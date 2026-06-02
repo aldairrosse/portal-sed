@@ -1,0 +1,169 @@
+schema: spec-driven
+
+context: |
+  # SED — Portal de evaluación de desempeño
+
+  Portal web para fijación y evaluación de objetivos de empleados.
+  Estado actual: especificación y principios. Sin implementación de aplicación aún.
+  Escala objetivo: miles a millones de usuarios (multi-tenant o partición por organización).
+
+  ## Módulos de producto (4)
+
+  1. **Catálogo de objetivos** — lista, alta por indicador, descripción y categoría.
+  2. **Mis evaluados** — desempeño y puesto, lista empleados, evaluación por tipo, fijación/evaluación, notificaciones email.
+  3. **Mi evaluación** — consulta (y edición si ciclo lo permite) de la evaluación propia.
+  4. **Objetivos** — fijación y evaluación con metas, por desempeño, etc.
+
+  ## Stack obligatorio (al implementar)
+
+  - Frontend: Vite + Svelte 5 + TypeScript + DaisyUI (SPA, lazy routes, WCAG 2.1 AA).
+  - Paquetes JS: pnpm únicamente.
+  - Backend: Go 1.22+ + Chi; handlers delgados; lógica en internal/.
+  - ORM: Ent (preferido) o GORM; migraciones versionadas; índices explícitos en spec de datos.
+  - BD: PostgreSQL 15+; solo SQL preparado vía ORM/query builders.
+  - Contratos: OpenAPI 3.1 fuente de verdad; tipos TS con openapi-typescript + openapi-fetch.
+  - Auth: sesión httpOnly + rotación; JWT solo si spec lo exige; RBAC siempre en backend.
+  - Contenedores: Docker multi-stage; usuario no-root; secrets por env.
+
+  ## Arquitectura
+
+  ```
+  web/        → Vite + Svelte, consume OpenAPI
+  api/        → Go REST JSON /api/v1/, Ent/GORM + pgx
+  openspec/   → specs duraderas y changes activos
+  principles/ → decisiones transversales (referencia, no código)
+  ```
+
+  Bounded contexts: catálogo, evaluaciones/ciclos, identidad/acceso, notificaciones.
+
+  Backend capas: cmd/server → internal/handler → internal/service → internal/repository;
+  internal/auth, internal/notify (cola async, idempotencia por evaluation_id + event_type).
+
+  Frontend capas: src/routes (por módulo), src/lib/api (cliente OpenAPI), src/lib/stores (UI mínima),
+  src/lib/components (DaisyUI).
+
+  ## Dominio — conceptos clave
+
+  ### Ciclo anual (3 fases)
+
+  1. **Inicio de año** — RH asigna competencias por categoría (pilares); cada empleado fija metas con KPIs.
+  2. **Medio año** — revisión de avance sobre metas y competencias (no evaluación final).
+  3. **Fin de año** — autoevaluación empleado + evaluación RH; jefe registra potencial en matriz 9×9 (no sustituye evaluación RH).
+
+  ### Estructuras organizacionales (coexisten)
+
+  - **Corporativa:** colaborador → jefe (N colaboradores) → director (N jefes) → director general.
+  - **Retail / tiendas:** vendedor → gerente de tienda → divisional → regional (+ enlaces a corporativo).
+
+  Jerarquía define evaluador y alcance de "mis evaluados"; el **perfil de evaluación** define reglas de escala y metas.
+
+  ### Perfil de evaluación (por puesto, no solo rol RBAC)
+
+  Tipos: colaborador, jefe, vendedor, gerente de tienda, divisional, regional, director, director general, RH.
+  Cada perfil tiene **niveles de aceptación distintos** en escala 1-5.
+
+  ### Competencias (RH)
+
+  - Organizadas en **categorías / pilares** de la empresa.
+  - Escala personalizada **1-5** con criterios distintos por competencia y por categoría.
+  - RH asigna competencias al inicio de año según categoría y perfil.
+
+  ### Pilares y ponderación (decisiones cerradas)
+
+  - **Pilares únicos** para todos los perfiles (corporativo y retail).
+  - **Categorías / pilares:** solo agrupan competencias y muestran escalas 1-5; **sin** ponderación en categorías.
+  - **Metas:** KPI con unidad **porcentaje** o **moneda**; **solo metas** ponderan y deben sumar **100%** (o monto total acordado).
+  - **Medio año:** editar metas y avances; **prohibido eliminar** metas.
+  - **Fin de año:** autoevaluación + RH; jefe califica **9×9** (desempeño vs potencial).
+
+  ### Entidades resumidas
+
+  - **Ciclo de evaluación:** año + fase (asignación | avance | cierre).
+  - **Categoría / pilar:** agrupa competencias y metas.
+  - **Competencia:** indicador con escala 1-5 y criterios por categoría + perfil.
+  - **Meta:** KPI, unidad (%/$), peso, avance, calificación.
+  - **Evaluación:** instancia empleado + ciclo + fase + estado.
+
+  Estados borrador:
+  - Meta: borrador, fijada, en seguimiento, evaluada, cerrada.
+  - Evaluación empleado: pendiente asignación, pendiente avance, pendiente evaluación final, completada.
+
+  ### Estrategia UI-first (antes de backend/auth)
+
+  - Specs de pantalla con **fixtures JSON** y **selector de persona** en dev (sin login).
+  - Contratos OpenAPI como stub/types; implementación API después.
+  - Auth y RBAC en change posterior; UI no confía en ocultar botones como única protección.
+
+  Reglas pendientes de cerrar en spec: quién edita tras fijar en inicio de año; criterios escala por perfil en detalle;
+  visibilidad jefe en medio año; definición cuadrantes 9×9; triggers email; agregados RH.
+  Roadmap completo: openspec/SPEC-ROADMAP.md
+
+  ## API y rendimiento
+
+  - REST versionada /api/v1/; idempotencia en escrituras críticas.
+  - Listados: paginación cursor (?cursor=&limit=); campos mínimos en tabla; detalle en GET /resource/:id.
+  - Errores estándar: code, message, details[], trace_id.
+  - ETag/If-None-Match en catálogos estables; compresión gzip/brotli en proxy.
+
+  Índices ejemplo (nombrar en spec de listados):
+  - evaluaciones: (organization_id, cycle_id, employee_id)
+  - objetivos: (evaluation_id, type)
+  - catálogo: (organization_id, category_id)
+
+  Auditoría: created_at, updated_at, created_by, updated_by en evaluaciones y objetivos.
+
+  ## Seguridad
+
+  - AuthN backend; frontend cookies httpOnly; nunca tokens en localStorage.
+  - AuthZ RBAC en capa service, no solo ocultar UI.
+  - Rate limiting login y APIs sensibles; auditoría cambios en evaluaciones.
+  - Evaluaciones = datos personales/laborales; retención según política RH.
+
+  ## UI / UX
+
+  - Español por defecto en UI y mensajes de usuario.
+  - Sentence case en títulos, subtítulos, inputs y botones.
+  - Sin box-shadow decorativo; sin border-left/right como acento; hovers sutiles.
+  - Estados: skeleton loading, vacío, error red, 403 sin permiso.
+  - Layout autenticado con menú lateral por rol; rutas lazy-loaded.
+
+  ## Idioma artefactos
+
+  - Specs y docs de producto: español.
+  - Código y comentarios técnicos: inglés o español según consistencia del archivo.
+
+  ## Referencias obligatorias
+
+  - AGENTS.md — reglas para agentes (prevalece sobre README salvo OpenSpec de producto).
+  - principles/ — architecture, roles-and-auth, evaluations-domain, contracts-api, data-and-orm,
+    modules-and-screens, styles-and-ui, security, testing.
+  - Si principles/ y openspec/specs/ divergen, gana OpenSpec tras revisión explícita.
+
+  ## No hacer
+
+  - Código de aplicación sin change/spec aprobado en openspec/changes/.
+  - Concatenar SQL crudo con input de usuario.
+  - Commits o push sin pedido explícito del usuario.
+  - Sobre-ingeniería: helpers de una línea, abstracciones prematuras.
+
+rules:
+  proposal:
+    - Incluir sección Non-goals explícita.
+    - Referenciar principles/ relevantes y decisiones abiertas a cerrar.
+    - Nombrar actores, precondiciones, flujo feliz, errores y notificaciones email si aplica.
+    - No proponer implementación hasta spec aprobada; marcar dependencias entre changes.
+  design:
+    - Alinear capas api/ y web/ con principles/architecture.md.
+    - Documentar índices BD alineados a queries de listado.
+    - OpenAPI 3.1 como contrato; errores con code, message, details[], trace_id.
+    - RBAC en service layer; notificaciones async con idempotencia.
+  tasks:
+    - Chunks máx ~2h; incluir criterios de aceptación verificables.
+    - Ruta UI-first (aprobada): design/tokens → fixtures → pantallas Svelte → stub OpenAPI → backend → auth.
+    - Ruta API-first (alternativa): OpenAPI → backend → handlers → frontend.
+    - Sin código hasta tasks aprobados.
+    - CI: openspec validate, lint (golangci-lint, eslint), tests tabla dominio/handlers, pnpm audit.
+  spec:
+    - Una spec duradera por bounded context o módulo; nombre kebab-case.
+    - Cerrar reglas de negocio abiertas antes de handlers públicos.
+    - Incluir checklist security-baseline por change (ver principles/security.md).
