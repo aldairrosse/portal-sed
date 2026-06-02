@@ -24,3 +24,11 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Local cache (gentle-ai skill-registry, no versionar)
+.atl/
+
+# Loose design references (root, sin attach a ningún change)
+ide_inspiracion.jpeg
+select actual.png
+sidebar.png
