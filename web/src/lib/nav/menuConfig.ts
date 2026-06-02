@@ -1,0 +1,68 @@
+import type { EvaluationProfile, CyclePhase } from '$lib/types/evaluation';
+
+export interface MenuItem {
+	label: string;
+	href: string;
+	icon: string;
+	profiles: EvaluationProfile[];
+	phases?: CyclePhase[];
+}
+
+export const MENU_ITEMS: MenuItem[] = [
+	{
+		label: 'Inicio',
+		href: '/',
+		icon: 'Home',
+		profiles: ['colaborador', 'jefe', 'vendedor', 'gerente-tienda', 'divisional', 'regional', 'director', 'rh']
+	},
+	{
+		label: 'Asignación anual',
+		href: '/objetivos/asignacion',
+		icon: 'Target',
+		profiles: ['colaborador', 'jefe', 'vendedor', 'gerente-tienda', 'divisional', 'regional', 'director']
+	},
+	{
+		label: 'Avance medio año',
+		href: '/objetivos/avance',
+		icon: 'TrendingUp',
+		profiles: ['colaborador', 'jefe', 'vendedor', 'gerente-tienda', 'divisional', 'regional', 'director']
+	},
+	{
+		label: 'Mi evaluación',
+		href: '/mi-evaluacion',
+		icon: 'ClipboardCheck',
+		profiles: ['colaborador', 'jefe', 'vendedor', 'gerente-tienda', 'divisional', 'regional', 'director']
+	},
+	{
+		label: 'Mis evaluados',
+		href: '/mis-evaluados',
+		icon: 'Users',
+		profiles: ['jefe', 'gerente-tienda', 'divisional', 'regional', 'director']
+	},
+	{
+		label: 'Matriz 9×9',
+		href: '/evaluacion/9x9',
+		icon: 'Grid3x3',
+		profiles: ['jefe', 'divisional', 'regional', 'director']
+	},
+	{
+		label: 'Competencias',
+		href: '/rh/competencias',
+		icon: 'Award',
+		profiles: ['rh']
+	},
+	{
+		label: 'Evaluaciones RH',
+		href: '/rh/evaluaciones',
+		icon: 'FileText',
+		profiles: ['rh']
+	}
+];
+
+export function getVisibleMenuItems(profile: EvaluationProfile, phase: CyclePhase): MenuItem[] {
+	return MENU_ITEMS.filter((item) => {
+		if (!item.profiles.includes(profile)) return false;
+		if (item.phases && !item.phases.includes(phase)) return false;
+		return true;
+	});
+}

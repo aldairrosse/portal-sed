@@ -1,0 +1,147 @@
+@import "tailwindcss";
+
+@plugin "@tailwindcss/typography";
+
+@plugin "daisyui" {
+	themes: sed --default;
+}
+
+@plugin "daisyui/theme" {
+	name: "sed";
+	default: true;
+	color-scheme: light;
+
+	/* SED palette — hex */
+	--color-base-100: #f8fafc;
+	--color-base-200: #eef2f7;
+	--color-base-300: #e2e8f0;
+	--color-base-content: #334155;
+
+	--color-primary: #101C82;
+	--color-primary-content: #ffffff;
+
+	--color-secondary: #4a90a4;
+	--color-secondary-content: #ffffff;
+
+	--color-accent: #d97706;
+	--color-accent-content: #ffffff;
+
+	--color-neutral: #E8EAFC;
+	--color-neutral-content: #000000;
+
+	--color-info: #3b82f6;
+	--color-info-content: #ffffff;
+
+	--color-success: #22c55e;
+	--color-success-content: #ffffff;
+
+	--color-warning: #f59e0b;
+	--color-warning-content: #1e293b;
+
+	--color-error: #ef4444;
+	--color-error-content: #ffffff;
+
+	/* Radius */
+	--radius-selector: 0.75rem;
+	--radius-field: 0.6rem;
+	--radius-box: 1rem;
+
+	/* Borders */
+	--border: 1px;
+}
+
+/* === GLOBAL RESETS === */
+* {
+	box-shadow: none !important;
+}
+
+html {
+	font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+body {
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	background-color: var(--color-base-100);
+}
+
+/* === COMPONENT STYLES === */
+@layer components {
+	/* Cards: flat by default, no border, no shadow, no padding */
+	.card {
+		border: none !important;
+		box-shadow: none !important;
+		background: transparent;
+	}
+
+	/* Elevated card: only when emphasis needed */
+	.card-elevated {
+		background-color: var(--color-base-100) !important;
+		box-shadow:
+			0 1px 3px rgba(0, 0, 0, 0.04),
+			0 4px 12px rgba(0, 0, 0, 0.03) !important;
+	}
+
+	/* Buttons: flat, no border */
+	.btn {
+		border-radius: var(--radius-field) !important;
+		border: none !important;
+		box-shadow: none !important;
+		font-weight: 500;
+		transition: background-color 0.15s ease, opacity 0.15s ease;
+	}
+	.btn:hover {
+		opacity: 0.9;
+	}
+
+	/* Inputs: soft bg, no hard border */
+	.input,
+	.textarea {
+		border: 1.5px solid rgba(0, 0, 0, 0.08) !important;
+		background-color: #ffffff !important;
+		box-shadow: none !important;
+		transition: border-color 0.15s ease, box-shadow 0.15s ease;
+	}
+
+	.input:focus,
+	.textarea:focus {
+		border-color: var(--color-primary) !important;
+		box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12) !important;
+	}
+
+	/* Navbar: clean, no border */
+	.navbar {
+		border-bottom: none !important;
+		background-color: var(--color-base-100) !important;
+	}
+
+	/* Headings: darker, cleaner */
+	h1, h2, h3, h4, h5, h6 {
+		color: var(--color-base-content);
+		font-weight: 600;
+	}
+}
+
+/* === TYPOGRAPHY === */
+@layer base {
+	h1 { font-size: 1.5rem; line-height: 2rem; }
+	h2 { font-size: 1.25rem; line-height: 1.75rem; }
+	h3 { font-size: 1.125rem; line-height: 1.5rem; }
+}
+
+/* === UTILITIES === */
+@utility no-shadow {
+	box-shadow: none !important;
+}
+
+@utility soft-shadow {
+	box-shadow:
+		0 1px 3px rgba(0, 0, 0, 0.04),
+		0 4px 12px rgba(0, 0, 0, 0.03) !important;
+}
+
+@utility card-shadow {
+	box-shadow:
+		0 1px 3px rgba(0, 0, 0, 0.04),
+		0 8px 24px rgba(0, 0, 0, 0.06) !important;
+}
