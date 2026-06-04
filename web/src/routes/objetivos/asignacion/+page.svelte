@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Save, Plus, Library, MessageSquare } from '@lucide/svelte';
-	import type { Goal, GoalCategory, GoalUnit } from '$lib/types/goal';
+	import type { Goal, GoalCategory, GoalUnit, GoalComment } from '$lib/types/goal';
 	import type { ChangeRequest } from '$lib/types/goal';
 	import { MANAGER_MAP } from '$lib/types/goal';
 	import type { EvaluationProfile } from '$lib/types/evaluation';
@@ -19,10 +19,17 @@
 		isAssignmentValid,
 		linkKpiToGoal,
 		unlinkKpiFromGoal,
-		getAssignmentsByProfile
+		getAssignmentsByProfile,
+		getCyclePhase,
+		getGoalPermissions,
+		updateGoalProgress,
+		addGoalComment,
+		deleteGoalComment,
+		getGoalComments
 	} from '$lib/stores/goalsStore.svelte';
 	import { getProfile } from '$lib/stores/devContext.svelte';
 	import WeightIndicator from '$lib/components/goals/WeightIndicator.svelte';
+	import ProgressIndicator from '$lib/components/goals/ProgressIndicator.svelte';
 	import CategoryCard from '$lib/components/goals/CategoryCard.svelte';
 	import CategoryFormModal from '$lib/components/goals/CategoryFormModal.svelte';
 	import GoalFormModal from '$lib/components/goals/GoalFormModal.svelte';
@@ -30,6 +37,7 @@
 	import ReadOnlyBanner from '$lib/components/goals/ReadOnlyBanner.svelte';
 	import AssigneePicker from '$lib/components/goals/AssigneePicker.svelte';
 	import RequestChangeModal from '$lib/components/goals/RequestChangeModal.svelte';
+	import CommentPopover from '$lib/components/goals/GoalCommentModal.svelte';
 
 	// ─── Mode detection ──────────────────────────────────────────────────────
 
@@ -72,6 +80,34 @@
 	);
 
 	const targetEmployeeName = $derived(targetAssignment?.employeeName ?? '');
+
+	// ─── Cycle phase & permissions ──────────────────────────────────────────
+
+	const phase = $derived(getCyclePhase());
+	const isOwner = $derived(mode === 'editor');
+	const permissions = $derived(getGoalPermissions(viewerProfile, isOwner));
+
+	// ─── Comment modal state ────────────────────────────────────────────────
+
+	let commentGoal: Goal | null = $state(null);
+	let commentGoalComments = $state<GoalComment[]>([]);
+	let showCommentModal = $state(false);
+
+	function openComments(goal: Goal) {
+		commentGoal = goal;
+		commentGoalComments = getGoalComments(goal.id);
+		showCommentModal = true;
+	}
+
+	function handleAddComment(goalId: string, content: string) {
+		addGoalComment(goalId, viewerProfile, viewerProfile, content);
+		commentGoalComments = getGoalComments(goalId);
+	}
+
+	function handleDeleteComment(goalId: string, commentId: string) {
+		deleteGoalComment(goalId, commentId);
+		commentGoalComments = getGoalComments(goalId);
+	}
 
 	// ─── Existing page state ─────────────────────────────────────────────────
 
@@ -219,6 +255,10 @@
 		if (!targetAssignment) return;
 		openRequestModal('assignment', targetAssignment.id, targetEmployeeName);
 	}
+
+	function handleUpdateProgress(goalId: string, progress: number) {
+		updateGoalProgress(goalId, progress);
+	}
 </script>
 
 <svelte:head>
@@ -229,9 +269,13 @@
 	<!-- Page header -->
 	<div class="flex flex-wrap items-start justify-between gap-4">
 		<div class="min-w-0 flex-1">
-			<h1 class="text-2xl font-bold text-base-content">Asignación anual</h1>
+			<h1 class="text-2xl font-bold text-base-content">
+				{phase === 'avance' ? 'Avance de metas' : 'Asignación anual'}
+			</h1>
 			<p class="text-sm text-base-content/50 mt-1">
-				Defina las categorías y metas para el período de evaluación.
+				{phase === 'avance'
+					? 'Registre el avance de sus metas y agregue comentarios.'
+					: 'Defina las categorías y metas para el período de evaluación.'}
 			</p>
 		</div>
 		<div class="flex items-center gap-2">
@@ -243,20 +287,22 @@
 					onSelect={handleAssigneeSelect}
 				/>
 			{/if}
-			<button
-				class="btn btn-ghost btn-sm"
-				onclick={() => (showKpiLibrary = true)}
-				aria-label="Biblioteca de KPI"
-			>
-				<Library class="w-4 h-4" />
-				Biblioteca de KPI
-			</button>
-			{#if mode === 'editor'}
+			{#if phase !== 'avance'}
+				<button
+					class="btn btn-ghost btn-sm"
+					onclick={() => (showKpiLibrary = true)}
+					aria-label="Biblioteca de KPI"
+				>
+					<Library class="w-4 h-4" />
+					Biblioteca de KPI
+				</button>
+			{/if}
+			{#if mode === 'editor' && phase !== 'avance'}
 				<button class="btn btn-primary btn-sm" disabled={!valid} onclick={handleSaveAssignment}>
 					<Save class="w-4 h-4" />
 					Guardar asignación
 				</button>
-			{:else}
+			{:else if mode === 'reader'}
 				<button
 					class="btn btn-warning btn-sm"
 					onclick={handleRequestAssignmentChange}
@@ -271,17 +317,31 @@
 
 	<!-- Read-only banner -->
 	{#if mode === 'reader'}
-		<ReadOnlyBanner employeeName={targetEmployeeName} />
+		<ReadOnlyBanner employeeName={targetEmployeeName} {phase} />
 	{/if}
 
 	<!-- Global weight indicator (sticky) -->
 	<div class="sticky top-2 z-30 bg-base-200/95 backdrop-blur-sm rounded-lg p-4 mt-2 mb-4 border border-base-300 shadow-sm min-w-0">
-		<p class="text-sm font-semibold text-base-content mb-2">Distribución global de metas</p>
-		<WeightIndicator current={globalSum} label="Suma total de categorías" />
-		{#if !valid}
-			<p class="text-xs text-warning mt-1">
-				La suma de pesos debe ser 100% tanto a nivel global como en cada categoría.
-			</p>
+		<p class="text-sm font-semibold text-base-content mb-2">
+			{phase === 'avance' ? 'Avance global de metas' : 'Distribución global de metas'}
+		</p>
+		{#if phase === 'avance'}
+			{@const allGoals = goals}
+			{@const withProgress = allGoals.filter((g) => g.progress !== undefined)}
+			{@const avgProgress = withProgress.length > 0
+				? withProgress.reduce((acc, g) => {
+						const pct = g.unit === 'porcentaje' ? (g.progress ?? 0) : ((g.progress ?? 0) / (g.targetValue || 1)) * 100;
+						return acc + Math.min(pct, 100);
+					}, 0) / withProgress.length
+				: 0}
+			<ProgressIndicator value={avgProgress} label="Avance promedio total" color="primary" />
+		{:else}
+			<WeightIndicator current={globalSum} label="Suma total de categorías" />
+			{#if !valid}
+				<p class="text-xs text-warning mt-1">
+					La suma de pesos debe ser 100% tanto a nivel global como en cada categoría.
+				</p>
+			{/if}
 		{/if}
 	</div>
 
@@ -314,6 +374,14 @@
 					{mode}
 					onRequestChangeCategory={handleRequestChangeCategory}
 					onRequestChangeGoal={handleRequestChangeGoal}
+					{phase}
+					canDelete={permissions.canDelete}
+					canAddGoal={permissions.canDelete}
+					canEditCategory={permissions.canEditWeight}
+					canEditProgress={permissions.canEditProgress}
+					canComment={permissions.canComment}
+					onUpdateProgress={handleUpdateProgress}
+					onOpenComments={openComments}
 				/>
 			{/each}
 		</div>
@@ -323,8 +391,8 @@
 		</div>
 	{/if}
 
-	<!-- Nueva categoría button (editor only) -->
-	{#if mode === 'editor'}
+	<!-- Nueva categoría button (editor only, not in avance mode) -->
+	{#if mode === 'editor' && phase !== 'avance'}
 		<div class="flex justify-center pt-2">
 			<button
 				class="btn btn-outline btn-primary"
@@ -376,5 +444,17 @@
 		entityName={requestEntityName}
 		requestedBy={viewerProfile}
 		onClose={closeRequestModal}
+	/>
+{/if}
+
+{#if showCommentModal && commentGoal}
+	<CommentPopover
+		open={showCommentModal}
+		goal={commentGoal}
+		comments={commentGoalComments}
+		onAdd={handleAddComment}
+		onDelete={handleDeleteComment}
+		onClose={() => (showCommentModal = false)}
+		currentUserId={viewerProfile}
 	/>
 {/if}

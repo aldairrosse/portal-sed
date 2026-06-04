@@ -5,6 +5,10 @@ import type { EvaluationProfile } from './evaluation';
 export type GoalUnit = 'porcentaje' | 'moneda' | 'numero' | 'binario';
 export type KpiUnit = GoalUnit;
 
+// ─── Cycle Phase ──────────────────────────────────────────────────────────────
+
+export type CyclePhase = 'asignacion' | 'avance' | 'cierre';
+
 // ─── KPI ───────────────────────────────────────────────────────────────────────
 
 export interface KPI {
@@ -37,6 +41,19 @@ export interface Goal {
 	weight: number;
 	unit: GoalUnit;
 	targetValue: number;
+	progress?: number;
+	progressUpdatedAt?: string;
+	comments?: GoalComment[];
+}
+
+// ─── GoalComment ──────────────────────────────────────────────────────────────
+
+export interface GoalComment {
+	id: string;
+	authorId: string;
+	authorName: string;
+	content: string;
+	createdAt: string;
 }
 
 // ─── GoalKpiLink (N:M) ─────────────────────────────────────────────────────────

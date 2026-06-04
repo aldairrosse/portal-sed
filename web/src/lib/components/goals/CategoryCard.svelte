@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { Pencil, Trash2, Plus, MessageSquare } from '@lucide/svelte';
-	import type { Goal, GoalCategory, KPI } from '$lib/types/goal';
+	import type { Goal, GoalCategory, KPI, CyclePhase } from '$lib/types/goal';
 	import WeightIndicator from './WeightIndicator.svelte';
+	import ProgressIndicator from './ProgressIndicator.svelte';
 	import GoalRow from './GoalRow.svelte';
 
 	interface Props {
@@ -16,6 +17,14 @@
 		mode?: 'editor' | 'reader';
 		onRequestChangeCategory?: (category: GoalCategory) => void;
 		onRequestChangeGoal?: (goal: Goal) => void;
+		phase?: CyclePhase;
+		canDelete?: boolean;
+		canAddGoal?: boolean;
+		canEditCategory?: boolean;
+		canEditProgress?: boolean;
+		canComment?: boolean;
+		onUpdateProgress?: (goalId: string, progress: number) => void;
+		onOpenComments?: (goal: Goal) => void;
 	}
 
 	let {
@@ -29,8 +38,27 @@
 		onDeleteGoal,
 		mode = 'editor',
 		onRequestChangeCategory,
-		onRequestChangeGoal
+		onRequestChangeGoal,
+		phase = 'asignacion',
+		canDelete = true,
+		canAddGoal = true,
+		canEditCategory = true,
+		canEditProgress = false,
+		canComment = false,
+		onUpdateProgress,
+		onOpenComments
 	}: Props = $props();
+
+	let categoryProgress = $derived.by(() => {
+		if (goals.length === 0) return 0;
+		const withProgress = goals.filter((g) => g.progress !== undefined);
+		if (withProgress.length === 0) return 0;
+		const total = withProgress.reduce((acc, g) => {
+			const pct = g.unit === 'porcentaje' ? (g.progress ?? 0) : ((g.progress ?? 0) / (g.targetValue || 1)) * 100;
+			return acc + Math.min(pct, 100);
+		}, 0);
+		return total / withProgress.length;
+	});
 </script>
 
 <div class="card bg-base-100 border border-base-300 max-w-full">
@@ -45,7 +73,9 @@
 				<p class="text-xs text-base-content/50 truncate">{category.description}</p>
 			</div>
 			<div class="flex items-center gap-1">
-				{#if mode === 'editor'}
+				{#if phase === 'avance'}
+					<!-- No category edit/delete in avance mode -->
+				{:else if mode === 'editor' && canEditCategory}
 					<button
 						class="btn btn-ghost btn-square btn-sm"
 						title="Editar"
@@ -54,14 +84,16 @@
 					>
 						<Pencil class="w-4 h-4" />
 					</button>
-					<button
-						class="btn btn-ghost btn-square btn-sm text-error"
-						title="Eliminar"
-						onclick={() => onDeleteCategory(category.id)}
-						aria-label="Eliminar categoría {category.name}"
-					>
-						<Trash2 class="w-4 h-4" />
-					</button>
+					{#if canDelete}
+						<button
+							class="btn btn-ghost btn-square btn-sm text-error"
+							title="Eliminar"
+							onclick={() => onDeleteCategory(category.id)}
+							aria-label="Eliminar categoría {category.name}"
+						>
+							<Trash2 class="w-4 h-4" />
+						</button>
+					{/if}
 				{:else if onRequestChangeCategory}
 					<button
 						class="btn btn-ghost btn-sm text-warning"
@@ -76,12 +108,16 @@
 			</div>
 		</div>
 
-		<!-- Weight indicator for goals within this category -->
-		<div class="mb-4">
-			<WeightIndicator
-				current={goals.reduce((sum, g) => sum + g.weight, 0)}
-				label="Peso de metas en {category.name}"
-			/>
+		<!-- Indicators -->
+		<div class="mb-4 flex items-center gap-4">
+			{#if phase === 'avance'}
+				<ProgressIndicator value={categoryProgress} label="Avance promedio" />
+			{:else}
+				<WeightIndicator
+					current={goals.reduce((sum, g) => sum + g.weight, 0)}
+					label="Peso de metas en {category.name}"
+				/>
+			{/if}
 		</div>
 
 		<!-- Goals table -->
@@ -93,7 +129,9 @@
 							<th class="text-xs font-semibold text-base-content/60">Meta</th>
 							<th class="text-xs font-semibold text-base-content/60">Valor objetivo</th>
 							<th class="text-xs font-semibold text-base-content/60">Peso</th>
-							<th class="text-xs font-semibold text-base-content/60">KPI</th>
+							<th class="text-xs font-semibold text-base-content/60">
+								{phase === 'avance' ? 'Avance' : 'KPI'}
+							</th>
 							<th class="text-xs font-semibold text-base-content/60 text-right">Acciones</th>
 						</tr>
 					</thead>
@@ -106,6 +144,12 @@
 								onDelete={onDeleteGoal}
 								{mode}
 								onRequestChange={onRequestChangeGoal}
+								{phase}
+								{canEditProgress}
+								{canComment}
+								{canDelete}
+								{onUpdateProgress}
+								{onOpenComments}
 							/>
 						{/each}
 					</tbody>
@@ -117,8 +161,8 @@
 			</p>
 		{/if}
 
-		<!-- Add goal button (editor only) -->
-		{#if mode === 'editor'}
+		<!-- Add goal button (editor only, not in avance mode) -->
+		{#if mode === 'editor' && canAddGoal && phase !== 'avance'}
 			<div class="mt-3">
 				<button
 					class="btn btn-outline btn-primary btn-sm"

@@ -6,7 +6,10 @@
 		"categoryId": "cat-ventas-finanzas",
 		"weight": 50,
 		"unit": "moneda",
-		"targetValue": 1000000
+		"targetValue": 1000000,
+		"progress": 650000,
+		"progressUpdatedAt": "2026-06-01T10:00:00.000Z",
+		"comments": []
 	},
 	{
 		"id": "goal-mejorar-margen",
@@ -15,7 +18,10 @@
 		"categoryId": "cat-ventas-finanzas",
 		"weight": 30,
 		"unit": "porcentaje",
-		"targetValue": 25
+		"targetValue": 25,
+		"progress": 18,
+		"progressUpdatedAt": "2026-06-01T10:00:00.000Z",
+		"comments": []
 	},
 	{
 		"id": "goal-reducir-costos",
@@ -24,7 +30,8 @@
 		"categoryId": "cat-ventas-finanzas",
 		"weight": 20,
 		"unit": "numero",
-		"targetValue": 15
+		"targetValue": 15,
+		"comments": []
 	},
 	{
 		"id": "goal-mejorar-satisfaccion",
@@ -33,7 +40,10 @@
 		"categoryId": "cat-clientes-calidad",
 		"weight": 40,
 		"unit": "porcentaje",
-		"targetValue": 90
+		"targetValue": 90,
+		"progress": 82,
+		"progressUpdatedAt": "2026-06-01T10:00:00.000Z",
+		"comments": []
 	},
 	{
 		"id": "goal-reducir-quejas",
@@ -42,7 +52,10 @@
 		"categoryId": "cat-clientes-calidad",
 		"weight": 30,
 		"unit": "porcentaje",
-		"targetValue": 20
+		"targetValue": 20,
+		"progress": 35,
+		"progressUpdatedAt": "2026-06-01T10:00:00.000Z",
+		"comments": []
 	},
 	{
 		"id": "goal-fidelizacion",
@@ -51,7 +64,10 @@
 		"categoryId": "cat-clientes-calidad",
 		"weight": 30,
 		"unit": "porcentaje",
-		"targetValue": 80
+		"targetValue": 80,
+		"progress": 10,
+		"progressUpdatedAt": "2026-06-01T10:00:00.000Z",
+		"comments": []
 	},
 	{
 		"id": "goal-reducir-rotacion",
@@ -60,7 +76,10 @@
 		"categoryId": "cat-personas-equipo",
 		"weight": 50,
 		"unit": "porcentaje",
-		"targetValue": 10
+		"targetValue": 10,
+		"progress": 8,
+		"progressUpdatedAt": "2026-06-01T10:00:00.000Z",
+		"comments": []
 	},
 	{
 		"id": "goal-capacitaciones",
@@ -69,7 +88,10 @@
 		"categoryId": "cat-personas-equipo",
 		"weight": 50,
 		"unit": "numero",
-		"targetValue": 40
+		"targetValue": 40,
+		"progress": 20,
+		"progressUpdatedAt": "2026-06-01T10:00:00.000Z",
+		"comments": []
 	},
 	{
 		"id": "goal-optimizar-inventario",
@@ -78,7 +100,8 @@
 		"categoryId": "cat-operaciones-procesos",
 		"weight": 60,
 		"unit": "numero",
-		"targetValue": 4.5
+		"targetValue": 4.5,
+		"comments": []
 	},
 	{
 		"id": "goal-reducir-ausentismo",
@@ -87,6 +110,9 @@
 		"categoryId": "cat-operaciones-procesos",
 		"weight": 40,
 		"unit": "porcentaje",
-		"targetValue": 3
+		"targetValue": 3,
+		"progress": 100,
+		"progressUpdatedAt": "2026-06-01T10:00:00.000Z",
+		"comments": []
 	}
 ]

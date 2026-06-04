@@ -4,7 +4,9 @@ import type {
 	GoalKpiLink,
 	KPI,
 	EmployeeAssignment,
-	ChangeRequest
+	ChangeRequest,
+	GoalComment,
+	CyclePhase
 } from '$lib/types/goal';
 import { MANAGER_MAP } from '$lib/types/goal';
 import type { EvaluationProfile } from '$lib/types/evaluation';
@@ -14,6 +16,7 @@ import goalsData from '$lib/fixtures/goals/goals.json';
 import kpisData from '$lib/fixtures/goals/kpis.json';
 import goalKpiLinksData from '$lib/fixtures/goals/goal-kpi-links.json';
 import assignmentsData from '$lib/fixtures/goals/assignments.json';
+import cycleData from '$lib/fixtures/goals/cycle.json';
 
 // ─── Tolerance ────────────────────────────────────────────────────────────────
 
@@ -27,6 +30,7 @@ let kpis = $state<KPI[]>(structuredClone(kpisData as KPI[]));
 let goalKpiLinks = $state<GoalKpiLink[]>(structuredClone(goalKpiLinksData as GoalKpiLink[]));
 let assignments = $state<EmployeeAssignment[]>(structuredClone(assignmentsData as EmployeeAssignment[]));
 let changeRequests = $state<ChangeRequest[]>([]);
+let cyclePhase = $state<CyclePhase>(structuredClone(cycleData.phase as CyclePhase));
 
 // ─── Getters: General ─────────────────────────────────────────────────────────
 
@@ -52,6 +56,55 @@ export function getAssignments(): EmployeeAssignment[] {
 
 export function getChangeRequests(): ChangeRequest[] {
 	return changeRequests;
+}
+
+export function getCyclePhase(): CyclePhase {
+	return cyclePhase;
+}
+
+// ─── Getters: Progress & Comments ─────────────────────────────────────────────
+
+export function getGoalProgress(goalId: string): number | undefined {
+	const goal = goals.find((g) => g.id === goalId);
+	return goal?.progress;
+}
+
+export function getGoalComments(goalId: string): GoalComment[] {
+	const goal = goals.find((g) => g.id === goalId);
+	return goal?.comments ?? [];
+}
+
+export function getCategoryProgressAverage(categoryId: string): number {
+	const catGoals = goals.filter((g) => g.categoryId === categoryId);
+	if (catGoals.length === 0) return 0;
+	const withProgress = catGoals.filter((g) => g.progress !== undefined);
+	if (withProgress.length === 0) return 0;
+	const total = withProgress.reduce((acc, g) => {
+		const pct = g.unit === 'porcentaje' ? (g.progress ?? 0) : ((g.progress ?? 0) / (g.targetValue || 1)) * 100;
+		return acc + Math.min(pct, 100);
+	}, 0);
+	return total / withProgress.length;
+}
+
+export function getGoalPermissions(
+	role: EvaluationProfile,
+	isOwner: boolean
+): { canEditProgress: boolean; canComment: boolean; canEditWeight: boolean; canDelete: boolean } {
+	if (cyclePhase === 'asignacion') {
+		return {
+			canEditProgress: false,
+			canComment: false,
+			canEditWeight: isOwner,
+			canDelete: isOwner
+		};
+	}
+	// phase === 'avance'
+	return {
+		canEditProgress: true,
+		canComment: true,
+		canEditWeight: false,
+		canDelete: false
+	};
 }
 
 // ─── Getters: Filtered ────────────────────────────────────────────────────────
@@ -144,6 +197,8 @@ export function updateCategory(id: string, updates: Partial<Omit<GoalCategory, '
 }
 
 export function deleteCategory(id: string): void {
+	// Block deletion in 'avance' phase
+	if (cyclePhase === 'avance') return;
 	// Cascade: remove goals of this category
 	const deletedGoalIds = goals.filter((g) => g.categoryId === id).map((g) => g.id);
 	goals = goals.filter((g) => g.categoryId !== id);
@@ -164,6 +219,8 @@ export function updateGoal(id: string, updates: Partial<Omit<Goal, 'id'>>): void
 }
 
 export function deleteGoal(id: string): void {
+	// Block deletion in 'avance' phase
+	if (cyclePhase === 'avance') return;
 	goals = goals.filter((g) => g.id !== id);
 	// Cascade: remove KPI links for this goal
 	goalKpiLinks = goalKpiLinks.filter((link) => link.goalId !== id);
@@ -262,5 +319,41 @@ export function approveChangeRequest(id: string, approvedBy: string): void {
 export function rejectChangeRequest(id: string): void {
 	changeRequests = changeRequests.map((cr) =>
 		cr.id === id ? { ...cr, status: 'rejected' } : cr
+	);
+}
+
+// ─── Mutations: Progress & Comments ───────────────────────────────────────────
+
+export function updateGoalProgress(goalId: string, progress: number): void {
+	goals = goals.map((g) =>
+		g.id === goalId
+			? { ...g, progress, progressUpdatedAt: new Date().toISOString() }
+			: g
+	);
+}
+
+export function addGoalComment(
+	goalId: string,
+	authorId: string,
+	authorName: string,
+	content: string
+): void {
+	const comment: GoalComment = {
+		id: `comment-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+		authorId,
+		authorName,
+		content,
+		createdAt: new Date().toISOString()
+	};
+	goals = goals.map((g) =>
+		g.id === goalId ? { ...g, comments: [...(g.comments ?? []), comment] } : g
+	);
+}
+
+export function deleteGoalComment(goalId: string, commentId: string): void {
+	goals = goals.map((g) =>
+		g.id === goalId
+			? { ...g, comments: (g.comments ?? []).filter((c) => c.id !== commentId) }
+			: g
 	);
 }
