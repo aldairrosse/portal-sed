@@ -22,12 +22,6 @@ export const MENU_ITEMS: MenuItem[] = [
 		profiles: ['colaborador', 'jefe', 'vendedor', 'gerente-tienda', 'divisional', 'regional', 'director', 'rh']
 	},
 	{
-		label: 'Avance medio año',
-		href: '/objetivos/avance',
-		icon: 'TrendingUp',
-		profiles: ['colaborador', 'jefe', 'vendedor', 'gerente-tienda', 'divisional', 'regional', 'director']
-	},
-	{
 		label: 'Mi evaluación',
 		href: '/mi-evaluacion',
 		icon: 'ClipboardCheck',

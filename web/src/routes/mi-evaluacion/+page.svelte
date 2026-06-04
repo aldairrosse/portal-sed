@@ -1,12 +1,10 @@
 <script lang="ts">
-	import EmptyState from '$lib/components/ui/EmptyState.svelte';
 	import CompetencyRatingCard from '$lib/components/evaluation/CompetencyRatingCard.svelte';
 	import GoalClosureCard from '$lib/components/evaluation/GoalClosureCard.svelte';
 	import { getPhase, getProfile } from '$lib/stores/devContext.svelte';
 	import { getPillars, getCompetenciesByPillar, getLevelDefinitions, getCompetencyAcceptanceLevel } from '$lib/stores/competencyStore.svelte';
 	import { getCompetencyRatings, rateCompetency, closeGoal, getGoalClosures } from '$lib/stores/evaluationStore.svelte';
-	import { getAssignmentsByProfile } from '$lib/stores/goalsStore.svelte';
-	import { getGoalsByCategory, getCategories, getKpisForGoal } from '$lib/stores/goalsStore.svelte';
+	import { getAssignmentsByProfile, getGoalsByCategory, getCategories, getKpisForGoal } from '$lib/stores/goalsStore.svelte';
 
 	const phase = $derived(getPhase());
 	const profile = $derived(getProfile());
@@ -17,6 +15,10 @@
 	const ratings = $derived(getCompetencyRatings(employeeId));
 	const closures = $derived(getGoalClosures(employeeId));
 	const categories = $derived(getCategories());
+
+	const isFinAnio = $derived(phase === 'fin-anio');
+
+	let activeTab = $state<'metas' | 'competencias'>('metas');
 
 	function getCompetencies(pillarId: string) {
 		return getCompetenciesByPillar(pillarId);
@@ -48,52 +50,40 @@
 	<title>Mi evaluación — SED</title>
 </svelte:head>
 
-{#if phase !== 'fin-anio'}
-	<EmptyState
-		title="Mi evaluación"
-		message="Evaluación no disponible hasta fin de año."
-		actionLabel="Volver al inicio"
-		actionHref="/"
-	/>
-{:else}
-	<div class="flex flex-col gap-6">
-		<!-- Header -->
-		<div>
-			<h1 class="text-2xl font-bold text-base-content">Mi evaluación</h1>
-			<p class="text-sm text-base-content/50 mt-1">
-				Autoevaluación de competencias y cierre de metas
-			</p>
-		</div>
+<div class="flex flex-col gap-6">
+	<!-- Header -->
+	<div>
+		<h1 class="text-2xl font-bold text-base-content">Mi evaluación</h1>
+		<p class="text-sm text-base-content/50 mt-1">
+			{isFinAnio
+				? 'Autoevaluación de competencias y cierre de metas'
+				: 'Vista previa de tus competencias y metas (evaluación disponible en fin de año)'}
+		</p>
+	</div>
 
-		<!-- Section 1: Competencias -->
-		<section>
-			<h2 class="text-lg font-semibold text-base-content mb-4">Competencias</h2>
-			{#if pillars.length === 0}
-				<p class="text-sm text-base-content/30 italic">No hay pilares configurados.</p>
-			{:else}
-				<div class="flex flex-col gap-6">
-					{#each pillars as pillar (pillar.id)}
-						{@const competencies = getCompetencies(pillar.id)}
-						{@const compIds = competencies.map((c) => c.id)}
-						{@const acceptanceLevels = buildAcceptanceLevels(compIds)}
-						<CompetencyRatingCard
-							{pillar}
-							{competencies}
-							{ratings}
-							{levelDefinitions}
-							{acceptanceLevels}
-							mode="self"
-							onRate={handleRate}
-							disabled={false}
-						/>
-					{/each}
-				</div>
-			{/if}
-		</section>
+	<!-- Tabs -->
+	<div role="tablist" class="tabs tabs-bordered">
+		<button
+			role="tab"
+			class="tab {activeTab === 'metas' ? 'tab-active' : ''}"
+			onclick={() => (activeTab = 'metas')}
+			aria-selected={activeTab === 'metas'}
+		>
+			Metas
+		</button>
+		<button
+			role="tab"
+			class="tab {activeTab === 'competencias' ? 'tab-active' : ''}"
+			onclick={() => (activeTab = 'competencias')}
+			aria-selected={activeTab === 'competencias'}
+		>
+			Competencias
+		</button>
+	</div>
 
-		<!-- Section 2: Cierre de metas -->
+	<!-- Tab: Metas -->
+	{#if activeTab === 'metas'}
 		<section>
-			<h2 class="text-lg font-semibold text-base-content mb-4">Cierre de metas</h2>
 			{#if categories.length === 0}
 				<p class="text-sm text-base-content/30 italic">No hay categorías de metas configuradas.</p>
 			{:else}
@@ -113,7 +103,7 @@
 												{kpis}
 												{closure}
 												mode="self"
-												canEdit={true}
+												canEdit={isFinAnio}
 												onSaveClosure={handleCloseGoal}
 											/>
 										{/each}
@@ -125,5 +115,32 @@
 				</div>
 			{/if}
 		</section>
-	</div>
-{/if}
+	{/if}
+
+	<!-- Tab: Competencias -->
+	{#if activeTab === 'competencias'}
+		<section>
+			{#if pillars.length === 0}
+				<p class="text-sm text-base-content/30 italic">No hay pilares configurados.</p>
+			{:else}
+				<div class="flex flex-col gap-6">
+					{#each pillars as pillar (pillar.id)}
+						{@const competencies = getCompetencies(pillar.id)}
+						{@const compIds = competencies.map((c) => c.id)}
+						{@const acceptanceLevels = buildAcceptanceLevels(compIds)}
+						<CompetencyRatingCard
+							{pillar}
+							{competencies}
+							{ratings}
+							{levelDefinitions}
+							{acceptanceLevels}
+							mode="self"
+							onRate={handleRate}
+							disabled={!isFinAnio}
+						/>
+					{/each}
+				</div>
+			{/if}
+		</section>
+	{/if}
+</div>

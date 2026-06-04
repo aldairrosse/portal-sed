@@ -132,7 +132,9 @@
 							<th class="text-xs font-semibold text-base-content/60">
 								{phase === 'medio-anio' || phase === 'fin-anio' ? 'Avance' : 'KPI'}
 							</th>
+							{#if phase !== 'fin-anio'}
 							<th class="text-xs font-semibold text-base-content/60 text-right">Acciones</th>
+						{/if}
 						</tr>
 					</thead>
 					<tbody>

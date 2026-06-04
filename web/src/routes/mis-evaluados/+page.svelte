@@ -1,9 +1,7 @@
 <script lang="ts">
-	import EmptyState from '$lib/components/ui/EmptyState.svelte';
 	import EvaluationStatusBadge from '$lib/components/evaluation/EvaluationStatusBadge.svelte';
 	import ComparisonTable from '$lib/components/evaluation/ComparisonTable.svelte';
 	import GoalClosureCard from '$lib/components/evaluation/GoalClosureCard.svelte';
-	import AssigneePicker from '$lib/components/goals/AssigneePicker.svelte';
 	import { getPhase, getProfile } from '$lib/stores/devContext.svelte';
 	import { getPillars, getCompetenciesByPillar, getLevelDefinitions, getCompetencyAcceptanceLevel } from '$lib/stores/competencyStore.svelte';
 	import {
@@ -15,7 +13,6 @@
 	import { MANAGER_MAP } from '$lib/types/goal';
 	import type { EvaluationProfile } from '$lib/types/evaluation';
 	import { getAssignments, getAssignmentsByProfile, getGoalsByCategory, getCategories, getKpisForGoal } from '$lib/stores/goalsStore.svelte';
-	import { EVALUATION_PROFILES } from '$lib/types/evaluation';
 
 	const phase = $derived(getPhase());
 	const profile = $derived(getProfile());
@@ -23,6 +20,8 @@
 	const levelDefinitions = $derived(getLevelDefinitions());
 	const categories = $derived(getCategories());
 	const allAssignments = $derived(getAssignments());
+
+	const isFinAnio = $derived(phase === 'fin-anio');
 
 	// Build inverse MANAGER_MAP to find direct reports for this profile
 	const inverseManagerMap = $derived.by(() => {
@@ -41,10 +40,26 @@
 	);
 
 	let selectedEmployeeId = $state('');
+	let searchQuery = $state('');
+	let showDropdown = $state(false);
+
+	const filteredAssignments = $derived(
+		searchQuery.trim() === ''
+			? subordinateAssignments
+			: subordinateAssignments.filter((a) =>
+					a.employeeName.toLowerCase().includes(searchQuery.toLowerCase())
+				)
+	);
+
+	const selectedEmployeeName = $derived(
+		subordinateAssignments.find((a) => a.employeeId === selectedEmployeeId)?.employeeName ?? ''
+	);
 
 	const allCompetencies = $derived(pillars.flatMap((p) => getCompetenciesByPillar(p.id)));
 	const ratings = $derived(getCompetencyRatings(selectedEmployeeId));
 	const closures = $derived(getGoalClosures(selectedEmployeeId));
+
+	let activeTab = $state<'resumen' | 'competencias' | 'metas'>('resumen');
 
 	function getCompetencies(pillarId: string) {
 		return getCompetenciesByPillar(pillarId);
@@ -61,6 +76,13 @@
 			if (level) result[compId] = level;
 		}
 		return result;
+	}
+
+	function handleSelectEmployee(employeeId: string) {
+		selectedEmployeeId = employeeId;
+		const emp = subordinateAssignments.find((a) => a.employeeId === employeeId);
+		searchQuery = emp?.employeeName ?? '';
+		showDropdown = false;
 	}
 
 	function handleManagerComment(goalId: string, comment: string) {
@@ -81,37 +103,96 @@
 	<title>Mis evaluados — SED</title>
 </svelte:head>
 
-{#if phase !== 'fin-anio'}
-	<EmptyState
-		title="Mis evaluados"
-		message="Evaluación no disponible hasta fin de año."
-		actionLabel="Volver al inicio"
-		actionHref="/"
-	/>
-{:else}
-	<div class="flex flex-col gap-6">
-		<!-- Header -->
-		<div>
-			<h1 class="text-2xl font-bold text-base-content">Mis evaluados</h1>
-			<p class="text-sm text-base-content/50 mt-1">
-				Revisión de evaluaciones de tu equipo
-			</p>
+<div class="flex flex-col gap-6">
+	<!-- Header -->
+	<div>
+		<h1 class="text-2xl font-bold text-base-content">Mis evaluados</h1>
+		<p class="text-sm text-base-content/50 mt-1">
+			Revisión de evaluaciones de tu equipo
+		</p>
+	</div>
+
+	<!-- Employee search input -->
+	<div class="relative w-full max-w-sm">
+		<label class="label" for="employee-search">
+			<span class="label-text">Buscar evaluado</span>
+		</label>
+		<input
+			id="employee-search"
+			type="text"
+			class="input input-bordered input-sm w-full"
+			placeholder="Escribí un nombre..."
+			value={searchQuery}
+			oninput={(e) => {
+				searchQuery = (e.target as HTMLInputElement).value;
+				showDropdown = true;
+			}}
+			onfocus={() => (showDropdown = true)}
+			onblur={() => setTimeout(() => (showDropdown = false), 150)}
+			aria-label="Buscar evaluado"
+			aria-expanded={showDropdown}
+			aria-autocomplete="list"
+			role="combobox"
+		/>
+		{#if showDropdown && filteredAssignments.length > 0}
+			<ul
+				class="absolute z-50 mt-1 w-full bg-base-100 border border-base-300 rounded-lg shadow-lg max-h-60 overflow-auto"
+				role="listbox"
+			>
+				{#each filteredAssignments as assignment (assignment.employeeId)}
+					<li>
+						<button
+							type="button"
+							class="w-full text-left px-4 py-2 text-sm hover:bg-base-200 {selectedEmployeeId === assignment.employeeId ? 'bg-base-200 font-semibold' : ''}"
+							onmousedown={() => handleSelectEmployee(assignment.employeeId)}
+							role="option"
+							aria-selected={selectedEmployeeId === assignment.employeeId}
+						>
+							{assignment.employeeName}
+						</button>
+					</li>
+				{/each}
+			</ul>
+		{/if}
+	</div>
+
+	{#if selectedEmployeeId}
+		<!-- Status badge -->
+		<div class="flex items-center gap-2">
+			<span class="text-sm text-base-content/60">Evaluado: <strong>{selectedEmployeeName}</strong></span>
+			<EvaluationStatusBadge {status} />
 		</div>
 
-		<!-- Employee picker (direct reports only) -->
-		<div class="flex items-end gap-4 flex-wrap">
-			<AssigneePicker
-				assignments={subordinateAssignments}
-				selectedEmployeeId={selectedEmployeeId}
-				onSelect={(id) => (selectedEmployeeId = id)}
-			/>
-			{#if selectedEmployeeId}
-				<EvaluationStatusBadge {status} />
-			{/if}
+		<!-- Tabs -->
+		<div role="tablist" class="tabs tabs-bordered">
+			<button
+				role="tab"
+				class="tab {activeTab === 'resumen' ? 'tab-active' : ''}"
+				onclick={() => (activeTab = 'resumen')}
+				aria-selected={activeTab === 'resumen'}
+			>
+				Resumen
+			</button>
+			<button
+				role="tab"
+				class="tab {activeTab === 'competencias' ? 'tab-active' : ''}"
+				onclick={() => (activeTab = 'competencias')}
+				aria-selected={activeTab === 'competencias'}
+			>
+				Competencias
+			</button>
+			<button
+				role="tab"
+				class="tab {activeTab === 'metas' ? 'tab-active' : ''}"
+				onclick={() => (activeTab = 'metas')}
+				aria-selected={activeTab === 'metas'}
+			>
+				Metas
+			</button>
 		</div>
 
-		{#if selectedEmployeeId}
-			<!-- Section 1: Comparison table (read-only, no RH column) -->
+		<!-- Tab: Resumen -->
+		{#if activeTab === 'resumen'}
 			<section>
 				<h2 class="text-lg font-semibold text-base-content mb-4">Resumen de competencias</h2>
 				<ComparisonTable
@@ -119,11 +200,13 @@
 					competencies={allCompetencies}
 					{acceptanceLevels}
 					{levelDefinitions}
-					showRhColumn={true}
+					showRhColumn={isFinAnio}
 				/>
 			</section>
+		{/if}
 
-			<!-- Section 2: Read-only competency view -->
+		<!-- Tab: Competencias -->
+		{#if activeTab === 'competencias'}
 			<section>
 				<h2 class="text-lg font-semibold text-base-content mb-4">Competencias</h2>
 				{#each pillars as pillar (pillar.id)}
@@ -167,8 +250,10 @@
 					</div>
 				{/each}
 			</section>
+		{/if}
 
-			<!-- Section 3: Goal closures with manager comments -->
+		<!-- Tab: Metas -->
+		{#if activeTab === 'metas'}
 			<section>
 				<h2 class="text-lg font-semibold text-base-content mb-4">Cierre de metas</h2>
 				{#each categories as category (category.id)}
@@ -186,6 +271,7 @@
 											{kpis}
 											{closure}
 											mode="manager"
+											canEdit={isFinAnio}
 											onManagerComment={handleManagerComment}
 										/>
 									{/each}
@@ -195,10 +281,10 @@
 					{/if}
 				{/each}
 			</section>
-		{:else}
-			<p class="text-sm text-base-content/30 italic text-center py-8">
-				Selecciona un evaluado para comenzar.
-			</p>
 		{/if}
-	</div>
-{/if}
+	{:else}
+		<p class="text-sm text-base-content/30 italic text-center py-8">
+			Selecciona un evaluado para comenzar.
+		</p>
+	{/if}
+</div>

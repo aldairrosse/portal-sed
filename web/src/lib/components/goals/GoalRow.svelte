@@ -113,52 +113,54 @@
 			<span class="text-xs text-base-content/30 italic">Sin KPI</span>
 		{/if}
 	</td>
-	<td class="text-right">
-		<div class="flex items-center justify-end gap-1">
-			{#if phase === 'medio-anio'}
-				{#if canComment}
+	{#if phase !== 'fin-anio'}
+		<td class="text-right">
+			<div class="flex items-center justify-end gap-1">
+				{#if phase === 'medio-anio'}
+					{#if canComment}
+						<button
+							class="btn btn-ghost btn-square btn-xs relative"
+							title="Comentarios"
+							onclick={() => onOpenComments?.(goal)}
+							aria-label="Comentarios de {goal.name}"
+						>
+							<MessageCircle class="w-3.5 h-3.5" />
+							{#if (goal.comments?.length ?? 0) > 0}
+								<span class="badge badge-xs badge-primary absolute -top-1.5 -right-1.5">{goal.comments?.length}</span>
+							{/if}
+						</button>
+					{/if}
+				{:else if mode === 'editor'}
 					<button
-						class="btn btn-ghost btn-square btn-xs relative"
-						title="Comentarios"
-						onclick={() => onOpenComments?.(goal)}
-						aria-label="Comentarios de {goal.name}"
+						class="btn btn-ghost btn-square btn-xs"
+						title="Editar"
+						onclick={() => onEdit(goal)}
+						aria-label="Editar {goal.name}"
 					>
-						<MessageCircle class="w-3.5 h-3.5" />
-						{#if (goal.comments?.length ?? 0) > 0}
-							<span class="badge badge-xs badge-primary absolute -top-1.5 -right-1.5">{goal.comments?.length}</span>
-						{/if}
+						<Pencil class="w-3.5 h-3.5" />
+					</button>
+					{#if canDelete}
+						<button
+							class="btn btn-ghost btn-square btn-xs text-error"
+							title="Eliminar"
+							onclick={() => onDelete(goal.id)}
+							aria-label="Eliminar {goal.name}"
+						>
+							<Trash2 class="w-3.5 h-3.5" />
+						</button>
+					{/if}
+				{:else if onRequestChange}
+					<button
+						class="btn btn-ghost btn-xs text-warning"
+						title="Solicitar cambio"
+						onclick={() => onRequestChange(goal)}
+						aria-label="Solicitar cambio en {goal.name}"
+					>
+						<MessageSquare class="w-3.5 h-3.5" />
+						Solicitar cambio
 					</button>
 				{/if}
-			{:else if mode === 'editor' && phase !== 'fin-anio'}
-				<button
-					class="btn btn-ghost btn-square btn-xs"
-					title="Editar"
-					onclick={() => onEdit(goal)}
-					aria-label="Editar {goal.name}"
-				>
-					<Pencil class="w-3.5 h-3.5" />
-				</button>
-				{#if canDelete}
-					<button
-						class="btn btn-ghost btn-square btn-xs text-error"
-						title="Eliminar"
-						onclick={() => onDelete(goal.id)}
-						aria-label="Eliminar {goal.name}"
-					>
-						<Trash2 class="w-3.5 h-3.5" />
-					</button>
-				{/if}
-			{:else if onRequestChange && phase !== 'fin-anio'}
-				<button
-					class="btn btn-ghost btn-xs text-warning"
-					title="Solicitar cambio"
-					onclick={() => onRequestChange(goal)}
-					aria-label="Solicitar cambio en {goal.name}"
-				>
-					<MessageSquare class="w-3.5 h-3.5" />
-					Solicitar cambio
-				</button>
-			{/if}
-		</div>
-	</td>
+			</div>
+		</td>
+	{/if}
 </tr>

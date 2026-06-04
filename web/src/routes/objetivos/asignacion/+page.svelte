@@ -297,11 +297,11 @@
 					Biblioteca de KPI
 				</button>
 			{/if}
-			{#if mode === 'editor' && phase !== 'medio-anio'}
-				<button class="btn btn-primary btn-sm" disabled={!valid} onclick={handleSaveAssignment}>
-					<Save class="w-4 h-4" />
-					Guardar asignación
-				</button>
+		{#if mode === 'editor' && phase !== 'medio-anio' && phase !== 'fin-anio'}
+			<button class="btn btn-primary btn-sm" disabled={!valid} onclick={handleSaveAssignment}>
+				<Save class="w-4 h-4" />
+				Guardar asignación
+			</button>
 			{:else if mode === 'reader'}
 				<button
 					class="btn btn-warning btn-sm"
@@ -391,8 +391,8 @@
 		</div>
 	{/if}
 
-	<!-- Nueva categoría button (editor only, not in avance mode) -->
-	{#if mode === 'editor' && phase !== 'medio-anio'}
+	<!-- Nueva categoría button (editor only, not in avance or cierre mode) -->
+	{#if mode === 'editor' && phase !== 'medio-anio' && phase !== 'fin-anio'}
 		<div class="flex justify-center pt-2">
 			<button
 				class="btn btn-outline btn-primary"

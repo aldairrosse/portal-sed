@@ -204,27 +204,34 @@
 						<p class="text-sm text-base-content/70 bg-base-200 rounded p-2">{closure.rhAssessment}</p>
 					</div>
 				{/if}
-				<label class="label px-0 py-1" for={managerCommentId}>
-					<span class="label-text text-xs">Comentario del jefe</span>
-				</label>
-				<textarea
-					id={managerCommentId}
-					class="textarea textarea-bordered textarea-xs w-full"
-					value={managerCommentValue}
-					oninput={(e) => (managerCommentValue = (e.target as HTMLTextAreaElement).value)}
-					rows="2"
-					placeholder="Agrega tu comentario como jefe"
-					aria-label="Comentario del jefe para {goal.name}"
-				></textarea>
-				<div class="mt-2">
-					<button
-						class="btn btn-primary btn-xs"
-						onclick={handleManagerComment}
-						aria-label="Guardar comentario para {goal.name}"
-					>
-						Guardar comentario
-					</button>
-				</div>
+				{#if canEdit}
+					<label class="label px-0 py-1" for={managerCommentId}>
+						<span class="label-text text-xs">Comentario del jefe</span>
+					</label>
+					<textarea
+						id={managerCommentId}
+						class="textarea textarea-bordered textarea-xs w-full"
+						value={managerCommentValue}
+						oninput={(e) => (managerCommentValue = (e.target as HTMLTextAreaElement).value)}
+						rows="2"
+						placeholder="Agrega tu comentario como jefe"
+						aria-label="Comentario del jefe para {goal.name}"
+					></textarea>
+					<div class="mt-2">
+						<button
+							class="btn btn-primary btn-xs"
+							onclick={handleManagerComment}
+							aria-label="Guardar comentario para {goal.name}"
+						>
+							Guardar comentario
+						</button>
+					</div>
+				{:else if closure?.managerComment}
+					<div class="mt-2">
+						<span class="text-xs text-base-content/50">Comentario del jefe:</span>
+						<p class="text-sm text-base-content/70 bg-base-200 rounded p-2">{closure.managerComment}</p>
+					</div>
+				{/if}
 			</div>
 		{/if}
 	</div>
