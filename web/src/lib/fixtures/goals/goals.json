@@ -4,69 +4,89 @@
 		"name": "Alcanzar meta de ventas mensuales",
 		"description": "Cumplir con la cuota de ventas asignada cada mes del período",
 		"categoryId": "cat-ventas-finanzas",
-		"weight": 50
+		"weight": 50,
+		"unit": "moneda",
+		"targetValue": 1000000
 	},
 	{
 		"id": "goal-mejorar-margen",
 		"name": "Mejorar margen operativo",
 		"description": "Incrementar el margen de utilidad operativa respecto al año anterior",
 		"categoryId": "cat-ventas-finanzas",
-		"weight": 30
+		"weight": 30,
+		"unit": "porcentaje",
+		"targetValue": 25
 	},
 	{
 		"id": "goal-reducir-costos",
 		"name": "Reducir costos operativos",
 		"description": "Identificar y ejecutar oportunidades de ahorro en gastos operativos",
 		"categoryId": "cat-ventas-finanzas",
-		"weight": 20
+		"weight": 20,
+		"unit": "numero",
+		"targetValue": 15
 	},
 	{
 		"id": "goal-mejorar-satisfaccion",
 		"name": "Mejorar satisfacción del cliente",
 		"description": "Alcanzar el puntaje objetivo en encuestas de satisfacción",
 		"categoryId": "cat-clientes-calidad",
-		"weight": 40
+		"weight": 40,
+		"unit": "porcentaje",
+		"targetValue": 90
 	},
 	{
 		"id": "goal-reducir-quejas",
 		"name": "Reducir quejas y reclamaciones",
 		"description": "Disminuir el número de quejas recibidas en un 20% respecto al período anterior",
 		"categoryId": "cat-clientes-calidad",
-		"weight": 30
+		"weight": 30,
+		"unit": "porcentaje",
+		"targetValue": 20
 	},
 	{
 		"id": "goal-fidelizacion",
 		"name": "Implementar programa de fidelización",
 		"description": "Diseñar y lanzar un programa de fidelización para clientes frecuentes",
 		"categoryId": "cat-clientes-calidad",
-		"weight": 30
+		"weight": 30,
+		"unit": "porcentaje",
+		"targetValue": 80
 	},
 	{
 		"id": "goal-reducir-rotacion",
 		"name": "Reducir rotación de personal",
 		"description": "Disminuir la rotación voluntaria implementando planes de retención",
 		"categoryId": "cat-personas-equipo",
-		"weight": 50
+		"weight": 50,
+		"unit": "porcentaje",
+		"targetValue": 10
 	},
 	{
 		"id": "goal-capacitaciones",
 		"name": "Completar capacitaciones del equipo",
 		"description": "Asegurar que cada miembro complete al menos 40 horas de capacitación",
 		"categoryId": "cat-personas-equipo",
-		"weight": 50
+		"weight": 50,
+		"unit": "numero",
+		"targetValue": 40
 	},
 	{
 		"id": "goal-optimizar-inventario",
 		"name": "Optimizar rotación de inventario",
 		"description": "Mejorar el índice de rotación de inventario en los puntos de venta",
 		"categoryId": "cat-operaciones-procesos",
-		"weight": 60
+		"weight": 60,
+		"unit": "numero",
+		"targetValue": 4.5
 	},
 	{
 		"id": "goal-reducir-ausentismo",
 		"name": "Reducir ausentismo",
 		"description": "Implementar medidas para reducir el ausentismo por debajo del 3%",
 		"categoryId": "cat-operaciones-procesos",
-		"weight": 40
+		"weight": 40,
+		"unit": "porcentaje",
+		"targetValue": 3
 	}
 ]

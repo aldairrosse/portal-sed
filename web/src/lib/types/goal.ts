@@ -35,6 +35,8 @@ export interface Goal {
 	description: string;
 	categoryId: string;
 	weight: number;
+	unit: GoalUnit;
+	targetValue: number;
 }
 
 // ─── GoalKpiLink (N:M) ─────────────────────────────────────────────────────────

@@ -22,7 +22,7 @@ const EPSILON = 0.01;
 // ─── State ────────────────────────────────────────────────────────────────────
 
 let categories = $state<GoalCategory[]>(structuredClone(categoriesData));
-let goals = $state<Goal[]>(structuredClone(goalsData));
+let goals = $state<Goal[]>(structuredClone(goalsData as Goal[]));
 let kpis = $state<KPI[]>(structuredClone(kpisData as KPI[]));
 let goalKpiLinks = $state<GoalKpiLink[]>(structuredClone(goalKpiLinksData as GoalKpiLink[]));
 let assignments = $state<EmployeeAssignment[]>(structuredClone(assignmentsData as EmployeeAssignment[]));
