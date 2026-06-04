@@ -438,6 +438,75 @@ func HasEvaluatorScopesWith(preds ...predicate.EvaluatorScope) predicate.Cycle {
 	})
 }
 
+// HasGoalAssignments applies the HasEdge predicate on the "goal_assignments" edge.
+func HasGoalAssignments() predicate.Cycle {
+	return predicate.Cycle(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, GoalAssignmentsTable, GoalAssignmentsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasGoalAssignmentsWith applies the HasEdge predicate on the "goal_assignments" edge with a given conditions (other predicates).
+func HasGoalAssignmentsWith(preds ...predicate.GoalAssignment) predicate.Cycle {
+	return predicate.Cycle(func(s *sql.Selector) {
+		step := newGoalAssignmentsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasEvaluations applies the HasEdge predicate on the "evaluations" edge.
+func HasEvaluations() predicate.Cycle {
+	return predicate.Cycle(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, EvaluationsTable, EvaluationsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasEvaluationsWith applies the HasEdge predicate on the "evaluations" edge with a given conditions (other predicates).
+func HasEvaluationsWith(preds ...predicate.Evaluation) predicate.Cycle {
+	return predicate.Cycle(func(s *sql.Selector) {
+		step := newEvaluationsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasNineBoxMatrices applies the HasEdge predicate on the "nine_box_matrices" edge.
+func HasNineBoxMatrices() predicate.Cycle {
+	return predicate.Cycle(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, NineBoxMatricesTable, NineBoxMatricesColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasNineBoxMatricesWith applies the HasEdge predicate on the "nine_box_matrices" edge with a given conditions (other predicates).
+func HasNineBoxMatricesWith(preds ...predicate.NineBoxMatrix) predicate.Cycle {
+	return predicate.Cycle(func(s *sql.Selector) {
+		step := newNineBoxMatricesStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.Cycle) predicate.Cycle {
 	return predicate.Cycle(sql.AndPredicates(predicates...))

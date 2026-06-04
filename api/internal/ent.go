@@ -16,9 +16,21 @@ import (
 	"github.com/sed-evaluacion-desempeno/api/internal/competencyacceptancelevel"
 	"github.com/sed-evaluacion-desempeno/api/internal/cycle"
 	"github.com/sed-evaluacion-desempeno/api/internal/employee"
+	"github.com/sed-evaluacion-desempeno/api/internal/evaluation"
+	"github.com/sed-evaluacion-desempeno/api/internal/evaluationcompetency"
+	"github.com/sed-evaluacion-desempeno/api/internal/evaluationgoal"
 	"github.com/sed-evaluacion-desempeno/api/internal/evaluationprofile"
 	"github.com/sed-evaluacion-desempeno/api/internal/evaluatorscope"
+	"github.com/sed-evaluacion-desempeno/api/internal/goal"
+	"github.com/sed-evaluacion-desempeno/api/internal/goalassignment"
+	"github.com/sed-evaluacion-desempeno/api/internal/goalcategory"
+	"github.com/sed-evaluacion-desempeno/api/internal/goalkpilink"
+	"github.com/sed-evaluacion-desempeno/api/internal/kpi"
 	"github.com/sed-evaluacion-desempeno/api/internal/leveldefinition"
+	"github.com/sed-evaluacion-desempeno/api/internal/nineboxentry"
+	"github.com/sed-evaluacion-desempeno/api/internal/nineboxmatrix"
+	"github.com/sed-evaluacion-desempeno/api/internal/nineboxquadrant"
+	"github.com/sed-evaluacion-desempeno/api/internal/nineboxscale"
 	"github.com/sed-evaluacion-desempeno/api/internal/organization"
 	"github.com/sed-evaluacion-desempeno/api/internal/orgnode"
 	"github.com/sed-evaluacion-desempeno/api/internal/phasedefinition"
@@ -89,9 +101,21 @@ func checkColumn(t, c string) error {
 			competencyacceptancelevel.Table: competencyacceptancelevel.ValidColumn,
 			cycle.Table:                     cycle.ValidColumn,
 			employee.Table:                  employee.ValidColumn,
+			evaluation.Table:                evaluation.ValidColumn,
+			evaluationcompetency.Table:      evaluationcompetency.ValidColumn,
+			evaluationgoal.Table:            evaluationgoal.ValidColumn,
 			evaluationprofile.Table:         evaluationprofile.ValidColumn,
 			evaluatorscope.Table:            evaluatorscope.ValidColumn,
+			goal.Table:                      goal.ValidColumn,
+			goalassignment.Table:            goalassignment.ValidColumn,
+			goalcategory.Table:              goalcategory.ValidColumn,
+			goalkpilink.Table:               goalkpilink.ValidColumn,
+			kpi.Table:                       kpi.ValidColumn,
 			leveldefinition.Table:           leveldefinition.ValidColumn,
+			nineboxentry.Table:              nineboxentry.ValidColumn,
+			nineboxmatrix.Table:             nineboxmatrix.ValidColumn,
+			nineboxquadrant.Table:           nineboxquadrant.ValidColumn,
+			nineboxscale.Table:              nineboxscale.ValidColumn,
 			orgnode.Table:                   orgnode.ValidColumn,
 			organization.Table:              organization.ValidColumn,
 			phasedefinition.Table:           phasedefinition.ValidColumn,

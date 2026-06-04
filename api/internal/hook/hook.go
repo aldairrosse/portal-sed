@@ -57,6 +57,42 @@ func (f EmployeeFunc) Mutate(ctx context.Context, m internal.Mutation) (internal
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *internal.EmployeeMutation", m)
 }
 
+// The EvaluationFunc type is an adapter to allow the use of ordinary
+// function as Evaluation mutator.
+type EvaluationFunc func(context.Context, *internal.EvaluationMutation) (internal.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f EvaluationFunc) Mutate(ctx context.Context, m internal.Mutation) (internal.Value, error) {
+	if mv, ok := m.(*internal.EvaluationMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *internal.EvaluationMutation", m)
+}
+
+// The EvaluationCompetencyFunc type is an adapter to allow the use of ordinary
+// function as EvaluationCompetency mutator.
+type EvaluationCompetencyFunc func(context.Context, *internal.EvaluationCompetencyMutation) (internal.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f EvaluationCompetencyFunc) Mutate(ctx context.Context, m internal.Mutation) (internal.Value, error) {
+	if mv, ok := m.(*internal.EvaluationCompetencyMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *internal.EvaluationCompetencyMutation", m)
+}
+
+// The EvaluationGoalFunc type is an adapter to allow the use of ordinary
+// function as EvaluationGoal mutator.
+type EvaluationGoalFunc func(context.Context, *internal.EvaluationGoalMutation) (internal.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f EvaluationGoalFunc) Mutate(ctx context.Context, m internal.Mutation) (internal.Value, error) {
+	if mv, ok := m.(*internal.EvaluationGoalMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *internal.EvaluationGoalMutation", m)
+}
+
 // The EvaluationProfileFunc type is an adapter to allow the use of ordinary
 // function as EvaluationProfile mutator.
 type EvaluationProfileFunc func(context.Context, *internal.EvaluationProfileMutation) (internal.Value, error)
@@ -81,6 +117,66 @@ func (f EvaluatorScopeFunc) Mutate(ctx context.Context, m internal.Mutation) (in
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *internal.EvaluatorScopeMutation", m)
 }
 
+// The GoalFunc type is an adapter to allow the use of ordinary
+// function as Goal mutator.
+type GoalFunc func(context.Context, *internal.GoalMutation) (internal.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f GoalFunc) Mutate(ctx context.Context, m internal.Mutation) (internal.Value, error) {
+	if mv, ok := m.(*internal.GoalMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *internal.GoalMutation", m)
+}
+
+// The GoalAssignmentFunc type is an adapter to allow the use of ordinary
+// function as GoalAssignment mutator.
+type GoalAssignmentFunc func(context.Context, *internal.GoalAssignmentMutation) (internal.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f GoalAssignmentFunc) Mutate(ctx context.Context, m internal.Mutation) (internal.Value, error) {
+	if mv, ok := m.(*internal.GoalAssignmentMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *internal.GoalAssignmentMutation", m)
+}
+
+// The GoalCategoryFunc type is an adapter to allow the use of ordinary
+// function as GoalCategory mutator.
+type GoalCategoryFunc func(context.Context, *internal.GoalCategoryMutation) (internal.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f GoalCategoryFunc) Mutate(ctx context.Context, m internal.Mutation) (internal.Value, error) {
+	if mv, ok := m.(*internal.GoalCategoryMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *internal.GoalCategoryMutation", m)
+}
+
+// The GoalKpiLinkFunc type is an adapter to allow the use of ordinary
+// function as GoalKpiLink mutator.
+type GoalKpiLinkFunc func(context.Context, *internal.GoalKpiLinkMutation) (internal.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f GoalKpiLinkFunc) Mutate(ctx context.Context, m internal.Mutation) (internal.Value, error) {
+	if mv, ok := m.(*internal.GoalKpiLinkMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *internal.GoalKpiLinkMutation", m)
+}
+
+// The KPIFunc type is an adapter to allow the use of ordinary
+// function as KPI mutator.
+type KPIFunc func(context.Context, *internal.KPIMutation) (internal.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f KPIFunc) Mutate(ctx context.Context, m internal.Mutation) (internal.Value, error) {
+	if mv, ok := m.(*internal.KPIMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *internal.KPIMutation", m)
+}
+
 // The LevelDefinitionFunc type is an adapter to allow the use of ordinary
 // function as LevelDefinition mutator.
 type LevelDefinitionFunc func(context.Context, *internal.LevelDefinitionMutation) (internal.Value, error)
@@ -91,6 +187,54 @@ func (f LevelDefinitionFunc) Mutate(ctx context.Context, m internal.Mutation) (i
 		return f(ctx, mv)
 	}
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *internal.LevelDefinitionMutation", m)
+}
+
+// The NineBoxEntryFunc type is an adapter to allow the use of ordinary
+// function as NineBoxEntry mutator.
+type NineBoxEntryFunc func(context.Context, *internal.NineBoxEntryMutation) (internal.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f NineBoxEntryFunc) Mutate(ctx context.Context, m internal.Mutation) (internal.Value, error) {
+	if mv, ok := m.(*internal.NineBoxEntryMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *internal.NineBoxEntryMutation", m)
+}
+
+// The NineBoxMatrixFunc type is an adapter to allow the use of ordinary
+// function as NineBoxMatrix mutator.
+type NineBoxMatrixFunc func(context.Context, *internal.NineBoxMatrixMutation) (internal.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f NineBoxMatrixFunc) Mutate(ctx context.Context, m internal.Mutation) (internal.Value, error) {
+	if mv, ok := m.(*internal.NineBoxMatrixMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *internal.NineBoxMatrixMutation", m)
+}
+
+// The NineBoxQuadrantFunc type is an adapter to allow the use of ordinary
+// function as NineBoxQuadrant mutator.
+type NineBoxQuadrantFunc func(context.Context, *internal.NineBoxQuadrantMutation) (internal.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f NineBoxQuadrantFunc) Mutate(ctx context.Context, m internal.Mutation) (internal.Value, error) {
+	if mv, ok := m.(*internal.NineBoxQuadrantMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *internal.NineBoxQuadrantMutation", m)
+}
+
+// The NineBoxScaleFunc type is an adapter to allow the use of ordinary
+// function as NineBoxScale mutator.
+type NineBoxScaleFunc func(context.Context, *internal.NineBoxScaleMutation) (internal.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f NineBoxScaleFunc) Mutate(ctx context.Context, m internal.Mutation) (internal.Value, error) {
+	if mv, ok := m.(*internal.NineBoxScaleMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *internal.NineBoxScaleMutation", m)
 }
 
 // The OrgNodeFunc type is an adapter to allow the use of ordinary

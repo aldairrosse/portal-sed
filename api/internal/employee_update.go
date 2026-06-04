@@ -13,8 +13,13 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
 	"github.com/sed-evaluacion-desempeno/api/internal/employee"
+	"github.com/sed-evaluacion-desempeno/api/internal/evaluation"
 	"github.com/sed-evaluacion-desempeno/api/internal/evaluationprofile"
 	"github.com/sed-evaluacion-desempeno/api/internal/evaluatorscope"
+	"github.com/sed-evaluacion-desempeno/api/internal/goalassignment"
+	"github.com/sed-evaluacion-desempeno/api/internal/goalcategory"
+	"github.com/sed-evaluacion-desempeno/api/internal/nineboxentry"
+	"github.com/sed-evaluacion-desempeno/api/internal/nineboxmatrix"
 	"github.com/sed-evaluacion-desempeno/api/internal/orgnode"
 	"github.com/sed-evaluacion-desempeno/api/internal/predicate"
 )
@@ -229,6 +234,81 @@ func (_u *EmployeeUpdate) AddEvaluatorScopes(v ...*EvaluatorScope) *EmployeeUpda
 	return _u.AddEvaluatorScopeIDs(ids...)
 }
 
+// AddGoalCategoryIDs adds the "goal_categories" edge to the GoalCategory entity by IDs.
+func (_u *EmployeeUpdate) AddGoalCategoryIDs(ids ...uuid.UUID) *EmployeeUpdate {
+	_u.mutation.AddGoalCategoryIDs(ids...)
+	return _u
+}
+
+// AddGoalCategories adds the "goal_categories" edges to the GoalCategory entity.
+func (_u *EmployeeUpdate) AddGoalCategories(v ...*GoalCategory) *EmployeeUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddGoalCategoryIDs(ids...)
+}
+
+// AddGoalAssignmentIDs adds the "goal_assignments" edge to the GoalAssignment entity by IDs.
+func (_u *EmployeeUpdate) AddGoalAssignmentIDs(ids ...uuid.UUID) *EmployeeUpdate {
+	_u.mutation.AddGoalAssignmentIDs(ids...)
+	return _u
+}
+
+// AddGoalAssignments adds the "goal_assignments" edges to the GoalAssignment entity.
+func (_u *EmployeeUpdate) AddGoalAssignments(v ...*GoalAssignment) *EmployeeUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddGoalAssignmentIDs(ids...)
+}
+
+// AddEvaluationIDs adds the "evaluations" edge to the Evaluation entity by IDs.
+func (_u *EmployeeUpdate) AddEvaluationIDs(ids ...uuid.UUID) *EmployeeUpdate {
+	_u.mutation.AddEvaluationIDs(ids...)
+	return _u
+}
+
+// AddEvaluations adds the "evaluations" edges to the Evaluation entity.
+func (_u *EmployeeUpdate) AddEvaluations(v ...*Evaluation) *EmployeeUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddEvaluationIDs(ids...)
+}
+
+// AddNineBoxMatrixIDs adds the "nine_box_matrices" edge to the NineBoxMatrix entity by IDs.
+func (_u *EmployeeUpdate) AddNineBoxMatrixIDs(ids ...uuid.UUID) *EmployeeUpdate {
+	_u.mutation.AddNineBoxMatrixIDs(ids...)
+	return _u
+}
+
+// AddNineBoxMatrices adds the "nine_box_matrices" edges to the NineBoxMatrix entity.
+func (_u *EmployeeUpdate) AddNineBoxMatrices(v ...*NineBoxMatrix) *EmployeeUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddNineBoxMatrixIDs(ids...)
+}
+
+// AddNineBoxEntryIDs adds the "nine_box_entries" edge to the NineBoxEntry entity by IDs.
+func (_u *EmployeeUpdate) AddNineBoxEntryIDs(ids ...uuid.UUID) *EmployeeUpdate {
+	_u.mutation.AddNineBoxEntryIDs(ids...)
+	return _u
+}
+
+// AddNineBoxEntries adds the "nine_box_entries" edges to the NineBoxEntry entity.
+func (_u *EmployeeUpdate) AddNineBoxEntries(v ...*NineBoxEntry) *EmployeeUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddNineBoxEntryIDs(ids...)
+}
+
 // Mutation returns the EmployeeMutation object of the builder.
 func (_u *EmployeeUpdate) Mutation() *EmployeeMutation {
 	return _u.mutation
@@ -292,6 +372,111 @@ func (_u *EmployeeUpdate) RemoveEvaluatorScopes(v ...*EvaluatorScope) *EmployeeU
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveEvaluatorScopeIDs(ids...)
+}
+
+// ClearGoalCategories clears all "goal_categories" edges to the GoalCategory entity.
+func (_u *EmployeeUpdate) ClearGoalCategories() *EmployeeUpdate {
+	_u.mutation.ClearGoalCategories()
+	return _u
+}
+
+// RemoveGoalCategoryIDs removes the "goal_categories" edge to GoalCategory entities by IDs.
+func (_u *EmployeeUpdate) RemoveGoalCategoryIDs(ids ...uuid.UUID) *EmployeeUpdate {
+	_u.mutation.RemoveGoalCategoryIDs(ids...)
+	return _u
+}
+
+// RemoveGoalCategories removes "goal_categories" edges to GoalCategory entities.
+func (_u *EmployeeUpdate) RemoveGoalCategories(v ...*GoalCategory) *EmployeeUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveGoalCategoryIDs(ids...)
+}
+
+// ClearGoalAssignments clears all "goal_assignments" edges to the GoalAssignment entity.
+func (_u *EmployeeUpdate) ClearGoalAssignments() *EmployeeUpdate {
+	_u.mutation.ClearGoalAssignments()
+	return _u
+}
+
+// RemoveGoalAssignmentIDs removes the "goal_assignments" edge to GoalAssignment entities by IDs.
+func (_u *EmployeeUpdate) RemoveGoalAssignmentIDs(ids ...uuid.UUID) *EmployeeUpdate {
+	_u.mutation.RemoveGoalAssignmentIDs(ids...)
+	return _u
+}
+
+// RemoveGoalAssignments removes "goal_assignments" edges to GoalAssignment entities.
+func (_u *EmployeeUpdate) RemoveGoalAssignments(v ...*GoalAssignment) *EmployeeUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveGoalAssignmentIDs(ids...)
+}
+
+// ClearEvaluations clears all "evaluations" edges to the Evaluation entity.
+func (_u *EmployeeUpdate) ClearEvaluations() *EmployeeUpdate {
+	_u.mutation.ClearEvaluations()
+	return _u
+}
+
+// RemoveEvaluationIDs removes the "evaluations" edge to Evaluation entities by IDs.
+func (_u *EmployeeUpdate) RemoveEvaluationIDs(ids ...uuid.UUID) *EmployeeUpdate {
+	_u.mutation.RemoveEvaluationIDs(ids...)
+	return _u
+}
+
+// RemoveEvaluations removes "evaluations" edges to Evaluation entities.
+func (_u *EmployeeUpdate) RemoveEvaluations(v ...*Evaluation) *EmployeeUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveEvaluationIDs(ids...)
+}
+
+// ClearNineBoxMatrices clears all "nine_box_matrices" edges to the NineBoxMatrix entity.
+func (_u *EmployeeUpdate) ClearNineBoxMatrices() *EmployeeUpdate {
+	_u.mutation.ClearNineBoxMatrices()
+	return _u
+}
+
+// RemoveNineBoxMatrixIDs removes the "nine_box_matrices" edge to NineBoxMatrix entities by IDs.
+func (_u *EmployeeUpdate) RemoveNineBoxMatrixIDs(ids ...uuid.UUID) *EmployeeUpdate {
+	_u.mutation.RemoveNineBoxMatrixIDs(ids...)
+	return _u
+}
+
+// RemoveNineBoxMatrices removes "nine_box_matrices" edges to NineBoxMatrix entities.
+func (_u *EmployeeUpdate) RemoveNineBoxMatrices(v ...*NineBoxMatrix) *EmployeeUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveNineBoxMatrixIDs(ids...)
+}
+
+// ClearNineBoxEntries clears all "nine_box_entries" edges to the NineBoxEntry entity.
+func (_u *EmployeeUpdate) ClearNineBoxEntries() *EmployeeUpdate {
+	_u.mutation.ClearNineBoxEntries()
+	return _u
+}
+
+// RemoveNineBoxEntryIDs removes the "nine_box_entries" edge to NineBoxEntry entities by IDs.
+func (_u *EmployeeUpdate) RemoveNineBoxEntryIDs(ids ...uuid.UUID) *EmployeeUpdate {
+	_u.mutation.RemoveNineBoxEntryIDs(ids...)
+	return _u
+}
+
+// RemoveNineBoxEntries removes "nine_box_entries" edges to NineBoxEntry entities.
+func (_u *EmployeeUpdate) RemoveNineBoxEntries(v ...*NineBoxEntry) *EmployeeUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveNineBoxEntryIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -574,6 +759,231 @@ func (_u *EmployeeUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if _u.mutation.GoalCategoriesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   employee.GoalCategoriesTable,
+			Columns: []string{employee.GoalCategoriesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(goalcategory.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedGoalCategoriesIDs(); len(nodes) > 0 && !_u.mutation.GoalCategoriesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   employee.GoalCategoriesTable,
+			Columns: []string{employee.GoalCategoriesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(goalcategory.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.GoalCategoriesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   employee.GoalCategoriesTable,
+			Columns: []string{employee.GoalCategoriesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(goalcategory.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.GoalAssignmentsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   employee.GoalAssignmentsTable,
+			Columns: []string{employee.GoalAssignmentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(goalassignment.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedGoalAssignmentsIDs(); len(nodes) > 0 && !_u.mutation.GoalAssignmentsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   employee.GoalAssignmentsTable,
+			Columns: []string{employee.GoalAssignmentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(goalassignment.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.GoalAssignmentsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   employee.GoalAssignmentsTable,
+			Columns: []string{employee.GoalAssignmentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(goalassignment.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.EvaluationsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   employee.EvaluationsTable,
+			Columns: []string{employee.EvaluationsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(evaluation.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedEvaluationsIDs(); len(nodes) > 0 && !_u.mutation.EvaluationsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   employee.EvaluationsTable,
+			Columns: []string{employee.EvaluationsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(evaluation.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.EvaluationsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   employee.EvaluationsTable,
+			Columns: []string{employee.EvaluationsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(evaluation.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.NineBoxMatricesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   employee.NineBoxMatricesTable,
+			Columns: []string{employee.NineBoxMatricesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(nineboxmatrix.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedNineBoxMatricesIDs(); len(nodes) > 0 && !_u.mutation.NineBoxMatricesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   employee.NineBoxMatricesTable,
+			Columns: []string{employee.NineBoxMatricesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(nineboxmatrix.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.NineBoxMatricesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   employee.NineBoxMatricesTable,
+			Columns: []string{employee.NineBoxMatricesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(nineboxmatrix.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.NineBoxEntriesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   employee.NineBoxEntriesTable,
+			Columns: []string{employee.NineBoxEntriesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(nineboxentry.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedNineBoxEntriesIDs(); len(nodes) > 0 && !_u.mutation.NineBoxEntriesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   employee.NineBoxEntriesTable,
+			Columns: []string{employee.NineBoxEntriesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(nineboxentry.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.NineBoxEntriesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   employee.NineBoxEntriesTable,
+			Columns: []string{employee.NineBoxEntriesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(nineboxentry.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{employee.Label}
@@ -791,6 +1201,81 @@ func (_u *EmployeeUpdateOne) AddEvaluatorScopes(v ...*EvaluatorScope) *EmployeeU
 	return _u.AddEvaluatorScopeIDs(ids...)
 }
 
+// AddGoalCategoryIDs adds the "goal_categories" edge to the GoalCategory entity by IDs.
+func (_u *EmployeeUpdateOne) AddGoalCategoryIDs(ids ...uuid.UUID) *EmployeeUpdateOne {
+	_u.mutation.AddGoalCategoryIDs(ids...)
+	return _u
+}
+
+// AddGoalCategories adds the "goal_categories" edges to the GoalCategory entity.
+func (_u *EmployeeUpdateOne) AddGoalCategories(v ...*GoalCategory) *EmployeeUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddGoalCategoryIDs(ids...)
+}
+
+// AddGoalAssignmentIDs adds the "goal_assignments" edge to the GoalAssignment entity by IDs.
+func (_u *EmployeeUpdateOne) AddGoalAssignmentIDs(ids ...uuid.UUID) *EmployeeUpdateOne {
+	_u.mutation.AddGoalAssignmentIDs(ids...)
+	return _u
+}
+
+// AddGoalAssignments adds the "goal_assignments" edges to the GoalAssignment entity.
+func (_u *EmployeeUpdateOne) AddGoalAssignments(v ...*GoalAssignment) *EmployeeUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddGoalAssignmentIDs(ids...)
+}
+
+// AddEvaluationIDs adds the "evaluations" edge to the Evaluation entity by IDs.
+func (_u *EmployeeUpdateOne) AddEvaluationIDs(ids ...uuid.UUID) *EmployeeUpdateOne {
+	_u.mutation.AddEvaluationIDs(ids...)
+	return _u
+}
+
+// AddEvaluations adds the "evaluations" edges to the Evaluation entity.
+func (_u *EmployeeUpdateOne) AddEvaluations(v ...*Evaluation) *EmployeeUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddEvaluationIDs(ids...)
+}
+
+// AddNineBoxMatrixIDs adds the "nine_box_matrices" edge to the NineBoxMatrix entity by IDs.
+func (_u *EmployeeUpdateOne) AddNineBoxMatrixIDs(ids ...uuid.UUID) *EmployeeUpdateOne {
+	_u.mutation.AddNineBoxMatrixIDs(ids...)
+	return _u
+}
+
+// AddNineBoxMatrices adds the "nine_box_matrices" edges to the NineBoxMatrix entity.
+func (_u *EmployeeUpdateOne) AddNineBoxMatrices(v ...*NineBoxMatrix) *EmployeeUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddNineBoxMatrixIDs(ids...)
+}
+
+// AddNineBoxEntryIDs adds the "nine_box_entries" edge to the NineBoxEntry entity by IDs.
+func (_u *EmployeeUpdateOne) AddNineBoxEntryIDs(ids ...uuid.UUID) *EmployeeUpdateOne {
+	_u.mutation.AddNineBoxEntryIDs(ids...)
+	return _u
+}
+
+// AddNineBoxEntries adds the "nine_box_entries" edges to the NineBoxEntry entity.
+func (_u *EmployeeUpdateOne) AddNineBoxEntries(v ...*NineBoxEntry) *EmployeeUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddNineBoxEntryIDs(ids...)
+}
+
 // Mutation returns the EmployeeMutation object of the builder.
 func (_u *EmployeeUpdateOne) Mutation() *EmployeeMutation {
 	return _u.mutation
@@ -854,6 +1339,111 @@ func (_u *EmployeeUpdateOne) RemoveEvaluatorScopes(v ...*EvaluatorScope) *Employ
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveEvaluatorScopeIDs(ids...)
+}
+
+// ClearGoalCategories clears all "goal_categories" edges to the GoalCategory entity.
+func (_u *EmployeeUpdateOne) ClearGoalCategories() *EmployeeUpdateOne {
+	_u.mutation.ClearGoalCategories()
+	return _u
+}
+
+// RemoveGoalCategoryIDs removes the "goal_categories" edge to GoalCategory entities by IDs.
+func (_u *EmployeeUpdateOne) RemoveGoalCategoryIDs(ids ...uuid.UUID) *EmployeeUpdateOne {
+	_u.mutation.RemoveGoalCategoryIDs(ids...)
+	return _u
+}
+
+// RemoveGoalCategories removes "goal_categories" edges to GoalCategory entities.
+func (_u *EmployeeUpdateOne) RemoveGoalCategories(v ...*GoalCategory) *EmployeeUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveGoalCategoryIDs(ids...)
+}
+
+// ClearGoalAssignments clears all "goal_assignments" edges to the GoalAssignment entity.
+func (_u *EmployeeUpdateOne) ClearGoalAssignments() *EmployeeUpdateOne {
+	_u.mutation.ClearGoalAssignments()
+	return _u
+}
+
+// RemoveGoalAssignmentIDs removes the "goal_assignments" edge to GoalAssignment entities by IDs.
+func (_u *EmployeeUpdateOne) RemoveGoalAssignmentIDs(ids ...uuid.UUID) *EmployeeUpdateOne {
+	_u.mutation.RemoveGoalAssignmentIDs(ids...)
+	return _u
+}
+
+// RemoveGoalAssignments removes "goal_assignments" edges to GoalAssignment entities.
+func (_u *EmployeeUpdateOne) RemoveGoalAssignments(v ...*GoalAssignment) *EmployeeUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveGoalAssignmentIDs(ids...)
+}
+
+// ClearEvaluations clears all "evaluations" edges to the Evaluation entity.
+func (_u *EmployeeUpdateOne) ClearEvaluations() *EmployeeUpdateOne {
+	_u.mutation.ClearEvaluations()
+	return _u
+}
+
+// RemoveEvaluationIDs removes the "evaluations" edge to Evaluation entities by IDs.
+func (_u *EmployeeUpdateOne) RemoveEvaluationIDs(ids ...uuid.UUID) *EmployeeUpdateOne {
+	_u.mutation.RemoveEvaluationIDs(ids...)
+	return _u
+}
+
+// RemoveEvaluations removes "evaluations" edges to Evaluation entities.
+func (_u *EmployeeUpdateOne) RemoveEvaluations(v ...*Evaluation) *EmployeeUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveEvaluationIDs(ids...)
+}
+
+// ClearNineBoxMatrices clears all "nine_box_matrices" edges to the NineBoxMatrix entity.
+func (_u *EmployeeUpdateOne) ClearNineBoxMatrices() *EmployeeUpdateOne {
+	_u.mutation.ClearNineBoxMatrices()
+	return _u
+}
+
+// RemoveNineBoxMatrixIDs removes the "nine_box_matrices" edge to NineBoxMatrix entities by IDs.
+func (_u *EmployeeUpdateOne) RemoveNineBoxMatrixIDs(ids ...uuid.UUID) *EmployeeUpdateOne {
+	_u.mutation.RemoveNineBoxMatrixIDs(ids...)
+	return _u
+}
+
+// RemoveNineBoxMatrices removes "nine_box_matrices" edges to NineBoxMatrix entities.
+func (_u *EmployeeUpdateOne) RemoveNineBoxMatrices(v ...*NineBoxMatrix) *EmployeeUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveNineBoxMatrixIDs(ids...)
+}
+
+// ClearNineBoxEntries clears all "nine_box_entries" edges to the NineBoxEntry entity.
+func (_u *EmployeeUpdateOne) ClearNineBoxEntries() *EmployeeUpdateOne {
+	_u.mutation.ClearNineBoxEntries()
+	return _u
+}
+
+// RemoveNineBoxEntryIDs removes the "nine_box_entries" edge to NineBoxEntry entities by IDs.
+func (_u *EmployeeUpdateOne) RemoveNineBoxEntryIDs(ids ...uuid.UUID) *EmployeeUpdateOne {
+	_u.mutation.RemoveNineBoxEntryIDs(ids...)
+	return _u
+}
+
+// RemoveNineBoxEntries removes "nine_box_entries" edges to NineBoxEntry entities.
+func (_u *EmployeeUpdateOne) RemoveNineBoxEntries(v ...*NineBoxEntry) *EmployeeUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveNineBoxEntryIDs(ids...)
 }
 
 // Where appends a list predicates to the EmployeeUpdate builder.
@@ -1159,6 +1749,231 @@ func (_u *EmployeeUpdateOne) sqlSave(ctx context.Context) (_node *Employee, err 
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(evaluatorscope.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.GoalCategoriesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   employee.GoalCategoriesTable,
+			Columns: []string{employee.GoalCategoriesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(goalcategory.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedGoalCategoriesIDs(); len(nodes) > 0 && !_u.mutation.GoalCategoriesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   employee.GoalCategoriesTable,
+			Columns: []string{employee.GoalCategoriesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(goalcategory.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.GoalCategoriesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   employee.GoalCategoriesTable,
+			Columns: []string{employee.GoalCategoriesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(goalcategory.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.GoalAssignmentsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   employee.GoalAssignmentsTable,
+			Columns: []string{employee.GoalAssignmentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(goalassignment.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedGoalAssignmentsIDs(); len(nodes) > 0 && !_u.mutation.GoalAssignmentsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   employee.GoalAssignmentsTable,
+			Columns: []string{employee.GoalAssignmentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(goalassignment.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.GoalAssignmentsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   employee.GoalAssignmentsTable,
+			Columns: []string{employee.GoalAssignmentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(goalassignment.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.EvaluationsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   employee.EvaluationsTable,
+			Columns: []string{employee.EvaluationsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(evaluation.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedEvaluationsIDs(); len(nodes) > 0 && !_u.mutation.EvaluationsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   employee.EvaluationsTable,
+			Columns: []string{employee.EvaluationsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(evaluation.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.EvaluationsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   employee.EvaluationsTable,
+			Columns: []string{employee.EvaluationsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(evaluation.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.NineBoxMatricesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   employee.NineBoxMatricesTable,
+			Columns: []string{employee.NineBoxMatricesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(nineboxmatrix.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedNineBoxMatricesIDs(); len(nodes) > 0 && !_u.mutation.NineBoxMatricesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   employee.NineBoxMatricesTable,
+			Columns: []string{employee.NineBoxMatricesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(nineboxmatrix.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.NineBoxMatricesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   employee.NineBoxMatricesTable,
+			Columns: []string{employee.NineBoxMatricesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(nineboxmatrix.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.NineBoxEntriesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   employee.NineBoxEntriesTable,
+			Columns: []string{employee.NineBoxEntriesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(nineboxentry.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedNineBoxEntriesIDs(); len(nodes) > 0 && !_u.mutation.NineBoxEntriesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   employee.NineBoxEntriesTable,
+			Columns: []string{employee.NineBoxEntriesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(nineboxentry.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.NineBoxEntriesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   employee.NineBoxEntriesTable,
+			Columns: []string{employee.NineBoxEntriesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(nineboxentry.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

@@ -18,14 +18,50 @@ type Cycle func(*sql.Selector)
 // Employee is the predicate function for employee builders.
 type Employee func(*sql.Selector)
 
+// Evaluation is the predicate function for evaluation builders.
+type Evaluation func(*sql.Selector)
+
+// EvaluationCompetency is the predicate function for evaluationcompetency builders.
+type EvaluationCompetency func(*sql.Selector)
+
+// EvaluationGoal is the predicate function for evaluationgoal builders.
+type EvaluationGoal func(*sql.Selector)
+
 // EvaluationProfile is the predicate function for evaluationprofile builders.
 type EvaluationProfile func(*sql.Selector)
 
 // EvaluatorScope is the predicate function for evaluatorscope builders.
 type EvaluatorScope func(*sql.Selector)
 
+// Goal is the predicate function for goal builders.
+type Goal func(*sql.Selector)
+
+// GoalAssignment is the predicate function for goalassignment builders.
+type GoalAssignment func(*sql.Selector)
+
+// GoalCategory is the predicate function for goalcategory builders.
+type GoalCategory func(*sql.Selector)
+
+// GoalKpiLink is the predicate function for goalkpilink builders.
+type GoalKpiLink func(*sql.Selector)
+
+// KPI is the predicate function for kpi builders.
+type KPI func(*sql.Selector)
+
 // LevelDefinition is the predicate function for leveldefinition builders.
 type LevelDefinition func(*sql.Selector)
+
+// NineBoxEntry is the predicate function for nineboxentry builders.
+type NineBoxEntry func(*sql.Selector)
+
+// NineBoxMatrix is the predicate function for nineboxmatrix builders.
+type NineBoxMatrix func(*sql.Selector)
+
+// NineBoxQuadrant is the predicate function for nineboxquadrant builders.
+type NineBoxQuadrant func(*sql.Selector)
+
+// NineBoxScale is the predicate function for nineboxscale builders.
+type NineBoxScale func(*sql.Selector)
 
 // OrgNode is the predicate function for orgnode builders.
 type OrgNode func(*sql.Selector)

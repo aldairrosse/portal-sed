@@ -20,9 +20,21 @@ import (
 	"github.com/sed-evaluacion-desempeno/api/internal/competencyacceptancelevel"
 	"github.com/sed-evaluacion-desempeno/api/internal/cycle"
 	"github.com/sed-evaluacion-desempeno/api/internal/employee"
+	"github.com/sed-evaluacion-desempeno/api/internal/evaluation"
+	"github.com/sed-evaluacion-desempeno/api/internal/evaluationcompetency"
+	"github.com/sed-evaluacion-desempeno/api/internal/evaluationgoal"
 	"github.com/sed-evaluacion-desempeno/api/internal/evaluationprofile"
 	"github.com/sed-evaluacion-desempeno/api/internal/evaluatorscope"
+	"github.com/sed-evaluacion-desempeno/api/internal/goal"
+	"github.com/sed-evaluacion-desempeno/api/internal/goalassignment"
+	"github.com/sed-evaluacion-desempeno/api/internal/goalcategory"
+	"github.com/sed-evaluacion-desempeno/api/internal/goalkpilink"
+	"github.com/sed-evaluacion-desempeno/api/internal/kpi"
 	"github.com/sed-evaluacion-desempeno/api/internal/leveldefinition"
+	"github.com/sed-evaluacion-desempeno/api/internal/nineboxentry"
+	"github.com/sed-evaluacion-desempeno/api/internal/nineboxmatrix"
+	"github.com/sed-evaluacion-desempeno/api/internal/nineboxquadrant"
+	"github.com/sed-evaluacion-desempeno/api/internal/nineboxscale"
 	"github.com/sed-evaluacion-desempeno/api/internal/organization"
 	"github.com/sed-evaluacion-desempeno/api/internal/orgnode"
 	"github.com/sed-evaluacion-desempeno/api/internal/phasedefinition"
@@ -44,12 +56,36 @@ type Client struct {
 	Cycle *CycleClient
 	// Employee is the client for interacting with the Employee builders.
 	Employee *EmployeeClient
+	// Evaluation is the client for interacting with the Evaluation builders.
+	Evaluation *EvaluationClient
+	// EvaluationCompetency is the client for interacting with the EvaluationCompetency builders.
+	EvaluationCompetency *EvaluationCompetencyClient
+	// EvaluationGoal is the client for interacting with the EvaluationGoal builders.
+	EvaluationGoal *EvaluationGoalClient
 	// EvaluationProfile is the client for interacting with the EvaluationProfile builders.
 	EvaluationProfile *EvaluationProfileClient
 	// EvaluatorScope is the client for interacting with the EvaluatorScope builders.
 	EvaluatorScope *EvaluatorScopeClient
+	// Goal is the client for interacting with the Goal builders.
+	Goal *GoalClient
+	// GoalAssignment is the client for interacting with the GoalAssignment builders.
+	GoalAssignment *GoalAssignmentClient
+	// GoalCategory is the client for interacting with the GoalCategory builders.
+	GoalCategory *GoalCategoryClient
+	// GoalKpiLink is the client for interacting with the GoalKpiLink builders.
+	GoalKpiLink *GoalKpiLinkClient
+	// KPI is the client for interacting with the KPI builders.
+	KPI *KPIClient
 	// LevelDefinition is the client for interacting with the LevelDefinition builders.
 	LevelDefinition *LevelDefinitionClient
+	// NineBoxEntry is the client for interacting with the NineBoxEntry builders.
+	NineBoxEntry *NineBoxEntryClient
+	// NineBoxMatrix is the client for interacting with the NineBoxMatrix builders.
+	NineBoxMatrix *NineBoxMatrixClient
+	// NineBoxQuadrant is the client for interacting with the NineBoxQuadrant builders.
+	NineBoxQuadrant *NineBoxQuadrantClient
+	// NineBoxScale is the client for interacting with the NineBoxScale builders.
+	NineBoxScale *NineBoxScaleClient
 	// OrgNode is the client for interacting with the OrgNode builders.
 	OrgNode *OrgNodeClient
 	// Organization is the client for interacting with the Organization builders.
@@ -77,9 +113,21 @@ func (c *Client) init() {
 	c.CompetencyAcceptanceLevel = NewCompetencyAcceptanceLevelClient(c.config)
 	c.Cycle = NewCycleClient(c.config)
 	c.Employee = NewEmployeeClient(c.config)
+	c.Evaluation = NewEvaluationClient(c.config)
+	c.EvaluationCompetency = NewEvaluationCompetencyClient(c.config)
+	c.EvaluationGoal = NewEvaluationGoalClient(c.config)
 	c.EvaluationProfile = NewEvaluationProfileClient(c.config)
 	c.EvaluatorScope = NewEvaluatorScopeClient(c.config)
+	c.Goal = NewGoalClient(c.config)
+	c.GoalAssignment = NewGoalAssignmentClient(c.config)
+	c.GoalCategory = NewGoalCategoryClient(c.config)
+	c.GoalKpiLink = NewGoalKpiLinkClient(c.config)
+	c.KPI = NewKPIClient(c.config)
 	c.LevelDefinition = NewLevelDefinitionClient(c.config)
+	c.NineBoxEntry = NewNineBoxEntryClient(c.config)
+	c.NineBoxMatrix = NewNineBoxMatrixClient(c.config)
+	c.NineBoxQuadrant = NewNineBoxQuadrantClient(c.config)
+	c.NineBoxScale = NewNineBoxScaleClient(c.config)
 	c.OrgNode = NewOrgNodeClient(c.config)
 	c.Organization = NewOrganizationClient(c.config)
 	c.PhaseDefinition = NewPhaseDefinitionClient(c.config)
@@ -182,9 +230,21 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		CompetencyAcceptanceLevel: NewCompetencyAcceptanceLevelClient(cfg),
 		Cycle:                     NewCycleClient(cfg),
 		Employee:                  NewEmployeeClient(cfg),
+		Evaluation:                NewEvaluationClient(cfg),
+		EvaluationCompetency:      NewEvaluationCompetencyClient(cfg),
+		EvaluationGoal:            NewEvaluationGoalClient(cfg),
 		EvaluationProfile:         NewEvaluationProfileClient(cfg),
 		EvaluatorScope:            NewEvaluatorScopeClient(cfg),
+		Goal:                      NewGoalClient(cfg),
+		GoalAssignment:            NewGoalAssignmentClient(cfg),
+		GoalCategory:              NewGoalCategoryClient(cfg),
+		GoalKpiLink:               NewGoalKpiLinkClient(cfg),
+		KPI:                       NewKPIClient(cfg),
 		LevelDefinition:           NewLevelDefinitionClient(cfg),
+		NineBoxEntry:              NewNineBoxEntryClient(cfg),
+		NineBoxMatrix:             NewNineBoxMatrixClient(cfg),
+		NineBoxQuadrant:           NewNineBoxQuadrantClient(cfg),
+		NineBoxScale:              NewNineBoxScaleClient(cfg),
 		OrgNode:                   NewOrgNodeClient(cfg),
 		Organization:              NewOrganizationClient(cfg),
 		PhaseDefinition:           NewPhaseDefinitionClient(cfg),
@@ -214,9 +274,21 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		CompetencyAcceptanceLevel: NewCompetencyAcceptanceLevelClient(cfg),
 		Cycle:                     NewCycleClient(cfg),
 		Employee:                  NewEmployeeClient(cfg),
+		Evaluation:                NewEvaluationClient(cfg),
+		EvaluationCompetency:      NewEvaluationCompetencyClient(cfg),
+		EvaluationGoal:            NewEvaluationGoalClient(cfg),
 		EvaluationProfile:         NewEvaluationProfileClient(cfg),
 		EvaluatorScope:            NewEvaluatorScopeClient(cfg),
+		Goal:                      NewGoalClient(cfg),
+		GoalAssignment:            NewGoalAssignmentClient(cfg),
+		GoalCategory:              NewGoalCategoryClient(cfg),
+		GoalKpiLink:               NewGoalKpiLinkClient(cfg),
+		KPI:                       NewKPIClient(cfg),
 		LevelDefinition:           NewLevelDefinitionClient(cfg),
+		NineBoxEntry:              NewNineBoxEntryClient(cfg),
+		NineBoxMatrix:             NewNineBoxMatrixClient(cfg),
+		NineBoxQuadrant:           NewNineBoxQuadrantClient(cfg),
+		NineBoxScale:              NewNineBoxScaleClient(cfg),
 		OrgNode:                   NewOrgNodeClient(cfg),
 		Organization:              NewOrganizationClient(cfg),
 		PhaseDefinition:           NewPhaseDefinitionClient(cfg),
@@ -252,10 +324,12 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
-		c.Competency, c.CompetencyAcceptanceLevel, c.Cycle, c.Employee,
-		c.EvaluationProfile, c.EvaluatorScope, c.LevelDefinition, c.OrgNode,
-		c.Organization, c.PhaseDefinition, c.PhaseTransition, c.Pillar,
-		c.ScaleCriterion,
+		c.Competency, c.CompetencyAcceptanceLevel, c.Cycle, c.Employee, c.Evaluation,
+		c.EvaluationCompetency, c.EvaluationGoal, c.EvaluationProfile,
+		c.EvaluatorScope, c.Goal, c.GoalAssignment, c.GoalCategory, c.GoalKpiLink,
+		c.KPI, c.LevelDefinition, c.NineBoxEntry, c.NineBoxMatrix, c.NineBoxQuadrant,
+		c.NineBoxScale, c.OrgNode, c.Organization, c.PhaseDefinition,
+		c.PhaseTransition, c.Pillar, c.ScaleCriterion,
 	} {
 		n.Use(hooks...)
 	}
@@ -265,10 +339,12 @@ func (c *Client) Use(hooks ...Hook) {
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
-		c.Competency, c.CompetencyAcceptanceLevel, c.Cycle, c.Employee,
-		c.EvaluationProfile, c.EvaluatorScope, c.LevelDefinition, c.OrgNode,
-		c.Organization, c.PhaseDefinition, c.PhaseTransition, c.Pillar,
-		c.ScaleCriterion,
+		c.Competency, c.CompetencyAcceptanceLevel, c.Cycle, c.Employee, c.Evaluation,
+		c.EvaluationCompetency, c.EvaluationGoal, c.EvaluationProfile,
+		c.EvaluatorScope, c.Goal, c.GoalAssignment, c.GoalCategory, c.GoalKpiLink,
+		c.KPI, c.LevelDefinition, c.NineBoxEntry, c.NineBoxMatrix, c.NineBoxQuadrant,
+		c.NineBoxScale, c.OrgNode, c.Organization, c.PhaseDefinition,
+		c.PhaseTransition, c.Pillar, c.ScaleCriterion,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -285,12 +361,36 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Cycle.mutate(ctx, m)
 	case *EmployeeMutation:
 		return c.Employee.mutate(ctx, m)
+	case *EvaluationMutation:
+		return c.Evaluation.mutate(ctx, m)
+	case *EvaluationCompetencyMutation:
+		return c.EvaluationCompetency.mutate(ctx, m)
+	case *EvaluationGoalMutation:
+		return c.EvaluationGoal.mutate(ctx, m)
 	case *EvaluationProfileMutation:
 		return c.EvaluationProfile.mutate(ctx, m)
 	case *EvaluatorScopeMutation:
 		return c.EvaluatorScope.mutate(ctx, m)
+	case *GoalMutation:
+		return c.Goal.mutate(ctx, m)
+	case *GoalAssignmentMutation:
+		return c.GoalAssignment.mutate(ctx, m)
+	case *GoalCategoryMutation:
+		return c.GoalCategory.mutate(ctx, m)
+	case *GoalKpiLinkMutation:
+		return c.GoalKpiLink.mutate(ctx, m)
+	case *KPIMutation:
+		return c.KPI.mutate(ctx, m)
 	case *LevelDefinitionMutation:
 		return c.LevelDefinition.mutate(ctx, m)
+	case *NineBoxEntryMutation:
+		return c.NineBoxEntry.mutate(ctx, m)
+	case *NineBoxMatrixMutation:
+		return c.NineBoxMatrix.mutate(ctx, m)
+	case *NineBoxQuadrantMutation:
+		return c.NineBoxQuadrant.mutate(ctx, m)
+	case *NineBoxScaleMutation:
+		return c.NineBoxScale.mutate(ctx, m)
 	case *OrgNodeMutation:
 		return c.OrgNode.mutate(ctx, m)
 	case *OrganizationMutation:
@@ -457,6 +557,22 @@ func (c *CompetencyClient) QueryAcceptanceLevels(_m *Competency) *CompetencyAcce
 			sqlgraph.From(competency.Table, competency.FieldID, id),
 			sqlgraph.To(competencyacceptancelevel.Table, competencyacceptancelevel.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, competency.AcceptanceLevelsTable, competency.AcceptanceLevelsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryEvaluationCompetencies queries the evaluation_competencies edge of a Competency.
+func (c *CompetencyClient) QueryEvaluationCompetencies(_m *Competency) *EvaluationCompetencyQuery {
+	query := (&EvaluationCompetencyClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(competency.Table, competency.FieldID, id),
+			sqlgraph.To(evaluationcompetency.Table, evaluationcompetency.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, competency.EvaluationCompetenciesTable, competency.EvaluationCompetenciesColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
@@ -826,6 +942,54 @@ func (c *CycleClient) QueryEvaluatorScopes(_m *Cycle) *EvaluatorScopeQuery {
 	return query
 }
 
+// QueryGoalAssignments queries the goal_assignments edge of a Cycle.
+func (c *CycleClient) QueryGoalAssignments(_m *Cycle) *GoalAssignmentQuery {
+	query := (&GoalAssignmentClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(cycle.Table, cycle.FieldID, id),
+			sqlgraph.To(goalassignment.Table, goalassignment.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, cycle.GoalAssignmentsTable, cycle.GoalAssignmentsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryEvaluations queries the evaluations edge of a Cycle.
+func (c *CycleClient) QueryEvaluations(_m *Cycle) *EvaluationQuery {
+	query := (&EvaluationClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(cycle.Table, cycle.FieldID, id),
+			sqlgraph.To(evaluation.Table, evaluation.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, cycle.EvaluationsTable, cycle.EvaluationsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryNineBoxMatrices queries the nine_box_matrices edge of a Cycle.
+func (c *CycleClient) QueryNineBoxMatrices(_m *Cycle) *NineBoxMatrixQuery {
+	query := (&NineBoxMatrixClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(cycle.Table, cycle.FieldID, id),
+			sqlgraph.To(nineboxmatrix.Table, nineboxmatrix.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, cycle.NineBoxMatricesTable, cycle.NineBoxMatricesColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *CycleClient) Hooks() []Hook {
 	return c.hooks.Cycle
@@ -1039,6 +1203,86 @@ func (c *EmployeeClient) QueryEvaluatorScopes(_m *Employee) *EvaluatorScopeQuery
 	return query
 }
 
+// QueryGoalCategories queries the goal_categories edge of a Employee.
+func (c *EmployeeClient) QueryGoalCategories(_m *Employee) *GoalCategoryQuery {
+	query := (&GoalCategoryClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(employee.Table, employee.FieldID, id),
+			sqlgraph.To(goalcategory.Table, goalcategory.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, employee.GoalCategoriesTable, employee.GoalCategoriesColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryGoalAssignments queries the goal_assignments edge of a Employee.
+func (c *EmployeeClient) QueryGoalAssignments(_m *Employee) *GoalAssignmentQuery {
+	query := (&GoalAssignmentClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(employee.Table, employee.FieldID, id),
+			sqlgraph.To(goalassignment.Table, goalassignment.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, employee.GoalAssignmentsTable, employee.GoalAssignmentsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryEvaluations queries the evaluations edge of a Employee.
+func (c *EmployeeClient) QueryEvaluations(_m *Employee) *EvaluationQuery {
+	query := (&EvaluationClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(employee.Table, employee.FieldID, id),
+			sqlgraph.To(evaluation.Table, evaluation.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, employee.EvaluationsTable, employee.EvaluationsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryNineBoxMatrices queries the nine_box_matrices edge of a Employee.
+func (c *EmployeeClient) QueryNineBoxMatrices(_m *Employee) *NineBoxMatrixQuery {
+	query := (&NineBoxMatrixClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(employee.Table, employee.FieldID, id),
+			sqlgraph.To(nineboxmatrix.Table, nineboxmatrix.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, employee.NineBoxMatricesTable, employee.NineBoxMatricesColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryNineBoxEntries queries the nine_box_entries edge of a Employee.
+func (c *EmployeeClient) QueryNineBoxEntries(_m *Employee) *NineBoxEntryQuery {
+	query := (&NineBoxEntryClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(employee.Table, employee.FieldID, id),
+			sqlgraph.To(nineboxentry.Table, nineboxentry.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, employee.NineBoxEntriesTable, employee.NineBoxEntriesColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *EmployeeClient) Hooks() []Hook {
 	return c.hooks.Employee
@@ -1061,6 +1305,549 @@ func (c *EmployeeClient) mutate(ctx context.Context, m *EmployeeMutation) (Value
 		return (&EmployeeDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("internal: unknown Employee mutation op: %q", m.Op())
+	}
+}
+
+// EvaluationClient is a client for the Evaluation schema.
+type EvaluationClient struct {
+	config
+}
+
+// NewEvaluationClient returns a client for the Evaluation from the given config.
+func NewEvaluationClient(c config) *EvaluationClient {
+	return &EvaluationClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `evaluation.Hooks(f(g(h())))`.
+func (c *EvaluationClient) Use(hooks ...Hook) {
+	c.hooks.Evaluation = append(c.hooks.Evaluation, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `evaluation.Intercept(f(g(h())))`.
+func (c *EvaluationClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Evaluation = append(c.inters.Evaluation, interceptors...)
+}
+
+// Create returns a builder for creating a Evaluation entity.
+func (c *EvaluationClient) Create() *EvaluationCreate {
+	mutation := newEvaluationMutation(c.config, OpCreate)
+	return &EvaluationCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Evaluation entities.
+func (c *EvaluationClient) CreateBulk(builders ...*EvaluationCreate) *EvaluationCreateBulk {
+	return &EvaluationCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *EvaluationClient) MapCreateBulk(slice any, setFunc func(*EvaluationCreate, int)) *EvaluationCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &EvaluationCreateBulk{err: fmt.Errorf("calling to EvaluationClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*EvaluationCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &EvaluationCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Evaluation.
+func (c *EvaluationClient) Update() *EvaluationUpdate {
+	mutation := newEvaluationMutation(c.config, OpUpdate)
+	return &EvaluationUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *EvaluationClient) UpdateOne(_m *Evaluation) *EvaluationUpdateOne {
+	mutation := newEvaluationMutation(c.config, OpUpdateOne, withEvaluation(_m))
+	return &EvaluationUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *EvaluationClient) UpdateOneID(id uuid.UUID) *EvaluationUpdateOne {
+	mutation := newEvaluationMutation(c.config, OpUpdateOne, withEvaluationID(id))
+	return &EvaluationUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Evaluation.
+func (c *EvaluationClient) Delete() *EvaluationDelete {
+	mutation := newEvaluationMutation(c.config, OpDelete)
+	return &EvaluationDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *EvaluationClient) DeleteOne(_m *Evaluation) *EvaluationDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *EvaluationClient) DeleteOneID(id uuid.UUID) *EvaluationDeleteOne {
+	builder := c.Delete().Where(evaluation.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &EvaluationDeleteOne{builder}
+}
+
+// Query returns a query builder for Evaluation.
+func (c *EvaluationClient) Query() *EvaluationQuery {
+	return &EvaluationQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeEvaluation},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Evaluation entity by its id.
+func (c *EvaluationClient) Get(ctx context.Context, id uuid.UUID) (*Evaluation, error) {
+	return c.Query().Where(evaluation.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *EvaluationClient) GetX(ctx context.Context, id uuid.UUID) *Evaluation {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryEmployee queries the employee edge of a Evaluation.
+func (c *EvaluationClient) QueryEmployee(_m *Evaluation) *EmployeeQuery {
+	query := (&EmployeeClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(evaluation.Table, evaluation.FieldID, id),
+			sqlgraph.To(employee.Table, employee.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, evaluation.EmployeeTable, evaluation.EmployeeColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryCycle queries the cycle edge of a Evaluation.
+func (c *EvaluationClient) QueryCycle(_m *Evaluation) *CycleQuery {
+	query := (&CycleClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(evaluation.Table, evaluation.FieldID, id),
+			sqlgraph.To(cycle.Table, cycle.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, evaluation.CycleTable, evaluation.CycleColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryCompetencyRatings queries the competency_ratings edge of a Evaluation.
+func (c *EvaluationClient) QueryCompetencyRatings(_m *Evaluation) *EvaluationCompetencyQuery {
+	query := (&EvaluationCompetencyClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(evaluation.Table, evaluation.FieldID, id),
+			sqlgraph.To(evaluationcompetency.Table, evaluationcompetency.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, evaluation.CompetencyRatingsTable, evaluation.CompetencyRatingsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryGoalRatings queries the goal_ratings edge of a Evaluation.
+func (c *EvaluationClient) QueryGoalRatings(_m *Evaluation) *EvaluationGoalQuery {
+	query := (&EvaluationGoalClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(evaluation.Table, evaluation.FieldID, id),
+			sqlgraph.To(evaluationgoal.Table, evaluationgoal.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, evaluation.GoalRatingsTable, evaluation.GoalRatingsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *EvaluationClient) Hooks() []Hook {
+	return c.hooks.Evaluation
+}
+
+// Interceptors returns the client interceptors.
+func (c *EvaluationClient) Interceptors() []Interceptor {
+	return c.inters.Evaluation
+}
+
+func (c *EvaluationClient) mutate(ctx context.Context, m *EvaluationMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&EvaluationCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&EvaluationUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&EvaluationUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&EvaluationDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("internal: unknown Evaluation mutation op: %q", m.Op())
+	}
+}
+
+// EvaluationCompetencyClient is a client for the EvaluationCompetency schema.
+type EvaluationCompetencyClient struct {
+	config
+}
+
+// NewEvaluationCompetencyClient returns a client for the EvaluationCompetency from the given config.
+func NewEvaluationCompetencyClient(c config) *EvaluationCompetencyClient {
+	return &EvaluationCompetencyClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `evaluationcompetency.Hooks(f(g(h())))`.
+func (c *EvaluationCompetencyClient) Use(hooks ...Hook) {
+	c.hooks.EvaluationCompetency = append(c.hooks.EvaluationCompetency, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `evaluationcompetency.Intercept(f(g(h())))`.
+func (c *EvaluationCompetencyClient) Intercept(interceptors ...Interceptor) {
+	c.inters.EvaluationCompetency = append(c.inters.EvaluationCompetency, interceptors...)
+}
+
+// Create returns a builder for creating a EvaluationCompetency entity.
+func (c *EvaluationCompetencyClient) Create() *EvaluationCompetencyCreate {
+	mutation := newEvaluationCompetencyMutation(c.config, OpCreate)
+	return &EvaluationCompetencyCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of EvaluationCompetency entities.
+func (c *EvaluationCompetencyClient) CreateBulk(builders ...*EvaluationCompetencyCreate) *EvaluationCompetencyCreateBulk {
+	return &EvaluationCompetencyCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *EvaluationCompetencyClient) MapCreateBulk(slice any, setFunc func(*EvaluationCompetencyCreate, int)) *EvaluationCompetencyCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &EvaluationCompetencyCreateBulk{err: fmt.Errorf("calling to EvaluationCompetencyClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*EvaluationCompetencyCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &EvaluationCompetencyCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for EvaluationCompetency.
+func (c *EvaluationCompetencyClient) Update() *EvaluationCompetencyUpdate {
+	mutation := newEvaluationCompetencyMutation(c.config, OpUpdate)
+	return &EvaluationCompetencyUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *EvaluationCompetencyClient) UpdateOne(_m *EvaluationCompetency) *EvaluationCompetencyUpdateOne {
+	mutation := newEvaluationCompetencyMutation(c.config, OpUpdateOne, withEvaluationCompetency(_m))
+	return &EvaluationCompetencyUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *EvaluationCompetencyClient) UpdateOneID(id uuid.UUID) *EvaluationCompetencyUpdateOne {
+	mutation := newEvaluationCompetencyMutation(c.config, OpUpdateOne, withEvaluationCompetencyID(id))
+	return &EvaluationCompetencyUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for EvaluationCompetency.
+func (c *EvaluationCompetencyClient) Delete() *EvaluationCompetencyDelete {
+	mutation := newEvaluationCompetencyMutation(c.config, OpDelete)
+	return &EvaluationCompetencyDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *EvaluationCompetencyClient) DeleteOne(_m *EvaluationCompetency) *EvaluationCompetencyDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *EvaluationCompetencyClient) DeleteOneID(id uuid.UUID) *EvaluationCompetencyDeleteOne {
+	builder := c.Delete().Where(evaluationcompetency.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &EvaluationCompetencyDeleteOne{builder}
+}
+
+// Query returns a query builder for EvaluationCompetency.
+func (c *EvaluationCompetencyClient) Query() *EvaluationCompetencyQuery {
+	return &EvaluationCompetencyQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeEvaluationCompetency},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a EvaluationCompetency entity by its id.
+func (c *EvaluationCompetencyClient) Get(ctx context.Context, id uuid.UUID) (*EvaluationCompetency, error) {
+	return c.Query().Where(evaluationcompetency.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *EvaluationCompetencyClient) GetX(ctx context.Context, id uuid.UUID) *EvaluationCompetency {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryEvaluation queries the evaluation edge of a EvaluationCompetency.
+func (c *EvaluationCompetencyClient) QueryEvaluation(_m *EvaluationCompetency) *EvaluationQuery {
+	query := (&EvaluationClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(evaluationcompetency.Table, evaluationcompetency.FieldID, id),
+			sqlgraph.To(evaluation.Table, evaluation.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, evaluationcompetency.EvaluationTable, evaluationcompetency.EvaluationColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryCompetency queries the competency edge of a EvaluationCompetency.
+func (c *EvaluationCompetencyClient) QueryCompetency(_m *EvaluationCompetency) *CompetencyQuery {
+	query := (&CompetencyClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(evaluationcompetency.Table, evaluationcompetency.FieldID, id),
+			sqlgraph.To(competency.Table, competency.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, evaluationcompetency.CompetencyTable, evaluationcompetency.CompetencyColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryProfile queries the profile edge of a EvaluationCompetency.
+func (c *EvaluationCompetencyClient) QueryProfile(_m *EvaluationCompetency) *EvaluationProfileQuery {
+	query := (&EvaluationProfileClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(evaluationcompetency.Table, evaluationcompetency.FieldID, id),
+			sqlgraph.To(evaluationprofile.Table, evaluationprofile.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, evaluationcompetency.ProfileTable, evaluationcompetency.ProfileColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *EvaluationCompetencyClient) Hooks() []Hook {
+	return c.hooks.EvaluationCompetency
+}
+
+// Interceptors returns the client interceptors.
+func (c *EvaluationCompetencyClient) Interceptors() []Interceptor {
+	return c.inters.EvaluationCompetency
+}
+
+func (c *EvaluationCompetencyClient) mutate(ctx context.Context, m *EvaluationCompetencyMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&EvaluationCompetencyCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&EvaluationCompetencyUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&EvaluationCompetencyUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&EvaluationCompetencyDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("internal: unknown EvaluationCompetency mutation op: %q", m.Op())
+	}
+}
+
+// EvaluationGoalClient is a client for the EvaluationGoal schema.
+type EvaluationGoalClient struct {
+	config
+}
+
+// NewEvaluationGoalClient returns a client for the EvaluationGoal from the given config.
+func NewEvaluationGoalClient(c config) *EvaluationGoalClient {
+	return &EvaluationGoalClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `evaluationgoal.Hooks(f(g(h())))`.
+func (c *EvaluationGoalClient) Use(hooks ...Hook) {
+	c.hooks.EvaluationGoal = append(c.hooks.EvaluationGoal, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `evaluationgoal.Intercept(f(g(h())))`.
+func (c *EvaluationGoalClient) Intercept(interceptors ...Interceptor) {
+	c.inters.EvaluationGoal = append(c.inters.EvaluationGoal, interceptors...)
+}
+
+// Create returns a builder for creating a EvaluationGoal entity.
+func (c *EvaluationGoalClient) Create() *EvaluationGoalCreate {
+	mutation := newEvaluationGoalMutation(c.config, OpCreate)
+	return &EvaluationGoalCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of EvaluationGoal entities.
+func (c *EvaluationGoalClient) CreateBulk(builders ...*EvaluationGoalCreate) *EvaluationGoalCreateBulk {
+	return &EvaluationGoalCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *EvaluationGoalClient) MapCreateBulk(slice any, setFunc func(*EvaluationGoalCreate, int)) *EvaluationGoalCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &EvaluationGoalCreateBulk{err: fmt.Errorf("calling to EvaluationGoalClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*EvaluationGoalCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &EvaluationGoalCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for EvaluationGoal.
+func (c *EvaluationGoalClient) Update() *EvaluationGoalUpdate {
+	mutation := newEvaluationGoalMutation(c.config, OpUpdate)
+	return &EvaluationGoalUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *EvaluationGoalClient) UpdateOne(_m *EvaluationGoal) *EvaluationGoalUpdateOne {
+	mutation := newEvaluationGoalMutation(c.config, OpUpdateOne, withEvaluationGoal(_m))
+	return &EvaluationGoalUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *EvaluationGoalClient) UpdateOneID(id uuid.UUID) *EvaluationGoalUpdateOne {
+	mutation := newEvaluationGoalMutation(c.config, OpUpdateOne, withEvaluationGoalID(id))
+	return &EvaluationGoalUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for EvaluationGoal.
+func (c *EvaluationGoalClient) Delete() *EvaluationGoalDelete {
+	mutation := newEvaluationGoalMutation(c.config, OpDelete)
+	return &EvaluationGoalDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *EvaluationGoalClient) DeleteOne(_m *EvaluationGoal) *EvaluationGoalDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *EvaluationGoalClient) DeleteOneID(id uuid.UUID) *EvaluationGoalDeleteOne {
+	builder := c.Delete().Where(evaluationgoal.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &EvaluationGoalDeleteOne{builder}
+}
+
+// Query returns a query builder for EvaluationGoal.
+func (c *EvaluationGoalClient) Query() *EvaluationGoalQuery {
+	return &EvaluationGoalQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeEvaluationGoal},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a EvaluationGoal entity by its id.
+func (c *EvaluationGoalClient) Get(ctx context.Context, id uuid.UUID) (*EvaluationGoal, error) {
+	return c.Query().Where(evaluationgoal.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *EvaluationGoalClient) GetX(ctx context.Context, id uuid.UUID) *EvaluationGoal {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryEvaluation queries the evaluation edge of a EvaluationGoal.
+func (c *EvaluationGoalClient) QueryEvaluation(_m *EvaluationGoal) *EvaluationQuery {
+	query := (&EvaluationClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(evaluationgoal.Table, evaluationgoal.FieldID, id),
+			sqlgraph.To(evaluation.Table, evaluation.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, evaluationgoal.EvaluationTable, evaluationgoal.EvaluationColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryGoal queries the goal edge of a EvaluationGoal.
+func (c *EvaluationGoalClient) QueryGoal(_m *EvaluationGoal) *GoalQuery {
+	query := (&GoalClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(evaluationgoal.Table, evaluationgoal.FieldID, id),
+			sqlgraph.To(goal.Table, goal.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, evaluationgoal.GoalTable, evaluationgoal.GoalColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *EvaluationGoalClient) Hooks() []Hook {
+	return c.hooks.EvaluationGoal
+}
+
+// Interceptors returns the client interceptors.
+func (c *EvaluationGoalClient) Interceptors() []Interceptor {
+	return c.inters.EvaluationGoal
+}
+
+func (c *EvaluationGoalClient) mutate(ctx context.Context, m *EvaluationGoalMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&EvaluationGoalCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&EvaluationGoalUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&EvaluationGoalUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&EvaluationGoalDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("internal: unknown EvaluationGoal mutation op: %q", m.Op())
 	}
 }
 
@@ -1197,6 +1984,22 @@ func (c *EvaluationProfileClient) QueryAcceptanceLevels(_m *EvaluationProfile) *
 			sqlgraph.From(evaluationprofile.Table, evaluationprofile.FieldID, id),
 			sqlgraph.To(competencyacceptancelevel.Table, competencyacceptancelevel.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, evaluationprofile.AcceptanceLevelsTable, evaluationprofile.AcceptanceLevelsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryEvaluationCompetencies queries the evaluation_competencies edge of a EvaluationProfile.
+func (c *EvaluationProfileClient) QueryEvaluationCompetencies(_m *EvaluationProfile) *EvaluationCompetencyQuery {
+	query := (&EvaluationCompetencyClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(evaluationprofile.Table, evaluationprofile.FieldID, id),
+			sqlgraph.To(evaluationcompetency.Table, evaluationcompetency.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, evaluationprofile.EvaluationCompetenciesTable, evaluationprofile.EvaluationCompetenciesColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
@@ -1394,6 +2197,831 @@ func (c *EvaluatorScopeClient) mutate(ctx context.Context, m *EvaluatorScopeMuta
 	}
 }
 
+// GoalClient is a client for the Goal schema.
+type GoalClient struct {
+	config
+}
+
+// NewGoalClient returns a client for the Goal from the given config.
+func NewGoalClient(c config) *GoalClient {
+	return &GoalClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `goal.Hooks(f(g(h())))`.
+func (c *GoalClient) Use(hooks ...Hook) {
+	c.hooks.Goal = append(c.hooks.Goal, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `goal.Intercept(f(g(h())))`.
+func (c *GoalClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Goal = append(c.inters.Goal, interceptors...)
+}
+
+// Create returns a builder for creating a Goal entity.
+func (c *GoalClient) Create() *GoalCreate {
+	mutation := newGoalMutation(c.config, OpCreate)
+	return &GoalCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Goal entities.
+func (c *GoalClient) CreateBulk(builders ...*GoalCreate) *GoalCreateBulk {
+	return &GoalCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *GoalClient) MapCreateBulk(slice any, setFunc func(*GoalCreate, int)) *GoalCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &GoalCreateBulk{err: fmt.Errorf("calling to GoalClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*GoalCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &GoalCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Goal.
+func (c *GoalClient) Update() *GoalUpdate {
+	mutation := newGoalMutation(c.config, OpUpdate)
+	return &GoalUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *GoalClient) UpdateOne(_m *Goal) *GoalUpdateOne {
+	mutation := newGoalMutation(c.config, OpUpdateOne, withGoal(_m))
+	return &GoalUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *GoalClient) UpdateOneID(id uuid.UUID) *GoalUpdateOne {
+	mutation := newGoalMutation(c.config, OpUpdateOne, withGoalID(id))
+	return &GoalUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Goal.
+func (c *GoalClient) Delete() *GoalDelete {
+	mutation := newGoalMutation(c.config, OpDelete)
+	return &GoalDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *GoalClient) DeleteOne(_m *Goal) *GoalDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *GoalClient) DeleteOneID(id uuid.UUID) *GoalDeleteOne {
+	builder := c.Delete().Where(goal.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &GoalDeleteOne{builder}
+}
+
+// Query returns a query builder for Goal.
+func (c *GoalClient) Query() *GoalQuery {
+	return &GoalQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeGoal},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Goal entity by its id.
+func (c *GoalClient) Get(ctx context.Context, id uuid.UUID) (*Goal, error) {
+	return c.Query().Where(goal.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *GoalClient) GetX(ctx context.Context, id uuid.UUID) *Goal {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryCategory queries the category edge of a Goal.
+func (c *GoalClient) QueryCategory(_m *Goal) *GoalCategoryQuery {
+	query := (&GoalCategoryClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(goal.Table, goal.FieldID, id),
+			sqlgraph.To(goalcategory.Table, goalcategory.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, goal.CategoryTable, goal.CategoryColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryKpiLinks queries the kpi_links edge of a Goal.
+func (c *GoalClient) QueryKpiLinks(_m *Goal) *GoalKpiLinkQuery {
+	query := (&GoalKpiLinkClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(goal.Table, goal.FieldID, id),
+			sqlgraph.To(goalkpilink.Table, goalkpilink.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, goal.KpiLinksTable, goal.KpiLinksColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryEvaluationGoals queries the evaluation_goals edge of a Goal.
+func (c *GoalClient) QueryEvaluationGoals(_m *Goal) *EvaluationGoalQuery {
+	query := (&EvaluationGoalClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(goal.Table, goal.FieldID, id),
+			sqlgraph.To(evaluationgoal.Table, evaluationgoal.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, goal.EvaluationGoalsTable, goal.EvaluationGoalsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *GoalClient) Hooks() []Hook {
+	return c.hooks.Goal
+}
+
+// Interceptors returns the client interceptors.
+func (c *GoalClient) Interceptors() []Interceptor {
+	return c.inters.Goal
+}
+
+func (c *GoalClient) mutate(ctx context.Context, m *GoalMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&GoalCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&GoalUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&GoalUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&GoalDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("internal: unknown Goal mutation op: %q", m.Op())
+	}
+}
+
+// GoalAssignmentClient is a client for the GoalAssignment schema.
+type GoalAssignmentClient struct {
+	config
+}
+
+// NewGoalAssignmentClient returns a client for the GoalAssignment from the given config.
+func NewGoalAssignmentClient(c config) *GoalAssignmentClient {
+	return &GoalAssignmentClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `goalassignment.Hooks(f(g(h())))`.
+func (c *GoalAssignmentClient) Use(hooks ...Hook) {
+	c.hooks.GoalAssignment = append(c.hooks.GoalAssignment, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `goalassignment.Intercept(f(g(h())))`.
+func (c *GoalAssignmentClient) Intercept(interceptors ...Interceptor) {
+	c.inters.GoalAssignment = append(c.inters.GoalAssignment, interceptors...)
+}
+
+// Create returns a builder for creating a GoalAssignment entity.
+func (c *GoalAssignmentClient) Create() *GoalAssignmentCreate {
+	mutation := newGoalAssignmentMutation(c.config, OpCreate)
+	return &GoalAssignmentCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of GoalAssignment entities.
+func (c *GoalAssignmentClient) CreateBulk(builders ...*GoalAssignmentCreate) *GoalAssignmentCreateBulk {
+	return &GoalAssignmentCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *GoalAssignmentClient) MapCreateBulk(slice any, setFunc func(*GoalAssignmentCreate, int)) *GoalAssignmentCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &GoalAssignmentCreateBulk{err: fmt.Errorf("calling to GoalAssignmentClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*GoalAssignmentCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &GoalAssignmentCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for GoalAssignment.
+func (c *GoalAssignmentClient) Update() *GoalAssignmentUpdate {
+	mutation := newGoalAssignmentMutation(c.config, OpUpdate)
+	return &GoalAssignmentUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *GoalAssignmentClient) UpdateOne(_m *GoalAssignment) *GoalAssignmentUpdateOne {
+	mutation := newGoalAssignmentMutation(c.config, OpUpdateOne, withGoalAssignment(_m))
+	return &GoalAssignmentUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *GoalAssignmentClient) UpdateOneID(id uuid.UUID) *GoalAssignmentUpdateOne {
+	mutation := newGoalAssignmentMutation(c.config, OpUpdateOne, withGoalAssignmentID(id))
+	return &GoalAssignmentUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for GoalAssignment.
+func (c *GoalAssignmentClient) Delete() *GoalAssignmentDelete {
+	mutation := newGoalAssignmentMutation(c.config, OpDelete)
+	return &GoalAssignmentDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *GoalAssignmentClient) DeleteOne(_m *GoalAssignment) *GoalAssignmentDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *GoalAssignmentClient) DeleteOneID(id uuid.UUID) *GoalAssignmentDeleteOne {
+	builder := c.Delete().Where(goalassignment.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &GoalAssignmentDeleteOne{builder}
+}
+
+// Query returns a query builder for GoalAssignment.
+func (c *GoalAssignmentClient) Query() *GoalAssignmentQuery {
+	return &GoalAssignmentQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeGoalAssignment},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a GoalAssignment entity by its id.
+func (c *GoalAssignmentClient) Get(ctx context.Context, id uuid.UUID) (*GoalAssignment, error) {
+	return c.Query().Where(goalassignment.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *GoalAssignmentClient) GetX(ctx context.Context, id uuid.UUID) *GoalAssignment {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryEmployee queries the employee edge of a GoalAssignment.
+func (c *GoalAssignmentClient) QueryEmployee(_m *GoalAssignment) *EmployeeQuery {
+	query := (&EmployeeClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(goalassignment.Table, goalassignment.FieldID, id),
+			sqlgraph.To(employee.Table, employee.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, goalassignment.EmployeeTable, goalassignment.EmployeeColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryCycle queries the cycle edge of a GoalAssignment.
+func (c *GoalAssignmentClient) QueryCycle(_m *GoalAssignment) *CycleQuery {
+	query := (&CycleClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(goalassignment.Table, goalassignment.FieldID, id),
+			sqlgraph.To(cycle.Table, cycle.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, goalassignment.CycleTable, goalassignment.CycleColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *GoalAssignmentClient) Hooks() []Hook {
+	return c.hooks.GoalAssignment
+}
+
+// Interceptors returns the client interceptors.
+func (c *GoalAssignmentClient) Interceptors() []Interceptor {
+	return c.inters.GoalAssignment
+}
+
+func (c *GoalAssignmentClient) mutate(ctx context.Context, m *GoalAssignmentMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&GoalAssignmentCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&GoalAssignmentUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&GoalAssignmentUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&GoalAssignmentDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("internal: unknown GoalAssignment mutation op: %q", m.Op())
+	}
+}
+
+// GoalCategoryClient is a client for the GoalCategory schema.
+type GoalCategoryClient struct {
+	config
+}
+
+// NewGoalCategoryClient returns a client for the GoalCategory from the given config.
+func NewGoalCategoryClient(c config) *GoalCategoryClient {
+	return &GoalCategoryClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `goalcategory.Hooks(f(g(h())))`.
+func (c *GoalCategoryClient) Use(hooks ...Hook) {
+	c.hooks.GoalCategory = append(c.hooks.GoalCategory, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `goalcategory.Intercept(f(g(h())))`.
+func (c *GoalCategoryClient) Intercept(interceptors ...Interceptor) {
+	c.inters.GoalCategory = append(c.inters.GoalCategory, interceptors...)
+}
+
+// Create returns a builder for creating a GoalCategory entity.
+func (c *GoalCategoryClient) Create() *GoalCategoryCreate {
+	mutation := newGoalCategoryMutation(c.config, OpCreate)
+	return &GoalCategoryCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of GoalCategory entities.
+func (c *GoalCategoryClient) CreateBulk(builders ...*GoalCategoryCreate) *GoalCategoryCreateBulk {
+	return &GoalCategoryCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *GoalCategoryClient) MapCreateBulk(slice any, setFunc func(*GoalCategoryCreate, int)) *GoalCategoryCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &GoalCategoryCreateBulk{err: fmt.Errorf("calling to GoalCategoryClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*GoalCategoryCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &GoalCategoryCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for GoalCategory.
+func (c *GoalCategoryClient) Update() *GoalCategoryUpdate {
+	mutation := newGoalCategoryMutation(c.config, OpUpdate)
+	return &GoalCategoryUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *GoalCategoryClient) UpdateOne(_m *GoalCategory) *GoalCategoryUpdateOne {
+	mutation := newGoalCategoryMutation(c.config, OpUpdateOne, withGoalCategory(_m))
+	return &GoalCategoryUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *GoalCategoryClient) UpdateOneID(id uuid.UUID) *GoalCategoryUpdateOne {
+	mutation := newGoalCategoryMutation(c.config, OpUpdateOne, withGoalCategoryID(id))
+	return &GoalCategoryUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for GoalCategory.
+func (c *GoalCategoryClient) Delete() *GoalCategoryDelete {
+	mutation := newGoalCategoryMutation(c.config, OpDelete)
+	return &GoalCategoryDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *GoalCategoryClient) DeleteOne(_m *GoalCategory) *GoalCategoryDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *GoalCategoryClient) DeleteOneID(id uuid.UUID) *GoalCategoryDeleteOne {
+	builder := c.Delete().Where(goalcategory.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &GoalCategoryDeleteOne{builder}
+}
+
+// Query returns a query builder for GoalCategory.
+func (c *GoalCategoryClient) Query() *GoalCategoryQuery {
+	return &GoalCategoryQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeGoalCategory},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a GoalCategory entity by its id.
+func (c *GoalCategoryClient) Get(ctx context.Context, id uuid.UUID) (*GoalCategory, error) {
+	return c.Query().Where(goalcategory.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *GoalCategoryClient) GetX(ctx context.Context, id uuid.UUID) *GoalCategory {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryEmployee queries the employee edge of a GoalCategory.
+func (c *GoalCategoryClient) QueryEmployee(_m *GoalCategory) *EmployeeQuery {
+	query := (&EmployeeClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(goalcategory.Table, goalcategory.FieldID, id),
+			sqlgraph.To(employee.Table, employee.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, goalcategory.EmployeeTable, goalcategory.EmployeeColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryGoals queries the goals edge of a GoalCategory.
+func (c *GoalCategoryClient) QueryGoals(_m *GoalCategory) *GoalQuery {
+	query := (&GoalClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(goalcategory.Table, goalcategory.FieldID, id),
+			sqlgraph.To(goal.Table, goal.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, goalcategory.GoalsTable, goalcategory.GoalsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *GoalCategoryClient) Hooks() []Hook {
+	return c.hooks.GoalCategory
+}
+
+// Interceptors returns the client interceptors.
+func (c *GoalCategoryClient) Interceptors() []Interceptor {
+	return c.inters.GoalCategory
+}
+
+func (c *GoalCategoryClient) mutate(ctx context.Context, m *GoalCategoryMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&GoalCategoryCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&GoalCategoryUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&GoalCategoryUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&GoalCategoryDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("internal: unknown GoalCategory mutation op: %q", m.Op())
+	}
+}
+
+// GoalKpiLinkClient is a client for the GoalKpiLink schema.
+type GoalKpiLinkClient struct {
+	config
+}
+
+// NewGoalKpiLinkClient returns a client for the GoalKpiLink from the given config.
+func NewGoalKpiLinkClient(c config) *GoalKpiLinkClient {
+	return &GoalKpiLinkClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `goalkpilink.Hooks(f(g(h())))`.
+func (c *GoalKpiLinkClient) Use(hooks ...Hook) {
+	c.hooks.GoalKpiLink = append(c.hooks.GoalKpiLink, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `goalkpilink.Intercept(f(g(h())))`.
+func (c *GoalKpiLinkClient) Intercept(interceptors ...Interceptor) {
+	c.inters.GoalKpiLink = append(c.inters.GoalKpiLink, interceptors...)
+}
+
+// Create returns a builder for creating a GoalKpiLink entity.
+func (c *GoalKpiLinkClient) Create() *GoalKpiLinkCreate {
+	mutation := newGoalKpiLinkMutation(c.config, OpCreate)
+	return &GoalKpiLinkCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of GoalKpiLink entities.
+func (c *GoalKpiLinkClient) CreateBulk(builders ...*GoalKpiLinkCreate) *GoalKpiLinkCreateBulk {
+	return &GoalKpiLinkCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *GoalKpiLinkClient) MapCreateBulk(slice any, setFunc func(*GoalKpiLinkCreate, int)) *GoalKpiLinkCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &GoalKpiLinkCreateBulk{err: fmt.Errorf("calling to GoalKpiLinkClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*GoalKpiLinkCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &GoalKpiLinkCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for GoalKpiLink.
+func (c *GoalKpiLinkClient) Update() *GoalKpiLinkUpdate {
+	mutation := newGoalKpiLinkMutation(c.config, OpUpdate)
+	return &GoalKpiLinkUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *GoalKpiLinkClient) UpdateOne(_m *GoalKpiLink) *GoalKpiLinkUpdateOne {
+	mutation := newGoalKpiLinkMutation(c.config, OpUpdateOne, withGoalKpiLink(_m))
+	return &GoalKpiLinkUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *GoalKpiLinkClient) UpdateOneID(id int) *GoalKpiLinkUpdateOne {
+	mutation := newGoalKpiLinkMutation(c.config, OpUpdateOne, withGoalKpiLinkID(id))
+	return &GoalKpiLinkUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for GoalKpiLink.
+func (c *GoalKpiLinkClient) Delete() *GoalKpiLinkDelete {
+	mutation := newGoalKpiLinkMutation(c.config, OpDelete)
+	return &GoalKpiLinkDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *GoalKpiLinkClient) DeleteOne(_m *GoalKpiLink) *GoalKpiLinkDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *GoalKpiLinkClient) DeleteOneID(id int) *GoalKpiLinkDeleteOne {
+	builder := c.Delete().Where(goalkpilink.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &GoalKpiLinkDeleteOne{builder}
+}
+
+// Query returns a query builder for GoalKpiLink.
+func (c *GoalKpiLinkClient) Query() *GoalKpiLinkQuery {
+	return &GoalKpiLinkQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeGoalKpiLink},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a GoalKpiLink entity by its id.
+func (c *GoalKpiLinkClient) Get(ctx context.Context, id int) (*GoalKpiLink, error) {
+	return c.Query().Where(goalkpilink.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *GoalKpiLinkClient) GetX(ctx context.Context, id int) *GoalKpiLink {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryGoal queries the goal edge of a GoalKpiLink.
+func (c *GoalKpiLinkClient) QueryGoal(_m *GoalKpiLink) *GoalQuery {
+	query := (&GoalClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(goalkpilink.Table, goalkpilink.FieldID, id),
+			sqlgraph.To(goal.Table, goal.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, goalkpilink.GoalTable, goalkpilink.GoalColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryKpi queries the kpi edge of a GoalKpiLink.
+func (c *GoalKpiLinkClient) QueryKpi(_m *GoalKpiLink) *KPIQuery {
+	query := (&KPIClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(goalkpilink.Table, goalkpilink.FieldID, id),
+			sqlgraph.To(kpi.Table, kpi.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, goalkpilink.KpiTable, goalkpilink.KpiColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *GoalKpiLinkClient) Hooks() []Hook {
+	return c.hooks.GoalKpiLink
+}
+
+// Interceptors returns the client interceptors.
+func (c *GoalKpiLinkClient) Interceptors() []Interceptor {
+	return c.inters.GoalKpiLink
+}
+
+func (c *GoalKpiLinkClient) mutate(ctx context.Context, m *GoalKpiLinkMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&GoalKpiLinkCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&GoalKpiLinkUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&GoalKpiLinkUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&GoalKpiLinkDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("internal: unknown GoalKpiLink mutation op: %q", m.Op())
+	}
+}
+
+// KPIClient is a client for the KPI schema.
+type KPIClient struct {
+	config
+}
+
+// NewKPIClient returns a client for the KPI from the given config.
+func NewKPIClient(c config) *KPIClient {
+	return &KPIClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `kpi.Hooks(f(g(h())))`.
+func (c *KPIClient) Use(hooks ...Hook) {
+	c.hooks.KPI = append(c.hooks.KPI, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `kpi.Intercept(f(g(h())))`.
+func (c *KPIClient) Intercept(interceptors ...Interceptor) {
+	c.inters.KPI = append(c.inters.KPI, interceptors...)
+}
+
+// Create returns a builder for creating a KPI entity.
+func (c *KPIClient) Create() *KPICreate {
+	mutation := newKPIMutation(c.config, OpCreate)
+	return &KPICreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of KPI entities.
+func (c *KPIClient) CreateBulk(builders ...*KPICreate) *KPICreateBulk {
+	return &KPICreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *KPIClient) MapCreateBulk(slice any, setFunc func(*KPICreate, int)) *KPICreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &KPICreateBulk{err: fmt.Errorf("calling to KPIClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*KPICreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &KPICreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for KPI.
+func (c *KPIClient) Update() *KPIUpdate {
+	mutation := newKPIMutation(c.config, OpUpdate)
+	return &KPIUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *KPIClient) UpdateOne(_m *KPI) *KPIUpdateOne {
+	mutation := newKPIMutation(c.config, OpUpdateOne, withKPI(_m))
+	return &KPIUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *KPIClient) UpdateOneID(id uuid.UUID) *KPIUpdateOne {
+	mutation := newKPIMutation(c.config, OpUpdateOne, withKPIID(id))
+	return &KPIUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for KPI.
+func (c *KPIClient) Delete() *KPIDelete {
+	mutation := newKPIMutation(c.config, OpDelete)
+	return &KPIDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *KPIClient) DeleteOne(_m *KPI) *KPIDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *KPIClient) DeleteOneID(id uuid.UUID) *KPIDeleteOne {
+	builder := c.Delete().Where(kpi.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &KPIDeleteOne{builder}
+}
+
+// Query returns a query builder for KPI.
+func (c *KPIClient) Query() *KPIQuery {
+	return &KPIQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeKPI},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a KPI entity by its id.
+func (c *KPIClient) Get(ctx context.Context, id uuid.UUID) (*KPI, error) {
+	return c.Query().Where(kpi.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *KPIClient) GetX(ctx context.Context, id uuid.UUID) *KPI {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryGoalLinks queries the goal_links edge of a KPI.
+func (c *KPIClient) QueryGoalLinks(_m *KPI) *GoalKpiLinkQuery {
+	query := (&GoalKpiLinkClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(kpi.Table, kpi.FieldID, id),
+			sqlgraph.To(goalkpilink.Table, goalkpilink.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, kpi.GoalLinksTable, kpi.GoalLinksColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *KPIClient) Hooks() []Hook {
+	return c.hooks.KPI
+}
+
+// Interceptors returns the client interceptors.
+func (c *KPIClient) Interceptors() []Interceptor {
+	return c.inters.KPI
+}
+
+func (c *KPIClient) mutate(ctx context.Context, m *KPIMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&KPICreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&KPIUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&KPIUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&KPIDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("internal: unknown KPI mutation op: %q", m.Op())
+	}
+}
+
 // LevelDefinitionClient is a client for the LevelDefinition schema.
 type LevelDefinitionClient struct {
 	config
@@ -1524,6 +3152,618 @@ func (c *LevelDefinitionClient) mutate(ctx context.Context, m *LevelDefinitionMu
 		return (&LevelDefinitionDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("internal: unknown LevelDefinition mutation op: %q", m.Op())
+	}
+}
+
+// NineBoxEntryClient is a client for the NineBoxEntry schema.
+type NineBoxEntryClient struct {
+	config
+}
+
+// NewNineBoxEntryClient returns a client for the NineBoxEntry from the given config.
+func NewNineBoxEntryClient(c config) *NineBoxEntryClient {
+	return &NineBoxEntryClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `nineboxentry.Hooks(f(g(h())))`.
+func (c *NineBoxEntryClient) Use(hooks ...Hook) {
+	c.hooks.NineBoxEntry = append(c.hooks.NineBoxEntry, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `nineboxentry.Intercept(f(g(h())))`.
+func (c *NineBoxEntryClient) Intercept(interceptors ...Interceptor) {
+	c.inters.NineBoxEntry = append(c.inters.NineBoxEntry, interceptors...)
+}
+
+// Create returns a builder for creating a NineBoxEntry entity.
+func (c *NineBoxEntryClient) Create() *NineBoxEntryCreate {
+	mutation := newNineBoxEntryMutation(c.config, OpCreate)
+	return &NineBoxEntryCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of NineBoxEntry entities.
+func (c *NineBoxEntryClient) CreateBulk(builders ...*NineBoxEntryCreate) *NineBoxEntryCreateBulk {
+	return &NineBoxEntryCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *NineBoxEntryClient) MapCreateBulk(slice any, setFunc func(*NineBoxEntryCreate, int)) *NineBoxEntryCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &NineBoxEntryCreateBulk{err: fmt.Errorf("calling to NineBoxEntryClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*NineBoxEntryCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &NineBoxEntryCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for NineBoxEntry.
+func (c *NineBoxEntryClient) Update() *NineBoxEntryUpdate {
+	mutation := newNineBoxEntryMutation(c.config, OpUpdate)
+	return &NineBoxEntryUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *NineBoxEntryClient) UpdateOne(_m *NineBoxEntry) *NineBoxEntryUpdateOne {
+	mutation := newNineBoxEntryMutation(c.config, OpUpdateOne, withNineBoxEntry(_m))
+	return &NineBoxEntryUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *NineBoxEntryClient) UpdateOneID(id uuid.UUID) *NineBoxEntryUpdateOne {
+	mutation := newNineBoxEntryMutation(c.config, OpUpdateOne, withNineBoxEntryID(id))
+	return &NineBoxEntryUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for NineBoxEntry.
+func (c *NineBoxEntryClient) Delete() *NineBoxEntryDelete {
+	mutation := newNineBoxEntryMutation(c.config, OpDelete)
+	return &NineBoxEntryDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *NineBoxEntryClient) DeleteOne(_m *NineBoxEntry) *NineBoxEntryDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *NineBoxEntryClient) DeleteOneID(id uuid.UUID) *NineBoxEntryDeleteOne {
+	builder := c.Delete().Where(nineboxentry.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &NineBoxEntryDeleteOne{builder}
+}
+
+// Query returns a query builder for NineBoxEntry.
+func (c *NineBoxEntryClient) Query() *NineBoxEntryQuery {
+	return &NineBoxEntryQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeNineBoxEntry},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a NineBoxEntry entity by its id.
+func (c *NineBoxEntryClient) Get(ctx context.Context, id uuid.UUID) (*NineBoxEntry, error) {
+	return c.Query().Where(nineboxentry.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *NineBoxEntryClient) GetX(ctx context.Context, id uuid.UUID) *NineBoxEntry {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryMatrix queries the matrix edge of a NineBoxEntry.
+func (c *NineBoxEntryClient) QueryMatrix(_m *NineBoxEntry) *NineBoxMatrixQuery {
+	query := (&NineBoxMatrixClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(nineboxentry.Table, nineboxentry.FieldID, id),
+			sqlgraph.To(nineboxmatrix.Table, nineboxmatrix.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, nineboxentry.MatrixTable, nineboxentry.MatrixColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryEvaluatee queries the evaluatee edge of a NineBoxEntry.
+func (c *NineBoxEntryClient) QueryEvaluatee(_m *NineBoxEntry) *EmployeeQuery {
+	query := (&EmployeeClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(nineboxentry.Table, nineboxentry.FieldID, id),
+			sqlgraph.To(employee.Table, employee.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, nineboxentry.EvaluateeTable, nineboxentry.EvaluateeColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *NineBoxEntryClient) Hooks() []Hook {
+	return c.hooks.NineBoxEntry
+}
+
+// Interceptors returns the client interceptors.
+func (c *NineBoxEntryClient) Interceptors() []Interceptor {
+	return c.inters.NineBoxEntry
+}
+
+func (c *NineBoxEntryClient) mutate(ctx context.Context, m *NineBoxEntryMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&NineBoxEntryCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&NineBoxEntryUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&NineBoxEntryUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&NineBoxEntryDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("internal: unknown NineBoxEntry mutation op: %q", m.Op())
+	}
+}
+
+// NineBoxMatrixClient is a client for the NineBoxMatrix schema.
+type NineBoxMatrixClient struct {
+	config
+}
+
+// NewNineBoxMatrixClient returns a client for the NineBoxMatrix from the given config.
+func NewNineBoxMatrixClient(c config) *NineBoxMatrixClient {
+	return &NineBoxMatrixClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `nineboxmatrix.Hooks(f(g(h())))`.
+func (c *NineBoxMatrixClient) Use(hooks ...Hook) {
+	c.hooks.NineBoxMatrix = append(c.hooks.NineBoxMatrix, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `nineboxmatrix.Intercept(f(g(h())))`.
+func (c *NineBoxMatrixClient) Intercept(interceptors ...Interceptor) {
+	c.inters.NineBoxMatrix = append(c.inters.NineBoxMatrix, interceptors...)
+}
+
+// Create returns a builder for creating a NineBoxMatrix entity.
+func (c *NineBoxMatrixClient) Create() *NineBoxMatrixCreate {
+	mutation := newNineBoxMatrixMutation(c.config, OpCreate)
+	return &NineBoxMatrixCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of NineBoxMatrix entities.
+func (c *NineBoxMatrixClient) CreateBulk(builders ...*NineBoxMatrixCreate) *NineBoxMatrixCreateBulk {
+	return &NineBoxMatrixCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *NineBoxMatrixClient) MapCreateBulk(slice any, setFunc func(*NineBoxMatrixCreate, int)) *NineBoxMatrixCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &NineBoxMatrixCreateBulk{err: fmt.Errorf("calling to NineBoxMatrixClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*NineBoxMatrixCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &NineBoxMatrixCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for NineBoxMatrix.
+func (c *NineBoxMatrixClient) Update() *NineBoxMatrixUpdate {
+	mutation := newNineBoxMatrixMutation(c.config, OpUpdate)
+	return &NineBoxMatrixUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *NineBoxMatrixClient) UpdateOne(_m *NineBoxMatrix) *NineBoxMatrixUpdateOne {
+	mutation := newNineBoxMatrixMutation(c.config, OpUpdateOne, withNineBoxMatrix(_m))
+	return &NineBoxMatrixUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *NineBoxMatrixClient) UpdateOneID(id uuid.UUID) *NineBoxMatrixUpdateOne {
+	mutation := newNineBoxMatrixMutation(c.config, OpUpdateOne, withNineBoxMatrixID(id))
+	return &NineBoxMatrixUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for NineBoxMatrix.
+func (c *NineBoxMatrixClient) Delete() *NineBoxMatrixDelete {
+	mutation := newNineBoxMatrixMutation(c.config, OpDelete)
+	return &NineBoxMatrixDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *NineBoxMatrixClient) DeleteOne(_m *NineBoxMatrix) *NineBoxMatrixDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *NineBoxMatrixClient) DeleteOneID(id uuid.UUID) *NineBoxMatrixDeleteOne {
+	builder := c.Delete().Where(nineboxmatrix.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &NineBoxMatrixDeleteOne{builder}
+}
+
+// Query returns a query builder for NineBoxMatrix.
+func (c *NineBoxMatrixClient) Query() *NineBoxMatrixQuery {
+	return &NineBoxMatrixQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeNineBoxMatrix},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a NineBoxMatrix entity by its id.
+func (c *NineBoxMatrixClient) Get(ctx context.Context, id uuid.UUID) (*NineBoxMatrix, error) {
+	return c.Query().Where(nineboxmatrix.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *NineBoxMatrixClient) GetX(ctx context.Context, id uuid.UUID) *NineBoxMatrix {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryCycle queries the cycle edge of a NineBoxMatrix.
+func (c *NineBoxMatrixClient) QueryCycle(_m *NineBoxMatrix) *CycleQuery {
+	query := (&CycleClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(nineboxmatrix.Table, nineboxmatrix.FieldID, id),
+			sqlgraph.To(cycle.Table, cycle.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, nineboxmatrix.CycleTable, nineboxmatrix.CycleColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryEvaluator queries the evaluator edge of a NineBoxMatrix.
+func (c *NineBoxMatrixClient) QueryEvaluator(_m *NineBoxMatrix) *EmployeeQuery {
+	query := (&EmployeeClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(nineboxmatrix.Table, nineboxmatrix.FieldID, id),
+			sqlgraph.To(employee.Table, employee.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, nineboxmatrix.EvaluatorTable, nineboxmatrix.EvaluatorColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryEntries queries the entries edge of a NineBoxMatrix.
+func (c *NineBoxMatrixClient) QueryEntries(_m *NineBoxMatrix) *NineBoxEntryQuery {
+	query := (&NineBoxEntryClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(nineboxmatrix.Table, nineboxmatrix.FieldID, id),
+			sqlgraph.To(nineboxentry.Table, nineboxentry.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, nineboxmatrix.EntriesTable, nineboxmatrix.EntriesColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *NineBoxMatrixClient) Hooks() []Hook {
+	return c.hooks.NineBoxMatrix
+}
+
+// Interceptors returns the client interceptors.
+func (c *NineBoxMatrixClient) Interceptors() []Interceptor {
+	return c.inters.NineBoxMatrix
+}
+
+func (c *NineBoxMatrixClient) mutate(ctx context.Context, m *NineBoxMatrixMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&NineBoxMatrixCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&NineBoxMatrixUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&NineBoxMatrixUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&NineBoxMatrixDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("internal: unknown NineBoxMatrix mutation op: %q", m.Op())
+	}
+}
+
+// NineBoxQuadrantClient is a client for the NineBoxQuadrant schema.
+type NineBoxQuadrantClient struct {
+	config
+}
+
+// NewNineBoxQuadrantClient returns a client for the NineBoxQuadrant from the given config.
+func NewNineBoxQuadrantClient(c config) *NineBoxQuadrantClient {
+	return &NineBoxQuadrantClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `nineboxquadrant.Hooks(f(g(h())))`.
+func (c *NineBoxQuadrantClient) Use(hooks ...Hook) {
+	c.hooks.NineBoxQuadrant = append(c.hooks.NineBoxQuadrant, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `nineboxquadrant.Intercept(f(g(h())))`.
+func (c *NineBoxQuadrantClient) Intercept(interceptors ...Interceptor) {
+	c.inters.NineBoxQuadrant = append(c.inters.NineBoxQuadrant, interceptors...)
+}
+
+// Create returns a builder for creating a NineBoxQuadrant entity.
+func (c *NineBoxQuadrantClient) Create() *NineBoxQuadrantCreate {
+	mutation := newNineBoxQuadrantMutation(c.config, OpCreate)
+	return &NineBoxQuadrantCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of NineBoxQuadrant entities.
+func (c *NineBoxQuadrantClient) CreateBulk(builders ...*NineBoxQuadrantCreate) *NineBoxQuadrantCreateBulk {
+	return &NineBoxQuadrantCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *NineBoxQuadrantClient) MapCreateBulk(slice any, setFunc func(*NineBoxQuadrantCreate, int)) *NineBoxQuadrantCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &NineBoxQuadrantCreateBulk{err: fmt.Errorf("calling to NineBoxQuadrantClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*NineBoxQuadrantCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &NineBoxQuadrantCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for NineBoxQuadrant.
+func (c *NineBoxQuadrantClient) Update() *NineBoxQuadrantUpdate {
+	mutation := newNineBoxQuadrantMutation(c.config, OpUpdate)
+	return &NineBoxQuadrantUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *NineBoxQuadrantClient) UpdateOne(_m *NineBoxQuadrant) *NineBoxQuadrantUpdateOne {
+	mutation := newNineBoxQuadrantMutation(c.config, OpUpdateOne, withNineBoxQuadrant(_m))
+	return &NineBoxQuadrantUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *NineBoxQuadrantClient) UpdateOneID(id uuid.UUID) *NineBoxQuadrantUpdateOne {
+	mutation := newNineBoxQuadrantMutation(c.config, OpUpdateOne, withNineBoxQuadrantID(id))
+	return &NineBoxQuadrantUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for NineBoxQuadrant.
+func (c *NineBoxQuadrantClient) Delete() *NineBoxQuadrantDelete {
+	mutation := newNineBoxQuadrantMutation(c.config, OpDelete)
+	return &NineBoxQuadrantDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *NineBoxQuadrantClient) DeleteOne(_m *NineBoxQuadrant) *NineBoxQuadrantDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *NineBoxQuadrantClient) DeleteOneID(id uuid.UUID) *NineBoxQuadrantDeleteOne {
+	builder := c.Delete().Where(nineboxquadrant.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &NineBoxQuadrantDeleteOne{builder}
+}
+
+// Query returns a query builder for NineBoxQuadrant.
+func (c *NineBoxQuadrantClient) Query() *NineBoxQuadrantQuery {
+	return &NineBoxQuadrantQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeNineBoxQuadrant},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a NineBoxQuadrant entity by its id.
+func (c *NineBoxQuadrantClient) Get(ctx context.Context, id uuid.UUID) (*NineBoxQuadrant, error) {
+	return c.Query().Where(nineboxquadrant.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *NineBoxQuadrantClient) GetX(ctx context.Context, id uuid.UUID) *NineBoxQuadrant {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *NineBoxQuadrantClient) Hooks() []Hook {
+	return c.hooks.NineBoxQuadrant
+}
+
+// Interceptors returns the client interceptors.
+func (c *NineBoxQuadrantClient) Interceptors() []Interceptor {
+	return c.inters.NineBoxQuadrant
+}
+
+func (c *NineBoxQuadrantClient) mutate(ctx context.Context, m *NineBoxQuadrantMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&NineBoxQuadrantCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&NineBoxQuadrantUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&NineBoxQuadrantUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&NineBoxQuadrantDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("internal: unknown NineBoxQuadrant mutation op: %q", m.Op())
+	}
+}
+
+// NineBoxScaleClient is a client for the NineBoxScale schema.
+type NineBoxScaleClient struct {
+	config
+}
+
+// NewNineBoxScaleClient returns a client for the NineBoxScale from the given config.
+func NewNineBoxScaleClient(c config) *NineBoxScaleClient {
+	return &NineBoxScaleClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `nineboxscale.Hooks(f(g(h())))`.
+func (c *NineBoxScaleClient) Use(hooks ...Hook) {
+	c.hooks.NineBoxScale = append(c.hooks.NineBoxScale, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `nineboxscale.Intercept(f(g(h())))`.
+func (c *NineBoxScaleClient) Intercept(interceptors ...Interceptor) {
+	c.inters.NineBoxScale = append(c.inters.NineBoxScale, interceptors...)
+}
+
+// Create returns a builder for creating a NineBoxScale entity.
+func (c *NineBoxScaleClient) Create() *NineBoxScaleCreate {
+	mutation := newNineBoxScaleMutation(c.config, OpCreate)
+	return &NineBoxScaleCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of NineBoxScale entities.
+func (c *NineBoxScaleClient) CreateBulk(builders ...*NineBoxScaleCreate) *NineBoxScaleCreateBulk {
+	return &NineBoxScaleCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *NineBoxScaleClient) MapCreateBulk(slice any, setFunc func(*NineBoxScaleCreate, int)) *NineBoxScaleCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &NineBoxScaleCreateBulk{err: fmt.Errorf("calling to NineBoxScaleClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*NineBoxScaleCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &NineBoxScaleCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for NineBoxScale.
+func (c *NineBoxScaleClient) Update() *NineBoxScaleUpdate {
+	mutation := newNineBoxScaleMutation(c.config, OpUpdate)
+	return &NineBoxScaleUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *NineBoxScaleClient) UpdateOne(_m *NineBoxScale) *NineBoxScaleUpdateOne {
+	mutation := newNineBoxScaleMutation(c.config, OpUpdateOne, withNineBoxScale(_m))
+	return &NineBoxScaleUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *NineBoxScaleClient) UpdateOneID(id uuid.UUID) *NineBoxScaleUpdateOne {
+	mutation := newNineBoxScaleMutation(c.config, OpUpdateOne, withNineBoxScaleID(id))
+	return &NineBoxScaleUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for NineBoxScale.
+func (c *NineBoxScaleClient) Delete() *NineBoxScaleDelete {
+	mutation := newNineBoxScaleMutation(c.config, OpDelete)
+	return &NineBoxScaleDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *NineBoxScaleClient) DeleteOne(_m *NineBoxScale) *NineBoxScaleDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *NineBoxScaleClient) DeleteOneID(id uuid.UUID) *NineBoxScaleDeleteOne {
+	builder := c.Delete().Where(nineboxscale.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &NineBoxScaleDeleteOne{builder}
+}
+
+// Query returns a query builder for NineBoxScale.
+func (c *NineBoxScaleClient) Query() *NineBoxScaleQuery {
+	return &NineBoxScaleQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeNineBoxScale},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a NineBoxScale entity by its id.
+func (c *NineBoxScaleClient) Get(ctx context.Context, id uuid.UUID) (*NineBoxScale, error) {
+	return c.Query().Where(nineboxscale.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *NineBoxScaleClient) GetX(ctx context.Context, id uuid.UUID) *NineBoxScale {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *NineBoxScaleClient) Hooks() []Hook {
+	return c.hooks.NineBoxScale
+}
+
+// Interceptors returns the client interceptors.
+func (c *NineBoxScaleClient) Interceptors() []Interceptor {
+	return c.inters.NineBoxScale
+}
+
+func (c *NineBoxScaleClient) mutate(ctx context.Context, m *NineBoxScaleMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&NineBoxScaleCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&NineBoxScaleUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&NineBoxScaleUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&NineBoxScaleDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("internal: unknown NineBoxScale mutation op: %q", m.Op())
 	}
 }
 
@@ -2584,13 +4824,17 @@ func (c *ScaleCriterionClient) mutate(ctx context.Context, m *ScaleCriterionMuta
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		Competency, CompetencyAcceptanceLevel, Cycle, Employee, EvaluationProfile,
-		EvaluatorScope, LevelDefinition, OrgNode, Organization, PhaseDefinition,
-		PhaseTransition, Pillar, ScaleCriterion []ent.Hook
+		Competency, CompetencyAcceptanceLevel, Cycle, Employee, Evaluation,
+		EvaluationCompetency, EvaluationGoal, EvaluationProfile, EvaluatorScope, Goal,
+		GoalAssignment, GoalCategory, GoalKpiLink, KPI, LevelDefinition, NineBoxEntry,
+		NineBoxMatrix, NineBoxQuadrant, NineBoxScale, OrgNode, Organization,
+		PhaseDefinition, PhaseTransition, Pillar, ScaleCriterion []ent.Hook
 	}
 	inters struct {
-		Competency, CompetencyAcceptanceLevel, Cycle, Employee, EvaluationProfile,
-		EvaluatorScope, LevelDefinition, OrgNode, Organization, PhaseDefinition,
-		PhaseTransition, Pillar, ScaleCriterion []ent.Interceptor
+		Competency, CompetencyAcceptanceLevel, Cycle, Employee, Evaluation,
+		EvaluationCompetency, EvaluationGoal, EvaluationProfile, EvaluatorScope, Goal,
+		GoalAssignment, GoalCategory, GoalKpiLink, KPI, LevelDefinition, NineBoxEntry,
+		NineBoxMatrix, NineBoxQuadrant, NineBoxScale, OrgNode, Organization,
+		PhaseDefinition, PhaseTransition, Pillar, ScaleCriterion []ent.Interceptor
 	}
 )

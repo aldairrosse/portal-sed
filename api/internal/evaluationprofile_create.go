@@ -12,6 +12,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/sed-evaluacion-desempeno/api/internal/competencyacceptancelevel"
 	"github.com/sed-evaluacion-desempeno/api/internal/employee"
+	"github.com/sed-evaluacion-desempeno/api/internal/evaluationcompetency"
 	"github.com/sed-evaluacion-desempeno/api/internal/evaluationprofile"
 )
 
@@ -84,6 +85,21 @@ func (_c *EvaluationProfileCreate) AddAcceptanceLevels(v ...*CompetencyAcceptanc
 		ids[i] = v[i].ID
 	}
 	return _c.AddAcceptanceLevelIDs(ids...)
+}
+
+// AddEvaluationCompetencyIDs adds the "evaluation_competencies" edge to the EvaluationCompetency entity by IDs.
+func (_c *EvaluationProfileCreate) AddEvaluationCompetencyIDs(ids ...uuid.UUID) *EvaluationProfileCreate {
+	_c.mutation.AddEvaluationCompetencyIDs(ids...)
+	return _c
+}
+
+// AddEvaluationCompetencies adds the "evaluation_competencies" edges to the EvaluationCompetency entity.
+func (_c *EvaluationProfileCreate) AddEvaluationCompetencies(v ...*EvaluationCompetency) *EvaluationProfileCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddEvaluationCompetencyIDs(ids...)
 }
 
 // Mutation returns the EvaluationProfileMutation object of the builder.
@@ -205,6 +221,22 @@ func (_c *EvaluationProfileCreate) createSpec() (*EvaluationProfile, *sqlgraph.C
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(competencyacceptancelevel.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.EvaluationCompetenciesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   evaluationprofile.EvaluationCompetenciesTable,
+			Columns: []string{evaluationprofile.EvaluationCompetenciesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(evaluationcompetency.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

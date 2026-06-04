@@ -31,6 +31,8 @@ const (
 	EdgeScaleCriteria = "scale_criteria"
 	// EdgeAcceptanceLevels holds the string denoting the acceptance_levels edge name in mutations.
 	EdgeAcceptanceLevels = "acceptance_levels"
+	// EdgeEvaluationCompetencies holds the string denoting the evaluation_competencies edge name in mutations.
+	EdgeEvaluationCompetencies = "evaluation_competencies"
 	// Table holds the table name of the competency in the database.
 	Table = "competencies"
 	// PillarTable is the table that holds the pillar relation/edge.
@@ -54,6 +56,13 @@ const (
 	AcceptanceLevelsInverseTable = "competency_acceptance_levels"
 	// AcceptanceLevelsColumn is the table column denoting the acceptance_levels relation/edge.
 	AcceptanceLevelsColumn = "competency_id"
+	// EvaluationCompetenciesTable is the table that holds the evaluation_competencies relation/edge.
+	EvaluationCompetenciesTable = "evaluation_competencies"
+	// EvaluationCompetenciesInverseTable is the table name for the EvaluationCompetency entity.
+	// It exists in this package in order to avoid circular dependency with the "evaluationcompetency" package.
+	EvaluationCompetenciesInverseTable = "evaluation_competencies"
+	// EvaluationCompetenciesColumn is the table column denoting the evaluation_competencies relation/edge.
+	EvaluationCompetenciesColumn = "competency_id"
 )
 
 // Columns holds all SQL columns for competency fields.
@@ -156,6 +165,20 @@ func ByAcceptanceLevels(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption 
 		sqlgraph.OrderByNeighborTerms(s, newAcceptanceLevelsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByEvaluationCompetenciesCount orders the results by evaluation_competencies count.
+func ByEvaluationCompetenciesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newEvaluationCompetenciesStep(), opts...)
+	}
+}
+
+// ByEvaluationCompetencies orders the results by evaluation_competencies terms.
+func ByEvaluationCompetencies(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newEvaluationCompetenciesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newPillarStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -175,5 +198,12 @@ func newAcceptanceLevelsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(AcceptanceLevelsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, AcceptanceLevelsTable, AcceptanceLevelsColumn),
+	)
+}
+func newEvaluationCompetenciesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(EvaluationCompetenciesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, EvaluationCompetenciesTable, EvaluationCompetenciesColumn),
 	)
 }

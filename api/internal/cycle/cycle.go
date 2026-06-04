@@ -38,6 +38,12 @@ const (
 	EdgePhaseDefinitions = "phase_definitions"
 	// EdgeEvaluatorScopes holds the string denoting the evaluator_scopes edge name in mutations.
 	EdgeEvaluatorScopes = "evaluator_scopes"
+	// EdgeGoalAssignments holds the string denoting the goal_assignments edge name in mutations.
+	EdgeGoalAssignments = "goal_assignments"
+	// EdgeEvaluations holds the string denoting the evaluations edge name in mutations.
+	EdgeEvaluations = "evaluations"
+	// EdgeNineBoxMatrices holds the string denoting the nine_box_matrices edge name in mutations.
+	EdgeNineBoxMatrices = "nine_box_matrices"
 	// Table holds the table name of the cycle in the database.
 	Table = "cycles"
 	// OrganizationTable is the table that holds the organization relation/edge.
@@ -68,6 +74,27 @@ const (
 	EvaluatorScopesInverseTable = "evaluator_scopes"
 	// EvaluatorScopesColumn is the table column denoting the evaluator_scopes relation/edge.
 	EvaluatorScopesColumn = "cycle_id"
+	// GoalAssignmentsTable is the table that holds the goal_assignments relation/edge.
+	GoalAssignmentsTable = "goal_assignments"
+	// GoalAssignmentsInverseTable is the table name for the GoalAssignment entity.
+	// It exists in this package in order to avoid circular dependency with the "goalassignment" package.
+	GoalAssignmentsInverseTable = "goal_assignments"
+	// GoalAssignmentsColumn is the table column denoting the goal_assignments relation/edge.
+	GoalAssignmentsColumn = "cycle_id"
+	// EvaluationsTable is the table that holds the evaluations relation/edge.
+	EvaluationsTable = "evaluations"
+	// EvaluationsInverseTable is the table name for the Evaluation entity.
+	// It exists in this package in order to avoid circular dependency with the "evaluation" package.
+	EvaluationsInverseTable = "evaluations"
+	// EvaluationsColumn is the table column denoting the evaluations relation/edge.
+	EvaluationsColumn = "cycle_id"
+	// NineBoxMatricesTable is the table that holds the nine_box_matrices relation/edge.
+	NineBoxMatricesTable = "nine_box_matrixes"
+	// NineBoxMatricesInverseTable is the table name for the NineBoxMatrix entity.
+	// It exists in this package in order to avoid circular dependency with the "nineboxmatrix" package.
+	NineBoxMatricesInverseTable = "nine_box_matrixes"
+	// NineBoxMatricesColumn is the table column denoting the nine_box_matrices relation/edge.
+	NineBoxMatricesColumn = "cycle_id"
 )
 
 // Columns holds all SQL columns for cycle fields.
@@ -218,6 +245,48 @@ func ByEvaluatorScopes(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newEvaluatorScopesStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByGoalAssignmentsCount orders the results by goal_assignments count.
+func ByGoalAssignmentsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newGoalAssignmentsStep(), opts...)
+	}
+}
+
+// ByGoalAssignments orders the results by goal_assignments terms.
+func ByGoalAssignments(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newGoalAssignmentsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByEvaluationsCount orders the results by evaluations count.
+func ByEvaluationsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newEvaluationsStep(), opts...)
+	}
+}
+
+// ByEvaluations orders the results by evaluations terms.
+func ByEvaluations(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newEvaluationsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByNineBoxMatricesCount orders the results by nine_box_matrices count.
+func ByNineBoxMatricesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newNineBoxMatricesStep(), opts...)
+	}
+}
+
+// ByNineBoxMatrices orders the results by nine_box_matrices terms.
+func ByNineBoxMatrices(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newNineBoxMatricesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newOrganizationStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -244,5 +313,26 @@ func newEvaluatorScopesStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(EvaluatorScopesInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, EvaluatorScopesTable, EvaluatorScopesColumn),
+	)
+}
+func newGoalAssignmentsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(GoalAssignmentsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, GoalAssignmentsTable, GoalAssignmentsColumn),
+	)
+}
+func newEvaluationsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(EvaluationsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, EvaluationsTable, EvaluationsColumn),
+	)
+}
+func newNineBoxMatricesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(NineBoxMatricesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, NineBoxMatricesTable, NineBoxMatricesColumn),
 	)
 }

@@ -10,9 +10,21 @@ import (
 	"github.com/sed-evaluacion-desempeno/api/internal/competencyacceptancelevel"
 	"github.com/sed-evaluacion-desempeno/api/internal/cycle"
 	"github.com/sed-evaluacion-desempeno/api/internal/employee"
+	"github.com/sed-evaluacion-desempeno/api/internal/evaluation"
+	"github.com/sed-evaluacion-desempeno/api/internal/evaluationcompetency"
+	"github.com/sed-evaluacion-desempeno/api/internal/evaluationgoal"
 	"github.com/sed-evaluacion-desempeno/api/internal/evaluationprofile"
 	"github.com/sed-evaluacion-desempeno/api/internal/evaluatorscope"
+	"github.com/sed-evaluacion-desempeno/api/internal/goal"
+	"github.com/sed-evaluacion-desempeno/api/internal/goalassignment"
+	"github.com/sed-evaluacion-desempeno/api/internal/goalcategory"
+	"github.com/sed-evaluacion-desempeno/api/internal/goalkpilink"
+	"github.com/sed-evaluacion-desempeno/api/internal/kpi"
 	"github.com/sed-evaluacion-desempeno/api/internal/leveldefinition"
+	"github.com/sed-evaluacion-desempeno/api/internal/nineboxentry"
+	"github.com/sed-evaluacion-desempeno/api/internal/nineboxmatrix"
+	"github.com/sed-evaluacion-desempeno/api/internal/nineboxquadrant"
+	"github.com/sed-evaluacion-desempeno/api/internal/nineboxscale"
 	"github.com/sed-evaluacion-desempeno/api/internal/organization"
 	"github.com/sed-evaluacion-desempeno/api/internal/orgnode"
 	"github.com/sed-evaluacion-desempeno/api/internal/phasedefinition"
@@ -130,6 +142,71 @@ func init() {
 	employeeDescID := employeeFields[0].Descriptor()
 	// employee.DefaultID holds the default value on creation for the id field.
 	employee.DefaultID = employeeDescID.Default.(func() uuid.UUID)
+	evaluationMixin := schema.Evaluation{}.Mixin()
+	evaluationMixinFields0 := evaluationMixin[0].Fields()
+	_ = evaluationMixinFields0
+	evaluationFields := schema.Evaluation{}.Fields()
+	_ = evaluationFields
+	// evaluationDescCreatedAt is the schema descriptor for created_at field.
+	evaluationDescCreatedAt := evaluationMixinFields0[0].Descriptor()
+	// evaluation.DefaultCreatedAt holds the default value on creation for the created_at field.
+	evaluation.DefaultCreatedAt = evaluationDescCreatedAt.Default.(func() time.Time)
+	// evaluationDescUpdatedAt is the schema descriptor for updated_at field.
+	evaluationDescUpdatedAt := evaluationMixinFields0[1].Descriptor()
+	// evaluation.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	evaluation.DefaultUpdatedAt = evaluationDescUpdatedAt.Default.(func() time.Time)
+	// evaluation.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	evaluation.UpdateDefaultUpdatedAt = evaluationDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// evaluationDescID is the schema descriptor for id field.
+	evaluationDescID := evaluationFields[0].Descriptor()
+	// evaluation.DefaultID holds the default value on creation for the id field.
+	evaluation.DefaultID = evaluationDescID.Default.(func() uuid.UUID)
+	evaluationcompetencyMixin := schema.EvaluationCompetency{}.Mixin()
+	evaluationcompetencyMixinFields0 := evaluationcompetencyMixin[0].Fields()
+	_ = evaluationcompetencyMixinFields0
+	evaluationcompetencyFields := schema.EvaluationCompetency{}.Fields()
+	_ = evaluationcompetencyFields
+	// evaluationcompetencyDescCreatedAt is the schema descriptor for created_at field.
+	evaluationcompetencyDescCreatedAt := evaluationcompetencyMixinFields0[0].Descriptor()
+	// evaluationcompetency.DefaultCreatedAt holds the default value on creation for the created_at field.
+	evaluationcompetency.DefaultCreatedAt = evaluationcompetencyDescCreatedAt.Default.(func() time.Time)
+	// evaluationcompetencyDescUpdatedAt is the schema descriptor for updated_at field.
+	evaluationcompetencyDescUpdatedAt := evaluationcompetencyMixinFields0[1].Descriptor()
+	// evaluationcompetency.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	evaluationcompetency.DefaultUpdatedAt = evaluationcompetencyDescUpdatedAt.Default.(func() time.Time)
+	// evaluationcompetency.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	evaluationcompetency.UpdateDefaultUpdatedAt = evaluationcompetencyDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// evaluationcompetencyDescRating is the schema descriptor for rating field.
+	evaluationcompetencyDescRating := evaluationcompetencyFields[1].Descriptor()
+	// evaluationcompetency.RatingValidator is a validator for the "rating" field. It is called by the builders before save.
+	evaluationcompetency.RatingValidator = evaluationcompetencyDescRating.Validators[0].(func(int) error)
+	// evaluationcompetencyDescID is the schema descriptor for id field.
+	evaluationcompetencyDescID := evaluationcompetencyFields[0].Descriptor()
+	// evaluationcompetency.DefaultID holds the default value on creation for the id field.
+	evaluationcompetency.DefaultID = evaluationcompetencyDescID.Default.(func() uuid.UUID)
+	evaluationgoalMixin := schema.EvaluationGoal{}.Mixin()
+	evaluationgoalMixinFields0 := evaluationgoalMixin[0].Fields()
+	_ = evaluationgoalMixinFields0
+	evaluationgoalFields := schema.EvaluationGoal{}.Fields()
+	_ = evaluationgoalFields
+	// evaluationgoalDescCreatedAt is the schema descriptor for created_at field.
+	evaluationgoalDescCreatedAt := evaluationgoalMixinFields0[0].Descriptor()
+	// evaluationgoal.DefaultCreatedAt holds the default value on creation for the created_at field.
+	evaluationgoal.DefaultCreatedAt = evaluationgoalDescCreatedAt.Default.(func() time.Time)
+	// evaluationgoalDescUpdatedAt is the schema descriptor for updated_at field.
+	evaluationgoalDescUpdatedAt := evaluationgoalMixinFields0[1].Descriptor()
+	// evaluationgoal.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	evaluationgoal.DefaultUpdatedAt = evaluationgoalDescUpdatedAt.Default.(func() time.Time)
+	// evaluationgoal.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	evaluationgoal.UpdateDefaultUpdatedAt = evaluationgoalDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// evaluationgoalDescFinalRating is the schema descriptor for final_rating field.
+	evaluationgoalDescFinalRating := evaluationgoalFields[1].Descriptor()
+	// evaluationgoal.FinalRatingValidator is a validator for the "final_rating" field. It is called by the builders before save.
+	evaluationgoal.FinalRatingValidator = evaluationgoalDescFinalRating.Validators[0].(func(int) error)
+	// evaluationgoalDescID is the schema descriptor for id field.
+	evaluationgoalDescID := evaluationgoalFields[0].Descriptor()
+	// evaluationgoal.DefaultID holds the default value on creation for the id field.
+	evaluationgoal.DefaultID = evaluationgoalDescID.Default.(func() uuid.UUID)
 	evaluationprofileFields := schema.EvaluationProfile{}.Fields()
 	_ = evaluationprofileFields
 	// evaluationprofileDescName is the schema descriptor for name field.
@@ -159,6 +236,116 @@ func init() {
 	evaluatorscopeDescID := evaluatorscopeFields[0].Descriptor()
 	// evaluatorscope.DefaultID holds the default value on creation for the id field.
 	evaluatorscope.DefaultID = evaluatorscopeDescID.Default.(func() uuid.UUID)
+	goalMixin := schema.Goal{}.Mixin()
+	goalMixinFields0 := goalMixin[0].Fields()
+	_ = goalMixinFields0
+	goalFields := schema.Goal{}.Fields()
+	_ = goalFields
+	// goalDescCreatedAt is the schema descriptor for created_at field.
+	goalDescCreatedAt := goalMixinFields0[0].Descriptor()
+	// goal.DefaultCreatedAt holds the default value on creation for the created_at field.
+	goal.DefaultCreatedAt = goalDescCreatedAt.Default.(func() time.Time)
+	// goalDescUpdatedAt is the schema descriptor for updated_at field.
+	goalDescUpdatedAt := goalMixinFields0[1].Descriptor()
+	// goal.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	goal.DefaultUpdatedAt = goalDescUpdatedAt.Default.(func() time.Time)
+	// goal.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	goal.UpdateDefaultUpdatedAt = goalDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// goalDescName is the schema descriptor for name field.
+	goalDescName := goalFields[1].Descriptor()
+	// goal.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	goal.NameValidator = goalDescName.Validators[0].(func(string) error)
+	// goalDescWeight is the schema descriptor for weight field.
+	goalDescWeight := goalFields[4].Descriptor()
+	// goal.WeightValidator is a validator for the "weight" field. It is called by the builders before save.
+	goal.WeightValidator = goalDescWeight.Validators[0].(func(float64) error)
+	// goalDescTargetValue is the schema descriptor for target_value field.
+	goalDescTargetValue := goalFields[5].Descriptor()
+	// goal.TargetValueValidator is a validator for the "target_value" field. It is called by the builders before save.
+	goal.TargetValueValidator = goalDescTargetValue.Validators[0].(func(float64) error)
+	// goalDescCurrentValue is the schema descriptor for current_value field.
+	goalDescCurrentValue := goalFields[6].Descriptor()
+	// goal.DefaultCurrentValue holds the default value on creation for the current_value field.
+	goal.DefaultCurrentValue = goalDescCurrentValue.Default.(float64)
+	// goalDescID is the schema descriptor for id field.
+	goalDescID := goalFields[0].Descriptor()
+	// goal.DefaultID holds the default value on creation for the id field.
+	goal.DefaultID = goalDescID.Default.(func() uuid.UUID)
+	goalassignmentMixin := schema.GoalAssignment{}.Mixin()
+	goalassignmentMixinFields0 := goalassignmentMixin[0].Fields()
+	_ = goalassignmentMixinFields0
+	goalassignmentFields := schema.GoalAssignment{}.Fields()
+	_ = goalassignmentFields
+	// goalassignmentDescCreatedAt is the schema descriptor for created_at field.
+	goalassignmentDescCreatedAt := goalassignmentMixinFields0[0].Descriptor()
+	// goalassignment.DefaultCreatedAt holds the default value on creation for the created_at field.
+	goalassignment.DefaultCreatedAt = goalassignmentDescCreatedAt.Default.(func() time.Time)
+	// goalassignmentDescUpdatedAt is the schema descriptor for updated_at field.
+	goalassignmentDescUpdatedAt := goalassignmentMixinFields0[1].Descriptor()
+	// goalassignment.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	goalassignment.DefaultUpdatedAt = goalassignmentDescUpdatedAt.Default.(func() time.Time)
+	// goalassignment.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	goalassignment.UpdateDefaultUpdatedAt = goalassignmentDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// goalassignmentDescID is the schema descriptor for id field.
+	goalassignmentDescID := goalassignmentFields[0].Descriptor()
+	// goalassignment.DefaultID holds the default value on creation for the id field.
+	goalassignment.DefaultID = goalassignmentDescID.Default.(func() uuid.UUID)
+	goalcategoryMixin := schema.GoalCategory{}.Mixin()
+	goalcategoryMixinFields0 := goalcategoryMixin[0].Fields()
+	_ = goalcategoryMixinFields0
+	goalcategoryFields := schema.GoalCategory{}.Fields()
+	_ = goalcategoryFields
+	// goalcategoryDescCreatedAt is the schema descriptor for created_at field.
+	goalcategoryDescCreatedAt := goalcategoryMixinFields0[0].Descriptor()
+	// goalcategory.DefaultCreatedAt holds the default value on creation for the created_at field.
+	goalcategory.DefaultCreatedAt = goalcategoryDescCreatedAt.Default.(func() time.Time)
+	// goalcategoryDescUpdatedAt is the schema descriptor for updated_at field.
+	goalcategoryDescUpdatedAt := goalcategoryMixinFields0[1].Descriptor()
+	// goalcategory.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	goalcategory.DefaultUpdatedAt = goalcategoryDescUpdatedAt.Default.(func() time.Time)
+	// goalcategory.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	goalcategory.UpdateDefaultUpdatedAt = goalcategoryDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// goalcategoryDescName is the schema descriptor for name field.
+	goalcategoryDescName := goalcategoryFields[1].Descriptor()
+	// goalcategory.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	goalcategory.NameValidator = goalcategoryDescName.Validators[0].(func(string) error)
+	// goalcategoryDescWeight is the schema descriptor for weight field.
+	goalcategoryDescWeight := goalcategoryFields[3].Descriptor()
+	// goalcategory.WeightValidator is a validator for the "weight" field. It is called by the builders before save.
+	goalcategory.WeightValidator = goalcategoryDescWeight.Validators[0].(func(float64) error)
+	// goalcategoryDescID is the schema descriptor for id field.
+	goalcategoryDescID := goalcategoryFields[0].Descriptor()
+	// goalcategory.DefaultID holds the default value on creation for the id field.
+	goalcategory.DefaultID = goalcategoryDescID.Default.(func() uuid.UUID)
+	goalkpilinkFields := schema.GoalKpiLink{}.Fields()
+	_ = goalkpilinkFields
+	// goalkpilinkDescCreatedAt is the schema descriptor for created_at field.
+	goalkpilinkDescCreatedAt := goalkpilinkFields[2].Descriptor()
+	// goalkpilink.DefaultCreatedAt holds the default value on creation for the created_at field.
+	goalkpilink.DefaultCreatedAt = goalkpilinkDescCreatedAt.Default.(func() time.Time)
+	kpiMixin := schema.KPI{}.Mixin()
+	kpiMixinFields0 := kpiMixin[0].Fields()
+	_ = kpiMixinFields0
+	kpiFields := schema.KPI{}.Fields()
+	_ = kpiFields
+	// kpiDescCreatedAt is the schema descriptor for created_at field.
+	kpiDescCreatedAt := kpiMixinFields0[0].Descriptor()
+	// kpi.DefaultCreatedAt holds the default value on creation for the created_at field.
+	kpi.DefaultCreatedAt = kpiDescCreatedAt.Default.(func() time.Time)
+	// kpiDescUpdatedAt is the schema descriptor for updated_at field.
+	kpiDescUpdatedAt := kpiMixinFields0[1].Descriptor()
+	// kpi.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	kpi.DefaultUpdatedAt = kpiDescUpdatedAt.Default.(func() time.Time)
+	// kpi.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	kpi.UpdateDefaultUpdatedAt = kpiDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// kpiDescName is the schema descriptor for name field.
+	kpiDescName := kpiFields[1].Descriptor()
+	// kpi.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	kpi.NameValidator = kpiDescName.Validators[0].(func(string) error)
+	// kpiDescID is the schema descriptor for id field.
+	kpiDescID := kpiFields[0].Descriptor()
+	// kpi.DefaultID holds the default value on creation for the id field.
+	kpi.DefaultID = kpiDescID.Default.(func() uuid.UUID)
 	leveldefinitionFields := schema.LevelDefinition{}.Fields()
 	_ = leveldefinitionFields
 	// leveldefinitionDescLevel is the schema descriptor for level field.
@@ -169,6 +356,88 @@ func init() {
 	leveldefinitionDescLabel := leveldefinitionFields[1].Descriptor()
 	// leveldefinition.LabelValidator is a validator for the "label" field. It is called by the builders before save.
 	leveldefinition.LabelValidator = leveldefinitionDescLabel.Validators[0].(func(string) error)
+	nineboxentryMixin := schema.NineBoxEntry{}.Mixin()
+	nineboxentryMixinFields0 := nineboxentryMixin[0].Fields()
+	_ = nineboxentryMixinFields0
+	nineboxentryFields := schema.NineBoxEntry{}.Fields()
+	_ = nineboxentryFields
+	// nineboxentryDescCreatedAt is the schema descriptor for created_at field.
+	nineboxentryDescCreatedAt := nineboxentryMixinFields0[0].Descriptor()
+	// nineboxentry.DefaultCreatedAt holds the default value on creation for the created_at field.
+	nineboxentry.DefaultCreatedAt = nineboxentryDescCreatedAt.Default.(func() time.Time)
+	// nineboxentryDescUpdatedAt is the schema descriptor for updated_at field.
+	nineboxentryDescUpdatedAt := nineboxentryMixinFields0[1].Descriptor()
+	// nineboxentry.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	nineboxentry.DefaultUpdatedAt = nineboxentryDescUpdatedAt.Default.(func() time.Time)
+	// nineboxentry.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	nineboxentry.UpdateDefaultUpdatedAt = nineboxentryDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// nineboxentryDescPerformanceScore is the schema descriptor for performance_score field.
+	nineboxentryDescPerformanceScore := nineboxentryFields[1].Descriptor()
+	// nineboxentry.PerformanceScoreValidator is a validator for the "performance_score" field. It is called by the builders before save.
+	nineboxentry.PerformanceScoreValidator = nineboxentryDescPerformanceScore.Validators[0].(func(int) error)
+	// nineboxentryDescPotentialScore is the schema descriptor for potential_score field.
+	nineboxentryDescPotentialScore := nineboxentryFields[2].Descriptor()
+	// nineboxentry.PotentialScoreValidator is a validator for the "potential_score" field. It is called by the builders before save.
+	nineboxentry.PotentialScoreValidator = nineboxentryDescPotentialScore.Validators[0].(func(int) error)
+	// nineboxentryDescQuadrant is the schema descriptor for quadrant field.
+	nineboxentryDescQuadrant := nineboxentryFields[3].Descriptor()
+	// nineboxentry.QuadrantValidator is a validator for the "quadrant" field. It is called by the builders before save.
+	nineboxentry.QuadrantValidator = nineboxentryDescQuadrant.Validators[0].(func(int) error)
+	// nineboxentryDescID is the schema descriptor for id field.
+	nineboxentryDescID := nineboxentryFields[0].Descriptor()
+	// nineboxentry.DefaultID holds the default value on creation for the id field.
+	nineboxentry.DefaultID = nineboxentryDescID.Default.(func() uuid.UUID)
+	nineboxmatrixMixin := schema.NineBoxMatrix{}.Mixin()
+	nineboxmatrixMixinFields0 := nineboxmatrixMixin[0].Fields()
+	_ = nineboxmatrixMixinFields0
+	nineboxmatrixFields := schema.NineBoxMatrix{}.Fields()
+	_ = nineboxmatrixFields
+	// nineboxmatrixDescCreatedAt is the schema descriptor for created_at field.
+	nineboxmatrixDescCreatedAt := nineboxmatrixMixinFields0[0].Descriptor()
+	// nineboxmatrix.DefaultCreatedAt holds the default value on creation for the created_at field.
+	nineboxmatrix.DefaultCreatedAt = nineboxmatrixDescCreatedAt.Default.(func() time.Time)
+	// nineboxmatrixDescUpdatedAt is the schema descriptor for updated_at field.
+	nineboxmatrixDescUpdatedAt := nineboxmatrixMixinFields0[1].Descriptor()
+	// nineboxmatrix.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	nineboxmatrix.DefaultUpdatedAt = nineboxmatrixDescUpdatedAt.Default.(func() time.Time)
+	// nineboxmatrix.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	nineboxmatrix.UpdateDefaultUpdatedAt = nineboxmatrixDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// nineboxmatrixDescID is the schema descriptor for id field.
+	nineboxmatrixDescID := nineboxmatrixFields[0].Descriptor()
+	// nineboxmatrix.DefaultID holds the default value on creation for the id field.
+	nineboxmatrix.DefaultID = nineboxmatrixDescID.Default.(func() uuid.UUID)
+	nineboxquadrantFields := schema.NineBoxQuadrant{}.Fields()
+	_ = nineboxquadrantFields
+	// nineboxquadrantDescQuadrant is the schema descriptor for quadrant field.
+	nineboxquadrantDescQuadrant := nineboxquadrantFields[1].Descriptor()
+	// nineboxquadrant.QuadrantValidator is a validator for the "quadrant" field. It is called by the builders before save.
+	nineboxquadrant.QuadrantValidator = nineboxquadrantDescQuadrant.Validators[0].(func(int) error)
+	// nineboxquadrantDescLabel is the schema descriptor for label field.
+	nineboxquadrantDescLabel := nineboxquadrantFields[2].Descriptor()
+	// nineboxquadrant.LabelValidator is a validator for the "label" field. It is called by the builders before save.
+	nineboxquadrant.LabelValidator = nineboxquadrantDescLabel.Validators[0].(func(string) error)
+	// nineboxquadrantDescColor is the schema descriptor for color field.
+	nineboxquadrantDescColor := nineboxquadrantFields[4].Descriptor()
+	// nineboxquadrant.ColorValidator is a validator for the "color" field. It is called by the builders before save.
+	nineboxquadrant.ColorValidator = nineboxquadrantDescColor.Validators[0].(func(string) error)
+	// nineboxquadrantDescID is the schema descriptor for id field.
+	nineboxquadrantDescID := nineboxquadrantFields[0].Descriptor()
+	// nineboxquadrant.DefaultID holds the default value on creation for the id field.
+	nineboxquadrant.DefaultID = nineboxquadrantDescID.Default.(func() uuid.UUID)
+	nineboxscaleFields := schema.NineBoxScale{}.Fields()
+	_ = nineboxscaleFields
+	// nineboxscaleDescLevel is the schema descriptor for level field.
+	nineboxscaleDescLevel := nineboxscaleFields[2].Descriptor()
+	// nineboxscale.LevelValidator is a validator for the "level" field. It is called by the builders before save.
+	nineboxscale.LevelValidator = nineboxscaleDescLevel.Validators[0].(func(int) error)
+	// nineboxscaleDescLabel is the schema descriptor for label field.
+	nineboxscaleDescLabel := nineboxscaleFields[3].Descriptor()
+	// nineboxscale.LabelValidator is a validator for the "label" field. It is called by the builders before save.
+	nineboxscale.LabelValidator = nineboxscaleDescLabel.Validators[0].(func(string) error)
+	// nineboxscaleDescID is the schema descriptor for id field.
+	nineboxscaleDescID := nineboxscaleFields[0].Descriptor()
+	// nineboxscale.DefaultID holds the default value on creation for the id field.
+	nineboxscale.DefaultID = nineboxscaleDescID.Default.(func() uuid.UUID)
 	orgnodeMixin := schema.OrgNode{}.Mixin()
 	orgnodeMixinFields0 := orgnodeMixin[0].Fields()
 	_ = orgnodeMixinFields0

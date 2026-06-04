@@ -13,7 +13,10 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
 	"github.com/sed-evaluacion-desempeno/api/internal/cycle"
+	"github.com/sed-evaluacion-desempeno/api/internal/evaluation"
 	"github.com/sed-evaluacion-desempeno/api/internal/evaluatorscope"
+	"github.com/sed-evaluacion-desempeno/api/internal/goalassignment"
+	"github.com/sed-evaluacion-desempeno/api/internal/nineboxmatrix"
 	"github.com/sed-evaluacion-desempeno/api/internal/organization"
 	"github.com/sed-evaluacion-desempeno/api/internal/phasedefinition"
 	"github.com/sed-evaluacion-desempeno/api/internal/phasetransition"
@@ -178,6 +181,51 @@ func (_u *CycleUpdate) AddEvaluatorScopes(v ...*EvaluatorScope) *CycleUpdate {
 	return _u.AddEvaluatorScopeIDs(ids...)
 }
 
+// AddGoalAssignmentIDs adds the "goal_assignments" edge to the GoalAssignment entity by IDs.
+func (_u *CycleUpdate) AddGoalAssignmentIDs(ids ...uuid.UUID) *CycleUpdate {
+	_u.mutation.AddGoalAssignmentIDs(ids...)
+	return _u
+}
+
+// AddGoalAssignments adds the "goal_assignments" edges to the GoalAssignment entity.
+func (_u *CycleUpdate) AddGoalAssignments(v ...*GoalAssignment) *CycleUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddGoalAssignmentIDs(ids...)
+}
+
+// AddEvaluationIDs adds the "evaluations" edge to the Evaluation entity by IDs.
+func (_u *CycleUpdate) AddEvaluationIDs(ids ...uuid.UUID) *CycleUpdate {
+	_u.mutation.AddEvaluationIDs(ids...)
+	return _u
+}
+
+// AddEvaluations adds the "evaluations" edges to the Evaluation entity.
+func (_u *CycleUpdate) AddEvaluations(v ...*Evaluation) *CycleUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddEvaluationIDs(ids...)
+}
+
+// AddNineBoxMatrixIDs adds the "nine_box_matrices" edge to the NineBoxMatrix entity by IDs.
+func (_u *CycleUpdate) AddNineBoxMatrixIDs(ids ...uuid.UUID) *CycleUpdate {
+	_u.mutation.AddNineBoxMatrixIDs(ids...)
+	return _u
+}
+
+// AddNineBoxMatrices adds the "nine_box_matrices" edges to the NineBoxMatrix entity.
+func (_u *CycleUpdate) AddNineBoxMatrices(v ...*NineBoxMatrix) *CycleUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddNineBoxMatrixIDs(ids...)
+}
+
 // Mutation returns the CycleMutation object of the builder.
 func (_u *CycleUpdate) Mutation() *CycleMutation {
 	return _u.mutation
@@ -250,6 +298,69 @@ func (_u *CycleUpdate) RemoveEvaluatorScopes(v ...*EvaluatorScope) *CycleUpdate 
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveEvaluatorScopeIDs(ids...)
+}
+
+// ClearGoalAssignments clears all "goal_assignments" edges to the GoalAssignment entity.
+func (_u *CycleUpdate) ClearGoalAssignments() *CycleUpdate {
+	_u.mutation.ClearGoalAssignments()
+	return _u
+}
+
+// RemoveGoalAssignmentIDs removes the "goal_assignments" edge to GoalAssignment entities by IDs.
+func (_u *CycleUpdate) RemoveGoalAssignmentIDs(ids ...uuid.UUID) *CycleUpdate {
+	_u.mutation.RemoveGoalAssignmentIDs(ids...)
+	return _u
+}
+
+// RemoveGoalAssignments removes "goal_assignments" edges to GoalAssignment entities.
+func (_u *CycleUpdate) RemoveGoalAssignments(v ...*GoalAssignment) *CycleUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveGoalAssignmentIDs(ids...)
+}
+
+// ClearEvaluations clears all "evaluations" edges to the Evaluation entity.
+func (_u *CycleUpdate) ClearEvaluations() *CycleUpdate {
+	_u.mutation.ClearEvaluations()
+	return _u
+}
+
+// RemoveEvaluationIDs removes the "evaluations" edge to Evaluation entities by IDs.
+func (_u *CycleUpdate) RemoveEvaluationIDs(ids ...uuid.UUID) *CycleUpdate {
+	_u.mutation.RemoveEvaluationIDs(ids...)
+	return _u
+}
+
+// RemoveEvaluations removes "evaluations" edges to Evaluation entities.
+func (_u *CycleUpdate) RemoveEvaluations(v ...*Evaluation) *CycleUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveEvaluationIDs(ids...)
+}
+
+// ClearNineBoxMatrices clears all "nine_box_matrices" edges to the NineBoxMatrix entity.
+func (_u *CycleUpdate) ClearNineBoxMatrices() *CycleUpdate {
+	_u.mutation.ClearNineBoxMatrices()
+	return _u
+}
+
+// RemoveNineBoxMatrixIDs removes the "nine_box_matrices" edge to NineBoxMatrix entities by IDs.
+func (_u *CycleUpdate) RemoveNineBoxMatrixIDs(ids ...uuid.UUID) *CycleUpdate {
+	_u.mutation.RemoveNineBoxMatrixIDs(ids...)
+	return _u
+}
+
+// RemoveNineBoxMatrices removes "nine_box_matrices" edges to NineBoxMatrix entities.
+func (_u *CycleUpdate) RemoveNineBoxMatrices(v ...*NineBoxMatrix) *CycleUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveNineBoxMatrixIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -501,6 +612,141 @@ func (_u *CycleUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if _u.mutation.GoalAssignmentsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   cycle.GoalAssignmentsTable,
+			Columns: []string{cycle.GoalAssignmentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(goalassignment.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedGoalAssignmentsIDs(); len(nodes) > 0 && !_u.mutation.GoalAssignmentsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   cycle.GoalAssignmentsTable,
+			Columns: []string{cycle.GoalAssignmentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(goalassignment.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.GoalAssignmentsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   cycle.GoalAssignmentsTable,
+			Columns: []string{cycle.GoalAssignmentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(goalassignment.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.EvaluationsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   cycle.EvaluationsTable,
+			Columns: []string{cycle.EvaluationsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(evaluation.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedEvaluationsIDs(); len(nodes) > 0 && !_u.mutation.EvaluationsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   cycle.EvaluationsTable,
+			Columns: []string{cycle.EvaluationsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(evaluation.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.EvaluationsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   cycle.EvaluationsTable,
+			Columns: []string{cycle.EvaluationsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(evaluation.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.NineBoxMatricesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   cycle.NineBoxMatricesTable,
+			Columns: []string{cycle.NineBoxMatricesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(nineboxmatrix.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedNineBoxMatricesIDs(); len(nodes) > 0 && !_u.mutation.NineBoxMatricesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   cycle.NineBoxMatricesTable,
+			Columns: []string{cycle.NineBoxMatricesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(nineboxmatrix.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.NineBoxMatricesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   cycle.NineBoxMatricesTable,
+			Columns: []string{cycle.NineBoxMatricesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(nineboxmatrix.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{cycle.Label}
@@ -666,6 +912,51 @@ func (_u *CycleUpdateOne) AddEvaluatorScopes(v ...*EvaluatorScope) *CycleUpdateO
 	return _u.AddEvaluatorScopeIDs(ids...)
 }
 
+// AddGoalAssignmentIDs adds the "goal_assignments" edge to the GoalAssignment entity by IDs.
+func (_u *CycleUpdateOne) AddGoalAssignmentIDs(ids ...uuid.UUID) *CycleUpdateOne {
+	_u.mutation.AddGoalAssignmentIDs(ids...)
+	return _u
+}
+
+// AddGoalAssignments adds the "goal_assignments" edges to the GoalAssignment entity.
+func (_u *CycleUpdateOne) AddGoalAssignments(v ...*GoalAssignment) *CycleUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddGoalAssignmentIDs(ids...)
+}
+
+// AddEvaluationIDs adds the "evaluations" edge to the Evaluation entity by IDs.
+func (_u *CycleUpdateOne) AddEvaluationIDs(ids ...uuid.UUID) *CycleUpdateOne {
+	_u.mutation.AddEvaluationIDs(ids...)
+	return _u
+}
+
+// AddEvaluations adds the "evaluations" edges to the Evaluation entity.
+func (_u *CycleUpdateOne) AddEvaluations(v ...*Evaluation) *CycleUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddEvaluationIDs(ids...)
+}
+
+// AddNineBoxMatrixIDs adds the "nine_box_matrices" edge to the NineBoxMatrix entity by IDs.
+func (_u *CycleUpdateOne) AddNineBoxMatrixIDs(ids ...uuid.UUID) *CycleUpdateOne {
+	_u.mutation.AddNineBoxMatrixIDs(ids...)
+	return _u
+}
+
+// AddNineBoxMatrices adds the "nine_box_matrices" edges to the NineBoxMatrix entity.
+func (_u *CycleUpdateOne) AddNineBoxMatrices(v ...*NineBoxMatrix) *CycleUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddNineBoxMatrixIDs(ids...)
+}
+
 // Mutation returns the CycleMutation object of the builder.
 func (_u *CycleUpdateOne) Mutation() *CycleMutation {
 	return _u.mutation
@@ -738,6 +1029,69 @@ func (_u *CycleUpdateOne) RemoveEvaluatorScopes(v ...*EvaluatorScope) *CycleUpda
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveEvaluatorScopeIDs(ids...)
+}
+
+// ClearGoalAssignments clears all "goal_assignments" edges to the GoalAssignment entity.
+func (_u *CycleUpdateOne) ClearGoalAssignments() *CycleUpdateOne {
+	_u.mutation.ClearGoalAssignments()
+	return _u
+}
+
+// RemoveGoalAssignmentIDs removes the "goal_assignments" edge to GoalAssignment entities by IDs.
+func (_u *CycleUpdateOne) RemoveGoalAssignmentIDs(ids ...uuid.UUID) *CycleUpdateOne {
+	_u.mutation.RemoveGoalAssignmentIDs(ids...)
+	return _u
+}
+
+// RemoveGoalAssignments removes "goal_assignments" edges to GoalAssignment entities.
+func (_u *CycleUpdateOne) RemoveGoalAssignments(v ...*GoalAssignment) *CycleUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveGoalAssignmentIDs(ids...)
+}
+
+// ClearEvaluations clears all "evaluations" edges to the Evaluation entity.
+func (_u *CycleUpdateOne) ClearEvaluations() *CycleUpdateOne {
+	_u.mutation.ClearEvaluations()
+	return _u
+}
+
+// RemoveEvaluationIDs removes the "evaluations" edge to Evaluation entities by IDs.
+func (_u *CycleUpdateOne) RemoveEvaluationIDs(ids ...uuid.UUID) *CycleUpdateOne {
+	_u.mutation.RemoveEvaluationIDs(ids...)
+	return _u
+}
+
+// RemoveEvaluations removes "evaluations" edges to Evaluation entities.
+func (_u *CycleUpdateOne) RemoveEvaluations(v ...*Evaluation) *CycleUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveEvaluationIDs(ids...)
+}
+
+// ClearNineBoxMatrices clears all "nine_box_matrices" edges to the NineBoxMatrix entity.
+func (_u *CycleUpdateOne) ClearNineBoxMatrices() *CycleUpdateOne {
+	_u.mutation.ClearNineBoxMatrices()
+	return _u
+}
+
+// RemoveNineBoxMatrixIDs removes the "nine_box_matrices" edge to NineBoxMatrix entities by IDs.
+func (_u *CycleUpdateOne) RemoveNineBoxMatrixIDs(ids ...uuid.UUID) *CycleUpdateOne {
+	_u.mutation.RemoveNineBoxMatrixIDs(ids...)
+	return _u
+}
+
+// RemoveNineBoxMatrices removes "nine_box_matrices" edges to NineBoxMatrix entities.
+func (_u *CycleUpdateOne) RemoveNineBoxMatrices(v ...*NineBoxMatrix) *CycleUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveNineBoxMatrixIDs(ids...)
 }
 
 // Where appends a list predicates to the CycleUpdate builder.
@@ -1012,6 +1366,141 @@ func (_u *CycleUpdateOne) sqlSave(ctx context.Context) (_node *Cycle, err error)
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(evaluatorscope.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.GoalAssignmentsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   cycle.GoalAssignmentsTable,
+			Columns: []string{cycle.GoalAssignmentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(goalassignment.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedGoalAssignmentsIDs(); len(nodes) > 0 && !_u.mutation.GoalAssignmentsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   cycle.GoalAssignmentsTable,
+			Columns: []string{cycle.GoalAssignmentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(goalassignment.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.GoalAssignmentsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   cycle.GoalAssignmentsTable,
+			Columns: []string{cycle.GoalAssignmentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(goalassignment.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.EvaluationsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   cycle.EvaluationsTable,
+			Columns: []string{cycle.EvaluationsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(evaluation.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedEvaluationsIDs(); len(nodes) > 0 && !_u.mutation.EvaluationsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   cycle.EvaluationsTable,
+			Columns: []string{cycle.EvaluationsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(evaluation.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.EvaluationsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   cycle.EvaluationsTable,
+			Columns: []string{cycle.EvaluationsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(evaluation.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.NineBoxMatricesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   cycle.NineBoxMatricesTable,
+			Columns: []string{cycle.NineBoxMatricesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(nineboxmatrix.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedNineBoxMatricesIDs(); len(nodes) > 0 && !_u.mutation.NineBoxMatricesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   cycle.NineBoxMatricesTable,
+			Columns: []string{cycle.NineBoxMatricesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(nineboxmatrix.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.NineBoxMatricesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   cycle.NineBoxMatricesTable,
+			Columns: []string{cycle.NineBoxMatricesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(nineboxmatrix.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

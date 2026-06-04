@@ -14,7 +14,10 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
 	"github.com/sed-evaluacion-desempeno/api/internal/cycle"
+	"github.com/sed-evaluacion-desempeno/api/internal/evaluation"
 	"github.com/sed-evaluacion-desempeno/api/internal/evaluatorscope"
+	"github.com/sed-evaluacion-desempeno/api/internal/goalassignment"
+	"github.com/sed-evaluacion-desempeno/api/internal/nineboxmatrix"
 	"github.com/sed-evaluacion-desempeno/api/internal/organization"
 	"github.com/sed-evaluacion-desempeno/api/internal/phasedefinition"
 	"github.com/sed-evaluacion-desempeno/api/internal/phasetransition"
@@ -32,6 +35,9 @@ type CycleQuery struct {
 	withPhaseTransitions *PhaseTransitionQuery
 	withPhaseDefinitions *PhaseDefinitionQuery
 	withEvaluatorScopes  *EvaluatorScopeQuery
+	withGoalAssignments  *GoalAssignmentQuery
+	withEvaluations      *EvaluationQuery
+	withNineBoxMatrices  *NineBoxMatrixQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -149,6 +155,72 @@ func (_q *CycleQuery) QueryEvaluatorScopes() *EvaluatorScopeQuery {
 			sqlgraph.From(cycle.Table, cycle.FieldID, selector),
 			sqlgraph.To(evaluatorscope.Table, evaluatorscope.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, cycle.EvaluatorScopesTable, cycle.EvaluatorScopesColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryGoalAssignments chains the current query on the "goal_assignments" edge.
+func (_q *CycleQuery) QueryGoalAssignments() *GoalAssignmentQuery {
+	query := (&GoalAssignmentClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(cycle.Table, cycle.FieldID, selector),
+			sqlgraph.To(goalassignment.Table, goalassignment.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, cycle.GoalAssignmentsTable, cycle.GoalAssignmentsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryEvaluations chains the current query on the "evaluations" edge.
+func (_q *CycleQuery) QueryEvaluations() *EvaluationQuery {
+	query := (&EvaluationClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(cycle.Table, cycle.FieldID, selector),
+			sqlgraph.To(evaluation.Table, evaluation.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, cycle.EvaluationsTable, cycle.EvaluationsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryNineBoxMatrices chains the current query on the "nine_box_matrices" edge.
+func (_q *CycleQuery) QueryNineBoxMatrices() *NineBoxMatrixQuery {
+	query := (&NineBoxMatrixClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(cycle.Table, cycle.FieldID, selector),
+			sqlgraph.To(nineboxmatrix.Table, nineboxmatrix.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, cycle.NineBoxMatricesTable, cycle.NineBoxMatricesColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -352,6 +424,9 @@ func (_q *CycleQuery) Clone() *CycleQuery {
 		withPhaseTransitions: _q.withPhaseTransitions.Clone(),
 		withPhaseDefinitions: _q.withPhaseDefinitions.Clone(),
 		withEvaluatorScopes:  _q.withEvaluatorScopes.Clone(),
+		withGoalAssignments:  _q.withGoalAssignments.Clone(),
+		withEvaluations:      _q.withEvaluations.Clone(),
+		withNineBoxMatrices:  _q.withNineBoxMatrices.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
@@ -399,6 +474,39 @@ func (_q *CycleQuery) WithEvaluatorScopes(opts ...func(*EvaluatorScopeQuery)) *C
 		opt(query)
 	}
 	_q.withEvaluatorScopes = query
+	return _q
+}
+
+// WithGoalAssignments tells the query-builder to eager-load the nodes that are connected to
+// the "goal_assignments" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *CycleQuery) WithGoalAssignments(opts ...func(*GoalAssignmentQuery)) *CycleQuery {
+	query := (&GoalAssignmentClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withGoalAssignments = query
+	return _q
+}
+
+// WithEvaluations tells the query-builder to eager-load the nodes that are connected to
+// the "evaluations" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *CycleQuery) WithEvaluations(opts ...func(*EvaluationQuery)) *CycleQuery {
+	query := (&EvaluationClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withEvaluations = query
+	return _q
+}
+
+// WithNineBoxMatrices tells the query-builder to eager-load the nodes that are connected to
+// the "nine_box_matrices" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *CycleQuery) WithNineBoxMatrices(opts ...func(*NineBoxMatrixQuery)) *CycleQuery {
+	query := (&NineBoxMatrixClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withNineBoxMatrices = query
 	return _q
 }
 
@@ -480,11 +588,14 @@ func (_q *CycleQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Cycle,
 	var (
 		nodes       = []*Cycle{}
 		_spec       = _q.querySpec()
-		loadedTypes = [4]bool{
+		loadedTypes = [7]bool{
 			_q.withOrganization != nil,
 			_q.withPhaseTransitions != nil,
 			_q.withPhaseDefinitions != nil,
 			_q.withEvaluatorScopes != nil,
+			_q.withGoalAssignments != nil,
+			_q.withEvaluations != nil,
+			_q.withNineBoxMatrices != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -529,6 +640,27 @@ func (_q *CycleQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Cycle,
 		if err := _q.loadEvaluatorScopes(ctx, query, nodes,
 			func(n *Cycle) { n.Edges.EvaluatorScopes = []*EvaluatorScope{} },
 			func(n *Cycle, e *EvaluatorScope) { n.Edges.EvaluatorScopes = append(n.Edges.EvaluatorScopes, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withGoalAssignments; query != nil {
+		if err := _q.loadGoalAssignments(ctx, query, nodes,
+			func(n *Cycle) { n.Edges.GoalAssignments = []*GoalAssignment{} },
+			func(n *Cycle, e *GoalAssignment) { n.Edges.GoalAssignments = append(n.Edges.GoalAssignments, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withEvaluations; query != nil {
+		if err := _q.loadEvaluations(ctx, query, nodes,
+			func(n *Cycle) { n.Edges.Evaluations = []*Evaluation{} },
+			func(n *Cycle, e *Evaluation) { n.Edges.Evaluations = append(n.Edges.Evaluations, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withNineBoxMatrices; query != nil {
+		if err := _q.loadNineBoxMatrices(ctx, query, nodes,
+			func(n *Cycle) { n.Edges.NineBoxMatrices = []*NineBoxMatrix{} },
+			func(n *Cycle, e *NineBoxMatrix) { n.Edges.NineBoxMatrices = append(n.Edges.NineBoxMatrices, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -652,6 +784,96 @@ func (_q *CycleQuery) loadEvaluatorScopes(ctx context.Context, query *EvaluatorS
 		node, ok := nodeids[*fk]
 		if !ok {
 			return fmt.Errorf(`unexpected referenced foreign-key "cycle_id" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *CycleQuery) loadGoalAssignments(ctx context.Context, query *GoalAssignmentQuery, nodes []*Cycle, init func(*Cycle), assign func(*Cycle, *GoalAssignment)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*Cycle)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(goalassignment.FieldCycleID)
+	}
+	query.Where(predicate.GoalAssignment(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(cycle.GoalAssignmentsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.CycleID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "cycle_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *CycleQuery) loadEvaluations(ctx context.Context, query *EvaluationQuery, nodes []*Cycle, init func(*Cycle), assign func(*Cycle, *Evaluation)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*Cycle)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(evaluation.FieldCycleID)
+	}
+	query.Where(predicate.Evaluation(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(cycle.EvaluationsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.CycleID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "cycle_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *CycleQuery) loadNineBoxMatrices(ctx context.Context, query *NineBoxMatrixQuery, nodes []*Cycle, init func(*Cycle), assign func(*Cycle, *NineBoxMatrix)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*Cycle)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(nineboxmatrix.FieldCycleID)
+	}
+	query.Where(predicate.NineBoxMatrix(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(cycle.NineBoxMatricesColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.CycleID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "cycle_id" returned %v for node %v`, fk, n.ID)
 		}
 		assign(node, n)
 	}

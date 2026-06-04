@@ -16,9 +16,21 @@ import (
 	"github.com/sed-evaluacion-desempeno/api/internal/competencyacceptancelevel"
 	"github.com/sed-evaluacion-desempeno/api/internal/cycle"
 	"github.com/sed-evaluacion-desempeno/api/internal/employee"
+	"github.com/sed-evaluacion-desempeno/api/internal/evaluation"
+	"github.com/sed-evaluacion-desempeno/api/internal/evaluationcompetency"
+	"github.com/sed-evaluacion-desempeno/api/internal/evaluationgoal"
 	"github.com/sed-evaluacion-desempeno/api/internal/evaluationprofile"
 	"github.com/sed-evaluacion-desempeno/api/internal/evaluatorscope"
+	"github.com/sed-evaluacion-desempeno/api/internal/goal"
+	"github.com/sed-evaluacion-desempeno/api/internal/goalassignment"
+	"github.com/sed-evaluacion-desempeno/api/internal/goalcategory"
+	"github.com/sed-evaluacion-desempeno/api/internal/goalkpilink"
+	"github.com/sed-evaluacion-desempeno/api/internal/kpi"
 	"github.com/sed-evaluacion-desempeno/api/internal/leveldefinition"
+	"github.com/sed-evaluacion-desempeno/api/internal/nineboxentry"
+	"github.com/sed-evaluacion-desempeno/api/internal/nineboxmatrix"
+	"github.com/sed-evaluacion-desempeno/api/internal/nineboxquadrant"
+	"github.com/sed-evaluacion-desempeno/api/internal/nineboxscale"
 	"github.com/sed-evaluacion-desempeno/api/internal/organization"
 	"github.com/sed-evaluacion-desempeno/api/internal/orgnode"
 	"github.com/sed-evaluacion-desempeno/api/internal/phasedefinition"
@@ -41,9 +53,21 @@ const (
 	TypeCompetencyAcceptanceLevel = "CompetencyAcceptanceLevel"
 	TypeCycle                     = "Cycle"
 	TypeEmployee                  = "Employee"
+	TypeEvaluation                = "Evaluation"
+	TypeEvaluationCompetency      = "EvaluationCompetency"
+	TypeEvaluationGoal            = "EvaluationGoal"
 	TypeEvaluationProfile         = "EvaluationProfile"
 	TypeEvaluatorScope            = "EvaluatorScope"
+	TypeGoal                      = "Goal"
+	TypeGoalAssignment            = "GoalAssignment"
+	TypeGoalCategory              = "GoalCategory"
+	TypeGoalKpiLink               = "GoalKpiLink"
+	TypeKPI                       = "KPI"
 	TypeLevelDefinition           = "LevelDefinition"
+	TypeNineBoxEntry              = "NineBoxEntry"
+	TypeNineBoxMatrix             = "NineBoxMatrix"
+	TypeNineBoxQuadrant           = "NineBoxQuadrant"
+	TypeNineBoxScale              = "NineBoxScale"
 	TypeOrgNode                   = "OrgNode"
 	TypeOrganization              = "Organization"
 	TypePhaseDefinition           = "PhaseDefinition"
@@ -55,25 +79,28 @@ const (
 // CompetencyMutation represents an operation that mutates the Competency nodes in the graph.
 type CompetencyMutation struct {
 	config
-	op                       Op
-	typ                      string
-	id                       *uuid.UUID
-	created_at               *time.Time
-	updated_at               *time.Time
-	name                     *string
-	description              *string
-	clearedFields            map[string]struct{}
-	pillar                   *uuid.UUID
-	clearedpillar            bool
-	scale_criteria           map[uuid.UUID]struct{}
-	removedscale_criteria    map[uuid.UUID]struct{}
-	clearedscale_criteria    bool
-	acceptance_levels        map[uuid.UUID]struct{}
-	removedacceptance_levels map[uuid.UUID]struct{}
-	clearedacceptance_levels bool
-	done                     bool
-	oldValue                 func(context.Context) (*Competency, error)
-	predicates               []predicate.Competency
+	op                             Op
+	typ                            string
+	id                             *uuid.UUID
+	created_at                     *time.Time
+	updated_at                     *time.Time
+	name                           *string
+	description                    *string
+	clearedFields                  map[string]struct{}
+	pillar                         *uuid.UUID
+	clearedpillar                  bool
+	scale_criteria                 map[uuid.UUID]struct{}
+	removedscale_criteria          map[uuid.UUID]struct{}
+	clearedscale_criteria          bool
+	acceptance_levels              map[uuid.UUID]struct{}
+	removedacceptance_levels       map[uuid.UUID]struct{}
+	clearedacceptance_levels       bool
+	evaluation_competencies        map[uuid.UUID]struct{}
+	removedevaluation_competencies map[uuid.UUID]struct{}
+	clearedevaluation_competencies bool
+	done                           bool
+	oldValue                       func(context.Context) (*Competency, error)
+	predicates                     []predicate.Competency
 }
 
 var _ ent.Mutation = (*CompetencyMutation)(nil)
@@ -508,6 +535,60 @@ func (m *CompetencyMutation) ResetAcceptanceLevels() {
 	m.removedacceptance_levels = nil
 }
 
+// AddEvaluationCompetencyIDs adds the "evaluation_competencies" edge to the EvaluationCompetency entity by ids.
+func (m *CompetencyMutation) AddEvaluationCompetencyIDs(ids ...uuid.UUID) {
+	if m.evaluation_competencies == nil {
+		m.evaluation_competencies = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.evaluation_competencies[ids[i]] = struct{}{}
+	}
+}
+
+// ClearEvaluationCompetencies clears the "evaluation_competencies" edge to the EvaluationCompetency entity.
+func (m *CompetencyMutation) ClearEvaluationCompetencies() {
+	m.clearedevaluation_competencies = true
+}
+
+// EvaluationCompetenciesCleared reports if the "evaluation_competencies" edge to the EvaluationCompetency entity was cleared.
+func (m *CompetencyMutation) EvaluationCompetenciesCleared() bool {
+	return m.clearedevaluation_competencies
+}
+
+// RemoveEvaluationCompetencyIDs removes the "evaluation_competencies" edge to the EvaluationCompetency entity by IDs.
+func (m *CompetencyMutation) RemoveEvaluationCompetencyIDs(ids ...uuid.UUID) {
+	if m.removedevaluation_competencies == nil {
+		m.removedevaluation_competencies = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.evaluation_competencies, ids[i])
+		m.removedevaluation_competencies[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedEvaluationCompetencies returns the removed IDs of the "evaluation_competencies" edge to the EvaluationCompetency entity.
+func (m *CompetencyMutation) RemovedEvaluationCompetenciesIDs() (ids []uuid.UUID) {
+	for id := range m.removedevaluation_competencies {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// EvaluationCompetenciesIDs returns the "evaluation_competencies" edge IDs in the mutation.
+func (m *CompetencyMutation) EvaluationCompetenciesIDs() (ids []uuid.UUID) {
+	for id := range m.evaluation_competencies {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetEvaluationCompetencies resets all changes to the "evaluation_competencies" edge.
+func (m *CompetencyMutation) ResetEvaluationCompetencies() {
+	m.evaluation_competencies = nil
+	m.clearedevaluation_competencies = false
+	m.removedevaluation_competencies = nil
+}
+
 // Where appends a list predicates to the CompetencyMutation builder.
 func (m *CompetencyMutation) Where(ps ...predicate.Competency) {
 	m.predicates = append(m.predicates, ps...)
@@ -718,7 +799,7 @@ func (m *CompetencyMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *CompetencyMutation) AddedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.pillar != nil {
 		edges = append(edges, competency.EdgePillar)
 	}
@@ -727,6 +808,9 @@ func (m *CompetencyMutation) AddedEdges() []string {
 	}
 	if m.acceptance_levels != nil {
 		edges = append(edges, competency.EdgeAcceptanceLevels)
+	}
+	if m.evaluation_competencies != nil {
+		edges = append(edges, competency.EdgeEvaluationCompetencies)
 	}
 	return edges
 }
@@ -751,18 +835,27 @@ func (m *CompetencyMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case competency.EdgeEvaluationCompetencies:
+		ids := make([]ent.Value, 0, len(m.evaluation_competencies))
+		for id := range m.evaluation_competencies {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *CompetencyMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.removedscale_criteria != nil {
 		edges = append(edges, competency.EdgeScaleCriteria)
 	}
 	if m.removedacceptance_levels != nil {
 		edges = append(edges, competency.EdgeAcceptanceLevels)
+	}
+	if m.removedevaluation_competencies != nil {
+		edges = append(edges, competency.EdgeEvaluationCompetencies)
 	}
 	return edges
 }
@@ -783,13 +876,19 @@ func (m *CompetencyMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case competency.EdgeEvaluationCompetencies:
+		ids := make([]ent.Value, 0, len(m.removedevaluation_competencies))
+		for id := range m.removedevaluation_competencies {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *CompetencyMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.clearedpillar {
 		edges = append(edges, competency.EdgePillar)
 	}
@@ -798,6 +897,9 @@ func (m *CompetencyMutation) ClearedEdges() []string {
 	}
 	if m.clearedacceptance_levels {
 		edges = append(edges, competency.EdgeAcceptanceLevels)
+	}
+	if m.clearedevaluation_competencies {
+		edges = append(edges, competency.EdgeEvaluationCompetencies)
 	}
 	return edges
 }
@@ -812,6 +914,8 @@ func (m *CompetencyMutation) EdgeCleared(name string) bool {
 		return m.clearedscale_criteria
 	case competency.EdgeAcceptanceLevels:
 		return m.clearedacceptance_levels
+	case competency.EdgeEvaluationCompetencies:
+		return m.clearedevaluation_competencies
 	}
 	return false
 }
@@ -839,6 +943,9 @@ func (m *CompetencyMutation) ResetEdge(name string) error {
 		return nil
 	case competency.EdgeAcceptanceLevels:
 		m.ResetAcceptanceLevels()
+		return nil
+	case competency.EdgeEvaluationCompetencies:
+		m.ResetEvaluationCompetencies()
 		return nil
 	}
 	return fmt.Errorf("unknown Competency edge %s", name)
@@ -1553,6 +1660,15 @@ type CycleMutation struct {
 	evaluator_scopes         map[uuid.UUID]struct{}
 	removedevaluator_scopes  map[uuid.UUID]struct{}
 	clearedevaluator_scopes  bool
+	goal_assignments         map[uuid.UUID]struct{}
+	removedgoal_assignments  map[uuid.UUID]struct{}
+	clearedgoal_assignments  bool
+	evaluations              map[uuid.UUID]struct{}
+	removedevaluations       map[uuid.UUID]struct{}
+	clearedevaluations       bool
+	nine_box_matrices        map[uuid.UUID]struct{}
+	removednine_box_matrices map[uuid.UUID]struct{}
+	clearednine_box_matrices bool
 	done                     bool
 	oldValue                 func(context.Context) (*Cycle, error)
 	predicates               []predicate.Cycle
@@ -2149,6 +2265,168 @@ func (m *CycleMutation) ResetEvaluatorScopes() {
 	m.removedevaluator_scopes = nil
 }
 
+// AddGoalAssignmentIDs adds the "goal_assignments" edge to the GoalAssignment entity by ids.
+func (m *CycleMutation) AddGoalAssignmentIDs(ids ...uuid.UUID) {
+	if m.goal_assignments == nil {
+		m.goal_assignments = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.goal_assignments[ids[i]] = struct{}{}
+	}
+}
+
+// ClearGoalAssignments clears the "goal_assignments" edge to the GoalAssignment entity.
+func (m *CycleMutation) ClearGoalAssignments() {
+	m.clearedgoal_assignments = true
+}
+
+// GoalAssignmentsCleared reports if the "goal_assignments" edge to the GoalAssignment entity was cleared.
+func (m *CycleMutation) GoalAssignmentsCleared() bool {
+	return m.clearedgoal_assignments
+}
+
+// RemoveGoalAssignmentIDs removes the "goal_assignments" edge to the GoalAssignment entity by IDs.
+func (m *CycleMutation) RemoveGoalAssignmentIDs(ids ...uuid.UUID) {
+	if m.removedgoal_assignments == nil {
+		m.removedgoal_assignments = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.goal_assignments, ids[i])
+		m.removedgoal_assignments[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedGoalAssignments returns the removed IDs of the "goal_assignments" edge to the GoalAssignment entity.
+func (m *CycleMutation) RemovedGoalAssignmentsIDs() (ids []uuid.UUID) {
+	for id := range m.removedgoal_assignments {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// GoalAssignmentsIDs returns the "goal_assignments" edge IDs in the mutation.
+func (m *CycleMutation) GoalAssignmentsIDs() (ids []uuid.UUID) {
+	for id := range m.goal_assignments {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetGoalAssignments resets all changes to the "goal_assignments" edge.
+func (m *CycleMutation) ResetGoalAssignments() {
+	m.goal_assignments = nil
+	m.clearedgoal_assignments = false
+	m.removedgoal_assignments = nil
+}
+
+// AddEvaluationIDs adds the "evaluations" edge to the Evaluation entity by ids.
+func (m *CycleMutation) AddEvaluationIDs(ids ...uuid.UUID) {
+	if m.evaluations == nil {
+		m.evaluations = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.evaluations[ids[i]] = struct{}{}
+	}
+}
+
+// ClearEvaluations clears the "evaluations" edge to the Evaluation entity.
+func (m *CycleMutation) ClearEvaluations() {
+	m.clearedevaluations = true
+}
+
+// EvaluationsCleared reports if the "evaluations" edge to the Evaluation entity was cleared.
+func (m *CycleMutation) EvaluationsCleared() bool {
+	return m.clearedevaluations
+}
+
+// RemoveEvaluationIDs removes the "evaluations" edge to the Evaluation entity by IDs.
+func (m *CycleMutation) RemoveEvaluationIDs(ids ...uuid.UUID) {
+	if m.removedevaluations == nil {
+		m.removedevaluations = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.evaluations, ids[i])
+		m.removedevaluations[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedEvaluations returns the removed IDs of the "evaluations" edge to the Evaluation entity.
+func (m *CycleMutation) RemovedEvaluationsIDs() (ids []uuid.UUID) {
+	for id := range m.removedevaluations {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// EvaluationsIDs returns the "evaluations" edge IDs in the mutation.
+func (m *CycleMutation) EvaluationsIDs() (ids []uuid.UUID) {
+	for id := range m.evaluations {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetEvaluations resets all changes to the "evaluations" edge.
+func (m *CycleMutation) ResetEvaluations() {
+	m.evaluations = nil
+	m.clearedevaluations = false
+	m.removedevaluations = nil
+}
+
+// AddNineBoxMatrixIDs adds the "nine_box_matrices" edge to the NineBoxMatrix entity by ids.
+func (m *CycleMutation) AddNineBoxMatrixIDs(ids ...uuid.UUID) {
+	if m.nine_box_matrices == nil {
+		m.nine_box_matrices = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.nine_box_matrices[ids[i]] = struct{}{}
+	}
+}
+
+// ClearNineBoxMatrices clears the "nine_box_matrices" edge to the NineBoxMatrix entity.
+func (m *CycleMutation) ClearNineBoxMatrices() {
+	m.clearednine_box_matrices = true
+}
+
+// NineBoxMatricesCleared reports if the "nine_box_matrices" edge to the NineBoxMatrix entity was cleared.
+func (m *CycleMutation) NineBoxMatricesCleared() bool {
+	return m.clearednine_box_matrices
+}
+
+// RemoveNineBoxMatrixIDs removes the "nine_box_matrices" edge to the NineBoxMatrix entity by IDs.
+func (m *CycleMutation) RemoveNineBoxMatrixIDs(ids ...uuid.UUID) {
+	if m.removednine_box_matrices == nil {
+		m.removednine_box_matrices = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.nine_box_matrices, ids[i])
+		m.removednine_box_matrices[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedNineBoxMatrices returns the removed IDs of the "nine_box_matrices" edge to the NineBoxMatrix entity.
+func (m *CycleMutation) RemovedNineBoxMatricesIDs() (ids []uuid.UUID) {
+	for id := range m.removednine_box_matrices {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// NineBoxMatricesIDs returns the "nine_box_matrices" edge IDs in the mutation.
+func (m *CycleMutation) NineBoxMatricesIDs() (ids []uuid.UUID) {
+	for id := range m.nine_box_matrices {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetNineBoxMatrices resets all changes to the "nine_box_matrices" edge.
+func (m *CycleMutation) ResetNineBoxMatrices() {
+	m.nine_box_matrices = nil
+	m.clearednine_box_matrices = false
+	m.removednine_box_matrices = nil
+}
+
 // Where appends a list predicates to the CycleMutation builder.
 func (m *CycleMutation) Where(ps ...predicate.Cycle) {
 	m.predicates = append(m.predicates, ps...)
@@ -2414,7 +2692,7 @@ func (m *CycleMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *CycleMutation) AddedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 7)
 	if m.organization != nil {
 		edges = append(edges, cycle.EdgeOrganization)
 	}
@@ -2426,6 +2704,15 @@ func (m *CycleMutation) AddedEdges() []string {
 	}
 	if m.evaluator_scopes != nil {
 		edges = append(edges, cycle.EdgeEvaluatorScopes)
+	}
+	if m.goal_assignments != nil {
+		edges = append(edges, cycle.EdgeGoalAssignments)
+	}
+	if m.evaluations != nil {
+		edges = append(edges, cycle.EdgeEvaluations)
+	}
+	if m.nine_box_matrices != nil {
+		edges = append(edges, cycle.EdgeNineBoxMatrices)
 	}
 	return edges
 }
@@ -2456,13 +2743,31 @@ func (m *CycleMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case cycle.EdgeGoalAssignments:
+		ids := make([]ent.Value, 0, len(m.goal_assignments))
+		for id := range m.goal_assignments {
+			ids = append(ids, id)
+		}
+		return ids
+	case cycle.EdgeEvaluations:
+		ids := make([]ent.Value, 0, len(m.evaluations))
+		for id := range m.evaluations {
+			ids = append(ids, id)
+		}
+		return ids
+	case cycle.EdgeNineBoxMatrices:
+		ids := make([]ent.Value, 0, len(m.nine_box_matrices))
+		for id := range m.nine_box_matrices {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *CycleMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 7)
 	if m.removedphase_transitions != nil {
 		edges = append(edges, cycle.EdgePhaseTransitions)
 	}
@@ -2471,6 +2776,15 @@ func (m *CycleMutation) RemovedEdges() []string {
 	}
 	if m.removedevaluator_scopes != nil {
 		edges = append(edges, cycle.EdgeEvaluatorScopes)
+	}
+	if m.removedgoal_assignments != nil {
+		edges = append(edges, cycle.EdgeGoalAssignments)
+	}
+	if m.removedevaluations != nil {
+		edges = append(edges, cycle.EdgeEvaluations)
+	}
+	if m.removednine_box_matrices != nil {
+		edges = append(edges, cycle.EdgeNineBoxMatrices)
 	}
 	return edges
 }
@@ -2497,13 +2811,31 @@ func (m *CycleMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case cycle.EdgeGoalAssignments:
+		ids := make([]ent.Value, 0, len(m.removedgoal_assignments))
+		for id := range m.removedgoal_assignments {
+			ids = append(ids, id)
+		}
+		return ids
+	case cycle.EdgeEvaluations:
+		ids := make([]ent.Value, 0, len(m.removedevaluations))
+		for id := range m.removedevaluations {
+			ids = append(ids, id)
+		}
+		return ids
+	case cycle.EdgeNineBoxMatrices:
+		ids := make([]ent.Value, 0, len(m.removednine_box_matrices))
+		for id := range m.removednine_box_matrices {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *CycleMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 7)
 	if m.clearedorganization {
 		edges = append(edges, cycle.EdgeOrganization)
 	}
@@ -2515,6 +2847,15 @@ func (m *CycleMutation) ClearedEdges() []string {
 	}
 	if m.clearedevaluator_scopes {
 		edges = append(edges, cycle.EdgeEvaluatorScopes)
+	}
+	if m.clearedgoal_assignments {
+		edges = append(edges, cycle.EdgeGoalAssignments)
+	}
+	if m.clearedevaluations {
+		edges = append(edges, cycle.EdgeEvaluations)
+	}
+	if m.clearednine_box_matrices {
+		edges = append(edges, cycle.EdgeNineBoxMatrices)
 	}
 	return edges
 }
@@ -2531,6 +2872,12 @@ func (m *CycleMutation) EdgeCleared(name string) bool {
 		return m.clearedphase_definitions
 	case cycle.EdgeEvaluatorScopes:
 		return m.clearedevaluator_scopes
+	case cycle.EdgeGoalAssignments:
+		return m.clearedgoal_assignments
+	case cycle.EdgeEvaluations:
+		return m.clearedevaluations
+	case cycle.EdgeNineBoxMatrices:
+		return m.clearednine_box_matrices
 	}
 	return false
 }
@@ -2562,6 +2909,15 @@ func (m *CycleMutation) ResetEdge(name string) error {
 	case cycle.EdgeEvaluatorScopes:
 		m.ResetEvaluatorScopes()
 		return nil
+	case cycle.EdgeGoalAssignments:
+		m.ResetGoalAssignments()
+		return nil
+	case cycle.EdgeEvaluations:
+		m.ResetEvaluations()
+		return nil
+	case cycle.EdgeNineBoxMatrices:
+		m.ResetNineBoxMatrices()
+		return nil
 	}
 	return fmt.Errorf("unknown Cycle edge %s", name)
 }
@@ -2569,34 +2925,49 @@ func (m *CycleMutation) ResetEdge(name string) error {
 // EmployeeMutation represents an operation that mutates the Employee nodes in the graph.
 type EmployeeMutation struct {
 	config
-	op                      Op
-	typ                     string
-	id                      *uuid.UUID
-	created_at              *time.Time
-	updated_at              *time.Time
-	created_by              *uuid.UUID
-	updated_by              *uuid.UUID
-	first_name              *string
-	last_name               *string
-	employee_number         *string
-	email                   *string
-	is_active               *bool
-	clearedFields           map[string]struct{}
-	org_node                *uuid.UUID
-	clearedorg_node         bool
-	manager                 *uuid.UUID
-	clearedmanager          bool
-	direct_reports          map[uuid.UUID]struct{}
-	removeddirect_reports   map[uuid.UUID]struct{}
-	cleareddirect_reports   bool
-	profile                 *uuid.UUID
-	clearedprofile          bool
-	evaluator_scopes        map[uuid.UUID]struct{}
-	removedevaluator_scopes map[uuid.UUID]struct{}
-	clearedevaluator_scopes bool
-	done                    bool
-	oldValue                func(context.Context) (*Employee, error)
-	predicates              []predicate.Employee
+	op                       Op
+	typ                      string
+	id                       *uuid.UUID
+	created_at               *time.Time
+	updated_at               *time.Time
+	created_by               *uuid.UUID
+	updated_by               *uuid.UUID
+	first_name               *string
+	last_name                *string
+	employee_number          *string
+	email                    *string
+	is_active                *bool
+	clearedFields            map[string]struct{}
+	org_node                 *uuid.UUID
+	clearedorg_node          bool
+	manager                  *uuid.UUID
+	clearedmanager           bool
+	direct_reports           map[uuid.UUID]struct{}
+	removeddirect_reports    map[uuid.UUID]struct{}
+	cleareddirect_reports    bool
+	profile                  *uuid.UUID
+	clearedprofile           bool
+	evaluator_scopes         map[uuid.UUID]struct{}
+	removedevaluator_scopes  map[uuid.UUID]struct{}
+	clearedevaluator_scopes  bool
+	goal_categories          map[uuid.UUID]struct{}
+	removedgoal_categories   map[uuid.UUID]struct{}
+	clearedgoal_categories   bool
+	goal_assignments         map[uuid.UUID]struct{}
+	removedgoal_assignments  map[uuid.UUID]struct{}
+	clearedgoal_assignments  bool
+	evaluations              map[uuid.UUID]struct{}
+	removedevaluations       map[uuid.UUID]struct{}
+	clearedevaluations       bool
+	nine_box_matrices        map[uuid.UUID]struct{}
+	removednine_box_matrices map[uuid.UUID]struct{}
+	clearednine_box_matrices bool
+	nine_box_entries         map[uuid.UUID]struct{}
+	removednine_box_entries  map[uuid.UUID]struct{}
+	clearednine_box_entries  bool
+	done                     bool
+	oldValue                 func(context.Context) (*Employee, error)
+	predicates               []predicate.Employee
 }
 
 var _ ent.Mutation = (*EmployeeMutation)(nil)
@@ -3337,6 +3708,276 @@ func (m *EmployeeMutation) ResetEvaluatorScopes() {
 	m.removedevaluator_scopes = nil
 }
 
+// AddGoalCategoryIDs adds the "goal_categories" edge to the GoalCategory entity by ids.
+func (m *EmployeeMutation) AddGoalCategoryIDs(ids ...uuid.UUID) {
+	if m.goal_categories == nil {
+		m.goal_categories = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.goal_categories[ids[i]] = struct{}{}
+	}
+}
+
+// ClearGoalCategories clears the "goal_categories" edge to the GoalCategory entity.
+func (m *EmployeeMutation) ClearGoalCategories() {
+	m.clearedgoal_categories = true
+}
+
+// GoalCategoriesCleared reports if the "goal_categories" edge to the GoalCategory entity was cleared.
+func (m *EmployeeMutation) GoalCategoriesCleared() bool {
+	return m.clearedgoal_categories
+}
+
+// RemoveGoalCategoryIDs removes the "goal_categories" edge to the GoalCategory entity by IDs.
+func (m *EmployeeMutation) RemoveGoalCategoryIDs(ids ...uuid.UUID) {
+	if m.removedgoal_categories == nil {
+		m.removedgoal_categories = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.goal_categories, ids[i])
+		m.removedgoal_categories[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedGoalCategories returns the removed IDs of the "goal_categories" edge to the GoalCategory entity.
+func (m *EmployeeMutation) RemovedGoalCategoriesIDs() (ids []uuid.UUID) {
+	for id := range m.removedgoal_categories {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// GoalCategoriesIDs returns the "goal_categories" edge IDs in the mutation.
+func (m *EmployeeMutation) GoalCategoriesIDs() (ids []uuid.UUID) {
+	for id := range m.goal_categories {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetGoalCategories resets all changes to the "goal_categories" edge.
+func (m *EmployeeMutation) ResetGoalCategories() {
+	m.goal_categories = nil
+	m.clearedgoal_categories = false
+	m.removedgoal_categories = nil
+}
+
+// AddGoalAssignmentIDs adds the "goal_assignments" edge to the GoalAssignment entity by ids.
+func (m *EmployeeMutation) AddGoalAssignmentIDs(ids ...uuid.UUID) {
+	if m.goal_assignments == nil {
+		m.goal_assignments = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.goal_assignments[ids[i]] = struct{}{}
+	}
+}
+
+// ClearGoalAssignments clears the "goal_assignments" edge to the GoalAssignment entity.
+func (m *EmployeeMutation) ClearGoalAssignments() {
+	m.clearedgoal_assignments = true
+}
+
+// GoalAssignmentsCleared reports if the "goal_assignments" edge to the GoalAssignment entity was cleared.
+func (m *EmployeeMutation) GoalAssignmentsCleared() bool {
+	return m.clearedgoal_assignments
+}
+
+// RemoveGoalAssignmentIDs removes the "goal_assignments" edge to the GoalAssignment entity by IDs.
+func (m *EmployeeMutation) RemoveGoalAssignmentIDs(ids ...uuid.UUID) {
+	if m.removedgoal_assignments == nil {
+		m.removedgoal_assignments = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.goal_assignments, ids[i])
+		m.removedgoal_assignments[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedGoalAssignments returns the removed IDs of the "goal_assignments" edge to the GoalAssignment entity.
+func (m *EmployeeMutation) RemovedGoalAssignmentsIDs() (ids []uuid.UUID) {
+	for id := range m.removedgoal_assignments {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// GoalAssignmentsIDs returns the "goal_assignments" edge IDs in the mutation.
+func (m *EmployeeMutation) GoalAssignmentsIDs() (ids []uuid.UUID) {
+	for id := range m.goal_assignments {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetGoalAssignments resets all changes to the "goal_assignments" edge.
+func (m *EmployeeMutation) ResetGoalAssignments() {
+	m.goal_assignments = nil
+	m.clearedgoal_assignments = false
+	m.removedgoal_assignments = nil
+}
+
+// AddEvaluationIDs adds the "evaluations" edge to the Evaluation entity by ids.
+func (m *EmployeeMutation) AddEvaluationIDs(ids ...uuid.UUID) {
+	if m.evaluations == nil {
+		m.evaluations = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.evaluations[ids[i]] = struct{}{}
+	}
+}
+
+// ClearEvaluations clears the "evaluations" edge to the Evaluation entity.
+func (m *EmployeeMutation) ClearEvaluations() {
+	m.clearedevaluations = true
+}
+
+// EvaluationsCleared reports if the "evaluations" edge to the Evaluation entity was cleared.
+func (m *EmployeeMutation) EvaluationsCleared() bool {
+	return m.clearedevaluations
+}
+
+// RemoveEvaluationIDs removes the "evaluations" edge to the Evaluation entity by IDs.
+func (m *EmployeeMutation) RemoveEvaluationIDs(ids ...uuid.UUID) {
+	if m.removedevaluations == nil {
+		m.removedevaluations = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.evaluations, ids[i])
+		m.removedevaluations[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedEvaluations returns the removed IDs of the "evaluations" edge to the Evaluation entity.
+func (m *EmployeeMutation) RemovedEvaluationsIDs() (ids []uuid.UUID) {
+	for id := range m.removedevaluations {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// EvaluationsIDs returns the "evaluations" edge IDs in the mutation.
+func (m *EmployeeMutation) EvaluationsIDs() (ids []uuid.UUID) {
+	for id := range m.evaluations {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetEvaluations resets all changes to the "evaluations" edge.
+func (m *EmployeeMutation) ResetEvaluations() {
+	m.evaluations = nil
+	m.clearedevaluations = false
+	m.removedevaluations = nil
+}
+
+// AddNineBoxMatrixIDs adds the "nine_box_matrices" edge to the NineBoxMatrix entity by ids.
+func (m *EmployeeMutation) AddNineBoxMatrixIDs(ids ...uuid.UUID) {
+	if m.nine_box_matrices == nil {
+		m.nine_box_matrices = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.nine_box_matrices[ids[i]] = struct{}{}
+	}
+}
+
+// ClearNineBoxMatrices clears the "nine_box_matrices" edge to the NineBoxMatrix entity.
+func (m *EmployeeMutation) ClearNineBoxMatrices() {
+	m.clearednine_box_matrices = true
+}
+
+// NineBoxMatricesCleared reports if the "nine_box_matrices" edge to the NineBoxMatrix entity was cleared.
+func (m *EmployeeMutation) NineBoxMatricesCleared() bool {
+	return m.clearednine_box_matrices
+}
+
+// RemoveNineBoxMatrixIDs removes the "nine_box_matrices" edge to the NineBoxMatrix entity by IDs.
+func (m *EmployeeMutation) RemoveNineBoxMatrixIDs(ids ...uuid.UUID) {
+	if m.removednine_box_matrices == nil {
+		m.removednine_box_matrices = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.nine_box_matrices, ids[i])
+		m.removednine_box_matrices[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedNineBoxMatrices returns the removed IDs of the "nine_box_matrices" edge to the NineBoxMatrix entity.
+func (m *EmployeeMutation) RemovedNineBoxMatricesIDs() (ids []uuid.UUID) {
+	for id := range m.removednine_box_matrices {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// NineBoxMatricesIDs returns the "nine_box_matrices" edge IDs in the mutation.
+func (m *EmployeeMutation) NineBoxMatricesIDs() (ids []uuid.UUID) {
+	for id := range m.nine_box_matrices {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetNineBoxMatrices resets all changes to the "nine_box_matrices" edge.
+func (m *EmployeeMutation) ResetNineBoxMatrices() {
+	m.nine_box_matrices = nil
+	m.clearednine_box_matrices = false
+	m.removednine_box_matrices = nil
+}
+
+// AddNineBoxEntryIDs adds the "nine_box_entries" edge to the NineBoxEntry entity by ids.
+func (m *EmployeeMutation) AddNineBoxEntryIDs(ids ...uuid.UUID) {
+	if m.nine_box_entries == nil {
+		m.nine_box_entries = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.nine_box_entries[ids[i]] = struct{}{}
+	}
+}
+
+// ClearNineBoxEntries clears the "nine_box_entries" edge to the NineBoxEntry entity.
+func (m *EmployeeMutation) ClearNineBoxEntries() {
+	m.clearednine_box_entries = true
+}
+
+// NineBoxEntriesCleared reports if the "nine_box_entries" edge to the NineBoxEntry entity was cleared.
+func (m *EmployeeMutation) NineBoxEntriesCleared() bool {
+	return m.clearednine_box_entries
+}
+
+// RemoveNineBoxEntryIDs removes the "nine_box_entries" edge to the NineBoxEntry entity by IDs.
+func (m *EmployeeMutation) RemoveNineBoxEntryIDs(ids ...uuid.UUID) {
+	if m.removednine_box_entries == nil {
+		m.removednine_box_entries = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.nine_box_entries, ids[i])
+		m.removednine_box_entries[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedNineBoxEntries returns the removed IDs of the "nine_box_entries" edge to the NineBoxEntry entity.
+func (m *EmployeeMutation) RemovedNineBoxEntriesIDs() (ids []uuid.UUID) {
+	for id := range m.removednine_box_entries {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// NineBoxEntriesIDs returns the "nine_box_entries" edge IDs in the mutation.
+func (m *EmployeeMutation) NineBoxEntriesIDs() (ids []uuid.UUID) {
+	for id := range m.nine_box_entries {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetNineBoxEntries resets all changes to the "nine_box_entries" edge.
+func (m *EmployeeMutation) ResetNineBoxEntries() {
+	m.nine_box_entries = nil
+	m.clearednine_box_entries = false
+	m.removednine_box_entries = nil
+}
+
 // Where appends a list predicates to the EmployeeMutation builder.
 func (m *EmployeeMutation) Where(ps ...predicate.Employee) {
 	m.predicates = append(m.predicates, ps...)
@@ -3666,7 +4307,7 @@ func (m *EmployeeMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *EmployeeMutation) AddedEdges() []string {
-	edges := make([]string, 0, 5)
+	edges := make([]string, 0, 10)
 	if m.org_node != nil {
 		edges = append(edges, employee.EdgeOrgNode)
 	}
@@ -3681,6 +4322,21 @@ func (m *EmployeeMutation) AddedEdges() []string {
 	}
 	if m.evaluator_scopes != nil {
 		edges = append(edges, employee.EdgeEvaluatorScopes)
+	}
+	if m.goal_categories != nil {
+		edges = append(edges, employee.EdgeGoalCategories)
+	}
+	if m.goal_assignments != nil {
+		edges = append(edges, employee.EdgeGoalAssignments)
+	}
+	if m.evaluations != nil {
+		edges = append(edges, employee.EdgeEvaluations)
+	}
+	if m.nine_box_matrices != nil {
+		edges = append(edges, employee.EdgeNineBoxMatrices)
+	}
+	if m.nine_box_entries != nil {
+		edges = append(edges, employee.EdgeNineBoxEntries)
 	}
 	return edges
 }
@@ -3713,18 +4369,63 @@ func (m *EmployeeMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case employee.EdgeGoalCategories:
+		ids := make([]ent.Value, 0, len(m.goal_categories))
+		for id := range m.goal_categories {
+			ids = append(ids, id)
+		}
+		return ids
+	case employee.EdgeGoalAssignments:
+		ids := make([]ent.Value, 0, len(m.goal_assignments))
+		for id := range m.goal_assignments {
+			ids = append(ids, id)
+		}
+		return ids
+	case employee.EdgeEvaluations:
+		ids := make([]ent.Value, 0, len(m.evaluations))
+		for id := range m.evaluations {
+			ids = append(ids, id)
+		}
+		return ids
+	case employee.EdgeNineBoxMatrices:
+		ids := make([]ent.Value, 0, len(m.nine_box_matrices))
+		for id := range m.nine_box_matrices {
+			ids = append(ids, id)
+		}
+		return ids
+	case employee.EdgeNineBoxEntries:
+		ids := make([]ent.Value, 0, len(m.nine_box_entries))
+		for id := range m.nine_box_entries {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *EmployeeMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 5)
+	edges := make([]string, 0, 10)
 	if m.removeddirect_reports != nil {
 		edges = append(edges, employee.EdgeDirectReports)
 	}
 	if m.removedevaluator_scopes != nil {
 		edges = append(edges, employee.EdgeEvaluatorScopes)
+	}
+	if m.removedgoal_categories != nil {
+		edges = append(edges, employee.EdgeGoalCategories)
+	}
+	if m.removedgoal_assignments != nil {
+		edges = append(edges, employee.EdgeGoalAssignments)
+	}
+	if m.removedevaluations != nil {
+		edges = append(edges, employee.EdgeEvaluations)
+	}
+	if m.removednine_box_matrices != nil {
+		edges = append(edges, employee.EdgeNineBoxMatrices)
+	}
+	if m.removednine_box_entries != nil {
+		edges = append(edges, employee.EdgeNineBoxEntries)
 	}
 	return edges
 }
@@ -3745,13 +4446,43 @@ func (m *EmployeeMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case employee.EdgeGoalCategories:
+		ids := make([]ent.Value, 0, len(m.removedgoal_categories))
+		for id := range m.removedgoal_categories {
+			ids = append(ids, id)
+		}
+		return ids
+	case employee.EdgeGoalAssignments:
+		ids := make([]ent.Value, 0, len(m.removedgoal_assignments))
+		for id := range m.removedgoal_assignments {
+			ids = append(ids, id)
+		}
+		return ids
+	case employee.EdgeEvaluations:
+		ids := make([]ent.Value, 0, len(m.removedevaluations))
+		for id := range m.removedevaluations {
+			ids = append(ids, id)
+		}
+		return ids
+	case employee.EdgeNineBoxMatrices:
+		ids := make([]ent.Value, 0, len(m.removednine_box_matrices))
+		for id := range m.removednine_box_matrices {
+			ids = append(ids, id)
+		}
+		return ids
+	case employee.EdgeNineBoxEntries:
+		ids := make([]ent.Value, 0, len(m.removednine_box_entries))
+		for id := range m.removednine_box_entries {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *EmployeeMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 5)
+	edges := make([]string, 0, 10)
 	if m.clearedorg_node {
 		edges = append(edges, employee.EdgeOrgNode)
 	}
@@ -3766,6 +4497,21 @@ func (m *EmployeeMutation) ClearedEdges() []string {
 	}
 	if m.clearedevaluator_scopes {
 		edges = append(edges, employee.EdgeEvaluatorScopes)
+	}
+	if m.clearedgoal_categories {
+		edges = append(edges, employee.EdgeGoalCategories)
+	}
+	if m.clearedgoal_assignments {
+		edges = append(edges, employee.EdgeGoalAssignments)
+	}
+	if m.clearedevaluations {
+		edges = append(edges, employee.EdgeEvaluations)
+	}
+	if m.clearednine_box_matrices {
+		edges = append(edges, employee.EdgeNineBoxMatrices)
+	}
+	if m.clearednine_box_entries {
+		edges = append(edges, employee.EdgeNineBoxEntries)
 	}
 	return edges
 }
@@ -3784,6 +4530,16 @@ func (m *EmployeeMutation) EdgeCleared(name string) bool {
 		return m.clearedprofile
 	case employee.EdgeEvaluatorScopes:
 		return m.clearedevaluator_scopes
+	case employee.EdgeGoalCategories:
+		return m.clearedgoal_categories
+	case employee.EdgeGoalAssignments:
+		return m.clearedgoal_assignments
+	case employee.EdgeEvaluations:
+		return m.clearedevaluations
+	case employee.EdgeNineBoxMatrices:
+		return m.clearednine_box_matrices
+	case employee.EdgeNineBoxEntries:
+		return m.clearednine_box_entries
 	}
 	return false
 }
@@ -3824,28 +4580,2813 @@ func (m *EmployeeMutation) ResetEdge(name string) error {
 	case employee.EdgeEvaluatorScopes:
 		m.ResetEvaluatorScopes()
 		return nil
+	case employee.EdgeGoalCategories:
+		m.ResetGoalCategories()
+		return nil
+	case employee.EdgeGoalAssignments:
+		m.ResetGoalAssignments()
+		return nil
+	case employee.EdgeEvaluations:
+		m.ResetEvaluations()
+		return nil
+	case employee.EdgeNineBoxMatrices:
+		m.ResetNineBoxMatrices()
+		return nil
+	case employee.EdgeNineBoxEntries:
+		m.ResetNineBoxEntries()
+		return nil
 	}
 	return fmt.Errorf("unknown Employee edge %s", name)
+}
+
+// EvaluationMutation represents an operation that mutates the Evaluation nodes in the graph.
+type EvaluationMutation struct {
+	config
+	op                           Op
+	typ                          string
+	id                           *uuid.UUID
+	created_at                   *time.Time
+	updated_at                   *time.Time
+	created_by                   *uuid.UUID
+	updated_by                   *uuid.UUID
+	phase                        *evaluation.Phase
+	state                        *evaluation.State
+	self_evaluation_completed_at *time.Time
+	rh_evaluation_completed_at   *time.Time
+	clearedFields                map[string]struct{}
+	employee                     *uuid.UUID
+	clearedemployee              bool
+	cycle                        *uuid.UUID
+	clearedcycle                 bool
+	competency_ratings           map[uuid.UUID]struct{}
+	removedcompetency_ratings    map[uuid.UUID]struct{}
+	clearedcompetency_ratings    bool
+	goal_ratings                 map[uuid.UUID]struct{}
+	removedgoal_ratings          map[uuid.UUID]struct{}
+	clearedgoal_ratings          bool
+	done                         bool
+	oldValue                     func(context.Context) (*Evaluation, error)
+	predicates                   []predicate.Evaluation
+}
+
+var _ ent.Mutation = (*EvaluationMutation)(nil)
+
+// evaluationOption allows management of the mutation configuration using functional options.
+type evaluationOption func(*EvaluationMutation)
+
+// newEvaluationMutation creates new mutation for the Evaluation entity.
+func newEvaluationMutation(c config, op Op, opts ...evaluationOption) *EvaluationMutation {
+	m := &EvaluationMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeEvaluation,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withEvaluationID sets the ID field of the mutation.
+func withEvaluationID(id uuid.UUID) evaluationOption {
+	return func(m *EvaluationMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *Evaluation
+		)
+		m.oldValue = func(ctx context.Context) (*Evaluation, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().Evaluation.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withEvaluation sets the old Evaluation of the mutation.
+func withEvaluation(node *Evaluation) evaluationOption {
+	return func(m *EvaluationMutation) {
+		m.oldValue = func(context.Context) (*Evaluation, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m EvaluationMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m EvaluationMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("internal: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of Evaluation entities.
+func (m *EvaluationMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *EvaluationMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *EvaluationMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().Evaluation.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *EvaluationMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *EvaluationMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the Evaluation entity.
+// If the Evaluation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EvaluationMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *EvaluationMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *EvaluationMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *EvaluationMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the Evaluation entity.
+// If the Evaluation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EvaluationMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *EvaluationMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetCreatedBy sets the "created_by" field.
+func (m *EvaluationMutation) SetCreatedBy(u uuid.UUID) {
+	m.created_by = &u
+}
+
+// CreatedBy returns the value of the "created_by" field in the mutation.
+func (m *EvaluationMutation) CreatedBy() (r uuid.UUID, exists bool) {
+	v := m.created_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedBy returns the old "created_by" field's value of the Evaluation entity.
+// If the Evaluation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EvaluationMutation) OldCreatedBy(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedBy is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedBy requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedBy: %w", err)
+	}
+	return oldValue.CreatedBy, nil
+}
+
+// ResetCreatedBy resets all changes to the "created_by" field.
+func (m *EvaluationMutation) ResetCreatedBy() {
+	m.created_by = nil
+}
+
+// SetUpdatedBy sets the "updated_by" field.
+func (m *EvaluationMutation) SetUpdatedBy(u uuid.UUID) {
+	m.updated_by = &u
+}
+
+// UpdatedBy returns the value of the "updated_by" field in the mutation.
+func (m *EvaluationMutation) UpdatedBy() (r uuid.UUID, exists bool) {
+	v := m.updated_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedBy returns the old "updated_by" field's value of the Evaluation entity.
+// If the Evaluation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EvaluationMutation) OldUpdatedBy(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedBy is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedBy requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedBy: %w", err)
+	}
+	return oldValue.UpdatedBy, nil
+}
+
+// ResetUpdatedBy resets all changes to the "updated_by" field.
+func (m *EvaluationMutation) ResetUpdatedBy() {
+	m.updated_by = nil
+}
+
+// SetPhase sets the "phase" field.
+func (m *EvaluationMutation) SetPhase(e evaluation.Phase) {
+	m.phase = &e
+}
+
+// Phase returns the value of the "phase" field in the mutation.
+func (m *EvaluationMutation) Phase() (r evaluation.Phase, exists bool) {
+	v := m.phase
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPhase returns the old "phase" field's value of the Evaluation entity.
+// If the Evaluation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EvaluationMutation) OldPhase(ctx context.Context) (v evaluation.Phase, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPhase is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPhase requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPhase: %w", err)
+	}
+	return oldValue.Phase, nil
+}
+
+// ResetPhase resets all changes to the "phase" field.
+func (m *EvaluationMutation) ResetPhase() {
+	m.phase = nil
+}
+
+// SetState sets the "state" field.
+func (m *EvaluationMutation) SetState(e evaluation.State) {
+	m.state = &e
+}
+
+// State returns the value of the "state" field in the mutation.
+func (m *EvaluationMutation) State() (r evaluation.State, exists bool) {
+	v := m.state
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldState returns the old "state" field's value of the Evaluation entity.
+// If the Evaluation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EvaluationMutation) OldState(ctx context.Context) (v evaluation.State, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldState is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldState requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldState: %w", err)
+	}
+	return oldValue.State, nil
+}
+
+// ResetState resets all changes to the "state" field.
+func (m *EvaluationMutation) ResetState() {
+	m.state = nil
+}
+
+// SetSelfEvaluationCompletedAt sets the "self_evaluation_completed_at" field.
+func (m *EvaluationMutation) SetSelfEvaluationCompletedAt(t time.Time) {
+	m.self_evaluation_completed_at = &t
+}
+
+// SelfEvaluationCompletedAt returns the value of the "self_evaluation_completed_at" field in the mutation.
+func (m *EvaluationMutation) SelfEvaluationCompletedAt() (r time.Time, exists bool) {
+	v := m.self_evaluation_completed_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSelfEvaluationCompletedAt returns the old "self_evaluation_completed_at" field's value of the Evaluation entity.
+// If the Evaluation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EvaluationMutation) OldSelfEvaluationCompletedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSelfEvaluationCompletedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSelfEvaluationCompletedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSelfEvaluationCompletedAt: %w", err)
+	}
+	return oldValue.SelfEvaluationCompletedAt, nil
+}
+
+// ClearSelfEvaluationCompletedAt clears the value of the "self_evaluation_completed_at" field.
+func (m *EvaluationMutation) ClearSelfEvaluationCompletedAt() {
+	m.self_evaluation_completed_at = nil
+	m.clearedFields[evaluation.FieldSelfEvaluationCompletedAt] = struct{}{}
+}
+
+// SelfEvaluationCompletedAtCleared returns if the "self_evaluation_completed_at" field was cleared in this mutation.
+func (m *EvaluationMutation) SelfEvaluationCompletedAtCleared() bool {
+	_, ok := m.clearedFields[evaluation.FieldSelfEvaluationCompletedAt]
+	return ok
+}
+
+// ResetSelfEvaluationCompletedAt resets all changes to the "self_evaluation_completed_at" field.
+func (m *EvaluationMutation) ResetSelfEvaluationCompletedAt() {
+	m.self_evaluation_completed_at = nil
+	delete(m.clearedFields, evaluation.FieldSelfEvaluationCompletedAt)
+}
+
+// SetRhEvaluationCompletedAt sets the "rh_evaluation_completed_at" field.
+func (m *EvaluationMutation) SetRhEvaluationCompletedAt(t time.Time) {
+	m.rh_evaluation_completed_at = &t
+}
+
+// RhEvaluationCompletedAt returns the value of the "rh_evaluation_completed_at" field in the mutation.
+func (m *EvaluationMutation) RhEvaluationCompletedAt() (r time.Time, exists bool) {
+	v := m.rh_evaluation_completed_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRhEvaluationCompletedAt returns the old "rh_evaluation_completed_at" field's value of the Evaluation entity.
+// If the Evaluation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EvaluationMutation) OldRhEvaluationCompletedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRhEvaluationCompletedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRhEvaluationCompletedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRhEvaluationCompletedAt: %w", err)
+	}
+	return oldValue.RhEvaluationCompletedAt, nil
+}
+
+// ClearRhEvaluationCompletedAt clears the value of the "rh_evaluation_completed_at" field.
+func (m *EvaluationMutation) ClearRhEvaluationCompletedAt() {
+	m.rh_evaluation_completed_at = nil
+	m.clearedFields[evaluation.FieldRhEvaluationCompletedAt] = struct{}{}
+}
+
+// RhEvaluationCompletedAtCleared returns if the "rh_evaluation_completed_at" field was cleared in this mutation.
+func (m *EvaluationMutation) RhEvaluationCompletedAtCleared() bool {
+	_, ok := m.clearedFields[evaluation.FieldRhEvaluationCompletedAt]
+	return ok
+}
+
+// ResetRhEvaluationCompletedAt resets all changes to the "rh_evaluation_completed_at" field.
+func (m *EvaluationMutation) ResetRhEvaluationCompletedAt() {
+	m.rh_evaluation_completed_at = nil
+	delete(m.clearedFields, evaluation.FieldRhEvaluationCompletedAt)
+}
+
+// SetEmployeeID sets the "employee_id" field.
+func (m *EvaluationMutation) SetEmployeeID(u uuid.UUID) {
+	m.employee = &u
+}
+
+// EmployeeID returns the value of the "employee_id" field in the mutation.
+func (m *EvaluationMutation) EmployeeID() (r uuid.UUID, exists bool) {
+	v := m.employee
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEmployeeID returns the old "employee_id" field's value of the Evaluation entity.
+// If the Evaluation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EvaluationMutation) OldEmployeeID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEmployeeID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEmployeeID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEmployeeID: %w", err)
+	}
+	return oldValue.EmployeeID, nil
+}
+
+// ResetEmployeeID resets all changes to the "employee_id" field.
+func (m *EvaluationMutation) ResetEmployeeID() {
+	m.employee = nil
+}
+
+// SetCycleID sets the "cycle_id" field.
+func (m *EvaluationMutation) SetCycleID(u uuid.UUID) {
+	m.cycle = &u
+}
+
+// CycleID returns the value of the "cycle_id" field in the mutation.
+func (m *EvaluationMutation) CycleID() (r uuid.UUID, exists bool) {
+	v := m.cycle
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCycleID returns the old "cycle_id" field's value of the Evaluation entity.
+// If the Evaluation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EvaluationMutation) OldCycleID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCycleID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCycleID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCycleID: %w", err)
+	}
+	return oldValue.CycleID, nil
+}
+
+// ResetCycleID resets all changes to the "cycle_id" field.
+func (m *EvaluationMutation) ResetCycleID() {
+	m.cycle = nil
+}
+
+// ClearEmployee clears the "employee" edge to the Employee entity.
+func (m *EvaluationMutation) ClearEmployee() {
+	m.clearedemployee = true
+	m.clearedFields[evaluation.FieldEmployeeID] = struct{}{}
+}
+
+// EmployeeCleared reports if the "employee" edge to the Employee entity was cleared.
+func (m *EvaluationMutation) EmployeeCleared() bool {
+	return m.clearedemployee
+}
+
+// EmployeeIDs returns the "employee" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// EmployeeID instead. It exists only for internal usage by the builders.
+func (m *EvaluationMutation) EmployeeIDs() (ids []uuid.UUID) {
+	if id := m.employee; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetEmployee resets all changes to the "employee" edge.
+func (m *EvaluationMutation) ResetEmployee() {
+	m.employee = nil
+	m.clearedemployee = false
+}
+
+// ClearCycle clears the "cycle" edge to the Cycle entity.
+func (m *EvaluationMutation) ClearCycle() {
+	m.clearedcycle = true
+	m.clearedFields[evaluation.FieldCycleID] = struct{}{}
+}
+
+// CycleCleared reports if the "cycle" edge to the Cycle entity was cleared.
+func (m *EvaluationMutation) CycleCleared() bool {
+	return m.clearedcycle
+}
+
+// CycleIDs returns the "cycle" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// CycleID instead. It exists only for internal usage by the builders.
+func (m *EvaluationMutation) CycleIDs() (ids []uuid.UUID) {
+	if id := m.cycle; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetCycle resets all changes to the "cycle" edge.
+func (m *EvaluationMutation) ResetCycle() {
+	m.cycle = nil
+	m.clearedcycle = false
+}
+
+// AddCompetencyRatingIDs adds the "competency_ratings" edge to the EvaluationCompetency entity by ids.
+func (m *EvaluationMutation) AddCompetencyRatingIDs(ids ...uuid.UUID) {
+	if m.competency_ratings == nil {
+		m.competency_ratings = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.competency_ratings[ids[i]] = struct{}{}
+	}
+}
+
+// ClearCompetencyRatings clears the "competency_ratings" edge to the EvaluationCompetency entity.
+func (m *EvaluationMutation) ClearCompetencyRatings() {
+	m.clearedcompetency_ratings = true
+}
+
+// CompetencyRatingsCleared reports if the "competency_ratings" edge to the EvaluationCompetency entity was cleared.
+func (m *EvaluationMutation) CompetencyRatingsCleared() bool {
+	return m.clearedcompetency_ratings
+}
+
+// RemoveCompetencyRatingIDs removes the "competency_ratings" edge to the EvaluationCompetency entity by IDs.
+func (m *EvaluationMutation) RemoveCompetencyRatingIDs(ids ...uuid.UUID) {
+	if m.removedcompetency_ratings == nil {
+		m.removedcompetency_ratings = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.competency_ratings, ids[i])
+		m.removedcompetency_ratings[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedCompetencyRatings returns the removed IDs of the "competency_ratings" edge to the EvaluationCompetency entity.
+func (m *EvaluationMutation) RemovedCompetencyRatingsIDs() (ids []uuid.UUID) {
+	for id := range m.removedcompetency_ratings {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// CompetencyRatingsIDs returns the "competency_ratings" edge IDs in the mutation.
+func (m *EvaluationMutation) CompetencyRatingsIDs() (ids []uuid.UUID) {
+	for id := range m.competency_ratings {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetCompetencyRatings resets all changes to the "competency_ratings" edge.
+func (m *EvaluationMutation) ResetCompetencyRatings() {
+	m.competency_ratings = nil
+	m.clearedcompetency_ratings = false
+	m.removedcompetency_ratings = nil
+}
+
+// AddGoalRatingIDs adds the "goal_ratings" edge to the EvaluationGoal entity by ids.
+func (m *EvaluationMutation) AddGoalRatingIDs(ids ...uuid.UUID) {
+	if m.goal_ratings == nil {
+		m.goal_ratings = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.goal_ratings[ids[i]] = struct{}{}
+	}
+}
+
+// ClearGoalRatings clears the "goal_ratings" edge to the EvaluationGoal entity.
+func (m *EvaluationMutation) ClearGoalRatings() {
+	m.clearedgoal_ratings = true
+}
+
+// GoalRatingsCleared reports if the "goal_ratings" edge to the EvaluationGoal entity was cleared.
+func (m *EvaluationMutation) GoalRatingsCleared() bool {
+	return m.clearedgoal_ratings
+}
+
+// RemoveGoalRatingIDs removes the "goal_ratings" edge to the EvaluationGoal entity by IDs.
+func (m *EvaluationMutation) RemoveGoalRatingIDs(ids ...uuid.UUID) {
+	if m.removedgoal_ratings == nil {
+		m.removedgoal_ratings = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.goal_ratings, ids[i])
+		m.removedgoal_ratings[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedGoalRatings returns the removed IDs of the "goal_ratings" edge to the EvaluationGoal entity.
+func (m *EvaluationMutation) RemovedGoalRatingsIDs() (ids []uuid.UUID) {
+	for id := range m.removedgoal_ratings {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// GoalRatingsIDs returns the "goal_ratings" edge IDs in the mutation.
+func (m *EvaluationMutation) GoalRatingsIDs() (ids []uuid.UUID) {
+	for id := range m.goal_ratings {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetGoalRatings resets all changes to the "goal_ratings" edge.
+func (m *EvaluationMutation) ResetGoalRatings() {
+	m.goal_ratings = nil
+	m.clearedgoal_ratings = false
+	m.removedgoal_ratings = nil
+}
+
+// Where appends a list predicates to the EvaluationMutation builder.
+func (m *EvaluationMutation) Where(ps ...predicate.Evaluation) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the EvaluationMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *EvaluationMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.Evaluation, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *EvaluationMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *EvaluationMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (Evaluation).
+func (m *EvaluationMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *EvaluationMutation) Fields() []string {
+	fields := make([]string, 0, 10)
+	if m.created_at != nil {
+		fields = append(fields, evaluation.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, evaluation.FieldUpdatedAt)
+	}
+	if m.created_by != nil {
+		fields = append(fields, evaluation.FieldCreatedBy)
+	}
+	if m.updated_by != nil {
+		fields = append(fields, evaluation.FieldUpdatedBy)
+	}
+	if m.phase != nil {
+		fields = append(fields, evaluation.FieldPhase)
+	}
+	if m.state != nil {
+		fields = append(fields, evaluation.FieldState)
+	}
+	if m.self_evaluation_completed_at != nil {
+		fields = append(fields, evaluation.FieldSelfEvaluationCompletedAt)
+	}
+	if m.rh_evaluation_completed_at != nil {
+		fields = append(fields, evaluation.FieldRhEvaluationCompletedAt)
+	}
+	if m.employee != nil {
+		fields = append(fields, evaluation.FieldEmployeeID)
+	}
+	if m.cycle != nil {
+		fields = append(fields, evaluation.FieldCycleID)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *EvaluationMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case evaluation.FieldCreatedAt:
+		return m.CreatedAt()
+	case evaluation.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case evaluation.FieldCreatedBy:
+		return m.CreatedBy()
+	case evaluation.FieldUpdatedBy:
+		return m.UpdatedBy()
+	case evaluation.FieldPhase:
+		return m.Phase()
+	case evaluation.FieldState:
+		return m.State()
+	case evaluation.FieldSelfEvaluationCompletedAt:
+		return m.SelfEvaluationCompletedAt()
+	case evaluation.FieldRhEvaluationCompletedAt:
+		return m.RhEvaluationCompletedAt()
+	case evaluation.FieldEmployeeID:
+		return m.EmployeeID()
+	case evaluation.FieldCycleID:
+		return m.CycleID()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *EvaluationMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case evaluation.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case evaluation.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case evaluation.FieldCreatedBy:
+		return m.OldCreatedBy(ctx)
+	case evaluation.FieldUpdatedBy:
+		return m.OldUpdatedBy(ctx)
+	case evaluation.FieldPhase:
+		return m.OldPhase(ctx)
+	case evaluation.FieldState:
+		return m.OldState(ctx)
+	case evaluation.FieldSelfEvaluationCompletedAt:
+		return m.OldSelfEvaluationCompletedAt(ctx)
+	case evaluation.FieldRhEvaluationCompletedAt:
+		return m.OldRhEvaluationCompletedAt(ctx)
+	case evaluation.FieldEmployeeID:
+		return m.OldEmployeeID(ctx)
+	case evaluation.FieldCycleID:
+		return m.OldCycleID(ctx)
+	}
+	return nil, fmt.Errorf("unknown Evaluation field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *EvaluationMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case evaluation.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case evaluation.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case evaluation.FieldCreatedBy:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedBy(v)
+		return nil
+	case evaluation.FieldUpdatedBy:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedBy(v)
+		return nil
+	case evaluation.FieldPhase:
+		v, ok := value.(evaluation.Phase)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPhase(v)
+		return nil
+	case evaluation.FieldState:
+		v, ok := value.(evaluation.State)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetState(v)
+		return nil
+	case evaluation.FieldSelfEvaluationCompletedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSelfEvaluationCompletedAt(v)
+		return nil
+	case evaluation.FieldRhEvaluationCompletedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRhEvaluationCompletedAt(v)
+		return nil
+	case evaluation.FieldEmployeeID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEmployeeID(v)
+		return nil
+	case evaluation.FieldCycleID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCycleID(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Evaluation field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *EvaluationMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *EvaluationMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *EvaluationMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown Evaluation numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *EvaluationMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(evaluation.FieldSelfEvaluationCompletedAt) {
+		fields = append(fields, evaluation.FieldSelfEvaluationCompletedAt)
+	}
+	if m.FieldCleared(evaluation.FieldRhEvaluationCompletedAt) {
+		fields = append(fields, evaluation.FieldRhEvaluationCompletedAt)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *EvaluationMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *EvaluationMutation) ClearField(name string) error {
+	switch name {
+	case evaluation.FieldSelfEvaluationCompletedAt:
+		m.ClearSelfEvaluationCompletedAt()
+		return nil
+	case evaluation.FieldRhEvaluationCompletedAt:
+		m.ClearRhEvaluationCompletedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown Evaluation nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *EvaluationMutation) ResetField(name string) error {
+	switch name {
+	case evaluation.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case evaluation.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case evaluation.FieldCreatedBy:
+		m.ResetCreatedBy()
+		return nil
+	case evaluation.FieldUpdatedBy:
+		m.ResetUpdatedBy()
+		return nil
+	case evaluation.FieldPhase:
+		m.ResetPhase()
+		return nil
+	case evaluation.FieldState:
+		m.ResetState()
+		return nil
+	case evaluation.FieldSelfEvaluationCompletedAt:
+		m.ResetSelfEvaluationCompletedAt()
+		return nil
+	case evaluation.FieldRhEvaluationCompletedAt:
+		m.ResetRhEvaluationCompletedAt()
+		return nil
+	case evaluation.FieldEmployeeID:
+		m.ResetEmployeeID()
+		return nil
+	case evaluation.FieldCycleID:
+		m.ResetCycleID()
+		return nil
+	}
+	return fmt.Errorf("unknown Evaluation field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *EvaluationMutation) AddedEdges() []string {
+	edges := make([]string, 0, 4)
+	if m.employee != nil {
+		edges = append(edges, evaluation.EdgeEmployee)
+	}
+	if m.cycle != nil {
+		edges = append(edges, evaluation.EdgeCycle)
+	}
+	if m.competency_ratings != nil {
+		edges = append(edges, evaluation.EdgeCompetencyRatings)
+	}
+	if m.goal_ratings != nil {
+		edges = append(edges, evaluation.EdgeGoalRatings)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *EvaluationMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case evaluation.EdgeEmployee:
+		if id := m.employee; id != nil {
+			return []ent.Value{*id}
+		}
+	case evaluation.EdgeCycle:
+		if id := m.cycle; id != nil {
+			return []ent.Value{*id}
+		}
+	case evaluation.EdgeCompetencyRatings:
+		ids := make([]ent.Value, 0, len(m.competency_ratings))
+		for id := range m.competency_ratings {
+			ids = append(ids, id)
+		}
+		return ids
+	case evaluation.EdgeGoalRatings:
+		ids := make([]ent.Value, 0, len(m.goal_ratings))
+		for id := range m.goal_ratings {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *EvaluationMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 4)
+	if m.removedcompetency_ratings != nil {
+		edges = append(edges, evaluation.EdgeCompetencyRatings)
+	}
+	if m.removedgoal_ratings != nil {
+		edges = append(edges, evaluation.EdgeGoalRatings)
+	}
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *EvaluationMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case evaluation.EdgeCompetencyRatings:
+		ids := make([]ent.Value, 0, len(m.removedcompetency_ratings))
+		for id := range m.removedcompetency_ratings {
+			ids = append(ids, id)
+		}
+		return ids
+	case evaluation.EdgeGoalRatings:
+		ids := make([]ent.Value, 0, len(m.removedgoal_ratings))
+		for id := range m.removedgoal_ratings {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *EvaluationMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 4)
+	if m.clearedemployee {
+		edges = append(edges, evaluation.EdgeEmployee)
+	}
+	if m.clearedcycle {
+		edges = append(edges, evaluation.EdgeCycle)
+	}
+	if m.clearedcompetency_ratings {
+		edges = append(edges, evaluation.EdgeCompetencyRatings)
+	}
+	if m.clearedgoal_ratings {
+		edges = append(edges, evaluation.EdgeGoalRatings)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *EvaluationMutation) EdgeCleared(name string) bool {
+	switch name {
+	case evaluation.EdgeEmployee:
+		return m.clearedemployee
+	case evaluation.EdgeCycle:
+		return m.clearedcycle
+	case evaluation.EdgeCompetencyRatings:
+		return m.clearedcompetency_ratings
+	case evaluation.EdgeGoalRatings:
+		return m.clearedgoal_ratings
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *EvaluationMutation) ClearEdge(name string) error {
+	switch name {
+	case evaluation.EdgeEmployee:
+		m.ClearEmployee()
+		return nil
+	case evaluation.EdgeCycle:
+		m.ClearCycle()
+		return nil
+	}
+	return fmt.Errorf("unknown Evaluation unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *EvaluationMutation) ResetEdge(name string) error {
+	switch name {
+	case evaluation.EdgeEmployee:
+		m.ResetEmployee()
+		return nil
+	case evaluation.EdgeCycle:
+		m.ResetCycle()
+		return nil
+	case evaluation.EdgeCompetencyRatings:
+		m.ResetCompetencyRatings()
+		return nil
+	case evaluation.EdgeGoalRatings:
+		m.ResetGoalRatings()
+		return nil
+	}
+	return fmt.Errorf("unknown Evaluation edge %s", name)
+}
+
+// EvaluationCompetencyMutation represents an operation that mutates the EvaluationCompetency nodes in the graph.
+type EvaluationCompetencyMutation struct {
+	config
+	op                Op
+	typ               string
+	id                *uuid.UUID
+	created_at        *time.Time
+	updated_at        *time.Time
+	rating            *int
+	addrating         *int
+	comments          *string
+	clearedFields     map[string]struct{}
+	evaluation        *uuid.UUID
+	clearedevaluation bool
+	competency        *uuid.UUID
+	clearedcompetency bool
+	profile           *uuid.UUID
+	clearedprofile    bool
+	done              bool
+	oldValue          func(context.Context) (*EvaluationCompetency, error)
+	predicates        []predicate.EvaluationCompetency
+}
+
+var _ ent.Mutation = (*EvaluationCompetencyMutation)(nil)
+
+// evaluationcompetencyOption allows management of the mutation configuration using functional options.
+type evaluationcompetencyOption func(*EvaluationCompetencyMutation)
+
+// newEvaluationCompetencyMutation creates new mutation for the EvaluationCompetency entity.
+func newEvaluationCompetencyMutation(c config, op Op, opts ...evaluationcompetencyOption) *EvaluationCompetencyMutation {
+	m := &EvaluationCompetencyMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeEvaluationCompetency,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withEvaluationCompetencyID sets the ID field of the mutation.
+func withEvaluationCompetencyID(id uuid.UUID) evaluationcompetencyOption {
+	return func(m *EvaluationCompetencyMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *EvaluationCompetency
+		)
+		m.oldValue = func(ctx context.Context) (*EvaluationCompetency, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().EvaluationCompetency.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withEvaluationCompetency sets the old EvaluationCompetency of the mutation.
+func withEvaluationCompetency(node *EvaluationCompetency) evaluationcompetencyOption {
+	return func(m *EvaluationCompetencyMutation) {
+		m.oldValue = func(context.Context) (*EvaluationCompetency, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m EvaluationCompetencyMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m EvaluationCompetencyMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("internal: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of EvaluationCompetency entities.
+func (m *EvaluationCompetencyMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *EvaluationCompetencyMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *EvaluationCompetencyMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().EvaluationCompetency.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *EvaluationCompetencyMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *EvaluationCompetencyMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the EvaluationCompetency entity.
+// If the EvaluationCompetency object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EvaluationCompetencyMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *EvaluationCompetencyMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *EvaluationCompetencyMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *EvaluationCompetencyMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the EvaluationCompetency entity.
+// If the EvaluationCompetency object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EvaluationCompetencyMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *EvaluationCompetencyMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetRating sets the "rating" field.
+func (m *EvaluationCompetencyMutation) SetRating(i int) {
+	m.rating = &i
+	m.addrating = nil
+}
+
+// Rating returns the value of the "rating" field in the mutation.
+func (m *EvaluationCompetencyMutation) Rating() (r int, exists bool) {
+	v := m.rating
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRating returns the old "rating" field's value of the EvaluationCompetency entity.
+// If the EvaluationCompetency object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EvaluationCompetencyMutation) OldRating(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRating is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRating requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRating: %w", err)
+	}
+	return oldValue.Rating, nil
+}
+
+// AddRating adds i to the "rating" field.
+func (m *EvaluationCompetencyMutation) AddRating(i int) {
+	if m.addrating != nil {
+		*m.addrating += i
+	} else {
+		m.addrating = &i
+	}
+}
+
+// AddedRating returns the value that was added to the "rating" field in this mutation.
+func (m *EvaluationCompetencyMutation) AddedRating() (r int, exists bool) {
+	v := m.addrating
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetRating resets all changes to the "rating" field.
+func (m *EvaluationCompetencyMutation) ResetRating() {
+	m.rating = nil
+	m.addrating = nil
+}
+
+// SetComments sets the "comments" field.
+func (m *EvaluationCompetencyMutation) SetComments(s string) {
+	m.comments = &s
+}
+
+// Comments returns the value of the "comments" field in the mutation.
+func (m *EvaluationCompetencyMutation) Comments() (r string, exists bool) {
+	v := m.comments
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldComments returns the old "comments" field's value of the EvaluationCompetency entity.
+// If the EvaluationCompetency object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EvaluationCompetencyMutation) OldComments(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldComments is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldComments requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldComments: %w", err)
+	}
+	return oldValue.Comments, nil
+}
+
+// ClearComments clears the value of the "comments" field.
+func (m *EvaluationCompetencyMutation) ClearComments() {
+	m.comments = nil
+	m.clearedFields[evaluationcompetency.FieldComments] = struct{}{}
+}
+
+// CommentsCleared returns if the "comments" field was cleared in this mutation.
+func (m *EvaluationCompetencyMutation) CommentsCleared() bool {
+	_, ok := m.clearedFields[evaluationcompetency.FieldComments]
+	return ok
+}
+
+// ResetComments resets all changes to the "comments" field.
+func (m *EvaluationCompetencyMutation) ResetComments() {
+	m.comments = nil
+	delete(m.clearedFields, evaluationcompetency.FieldComments)
+}
+
+// SetEvaluationID sets the "evaluation_id" field.
+func (m *EvaluationCompetencyMutation) SetEvaluationID(u uuid.UUID) {
+	m.evaluation = &u
+}
+
+// EvaluationID returns the value of the "evaluation_id" field in the mutation.
+func (m *EvaluationCompetencyMutation) EvaluationID() (r uuid.UUID, exists bool) {
+	v := m.evaluation
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEvaluationID returns the old "evaluation_id" field's value of the EvaluationCompetency entity.
+// If the EvaluationCompetency object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EvaluationCompetencyMutation) OldEvaluationID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEvaluationID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEvaluationID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEvaluationID: %w", err)
+	}
+	return oldValue.EvaluationID, nil
+}
+
+// ResetEvaluationID resets all changes to the "evaluation_id" field.
+func (m *EvaluationCompetencyMutation) ResetEvaluationID() {
+	m.evaluation = nil
+}
+
+// SetCompetencyID sets the "competency_id" field.
+func (m *EvaluationCompetencyMutation) SetCompetencyID(u uuid.UUID) {
+	m.competency = &u
+}
+
+// CompetencyID returns the value of the "competency_id" field in the mutation.
+func (m *EvaluationCompetencyMutation) CompetencyID() (r uuid.UUID, exists bool) {
+	v := m.competency
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCompetencyID returns the old "competency_id" field's value of the EvaluationCompetency entity.
+// If the EvaluationCompetency object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EvaluationCompetencyMutation) OldCompetencyID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCompetencyID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCompetencyID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCompetencyID: %w", err)
+	}
+	return oldValue.CompetencyID, nil
+}
+
+// ResetCompetencyID resets all changes to the "competency_id" field.
+func (m *EvaluationCompetencyMutation) ResetCompetencyID() {
+	m.competency = nil
+}
+
+// SetProfileID sets the "profile_id" field.
+func (m *EvaluationCompetencyMutation) SetProfileID(u uuid.UUID) {
+	m.profile = &u
+}
+
+// ProfileID returns the value of the "profile_id" field in the mutation.
+func (m *EvaluationCompetencyMutation) ProfileID() (r uuid.UUID, exists bool) {
+	v := m.profile
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldProfileID returns the old "profile_id" field's value of the EvaluationCompetency entity.
+// If the EvaluationCompetency object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EvaluationCompetencyMutation) OldProfileID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldProfileID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldProfileID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldProfileID: %w", err)
+	}
+	return oldValue.ProfileID, nil
+}
+
+// ResetProfileID resets all changes to the "profile_id" field.
+func (m *EvaluationCompetencyMutation) ResetProfileID() {
+	m.profile = nil
+}
+
+// ClearEvaluation clears the "evaluation" edge to the Evaluation entity.
+func (m *EvaluationCompetencyMutation) ClearEvaluation() {
+	m.clearedevaluation = true
+	m.clearedFields[evaluationcompetency.FieldEvaluationID] = struct{}{}
+}
+
+// EvaluationCleared reports if the "evaluation" edge to the Evaluation entity was cleared.
+func (m *EvaluationCompetencyMutation) EvaluationCleared() bool {
+	return m.clearedevaluation
+}
+
+// EvaluationIDs returns the "evaluation" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// EvaluationID instead. It exists only for internal usage by the builders.
+func (m *EvaluationCompetencyMutation) EvaluationIDs() (ids []uuid.UUID) {
+	if id := m.evaluation; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetEvaluation resets all changes to the "evaluation" edge.
+func (m *EvaluationCompetencyMutation) ResetEvaluation() {
+	m.evaluation = nil
+	m.clearedevaluation = false
+}
+
+// ClearCompetency clears the "competency" edge to the Competency entity.
+func (m *EvaluationCompetencyMutation) ClearCompetency() {
+	m.clearedcompetency = true
+	m.clearedFields[evaluationcompetency.FieldCompetencyID] = struct{}{}
+}
+
+// CompetencyCleared reports if the "competency" edge to the Competency entity was cleared.
+func (m *EvaluationCompetencyMutation) CompetencyCleared() bool {
+	return m.clearedcompetency
+}
+
+// CompetencyIDs returns the "competency" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// CompetencyID instead. It exists only for internal usage by the builders.
+func (m *EvaluationCompetencyMutation) CompetencyIDs() (ids []uuid.UUID) {
+	if id := m.competency; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetCompetency resets all changes to the "competency" edge.
+func (m *EvaluationCompetencyMutation) ResetCompetency() {
+	m.competency = nil
+	m.clearedcompetency = false
+}
+
+// ClearProfile clears the "profile" edge to the EvaluationProfile entity.
+func (m *EvaluationCompetencyMutation) ClearProfile() {
+	m.clearedprofile = true
+	m.clearedFields[evaluationcompetency.FieldProfileID] = struct{}{}
+}
+
+// ProfileCleared reports if the "profile" edge to the EvaluationProfile entity was cleared.
+func (m *EvaluationCompetencyMutation) ProfileCleared() bool {
+	return m.clearedprofile
+}
+
+// ProfileIDs returns the "profile" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ProfileID instead. It exists only for internal usage by the builders.
+func (m *EvaluationCompetencyMutation) ProfileIDs() (ids []uuid.UUID) {
+	if id := m.profile; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetProfile resets all changes to the "profile" edge.
+func (m *EvaluationCompetencyMutation) ResetProfile() {
+	m.profile = nil
+	m.clearedprofile = false
+}
+
+// Where appends a list predicates to the EvaluationCompetencyMutation builder.
+func (m *EvaluationCompetencyMutation) Where(ps ...predicate.EvaluationCompetency) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the EvaluationCompetencyMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *EvaluationCompetencyMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.EvaluationCompetency, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *EvaluationCompetencyMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *EvaluationCompetencyMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (EvaluationCompetency).
+func (m *EvaluationCompetencyMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *EvaluationCompetencyMutation) Fields() []string {
+	fields := make([]string, 0, 7)
+	if m.created_at != nil {
+		fields = append(fields, evaluationcompetency.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, evaluationcompetency.FieldUpdatedAt)
+	}
+	if m.rating != nil {
+		fields = append(fields, evaluationcompetency.FieldRating)
+	}
+	if m.comments != nil {
+		fields = append(fields, evaluationcompetency.FieldComments)
+	}
+	if m.evaluation != nil {
+		fields = append(fields, evaluationcompetency.FieldEvaluationID)
+	}
+	if m.competency != nil {
+		fields = append(fields, evaluationcompetency.FieldCompetencyID)
+	}
+	if m.profile != nil {
+		fields = append(fields, evaluationcompetency.FieldProfileID)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *EvaluationCompetencyMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case evaluationcompetency.FieldCreatedAt:
+		return m.CreatedAt()
+	case evaluationcompetency.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case evaluationcompetency.FieldRating:
+		return m.Rating()
+	case evaluationcompetency.FieldComments:
+		return m.Comments()
+	case evaluationcompetency.FieldEvaluationID:
+		return m.EvaluationID()
+	case evaluationcompetency.FieldCompetencyID:
+		return m.CompetencyID()
+	case evaluationcompetency.FieldProfileID:
+		return m.ProfileID()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *EvaluationCompetencyMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case evaluationcompetency.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case evaluationcompetency.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case evaluationcompetency.FieldRating:
+		return m.OldRating(ctx)
+	case evaluationcompetency.FieldComments:
+		return m.OldComments(ctx)
+	case evaluationcompetency.FieldEvaluationID:
+		return m.OldEvaluationID(ctx)
+	case evaluationcompetency.FieldCompetencyID:
+		return m.OldCompetencyID(ctx)
+	case evaluationcompetency.FieldProfileID:
+		return m.OldProfileID(ctx)
+	}
+	return nil, fmt.Errorf("unknown EvaluationCompetency field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *EvaluationCompetencyMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case evaluationcompetency.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case evaluationcompetency.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case evaluationcompetency.FieldRating:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRating(v)
+		return nil
+	case evaluationcompetency.FieldComments:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetComments(v)
+		return nil
+	case evaluationcompetency.FieldEvaluationID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEvaluationID(v)
+		return nil
+	case evaluationcompetency.FieldCompetencyID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCompetencyID(v)
+		return nil
+	case evaluationcompetency.FieldProfileID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetProfileID(v)
+		return nil
+	}
+	return fmt.Errorf("unknown EvaluationCompetency field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *EvaluationCompetencyMutation) AddedFields() []string {
+	var fields []string
+	if m.addrating != nil {
+		fields = append(fields, evaluationcompetency.FieldRating)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *EvaluationCompetencyMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case evaluationcompetency.FieldRating:
+		return m.AddedRating()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *EvaluationCompetencyMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case evaluationcompetency.FieldRating:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddRating(v)
+		return nil
+	}
+	return fmt.Errorf("unknown EvaluationCompetency numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *EvaluationCompetencyMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(evaluationcompetency.FieldComments) {
+		fields = append(fields, evaluationcompetency.FieldComments)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *EvaluationCompetencyMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *EvaluationCompetencyMutation) ClearField(name string) error {
+	switch name {
+	case evaluationcompetency.FieldComments:
+		m.ClearComments()
+		return nil
+	}
+	return fmt.Errorf("unknown EvaluationCompetency nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *EvaluationCompetencyMutation) ResetField(name string) error {
+	switch name {
+	case evaluationcompetency.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case evaluationcompetency.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case evaluationcompetency.FieldRating:
+		m.ResetRating()
+		return nil
+	case evaluationcompetency.FieldComments:
+		m.ResetComments()
+		return nil
+	case evaluationcompetency.FieldEvaluationID:
+		m.ResetEvaluationID()
+		return nil
+	case evaluationcompetency.FieldCompetencyID:
+		m.ResetCompetencyID()
+		return nil
+	case evaluationcompetency.FieldProfileID:
+		m.ResetProfileID()
+		return nil
+	}
+	return fmt.Errorf("unknown EvaluationCompetency field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *EvaluationCompetencyMutation) AddedEdges() []string {
+	edges := make([]string, 0, 3)
+	if m.evaluation != nil {
+		edges = append(edges, evaluationcompetency.EdgeEvaluation)
+	}
+	if m.competency != nil {
+		edges = append(edges, evaluationcompetency.EdgeCompetency)
+	}
+	if m.profile != nil {
+		edges = append(edges, evaluationcompetency.EdgeProfile)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *EvaluationCompetencyMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case evaluationcompetency.EdgeEvaluation:
+		if id := m.evaluation; id != nil {
+			return []ent.Value{*id}
+		}
+	case evaluationcompetency.EdgeCompetency:
+		if id := m.competency; id != nil {
+			return []ent.Value{*id}
+		}
+	case evaluationcompetency.EdgeProfile:
+		if id := m.profile; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *EvaluationCompetencyMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 3)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *EvaluationCompetencyMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *EvaluationCompetencyMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 3)
+	if m.clearedevaluation {
+		edges = append(edges, evaluationcompetency.EdgeEvaluation)
+	}
+	if m.clearedcompetency {
+		edges = append(edges, evaluationcompetency.EdgeCompetency)
+	}
+	if m.clearedprofile {
+		edges = append(edges, evaluationcompetency.EdgeProfile)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *EvaluationCompetencyMutation) EdgeCleared(name string) bool {
+	switch name {
+	case evaluationcompetency.EdgeEvaluation:
+		return m.clearedevaluation
+	case evaluationcompetency.EdgeCompetency:
+		return m.clearedcompetency
+	case evaluationcompetency.EdgeProfile:
+		return m.clearedprofile
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *EvaluationCompetencyMutation) ClearEdge(name string) error {
+	switch name {
+	case evaluationcompetency.EdgeEvaluation:
+		m.ClearEvaluation()
+		return nil
+	case evaluationcompetency.EdgeCompetency:
+		m.ClearCompetency()
+		return nil
+	case evaluationcompetency.EdgeProfile:
+		m.ClearProfile()
+		return nil
+	}
+	return fmt.Errorf("unknown EvaluationCompetency unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *EvaluationCompetencyMutation) ResetEdge(name string) error {
+	switch name {
+	case evaluationcompetency.EdgeEvaluation:
+		m.ResetEvaluation()
+		return nil
+	case evaluationcompetency.EdgeCompetency:
+		m.ResetCompetency()
+		return nil
+	case evaluationcompetency.EdgeProfile:
+		m.ResetProfile()
+		return nil
+	}
+	return fmt.Errorf("unknown EvaluationCompetency edge %s", name)
+}
+
+// EvaluationGoalMutation represents an operation that mutates the EvaluationGoal nodes in the graph.
+type EvaluationGoalMutation struct {
+	config
+	op                Op
+	typ               string
+	id                *uuid.UUID
+	created_at        *time.Time
+	updated_at        *time.Time
+	final_rating      *int
+	addfinal_rating   *int
+	final_comments    *string
+	clearedFields     map[string]struct{}
+	evaluation        *uuid.UUID
+	clearedevaluation bool
+	goal              *uuid.UUID
+	clearedgoal       bool
+	done              bool
+	oldValue          func(context.Context) (*EvaluationGoal, error)
+	predicates        []predicate.EvaluationGoal
+}
+
+var _ ent.Mutation = (*EvaluationGoalMutation)(nil)
+
+// evaluationgoalOption allows management of the mutation configuration using functional options.
+type evaluationgoalOption func(*EvaluationGoalMutation)
+
+// newEvaluationGoalMutation creates new mutation for the EvaluationGoal entity.
+func newEvaluationGoalMutation(c config, op Op, opts ...evaluationgoalOption) *EvaluationGoalMutation {
+	m := &EvaluationGoalMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeEvaluationGoal,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withEvaluationGoalID sets the ID field of the mutation.
+func withEvaluationGoalID(id uuid.UUID) evaluationgoalOption {
+	return func(m *EvaluationGoalMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *EvaluationGoal
+		)
+		m.oldValue = func(ctx context.Context) (*EvaluationGoal, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().EvaluationGoal.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withEvaluationGoal sets the old EvaluationGoal of the mutation.
+func withEvaluationGoal(node *EvaluationGoal) evaluationgoalOption {
+	return func(m *EvaluationGoalMutation) {
+		m.oldValue = func(context.Context) (*EvaluationGoal, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m EvaluationGoalMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m EvaluationGoalMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("internal: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of EvaluationGoal entities.
+func (m *EvaluationGoalMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *EvaluationGoalMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *EvaluationGoalMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().EvaluationGoal.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *EvaluationGoalMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *EvaluationGoalMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the EvaluationGoal entity.
+// If the EvaluationGoal object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EvaluationGoalMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *EvaluationGoalMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *EvaluationGoalMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *EvaluationGoalMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the EvaluationGoal entity.
+// If the EvaluationGoal object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EvaluationGoalMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *EvaluationGoalMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetFinalRating sets the "final_rating" field.
+func (m *EvaluationGoalMutation) SetFinalRating(i int) {
+	m.final_rating = &i
+	m.addfinal_rating = nil
+}
+
+// FinalRating returns the value of the "final_rating" field in the mutation.
+func (m *EvaluationGoalMutation) FinalRating() (r int, exists bool) {
+	v := m.final_rating
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFinalRating returns the old "final_rating" field's value of the EvaluationGoal entity.
+// If the EvaluationGoal object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EvaluationGoalMutation) OldFinalRating(ctx context.Context) (v *int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFinalRating is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFinalRating requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFinalRating: %w", err)
+	}
+	return oldValue.FinalRating, nil
+}
+
+// AddFinalRating adds i to the "final_rating" field.
+func (m *EvaluationGoalMutation) AddFinalRating(i int) {
+	if m.addfinal_rating != nil {
+		*m.addfinal_rating += i
+	} else {
+		m.addfinal_rating = &i
+	}
+}
+
+// AddedFinalRating returns the value that was added to the "final_rating" field in this mutation.
+func (m *EvaluationGoalMutation) AddedFinalRating() (r int, exists bool) {
+	v := m.addfinal_rating
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearFinalRating clears the value of the "final_rating" field.
+func (m *EvaluationGoalMutation) ClearFinalRating() {
+	m.final_rating = nil
+	m.addfinal_rating = nil
+	m.clearedFields[evaluationgoal.FieldFinalRating] = struct{}{}
+}
+
+// FinalRatingCleared returns if the "final_rating" field was cleared in this mutation.
+func (m *EvaluationGoalMutation) FinalRatingCleared() bool {
+	_, ok := m.clearedFields[evaluationgoal.FieldFinalRating]
+	return ok
+}
+
+// ResetFinalRating resets all changes to the "final_rating" field.
+func (m *EvaluationGoalMutation) ResetFinalRating() {
+	m.final_rating = nil
+	m.addfinal_rating = nil
+	delete(m.clearedFields, evaluationgoal.FieldFinalRating)
+}
+
+// SetFinalComments sets the "final_comments" field.
+func (m *EvaluationGoalMutation) SetFinalComments(s string) {
+	m.final_comments = &s
+}
+
+// FinalComments returns the value of the "final_comments" field in the mutation.
+func (m *EvaluationGoalMutation) FinalComments() (r string, exists bool) {
+	v := m.final_comments
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFinalComments returns the old "final_comments" field's value of the EvaluationGoal entity.
+// If the EvaluationGoal object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EvaluationGoalMutation) OldFinalComments(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFinalComments is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFinalComments requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFinalComments: %w", err)
+	}
+	return oldValue.FinalComments, nil
+}
+
+// ClearFinalComments clears the value of the "final_comments" field.
+func (m *EvaluationGoalMutation) ClearFinalComments() {
+	m.final_comments = nil
+	m.clearedFields[evaluationgoal.FieldFinalComments] = struct{}{}
+}
+
+// FinalCommentsCleared returns if the "final_comments" field was cleared in this mutation.
+func (m *EvaluationGoalMutation) FinalCommentsCleared() bool {
+	_, ok := m.clearedFields[evaluationgoal.FieldFinalComments]
+	return ok
+}
+
+// ResetFinalComments resets all changes to the "final_comments" field.
+func (m *EvaluationGoalMutation) ResetFinalComments() {
+	m.final_comments = nil
+	delete(m.clearedFields, evaluationgoal.FieldFinalComments)
+}
+
+// SetEvaluationID sets the "evaluation_id" field.
+func (m *EvaluationGoalMutation) SetEvaluationID(u uuid.UUID) {
+	m.evaluation = &u
+}
+
+// EvaluationID returns the value of the "evaluation_id" field in the mutation.
+func (m *EvaluationGoalMutation) EvaluationID() (r uuid.UUID, exists bool) {
+	v := m.evaluation
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEvaluationID returns the old "evaluation_id" field's value of the EvaluationGoal entity.
+// If the EvaluationGoal object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EvaluationGoalMutation) OldEvaluationID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEvaluationID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEvaluationID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEvaluationID: %w", err)
+	}
+	return oldValue.EvaluationID, nil
+}
+
+// ResetEvaluationID resets all changes to the "evaluation_id" field.
+func (m *EvaluationGoalMutation) ResetEvaluationID() {
+	m.evaluation = nil
+}
+
+// SetGoalID sets the "goal_id" field.
+func (m *EvaluationGoalMutation) SetGoalID(u uuid.UUID) {
+	m.goal = &u
+}
+
+// GoalID returns the value of the "goal_id" field in the mutation.
+func (m *EvaluationGoalMutation) GoalID() (r uuid.UUID, exists bool) {
+	v := m.goal
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldGoalID returns the old "goal_id" field's value of the EvaluationGoal entity.
+// If the EvaluationGoal object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EvaluationGoalMutation) OldGoalID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldGoalID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldGoalID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldGoalID: %w", err)
+	}
+	return oldValue.GoalID, nil
+}
+
+// ResetGoalID resets all changes to the "goal_id" field.
+func (m *EvaluationGoalMutation) ResetGoalID() {
+	m.goal = nil
+}
+
+// ClearEvaluation clears the "evaluation" edge to the Evaluation entity.
+func (m *EvaluationGoalMutation) ClearEvaluation() {
+	m.clearedevaluation = true
+	m.clearedFields[evaluationgoal.FieldEvaluationID] = struct{}{}
+}
+
+// EvaluationCleared reports if the "evaluation" edge to the Evaluation entity was cleared.
+func (m *EvaluationGoalMutation) EvaluationCleared() bool {
+	return m.clearedevaluation
+}
+
+// EvaluationIDs returns the "evaluation" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// EvaluationID instead. It exists only for internal usage by the builders.
+func (m *EvaluationGoalMutation) EvaluationIDs() (ids []uuid.UUID) {
+	if id := m.evaluation; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetEvaluation resets all changes to the "evaluation" edge.
+func (m *EvaluationGoalMutation) ResetEvaluation() {
+	m.evaluation = nil
+	m.clearedevaluation = false
+}
+
+// ClearGoal clears the "goal" edge to the Goal entity.
+func (m *EvaluationGoalMutation) ClearGoal() {
+	m.clearedgoal = true
+	m.clearedFields[evaluationgoal.FieldGoalID] = struct{}{}
+}
+
+// GoalCleared reports if the "goal" edge to the Goal entity was cleared.
+func (m *EvaluationGoalMutation) GoalCleared() bool {
+	return m.clearedgoal
+}
+
+// GoalIDs returns the "goal" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// GoalID instead. It exists only for internal usage by the builders.
+func (m *EvaluationGoalMutation) GoalIDs() (ids []uuid.UUID) {
+	if id := m.goal; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetGoal resets all changes to the "goal" edge.
+func (m *EvaluationGoalMutation) ResetGoal() {
+	m.goal = nil
+	m.clearedgoal = false
+}
+
+// Where appends a list predicates to the EvaluationGoalMutation builder.
+func (m *EvaluationGoalMutation) Where(ps ...predicate.EvaluationGoal) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the EvaluationGoalMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *EvaluationGoalMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.EvaluationGoal, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *EvaluationGoalMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *EvaluationGoalMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (EvaluationGoal).
+func (m *EvaluationGoalMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *EvaluationGoalMutation) Fields() []string {
+	fields := make([]string, 0, 6)
+	if m.created_at != nil {
+		fields = append(fields, evaluationgoal.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, evaluationgoal.FieldUpdatedAt)
+	}
+	if m.final_rating != nil {
+		fields = append(fields, evaluationgoal.FieldFinalRating)
+	}
+	if m.final_comments != nil {
+		fields = append(fields, evaluationgoal.FieldFinalComments)
+	}
+	if m.evaluation != nil {
+		fields = append(fields, evaluationgoal.FieldEvaluationID)
+	}
+	if m.goal != nil {
+		fields = append(fields, evaluationgoal.FieldGoalID)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *EvaluationGoalMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case evaluationgoal.FieldCreatedAt:
+		return m.CreatedAt()
+	case evaluationgoal.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case evaluationgoal.FieldFinalRating:
+		return m.FinalRating()
+	case evaluationgoal.FieldFinalComments:
+		return m.FinalComments()
+	case evaluationgoal.FieldEvaluationID:
+		return m.EvaluationID()
+	case evaluationgoal.FieldGoalID:
+		return m.GoalID()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *EvaluationGoalMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case evaluationgoal.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case evaluationgoal.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case evaluationgoal.FieldFinalRating:
+		return m.OldFinalRating(ctx)
+	case evaluationgoal.FieldFinalComments:
+		return m.OldFinalComments(ctx)
+	case evaluationgoal.FieldEvaluationID:
+		return m.OldEvaluationID(ctx)
+	case evaluationgoal.FieldGoalID:
+		return m.OldGoalID(ctx)
+	}
+	return nil, fmt.Errorf("unknown EvaluationGoal field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *EvaluationGoalMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case evaluationgoal.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case evaluationgoal.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case evaluationgoal.FieldFinalRating:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFinalRating(v)
+		return nil
+	case evaluationgoal.FieldFinalComments:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFinalComments(v)
+		return nil
+	case evaluationgoal.FieldEvaluationID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEvaluationID(v)
+		return nil
+	case evaluationgoal.FieldGoalID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetGoalID(v)
+		return nil
+	}
+	return fmt.Errorf("unknown EvaluationGoal field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *EvaluationGoalMutation) AddedFields() []string {
+	var fields []string
+	if m.addfinal_rating != nil {
+		fields = append(fields, evaluationgoal.FieldFinalRating)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *EvaluationGoalMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case evaluationgoal.FieldFinalRating:
+		return m.AddedFinalRating()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *EvaluationGoalMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case evaluationgoal.FieldFinalRating:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddFinalRating(v)
+		return nil
+	}
+	return fmt.Errorf("unknown EvaluationGoal numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *EvaluationGoalMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(evaluationgoal.FieldFinalRating) {
+		fields = append(fields, evaluationgoal.FieldFinalRating)
+	}
+	if m.FieldCleared(evaluationgoal.FieldFinalComments) {
+		fields = append(fields, evaluationgoal.FieldFinalComments)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *EvaluationGoalMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *EvaluationGoalMutation) ClearField(name string) error {
+	switch name {
+	case evaluationgoal.FieldFinalRating:
+		m.ClearFinalRating()
+		return nil
+	case evaluationgoal.FieldFinalComments:
+		m.ClearFinalComments()
+		return nil
+	}
+	return fmt.Errorf("unknown EvaluationGoal nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *EvaluationGoalMutation) ResetField(name string) error {
+	switch name {
+	case evaluationgoal.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case evaluationgoal.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case evaluationgoal.FieldFinalRating:
+		m.ResetFinalRating()
+		return nil
+	case evaluationgoal.FieldFinalComments:
+		m.ResetFinalComments()
+		return nil
+	case evaluationgoal.FieldEvaluationID:
+		m.ResetEvaluationID()
+		return nil
+	case evaluationgoal.FieldGoalID:
+		m.ResetGoalID()
+		return nil
+	}
+	return fmt.Errorf("unknown EvaluationGoal field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *EvaluationGoalMutation) AddedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.evaluation != nil {
+		edges = append(edges, evaluationgoal.EdgeEvaluation)
+	}
+	if m.goal != nil {
+		edges = append(edges, evaluationgoal.EdgeGoal)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *EvaluationGoalMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case evaluationgoal.EdgeEvaluation:
+		if id := m.evaluation; id != nil {
+			return []ent.Value{*id}
+		}
+	case evaluationgoal.EdgeGoal:
+		if id := m.goal; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *EvaluationGoalMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 2)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *EvaluationGoalMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *EvaluationGoalMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.clearedevaluation {
+		edges = append(edges, evaluationgoal.EdgeEvaluation)
+	}
+	if m.clearedgoal {
+		edges = append(edges, evaluationgoal.EdgeGoal)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *EvaluationGoalMutation) EdgeCleared(name string) bool {
+	switch name {
+	case evaluationgoal.EdgeEvaluation:
+		return m.clearedevaluation
+	case evaluationgoal.EdgeGoal:
+		return m.clearedgoal
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *EvaluationGoalMutation) ClearEdge(name string) error {
+	switch name {
+	case evaluationgoal.EdgeEvaluation:
+		m.ClearEvaluation()
+		return nil
+	case evaluationgoal.EdgeGoal:
+		m.ClearGoal()
+		return nil
+	}
+	return fmt.Errorf("unknown EvaluationGoal unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *EvaluationGoalMutation) ResetEdge(name string) error {
+	switch name {
+	case evaluationgoal.EdgeEvaluation:
+		m.ResetEvaluation()
+		return nil
+	case evaluationgoal.EdgeGoal:
+		m.ResetGoal()
+		return nil
+	}
+	return fmt.Errorf("unknown EvaluationGoal edge %s", name)
 }
 
 // EvaluationProfileMutation represents an operation that mutates the EvaluationProfile nodes in the graph.
 type EvaluationProfileMutation struct {
 	config
-	op                       Op
-	typ                      string
-	id                       *uuid.UUID
-	name                     *string
-	description              *string
-	clearedFields            map[string]struct{}
-	employees                map[uuid.UUID]struct{}
-	removedemployees         map[uuid.UUID]struct{}
-	clearedemployees         bool
-	acceptance_levels        map[uuid.UUID]struct{}
-	removedacceptance_levels map[uuid.UUID]struct{}
-	clearedacceptance_levels bool
-	done                     bool
-	oldValue                 func(context.Context) (*EvaluationProfile, error)
-	predicates               []predicate.EvaluationProfile
+	op                             Op
+	typ                            string
+	id                             *uuid.UUID
+	name                           *string
+	description                    *string
+	clearedFields                  map[string]struct{}
+	employees                      map[uuid.UUID]struct{}
+	removedemployees               map[uuid.UUID]struct{}
+	clearedemployees               bool
+	acceptance_levels              map[uuid.UUID]struct{}
+	removedacceptance_levels       map[uuid.UUID]struct{}
+	clearedacceptance_levels       bool
+	evaluation_competencies        map[uuid.UUID]struct{}
+	removedevaluation_competencies map[uuid.UUID]struct{}
+	clearedevaluation_competencies bool
+	done                           bool
+	oldValue                       func(context.Context) (*EvaluationProfile, error)
+	predicates                     []predicate.EvaluationProfile
 }
 
 var _ ent.Mutation = (*EvaluationProfileMutation)(nil)
@@ -4145,6 +7686,60 @@ func (m *EvaluationProfileMutation) ResetAcceptanceLevels() {
 	m.removedacceptance_levels = nil
 }
 
+// AddEvaluationCompetencyIDs adds the "evaluation_competencies" edge to the EvaluationCompetency entity by ids.
+func (m *EvaluationProfileMutation) AddEvaluationCompetencyIDs(ids ...uuid.UUID) {
+	if m.evaluation_competencies == nil {
+		m.evaluation_competencies = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.evaluation_competencies[ids[i]] = struct{}{}
+	}
+}
+
+// ClearEvaluationCompetencies clears the "evaluation_competencies" edge to the EvaluationCompetency entity.
+func (m *EvaluationProfileMutation) ClearEvaluationCompetencies() {
+	m.clearedevaluation_competencies = true
+}
+
+// EvaluationCompetenciesCleared reports if the "evaluation_competencies" edge to the EvaluationCompetency entity was cleared.
+func (m *EvaluationProfileMutation) EvaluationCompetenciesCleared() bool {
+	return m.clearedevaluation_competencies
+}
+
+// RemoveEvaluationCompetencyIDs removes the "evaluation_competencies" edge to the EvaluationCompetency entity by IDs.
+func (m *EvaluationProfileMutation) RemoveEvaluationCompetencyIDs(ids ...uuid.UUID) {
+	if m.removedevaluation_competencies == nil {
+		m.removedevaluation_competencies = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.evaluation_competencies, ids[i])
+		m.removedevaluation_competencies[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedEvaluationCompetencies returns the removed IDs of the "evaluation_competencies" edge to the EvaluationCompetency entity.
+func (m *EvaluationProfileMutation) RemovedEvaluationCompetenciesIDs() (ids []uuid.UUID) {
+	for id := range m.removedevaluation_competencies {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// EvaluationCompetenciesIDs returns the "evaluation_competencies" edge IDs in the mutation.
+func (m *EvaluationProfileMutation) EvaluationCompetenciesIDs() (ids []uuid.UUID) {
+	for id := range m.evaluation_competencies {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetEvaluationCompetencies resets all changes to the "evaluation_competencies" edge.
+func (m *EvaluationProfileMutation) ResetEvaluationCompetencies() {
+	m.evaluation_competencies = nil
+	m.clearedevaluation_competencies = false
+	m.removedevaluation_competencies = nil
+}
+
 // Where appends a list predicates to the EvaluationProfileMutation builder.
 func (m *EvaluationProfileMutation) Where(ps ...predicate.EvaluationProfile) {
 	m.predicates = append(m.predicates, ps...)
@@ -4304,12 +7899,15 @@ func (m *EvaluationProfileMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *EvaluationProfileMutation) AddedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.employees != nil {
 		edges = append(edges, evaluationprofile.EdgeEmployees)
 	}
 	if m.acceptance_levels != nil {
 		edges = append(edges, evaluationprofile.EdgeAcceptanceLevels)
+	}
+	if m.evaluation_competencies != nil {
+		edges = append(edges, evaluationprofile.EdgeEvaluationCompetencies)
 	}
 	return edges
 }
@@ -4330,18 +7928,27 @@ func (m *EvaluationProfileMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case evaluationprofile.EdgeEvaluationCompetencies:
+		ids := make([]ent.Value, 0, len(m.evaluation_competencies))
+		for id := range m.evaluation_competencies {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *EvaluationProfileMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.removedemployees != nil {
 		edges = append(edges, evaluationprofile.EdgeEmployees)
 	}
 	if m.removedacceptance_levels != nil {
 		edges = append(edges, evaluationprofile.EdgeAcceptanceLevels)
+	}
+	if m.removedevaluation_competencies != nil {
+		edges = append(edges, evaluationprofile.EdgeEvaluationCompetencies)
 	}
 	return edges
 }
@@ -4362,18 +7969,27 @@ func (m *EvaluationProfileMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case evaluationprofile.EdgeEvaluationCompetencies:
+		ids := make([]ent.Value, 0, len(m.removedevaluation_competencies))
+		for id := range m.removedevaluation_competencies {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *EvaluationProfileMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.clearedemployees {
 		edges = append(edges, evaluationprofile.EdgeEmployees)
 	}
 	if m.clearedacceptance_levels {
 		edges = append(edges, evaluationprofile.EdgeAcceptanceLevels)
+	}
+	if m.clearedevaluation_competencies {
+		edges = append(edges, evaluationprofile.EdgeEvaluationCompetencies)
 	}
 	return edges
 }
@@ -4386,6 +8002,8 @@ func (m *EvaluationProfileMutation) EdgeCleared(name string) bool {
 		return m.clearedemployees
 	case evaluationprofile.EdgeAcceptanceLevels:
 		return m.clearedacceptance_levels
+	case evaluationprofile.EdgeEvaluationCompetencies:
+		return m.clearedevaluation_competencies
 	}
 	return false
 }
@@ -4407,6 +8025,9 @@ func (m *EvaluationProfileMutation) ResetEdge(name string) error {
 		return nil
 	case evaluationprofile.EdgeAcceptanceLevels:
 		m.ResetAcceptanceLevels()
+		return nil
+	case evaluationprofile.EdgeEvaluationCompetencies:
+		m.ResetEvaluationCompetencies()
 		return nil
 	}
 	return fmt.Errorf("unknown EvaluationProfile edge %s", name)
@@ -5155,6 +8776,3976 @@ func (m *EvaluatorScopeMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown EvaluatorScope edge %s", name)
 }
 
+// GoalMutation represents an operation that mutates the Goal nodes in the graph.
+type GoalMutation struct {
+	config
+	op                      Op
+	typ                     string
+	id                      *uuid.UUID
+	created_at              *time.Time
+	updated_at              *time.Time
+	created_by              *uuid.UUID
+	updated_by              *uuid.UUID
+	name                    *string
+	description             *string
+	unit                    *goal.Unit
+	weight                  *float64
+	addweight               *float64
+	target_value            *float64
+	addtarget_value         *float64
+	current_value           *float64
+	addcurrent_value        *float64
+	state                   *goal.State
+	clearedFields           map[string]struct{}
+	category                *uuid.UUID
+	clearedcategory         bool
+	kpi_links               map[int]struct{}
+	removedkpi_links        map[int]struct{}
+	clearedkpi_links        bool
+	evaluation_goals        map[uuid.UUID]struct{}
+	removedevaluation_goals map[uuid.UUID]struct{}
+	clearedevaluation_goals bool
+	done                    bool
+	oldValue                func(context.Context) (*Goal, error)
+	predicates              []predicate.Goal
+}
+
+var _ ent.Mutation = (*GoalMutation)(nil)
+
+// goalOption allows management of the mutation configuration using functional options.
+type goalOption func(*GoalMutation)
+
+// newGoalMutation creates new mutation for the Goal entity.
+func newGoalMutation(c config, op Op, opts ...goalOption) *GoalMutation {
+	m := &GoalMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeGoal,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withGoalID sets the ID field of the mutation.
+func withGoalID(id uuid.UUID) goalOption {
+	return func(m *GoalMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *Goal
+		)
+		m.oldValue = func(ctx context.Context) (*Goal, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().Goal.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withGoal sets the old Goal of the mutation.
+func withGoal(node *Goal) goalOption {
+	return func(m *GoalMutation) {
+		m.oldValue = func(context.Context) (*Goal, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m GoalMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m GoalMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("internal: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of Goal entities.
+func (m *GoalMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *GoalMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *GoalMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().Goal.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *GoalMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *GoalMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the Goal entity.
+// If the Goal object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GoalMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *GoalMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *GoalMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *GoalMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the Goal entity.
+// If the Goal object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GoalMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *GoalMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetCreatedBy sets the "created_by" field.
+func (m *GoalMutation) SetCreatedBy(u uuid.UUID) {
+	m.created_by = &u
+}
+
+// CreatedBy returns the value of the "created_by" field in the mutation.
+func (m *GoalMutation) CreatedBy() (r uuid.UUID, exists bool) {
+	v := m.created_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedBy returns the old "created_by" field's value of the Goal entity.
+// If the Goal object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GoalMutation) OldCreatedBy(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedBy is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedBy requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedBy: %w", err)
+	}
+	return oldValue.CreatedBy, nil
+}
+
+// ResetCreatedBy resets all changes to the "created_by" field.
+func (m *GoalMutation) ResetCreatedBy() {
+	m.created_by = nil
+}
+
+// SetUpdatedBy sets the "updated_by" field.
+func (m *GoalMutation) SetUpdatedBy(u uuid.UUID) {
+	m.updated_by = &u
+}
+
+// UpdatedBy returns the value of the "updated_by" field in the mutation.
+func (m *GoalMutation) UpdatedBy() (r uuid.UUID, exists bool) {
+	v := m.updated_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedBy returns the old "updated_by" field's value of the Goal entity.
+// If the Goal object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GoalMutation) OldUpdatedBy(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedBy is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedBy requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedBy: %w", err)
+	}
+	return oldValue.UpdatedBy, nil
+}
+
+// ResetUpdatedBy resets all changes to the "updated_by" field.
+func (m *GoalMutation) ResetUpdatedBy() {
+	m.updated_by = nil
+}
+
+// SetName sets the "name" field.
+func (m *GoalMutation) SetName(s string) {
+	m.name = &s
+}
+
+// Name returns the value of the "name" field in the mutation.
+func (m *GoalMutation) Name() (r string, exists bool) {
+	v := m.name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldName returns the old "name" field's value of the Goal entity.
+// If the Goal object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GoalMutation) OldName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldName: %w", err)
+	}
+	return oldValue.Name, nil
+}
+
+// ResetName resets all changes to the "name" field.
+func (m *GoalMutation) ResetName() {
+	m.name = nil
+}
+
+// SetDescription sets the "description" field.
+func (m *GoalMutation) SetDescription(s string) {
+	m.description = &s
+}
+
+// Description returns the value of the "description" field in the mutation.
+func (m *GoalMutation) Description() (r string, exists bool) {
+	v := m.description
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDescription returns the old "description" field's value of the Goal entity.
+// If the Goal object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GoalMutation) OldDescription(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDescription is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDescription requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDescription: %w", err)
+	}
+	return oldValue.Description, nil
+}
+
+// ClearDescription clears the value of the "description" field.
+func (m *GoalMutation) ClearDescription() {
+	m.description = nil
+	m.clearedFields[goal.FieldDescription] = struct{}{}
+}
+
+// DescriptionCleared returns if the "description" field was cleared in this mutation.
+func (m *GoalMutation) DescriptionCleared() bool {
+	_, ok := m.clearedFields[goal.FieldDescription]
+	return ok
+}
+
+// ResetDescription resets all changes to the "description" field.
+func (m *GoalMutation) ResetDescription() {
+	m.description = nil
+	delete(m.clearedFields, goal.FieldDescription)
+}
+
+// SetUnit sets the "unit" field.
+func (m *GoalMutation) SetUnit(_go goal.Unit) {
+	m.unit = &_go
+}
+
+// Unit returns the value of the "unit" field in the mutation.
+func (m *GoalMutation) Unit() (r goal.Unit, exists bool) {
+	v := m.unit
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUnit returns the old "unit" field's value of the Goal entity.
+// If the Goal object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GoalMutation) OldUnit(ctx context.Context) (v goal.Unit, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUnit is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUnit requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUnit: %w", err)
+	}
+	return oldValue.Unit, nil
+}
+
+// ResetUnit resets all changes to the "unit" field.
+func (m *GoalMutation) ResetUnit() {
+	m.unit = nil
+}
+
+// SetWeight sets the "weight" field.
+func (m *GoalMutation) SetWeight(f float64) {
+	m.weight = &f
+	m.addweight = nil
+}
+
+// Weight returns the value of the "weight" field in the mutation.
+func (m *GoalMutation) Weight() (r float64, exists bool) {
+	v := m.weight
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWeight returns the old "weight" field's value of the Goal entity.
+// If the Goal object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GoalMutation) OldWeight(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldWeight is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldWeight requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWeight: %w", err)
+	}
+	return oldValue.Weight, nil
+}
+
+// AddWeight adds f to the "weight" field.
+func (m *GoalMutation) AddWeight(f float64) {
+	if m.addweight != nil {
+		*m.addweight += f
+	} else {
+		m.addweight = &f
+	}
+}
+
+// AddedWeight returns the value that was added to the "weight" field in this mutation.
+func (m *GoalMutation) AddedWeight() (r float64, exists bool) {
+	v := m.addweight
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetWeight resets all changes to the "weight" field.
+func (m *GoalMutation) ResetWeight() {
+	m.weight = nil
+	m.addweight = nil
+}
+
+// SetTargetValue sets the "target_value" field.
+func (m *GoalMutation) SetTargetValue(f float64) {
+	m.target_value = &f
+	m.addtarget_value = nil
+}
+
+// TargetValue returns the value of the "target_value" field in the mutation.
+func (m *GoalMutation) TargetValue() (r float64, exists bool) {
+	v := m.target_value
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTargetValue returns the old "target_value" field's value of the Goal entity.
+// If the Goal object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GoalMutation) OldTargetValue(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTargetValue is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTargetValue requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTargetValue: %w", err)
+	}
+	return oldValue.TargetValue, nil
+}
+
+// AddTargetValue adds f to the "target_value" field.
+func (m *GoalMutation) AddTargetValue(f float64) {
+	if m.addtarget_value != nil {
+		*m.addtarget_value += f
+	} else {
+		m.addtarget_value = &f
+	}
+}
+
+// AddedTargetValue returns the value that was added to the "target_value" field in this mutation.
+func (m *GoalMutation) AddedTargetValue() (r float64, exists bool) {
+	v := m.addtarget_value
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetTargetValue resets all changes to the "target_value" field.
+func (m *GoalMutation) ResetTargetValue() {
+	m.target_value = nil
+	m.addtarget_value = nil
+}
+
+// SetCurrentValue sets the "current_value" field.
+func (m *GoalMutation) SetCurrentValue(f float64) {
+	m.current_value = &f
+	m.addcurrent_value = nil
+}
+
+// CurrentValue returns the value of the "current_value" field in the mutation.
+func (m *GoalMutation) CurrentValue() (r float64, exists bool) {
+	v := m.current_value
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCurrentValue returns the old "current_value" field's value of the Goal entity.
+// If the Goal object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GoalMutation) OldCurrentValue(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCurrentValue is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCurrentValue requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCurrentValue: %w", err)
+	}
+	return oldValue.CurrentValue, nil
+}
+
+// AddCurrentValue adds f to the "current_value" field.
+func (m *GoalMutation) AddCurrentValue(f float64) {
+	if m.addcurrent_value != nil {
+		*m.addcurrent_value += f
+	} else {
+		m.addcurrent_value = &f
+	}
+}
+
+// AddedCurrentValue returns the value that was added to the "current_value" field in this mutation.
+func (m *GoalMutation) AddedCurrentValue() (r float64, exists bool) {
+	v := m.addcurrent_value
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetCurrentValue resets all changes to the "current_value" field.
+func (m *GoalMutation) ResetCurrentValue() {
+	m.current_value = nil
+	m.addcurrent_value = nil
+}
+
+// SetState sets the "state" field.
+func (m *GoalMutation) SetState(_go goal.State) {
+	m.state = &_go
+}
+
+// State returns the value of the "state" field in the mutation.
+func (m *GoalMutation) State() (r goal.State, exists bool) {
+	v := m.state
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldState returns the old "state" field's value of the Goal entity.
+// If the Goal object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GoalMutation) OldState(ctx context.Context) (v goal.State, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldState is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldState requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldState: %w", err)
+	}
+	return oldValue.State, nil
+}
+
+// ResetState resets all changes to the "state" field.
+func (m *GoalMutation) ResetState() {
+	m.state = nil
+}
+
+// SetCategoryID sets the "category_id" field.
+func (m *GoalMutation) SetCategoryID(u uuid.UUID) {
+	m.category = &u
+}
+
+// CategoryID returns the value of the "category_id" field in the mutation.
+func (m *GoalMutation) CategoryID() (r uuid.UUID, exists bool) {
+	v := m.category
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCategoryID returns the old "category_id" field's value of the Goal entity.
+// If the Goal object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GoalMutation) OldCategoryID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCategoryID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCategoryID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCategoryID: %w", err)
+	}
+	return oldValue.CategoryID, nil
+}
+
+// ResetCategoryID resets all changes to the "category_id" field.
+func (m *GoalMutation) ResetCategoryID() {
+	m.category = nil
+}
+
+// ClearCategory clears the "category" edge to the GoalCategory entity.
+func (m *GoalMutation) ClearCategory() {
+	m.clearedcategory = true
+	m.clearedFields[goal.FieldCategoryID] = struct{}{}
+}
+
+// CategoryCleared reports if the "category" edge to the GoalCategory entity was cleared.
+func (m *GoalMutation) CategoryCleared() bool {
+	return m.clearedcategory
+}
+
+// CategoryIDs returns the "category" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// CategoryID instead. It exists only for internal usage by the builders.
+func (m *GoalMutation) CategoryIDs() (ids []uuid.UUID) {
+	if id := m.category; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetCategory resets all changes to the "category" edge.
+func (m *GoalMutation) ResetCategory() {
+	m.category = nil
+	m.clearedcategory = false
+}
+
+// AddKpiLinkIDs adds the "kpi_links" edge to the GoalKpiLink entity by ids.
+func (m *GoalMutation) AddKpiLinkIDs(ids ...int) {
+	if m.kpi_links == nil {
+		m.kpi_links = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.kpi_links[ids[i]] = struct{}{}
+	}
+}
+
+// ClearKpiLinks clears the "kpi_links" edge to the GoalKpiLink entity.
+func (m *GoalMutation) ClearKpiLinks() {
+	m.clearedkpi_links = true
+}
+
+// KpiLinksCleared reports if the "kpi_links" edge to the GoalKpiLink entity was cleared.
+func (m *GoalMutation) KpiLinksCleared() bool {
+	return m.clearedkpi_links
+}
+
+// RemoveKpiLinkIDs removes the "kpi_links" edge to the GoalKpiLink entity by IDs.
+func (m *GoalMutation) RemoveKpiLinkIDs(ids ...int) {
+	if m.removedkpi_links == nil {
+		m.removedkpi_links = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.kpi_links, ids[i])
+		m.removedkpi_links[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedKpiLinks returns the removed IDs of the "kpi_links" edge to the GoalKpiLink entity.
+func (m *GoalMutation) RemovedKpiLinksIDs() (ids []int) {
+	for id := range m.removedkpi_links {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// KpiLinksIDs returns the "kpi_links" edge IDs in the mutation.
+func (m *GoalMutation) KpiLinksIDs() (ids []int) {
+	for id := range m.kpi_links {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetKpiLinks resets all changes to the "kpi_links" edge.
+func (m *GoalMutation) ResetKpiLinks() {
+	m.kpi_links = nil
+	m.clearedkpi_links = false
+	m.removedkpi_links = nil
+}
+
+// AddEvaluationGoalIDs adds the "evaluation_goals" edge to the EvaluationGoal entity by ids.
+func (m *GoalMutation) AddEvaluationGoalIDs(ids ...uuid.UUID) {
+	if m.evaluation_goals == nil {
+		m.evaluation_goals = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.evaluation_goals[ids[i]] = struct{}{}
+	}
+}
+
+// ClearEvaluationGoals clears the "evaluation_goals" edge to the EvaluationGoal entity.
+func (m *GoalMutation) ClearEvaluationGoals() {
+	m.clearedevaluation_goals = true
+}
+
+// EvaluationGoalsCleared reports if the "evaluation_goals" edge to the EvaluationGoal entity was cleared.
+func (m *GoalMutation) EvaluationGoalsCleared() bool {
+	return m.clearedevaluation_goals
+}
+
+// RemoveEvaluationGoalIDs removes the "evaluation_goals" edge to the EvaluationGoal entity by IDs.
+func (m *GoalMutation) RemoveEvaluationGoalIDs(ids ...uuid.UUID) {
+	if m.removedevaluation_goals == nil {
+		m.removedevaluation_goals = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.evaluation_goals, ids[i])
+		m.removedevaluation_goals[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedEvaluationGoals returns the removed IDs of the "evaluation_goals" edge to the EvaluationGoal entity.
+func (m *GoalMutation) RemovedEvaluationGoalsIDs() (ids []uuid.UUID) {
+	for id := range m.removedevaluation_goals {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// EvaluationGoalsIDs returns the "evaluation_goals" edge IDs in the mutation.
+func (m *GoalMutation) EvaluationGoalsIDs() (ids []uuid.UUID) {
+	for id := range m.evaluation_goals {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetEvaluationGoals resets all changes to the "evaluation_goals" edge.
+func (m *GoalMutation) ResetEvaluationGoals() {
+	m.evaluation_goals = nil
+	m.clearedevaluation_goals = false
+	m.removedevaluation_goals = nil
+}
+
+// Where appends a list predicates to the GoalMutation builder.
+func (m *GoalMutation) Where(ps ...predicate.Goal) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the GoalMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *GoalMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.Goal, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *GoalMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *GoalMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (Goal).
+func (m *GoalMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *GoalMutation) Fields() []string {
+	fields := make([]string, 0, 12)
+	if m.created_at != nil {
+		fields = append(fields, goal.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, goal.FieldUpdatedAt)
+	}
+	if m.created_by != nil {
+		fields = append(fields, goal.FieldCreatedBy)
+	}
+	if m.updated_by != nil {
+		fields = append(fields, goal.FieldUpdatedBy)
+	}
+	if m.name != nil {
+		fields = append(fields, goal.FieldName)
+	}
+	if m.description != nil {
+		fields = append(fields, goal.FieldDescription)
+	}
+	if m.unit != nil {
+		fields = append(fields, goal.FieldUnit)
+	}
+	if m.weight != nil {
+		fields = append(fields, goal.FieldWeight)
+	}
+	if m.target_value != nil {
+		fields = append(fields, goal.FieldTargetValue)
+	}
+	if m.current_value != nil {
+		fields = append(fields, goal.FieldCurrentValue)
+	}
+	if m.state != nil {
+		fields = append(fields, goal.FieldState)
+	}
+	if m.category != nil {
+		fields = append(fields, goal.FieldCategoryID)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *GoalMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case goal.FieldCreatedAt:
+		return m.CreatedAt()
+	case goal.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case goal.FieldCreatedBy:
+		return m.CreatedBy()
+	case goal.FieldUpdatedBy:
+		return m.UpdatedBy()
+	case goal.FieldName:
+		return m.Name()
+	case goal.FieldDescription:
+		return m.Description()
+	case goal.FieldUnit:
+		return m.Unit()
+	case goal.FieldWeight:
+		return m.Weight()
+	case goal.FieldTargetValue:
+		return m.TargetValue()
+	case goal.FieldCurrentValue:
+		return m.CurrentValue()
+	case goal.FieldState:
+		return m.State()
+	case goal.FieldCategoryID:
+		return m.CategoryID()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *GoalMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case goal.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case goal.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case goal.FieldCreatedBy:
+		return m.OldCreatedBy(ctx)
+	case goal.FieldUpdatedBy:
+		return m.OldUpdatedBy(ctx)
+	case goal.FieldName:
+		return m.OldName(ctx)
+	case goal.FieldDescription:
+		return m.OldDescription(ctx)
+	case goal.FieldUnit:
+		return m.OldUnit(ctx)
+	case goal.FieldWeight:
+		return m.OldWeight(ctx)
+	case goal.FieldTargetValue:
+		return m.OldTargetValue(ctx)
+	case goal.FieldCurrentValue:
+		return m.OldCurrentValue(ctx)
+	case goal.FieldState:
+		return m.OldState(ctx)
+	case goal.FieldCategoryID:
+		return m.OldCategoryID(ctx)
+	}
+	return nil, fmt.Errorf("unknown Goal field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *GoalMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case goal.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case goal.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case goal.FieldCreatedBy:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedBy(v)
+		return nil
+	case goal.FieldUpdatedBy:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedBy(v)
+		return nil
+	case goal.FieldName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetName(v)
+		return nil
+	case goal.FieldDescription:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDescription(v)
+		return nil
+	case goal.FieldUnit:
+		v, ok := value.(goal.Unit)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUnit(v)
+		return nil
+	case goal.FieldWeight:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWeight(v)
+		return nil
+	case goal.FieldTargetValue:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTargetValue(v)
+		return nil
+	case goal.FieldCurrentValue:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCurrentValue(v)
+		return nil
+	case goal.FieldState:
+		v, ok := value.(goal.State)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetState(v)
+		return nil
+	case goal.FieldCategoryID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCategoryID(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Goal field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *GoalMutation) AddedFields() []string {
+	var fields []string
+	if m.addweight != nil {
+		fields = append(fields, goal.FieldWeight)
+	}
+	if m.addtarget_value != nil {
+		fields = append(fields, goal.FieldTargetValue)
+	}
+	if m.addcurrent_value != nil {
+		fields = append(fields, goal.FieldCurrentValue)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *GoalMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case goal.FieldWeight:
+		return m.AddedWeight()
+	case goal.FieldTargetValue:
+		return m.AddedTargetValue()
+	case goal.FieldCurrentValue:
+		return m.AddedCurrentValue()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *GoalMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case goal.FieldWeight:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddWeight(v)
+		return nil
+	case goal.FieldTargetValue:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddTargetValue(v)
+		return nil
+	case goal.FieldCurrentValue:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddCurrentValue(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Goal numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *GoalMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(goal.FieldDescription) {
+		fields = append(fields, goal.FieldDescription)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *GoalMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *GoalMutation) ClearField(name string) error {
+	switch name {
+	case goal.FieldDescription:
+		m.ClearDescription()
+		return nil
+	}
+	return fmt.Errorf("unknown Goal nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *GoalMutation) ResetField(name string) error {
+	switch name {
+	case goal.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case goal.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case goal.FieldCreatedBy:
+		m.ResetCreatedBy()
+		return nil
+	case goal.FieldUpdatedBy:
+		m.ResetUpdatedBy()
+		return nil
+	case goal.FieldName:
+		m.ResetName()
+		return nil
+	case goal.FieldDescription:
+		m.ResetDescription()
+		return nil
+	case goal.FieldUnit:
+		m.ResetUnit()
+		return nil
+	case goal.FieldWeight:
+		m.ResetWeight()
+		return nil
+	case goal.FieldTargetValue:
+		m.ResetTargetValue()
+		return nil
+	case goal.FieldCurrentValue:
+		m.ResetCurrentValue()
+		return nil
+	case goal.FieldState:
+		m.ResetState()
+		return nil
+	case goal.FieldCategoryID:
+		m.ResetCategoryID()
+		return nil
+	}
+	return fmt.Errorf("unknown Goal field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *GoalMutation) AddedEdges() []string {
+	edges := make([]string, 0, 3)
+	if m.category != nil {
+		edges = append(edges, goal.EdgeCategory)
+	}
+	if m.kpi_links != nil {
+		edges = append(edges, goal.EdgeKpiLinks)
+	}
+	if m.evaluation_goals != nil {
+		edges = append(edges, goal.EdgeEvaluationGoals)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *GoalMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case goal.EdgeCategory:
+		if id := m.category; id != nil {
+			return []ent.Value{*id}
+		}
+	case goal.EdgeKpiLinks:
+		ids := make([]ent.Value, 0, len(m.kpi_links))
+		for id := range m.kpi_links {
+			ids = append(ids, id)
+		}
+		return ids
+	case goal.EdgeEvaluationGoals:
+		ids := make([]ent.Value, 0, len(m.evaluation_goals))
+		for id := range m.evaluation_goals {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *GoalMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 3)
+	if m.removedkpi_links != nil {
+		edges = append(edges, goal.EdgeKpiLinks)
+	}
+	if m.removedevaluation_goals != nil {
+		edges = append(edges, goal.EdgeEvaluationGoals)
+	}
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *GoalMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case goal.EdgeKpiLinks:
+		ids := make([]ent.Value, 0, len(m.removedkpi_links))
+		for id := range m.removedkpi_links {
+			ids = append(ids, id)
+		}
+		return ids
+	case goal.EdgeEvaluationGoals:
+		ids := make([]ent.Value, 0, len(m.removedevaluation_goals))
+		for id := range m.removedevaluation_goals {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *GoalMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 3)
+	if m.clearedcategory {
+		edges = append(edges, goal.EdgeCategory)
+	}
+	if m.clearedkpi_links {
+		edges = append(edges, goal.EdgeKpiLinks)
+	}
+	if m.clearedevaluation_goals {
+		edges = append(edges, goal.EdgeEvaluationGoals)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *GoalMutation) EdgeCleared(name string) bool {
+	switch name {
+	case goal.EdgeCategory:
+		return m.clearedcategory
+	case goal.EdgeKpiLinks:
+		return m.clearedkpi_links
+	case goal.EdgeEvaluationGoals:
+		return m.clearedevaluation_goals
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *GoalMutation) ClearEdge(name string) error {
+	switch name {
+	case goal.EdgeCategory:
+		m.ClearCategory()
+		return nil
+	}
+	return fmt.Errorf("unknown Goal unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *GoalMutation) ResetEdge(name string) error {
+	switch name {
+	case goal.EdgeCategory:
+		m.ResetCategory()
+		return nil
+	case goal.EdgeKpiLinks:
+		m.ResetKpiLinks()
+		return nil
+	case goal.EdgeEvaluationGoals:
+		m.ResetEvaluationGoals()
+		return nil
+	}
+	return fmt.Errorf("unknown Goal edge %s", name)
+}
+
+// GoalAssignmentMutation represents an operation that mutates the GoalAssignment nodes in the graph.
+type GoalAssignmentMutation struct {
+	config
+	op              Op
+	typ             string
+	id              *uuid.UUID
+	created_at      *time.Time
+	updated_at      *time.Time
+	clearedFields   map[string]struct{}
+	employee        *uuid.UUID
+	clearedemployee bool
+	cycle           *uuid.UUID
+	clearedcycle    bool
+	done            bool
+	oldValue        func(context.Context) (*GoalAssignment, error)
+	predicates      []predicate.GoalAssignment
+}
+
+var _ ent.Mutation = (*GoalAssignmentMutation)(nil)
+
+// goalassignmentOption allows management of the mutation configuration using functional options.
+type goalassignmentOption func(*GoalAssignmentMutation)
+
+// newGoalAssignmentMutation creates new mutation for the GoalAssignment entity.
+func newGoalAssignmentMutation(c config, op Op, opts ...goalassignmentOption) *GoalAssignmentMutation {
+	m := &GoalAssignmentMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeGoalAssignment,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withGoalAssignmentID sets the ID field of the mutation.
+func withGoalAssignmentID(id uuid.UUID) goalassignmentOption {
+	return func(m *GoalAssignmentMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *GoalAssignment
+		)
+		m.oldValue = func(ctx context.Context) (*GoalAssignment, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().GoalAssignment.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withGoalAssignment sets the old GoalAssignment of the mutation.
+func withGoalAssignment(node *GoalAssignment) goalassignmentOption {
+	return func(m *GoalAssignmentMutation) {
+		m.oldValue = func(context.Context) (*GoalAssignment, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m GoalAssignmentMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m GoalAssignmentMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("internal: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of GoalAssignment entities.
+func (m *GoalAssignmentMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *GoalAssignmentMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *GoalAssignmentMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().GoalAssignment.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *GoalAssignmentMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *GoalAssignmentMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the GoalAssignment entity.
+// If the GoalAssignment object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GoalAssignmentMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *GoalAssignmentMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *GoalAssignmentMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *GoalAssignmentMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the GoalAssignment entity.
+// If the GoalAssignment object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GoalAssignmentMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *GoalAssignmentMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetEmployeeID sets the "employee_id" field.
+func (m *GoalAssignmentMutation) SetEmployeeID(u uuid.UUID) {
+	m.employee = &u
+}
+
+// EmployeeID returns the value of the "employee_id" field in the mutation.
+func (m *GoalAssignmentMutation) EmployeeID() (r uuid.UUID, exists bool) {
+	v := m.employee
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEmployeeID returns the old "employee_id" field's value of the GoalAssignment entity.
+// If the GoalAssignment object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GoalAssignmentMutation) OldEmployeeID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEmployeeID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEmployeeID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEmployeeID: %w", err)
+	}
+	return oldValue.EmployeeID, nil
+}
+
+// ResetEmployeeID resets all changes to the "employee_id" field.
+func (m *GoalAssignmentMutation) ResetEmployeeID() {
+	m.employee = nil
+}
+
+// SetCycleID sets the "cycle_id" field.
+func (m *GoalAssignmentMutation) SetCycleID(u uuid.UUID) {
+	m.cycle = &u
+}
+
+// CycleID returns the value of the "cycle_id" field in the mutation.
+func (m *GoalAssignmentMutation) CycleID() (r uuid.UUID, exists bool) {
+	v := m.cycle
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCycleID returns the old "cycle_id" field's value of the GoalAssignment entity.
+// If the GoalAssignment object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GoalAssignmentMutation) OldCycleID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCycleID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCycleID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCycleID: %w", err)
+	}
+	return oldValue.CycleID, nil
+}
+
+// ResetCycleID resets all changes to the "cycle_id" field.
+func (m *GoalAssignmentMutation) ResetCycleID() {
+	m.cycle = nil
+}
+
+// ClearEmployee clears the "employee" edge to the Employee entity.
+func (m *GoalAssignmentMutation) ClearEmployee() {
+	m.clearedemployee = true
+	m.clearedFields[goalassignment.FieldEmployeeID] = struct{}{}
+}
+
+// EmployeeCleared reports if the "employee" edge to the Employee entity was cleared.
+func (m *GoalAssignmentMutation) EmployeeCleared() bool {
+	return m.clearedemployee
+}
+
+// EmployeeIDs returns the "employee" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// EmployeeID instead. It exists only for internal usage by the builders.
+func (m *GoalAssignmentMutation) EmployeeIDs() (ids []uuid.UUID) {
+	if id := m.employee; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetEmployee resets all changes to the "employee" edge.
+func (m *GoalAssignmentMutation) ResetEmployee() {
+	m.employee = nil
+	m.clearedemployee = false
+}
+
+// ClearCycle clears the "cycle" edge to the Cycle entity.
+func (m *GoalAssignmentMutation) ClearCycle() {
+	m.clearedcycle = true
+	m.clearedFields[goalassignment.FieldCycleID] = struct{}{}
+}
+
+// CycleCleared reports if the "cycle" edge to the Cycle entity was cleared.
+func (m *GoalAssignmentMutation) CycleCleared() bool {
+	return m.clearedcycle
+}
+
+// CycleIDs returns the "cycle" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// CycleID instead. It exists only for internal usage by the builders.
+func (m *GoalAssignmentMutation) CycleIDs() (ids []uuid.UUID) {
+	if id := m.cycle; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetCycle resets all changes to the "cycle" edge.
+func (m *GoalAssignmentMutation) ResetCycle() {
+	m.cycle = nil
+	m.clearedcycle = false
+}
+
+// Where appends a list predicates to the GoalAssignmentMutation builder.
+func (m *GoalAssignmentMutation) Where(ps ...predicate.GoalAssignment) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the GoalAssignmentMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *GoalAssignmentMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.GoalAssignment, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *GoalAssignmentMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *GoalAssignmentMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (GoalAssignment).
+func (m *GoalAssignmentMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *GoalAssignmentMutation) Fields() []string {
+	fields := make([]string, 0, 4)
+	if m.created_at != nil {
+		fields = append(fields, goalassignment.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, goalassignment.FieldUpdatedAt)
+	}
+	if m.employee != nil {
+		fields = append(fields, goalassignment.FieldEmployeeID)
+	}
+	if m.cycle != nil {
+		fields = append(fields, goalassignment.FieldCycleID)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *GoalAssignmentMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case goalassignment.FieldCreatedAt:
+		return m.CreatedAt()
+	case goalassignment.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case goalassignment.FieldEmployeeID:
+		return m.EmployeeID()
+	case goalassignment.FieldCycleID:
+		return m.CycleID()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *GoalAssignmentMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case goalassignment.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case goalassignment.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case goalassignment.FieldEmployeeID:
+		return m.OldEmployeeID(ctx)
+	case goalassignment.FieldCycleID:
+		return m.OldCycleID(ctx)
+	}
+	return nil, fmt.Errorf("unknown GoalAssignment field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *GoalAssignmentMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case goalassignment.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case goalassignment.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case goalassignment.FieldEmployeeID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEmployeeID(v)
+		return nil
+	case goalassignment.FieldCycleID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCycleID(v)
+		return nil
+	}
+	return fmt.Errorf("unknown GoalAssignment field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *GoalAssignmentMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *GoalAssignmentMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *GoalAssignmentMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown GoalAssignment numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *GoalAssignmentMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *GoalAssignmentMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *GoalAssignmentMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown GoalAssignment nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *GoalAssignmentMutation) ResetField(name string) error {
+	switch name {
+	case goalassignment.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case goalassignment.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case goalassignment.FieldEmployeeID:
+		m.ResetEmployeeID()
+		return nil
+	case goalassignment.FieldCycleID:
+		m.ResetCycleID()
+		return nil
+	}
+	return fmt.Errorf("unknown GoalAssignment field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *GoalAssignmentMutation) AddedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.employee != nil {
+		edges = append(edges, goalassignment.EdgeEmployee)
+	}
+	if m.cycle != nil {
+		edges = append(edges, goalassignment.EdgeCycle)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *GoalAssignmentMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case goalassignment.EdgeEmployee:
+		if id := m.employee; id != nil {
+			return []ent.Value{*id}
+		}
+	case goalassignment.EdgeCycle:
+		if id := m.cycle; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *GoalAssignmentMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 2)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *GoalAssignmentMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *GoalAssignmentMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.clearedemployee {
+		edges = append(edges, goalassignment.EdgeEmployee)
+	}
+	if m.clearedcycle {
+		edges = append(edges, goalassignment.EdgeCycle)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *GoalAssignmentMutation) EdgeCleared(name string) bool {
+	switch name {
+	case goalassignment.EdgeEmployee:
+		return m.clearedemployee
+	case goalassignment.EdgeCycle:
+		return m.clearedcycle
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *GoalAssignmentMutation) ClearEdge(name string) error {
+	switch name {
+	case goalassignment.EdgeEmployee:
+		m.ClearEmployee()
+		return nil
+	case goalassignment.EdgeCycle:
+		m.ClearCycle()
+		return nil
+	}
+	return fmt.Errorf("unknown GoalAssignment unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *GoalAssignmentMutation) ResetEdge(name string) error {
+	switch name {
+	case goalassignment.EdgeEmployee:
+		m.ResetEmployee()
+		return nil
+	case goalassignment.EdgeCycle:
+		m.ResetCycle()
+		return nil
+	}
+	return fmt.Errorf("unknown GoalAssignment edge %s", name)
+}
+
+// GoalCategoryMutation represents an operation that mutates the GoalCategory nodes in the graph.
+type GoalCategoryMutation struct {
+	config
+	op              Op
+	typ             string
+	id              *uuid.UUID
+	created_at      *time.Time
+	updated_at      *time.Time
+	created_by      *uuid.UUID
+	updated_by      *uuid.UUID
+	name            *string
+	description     *string
+	weight          *float64
+	addweight       *float64
+	clearedFields   map[string]struct{}
+	employee        *uuid.UUID
+	clearedemployee bool
+	goals           map[uuid.UUID]struct{}
+	removedgoals    map[uuid.UUID]struct{}
+	clearedgoals    bool
+	done            bool
+	oldValue        func(context.Context) (*GoalCategory, error)
+	predicates      []predicate.GoalCategory
+}
+
+var _ ent.Mutation = (*GoalCategoryMutation)(nil)
+
+// goalcategoryOption allows management of the mutation configuration using functional options.
+type goalcategoryOption func(*GoalCategoryMutation)
+
+// newGoalCategoryMutation creates new mutation for the GoalCategory entity.
+func newGoalCategoryMutation(c config, op Op, opts ...goalcategoryOption) *GoalCategoryMutation {
+	m := &GoalCategoryMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeGoalCategory,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withGoalCategoryID sets the ID field of the mutation.
+func withGoalCategoryID(id uuid.UUID) goalcategoryOption {
+	return func(m *GoalCategoryMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *GoalCategory
+		)
+		m.oldValue = func(ctx context.Context) (*GoalCategory, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().GoalCategory.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withGoalCategory sets the old GoalCategory of the mutation.
+func withGoalCategory(node *GoalCategory) goalcategoryOption {
+	return func(m *GoalCategoryMutation) {
+		m.oldValue = func(context.Context) (*GoalCategory, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m GoalCategoryMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m GoalCategoryMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("internal: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of GoalCategory entities.
+func (m *GoalCategoryMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *GoalCategoryMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *GoalCategoryMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().GoalCategory.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *GoalCategoryMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *GoalCategoryMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the GoalCategory entity.
+// If the GoalCategory object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GoalCategoryMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *GoalCategoryMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *GoalCategoryMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *GoalCategoryMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the GoalCategory entity.
+// If the GoalCategory object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GoalCategoryMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *GoalCategoryMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetCreatedBy sets the "created_by" field.
+func (m *GoalCategoryMutation) SetCreatedBy(u uuid.UUID) {
+	m.created_by = &u
+}
+
+// CreatedBy returns the value of the "created_by" field in the mutation.
+func (m *GoalCategoryMutation) CreatedBy() (r uuid.UUID, exists bool) {
+	v := m.created_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedBy returns the old "created_by" field's value of the GoalCategory entity.
+// If the GoalCategory object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GoalCategoryMutation) OldCreatedBy(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedBy is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedBy requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedBy: %w", err)
+	}
+	return oldValue.CreatedBy, nil
+}
+
+// ResetCreatedBy resets all changes to the "created_by" field.
+func (m *GoalCategoryMutation) ResetCreatedBy() {
+	m.created_by = nil
+}
+
+// SetUpdatedBy sets the "updated_by" field.
+func (m *GoalCategoryMutation) SetUpdatedBy(u uuid.UUID) {
+	m.updated_by = &u
+}
+
+// UpdatedBy returns the value of the "updated_by" field in the mutation.
+func (m *GoalCategoryMutation) UpdatedBy() (r uuid.UUID, exists bool) {
+	v := m.updated_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedBy returns the old "updated_by" field's value of the GoalCategory entity.
+// If the GoalCategory object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GoalCategoryMutation) OldUpdatedBy(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedBy is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedBy requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedBy: %w", err)
+	}
+	return oldValue.UpdatedBy, nil
+}
+
+// ResetUpdatedBy resets all changes to the "updated_by" field.
+func (m *GoalCategoryMutation) ResetUpdatedBy() {
+	m.updated_by = nil
+}
+
+// SetName sets the "name" field.
+func (m *GoalCategoryMutation) SetName(s string) {
+	m.name = &s
+}
+
+// Name returns the value of the "name" field in the mutation.
+func (m *GoalCategoryMutation) Name() (r string, exists bool) {
+	v := m.name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldName returns the old "name" field's value of the GoalCategory entity.
+// If the GoalCategory object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GoalCategoryMutation) OldName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldName: %w", err)
+	}
+	return oldValue.Name, nil
+}
+
+// ResetName resets all changes to the "name" field.
+func (m *GoalCategoryMutation) ResetName() {
+	m.name = nil
+}
+
+// SetDescription sets the "description" field.
+func (m *GoalCategoryMutation) SetDescription(s string) {
+	m.description = &s
+}
+
+// Description returns the value of the "description" field in the mutation.
+func (m *GoalCategoryMutation) Description() (r string, exists bool) {
+	v := m.description
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDescription returns the old "description" field's value of the GoalCategory entity.
+// If the GoalCategory object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GoalCategoryMutation) OldDescription(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDescription is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDescription requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDescription: %w", err)
+	}
+	return oldValue.Description, nil
+}
+
+// ClearDescription clears the value of the "description" field.
+func (m *GoalCategoryMutation) ClearDescription() {
+	m.description = nil
+	m.clearedFields[goalcategory.FieldDescription] = struct{}{}
+}
+
+// DescriptionCleared returns if the "description" field was cleared in this mutation.
+func (m *GoalCategoryMutation) DescriptionCleared() bool {
+	_, ok := m.clearedFields[goalcategory.FieldDescription]
+	return ok
+}
+
+// ResetDescription resets all changes to the "description" field.
+func (m *GoalCategoryMutation) ResetDescription() {
+	m.description = nil
+	delete(m.clearedFields, goalcategory.FieldDescription)
+}
+
+// SetWeight sets the "weight" field.
+func (m *GoalCategoryMutation) SetWeight(f float64) {
+	m.weight = &f
+	m.addweight = nil
+}
+
+// Weight returns the value of the "weight" field in the mutation.
+func (m *GoalCategoryMutation) Weight() (r float64, exists bool) {
+	v := m.weight
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWeight returns the old "weight" field's value of the GoalCategory entity.
+// If the GoalCategory object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GoalCategoryMutation) OldWeight(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldWeight is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldWeight requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWeight: %w", err)
+	}
+	return oldValue.Weight, nil
+}
+
+// AddWeight adds f to the "weight" field.
+func (m *GoalCategoryMutation) AddWeight(f float64) {
+	if m.addweight != nil {
+		*m.addweight += f
+	} else {
+		m.addweight = &f
+	}
+}
+
+// AddedWeight returns the value that was added to the "weight" field in this mutation.
+func (m *GoalCategoryMutation) AddedWeight() (r float64, exists bool) {
+	v := m.addweight
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetWeight resets all changes to the "weight" field.
+func (m *GoalCategoryMutation) ResetWeight() {
+	m.weight = nil
+	m.addweight = nil
+}
+
+// SetEmployeeID sets the "employee_id" field.
+func (m *GoalCategoryMutation) SetEmployeeID(u uuid.UUID) {
+	m.employee = &u
+}
+
+// EmployeeID returns the value of the "employee_id" field in the mutation.
+func (m *GoalCategoryMutation) EmployeeID() (r uuid.UUID, exists bool) {
+	v := m.employee
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEmployeeID returns the old "employee_id" field's value of the GoalCategory entity.
+// If the GoalCategory object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GoalCategoryMutation) OldEmployeeID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEmployeeID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEmployeeID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEmployeeID: %w", err)
+	}
+	return oldValue.EmployeeID, nil
+}
+
+// ResetEmployeeID resets all changes to the "employee_id" field.
+func (m *GoalCategoryMutation) ResetEmployeeID() {
+	m.employee = nil
+}
+
+// ClearEmployee clears the "employee" edge to the Employee entity.
+func (m *GoalCategoryMutation) ClearEmployee() {
+	m.clearedemployee = true
+	m.clearedFields[goalcategory.FieldEmployeeID] = struct{}{}
+}
+
+// EmployeeCleared reports if the "employee" edge to the Employee entity was cleared.
+func (m *GoalCategoryMutation) EmployeeCleared() bool {
+	return m.clearedemployee
+}
+
+// EmployeeIDs returns the "employee" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// EmployeeID instead. It exists only for internal usage by the builders.
+func (m *GoalCategoryMutation) EmployeeIDs() (ids []uuid.UUID) {
+	if id := m.employee; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetEmployee resets all changes to the "employee" edge.
+func (m *GoalCategoryMutation) ResetEmployee() {
+	m.employee = nil
+	m.clearedemployee = false
+}
+
+// AddGoalIDs adds the "goals" edge to the Goal entity by ids.
+func (m *GoalCategoryMutation) AddGoalIDs(ids ...uuid.UUID) {
+	if m.goals == nil {
+		m.goals = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.goals[ids[i]] = struct{}{}
+	}
+}
+
+// ClearGoals clears the "goals" edge to the Goal entity.
+func (m *GoalCategoryMutation) ClearGoals() {
+	m.clearedgoals = true
+}
+
+// GoalsCleared reports if the "goals" edge to the Goal entity was cleared.
+func (m *GoalCategoryMutation) GoalsCleared() bool {
+	return m.clearedgoals
+}
+
+// RemoveGoalIDs removes the "goals" edge to the Goal entity by IDs.
+func (m *GoalCategoryMutation) RemoveGoalIDs(ids ...uuid.UUID) {
+	if m.removedgoals == nil {
+		m.removedgoals = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.goals, ids[i])
+		m.removedgoals[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedGoals returns the removed IDs of the "goals" edge to the Goal entity.
+func (m *GoalCategoryMutation) RemovedGoalsIDs() (ids []uuid.UUID) {
+	for id := range m.removedgoals {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// GoalsIDs returns the "goals" edge IDs in the mutation.
+func (m *GoalCategoryMutation) GoalsIDs() (ids []uuid.UUID) {
+	for id := range m.goals {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetGoals resets all changes to the "goals" edge.
+func (m *GoalCategoryMutation) ResetGoals() {
+	m.goals = nil
+	m.clearedgoals = false
+	m.removedgoals = nil
+}
+
+// Where appends a list predicates to the GoalCategoryMutation builder.
+func (m *GoalCategoryMutation) Where(ps ...predicate.GoalCategory) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the GoalCategoryMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *GoalCategoryMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.GoalCategory, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *GoalCategoryMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *GoalCategoryMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (GoalCategory).
+func (m *GoalCategoryMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *GoalCategoryMutation) Fields() []string {
+	fields := make([]string, 0, 8)
+	if m.created_at != nil {
+		fields = append(fields, goalcategory.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, goalcategory.FieldUpdatedAt)
+	}
+	if m.created_by != nil {
+		fields = append(fields, goalcategory.FieldCreatedBy)
+	}
+	if m.updated_by != nil {
+		fields = append(fields, goalcategory.FieldUpdatedBy)
+	}
+	if m.name != nil {
+		fields = append(fields, goalcategory.FieldName)
+	}
+	if m.description != nil {
+		fields = append(fields, goalcategory.FieldDescription)
+	}
+	if m.weight != nil {
+		fields = append(fields, goalcategory.FieldWeight)
+	}
+	if m.employee != nil {
+		fields = append(fields, goalcategory.FieldEmployeeID)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *GoalCategoryMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case goalcategory.FieldCreatedAt:
+		return m.CreatedAt()
+	case goalcategory.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case goalcategory.FieldCreatedBy:
+		return m.CreatedBy()
+	case goalcategory.FieldUpdatedBy:
+		return m.UpdatedBy()
+	case goalcategory.FieldName:
+		return m.Name()
+	case goalcategory.FieldDescription:
+		return m.Description()
+	case goalcategory.FieldWeight:
+		return m.Weight()
+	case goalcategory.FieldEmployeeID:
+		return m.EmployeeID()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *GoalCategoryMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case goalcategory.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case goalcategory.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case goalcategory.FieldCreatedBy:
+		return m.OldCreatedBy(ctx)
+	case goalcategory.FieldUpdatedBy:
+		return m.OldUpdatedBy(ctx)
+	case goalcategory.FieldName:
+		return m.OldName(ctx)
+	case goalcategory.FieldDescription:
+		return m.OldDescription(ctx)
+	case goalcategory.FieldWeight:
+		return m.OldWeight(ctx)
+	case goalcategory.FieldEmployeeID:
+		return m.OldEmployeeID(ctx)
+	}
+	return nil, fmt.Errorf("unknown GoalCategory field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *GoalCategoryMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case goalcategory.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case goalcategory.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case goalcategory.FieldCreatedBy:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedBy(v)
+		return nil
+	case goalcategory.FieldUpdatedBy:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedBy(v)
+		return nil
+	case goalcategory.FieldName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetName(v)
+		return nil
+	case goalcategory.FieldDescription:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDescription(v)
+		return nil
+	case goalcategory.FieldWeight:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWeight(v)
+		return nil
+	case goalcategory.FieldEmployeeID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEmployeeID(v)
+		return nil
+	}
+	return fmt.Errorf("unknown GoalCategory field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *GoalCategoryMutation) AddedFields() []string {
+	var fields []string
+	if m.addweight != nil {
+		fields = append(fields, goalcategory.FieldWeight)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *GoalCategoryMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case goalcategory.FieldWeight:
+		return m.AddedWeight()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *GoalCategoryMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case goalcategory.FieldWeight:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddWeight(v)
+		return nil
+	}
+	return fmt.Errorf("unknown GoalCategory numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *GoalCategoryMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(goalcategory.FieldDescription) {
+		fields = append(fields, goalcategory.FieldDescription)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *GoalCategoryMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *GoalCategoryMutation) ClearField(name string) error {
+	switch name {
+	case goalcategory.FieldDescription:
+		m.ClearDescription()
+		return nil
+	}
+	return fmt.Errorf("unknown GoalCategory nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *GoalCategoryMutation) ResetField(name string) error {
+	switch name {
+	case goalcategory.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case goalcategory.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case goalcategory.FieldCreatedBy:
+		m.ResetCreatedBy()
+		return nil
+	case goalcategory.FieldUpdatedBy:
+		m.ResetUpdatedBy()
+		return nil
+	case goalcategory.FieldName:
+		m.ResetName()
+		return nil
+	case goalcategory.FieldDescription:
+		m.ResetDescription()
+		return nil
+	case goalcategory.FieldWeight:
+		m.ResetWeight()
+		return nil
+	case goalcategory.FieldEmployeeID:
+		m.ResetEmployeeID()
+		return nil
+	}
+	return fmt.Errorf("unknown GoalCategory field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *GoalCategoryMutation) AddedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.employee != nil {
+		edges = append(edges, goalcategory.EdgeEmployee)
+	}
+	if m.goals != nil {
+		edges = append(edges, goalcategory.EdgeGoals)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *GoalCategoryMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case goalcategory.EdgeEmployee:
+		if id := m.employee; id != nil {
+			return []ent.Value{*id}
+		}
+	case goalcategory.EdgeGoals:
+		ids := make([]ent.Value, 0, len(m.goals))
+		for id := range m.goals {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *GoalCategoryMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.removedgoals != nil {
+		edges = append(edges, goalcategory.EdgeGoals)
+	}
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *GoalCategoryMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case goalcategory.EdgeGoals:
+		ids := make([]ent.Value, 0, len(m.removedgoals))
+		for id := range m.removedgoals {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *GoalCategoryMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.clearedemployee {
+		edges = append(edges, goalcategory.EdgeEmployee)
+	}
+	if m.clearedgoals {
+		edges = append(edges, goalcategory.EdgeGoals)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *GoalCategoryMutation) EdgeCleared(name string) bool {
+	switch name {
+	case goalcategory.EdgeEmployee:
+		return m.clearedemployee
+	case goalcategory.EdgeGoals:
+		return m.clearedgoals
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *GoalCategoryMutation) ClearEdge(name string) error {
+	switch name {
+	case goalcategory.EdgeEmployee:
+		m.ClearEmployee()
+		return nil
+	}
+	return fmt.Errorf("unknown GoalCategory unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *GoalCategoryMutation) ResetEdge(name string) error {
+	switch name {
+	case goalcategory.EdgeEmployee:
+		m.ResetEmployee()
+		return nil
+	case goalcategory.EdgeGoals:
+		m.ResetGoals()
+		return nil
+	}
+	return fmt.Errorf("unknown GoalCategory edge %s", name)
+}
+
+// GoalKpiLinkMutation represents an operation that mutates the GoalKpiLink nodes in the graph.
+type GoalKpiLinkMutation struct {
+	config
+	op            Op
+	typ           string
+	id            *int
+	created_at    *time.Time
+	clearedFields map[string]struct{}
+	goal          *uuid.UUID
+	clearedgoal   bool
+	kpi           *uuid.UUID
+	clearedkpi    bool
+	done          bool
+	oldValue      func(context.Context) (*GoalKpiLink, error)
+	predicates    []predicate.GoalKpiLink
+}
+
+var _ ent.Mutation = (*GoalKpiLinkMutation)(nil)
+
+// goalkpilinkOption allows management of the mutation configuration using functional options.
+type goalkpilinkOption func(*GoalKpiLinkMutation)
+
+// newGoalKpiLinkMutation creates new mutation for the GoalKpiLink entity.
+func newGoalKpiLinkMutation(c config, op Op, opts ...goalkpilinkOption) *GoalKpiLinkMutation {
+	m := &GoalKpiLinkMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeGoalKpiLink,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withGoalKpiLinkID sets the ID field of the mutation.
+func withGoalKpiLinkID(id int) goalkpilinkOption {
+	return func(m *GoalKpiLinkMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *GoalKpiLink
+		)
+		m.oldValue = func(ctx context.Context) (*GoalKpiLink, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().GoalKpiLink.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withGoalKpiLink sets the old GoalKpiLink of the mutation.
+func withGoalKpiLink(node *GoalKpiLink) goalkpilinkOption {
+	return func(m *GoalKpiLinkMutation) {
+		m.oldValue = func(context.Context) (*GoalKpiLink, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m GoalKpiLinkMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m GoalKpiLinkMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("internal: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *GoalKpiLinkMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *GoalKpiLinkMutation) IDs(ctx context.Context) ([]int, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().GoalKpiLink.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetGoalID sets the "goal_id" field.
+func (m *GoalKpiLinkMutation) SetGoalID(u uuid.UUID) {
+	m.goal = &u
+}
+
+// GoalID returns the value of the "goal_id" field in the mutation.
+func (m *GoalKpiLinkMutation) GoalID() (r uuid.UUID, exists bool) {
+	v := m.goal
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldGoalID returns the old "goal_id" field's value of the GoalKpiLink entity.
+// If the GoalKpiLink object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GoalKpiLinkMutation) OldGoalID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldGoalID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldGoalID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldGoalID: %w", err)
+	}
+	return oldValue.GoalID, nil
+}
+
+// ResetGoalID resets all changes to the "goal_id" field.
+func (m *GoalKpiLinkMutation) ResetGoalID() {
+	m.goal = nil
+}
+
+// SetKpiID sets the "kpi_id" field.
+func (m *GoalKpiLinkMutation) SetKpiID(u uuid.UUID) {
+	m.kpi = &u
+}
+
+// KpiID returns the value of the "kpi_id" field in the mutation.
+func (m *GoalKpiLinkMutation) KpiID() (r uuid.UUID, exists bool) {
+	v := m.kpi
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldKpiID returns the old "kpi_id" field's value of the GoalKpiLink entity.
+// If the GoalKpiLink object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GoalKpiLinkMutation) OldKpiID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldKpiID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldKpiID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldKpiID: %w", err)
+	}
+	return oldValue.KpiID, nil
+}
+
+// ResetKpiID resets all changes to the "kpi_id" field.
+func (m *GoalKpiLinkMutation) ResetKpiID() {
+	m.kpi = nil
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *GoalKpiLinkMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *GoalKpiLinkMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the GoalKpiLink entity.
+// If the GoalKpiLink object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GoalKpiLinkMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *GoalKpiLinkMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// ClearGoal clears the "goal" edge to the Goal entity.
+func (m *GoalKpiLinkMutation) ClearGoal() {
+	m.clearedgoal = true
+	m.clearedFields[goalkpilink.FieldGoalID] = struct{}{}
+}
+
+// GoalCleared reports if the "goal" edge to the Goal entity was cleared.
+func (m *GoalKpiLinkMutation) GoalCleared() bool {
+	return m.clearedgoal
+}
+
+// GoalIDs returns the "goal" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// GoalID instead. It exists only for internal usage by the builders.
+func (m *GoalKpiLinkMutation) GoalIDs() (ids []uuid.UUID) {
+	if id := m.goal; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetGoal resets all changes to the "goal" edge.
+func (m *GoalKpiLinkMutation) ResetGoal() {
+	m.goal = nil
+	m.clearedgoal = false
+}
+
+// ClearKpi clears the "kpi" edge to the KPI entity.
+func (m *GoalKpiLinkMutation) ClearKpi() {
+	m.clearedkpi = true
+	m.clearedFields[goalkpilink.FieldKpiID] = struct{}{}
+}
+
+// KpiCleared reports if the "kpi" edge to the KPI entity was cleared.
+func (m *GoalKpiLinkMutation) KpiCleared() bool {
+	return m.clearedkpi
+}
+
+// KpiIDs returns the "kpi" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// KpiID instead. It exists only for internal usage by the builders.
+func (m *GoalKpiLinkMutation) KpiIDs() (ids []uuid.UUID) {
+	if id := m.kpi; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetKpi resets all changes to the "kpi" edge.
+func (m *GoalKpiLinkMutation) ResetKpi() {
+	m.kpi = nil
+	m.clearedkpi = false
+}
+
+// Where appends a list predicates to the GoalKpiLinkMutation builder.
+func (m *GoalKpiLinkMutation) Where(ps ...predicate.GoalKpiLink) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the GoalKpiLinkMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *GoalKpiLinkMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.GoalKpiLink, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *GoalKpiLinkMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *GoalKpiLinkMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (GoalKpiLink).
+func (m *GoalKpiLinkMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *GoalKpiLinkMutation) Fields() []string {
+	fields := make([]string, 0, 3)
+	if m.goal != nil {
+		fields = append(fields, goalkpilink.FieldGoalID)
+	}
+	if m.kpi != nil {
+		fields = append(fields, goalkpilink.FieldKpiID)
+	}
+	if m.created_at != nil {
+		fields = append(fields, goalkpilink.FieldCreatedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *GoalKpiLinkMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case goalkpilink.FieldGoalID:
+		return m.GoalID()
+	case goalkpilink.FieldKpiID:
+		return m.KpiID()
+	case goalkpilink.FieldCreatedAt:
+		return m.CreatedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *GoalKpiLinkMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case goalkpilink.FieldGoalID:
+		return m.OldGoalID(ctx)
+	case goalkpilink.FieldKpiID:
+		return m.OldKpiID(ctx)
+	case goalkpilink.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown GoalKpiLink field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *GoalKpiLinkMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case goalkpilink.FieldGoalID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetGoalID(v)
+		return nil
+	case goalkpilink.FieldKpiID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetKpiID(v)
+		return nil
+	case goalkpilink.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown GoalKpiLink field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *GoalKpiLinkMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *GoalKpiLinkMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *GoalKpiLinkMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown GoalKpiLink numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *GoalKpiLinkMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *GoalKpiLinkMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *GoalKpiLinkMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown GoalKpiLink nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *GoalKpiLinkMutation) ResetField(name string) error {
+	switch name {
+	case goalkpilink.FieldGoalID:
+		m.ResetGoalID()
+		return nil
+	case goalkpilink.FieldKpiID:
+		m.ResetKpiID()
+		return nil
+	case goalkpilink.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown GoalKpiLink field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *GoalKpiLinkMutation) AddedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.goal != nil {
+		edges = append(edges, goalkpilink.EdgeGoal)
+	}
+	if m.kpi != nil {
+		edges = append(edges, goalkpilink.EdgeKpi)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *GoalKpiLinkMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case goalkpilink.EdgeGoal:
+		if id := m.goal; id != nil {
+			return []ent.Value{*id}
+		}
+	case goalkpilink.EdgeKpi:
+		if id := m.kpi; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *GoalKpiLinkMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 2)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *GoalKpiLinkMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *GoalKpiLinkMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.clearedgoal {
+		edges = append(edges, goalkpilink.EdgeGoal)
+	}
+	if m.clearedkpi {
+		edges = append(edges, goalkpilink.EdgeKpi)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *GoalKpiLinkMutation) EdgeCleared(name string) bool {
+	switch name {
+	case goalkpilink.EdgeGoal:
+		return m.clearedgoal
+	case goalkpilink.EdgeKpi:
+		return m.clearedkpi
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *GoalKpiLinkMutation) ClearEdge(name string) error {
+	switch name {
+	case goalkpilink.EdgeGoal:
+		m.ClearGoal()
+		return nil
+	case goalkpilink.EdgeKpi:
+		m.ClearKpi()
+		return nil
+	}
+	return fmt.Errorf("unknown GoalKpiLink unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *GoalKpiLinkMutation) ResetEdge(name string) error {
+	switch name {
+	case goalkpilink.EdgeGoal:
+		m.ResetGoal()
+		return nil
+	case goalkpilink.EdgeKpi:
+		m.ResetKpi()
+		return nil
+	}
+	return fmt.Errorf("unknown GoalKpiLink edge %s", name)
+}
+
+// KPIMutation represents an operation that mutates the KPI nodes in the graph.
+type KPIMutation struct {
+	config
+	op                Op
+	typ               string
+	id                *uuid.UUID
+	created_at        *time.Time
+	updated_at        *time.Time
+	name              *string
+	unit              *kpi.Unit
+	description       *string
+	clearedFields     map[string]struct{}
+	goal_links        map[int]struct{}
+	removedgoal_links map[int]struct{}
+	clearedgoal_links bool
+	done              bool
+	oldValue          func(context.Context) (*KPI, error)
+	predicates        []predicate.KPI
+}
+
+var _ ent.Mutation = (*KPIMutation)(nil)
+
+// kpiOption allows management of the mutation configuration using functional options.
+type kpiOption func(*KPIMutation)
+
+// newKPIMutation creates new mutation for the KPI entity.
+func newKPIMutation(c config, op Op, opts ...kpiOption) *KPIMutation {
+	m := &KPIMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeKPI,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withKPIID sets the ID field of the mutation.
+func withKPIID(id uuid.UUID) kpiOption {
+	return func(m *KPIMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *KPI
+		)
+		m.oldValue = func(ctx context.Context) (*KPI, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().KPI.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withKPI sets the old KPI of the mutation.
+func withKPI(node *KPI) kpiOption {
+	return func(m *KPIMutation) {
+		m.oldValue = func(context.Context) (*KPI, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m KPIMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m KPIMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("internal: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of KPI entities.
+func (m *KPIMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *KPIMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *KPIMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().KPI.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *KPIMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *KPIMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the KPI entity.
+// If the KPI object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *KPIMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *KPIMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *KPIMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *KPIMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the KPI entity.
+// If the KPI object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *KPIMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *KPIMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetName sets the "name" field.
+func (m *KPIMutation) SetName(s string) {
+	m.name = &s
+}
+
+// Name returns the value of the "name" field in the mutation.
+func (m *KPIMutation) Name() (r string, exists bool) {
+	v := m.name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldName returns the old "name" field's value of the KPI entity.
+// If the KPI object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *KPIMutation) OldName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldName: %w", err)
+	}
+	return oldValue.Name, nil
+}
+
+// ResetName resets all changes to the "name" field.
+func (m *KPIMutation) ResetName() {
+	m.name = nil
+}
+
+// SetUnit sets the "unit" field.
+func (m *KPIMutation) SetUnit(k kpi.Unit) {
+	m.unit = &k
+}
+
+// Unit returns the value of the "unit" field in the mutation.
+func (m *KPIMutation) Unit() (r kpi.Unit, exists bool) {
+	v := m.unit
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUnit returns the old "unit" field's value of the KPI entity.
+// If the KPI object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *KPIMutation) OldUnit(ctx context.Context) (v kpi.Unit, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUnit is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUnit requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUnit: %w", err)
+	}
+	return oldValue.Unit, nil
+}
+
+// ResetUnit resets all changes to the "unit" field.
+func (m *KPIMutation) ResetUnit() {
+	m.unit = nil
+}
+
+// SetDescription sets the "description" field.
+func (m *KPIMutation) SetDescription(s string) {
+	m.description = &s
+}
+
+// Description returns the value of the "description" field in the mutation.
+func (m *KPIMutation) Description() (r string, exists bool) {
+	v := m.description
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDescription returns the old "description" field's value of the KPI entity.
+// If the KPI object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *KPIMutation) OldDescription(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDescription is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDescription requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDescription: %w", err)
+	}
+	return oldValue.Description, nil
+}
+
+// ClearDescription clears the value of the "description" field.
+func (m *KPIMutation) ClearDescription() {
+	m.description = nil
+	m.clearedFields[kpi.FieldDescription] = struct{}{}
+}
+
+// DescriptionCleared returns if the "description" field was cleared in this mutation.
+func (m *KPIMutation) DescriptionCleared() bool {
+	_, ok := m.clearedFields[kpi.FieldDescription]
+	return ok
+}
+
+// ResetDescription resets all changes to the "description" field.
+func (m *KPIMutation) ResetDescription() {
+	m.description = nil
+	delete(m.clearedFields, kpi.FieldDescription)
+}
+
+// AddGoalLinkIDs adds the "goal_links" edge to the GoalKpiLink entity by ids.
+func (m *KPIMutation) AddGoalLinkIDs(ids ...int) {
+	if m.goal_links == nil {
+		m.goal_links = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.goal_links[ids[i]] = struct{}{}
+	}
+}
+
+// ClearGoalLinks clears the "goal_links" edge to the GoalKpiLink entity.
+func (m *KPIMutation) ClearGoalLinks() {
+	m.clearedgoal_links = true
+}
+
+// GoalLinksCleared reports if the "goal_links" edge to the GoalKpiLink entity was cleared.
+func (m *KPIMutation) GoalLinksCleared() bool {
+	return m.clearedgoal_links
+}
+
+// RemoveGoalLinkIDs removes the "goal_links" edge to the GoalKpiLink entity by IDs.
+func (m *KPIMutation) RemoveGoalLinkIDs(ids ...int) {
+	if m.removedgoal_links == nil {
+		m.removedgoal_links = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.goal_links, ids[i])
+		m.removedgoal_links[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedGoalLinks returns the removed IDs of the "goal_links" edge to the GoalKpiLink entity.
+func (m *KPIMutation) RemovedGoalLinksIDs() (ids []int) {
+	for id := range m.removedgoal_links {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// GoalLinksIDs returns the "goal_links" edge IDs in the mutation.
+func (m *KPIMutation) GoalLinksIDs() (ids []int) {
+	for id := range m.goal_links {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetGoalLinks resets all changes to the "goal_links" edge.
+func (m *KPIMutation) ResetGoalLinks() {
+	m.goal_links = nil
+	m.clearedgoal_links = false
+	m.removedgoal_links = nil
+}
+
+// Where appends a list predicates to the KPIMutation builder.
+func (m *KPIMutation) Where(ps ...predicate.KPI) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the KPIMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *KPIMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.KPI, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *KPIMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *KPIMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (KPI).
+func (m *KPIMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *KPIMutation) Fields() []string {
+	fields := make([]string, 0, 5)
+	if m.created_at != nil {
+		fields = append(fields, kpi.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, kpi.FieldUpdatedAt)
+	}
+	if m.name != nil {
+		fields = append(fields, kpi.FieldName)
+	}
+	if m.unit != nil {
+		fields = append(fields, kpi.FieldUnit)
+	}
+	if m.description != nil {
+		fields = append(fields, kpi.FieldDescription)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *KPIMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case kpi.FieldCreatedAt:
+		return m.CreatedAt()
+	case kpi.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case kpi.FieldName:
+		return m.Name()
+	case kpi.FieldUnit:
+		return m.Unit()
+	case kpi.FieldDescription:
+		return m.Description()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *KPIMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case kpi.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case kpi.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case kpi.FieldName:
+		return m.OldName(ctx)
+	case kpi.FieldUnit:
+		return m.OldUnit(ctx)
+	case kpi.FieldDescription:
+		return m.OldDescription(ctx)
+	}
+	return nil, fmt.Errorf("unknown KPI field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *KPIMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case kpi.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case kpi.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case kpi.FieldName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetName(v)
+		return nil
+	case kpi.FieldUnit:
+		v, ok := value.(kpi.Unit)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUnit(v)
+		return nil
+	case kpi.FieldDescription:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDescription(v)
+		return nil
+	}
+	return fmt.Errorf("unknown KPI field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *KPIMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *KPIMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *KPIMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown KPI numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *KPIMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(kpi.FieldDescription) {
+		fields = append(fields, kpi.FieldDescription)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *KPIMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *KPIMutation) ClearField(name string) error {
+	switch name {
+	case kpi.FieldDescription:
+		m.ClearDescription()
+		return nil
+	}
+	return fmt.Errorf("unknown KPI nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *KPIMutation) ResetField(name string) error {
+	switch name {
+	case kpi.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case kpi.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case kpi.FieldName:
+		m.ResetName()
+		return nil
+	case kpi.FieldUnit:
+		m.ResetUnit()
+		return nil
+	case kpi.FieldDescription:
+		m.ResetDescription()
+		return nil
+	}
+	return fmt.Errorf("unknown KPI field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *KPIMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.goal_links != nil {
+		edges = append(edges, kpi.EdgeGoalLinks)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *KPIMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case kpi.EdgeGoalLinks:
+		ids := make([]ent.Value, 0, len(m.goal_links))
+		for id := range m.goal_links {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *KPIMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.removedgoal_links != nil {
+		edges = append(edges, kpi.EdgeGoalLinks)
+	}
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *KPIMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case kpi.EdgeGoalLinks:
+		ids := make([]ent.Value, 0, len(m.removedgoal_links))
+		for id := range m.removedgoal_links {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *KPIMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedgoal_links {
+		edges = append(edges, kpi.EdgeGoalLinks)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *KPIMutation) EdgeCleared(name string) bool {
+	switch name {
+	case kpi.EdgeGoalLinks:
+		return m.clearedgoal_links
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *KPIMutation) ClearEdge(name string) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown KPI unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *KPIMutation) ResetEdge(name string) error {
+	switch name {
+	case kpi.EdgeGoalLinks:
+		m.ResetGoalLinks()
+		return nil
+	}
+	return fmt.Errorf("unknown KPI edge %s", name)
+}
+
 // LevelDefinitionMutation represents an operation that mutates the LevelDefinition nodes in the graph.
 type LevelDefinitionMutation struct {
 	config
@@ -5645,6 +13236,2904 @@ func (m *LevelDefinitionMutation) ClearEdge(name string) error {
 // It returns an error if the edge is not defined in the schema.
 func (m *LevelDefinitionMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown LevelDefinition edge %s", name)
+}
+
+// NineBoxEntryMutation represents an operation that mutates the NineBoxEntry nodes in the graph.
+type NineBoxEntryMutation struct {
+	config
+	op                   Op
+	typ                  string
+	id                   *uuid.UUID
+	created_at           *time.Time
+	updated_at           *time.Time
+	created_by           *uuid.UUID
+	updated_by           *uuid.UUID
+	performance_score    *int
+	addperformance_score *int
+	potential_score      *int
+	addpotential_score   *int
+	quadrant             *int
+	addquadrant          *int
+	comments             *string
+	clearedFields        map[string]struct{}
+	matrix               *uuid.UUID
+	clearedmatrix        bool
+	evaluatee            *uuid.UUID
+	clearedevaluatee     bool
+	done                 bool
+	oldValue             func(context.Context) (*NineBoxEntry, error)
+	predicates           []predicate.NineBoxEntry
+}
+
+var _ ent.Mutation = (*NineBoxEntryMutation)(nil)
+
+// nineboxentryOption allows management of the mutation configuration using functional options.
+type nineboxentryOption func(*NineBoxEntryMutation)
+
+// newNineBoxEntryMutation creates new mutation for the NineBoxEntry entity.
+func newNineBoxEntryMutation(c config, op Op, opts ...nineboxentryOption) *NineBoxEntryMutation {
+	m := &NineBoxEntryMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeNineBoxEntry,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withNineBoxEntryID sets the ID field of the mutation.
+func withNineBoxEntryID(id uuid.UUID) nineboxentryOption {
+	return func(m *NineBoxEntryMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *NineBoxEntry
+		)
+		m.oldValue = func(ctx context.Context) (*NineBoxEntry, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().NineBoxEntry.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withNineBoxEntry sets the old NineBoxEntry of the mutation.
+func withNineBoxEntry(node *NineBoxEntry) nineboxentryOption {
+	return func(m *NineBoxEntryMutation) {
+		m.oldValue = func(context.Context) (*NineBoxEntry, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m NineBoxEntryMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m NineBoxEntryMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("internal: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of NineBoxEntry entities.
+func (m *NineBoxEntryMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *NineBoxEntryMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *NineBoxEntryMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().NineBoxEntry.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *NineBoxEntryMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *NineBoxEntryMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the NineBoxEntry entity.
+// If the NineBoxEntry object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NineBoxEntryMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *NineBoxEntryMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *NineBoxEntryMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *NineBoxEntryMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the NineBoxEntry entity.
+// If the NineBoxEntry object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NineBoxEntryMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *NineBoxEntryMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetCreatedBy sets the "created_by" field.
+func (m *NineBoxEntryMutation) SetCreatedBy(u uuid.UUID) {
+	m.created_by = &u
+}
+
+// CreatedBy returns the value of the "created_by" field in the mutation.
+func (m *NineBoxEntryMutation) CreatedBy() (r uuid.UUID, exists bool) {
+	v := m.created_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedBy returns the old "created_by" field's value of the NineBoxEntry entity.
+// If the NineBoxEntry object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NineBoxEntryMutation) OldCreatedBy(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedBy is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedBy requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedBy: %w", err)
+	}
+	return oldValue.CreatedBy, nil
+}
+
+// ResetCreatedBy resets all changes to the "created_by" field.
+func (m *NineBoxEntryMutation) ResetCreatedBy() {
+	m.created_by = nil
+}
+
+// SetUpdatedBy sets the "updated_by" field.
+func (m *NineBoxEntryMutation) SetUpdatedBy(u uuid.UUID) {
+	m.updated_by = &u
+}
+
+// UpdatedBy returns the value of the "updated_by" field in the mutation.
+func (m *NineBoxEntryMutation) UpdatedBy() (r uuid.UUID, exists bool) {
+	v := m.updated_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedBy returns the old "updated_by" field's value of the NineBoxEntry entity.
+// If the NineBoxEntry object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NineBoxEntryMutation) OldUpdatedBy(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedBy is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedBy requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedBy: %w", err)
+	}
+	return oldValue.UpdatedBy, nil
+}
+
+// ResetUpdatedBy resets all changes to the "updated_by" field.
+func (m *NineBoxEntryMutation) ResetUpdatedBy() {
+	m.updated_by = nil
+}
+
+// SetPerformanceScore sets the "performance_score" field.
+func (m *NineBoxEntryMutation) SetPerformanceScore(i int) {
+	m.performance_score = &i
+	m.addperformance_score = nil
+}
+
+// PerformanceScore returns the value of the "performance_score" field in the mutation.
+func (m *NineBoxEntryMutation) PerformanceScore() (r int, exists bool) {
+	v := m.performance_score
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPerformanceScore returns the old "performance_score" field's value of the NineBoxEntry entity.
+// If the NineBoxEntry object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NineBoxEntryMutation) OldPerformanceScore(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPerformanceScore is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPerformanceScore requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPerformanceScore: %w", err)
+	}
+	return oldValue.PerformanceScore, nil
+}
+
+// AddPerformanceScore adds i to the "performance_score" field.
+func (m *NineBoxEntryMutation) AddPerformanceScore(i int) {
+	if m.addperformance_score != nil {
+		*m.addperformance_score += i
+	} else {
+		m.addperformance_score = &i
+	}
+}
+
+// AddedPerformanceScore returns the value that was added to the "performance_score" field in this mutation.
+func (m *NineBoxEntryMutation) AddedPerformanceScore() (r int, exists bool) {
+	v := m.addperformance_score
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetPerformanceScore resets all changes to the "performance_score" field.
+func (m *NineBoxEntryMutation) ResetPerformanceScore() {
+	m.performance_score = nil
+	m.addperformance_score = nil
+}
+
+// SetPotentialScore sets the "potential_score" field.
+func (m *NineBoxEntryMutation) SetPotentialScore(i int) {
+	m.potential_score = &i
+	m.addpotential_score = nil
+}
+
+// PotentialScore returns the value of the "potential_score" field in the mutation.
+func (m *NineBoxEntryMutation) PotentialScore() (r int, exists bool) {
+	v := m.potential_score
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPotentialScore returns the old "potential_score" field's value of the NineBoxEntry entity.
+// If the NineBoxEntry object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NineBoxEntryMutation) OldPotentialScore(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPotentialScore is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPotentialScore requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPotentialScore: %w", err)
+	}
+	return oldValue.PotentialScore, nil
+}
+
+// AddPotentialScore adds i to the "potential_score" field.
+func (m *NineBoxEntryMutation) AddPotentialScore(i int) {
+	if m.addpotential_score != nil {
+		*m.addpotential_score += i
+	} else {
+		m.addpotential_score = &i
+	}
+}
+
+// AddedPotentialScore returns the value that was added to the "potential_score" field in this mutation.
+func (m *NineBoxEntryMutation) AddedPotentialScore() (r int, exists bool) {
+	v := m.addpotential_score
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetPotentialScore resets all changes to the "potential_score" field.
+func (m *NineBoxEntryMutation) ResetPotentialScore() {
+	m.potential_score = nil
+	m.addpotential_score = nil
+}
+
+// SetQuadrant sets the "quadrant" field.
+func (m *NineBoxEntryMutation) SetQuadrant(i int) {
+	m.quadrant = &i
+	m.addquadrant = nil
+}
+
+// Quadrant returns the value of the "quadrant" field in the mutation.
+func (m *NineBoxEntryMutation) Quadrant() (r int, exists bool) {
+	v := m.quadrant
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldQuadrant returns the old "quadrant" field's value of the NineBoxEntry entity.
+// If the NineBoxEntry object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NineBoxEntryMutation) OldQuadrant(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldQuadrant is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldQuadrant requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldQuadrant: %w", err)
+	}
+	return oldValue.Quadrant, nil
+}
+
+// AddQuadrant adds i to the "quadrant" field.
+func (m *NineBoxEntryMutation) AddQuadrant(i int) {
+	if m.addquadrant != nil {
+		*m.addquadrant += i
+	} else {
+		m.addquadrant = &i
+	}
+}
+
+// AddedQuadrant returns the value that was added to the "quadrant" field in this mutation.
+func (m *NineBoxEntryMutation) AddedQuadrant() (r int, exists bool) {
+	v := m.addquadrant
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetQuadrant resets all changes to the "quadrant" field.
+func (m *NineBoxEntryMutation) ResetQuadrant() {
+	m.quadrant = nil
+	m.addquadrant = nil
+}
+
+// SetComments sets the "comments" field.
+func (m *NineBoxEntryMutation) SetComments(s string) {
+	m.comments = &s
+}
+
+// Comments returns the value of the "comments" field in the mutation.
+func (m *NineBoxEntryMutation) Comments() (r string, exists bool) {
+	v := m.comments
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldComments returns the old "comments" field's value of the NineBoxEntry entity.
+// If the NineBoxEntry object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NineBoxEntryMutation) OldComments(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldComments is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldComments requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldComments: %w", err)
+	}
+	return oldValue.Comments, nil
+}
+
+// ClearComments clears the value of the "comments" field.
+func (m *NineBoxEntryMutation) ClearComments() {
+	m.comments = nil
+	m.clearedFields[nineboxentry.FieldComments] = struct{}{}
+}
+
+// CommentsCleared returns if the "comments" field was cleared in this mutation.
+func (m *NineBoxEntryMutation) CommentsCleared() bool {
+	_, ok := m.clearedFields[nineboxentry.FieldComments]
+	return ok
+}
+
+// ResetComments resets all changes to the "comments" field.
+func (m *NineBoxEntryMutation) ResetComments() {
+	m.comments = nil
+	delete(m.clearedFields, nineboxentry.FieldComments)
+}
+
+// SetMatrixID sets the "matrix_id" field.
+func (m *NineBoxEntryMutation) SetMatrixID(u uuid.UUID) {
+	m.matrix = &u
+}
+
+// MatrixID returns the value of the "matrix_id" field in the mutation.
+func (m *NineBoxEntryMutation) MatrixID() (r uuid.UUID, exists bool) {
+	v := m.matrix
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMatrixID returns the old "matrix_id" field's value of the NineBoxEntry entity.
+// If the NineBoxEntry object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NineBoxEntryMutation) OldMatrixID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMatrixID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMatrixID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMatrixID: %w", err)
+	}
+	return oldValue.MatrixID, nil
+}
+
+// ResetMatrixID resets all changes to the "matrix_id" field.
+func (m *NineBoxEntryMutation) ResetMatrixID() {
+	m.matrix = nil
+}
+
+// SetEvaluateeID sets the "evaluatee_id" field.
+func (m *NineBoxEntryMutation) SetEvaluateeID(u uuid.UUID) {
+	m.evaluatee = &u
+}
+
+// EvaluateeID returns the value of the "evaluatee_id" field in the mutation.
+func (m *NineBoxEntryMutation) EvaluateeID() (r uuid.UUID, exists bool) {
+	v := m.evaluatee
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEvaluateeID returns the old "evaluatee_id" field's value of the NineBoxEntry entity.
+// If the NineBoxEntry object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NineBoxEntryMutation) OldEvaluateeID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEvaluateeID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEvaluateeID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEvaluateeID: %w", err)
+	}
+	return oldValue.EvaluateeID, nil
+}
+
+// ResetEvaluateeID resets all changes to the "evaluatee_id" field.
+func (m *NineBoxEntryMutation) ResetEvaluateeID() {
+	m.evaluatee = nil
+}
+
+// ClearMatrix clears the "matrix" edge to the NineBoxMatrix entity.
+func (m *NineBoxEntryMutation) ClearMatrix() {
+	m.clearedmatrix = true
+	m.clearedFields[nineboxentry.FieldMatrixID] = struct{}{}
+}
+
+// MatrixCleared reports if the "matrix" edge to the NineBoxMatrix entity was cleared.
+func (m *NineBoxEntryMutation) MatrixCleared() bool {
+	return m.clearedmatrix
+}
+
+// MatrixIDs returns the "matrix" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// MatrixID instead. It exists only for internal usage by the builders.
+func (m *NineBoxEntryMutation) MatrixIDs() (ids []uuid.UUID) {
+	if id := m.matrix; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetMatrix resets all changes to the "matrix" edge.
+func (m *NineBoxEntryMutation) ResetMatrix() {
+	m.matrix = nil
+	m.clearedmatrix = false
+}
+
+// ClearEvaluatee clears the "evaluatee" edge to the Employee entity.
+func (m *NineBoxEntryMutation) ClearEvaluatee() {
+	m.clearedevaluatee = true
+	m.clearedFields[nineboxentry.FieldEvaluateeID] = struct{}{}
+}
+
+// EvaluateeCleared reports if the "evaluatee" edge to the Employee entity was cleared.
+func (m *NineBoxEntryMutation) EvaluateeCleared() bool {
+	return m.clearedevaluatee
+}
+
+// EvaluateeIDs returns the "evaluatee" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// EvaluateeID instead. It exists only for internal usage by the builders.
+func (m *NineBoxEntryMutation) EvaluateeIDs() (ids []uuid.UUID) {
+	if id := m.evaluatee; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetEvaluatee resets all changes to the "evaluatee" edge.
+func (m *NineBoxEntryMutation) ResetEvaluatee() {
+	m.evaluatee = nil
+	m.clearedevaluatee = false
+}
+
+// Where appends a list predicates to the NineBoxEntryMutation builder.
+func (m *NineBoxEntryMutation) Where(ps ...predicate.NineBoxEntry) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the NineBoxEntryMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *NineBoxEntryMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.NineBoxEntry, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *NineBoxEntryMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *NineBoxEntryMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (NineBoxEntry).
+func (m *NineBoxEntryMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *NineBoxEntryMutation) Fields() []string {
+	fields := make([]string, 0, 10)
+	if m.created_at != nil {
+		fields = append(fields, nineboxentry.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, nineboxentry.FieldUpdatedAt)
+	}
+	if m.created_by != nil {
+		fields = append(fields, nineboxentry.FieldCreatedBy)
+	}
+	if m.updated_by != nil {
+		fields = append(fields, nineboxentry.FieldUpdatedBy)
+	}
+	if m.performance_score != nil {
+		fields = append(fields, nineboxentry.FieldPerformanceScore)
+	}
+	if m.potential_score != nil {
+		fields = append(fields, nineboxentry.FieldPotentialScore)
+	}
+	if m.quadrant != nil {
+		fields = append(fields, nineboxentry.FieldQuadrant)
+	}
+	if m.comments != nil {
+		fields = append(fields, nineboxentry.FieldComments)
+	}
+	if m.matrix != nil {
+		fields = append(fields, nineboxentry.FieldMatrixID)
+	}
+	if m.evaluatee != nil {
+		fields = append(fields, nineboxentry.FieldEvaluateeID)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *NineBoxEntryMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case nineboxentry.FieldCreatedAt:
+		return m.CreatedAt()
+	case nineboxentry.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case nineboxentry.FieldCreatedBy:
+		return m.CreatedBy()
+	case nineboxentry.FieldUpdatedBy:
+		return m.UpdatedBy()
+	case nineboxentry.FieldPerformanceScore:
+		return m.PerformanceScore()
+	case nineboxentry.FieldPotentialScore:
+		return m.PotentialScore()
+	case nineboxentry.FieldQuadrant:
+		return m.Quadrant()
+	case nineboxentry.FieldComments:
+		return m.Comments()
+	case nineboxentry.FieldMatrixID:
+		return m.MatrixID()
+	case nineboxentry.FieldEvaluateeID:
+		return m.EvaluateeID()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *NineBoxEntryMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case nineboxentry.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case nineboxentry.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case nineboxentry.FieldCreatedBy:
+		return m.OldCreatedBy(ctx)
+	case nineboxentry.FieldUpdatedBy:
+		return m.OldUpdatedBy(ctx)
+	case nineboxentry.FieldPerformanceScore:
+		return m.OldPerformanceScore(ctx)
+	case nineboxentry.FieldPotentialScore:
+		return m.OldPotentialScore(ctx)
+	case nineboxentry.FieldQuadrant:
+		return m.OldQuadrant(ctx)
+	case nineboxentry.FieldComments:
+		return m.OldComments(ctx)
+	case nineboxentry.FieldMatrixID:
+		return m.OldMatrixID(ctx)
+	case nineboxentry.FieldEvaluateeID:
+		return m.OldEvaluateeID(ctx)
+	}
+	return nil, fmt.Errorf("unknown NineBoxEntry field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *NineBoxEntryMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case nineboxentry.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case nineboxentry.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case nineboxentry.FieldCreatedBy:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedBy(v)
+		return nil
+	case nineboxentry.FieldUpdatedBy:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedBy(v)
+		return nil
+	case nineboxentry.FieldPerformanceScore:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPerformanceScore(v)
+		return nil
+	case nineboxentry.FieldPotentialScore:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPotentialScore(v)
+		return nil
+	case nineboxentry.FieldQuadrant:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetQuadrant(v)
+		return nil
+	case nineboxentry.FieldComments:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetComments(v)
+		return nil
+	case nineboxentry.FieldMatrixID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMatrixID(v)
+		return nil
+	case nineboxentry.FieldEvaluateeID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEvaluateeID(v)
+		return nil
+	}
+	return fmt.Errorf("unknown NineBoxEntry field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *NineBoxEntryMutation) AddedFields() []string {
+	var fields []string
+	if m.addperformance_score != nil {
+		fields = append(fields, nineboxentry.FieldPerformanceScore)
+	}
+	if m.addpotential_score != nil {
+		fields = append(fields, nineboxentry.FieldPotentialScore)
+	}
+	if m.addquadrant != nil {
+		fields = append(fields, nineboxentry.FieldQuadrant)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *NineBoxEntryMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case nineboxentry.FieldPerformanceScore:
+		return m.AddedPerformanceScore()
+	case nineboxentry.FieldPotentialScore:
+		return m.AddedPotentialScore()
+	case nineboxentry.FieldQuadrant:
+		return m.AddedQuadrant()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *NineBoxEntryMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case nineboxentry.FieldPerformanceScore:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddPerformanceScore(v)
+		return nil
+	case nineboxentry.FieldPotentialScore:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddPotentialScore(v)
+		return nil
+	case nineboxentry.FieldQuadrant:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddQuadrant(v)
+		return nil
+	}
+	return fmt.Errorf("unknown NineBoxEntry numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *NineBoxEntryMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(nineboxentry.FieldComments) {
+		fields = append(fields, nineboxentry.FieldComments)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *NineBoxEntryMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *NineBoxEntryMutation) ClearField(name string) error {
+	switch name {
+	case nineboxentry.FieldComments:
+		m.ClearComments()
+		return nil
+	}
+	return fmt.Errorf("unknown NineBoxEntry nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *NineBoxEntryMutation) ResetField(name string) error {
+	switch name {
+	case nineboxentry.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case nineboxentry.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case nineboxentry.FieldCreatedBy:
+		m.ResetCreatedBy()
+		return nil
+	case nineboxentry.FieldUpdatedBy:
+		m.ResetUpdatedBy()
+		return nil
+	case nineboxentry.FieldPerformanceScore:
+		m.ResetPerformanceScore()
+		return nil
+	case nineboxentry.FieldPotentialScore:
+		m.ResetPotentialScore()
+		return nil
+	case nineboxentry.FieldQuadrant:
+		m.ResetQuadrant()
+		return nil
+	case nineboxentry.FieldComments:
+		m.ResetComments()
+		return nil
+	case nineboxentry.FieldMatrixID:
+		m.ResetMatrixID()
+		return nil
+	case nineboxentry.FieldEvaluateeID:
+		m.ResetEvaluateeID()
+		return nil
+	}
+	return fmt.Errorf("unknown NineBoxEntry field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *NineBoxEntryMutation) AddedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.matrix != nil {
+		edges = append(edges, nineboxentry.EdgeMatrix)
+	}
+	if m.evaluatee != nil {
+		edges = append(edges, nineboxentry.EdgeEvaluatee)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *NineBoxEntryMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case nineboxentry.EdgeMatrix:
+		if id := m.matrix; id != nil {
+			return []ent.Value{*id}
+		}
+	case nineboxentry.EdgeEvaluatee:
+		if id := m.evaluatee; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *NineBoxEntryMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 2)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *NineBoxEntryMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *NineBoxEntryMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.clearedmatrix {
+		edges = append(edges, nineboxentry.EdgeMatrix)
+	}
+	if m.clearedevaluatee {
+		edges = append(edges, nineboxentry.EdgeEvaluatee)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *NineBoxEntryMutation) EdgeCleared(name string) bool {
+	switch name {
+	case nineboxentry.EdgeMatrix:
+		return m.clearedmatrix
+	case nineboxentry.EdgeEvaluatee:
+		return m.clearedevaluatee
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *NineBoxEntryMutation) ClearEdge(name string) error {
+	switch name {
+	case nineboxentry.EdgeMatrix:
+		m.ClearMatrix()
+		return nil
+	case nineboxentry.EdgeEvaluatee:
+		m.ClearEvaluatee()
+		return nil
+	}
+	return fmt.Errorf("unknown NineBoxEntry unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *NineBoxEntryMutation) ResetEdge(name string) error {
+	switch name {
+	case nineboxentry.EdgeMatrix:
+		m.ResetMatrix()
+		return nil
+	case nineboxentry.EdgeEvaluatee:
+		m.ResetEvaluatee()
+		return nil
+	}
+	return fmt.Errorf("unknown NineBoxEntry edge %s", name)
+}
+
+// NineBoxMatrixMutation represents an operation that mutates the NineBoxMatrix nodes in the graph.
+type NineBoxMatrixMutation struct {
+	config
+	op               Op
+	typ              string
+	id               *uuid.UUID
+	created_at       *time.Time
+	updated_at       *time.Time
+	clearedFields    map[string]struct{}
+	cycle            *uuid.UUID
+	clearedcycle     bool
+	evaluator        *uuid.UUID
+	clearedevaluator bool
+	entries          map[uuid.UUID]struct{}
+	removedentries   map[uuid.UUID]struct{}
+	clearedentries   bool
+	done             bool
+	oldValue         func(context.Context) (*NineBoxMatrix, error)
+	predicates       []predicate.NineBoxMatrix
+}
+
+var _ ent.Mutation = (*NineBoxMatrixMutation)(nil)
+
+// nineboxmatrixOption allows management of the mutation configuration using functional options.
+type nineboxmatrixOption func(*NineBoxMatrixMutation)
+
+// newNineBoxMatrixMutation creates new mutation for the NineBoxMatrix entity.
+func newNineBoxMatrixMutation(c config, op Op, opts ...nineboxmatrixOption) *NineBoxMatrixMutation {
+	m := &NineBoxMatrixMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeNineBoxMatrix,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withNineBoxMatrixID sets the ID field of the mutation.
+func withNineBoxMatrixID(id uuid.UUID) nineboxmatrixOption {
+	return func(m *NineBoxMatrixMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *NineBoxMatrix
+		)
+		m.oldValue = func(ctx context.Context) (*NineBoxMatrix, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().NineBoxMatrix.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withNineBoxMatrix sets the old NineBoxMatrix of the mutation.
+func withNineBoxMatrix(node *NineBoxMatrix) nineboxmatrixOption {
+	return func(m *NineBoxMatrixMutation) {
+		m.oldValue = func(context.Context) (*NineBoxMatrix, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m NineBoxMatrixMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m NineBoxMatrixMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("internal: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of NineBoxMatrix entities.
+func (m *NineBoxMatrixMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *NineBoxMatrixMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *NineBoxMatrixMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().NineBoxMatrix.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *NineBoxMatrixMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *NineBoxMatrixMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the NineBoxMatrix entity.
+// If the NineBoxMatrix object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NineBoxMatrixMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *NineBoxMatrixMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *NineBoxMatrixMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *NineBoxMatrixMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the NineBoxMatrix entity.
+// If the NineBoxMatrix object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NineBoxMatrixMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *NineBoxMatrixMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetCycleID sets the "cycle_id" field.
+func (m *NineBoxMatrixMutation) SetCycleID(u uuid.UUID) {
+	m.cycle = &u
+}
+
+// CycleID returns the value of the "cycle_id" field in the mutation.
+func (m *NineBoxMatrixMutation) CycleID() (r uuid.UUID, exists bool) {
+	v := m.cycle
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCycleID returns the old "cycle_id" field's value of the NineBoxMatrix entity.
+// If the NineBoxMatrix object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NineBoxMatrixMutation) OldCycleID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCycleID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCycleID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCycleID: %w", err)
+	}
+	return oldValue.CycleID, nil
+}
+
+// ResetCycleID resets all changes to the "cycle_id" field.
+func (m *NineBoxMatrixMutation) ResetCycleID() {
+	m.cycle = nil
+}
+
+// SetEvaluatorID sets the "evaluator_id" field.
+func (m *NineBoxMatrixMutation) SetEvaluatorID(u uuid.UUID) {
+	m.evaluator = &u
+}
+
+// EvaluatorID returns the value of the "evaluator_id" field in the mutation.
+func (m *NineBoxMatrixMutation) EvaluatorID() (r uuid.UUID, exists bool) {
+	v := m.evaluator
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEvaluatorID returns the old "evaluator_id" field's value of the NineBoxMatrix entity.
+// If the NineBoxMatrix object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NineBoxMatrixMutation) OldEvaluatorID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEvaluatorID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEvaluatorID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEvaluatorID: %w", err)
+	}
+	return oldValue.EvaluatorID, nil
+}
+
+// ResetEvaluatorID resets all changes to the "evaluator_id" field.
+func (m *NineBoxMatrixMutation) ResetEvaluatorID() {
+	m.evaluator = nil
+}
+
+// ClearCycle clears the "cycle" edge to the Cycle entity.
+func (m *NineBoxMatrixMutation) ClearCycle() {
+	m.clearedcycle = true
+	m.clearedFields[nineboxmatrix.FieldCycleID] = struct{}{}
+}
+
+// CycleCleared reports if the "cycle" edge to the Cycle entity was cleared.
+func (m *NineBoxMatrixMutation) CycleCleared() bool {
+	return m.clearedcycle
+}
+
+// CycleIDs returns the "cycle" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// CycleID instead. It exists only for internal usage by the builders.
+func (m *NineBoxMatrixMutation) CycleIDs() (ids []uuid.UUID) {
+	if id := m.cycle; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetCycle resets all changes to the "cycle" edge.
+func (m *NineBoxMatrixMutation) ResetCycle() {
+	m.cycle = nil
+	m.clearedcycle = false
+}
+
+// ClearEvaluator clears the "evaluator" edge to the Employee entity.
+func (m *NineBoxMatrixMutation) ClearEvaluator() {
+	m.clearedevaluator = true
+	m.clearedFields[nineboxmatrix.FieldEvaluatorID] = struct{}{}
+}
+
+// EvaluatorCleared reports if the "evaluator" edge to the Employee entity was cleared.
+func (m *NineBoxMatrixMutation) EvaluatorCleared() bool {
+	return m.clearedevaluator
+}
+
+// EvaluatorIDs returns the "evaluator" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// EvaluatorID instead. It exists only for internal usage by the builders.
+func (m *NineBoxMatrixMutation) EvaluatorIDs() (ids []uuid.UUID) {
+	if id := m.evaluator; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetEvaluator resets all changes to the "evaluator" edge.
+func (m *NineBoxMatrixMutation) ResetEvaluator() {
+	m.evaluator = nil
+	m.clearedevaluator = false
+}
+
+// AddEntryIDs adds the "entries" edge to the NineBoxEntry entity by ids.
+func (m *NineBoxMatrixMutation) AddEntryIDs(ids ...uuid.UUID) {
+	if m.entries == nil {
+		m.entries = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.entries[ids[i]] = struct{}{}
+	}
+}
+
+// ClearEntries clears the "entries" edge to the NineBoxEntry entity.
+func (m *NineBoxMatrixMutation) ClearEntries() {
+	m.clearedentries = true
+}
+
+// EntriesCleared reports if the "entries" edge to the NineBoxEntry entity was cleared.
+func (m *NineBoxMatrixMutation) EntriesCleared() bool {
+	return m.clearedentries
+}
+
+// RemoveEntryIDs removes the "entries" edge to the NineBoxEntry entity by IDs.
+func (m *NineBoxMatrixMutation) RemoveEntryIDs(ids ...uuid.UUID) {
+	if m.removedentries == nil {
+		m.removedentries = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.entries, ids[i])
+		m.removedentries[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedEntries returns the removed IDs of the "entries" edge to the NineBoxEntry entity.
+func (m *NineBoxMatrixMutation) RemovedEntriesIDs() (ids []uuid.UUID) {
+	for id := range m.removedentries {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// EntriesIDs returns the "entries" edge IDs in the mutation.
+func (m *NineBoxMatrixMutation) EntriesIDs() (ids []uuid.UUID) {
+	for id := range m.entries {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetEntries resets all changes to the "entries" edge.
+func (m *NineBoxMatrixMutation) ResetEntries() {
+	m.entries = nil
+	m.clearedentries = false
+	m.removedentries = nil
+}
+
+// Where appends a list predicates to the NineBoxMatrixMutation builder.
+func (m *NineBoxMatrixMutation) Where(ps ...predicate.NineBoxMatrix) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the NineBoxMatrixMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *NineBoxMatrixMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.NineBoxMatrix, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *NineBoxMatrixMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *NineBoxMatrixMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (NineBoxMatrix).
+func (m *NineBoxMatrixMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *NineBoxMatrixMutation) Fields() []string {
+	fields := make([]string, 0, 4)
+	if m.created_at != nil {
+		fields = append(fields, nineboxmatrix.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, nineboxmatrix.FieldUpdatedAt)
+	}
+	if m.cycle != nil {
+		fields = append(fields, nineboxmatrix.FieldCycleID)
+	}
+	if m.evaluator != nil {
+		fields = append(fields, nineboxmatrix.FieldEvaluatorID)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *NineBoxMatrixMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case nineboxmatrix.FieldCreatedAt:
+		return m.CreatedAt()
+	case nineboxmatrix.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case nineboxmatrix.FieldCycleID:
+		return m.CycleID()
+	case nineboxmatrix.FieldEvaluatorID:
+		return m.EvaluatorID()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *NineBoxMatrixMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case nineboxmatrix.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case nineboxmatrix.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case nineboxmatrix.FieldCycleID:
+		return m.OldCycleID(ctx)
+	case nineboxmatrix.FieldEvaluatorID:
+		return m.OldEvaluatorID(ctx)
+	}
+	return nil, fmt.Errorf("unknown NineBoxMatrix field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *NineBoxMatrixMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case nineboxmatrix.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case nineboxmatrix.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case nineboxmatrix.FieldCycleID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCycleID(v)
+		return nil
+	case nineboxmatrix.FieldEvaluatorID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEvaluatorID(v)
+		return nil
+	}
+	return fmt.Errorf("unknown NineBoxMatrix field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *NineBoxMatrixMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *NineBoxMatrixMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *NineBoxMatrixMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown NineBoxMatrix numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *NineBoxMatrixMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *NineBoxMatrixMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *NineBoxMatrixMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown NineBoxMatrix nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *NineBoxMatrixMutation) ResetField(name string) error {
+	switch name {
+	case nineboxmatrix.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case nineboxmatrix.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case nineboxmatrix.FieldCycleID:
+		m.ResetCycleID()
+		return nil
+	case nineboxmatrix.FieldEvaluatorID:
+		m.ResetEvaluatorID()
+		return nil
+	}
+	return fmt.Errorf("unknown NineBoxMatrix field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *NineBoxMatrixMutation) AddedEdges() []string {
+	edges := make([]string, 0, 3)
+	if m.cycle != nil {
+		edges = append(edges, nineboxmatrix.EdgeCycle)
+	}
+	if m.evaluator != nil {
+		edges = append(edges, nineboxmatrix.EdgeEvaluator)
+	}
+	if m.entries != nil {
+		edges = append(edges, nineboxmatrix.EdgeEntries)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *NineBoxMatrixMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case nineboxmatrix.EdgeCycle:
+		if id := m.cycle; id != nil {
+			return []ent.Value{*id}
+		}
+	case nineboxmatrix.EdgeEvaluator:
+		if id := m.evaluator; id != nil {
+			return []ent.Value{*id}
+		}
+	case nineboxmatrix.EdgeEntries:
+		ids := make([]ent.Value, 0, len(m.entries))
+		for id := range m.entries {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *NineBoxMatrixMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 3)
+	if m.removedentries != nil {
+		edges = append(edges, nineboxmatrix.EdgeEntries)
+	}
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *NineBoxMatrixMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case nineboxmatrix.EdgeEntries:
+		ids := make([]ent.Value, 0, len(m.removedentries))
+		for id := range m.removedentries {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *NineBoxMatrixMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 3)
+	if m.clearedcycle {
+		edges = append(edges, nineboxmatrix.EdgeCycle)
+	}
+	if m.clearedevaluator {
+		edges = append(edges, nineboxmatrix.EdgeEvaluator)
+	}
+	if m.clearedentries {
+		edges = append(edges, nineboxmatrix.EdgeEntries)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *NineBoxMatrixMutation) EdgeCleared(name string) bool {
+	switch name {
+	case nineboxmatrix.EdgeCycle:
+		return m.clearedcycle
+	case nineboxmatrix.EdgeEvaluator:
+		return m.clearedevaluator
+	case nineboxmatrix.EdgeEntries:
+		return m.clearedentries
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *NineBoxMatrixMutation) ClearEdge(name string) error {
+	switch name {
+	case nineboxmatrix.EdgeCycle:
+		m.ClearCycle()
+		return nil
+	case nineboxmatrix.EdgeEvaluator:
+		m.ClearEvaluator()
+		return nil
+	}
+	return fmt.Errorf("unknown NineBoxMatrix unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *NineBoxMatrixMutation) ResetEdge(name string) error {
+	switch name {
+	case nineboxmatrix.EdgeCycle:
+		m.ResetCycle()
+		return nil
+	case nineboxmatrix.EdgeEvaluator:
+		m.ResetEvaluator()
+		return nil
+	case nineboxmatrix.EdgeEntries:
+		m.ResetEntries()
+		return nil
+	}
+	return fmt.Errorf("unknown NineBoxMatrix edge %s", name)
+}
+
+// NineBoxQuadrantMutation represents an operation that mutates the NineBoxQuadrant nodes in the graph.
+type NineBoxQuadrantMutation struct {
+	config
+	op                    Op
+	typ                   string
+	id                    *uuid.UUID
+	quadrant              *int
+	addquadrant           *int
+	label                 *string
+	description           *string
+	color                 *string
+	action_recommendation *string
+	clearedFields         map[string]struct{}
+	done                  bool
+	oldValue              func(context.Context) (*NineBoxQuadrant, error)
+	predicates            []predicate.NineBoxQuadrant
+}
+
+var _ ent.Mutation = (*NineBoxQuadrantMutation)(nil)
+
+// nineboxquadrantOption allows management of the mutation configuration using functional options.
+type nineboxquadrantOption func(*NineBoxQuadrantMutation)
+
+// newNineBoxQuadrantMutation creates new mutation for the NineBoxQuadrant entity.
+func newNineBoxQuadrantMutation(c config, op Op, opts ...nineboxquadrantOption) *NineBoxQuadrantMutation {
+	m := &NineBoxQuadrantMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeNineBoxQuadrant,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withNineBoxQuadrantID sets the ID field of the mutation.
+func withNineBoxQuadrantID(id uuid.UUID) nineboxquadrantOption {
+	return func(m *NineBoxQuadrantMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *NineBoxQuadrant
+		)
+		m.oldValue = func(ctx context.Context) (*NineBoxQuadrant, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().NineBoxQuadrant.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withNineBoxQuadrant sets the old NineBoxQuadrant of the mutation.
+func withNineBoxQuadrant(node *NineBoxQuadrant) nineboxquadrantOption {
+	return func(m *NineBoxQuadrantMutation) {
+		m.oldValue = func(context.Context) (*NineBoxQuadrant, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m NineBoxQuadrantMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m NineBoxQuadrantMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("internal: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of NineBoxQuadrant entities.
+func (m *NineBoxQuadrantMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *NineBoxQuadrantMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *NineBoxQuadrantMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().NineBoxQuadrant.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetQuadrant sets the "quadrant" field.
+func (m *NineBoxQuadrantMutation) SetQuadrant(i int) {
+	m.quadrant = &i
+	m.addquadrant = nil
+}
+
+// Quadrant returns the value of the "quadrant" field in the mutation.
+func (m *NineBoxQuadrantMutation) Quadrant() (r int, exists bool) {
+	v := m.quadrant
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldQuadrant returns the old "quadrant" field's value of the NineBoxQuadrant entity.
+// If the NineBoxQuadrant object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NineBoxQuadrantMutation) OldQuadrant(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldQuadrant is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldQuadrant requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldQuadrant: %w", err)
+	}
+	return oldValue.Quadrant, nil
+}
+
+// AddQuadrant adds i to the "quadrant" field.
+func (m *NineBoxQuadrantMutation) AddQuadrant(i int) {
+	if m.addquadrant != nil {
+		*m.addquadrant += i
+	} else {
+		m.addquadrant = &i
+	}
+}
+
+// AddedQuadrant returns the value that was added to the "quadrant" field in this mutation.
+func (m *NineBoxQuadrantMutation) AddedQuadrant() (r int, exists bool) {
+	v := m.addquadrant
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetQuadrant resets all changes to the "quadrant" field.
+func (m *NineBoxQuadrantMutation) ResetQuadrant() {
+	m.quadrant = nil
+	m.addquadrant = nil
+}
+
+// SetLabel sets the "label" field.
+func (m *NineBoxQuadrantMutation) SetLabel(s string) {
+	m.label = &s
+}
+
+// Label returns the value of the "label" field in the mutation.
+func (m *NineBoxQuadrantMutation) Label() (r string, exists bool) {
+	v := m.label
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLabel returns the old "label" field's value of the NineBoxQuadrant entity.
+// If the NineBoxQuadrant object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NineBoxQuadrantMutation) OldLabel(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLabel is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLabel requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLabel: %w", err)
+	}
+	return oldValue.Label, nil
+}
+
+// ResetLabel resets all changes to the "label" field.
+func (m *NineBoxQuadrantMutation) ResetLabel() {
+	m.label = nil
+}
+
+// SetDescription sets the "description" field.
+func (m *NineBoxQuadrantMutation) SetDescription(s string) {
+	m.description = &s
+}
+
+// Description returns the value of the "description" field in the mutation.
+func (m *NineBoxQuadrantMutation) Description() (r string, exists bool) {
+	v := m.description
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDescription returns the old "description" field's value of the NineBoxQuadrant entity.
+// If the NineBoxQuadrant object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NineBoxQuadrantMutation) OldDescription(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDescription is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDescription requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDescription: %w", err)
+	}
+	return oldValue.Description, nil
+}
+
+// ClearDescription clears the value of the "description" field.
+func (m *NineBoxQuadrantMutation) ClearDescription() {
+	m.description = nil
+	m.clearedFields[nineboxquadrant.FieldDescription] = struct{}{}
+}
+
+// DescriptionCleared returns if the "description" field was cleared in this mutation.
+func (m *NineBoxQuadrantMutation) DescriptionCleared() bool {
+	_, ok := m.clearedFields[nineboxquadrant.FieldDescription]
+	return ok
+}
+
+// ResetDescription resets all changes to the "description" field.
+func (m *NineBoxQuadrantMutation) ResetDescription() {
+	m.description = nil
+	delete(m.clearedFields, nineboxquadrant.FieldDescription)
+}
+
+// SetColor sets the "color" field.
+func (m *NineBoxQuadrantMutation) SetColor(s string) {
+	m.color = &s
+}
+
+// Color returns the value of the "color" field in the mutation.
+func (m *NineBoxQuadrantMutation) Color() (r string, exists bool) {
+	v := m.color
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldColor returns the old "color" field's value of the NineBoxQuadrant entity.
+// If the NineBoxQuadrant object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NineBoxQuadrantMutation) OldColor(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldColor is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldColor requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldColor: %w", err)
+	}
+	return oldValue.Color, nil
+}
+
+// ResetColor resets all changes to the "color" field.
+func (m *NineBoxQuadrantMutation) ResetColor() {
+	m.color = nil
+}
+
+// SetActionRecommendation sets the "action_recommendation" field.
+func (m *NineBoxQuadrantMutation) SetActionRecommendation(s string) {
+	m.action_recommendation = &s
+}
+
+// ActionRecommendation returns the value of the "action_recommendation" field in the mutation.
+func (m *NineBoxQuadrantMutation) ActionRecommendation() (r string, exists bool) {
+	v := m.action_recommendation
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldActionRecommendation returns the old "action_recommendation" field's value of the NineBoxQuadrant entity.
+// If the NineBoxQuadrant object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NineBoxQuadrantMutation) OldActionRecommendation(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldActionRecommendation is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldActionRecommendation requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldActionRecommendation: %w", err)
+	}
+	return oldValue.ActionRecommendation, nil
+}
+
+// ClearActionRecommendation clears the value of the "action_recommendation" field.
+func (m *NineBoxQuadrantMutation) ClearActionRecommendation() {
+	m.action_recommendation = nil
+	m.clearedFields[nineboxquadrant.FieldActionRecommendation] = struct{}{}
+}
+
+// ActionRecommendationCleared returns if the "action_recommendation" field was cleared in this mutation.
+func (m *NineBoxQuadrantMutation) ActionRecommendationCleared() bool {
+	_, ok := m.clearedFields[nineboxquadrant.FieldActionRecommendation]
+	return ok
+}
+
+// ResetActionRecommendation resets all changes to the "action_recommendation" field.
+func (m *NineBoxQuadrantMutation) ResetActionRecommendation() {
+	m.action_recommendation = nil
+	delete(m.clearedFields, nineboxquadrant.FieldActionRecommendation)
+}
+
+// Where appends a list predicates to the NineBoxQuadrantMutation builder.
+func (m *NineBoxQuadrantMutation) Where(ps ...predicate.NineBoxQuadrant) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the NineBoxQuadrantMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *NineBoxQuadrantMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.NineBoxQuadrant, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *NineBoxQuadrantMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *NineBoxQuadrantMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (NineBoxQuadrant).
+func (m *NineBoxQuadrantMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *NineBoxQuadrantMutation) Fields() []string {
+	fields := make([]string, 0, 5)
+	if m.quadrant != nil {
+		fields = append(fields, nineboxquadrant.FieldQuadrant)
+	}
+	if m.label != nil {
+		fields = append(fields, nineboxquadrant.FieldLabel)
+	}
+	if m.description != nil {
+		fields = append(fields, nineboxquadrant.FieldDescription)
+	}
+	if m.color != nil {
+		fields = append(fields, nineboxquadrant.FieldColor)
+	}
+	if m.action_recommendation != nil {
+		fields = append(fields, nineboxquadrant.FieldActionRecommendation)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *NineBoxQuadrantMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case nineboxquadrant.FieldQuadrant:
+		return m.Quadrant()
+	case nineboxquadrant.FieldLabel:
+		return m.Label()
+	case nineboxquadrant.FieldDescription:
+		return m.Description()
+	case nineboxquadrant.FieldColor:
+		return m.Color()
+	case nineboxquadrant.FieldActionRecommendation:
+		return m.ActionRecommendation()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *NineBoxQuadrantMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case nineboxquadrant.FieldQuadrant:
+		return m.OldQuadrant(ctx)
+	case nineboxquadrant.FieldLabel:
+		return m.OldLabel(ctx)
+	case nineboxquadrant.FieldDescription:
+		return m.OldDescription(ctx)
+	case nineboxquadrant.FieldColor:
+		return m.OldColor(ctx)
+	case nineboxquadrant.FieldActionRecommendation:
+		return m.OldActionRecommendation(ctx)
+	}
+	return nil, fmt.Errorf("unknown NineBoxQuadrant field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *NineBoxQuadrantMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case nineboxquadrant.FieldQuadrant:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetQuadrant(v)
+		return nil
+	case nineboxquadrant.FieldLabel:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLabel(v)
+		return nil
+	case nineboxquadrant.FieldDescription:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDescription(v)
+		return nil
+	case nineboxquadrant.FieldColor:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetColor(v)
+		return nil
+	case nineboxquadrant.FieldActionRecommendation:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetActionRecommendation(v)
+		return nil
+	}
+	return fmt.Errorf("unknown NineBoxQuadrant field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *NineBoxQuadrantMutation) AddedFields() []string {
+	var fields []string
+	if m.addquadrant != nil {
+		fields = append(fields, nineboxquadrant.FieldQuadrant)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *NineBoxQuadrantMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case nineboxquadrant.FieldQuadrant:
+		return m.AddedQuadrant()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *NineBoxQuadrantMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case nineboxquadrant.FieldQuadrant:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddQuadrant(v)
+		return nil
+	}
+	return fmt.Errorf("unknown NineBoxQuadrant numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *NineBoxQuadrantMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(nineboxquadrant.FieldDescription) {
+		fields = append(fields, nineboxquadrant.FieldDescription)
+	}
+	if m.FieldCleared(nineboxquadrant.FieldActionRecommendation) {
+		fields = append(fields, nineboxquadrant.FieldActionRecommendation)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *NineBoxQuadrantMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *NineBoxQuadrantMutation) ClearField(name string) error {
+	switch name {
+	case nineboxquadrant.FieldDescription:
+		m.ClearDescription()
+		return nil
+	case nineboxquadrant.FieldActionRecommendation:
+		m.ClearActionRecommendation()
+		return nil
+	}
+	return fmt.Errorf("unknown NineBoxQuadrant nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *NineBoxQuadrantMutation) ResetField(name string) error {
+	switch name {
+	case nineboxquadrant.FieldQuadrant:
+		m.ResetQuadrant()
+		return nil
+	case nineboxquadrant.FieldLabel:
+		m.ResetLabel()
+		return nil
+	case nineboxquadrant.FieldDescription:
+		m.ResetDescription()
+		return nil
+	case nineboxquadrant.FieldColor:
+		m.ResetColor()
+		return nil
+	case nineboxquadrant.FieldActionRecommendation:
+		m.ResetActionRecommendation()
+		return nil
+	}
+	return fmt.Errorf("unknown NineBoxQuadrant field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *NineBoxQuadrantMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *NineBoxQuadrantMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *NineBoxQuadrantMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *NineBoxQuadrantMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *NineBoxQuadrantMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *NineBoxQuadrantMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *NineBoxQuadrantMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown NineBoxQuadrant unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *NineBoxQuadrantMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown NineBoxQuadrant edge %s", name)
+}
+
+// NineBoxScaleMutation represents an operation that mutates the NineBoxScale nodes in the graph.
+type NineBoxScaleMutation struct {
+	config
+	op            Op
+	typ           string
+	id            *uuid.UUID
+	axis          *nineboxscale.Axis
+	level         *int
+	addlevel      *int
+	label         *string
+	description   *string
+	clearedFields map[string]struct{}
+	done          bool
+	oldValue      func(context.Context) (*NineBoxScale, error)
+	predicates    []predicate.NineBoxScale
+}
+
+var _ ent.Mutation = (*NineBoxScaleMutation)(nil)
+
+// nineboxscaleOption allows management of the mutation configuration using functional options.
+type nineboxscaleOption func(*NineBoxScaleMutation)
+
+// newNineBoxScaleMutation creates new mutation for the NineBoxScale entity.
+func newNineBoxScaleMutation(c config, op Op, opts ...nineboxscaleOption) *NineBoxScaleMutation {
+	m := &NineBoxScaleMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeNineBoxScale,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withNineBoxScaleID sets the ID field of the mutation.
+func withNineBoxScaleID(id uuid.UUID) nineboxscaleOption {
+	return func(m *NineBoxScaleMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *NineBoxScale
+		)
+		m.oldValue = func(ctx context.Context) (*NineBoxScale, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().NineBoxScale.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withNineBoxScale sets the old NineBoxScale of the mutation.
+func withNineBoxScale(node *NineBoxScale) nineboxscaleOption {
+	return func(m *NineBoxScaleMutation) {
+		m.oldValue = func(context.Context) (*NineBoxScale, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m NineBoxScaleMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m NineBoxScaleMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("internal: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of NineBoxScale entities.
+func (m *NineBoxScaleMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *NineBoxScaleMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *NineBoxScaleMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().NineBoxScale.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetAxis sets the "axis" field.
+func (m *NineBoxScaleMutation) SetAxis(n nineboxscale.Axis) {
+	m.axis = &n
+}
+
+// Axis returns the value of the "axis" field in the mutation.
+func (m *NineBoxScaleMutation) Axis() (r nineboxscale.Axis, exists bool) {
+	v := m.axis
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAxis returns the old "axis" field's value of the NineBoxScale entity.
+// If the NineBoxScale object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NineBoxScaleMutation) OldAxis(ctx context.Context) (v nineboxscale.Axis, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAxis is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAxis requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAxis: %w", err)
+	}
+	return oldValue.Axis, nil
+}
+
+// ResetAxis resets all changes to the "axis" field.
+func (m *NineBoxScaleMutation) ResetAxis() {
+	m.axis = nil
+}
+
+// SetLevel sets the "level" field.
+func (m *NineBoxScaleMutation) SetLevel(i int) {
+	m.level = &i
+	m.addlevel = nil
+}
+
+// Level returns the value of the "level" field in the mutation.
+func (m *NineBoxScaleMutation) Level() (r int, exists bool) {
+	v := m.level
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLevel returns the old "level" field's value of the NineBoxScale entity.
+// If the NineBoxScale object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NineBoxScaleMutation) OldLevel(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLevel is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLevel requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLevel: %w", err)
+	}
+	return oldValue.Level, nil
+}
+
+// AddLevel adds i to the "level" field.
+func (m *NineBoxScaleMutation) AddLevel(i int) {
+	if m.addlevel != nil {
+		*m.addlevel += i
+	} else {
+		m.addlevel = &i
+	}
+}
+
+// AddedLevel returns the value that was added to the "level" field in this mutation.
+func (m *NineBoxScaleMutation) AddedLevel() (r int, exists bool) {
+	v := m.addlevel
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetLevel resets all changes to the "level" field.
+func (m *NineBoxScaleMutation) ResetLevel() {
+	m.level = nil
+	m.addlevel = nil
+}
+
+// SetLabel sets the "label" field.
+func (m *NineBoxScaleMutation) SetLabel(s string) {
+	m.label = &s
+}
+
+// Label returns the value of the "label" field in the mutation.
+func (m *NineBoxScaleMutation) Label() (r string, exists bool) {
+	v := m.label
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLabel returns the old "label" field's value of the NineBoxScale entity.
+// If the NineBoxScale object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NineBoxScaleMutation) OldLabel(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLabel is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLabel requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLabel: %w", err)
+	}
+	return oldValue.Label, nil
+}
+
+// ResetLabel resets all changes to the "label" field.
+func (m *NineBoxScaleMutation) ResetLabel() {
+	m.label = nil
+}
+
+// SetDescription sets the "description" field.
+func (m *NineBoxScaleMutation) SetDescription(s string) {
+	m.description = &s
+}
+
+// Description returns the value of the "description" field in the mutation.
+func (m *NineBoxScaleMutation) Description() (r string, exists bool) {
+	v := m.description
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDescription returns the old "description" field's value of the NineBoxScale entity.
+// If the NineBoxScale object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NineBoxScaleMutation) OldDescription(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDescription is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDescription requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDescription: %w", err)
+	}
+	return oldValue.Description, nil
+}
+
+// ClearDescription clears the value of the "description" field.
+func (m *NineBoxScaleMutation) ClearDescription() {
+	m.description = nil
+	m.clearedFields[nineboxscale.FieldDescription] = struct{}{}
+}
+
+// DescriptionCleared returns if the "description" field was cleared in this mutation.
+func (m *NineBoxScaleMutation) DescriptionCleared() bool {
+	_, ok := m.clearedFields[nineboxscale.FieldDescription]
+	return ok
+}
+
+// ResetDescription resets all changes to the "description" field.
+func (m *NineBoxScaleMutation) ResetDescription() {
+	m.description = nil
+	delete(m.clearedFields, nineboxscale.FieldDescription)
+}
+
+// Where appends a list predicates to the NineBoxScaleMutation builder.
+func (m *NineBoxScaleMutation) Where(ps ...predicate.NineBoxScale) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the NineBoxScaleMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *NineBoxScaleMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.NineBoxScale, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *NineBoxScaleMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *NineBoxScaleMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (NineBoxScale).
+func (m *NineBoxScaleMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *NineBoxScaleMutation) Fields() []string {
+	fields := make([]string, 0, 4)
+	if m.axis != nil {
+		fields = append(fields, nineboxscale.FieldAxis)
+	}
+	if m.level != nil {
+		fields = append(fields, nineboxscale.FieldLevel)
+	}
+	if m.label != nil {
+		fields = append(fields, nineboxscale.FieldLabel)
+	}
+	if m.description != nil {
+		fields = append(fields, nineboxscale.FieldDescription)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *NineBoxScaleMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case nineboxscale.FieldAxis:
+		return m.Axis()
+	case nineboxscale.FieldLevel:
+		return m.Level()
+	case nineboxscale.FieldLabel:
+		return m.Label()
+	case nineboxscale.FieldDescription:
+		return m.Description()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *NineBoxScaleMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case nineboxscale.FieldAxis:
+		return m.OldAxis(ctx)
+	case nineboxscale.FieldLevel:
+		return m.OldLevel(ctx)
+	case nineboxscale.FieldLabel:
+		return m.OldLabel(ctx)
+	case nineboxscale.FieldDescription:
+		return m.OldDescription(ctx)
+	}
+	return nil, fmt.Errorf("unknown NineBoxScale field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *NineBoxScaleMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case nineboxscale.FieldAxis:
+		v, ok := value.(nineboxscale.Axis)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAxis(v)
+		return nil
+	case nineboxscale.FieldLevel:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLevel(v)
+		return nil
+	case nineboxscale.FieldLabel:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLabel(v)
+		return nil
+	case nineboxscale.FieldDescription:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDescription(v)
+		return nil
+	}
+	return fmt.Errorf("unknown NineBoxScale field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *NineBoxScaleMutation) AddedFields() []string {
+	var fields []string
+	if m.addlevel != nil {
+		fields = append(fields, nineboxscale.FieldLevel)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *NineBoxScaleMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case nineboxscale.FieldLevel:
+		return m.AddedLevel()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *NineBoxScaleMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case nineboxscale.FieldLevel:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddLevel(v)
+		return nil
+	}
+	return fmt.Errorf("unknown NineBoxScale numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *NineBoxScaleMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(nineboxscale.FieldDescription) {
+		fields = append(fields, nineboxscale.FieldDescription)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *NineBoxScaleMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *NineBoxScaleMutation) ClearField(name string) error {
+	switch name {
+	case nineboxscale.FieldDescription:
+		m.ClearDescription()
+		return nil
+	}
+	return fmt.Errorf("unknown NineBoxScale nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *NineBoxScaleMutation) ResetField(name string) error {
+	switch name {
+	case nineboxscale.FieldAxis:
+		m.ResetAxis()
+		return nil
+	case nineboxscale.FieldLevel:
+		m.ResetLevel()
+		return nil
+	case nineboxscale.FieldLabel:
+		m.ResetLabel()
+		return nil
+	case nineboxscale.FieldDescription:
+		m.ResetDescription()
+		return nil
+	}
+	return fmt.Errorf("unknown NineBoxScale field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *NineBoxScaleMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *NineBoxScaleMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *NineBoxScaleMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *NineBoxScaleMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *NineBoxScaleMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *NineBoxScaleMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *NineBoxScaleMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown NineBoxScale unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *NineBoxScaleMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown NineBoxScale edge %s", name)
 }
 
 // OrgNodeMutation represents an operation that mutates the OrgNode nodes in the graph.

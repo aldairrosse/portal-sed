@@ -250,6 +250,29 @@ func HasAcceptanceLevelsWith(preds ...predicate.CompetencyAcceptanceLevel) predi
 	})
 }
 
+// HasEvaluationCompetencies applies the HasEdge predicate on the "evaluation_competencies" edge.
+func HasEvaluationCompetencies() predicate.EvaluationProfile {
+	return predicate.EvaluationProfile(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, EvaluationCompetenciesTable, EvaluationCompetenciesColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasEvaluationCompetenciesWith applies the HasEdge predicate on the "evaluation_competencies" edge with a given conditions (other predicates).
+func HasEvaluationCompetenciesWith(preds ...predicate.EvaluationCompetency) predicate.EvaluationProfile {
+	return predicate.EvaluationProfile(func(s *sql.Selector) {
+		step := newEvaluationCompetenciesStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.EvaluationProfile) predicate.EvaluationProfile {
 	return predicate.EvaluationProfile(sql.AndPredicates(predicates...))

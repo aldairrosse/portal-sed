@@ -13,6 +13,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/sed-evaluacion-desempeno/api/internal/competencyacceptancelevel"
 	"github.com/sed-evaluacion-desempeno/api/internal/employee"
+	"github.com/sed-evaluacion-desempeno/api/internal/evaluationcompetency"
 	"github.com/sed-evaluacion-desempeno/api/internal/evaluationprofile"
 	"github.com/sed-evaluacion-desempeno/api/internal/predicate"
 )
@@ -94,6 +95,21 @@ func (_u *EvaluationProfileUpdate) AddAcceptanceLevels(v ...*CompetencyAcceptanc
 	return _u.AddAcceptanceLevelIDs(ids...)
 }
 
+// AddEvaluationCompetencyIDs adds the "evaluation_competencies" edge to the EvaluationCompetency entity by IDs.
+func (_u *EvaluationProfileUpdate) AddEvaluationCompetencyIDs(ids ...uuid.UUID) *EvaluationProfileUpdate {
+	_u.mutation.AddEvaluationCompetencyIDs(ids...)
+	return _u
+}
+
+// AddEvaluationCompetencies adds the "evaluation_competencies" edges to the EvaluationCompetency entity.
+func (_u *EvaluationProfileUpdate) AddEvaluationCompetencies(v ...*EvaluationCompetency) *EvaluationProfileUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddEvaluationCompetencyIDs(ids...)
+}
+
 // Mutation returns the EvaluationProfileMutation object of the builder.
 func (_u *EvaluationProfileUpdate) Mutation() *EvaluationProfileMutation {
 	return _u.mutation
@@ -139,6 +155,27 @@ func (_u *EvaluationProfileUpdate) RemoveAcceptanceLevels(v ...*CompetencyAccept
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveAcceptanceLevelIDs(ids...)
+}
+
+// ClearEvaluationCompetencies clears all "evaluation_competencies" edges to the EvaluationCompetency entity.
+func (_u *EvaluationProfileUpdate) ClearEvaluationCompetencies() *EvaluationProfileUpdate {
+	_u.mutation.ClearEvaluationCompetencies()
+	return _u
+}
+
+// RemoveEvaluationCompetencyIDs removes the "evaluation_competencies" edge to EvaluationCompetency entities by IDs.
+func (_u *EvaluationProfileUpdate) RemoveEvaluationCompetencyIDs(ids ...uuid.UUID) *EvaluationProfileUpdate {
+	_u.mutation.RemoveEvaluationCompetencyIDs(ids...)
+	return _u
+}
+
+// RemoveEvaluationCompetencies removes "evaluation_competencies" edges to EvaluationCompetency entities.
+func (_u *EvaluationProfileUpdate) RemoveEvaluationCompetencies(v ...*EvaluationCompetency) *EvaluationProfileUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveEvaluationCompetencyIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -289,6 +326,51 @@ func (_u *EvaluationProfileUpdate) sqlSave(ctx context.Context) (_node int, err 
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if _u.mutation.EvaluationCompetenciesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   evaluationprofile.EvaluationCompetenciesTable,
+			Columns: []string{evaluationprofile.EvaluationCompetenciesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(evaluationcompetency.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedEvaluationCompetenciesIDs(); len(nodes) > 0 && !_u.mutation.EvaluationCompetenciesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   evaluationprofile.EvaluationCompetenciesTable,
+			Columns: []string{evaluationprofile.EvaluationCompetenciesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(evaluationcompetency.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.EvaluationCompetenciesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   evaluationprofile.EvaluationCompetenciesTable,
+			Columns: []string{evaluationprofile.EvaluationCompetenciesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(evaluationcompetency.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{evaluationprofile.Label}
@@ -373,6 +455,21 @@ func (_u *EvaluationProfileUpdateOne) AddAcceptanceLevels(v ...*CompetencyAccept
 	return _u.AddAcceptanceLevelIDs(ids...)
 }
 
+// AddEvaluationCompetencyIDs adds the "evaluation_competencies" edge to the EvaluationCompetency entity by IDs.
+func (_u *EvaluationProfileUpdateOne) AddEvaluationCompetencyIDs(ids ...uuid.UUID) *EvaluationProfileUpdateOne {
+	_u.mutation.AddEvaluationCompetencyIDs(ids...)
+	return _u
+}
+
+// AddEvaluationCompetencies adds the "evaluation_competencies" edges to the EvaluationCompetency entity.
+func (_u *EvaluationProfileUpdateOne) AddEvaluationCompetencies(v ...*EvaluationCompetency) *EvaluationProfileUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddEvaluationCompetencyIDs(ids...)
+}
+
 // Mutation returns the EvaluationProfileMutation object of the builder.
 func (_u *EvaluationProfileUpdateOne) Mutation() *EvaluationProfileMutation {
 	return _u.mutation
@@ -418,6 +515,27 @@ func (_u *EvaluationProfileUpdateOne) RemoveAcceptanceLevels(v ...*CompetencyAcc
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveAcceptanceLevelIDs(ids...)
+}
+
+// ClearEvaluationCompetencies clears all "evaluation_competencies" edges to the EvaluationCompetency entity.
+func (_u *EvaluationProfileUpdateOne) ClearEvaluationCompetencies() *EvaluationProfileUpdateOne {
+	_u.mutation.ClearEvaluationCompetencies()
+	return _u
+}
+
+// RemoveEvaluationCompetencyIDs removes the "evaluation_competencies" edge to EvaluationCompetency entities by IDs.
+func (_u *EvaluationProfileUpdateOne) RemoveEvaluationCompetencyIDs(ids ...uuid.UUID) *EvaluationProfileUpdateOne {
+	_u.mutation.RemoveEvaluationCompetencyIDs(ids...)
+	return _u
+}
+
+// RemoveEvaluationCompetencies removes "evaluation_competencies" edges to EvaluationCompetency entities.
+func (_u *EvaluationProfileUpdateOne) RemoveEvaluationCompetencies(v ...*EvaluationCompetency) *EvaluationProfileUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveEvaluationCompetencyIDs(ids...)
 }
 
 // Where appends a list predicates to the EvaluationProfileUpdate builder.
@@ -591,6 +709,51 @@ func (_u *EvaluationProfileUpdateOne) sqlSave(ctx context.Context) (_node *Evalu
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(competencyacceptancelevel.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.EvaluationCompetenciesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   evaluationprofile.EvaluationCompetenciesTable,
+			Columns: []string{evaluationprofile.EvaluationCompetenciesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(evaluationcompetency.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedEvaluationCompetenciesIDs(); len(nodes) > 0 && !_u.mutation.EvaluationCompetenciesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   evaluationprofile.EvaluationCompetenciesTable,
+			Columns: []string{evaluationprofile.EvaluationCompetenciesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(evaluationcompetency.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.EvaluationCompetenciesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   evaluationprofile.EvaluationCompetenciesTable,
+			Columns: []string{evaluationprofile.EvaluationCompetenciesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(evaluationcompetency.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

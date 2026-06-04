@@ -12,7 +12,10 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
 	"github.com/sed-evaluacion-desempeno/api/internal/cycle"
+	"github.com/sed-evaluacion-desempeno/api/internal/evaluation"
 	"github.com/sed-evaluacion-desempeno/api/internal/evaluatorscope"
+	"github.com/sed-evaluacion-desempeno/api/internal/goalassignment"
+	"github.com/sed-evaluacion-desempeno/api/internal/nineboxmatrix"
 	"github.com/sed-evaluacion-desempeno/api/internal/organization"
 	"github.com/sed-evaluacion-desempeno/api/internal/phasedefinition"
 	"github.com/sed-evaluacion-desempeno/api/internal/phasetransition"
@@ -161,6 +164,51 @@ func (_c *CycleCreate) AddEvaluatorScopes(v ...*EvaluatorScope) *CycleCreate {
 		ids[i] = v[i].ID
 	}
 	return _c.AddEvaluatorScopeIDs(ids...)
+}
+
+// AddGoalAssignmentIDs adds the "goal_assignments" edge to the GoalAssignment entity by IDs.
+func (_c *CycleCreate) AddGoalAssignmentIDs(ids ...uuid.UUID) *CycleCreate {
+	_c.mutation.AddGoalAssignmentIDs(ids...)
+	return _c
+}
+
+// AddGoalAssignments adds the "goal_assignments" edges to the GoalAssignment entity.
+func (_c *CycleCreate) AddGoalAssignments(v ...*GoalAssignment) *CycleCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddGoalAssignmentIDs(ids...)
+}
+
+// AddEvaluationIDs adds the "evaluations" edge to the Evaluation entity by IDs.
+func (_c *CycleCreate) AddEvaluationIDs(ids ...uuid.UUID) *CycleCreate {
+	_c.mutation.AddEvaluationIDs(ids...)
+	return _c
+}
+
+// AddEvaluations adds the "evaluations" edges to the Evaluation entity.
+func (_c *CycleCreate) AddEvaluations(v ...*Evaluation) *CycleCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddEvaluationIDs(ids...)
+}
+
+// AddNineBoxMatrixIDs adds the "nine_box_matrices" edge to the NineBoxMatrix entity by IDs.
+func (_c *CycleCreate) AddNineBoxMatrixIDs(ids ...uuid.UUID) *CycleCreate {
+	_c.mutation.AddNineBoxMatrixIDs(ids...)
+	return _c
+}
+
+// AddNineBoxMatrices adds the "nine_box_matrices" edges to the NineBoxMatrix entity.
+func (_c *CycleCreate) AddNineBoxMatrices(v ...*NineBoxMatrix) *CycleCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddNineBoxMatrixIDs(ids...)
 }
 
 // Mutation returns the CycleMutation object of the builder.
@@ -354,6 +402,54 @@ func (_c *CycleCreate) createSpec() (*Cycle, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(evaluatorscope.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.GoalAssignmentsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   cycle.GoalAssignmentsTable,
+			Columns: []string{cycle.GoalAssignmentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(goalassignment.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.EvaluationsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   cycle.EvaluationsTable,
+			Columns: []string{cycle.EvaluationsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(evaluation.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.NineBoxMatricesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   cycle.NineBoxMatricesTable,
+			Columns: []string{cycle.NineBoxMatricesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(nineboxmatrix.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

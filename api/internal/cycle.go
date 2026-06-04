@@ -49,9 +49,15 @@ type CycleEdges struct {
 	PhaseDefinitions []*PhaseDefinition `json:"phase_definitions,omitempty"`
 	// EvaluatorScopes holds the value of the evaluator_scopes edge.
 	EvaluatorScopes []*EvaluatorScope `json:"evaluator_scopes,omitempty"`
+	// GoalAssignments holds the value of the goal_assignments edge.
+	GoalAssignments []*GoalAssignment `json:"goal_assignments,omitempty"`
+	// Evaluations holds the value of the evaluations edge.
+	Evaluations []*Evaluation `json:"evaluations,omitempty"`
+	// NineBoxMatrices holds the value of the nine_box_matrices edge.
+	NineBoxMatrices []*NineBoxMatrix `json:"nine_box_matrices,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [4]bool
+	loadedTypes [7]bool
 }
 
 // OrganizationOrErr returns the Organization value or an error if the edge
@@ -90,6 +96,33 @@ func (e CycleEdges) EvaluatorScopesOrErr() ([]*EvaluatorScope, error) {
 		return e.EvaluatorScopes, nil
 	}
 	return nil, &NotLoadedError{edge: "evaluator_scopes"}
+}
+
+// GoalAssignmentsOrErr returns the GoalAssignments value or an error if the edge
+// was not loaded in eager-loading.
+func (e CycleEdges) GoalAssignmentsOrErr() ([]*GoalAssignment, error) {
+	if e.loadedTypes[4] {
+		return e.GoalAssignments, nil
+	}
+	return nil, &NotLoadedError{edge: "goal_assignments"}
+}
+
+// EvaluationsOrErr returns the Evaluations value or an error if the edge
+// was not loaded in eager-loading.
+func (e CycleEdges) EvaluationsOrErr() ([]*Evaluation, error) {
+	if e.loadedTypes[5] {
+		return e.Evaluations, nil
+	}
+	return nil, &NotLoadedError{edge: "evaluations"}
+}
+
+// NineBoxMatricesOrErr returns the NineBoxMatrices value or an error if the edge
+// was not loaded in eager-loading.
+func (e CycleEdges) NineBoxMatricesOrErr() ([]*NineBoxMatrix, error) {
+	if e.loadedTypes[6] {
+		return e.NineBoxMatrices, nil
+	}
+	return nil, &NotLoadedError{edge: "nine_box_matrices"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -201,6 +234,21 @@ func (_m *Cycle) QueryPhaseDefinitions() *PhaseDefinitionQuery {
 // QueryEvaluatorScopes queries the "evaluator_scopes" edge of the Cycle entity.
 func (_m *Cycle) QueryEvaluatorScopes() *EvaluatorScopeQuery {
 	return NewCycleClient(_m.config).QueryEvaluatorScopes(_m)
+}
+
+// QueryGoalAssignments queries the "goal_assignments" edge of the Cycle entity.
+func (_m *Cycle) QueryGoalAssignments() *GoalAssignmentQuery {
+	return NewCycleClient(_m.config).QueryGoalAssignments(_m)
+}
+
+// QueryEvaluations queries the "evaluations" edge of the Cycle entity.
+func (_m *Cycle) QueryEvaluations() *EvaluationQuery {
+	return NewCycleClient(_m.config).QueryEvaluations(_m)
+}
+
+// QueryNineBoxMatrices queries the "nine_box_matrices" edge of the Cycle entity.
+func (_m *Cycle) QueryNineBoxMatrices() *NineBoxMatrixQuery {
+	return NewCycleClient(_m.config).QueryNineBoxMatrices(_m)
 }
 
 // Update returns a builder for updating this Cycle.

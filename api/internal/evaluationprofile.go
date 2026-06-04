@@ -33,9 +33,11 @@ type EvaluationProfileEdges struct {
 	Employees []*Employee `json:"employees,omitempty"`
 	// AcceptanceLevels holds the value of the acceptance_levels edge.
 	AcceptanceLevels []*CompetencyAcceptanceLevel `json:"acceptance_levels,omitempty"`
+	// EvaluationCompetencies holds the value of the evaluation_competencies edge.
+	EvaluationCompetencies []*EvaluationCompetency `json:"evaluation_competencies,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
+	loadedTypes [3]bool
 }
 
 // EmployeesOrErr returns the Employees value or an error if the edge
@@ -54,6 +56,15 @@ func (e EvaluationProfileEdges) AcceptanceLevelsOrErr() ([]*CompetencyAcceptance
 		return e.AcceptanceLevels, nil
 	}
 	return nil, &NotLoadedError{edge: "acceptance_levels"}
+}
+
+// EvaluationCompetenciesOrErr returns the EvaluationCompetencies value or an error if the edge
+// was not loaded in eager-loading.
+func (e EvaluationProfileEdges) EvaluationCompetenciesOrErr() ([]*EvaluationCompetency, error) {
+	if e.loadedTypes[2] {
+		return e.EvaluationCompetencies, nil
+	}
+	return nil, &NotLoadedError{edge: "evaluation_competencies"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -119,6 +130,11 @@ func (_m *EvaluationProfile) QueryEmployees() *EmployeeQuery {
 // QueryAcceptanceLevels queries the "acceptance_levels" edge of the EvaluationProfile entity.
 func (_m *EvaluationProfile) QueryAcceptanceLevels() *CompetencyAcceptanceLevelQuery {
 	return NewEvaluationProfileClient(_m.config).QueryAcceptanceLevels(_m)
+}
+
+// QueryEvaluationCompetencies queries the "evaluation_competencies" edge of the EvaluationProfile entity.
+func (_m *EvaluationProfile) QueryEvaluationCompetencies() *EvaluationCompetencyQuery {
+	return NewEvaluationProfileClient(_m.config).QueryEvaluationCompetencies(_m)
 }
 
 // Update returns a builder for updating this EvaluationProfile.

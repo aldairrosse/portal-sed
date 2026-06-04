@@ -62,9 +62,19 @@ type EmployeeEdges struct {
 	Profile *EvaluationProfile `json:"profile,omitempty"`
 	// EvaluatorScopes holds the value of the evaluator_scopes edge.
 	EvaluatorScopes []*EvaluatorScope `json:"evaluator_scopes,omitempty"`
+	// GoalCategories holds the value of the goal_categories edge.
+	GoalCategories []*GoalCategory `json:"goal_categories,omitempty"`
+	// GoalAssignments holds the value of the goal_assignments edge.
+	GoalAssignments []*GoalAssignment `json:"goal_assignments,omitempty"`
+	// Evaluations holds the value of the evaluations edge.
+	Evaluations []*Evaluation `json:"evaluations,omitempty"`
+	// NineBoxMatrices holds the value of the nine_box_matrices edge.
+	NineBoxMatrices []*NineBoxMatrix `json:"nine_box_matrices,omitempty"`
+	// NineBoxEntries holds the value of the nine_box_entries edge.
+	NineBoxEntries []*NineBoxEntry `json:"nine_box_entries,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [5]bool
+	loadedTypes [10]bool
 }
 
 // OrgNodeOrErr returns the OrgNode value or an error if the edge
@@ -116,6 +126,51 @@ func (e EmployeeEdges) EvaluatorScopesOrErr() ([]*EvaluatorScope, error) {
 		return e.EvaluatorScopes, nil
 	}
 	return nil, &NotLoadedError{edge: "evaluator_scopes"}
+}
+
+// GoalCategoriesOrErr returns the GoalCategories value or an error if the edge
+// was not loaded in eager-loading.
+func (e EmployeeEdges) GoalCategoriesOrErr() ([]*GoalCategory, error) {
+	if e.loadedTypes[5] {
+		return e.GoalCategories, nil
+	}
+	return nil, &NotLoadedError{edge: "goal_categories"}
+}
+
+// GoalAssignmentsOrErr returns the GoalAssignments value or an error if the edge
+// was not loaded in eager-loading.
+func (e EmployeeEdges) GoalAssignmentsOrErr() ([]*GoalAssignment, error) {
+	if e.loadedTypes[6] {
+		return e.GoalAssignments, nil
+	}
+	return nil, &NotLoadedError{edge: "goal_assignments"}
+}
+
+// EvaluationsOrErr returns the Evaluations value or an error if the edge
+// was not loaded in eager-loading.
+func (e EmployeeEdges) EvaluationsOrErr() ([]*Evaluation, error) {
+	if e.loadedTypes[7] {
+		return e.Evaluations, nil
+	}
+	return nil, &NotLoadedError{edge: "evaluations"}
+}
+
+// NineBoxMatricesOrErr returns the NineBoxMatrices value or an error if the edge
+// was not loaded in eager-loading.
+func (e EmployeeEdges) NineBoxMatricesOrErr() ([]*NineBoxMatrix, error) {
+	if e.loadedTypes[8] {
+		return e.NineBoxMatrices, nil
+	}
+	return nil, &NotLoadedError{edge: "nine_box_matrices"}
+}
+
+// NineBoxEntriesOrErr returns the NineBoxEntries value or an error if the edge
+// was not loaded in eager-loading.
+func (e EmployeeEdges) NineBoxEntriesOrErr() ([]*NineBoxEntry, error) {
+	if e.loadedTypes[9] {
+		return e.NineBoxEntries, nil
+	}
+	return nil, &NotLoadedError{edge: "nine_box_entries"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -263,6 +318,31 @@ func (_m *Employee) QueryProfile() *EvaluationProfileQuery {
 // QueryEvaluatorScopes queries the "evaluator_scopes" edge of the Employee entity.
 func (_m *Employee) QueryEvaluatorScopes() *EvaluatorScopeQuery {
 	return NewEmployeeClient(_m.config).QueryEvaluatorScopes(_m)
+}
+
+// QueryGoalCategories queries the "goal_categories" edge of the Employee entity.
+func (_m *Employee) QueryGoalCategories() *GoalCategoryQuery {
+	return NewEmployeeClient(_m.config).QueryGoalCategories(_m)
+}
+
+// QueryGoalAssignments queries the "goal_assignments" edge of the Employee entity.
+func (_m *Employee) QueryGoalAssignments() *GoalAssignmentQuery {
+	return NewEmployeeClient(_m.config).QueryGoalAssignments(_m)
+}
+
+// QueryEvaluations queries the "evaluations" edge of the Employee entity.
+func (_m *Employee) QueryEvaluations() *EvaluationQuery {
+	return NewEmployeeClient(_m.config).QueryEvaluations(_m)
+}
+
+// QueryNineBoxMatrices queries the "nine_box_matrices" edge of the Employee entity.
+func (_m *Employee) QueryNineBoxMatrices() *NineBoxMatrixQuery {
+	return NewEmployeeClient(_m.config).QueryNineBoxMatrices(_m)
+}
+
+// QueryNineBoxEntries queries the "nine_box_entries" edge of the Employee entity.
+func (_m *Employee) QueryNineBoxEntries() *NineBoxEntryQuery {
+	return NewEmployeeClient(_m.config).QueryNineBoxEntries(_m)
 }
 
 // Update returns a builder for updating this Employee.

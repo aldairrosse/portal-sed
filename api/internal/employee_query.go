@@ -14,8 +14,13 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
 	"github.com/sed-evaluacion-desempeno/api/internal/employee"
+	"github.com/sed-evaluacion-desempeno/api/internal/evaluation"
 	"github.com/sed-evaluacion-desempeno/api/internal/evaluationprofile"
 	"github.com/sed-evaluacion-desempeno/api/internal/evaluatorscope"
+	"github.com/sed-evaluacion-desempeno/api/internal/goalassignment"
+	"github.com/sed-evaluacion-desempeno/api/internal/goalcategory"
+	"github.com/sed-evaluacion-desempeno/api/internal/nineboxentry"
+	"github.com/sed-evaluacion-desempeno/api/internal/nineboxmatrix"
 	"github.com/sed-evaluacion-desempeno/api/internal/orgnode"
 	"github.com/sed-evaluacion-desempeno/api/internal/predicate"
 )
@@ -32,6 +37,11 @@ type EmployeeQuery struct {
 	withDirectReports   *EmployeeQuery
 	withProfile         *EvaluationProfileQuery
 	withEvaluatorScopes *EvaluatorScopeQuery
+	withGoalCategories  *GoalCategoryQuery
+	withGoalAssignments *GoalAssignmentQuery
+	withEvaluations     *EvaluationQuery
+	withNineBoxMatrices *NineBoxMatrixQuery
+	withNineBoxEntries  *NineBoxEntryQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -171,6 +181,116 @@ func (_q *EmployeeQuery) QueryEvaluatorScopes() *EvaluatorScopeQuery {
 			sqlgraph.From(employee.Table, employee.FieldID, selector),
 			sqlgraph.To(evaluatorscope.Table, evaluatorscope.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, employee.EvaluatorScopesTable, employee.EvaluatorScopesColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryGoalCategories chains the current query on the "goal_categories" edge.
+func (_q *EmployeeQuery) QueryGoalCategories() *GoalCategoryQuery {
+	query := (&GoalCategoryClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(employee.Table, employee.FieldID, selector),
+			sqlgraph.To(goalcategory.Table, goalcategory.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, employee.GoalCategoriesTable, employee.GoalCategoriesColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryGoalAssignments chains the current query on the "goal_assignments" edge.
+func (_q *EmployeeQuery) QueryGoalAssignments() *GoalAssignmentQuery {
+	query := (&GoalAssignmentClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(employee.Table, employee.FieldID, selector),
+			sqlgraph.To(goalassignment.Table, goalassignment.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, employee.GoalAssignmentsTable, employee.GoalAssignmentsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryEvaluations chains the current query on the "evaluations" edge.
+func (_q *EmployeeQuery) QueryEvaluations() *EvaluationQuery {
+	query := (&EvaluationClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(employee.Table, employee.FieldID, selector),
+			sqlgraph.To(evaluation.Table, evaluation.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, employee.EvaluationsTable, employee.EvaluationsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryNineBoxMatrices chains the current query on the "nine_box_matrices" edge.
+func (_q *EmployeeQuery) QueryNineBoxMatrices() *NineBoxMatrixQuery {
+	query := (&NineBoxMatrixClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(employee.Table, employee.FieldID, selector),
+			sqlgraph.To(nineboxmatrix.Table, nineboxmatrix.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, employee.NineBoxMatricesTable, employee.NineBoxMatricesColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryNineBoxEntries chains the current query on the "nine_box_entries" edge.
+func (_q *EmployeeQuery) QueryNineBoxEntries() *NineBoxEntryQuery {
+	query := (&NineBoxEntryClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(employee.Table, employee.FieldID, selector),
+			sqlgraph.To(nineboxentry.Table, nineboxentry.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, employee.NineBoxEntriesTable, employee.NineBoxEntriesColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -375,6 +495,11 @@ func (_q *EmployeeQuery) Clone() *EmployeeQuery {
 		withDirectReports:   _q.withDirectReports.Clone(),
 		withProfile:         _q.withProfile.Clone(),
 		withEvaluatorScopes: _q.withEvaluatorScopes.Clone(),
+		withGoalCategories:  _q.withGoalCategories.Clone(),
+		withGoalAssignments: _q.withGoalAssignments.Clone(),
+		withEvaluations:     _q.withEvaluations.Clone(),
+		withNineBoxMatrices: _q.withNineBoxMatrices.Clone(),
+		withNineBoxEntries:  _q.withNineBoxEntries.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
@@ -433,6 +558,61 @@ func (_q *EmployeeQuery) WithEvaluatorScopes(opts ...func(*EvaluatorScopeQuery))
 		opt(query)
 	}
 	_q.withEvaluatorScopes = query
+	return _q
+}
+
+// WithGoalCategories tells the query-builder to eager-load the nodes that are connected to
+// the "goal_categories" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *EmployeeQuery) WithGoalCategories(opts ...func(*GoalCategoryQuery)) *EmployeeQuery {
+	query := (&GoalCategoryClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withGoalCategories = query
+	return _q
+}
+
+// WithGoalAssignments tells the query-builder to eager-load the nodes that are connected to
+// the "goal_assignments" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *EmployeeQuery) WithGoalAssignments(opts ...func(*GoalAssignmentQuery)) *EmployeeQuery {
+	query := (&GoalAssignmentClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withGoalAssignments = query
+	return _q
+}
+
+// WithEvaluations tells the query-builder to eager-load the nodes that are connected to
+// the "evaluations" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *EmployeeQuery) WithEvaluations(opts ...func(*EvaluationQuery)) *EmployeeQuery {
+	query := (&EvaluationClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withEvaluations = query
+	return _q
+}
+
+// WithNineBoxMatrices tells the query-builder to eager-load the nodes that are connected to
+// the "nine_box_matrices" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *EmployeeQuery) WithNineBoxMatrices(opts ...func(*NineBoxMatrixQuery)) *EmployeeQuery {
+	query := (&NineBoxMatrixClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withNineBoxMatrices = query
+	return _q
+}
+
+// WithNineBoxEntries tells the query-builder to eager-load the nodes that are connected to
+// the "nine_box_entries" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *EmployeeQuery) WithNineBoxEntries(opts ...func(*NineBoxEntryQuery)) *EmployeeQuery {
+	query := (&NineBoxEntryClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withNineBoxEntries = query
 	return _q
 }
 
@@ -514,12 +694,17 @@ func (_q *EmployeeQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Emp
 	var (
 		nodes       = []*Employee{}
 		_spec       = _q.querySpec()
-		loadedTypes = [5]bool{
+		loadedTypes = [10]bool{
 			_q.withOrgNode != nil,
 			_q.withManager != nil,
 			_q.withDirectReports != nil,
 			_q.withProfile != nil,
 			_q.withEvaluatorScopes != nil,
+			_q.withGoalCategories != nil,
+			_q.withGoalAssignments != nil,
+			_q.withEvaluations != nil,
+			_q.withNineBoxMatrices != nil,
+			_q.withNineBoxEntries != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -569,6 +754,41 @@ func (_q *EmployeeQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Emp
 		if err := _q.loadEvaluatorScopes(ctx, query, nodes,
 			func(n *Employee) { n.Edges.EvaluatorScopes = []*EvaluatorScope{} },
 			func(n *Employee, e *EvaluatorScope) { n.Edges.EvaluatorScopes = append(n.Edges.EvaluatorScopes, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withGoalCategories; query != nil {
+		if err := _q.loadGoalCategories(ctx, query, nodes,
+			func(n *Employee) { n.Edges.GoalCategories = []*GoalCategory{} },
+			func(n *Employee, e *GoalCategory) { n.Edges.GoalCategories = append(n.Edges.GoalCategories, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withGoalAssignments; query != nil {
+		if err := _q.loadGoalAssignments(ctx, query, nodes,
+			func(n *Employee) { n.Edges.GoalAssignments = []*GoalAssignment{} },
+			func(n *Employee, e *GoalAssignment) { n.Edges.GoalAssignments = append(n.Edges.GoalAssignments, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withEvaluations; query != nil {
+		if err := _q.loadEvaluations(ctx, query, nodes,
+			func(n *Employee) { n.Edges.Evaluations = []*Evaluation{} },
+			func(n *Employee, e *Evaluation) { n.Edges.Evaluations = append(n.Edges.Evaluations, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withNineBoxMatrices; query != nil {
+		if err := _q.loadNineBoxMatrices(ctx, query, nodes,
+			func(n *Employee) { n.Edges.NineBoxMatrices = []*NineBoxMatrix{} },
+			func(n *Employee, e *NineBoxMatrix) { n.Edges.NineBoxMatrices = append(n.Edges.NineBoxMatrices, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withNineBoxEntries; query != nil {
+		if err := _q.loadNineBoxEntries(ctx, query, nodes,
+			func(n *Employee) { n.Edges.NineBoxEntries = []*NineBoxEntry{} },
+			func(n *Employee, e *NineBoxEntry) { n.Edges.NineBoxEntries = append(n.Edges.NineBoxEntries, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -723,6 +943,156 @@ func (_q *EmployeeQuery) loadEvaluatorScopes(ctx context.Context, query *Evaluat
 		node, ok := nodeids[fk]
 		if !ok {
 			return fmt.Errorf(`unexpected referenced foreign-key "evaluator_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *EmployeeQuery) loadGoalCategories(ctx context.Context, query *GoalCategoryQuery, nodes []*Employee, init func(*Employee), assign func(*Employee, *GoalCategory)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*Employee)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(goalcategory.FieldEmployeeID)
+	}
+	query.Where(predicate.GoalCategory(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(employee.GoalCategoriesColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.EmployeeID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "employee_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *EmployeeQuery) loadGoalAssignments(ctx context.Context, query *GoalAssignmentQuery, nodes []*Employee, init func(*Employee), assign func(*Employee, *GoalAssignment)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*Employee)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(goalassignment.FieldEmployeeID)
+	}
+	query.Where(predicate.GoalAssignment(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(employee.GoalAssignmentsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.EmployeeID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "employee_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *EmployeeQuery) loadEvaluations(ctx context.Context, query *EvaluationQuery, nodes []*Employee, init func(*Employee), assign func(*Employee, *Evaluation)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*Employee)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(evaluation.FieldEmployeeID)
+	}
+	query.Where(predicate.Evaluation(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(employee.EvaluationsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.EmployeeID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "employee_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *EmployeeQuery) loadNineBoxMatrices(ctx context.Context, query *NineBoxMatrixQuery, nodes []*Employee, init func(*Employee), assign func(*Employee, *NineBoxMatrix)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*Employee)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(nineboxmatrix.FieldEvaluatorID)
+	}
+	query.Where(predicate.NineBoxMatrix(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(employee.NineBoxMatricesColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.EvaluatorID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "evaluator_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *EmployeeQuery) loadNineBoxEntries(ctx context.Context, query *NineBoxEntryQuery, nodes []*Employee, init func(*Employee), assign func(*Employee, *NineBoxEntry)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*Employee)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(nineboxentry.FieldEvaluateeID)
+	}
+	query.Where(predicate.NineBoxEntry(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(employee.NineBoxEntriesColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.EvaluateeID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "evaluatee_id" returned %v for node %v`, fk, n.ID)
 		}
 		assign(node, n)
 	}

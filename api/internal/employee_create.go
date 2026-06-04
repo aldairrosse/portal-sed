@@ -12,8 +12,13 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
 	"github.com/sed-evaluacion-desempeno/api/internal/employee"
+	"github.com/sed-evaluacion-desempeno/api/internal/evaluation"
 	"github.com/sed-evaluacion-desempeno/api/internal/evaluationprofile"
 	"github.com/sed-evaluacion-desempeno/api/internal/evaluatorscope"
+	"github.com/sed-evaluacion-desempeno/api/internal/goalassignment"
+	"github.com/sed-evaluacion-desempeno/api/internal/goalcategory"
+	"github.com/sed-evaluacion-desempeno/api/internal/nineboxentry"
+	"github.com/sed-evaluacion-desempeno/api/internal/nineboxmatrix"
 	"github.com/sed-evaluacion-desempeno/api/internal/orgnode"
 )
 
@@ -185,6 +190,81 @@ func (_c *EmployeeCreate) AddEvaluatorScopes(v ...*EvaluatorScope) *EmployeeCrea
 		ids[i] = v[i].ID
 	}
 	return _c.AddEvaluatorScopeIDs(ids...)
+}
+
+// AddGoalCategoryIDs adds the "goal_categories" edge to the GoalCategory entity by IDs.
+func (_c *EmployeeCreate) AddGoalCategoryIDs(ids ...uuid.UUID) *EmployeeCreate {
+	_c.mutation.AddGoalCategoryIDs(ids...)
+	return _c
+}
+
+// AddGoalCategories adds the "goal_categories" edges to the GoalCategory entity.
+func (_c *EmployeeCreate) AddGoalCategories(v ...*GoalCategory) *EmployeeCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddGoalCategoryIDs(ids...)
+}
+
+// AddGoalAssignmentIDs adds the "goal_assignments" edge to the GoalAssignment entity by IDs.
+func (_c *EmployeeCreate) AddGoalAssignmentIDs(ids ...uuid.UUID) *EmployeeCreate {
+	_c.mutation.AddGoalAssignmentIDs(ids...)
+	return _c
+}
+
+// AddGoalAssignments adds the "goal_assignments" edges to the GoalAssignment entity.
+func (_c *EmployeeCreate) AddGoalAssignments(v ...*GoalAssignment) *EmployeeCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddGoalAssignmentIDs(ids...)
+}
+
+// AddEvaluationIDs adds the "evaluations" edge to the Evaluation entity by IDs.
+func (_c *EmployeeCreate) AddEvaluationIDs(ids ...uuid.UUID) *EmployeeCreate {
+	_c.mutation.AddEvaluationIDs(ids...)
+	return _c
+}
+
+// AddEvaluations adds the "evaluations" edges to the Evaluation entity.
+func (_c *EmployeeCreate) AddEvaluations(v ...*Evaluation) *EmployeeCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddEvaluationIDs(ids...)
+}
+
+// AddNineBoxMatrixIDs adds the "nine_box_matrices" edge to the NineBoxMatrix entity by IDs.
+func (_c *EmployeeCreate) AddNineBoxMatrixIDs(ids ...uuid.UUID) *EmployeeCreate {
+	_c.mutation.AddNineBoxMatrixIDs(ids...)
+	return _c
+}
+
+// AddNineBoxMatrices adds the "nine_box_matrices" edges to the NineBoxMatrix entity.
+func (_c *EmployeeCreate) AddNineBoxMatrices(v ...*NineBoxMatrix) *EmployeeCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddNineBoxMatrixIDs(ids...)
+}
+
+// AddNineBoxEntryIDs adds the "nine_box_entries" edge to the NineBoxEntry entity by IDs.
+func (_c *EmployeeCreate) AddNineBoxEntryIDs(ids ...uuid.UUID) *EmployeeCreate {
+	_c.mutation.AddNineBoxEntryIDs(ids...)
+	return _c
+}
+
+// AddNineBoxEntries adds the "nine_box_entries" edges to the NineBoxEntry entity.
+func (_c *EmployeeCreate) AddNineBoxEntries(v ...*NineBoxEntry) *EmployeeCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddNineBoxEntryIDs(ids...)
 }
 
 // Mutation returns the EmployeeMutation object of the builder.
@@ -448,6 +528,86 @@ func (_c *EmployeeCreate) createSpec() (*Employee, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(evaluatorscope.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.GoalCategoriesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   employee.GoalCategoriesTable,
+			Columns: []string{employee.GoalCategoriesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(goalcategory.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.GoalAssignmentsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   employee.GoalAssignmentsTable,
+			Columns: []string{employee.GoalAssignmentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(goalassignment.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.EvaluationsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   employee.EvaluationsTable,
+			Columns: []string{employee.EvaluationsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(evaluation.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.NineBoxMatricesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   employee.NineBoxMatricesTable,
+			Columns: []string{employee.NineBoxMatricesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(nineboxmatrix.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.NineBoxEntriesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   employee.NineBoxEntriesTable,
+			Columns: []string{employee.NineBoxEntriesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(nineboxentry.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

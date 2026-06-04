@@ -127,6 +127,107 @@ var (
 			},
 		},
 	}
+	// EvaluationsColumns holds the columns for the "evaluations" table.
+	EvaluationsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "created_by", Type: field.TypeUUID},
+		{Name: "updated_by", Type: field.TypeUUID},
+		{Name: "phase", Type: field.TypeEnum, Enums: []string{"asignacion", "avance", "cierre"}},
+		{Name: "state", Type: field.TypeEnum, Enums: []string{"pendiente_asignacion", "pendiente_avance", "pendiente_evaluacion_final", "completada"}},
+		{Name: "self_evaluation_completed_at", Type: field.TypeTime, Nullable: true},
+		{Name: "rh_evaluation_completed_at", Type: field.TypeTime, Nullable: true},
+		{Name: "cycle_id", Type: field.TypeUUID},
+		{Name: "employee_id", Type: field.TypeUUID},
+	}
+	// EvaluationsTable holds the schema information for the "evaluations" table.
+	EvaluationsTable = &schema.Table{
+		Name:       "evaluations",
+		Columns:    EvaluationsColumns,
+		PrimaryKey: []*schema.Column{EvaluationsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "evaluations_cycles_evaluations",
+				Columns:    []*schema.Column{EvaluationsColumns[9]},
+				RefColumns: []*schema.Column{CyclesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+			{
+				Symbol:     "evaluations_employees_evaluations",
+				Columns:    []*schema.Column{EvaluationsColumns[10]},
+				RefColumns: []*schema.Column{EmployeesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+	}
+	// EvaluationCompetenciesColumns holds the columns for the "evaluation_competencies" table.
+	EvaluationCompetenciesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "rating", Type: field.TypeInt},
+		{Name: "comments", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "competency_id", Type: field.TypeUUID},
+		{Name: "evaluation_id", Type: field.TypeUUID},
+		{Name: "profile_id", Type: field.TypeUUID},
+	}
+	// EvaluationCompetenciesTable holds the schema information for the "evaluation_competencies" table.
+	EvaluationCompetenciesTable = &schema.Table{
+		Name:       "evaluation_competencies",
+		Columns:    EvaluationCompetenciesColumns,
+		PrimaryKey: []*schema.Column{EvaluationCompetenciesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "evaluation_competencies_competencies_evaluation_competencies",
+				Columns:    []*schema.Column{EvaluationCompetenciesColumns[5]},
+				RefColumns: []*schema.Column{CompetenciesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+			{
+				Symbol:     "evaluation_competencies_evaluations_competency_ratings",
+				Columns:    []*schema.Column{EvaluationCompetenciesColumns[6]},
+				RefColumns: []*schema.Column{EvaluationsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "evaluation_competencies_evaluation_profiles_evaluation_competencies",
+				Columns:    []*schema.Column{EvaluationCompetenciesColumns[7]},
+				RefColumns: []*schema.Column{EvaluationProfilesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+	}
+	// EvaluationGoalsColumns holds the columns for the "evaluation_goals" table.
+	EvaluationGoalsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "final_rating", Type: field.TypeInt, Nullable: true},
+		{Name: "final_comments", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "evaluation_id", Type: field.TypeUUID},
+		{Name: "goal_id", Type: field.TypeUUID},
+	}
+	// EvaluationGoalsTable holds the schema information for the "evaluation_goals" table.
+	EvaluationGoalsTable = &schema.Table{
+		Name:       "evaluation_goals",
+		Columns:    EvaluationGoalsColumns,
+		PrimaryKey: []*schema.Column{EvaluationGoalsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "evaluation_goals_evaluations_goal_ratings",
+				Columns:    []*schema.Column{EvaluationGoalsColumns[5]},
+				RefColumns: []*schema.Column{EvaluationsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "evaluation_goals_goals_evaluation_goals",
+				Columns:    []*schema.Column{EvaluationGoalsColumns[6]},
+				RefColumns: []*schema.Column{GoalsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+	}
 	// EvaluationProfilesColumns holds the columns for the "evaluation_profiles" table.
 	EvaluationProfilesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
@@ -169,6 +270,132 @@ var (
 			},
 		},
 	}
+	// GoalsColumns holds the columns for the "goals" table.
+	GoalsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "created_by", Type: field.TypeUUID},
+		{Name: "updated_by", Type: field.TypeUUID},
+		{Name: "name", Type: field.TypeString},
+		{Name: "description", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "unit", Type: field.TypeEnum, Enums: []string{"porcentaje", "moneda", "numero"}},
+		{Name: "weight", Type: field.TypeFloat64},
+		{Name: "target_value", Type: field.TypeFloat64},
+		{Name: "current_value", Type: field.TypeFloat64, Default: 0},
+		{Name: "state", Type: field.TypeEnum, Enums: []string{"borrador", "fijada", "en_seguimiento", "evaluada", "cerrada"}},
+		{Name: "category_id", Type: field.TypeUUID},
+	}
+	// GoalsTable holds the schema information for the "goals" table.
+	GoalsTable = &schema.Table{
+		Name:       "goals",
+		Columns:    GoalsColumns,
+		PrimaryKey: []*schema.Column{GoalsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "goals_goal_categories_goals",
+				Columns:    []*schema.Column{GoalsColumns[12]},
+				RefColumns: []*schema.Column{GoalCategoriesColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+	}
+	// GoalAssignmentsColumns holds the columns for the "goal_assignments" table.
+	GoalAssignmentsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "cycle_id", Type: field.TypeUUID},
+		{Name: "employee_id", Type: field.TypeUUID},
+	}
+	// GoalAssignmentsTable holds the schema information for the "goal_assignments" table.
+	GoalAssignmentsTable = &schema.Table{
+		Name:       "goal_assignments",
+		Columns:    GoalAssignmentsColumns,
+		PrimaryKey: []*schema.Column{GoalAssignmentsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "goal_assignments_cycles_goal_assignments",
+				Columns:    []*schema.Column{GoalAssignmentsColumns[3]},
+				RefColumns: []*schema.Column{CyclesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+			{
+				Symbol:     "goal_assignments_employees_goal_assignments",
+				Columns:    []*schema.Column{GoalAssignmentsColumns[4]},
+				RefColumns: []*schema.Column{EmployeesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+	}
+	// GoalCategoriesColumns holds the columns for the "goal_categories" table.
+	GoalCategoriesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "created_by", Type: field.TypeUUID},
+		{Name: "updated_by", Type: field.TypeUUID},
+		{Name: "name", Type: field.TypeString},
+		{Name: "description", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "weight", Type: field.TypeFloat64},
+		{Name: "employee_id", Type: field.TypeUUID},
+	}
+	// GoalCategoriesTable holds the schema information for the "goal_categories" table.
+	GoalCategoriesTable = &schema.Table{
+		Name:       "goal_categories",
+		Columns:    GoalCategoriesColumns,
+		PrimaryKey: []*schema.Column{GoalCategoriesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "goal_categories_employees_goal_categories",
+				Columns:    []*schema.Column{GoalCategoriesColumns[8]},
+				RefColumns: []*schema.Column{EmployeesColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+	}
+	// GoalKpiLinksColumns holds the columns for the "goal_kpi_links" table.
+	GoalKpiLinksColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "goal_id", Type: field.TypeUUID},
+		{Name: "kpi_id", Type: field.TypeUUID},
+	}
+	// GoalKpiLinksTable holds the schema information for the "goal_kpi_links" table.
+	GoalKpiLinksTable = &schema.Table{
+		Name:       "goal_kpi_links",
+		Columns:    GoalKpiLinksColumns,
+		PrimaryKey: []*schema.Column{GoalKpiLinksColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "goal_kpi_links_goals_kpi_links",
+				Columns:    []*schema.Column{GoalKpiLinksColumns[2]},
+				RefColumns: []*schema.Column{GoalsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "goal_kpi_links_kp_is_goal_links",
+				Columns:    []*schema.Column{GoalKpiLinksColumns[3]},
+				RefColumns: []*schema.Column{KpIsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+	}
+	// KpIsColumns holds the columns for the "kp_is" table.
+	KpIsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "name", Type: field.TypeString, Unique: true},
+		{Name: "unit", Type: field.TypeEnum, Enums: []string{"porcentaje", "moneda", "numero"}},
+		{Name: "description", Type: field.TypeString, Nullable: true, Size: 2147483647},
+	}
+	// KpIsTable holds the schema information for the "kp_is" table.
+	KpIsTable = &schema.Table{
+		Name:       "kp_is",
+		Columns:    KpIsColumns,
+		PrimaryKey: []*schema.Column{KpIsColumns[0]},
+	}
 	// LevelDefinitionsColumns holds the columns for the "level_definitions" table.
 	LevelDefinitionsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
@@ -181,6 +408,97 @@ var (
 		Name:       "level_definitions",
 		Columns:    LevelDefinitionsColumns,
 		PrimaryKey: []*schema.Column{LevelDefinitionsColumns[0]},
+	}
+	// NineBoxEntriesColumns holds the columns for the "nine_box_entries" table.
+	NineBoxEntriesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "created_by", Type: field.TypeUUID},
+		{Name: "updated_by", Type: field.TypeUUID},
+		{Name: "performance_score", Type: field.TypeInt},
+		{Name: "potential_score", Type: field.TypeInt},
+		{Name: "quadrant", Type: field.TypeInt},
+		{Name: "comments", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "evaluatee_id", Type: field.TypeUUID},
+		{Name: "matrix_id", Type: field.TypeUUID},
+	}
+	// NineBoxEntriesTable holds the schema information for the "nine_box_entries" table.
+	NineBoxEntriesTable = &schema.Table{
+		Name:       "nine_box_entries",
+		Columns:    NineBoxEntriesColumns,
+		PrimaryKey: []*schema.Column{NineBoxEntriesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "nine_box_entries_employees_nine_box_entries",
+				Columns:    []*schema.Column{NineBoxEntriesColumns[9]},
+				RefColumns: []*schema.Column{EmployeesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+			{
+				Symbol:     "nine_box_entries_nine_box_matrixes_entries",
+				Columns:    []*schema.Column{NineBoxEntriesColumns[10]},
+				RefColumns: []*schema.Column{NineBoxMatrixesColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+	}
+	// NineBoxMatrixesColumns holds the columns for the "nine_box_matrixes" table.
+	NineBoxMatrixesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "cycle_id", Type: field.TypeUUID},
+		{Name: "evaluator_id", Type: field.TypeUUID},
+	}
+	// NineBoxMatrixesTable holds the schema information for the "nine_box_matrixes" table.
+	NineBoxMatrixesTable = &schema.Table{
+		Name:       "nine_box_matrixes",
+		Columns:    NineBoxMatrixesColumns,
+		PrimaryKey: []*schema.Column{NineBoxMatrixesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "nine_box_matrixes_cycles_nine_box_matrices",
+				Columns:    []*schema.Column{NineBoxMatrixesColumns[3]},
+				RefColumns: []*schema.Column{CyclesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+			{
+				Symbol:     "nine_box_matrixes_employees_nine_box_matrices",
+				Columns:    []*schema.Column{NineBoxMatrixesColumns[4]},
+				RefColumns: []*schema.Column{EmployeesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+	}
+	// NineBoxQuadrantsColumns holds the columns for the "nine_box_quadrants" table.
+	NineBoxQuadrantsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "quadrant", Type: field.TypeInt, Unique: true},
+		{Name: "label", Type: field.TypeString},
+		{Name: "description", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "color", Type: field.TypeString},
+		{Name: "action_recommendation", Type: field.TypeString, Nullable: true, Size: 2147483647},
+	}
+	// NineBoxQuadrantsTable holds the schema information for the "nine_box_quadrants" table.
+	NineBoxQuadrantsTable = &schema.Table{
+		Name:       "nine_box_quadrants",
+		Columns:    NineBoxQuadrantsColumns,
+		PrimaryKey: []*schema.Column{NineBoxQuadrantsColumns[0]},
+	}
+	// NineBoxScalesColumns holds the columns for the "nine_box_scales" table.
+	NineBoxScalesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "axis", Type: field.TypeEnum, Enums: []string{"performance", "potential"}},
+		{Name: "level", Type: field.TypeInt},
+		{Name: "label", Type: field.TypeString},
+		{Name: "description", Type: field.TypeString, Nullable: true, Size: 2147483647},
+	}
+	// NineBoxScalesTable holds the schema information for the "nine_box_scales" table.
+	NineBoxScalesTable = &schema.Table{
+		Name:       "nine_box_scales",
+		Columns:    NineBoxScalesColumns,
+		PrimaryKey: []*schema.Column{NineBoxScalesColumns[0]},
 	}
 	// OrgNodesColumns holds the columns for the "org_nodes" table.
 	OrgNodesColumns = []*schema.Column{
@@ -343,9 +661,21 @@ var (
 		CompetencyAcceptanceLevelsTable,
 		CyclesTable,
 		EmployeesTable,
+		EvaluationsTable,
+		EvaluationCompetenciesTable,
+		EvaluationGoalsTable,
 		EvaluationProfilesTable,
 		EvaluatorScopesTable,
+		GoalsTable,
+		GoalAssignmentsTable,
+		GoalCategoriesTable,
+		GoalKpiLinksTable,
+		KpIsTable,
 		LevelDefinitionsTable,
+		NineBoxEntriesTable,
+		NineBoxMatrixesTable,
+		NineBoxQuadrantsTable,
+		NineBoxScalesTable,
 		OrgNodesTable,
 		OrganizationsTable,
 		PhaseDefinitionsTable,
@@ -363,8 +693,25 @@ func init() {
 	EmployeesTable.ForeignKeys[0].RefTable = EmployeesTable
 	EmployeesTable.ForeignKeys[1].RefTable = EvaluationProfilesTable
 	EmployeesTable.ForeignKeys[2].RefTable = OrgNodesTable
+	EvaluationsTable.ForeignKeys[0].RefTable = CyclesTable
+	EvaluationsTable.ForeignKeys[1].RefTable = EmployeesTable
+	EvaluationCompetenciesTable.ForeignKeys[0].RefTable = CompetenciesTable
+	EvaluationCompetenciesTable.ForeignKeys[1].RefTable = EvaluationsTable
+	EvaluationCompetenciesTable.ForeignKeys[2].RefTable = EvaluationProfilesTable
+	EvaluationGoalsTable.ForeignKeys[0].RefTable = EvaluationsTable
+	EvaluationGoalsTable.ForeignKeys[1].RefTable = GoalsTable
 	EvaluatorScopesTable.ForeignKeys[0].RefTable = CyclesTable
 	EvaluatorScopesTable.ForeignKeys[1].RefTable = EmployeesTable
+	GoalsTable.ForeignKeys[0].RefTable = GoalCategoriesTable
+	GoalAssignmentsTable.ForeignKeys[0].RefTable = CyclesTable
+	GoalAssignmentsTable.ForeignKeys[1].RefTable = EmployeesTable
+	GoalCategoriesTable.ForeignKeys[0].RefTable = EmployeesTable
+	GoalKpiLinksTable.ForeignKeys[0].RefTable = GoalsTable
+	GoalKpiLinksTable.ForeignKeys[1].RefTable = KpIsTable
+	NineBoxEntriesTable.ForeignKeys[0].RefTable = EmployeesTable
+	NineBoxEntriesTable.ForeignKeys[1].RefTable = NineBoxMatrixesTable
+	NineBoxMatrixesTable.ForeignKeys[0].RefTable = CyclesTable
+	NineBoxMatrixesTable.ForeignKeys[1].RefTable = EmployeesTable
 	OrgNodesTable.ForeignKeys[0].RefTable = OrgNodesTable
 	OrgNodesTable.ForeignKeys[1].RefTable = OrganizationsTable
 	PhaseDefinitionsTable.ForeignKeys[0].RefTable = CyclesTable

@@ -49,6 +49,16 @@ const (
 	EdgeProfile = "profile"
 	// EdgeEvaluatorScopes holds the string denoting the evaluator_scopes edge name in mutations.
 	EdgeEvaluatorScopes = "evaluator_scopes"
+	// EdgeGoalCategories holds the string denoting the goal_categories edge name in mutations.
+	EdgeGoalCategories = "goal_categories"
+	// EdgeGoalAssignments holds the string denoting the goal_assignments edge name in mutations.
+	EdgeGoalAssignments = "goal_assignments"
+	// EdgeEvaluations holds the string denoting the evaluations edge name in mutations.
+	EdgeEvaluations = "evaluations"
+	// EdgeNineBoxMatrices holds the string denoting the nine_box_matrices edge name in mutations.
+	EdgeNineBoxMatrices = "nine_box_matrices"
+	// EdgeNineBoxEntries holds the string denoting the nine_box_entries edge name in mutations.
+	EdgeNineBoxEntries = "nine_box_entries"
 	// Table holds the table name of the employee in the database.
 	Table = "employees"
 	// OrgNodeTable is the table that holds the org_node relation/edge.
@@ -80,6 +90,41 @@ const (
 	EvaluatorScopesInverseTable = "evaluator_scopes"
 	// EvaluatorScopesColumn is the table column denoting the evaluator_scopes relation/edge.
 	EvaluatorScopesColumn = "evaluator_id"
+	// GoalCategoriesTable is the table that holds the goal_categories relation/edge.
+	GoalCategoriesTable = "goal_categories"
+	// GoalCategoriesInverseTable is the table name for the GoalCategory entity.
+	// It exists in this package in order to avoid circular dependency with the "goalcategory" package.
+	GoalCategoriesInverseTable = "goal_categories"
+	// GoalCategoriesColumn is the table column denoting the goal_categories relation/edge.
+	GoalCategoriesColumn = "employee_id"
+	// GoalAssignmentsTable is the table that holds the goal_assignments relation/edge.
+	GoalAssignmentsTable = "goal_assignments"
+	// GoalAssignmentsInverseTable is the table name for the GoalAssignment entity.
+	// It exists in this package in order to avoid circular dependency with the "goalassignment" package.
+	GoalAssignmentsInverseTable = "goal_assignments"
+	// GoalAssignmentsColumn is the table column denoting the goal_assignments relation/edge.
+	GoalAssignmentsColumn = "employee_id"
+	// EvaluationsTable is the table that holds the evaluations relation/edge.
+	EvaluationsTable = "evaluations"
+	// EvaluationsInverseTable is the table name for the Evaluation entity.
+	// It exists in this package in order to avoid circular dependency with the "evaluation" package.
+	EvaluationsInverseTable = "evaluations"
+	// EvaluationsColumn is the table column denoting the evaluations relation/edge.
+	EvaluationsColumn = "employee_id"
+	// NineBoxMatricesTable is the table that holds the nine_box_matrices relation/edge.
+	NineBoxMatricesTable = "nine_box_matrixes"
+	// NineBoxMatricesInverseTable is the table name for the NineBoxMatrix entity.
+	// It exists in this package in order to avoid circular dependency with the "nineboxmatrix" package.
+	NineBoxMatricesInverseTable = "nine_box_matrixes"
+	// NineBoxMatricesColumn is the table column denoting the nine_box_matrices relation/edge.
+	NineBoxMatricesColumn = "evaluator_id"
+	// NineBoxEntriesTable is the table that holds the nine_box_entries relation/edge.
+	NineBoxEntriesTable = "nine_box_entries"
+	// NineBoxEntriesInverseTable is the table name for the NineBoxEntry entity.
+	// It exists in this package in order to avoid circular dependency with the "nineboxentry" package.
+	NineBoxEntriesInverseTable = "nine_box_entries"
+	// NineBoxEntriesColumn is the table column denoting the nine_box_entries relation/edge.
+	NineBoxEntriesColumn = "evaluatee_id"
 )
 
 // Columns holds all SQL columns for employee fields.
@@ -246,6 +291,76 @@ func ByEvaluatorScopes(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newEvaluatorScopesStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByGoalCategoriesCount orders the results by goal_categories count.
+func ByGoalCategoriesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newGoalCategoriesStep(), opts...)
+	}
+}
+
+// ByGoalCategories orders the results by goal_categories terms.
+func ByGoalCategories(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newGoalCategoriesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByGoalAssignmentsCount orders the results by goal_assignments count.
+func ByGoalAssignmentsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newGoalAssignmentsStep(), opts...)
+	}
+}
+
+// ByGoalAssignments orders the results by goal_assignments terms.
+func ByGoalAssignments(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newGoalAssignmentsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByEvaluationsCount orders the results by evaluations count.
+func ByEvaluationsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newEvaluationsStep(), opts...)
+	}
+}
+
+// ByEvaluations orders the results by evaluations terms.
+func ByEvaluations(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newEvaluationsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByNineBoxMatricesCount orders the results by nine_box_matrices count.
+func ByNineBoxMatricesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newNineBoxMatricesStep(), opts...)
+	}
+}
+
+// ByNineBoxMatrices orders the results by nine_box_matrices terms.
+func ByNineBoxMatrices(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newNineBoxMatricesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByNineBoxEntriesCount orders the results by nine_box_entries count.
+func ByNineBoxEntriesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newNineBoxEntriesStep(), opts...)
+	}
+}
+
+// ByNineBoxEntries orders the results by nine_box_entries terms.
+func ByNineBoxEntries(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newNineBoxEntriesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newOrgNodeStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -279,5 +394,40 @@ func newEvaluatorScopesStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(EvaluatorScopesInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, EvaluatorScopesTable, EvaluatorScopesColumn),
+	)
+}
+func newGoalCategoriesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(GoalCategoriesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, GoalCategoriesTable, GoalCategoriesColumn),
+	)
+}
+func newGoalAssignmentsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(GoalAssignmentsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, GoalAssignmentsTable, GoalAssignmentsColumn),
+	)
+}
+func newEvaluationsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(EvaluationsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, EvaluationsTable, EvaluationsColumn),
+	)
+}
+func newNineBoxMatricesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(NineBoxMatricesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, NineBoxMatricesTable, NineBoxMatricesColumn),
+	)
+}
+func newNineBoxEntriesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(NineBoxEntriesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, NineBoxEntriesTable, NineBoxEntriesColumn),
 	)
 }

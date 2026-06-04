@@ -15,6 +15,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/sed-evaluacion-desempeno/api/internal/competencyacceptancelevel"
 	"github.com/sed-evaluacion-desempeno/api/internal/employee"
+	"github.com/sed-evaluacion-desempeno/api/internal/evaluationcompetency"
 	"github.com/sed-evaluacion-desempeno/api/internal/evaluationprofile"
 	"github.com/sed-evaluacion-desempeno/api/internal/predicate"
 )
@@ -22,12 +23,13 @@ import (
 // EvaluationProfileQuery is the builder for querying EvaluationProfile entities.
 type EvaluationProfileQuery struct {
 	config
-	ctx                  *QueryContext
-	order                []evaluationprofile.OrderOption
-	inters               []Interceptor
-	predicates           []predicate.EvaluationProfile
-	withEmployees        *EmployeeQuery
-	withAcceptanceLevels *CompetencyAcceptanceLevelQuery
+	ctx                        *QueryContext
+	order                      []evaluationprofile.OrderOption
+	inters                     []Interceptor
+	predicates                 []predicate.EvaluationProfile
+	withEmployees              *EmployeeQuery
+	withAcceptanceLevels       *CompetencyAcceptanceLevelQuery
+	withEvaluationCompetencies *EvaluationCompetencyQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -101,6 +103,28 @@ func (_q *EvaluationProfileQuery) QueryAcceptanceLevels() *CompetencyAcceptanceL
 			sqlgraph.From(evaluationprofile.Table, evaluationprofile.FieldID, selector),
 			sqlgraph.To(competencyacceptancelevel.Table, competencyacceptancelevel.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, evaluationprofile.AcceptanceLevelsTable, evaluationprofile.AcceptanceLevelsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryEvaluationCompetencies chains the current query on the "evaluation_competencies" edge.
+func (_q *EvaluationProfileQuery) QueryEvaluationCompetencies() *EvaluationCompetencyQuery {
+	query := (&EvaluationCompetencyClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(evaluationprofile.Table, evaluationprofile.FieldID, selector),
+			sqlgraph.To(evaluationcompetency.Table, evaluationcompetency.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, evaluationprofile.EvaluationCompetenciesTable, evaluationprofile.EvaluationCompetenciesColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -295,13 +319,14 @@ func (_q *EvaluationProfileQuery) Clone() *EvaluationProfileQuery {
 		return nil
 	}
 	return &EvaluationProfileQuery{
-		config:               _q.config,
-		ctx:                  _q.ctx.Clone(),
-		order:                append([]evaluationprofile.OrderOption{}, _q.order...),
-		inters:               append([]Interceptor{}, _q.inters...),
-		predicates:           append([]predicate.EvaluationProfile{}, _q.predicates...),
-		withEmployees:        _q.withEmployees.Clone(),
-		withAcceptanceLevels: _q.withAcceptanceLevels.Clone(),
+		config:                     _q.config,
+		ctx:                        _q.ctx.Clone(),
+		order:                      append([]evaluationprofile.OrderOption{}, _q.order...),
+		inters:                     append([]Interceptor{}, _q.inters...),
+		predicates:                 append([]predicate.EvaluationProfile{}, _q.predicates...),
+		withEmployees:              _q.withEmployees.Clone(),
+		withAcceptanceLevels:       _q.withAcceptanceLevels.Clone(),
+		withEvaluationCompetencies: _q.withEvaluationCompetencies.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
@@ -327,6 +352,17 @@ func (_q *EvaluationProfileQuery) WithAcceptanceLevels(opts ...func(*CompetencyA
 		opt(query)
 	}
 	_q.withAcceptanceLevels = query
+	return _q
+}
+
+// WithEvaluationCompetencies tells the query-builder to eager-load the nodes that are connected to
+// the "evaluation_competencies" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *EvaluationProfileQuery) WithEvaluationCompetencies(opts ...func(*EvaluationCompetencyQuery)) *EvaluationProfileQuery {
+	query := (&EvaluationCompetencyClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withEvaluationCompetencies = query
 	return _q
 }
 
@@ -408,9 +444,10 @@ func (_q *EvaluationProfileQuery) sqlAll(ctx context.Context, hooks ...queryHook
 	var (
 		nodes       = []*EvaluationProfile{}
 		_spec       = _q.querySpec()
-		loadedTypes = [2]bool{
+		loadedTypes = [3]bool{
 			_q.withEmployees != nil,
 			_q.withAcceptanceLevels != nil,
+			_q.withEvaluationCompetencies != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -443,6 +480,15 @@ func (_q *EvaluationProfileQuery) sqlAll(ctx context.Context, hooks ...queryHook
 			func(n *EvaluationProfile) { n.Edges.AcceptanceLevels = []*CompetencyAcceptanceLevel{} },
 			func(n *EvaluationProfile, e *CompetencyAcceptanceLevel) {
 				n.Edges.AcceptanceLevels = append(n.Edges.AcceptanceLevels, e)
+			}); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withEvaluationCompetencies; query != nil {
+		if err := _q.loadEvaluationCompetencies(ctx, query, nodes,
+			func(n *EvaluationProfile) { n.Edges.EvaluationCompetencies = []*EvaluationCompetency{} },
+			func(n *EvaluationProfile, e *EvaluationCompetency) {
+				n.Edges.EvaluationCompetencies = append(n.Edges.EvaluationCompetencies, e)
 			}); err != nil {
 			return nil, err
 		}
@@ -495,6 +541,36 @@ func (_q *EvaluationProfileQuery) loadAcceptanceLevels(ctx context.Context, quer
 	}
 	query.Where(predicate.CompetencyAcceptanceLevel(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(evaluationprofile.AcceptanceLevelsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.ProfileID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "profile_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *EvaluationProfileQuery) loadEvaluationCompetencies(ctx context.Context, query *EvaluationCompetencyQuery, nodes []*EvaluationProfile, init func(*EvaluationProfile), assign func(*EvaluationProfile, *EvaluationCompetency)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*EvaluationProfile)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(evaluationcompetency.FieldProfileID)
+	}
+	query.Where(predicate.EvaluationCompetency(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(evaluationprofile.EvaluationCompetenciesColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

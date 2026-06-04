@@ -20,12 +20,36 @@ type Tx struct {
 	Cycle *CycleClient
 	// Employee is the client for interacting with the Employee builders.
 	Employee *EmployeeClient
+	// Evaluation is the client for interacting with the Evaluation builders.
+	Evaluation *EvaluationClient
+	// EvaluationCompetency is the client for interacting with the EvaluationCompetency builders.
+	EvaluationCompetency *EvaluationCompetencyClient
+	// EvaluationGoal is the client for interacting with the EvaluationGoal builders.
+	EvaluationGoal *EvaluationGoalClient
 	// EvaluationProfile is the client for interacting with the EvaluationProfile builders.
 	EvaluationProfile *EvaluationProfileClient
 	// EvaluatorScope is the client for interacting with the EvaluatorScope builders.
 	EvaluatorScope *EvaluatorScopeClient
+	// Goal is the client for interacting with the Goal builders.
+	Goal *GoalClient
+	// GoalAssignment is the client for interacting with the GoalAssignment builders.
+	GoalAssignment *GoalAssignmentClient
+	// GoalCategory is the client for interacting with the GoalCategory builders.
+	GoalCategory *GoalCategoryClient
+	// GoalKpiLink is the client for interacting with the GoalKpiLink builders.
+	GoalKpiLink *GoalKpiLinkClient
+	// KPI is the client for interacting with the KPI builders.
+	KPI *KPIClient
 	// LevelDefinition is the client for interacting with the LevelDefinition builders.
 	LevelDefinition *LevelDefinitionClient
+	// NineBoxEntry is the client for interacting with the NineBoxEntry builders.
+	NineBoxEntry *NineBoxEntryClient
+	// NineBoxMatrix is the client for interacting with the NineBoxMatrix builders.
+	NineBoxMatrix *NineBoxMatrixClient
+	// NineBoxQuadrant is the client for interacting with the NineBoxQuadrant builders.
+	NineBoxQuadrant *NineBoxQuadrantClient
+	// NineBoxScale is the client for interacting with the NineBoxScale builders.
+	NineBoxScale *NineBoxScaleClient
 	// OrgNode is the client for interacting with the OrgNode builders.
 	OrgNode *OrgNodeClient
 	// Organization is the client for interacting with the Organization builders.
@@ -173,9 +197,21 @@ func (tx *Tx) init() {
 	tx.CompetencyAcceptanceLevel = NewCompetencyAcceptanceLevelClient(tx.config)
 	tx.Cycle = NewCycleClient(tx.config)
 	tx.Employee = NewEmployeeClient(tx.config)
+	tx.Evaluation = NewEvaluationClient(tx.config)
+	tx.EvaluationCompetency = NewEvaluationCompetencyClient(tx.config)
+	tx.EvaluationGoal = NewEvaluationGoalClient(tx.config)
 	tx.EvaluationProfile = NewEvaluationProfileClient(tx.config)
 	tx.EvaluatorScope = NewEvaluatorScopeClient(tx.config)
+	tx.Goal = NewGoalClient(tx.config)
+	tx.GoalAssignment = NewGoalAssignmentClient(tx.config)
+	tx.GoalCategory = NewGoalCategoryClient(tx.config)
+	tx.GoalKpiLink = NewGoalKpiLinkClient(tx.config)
+	tx.KPI = NewKPIClient(tx.config)
 	tx.LevelDefinition = NewLevelDefinitionClient(tx.config)
+	tx.NineBoxEntry = NewNineBoxEntryClient(tx.config)
+	tx.NineBoxMatrix = NewNineBoxMatrixClient(tx.config)
+	tx.NineBoxQuadrant = NewNineBoxQuadrantClient(tx.config)
+	tx.NineBoxScale = NewNineBoxScaleClient(tx.config)
 	tx.OrgNode = NewOrgNodeClient(tx.config)
 	tx.Organization = NewOrganizationClient(tx.config)
 	tx.PhaseDefinition = NewPhaseDefinitionClient(tx.config)
