@@ -1,0 +1,3 @@
+schema: ./internal/schema
+target: ./ent
+package: github.com/sed-evaluacion-desempeno/api/ent
