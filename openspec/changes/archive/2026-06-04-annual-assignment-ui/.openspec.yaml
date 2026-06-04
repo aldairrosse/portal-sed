@@ -1,0 +1,44 @@
+schema: spec-driven
+created: 2026-06-03
+status: proposed
+change: A3 — annual-assignment-ui
+description: >
+  Pantalla de inicio de año: cada empleado (incluido RH) crea y edita metas
+  anuales agrupadas en categorías custom (independientes de pilares), con doble
+  ponderación 100% (categorías suman 100% y metas dentro de cada categoría
+  suman 100%) y KPIs indicadores (numérico/porcentaje/moneda) vinculables a 1+
+  metas. Jefes/directores/gerentes pueden ver y solicitar cambios (ajustar
+  KPIs y ponderaciones) sin agregar ni borrar metas. UI-first con fixtures
+  JSON, sin API ni persistencia.
+artifacts:
+  - proposal.md
+  - design.md
+  - spec.md
+  - tasks.md
+decisions_reflected:
+  - "#1 Doble ponderación 100%"
+  - "#2 Catálogo único de pilares (independiente de este change)"
+  - "#5 Categorías custom independientes de pilares"
+  - "#6 KPIs indicadores vinculables a 1+ metas (N:M)"
+  - "#7 Todos los perfiles (incluido RH) son evaluables"
+  - "#8 Jerarquía de edición: ver + solicitar cambios, no agregar/borrar"
+non_goals:
+  - "Medio año (A4)"
+  - "Evaluación final (A5)"
+  - "Matriz 9×9 (A6)"
+  - "API real, persistencia, autenticación, RBAC servidor"
+  - "Mis evaluados en sí mismo (A7)"
+  - "Borrado de metas vía solicitud de cambio"
+  - "Notificaciones email"
+  - "Vínculo metas ↔ pilares/competencias"
+  - "Importación Excel, wizard multi-step, plantillas de metas"
+depends_on:
+  - A1 ui-shell-and-design-tokens (archived 2026-06-02)
+  - A2 rh-competency-admin-ui (archived 2026-06-03)
+related_parallel:
+  - B3 goals-and-weighting (Fase B, sync on archive)
+  - B4 org-hierarchy (Fase B, MANAGER_MAP will be replaced)
+prs_planned:
+  - PR 1: Foundation — types, fixtures, store, menu (~420 lines)
+  - PR 2: Editor UI — modals, cards, weight indicator, route (~480 lines)
+  - PR 3: Read-only / request-change mode + verification (~400 lines)
