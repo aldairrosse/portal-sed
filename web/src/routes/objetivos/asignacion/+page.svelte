@@ -1,6 +1,9 @@
 <script lang="ts">
-	import { Save, Plus, Library } from '@lucide/svelte';
+	import { Save, Plus, Library, MessageSquare } from '@lucide/svelte';
 	import type { Goal, GoalCategory, GoalUnit } from '$lib/types/goal';
+	import type { ChangeRequest } from '$lib/types/goal';
+	import { MANAGER_MAP } from '$lib/types/goal';
+	import type { EvaluationProfile } from '$lib/types/evaluation';
 	import {
 		getCategories,
 		getGoals,
@@ -15,13 +18,62 @@
 		deleteGoal,
 		isAssignmentValid,
 		linkKpiToGoal,
-		unlinkKpiFromGoal
+		unlinkKpiFromGoal,
+		getAssignmentsByProfile
 	} from '$lib/stores/goalsStore.svelte';
+	import { getProfile } from '$lib/stores/devContext.svelte';
 	import WeightIndicator from '$lib/components/goals/WeightIndicator.svelte';
 	import CategoryCard from '$lib/components/goals/CategoryCard.svelte';
 	import CategoryFormModal from '$lib/components/goals/CategoryFormModal.svelte';
 	import GoalFormModal from '$lib/components/goals/GoalFormModal.svelte';
 	import KpiFormModal from '$lib/components/goals/KpiFormModal.svelte';
+	import ReadOnlyBanner from '$lib/components/goals/ReadOnlyBanner.svelte';
+	import AssigneePicker from '$lib/components/goals/AssigneePicker.svelte';
+	import RequestChangeModal from '$lib/components/goals/RequestChangeModal.svelte';
+
+	// ─── Mode detection ──────────────────────────────────────────────────────
+
+	const viewerProfile = $derived(getProfile());
+
+	// Build inverse manager map: which profiles report to the current viewer
+	const subordinateProfiles = $derived<EvaluationProfile[]>(
+		(Object.entries(MANAGER_MAP) as [EvaluationProfile, EvaluationProfile][])
+			.filter(([, mgr]) => mgr === viewerProfile)
+			.map(([sub]) => sub)
+	);
+
+	const ownAssignment = $derived(getAssignmentsByProfile(viewerProfile)[0]);
+
+	const subordinateAssignments = $derived(
+		subordinateProfiles.flatMap((p) => getAssignmentsByProfile(p))
+	);
+
+	const availableAssignments = $derived(
+		ownAssignment ? [ownAssignment, ...subordinateAssignments] : [...subordinateAssignments]
+	);
+
+	const showAssigneePicker = $derived(subordinateProfiles.length > 0);
+
+	let selectedEmployeeId = $state('');
+
+	// Reset selected employee when assignment context changes (profile switch)
+	$effect(() => {
+		if (ownAssignment && !selectedEmployeeId) {
+			selectedEmployeeId = ownAssignment.employeeId;
+		}
+	});
+
+	const targetAssignment = $derived(
+		availableAssignments.find((a) => a.employeeId === selectedEmployeeId)
+	);
+
+	const mode = $derived<'editor' | 'reader'>(
+		targetAssignment?.profileId === viewerProfile ? 'editor' : 'reader'
+	);
+
+	const targetEmployeeName = $derived(targetAssignment?.employeeName ?? '');
+
+	// ─── Existing page state ─────────────────────────────────────────────────
 
 	let showCategoryForm = $state(false);
 	let showGoalForm = $state(false);
@@ -37,6 +89,30 @@
 	const allKpis = $derived(getKpis());
 	const globalSum = $derived(categories.reduce((sum, c) => sum + c.weight, 0));
 	const valid = $derived(isAssignmentValid());
+
+	// ─── Request change modal state ─────────────────────────────────────────
+
+	let showRequestModal = $state(false);
+	let requestEntityType: ChangeRequest['entityType'] = $state('goal');
+	let requestEntityId = $state('');
+	let requestEntityName = $state('');
+
+	function openRequestModal(type: ChangeRequest['entityType'], id: string, name: string) {
+		requestEntityType = type;
+		requestEntityId = id;
+		requestEntityName = name;
+		showRequestModal = true;
+	}
+
+	function closeRequestModal() {
+		showRequestModal = false;
+	}
+
+	// ─── Handlers ────────────────────────────────────────────────────────────
+
+	function handleAssigneeSelect(employeeId: string) {
+		selectedEmployeeId = employeeId;
+	}
 
 	function handleSaveCategory(data: { name: string; description: string; weight: number }) {
 		if (editingCategory) {
@@ -130,6 +206,19 @@
 		errorMsg = '';
 		setTimeout(() => (successMsg = ''), 3000);
 	}
+
+	function handleRequestChangeGoal(goal: Goal) {
+		openRequestModal('goal', goal.id, goal.name);
+	}
+
+	function handleRequestChangeCategory(category: GoalCategory) {
+		openRequestModal('category', category.id, category.name);
+	}
+
+	function handleRequestAssignmentChange() {
+		if (!targetAssignment) return;
+		openRequestModal('assignment', targetAssignment.id, targetEmployeeName);
+	}
 </script>
 
 <svelte:head>
@@ -146,6 +235,14 @@
 			</p>
 		</div>
 		<div class="flex items-center gap-2">
+			<!-- AssigneePicker for profiles with subordinates -->
+			{#if showAssigneePicker}
+				<AssigneePicker
+					assignments={availableAssignments}
+					selectedEmployeeId={selectedEmployeeId}
+					onSelect={handleAssigneeSelect}
+				/>
+			{/if}
 			<button
 				class="btn btn-ghost btn-sm"
 				onclick={() => (showKpiLibrary = true)}
@@ -154,12 +251,28 @@
 				<Library class="w-4 h-4" />
 				Biblioteca de KPI
 			</button>
-			<button class="btn btn-primary btn-sm" disabled={!valid} onclick={handleSaveAssignment}>
-				<Save class="w-4 h-4" />
-				Guardar asignación
-			</button>
+			{#if mode === 'editor'}
+				<button class="btn btn-primary btn-sm" disabled={!valid} onclick={handleSaveAssignment}>
+					<Save class="w-4 h-4" />
+					Guardar asignación
+				</button>
+			{:else}
+				<button
+					class="btn btn-warning btn-sm"
+					onclick={handleRequestAssignmentChange}
+					aria-label="Solicitar cambio en asignación"
+				>
+					<MessageSquare class="w-4 h-4" />
+					Solicitar cambio
+				</button>
+			{/if}
 		</div>
 	</div>
+
+	<!-- Read-only banner -->
+	{#if mode === 'reader'}
+		<ReadOnlyBanner employeeName={targetEmployeeName} />
+	{/if}
 
 	<!-- Global weight indicator -->
 	<div class="bg-base-200/50 rounded-lg p-4">
@@ -198,6 +311,9 @@
 					onAddGoal={handleAddGoal}
 					onEditGoal={handleEditGoal}
 					onDeleteGoal={handleDeleteGoal}
+					{mode}
+					onRequestChangeCategory={handleRequestChangeCategory}
+					onRequestChangeGoal={handleRequestChangeGoal}
 				/>
 			{/each}
 		</div>
@@ -207,19 +323,21 @@
 		</div>
 	{/if}
 
-	<!-- Nueva categoría button -->
-	<div class="flex justify-center pt-2">
-		<button
-			class="btn btn-outline btn-primary"
-			onclick={() => {
-				editingCategory = null;
-				showCategoryForm = true;
-			}}
-		>
-			<Plus class="w-4 h-4" />
-			Nueva categoría
-		</button>
-	</div>
+	<!-- Nueva categoría button (editor only) -->
+	{#if mode === 'editor'}
+		<div class="flex justify-center pt-2">
+			<button
+				class="btn btn-outline btn-primary"
+				onclick={() => {
+					editingCategory = null;
+					showCategoryForm = true;
+				}}
+			>
+				<Plus class="w-4 h-4" />
+				Nueva categoría
+			</button>
+		</div>
+	{/if}
 </div>
 
 <!-- Modals -->
@@ -249,3 +367,14 @@
 	open={showKpiLibrary}
 	onClose={() => (showKpiLibrary = false)}
 />
+
+{#if targetAssignment}
+	<RequestChangeModal
+		open={showRequestModal}
+		entityType={requestEntityType}
+		entityId={requestEntityId}
+		entityName={requestEntityName}
+		requestedBy={viewerProfile}
+		onClose={closeRequestModal}
+	/>
+{/if}

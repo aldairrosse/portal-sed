@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Pencil, Trash2, Plus } from '@lucide/svelte';
+	import { Pencil, Trash2, Plus, MessageSquare } from '@lucide/svelte';
 	import type { Goal, GoalCategory, KPI } from '$lib/types/goal';
 	import WeightIndicator from './WeightIndicator.svelte';
 	import GoalRow from './GoalRow.svelte';
@@ -13,6 +13,9 @@
 		onAddGoal: (categoryId: string) => void;
 		onEditGoal: (goal: Goal) => void;
 		onDeleteGoal: (goalId: string) => void;
+		mode?: 'editor' | 'reader';
+		onRequestChangeCategory?: (category: GoalCategory) => void;
+		onRequestChangeGoal?: (goal: Goal) => void;
 	}
 
 	let {
@@ -23,7 +26,10 @@
 		onDeleteCategory,
 		onAddGoal,
 		onEditGoal,
-		onDeleteGoal
+		onDeleteGoal,
+		mode = 'editor',
+		onRequestChangeCategory,
+		onRequestChangeGoal
 	}: Props = $props();
 </script>
 
@@ -39,20 +45,31 @@
 				<p class="text-xs text-base-content/50 truncate">{category.description}</p>
 			</div>
 			<div class="flex items-center gap-1 flex-shrink-0">
-				<button
-					class="btn btn-ghost btn-square btn-sm"
-					onclick={() => onEditCategory(category)}
-					aria-label="Editar categoría {category.name}"
-				>
-					<Pencil class="w-4 h-4" />
-				</button>
-				<button
-					class="btn btn-ghost btn-square btn-sm text-error"
-					onclick={() => onDeleteCategory(category.id)}
-					aria-label="Eliminar categoría {category.name}"
-				>
-					<Trash2 class="w-4 h-4" />
-				</button>
+				{#if mode === 'editor'}
+					<button
+						class="btn btn-ghost btn-square btn-sm"
+						onclick={() => onEditCategory(category)}
+						aria-label="Editar categoría {category.name}"
+					>
+						<Pencil class="w-4 h-4" />
+					</button>
+					<button
+						class="btn btn-ghost btn-square btn-sm text-error"
+						onclick={() => onDeleteCategory(category.id)}
+						aria-label="Eliminar categoría {category.name}"
+					>
+						<Trash2 class="w-4 h-4" />
+					</button>
+				{:else if onRequestChangeCategory}
+					<button
+						class="btn btn-ghost btn-sm text-warning"
+						onclick={() => onRequestChangeCategory(category)}
+						aria-label="Solicitar cambio en categoría {category.name}"
+					>
+						<MessageSquare class="w-4 h-4" />
+						Solicitar cambio
+					</button>
+				{/if}
 			</div>
 		</div>
 
@@ -84,6 +101,8 @@
 								kpis={getKpisForGoal(goal.id)}
 								onEdit={onEditGoal}
 								onDelete={onDeleteGoal}
+								{mode}
+								onRequestChange={onRequestChangeGoal}
 							/>
 						{/each}
 					</tbody>
@@ -95,15 +114,17 @@
 			</p>
 		{/if}
 
-		<!-- Add goal button -->
-		<div class="mt-3">
-			<button
-				class="btn btn-outline btn-primary btn-sm"
-				onclick={() => onAddGoal(category.id)}
-			>
-				<Plus class="w-4 h-4" />
-				Nueva meta
-			</button>
-		</div>
+		<!-- Add goal button (editor only) -->
+		{#if mode === 'editor'}
+			<div class="mt-3">
+				<button
+					class="btn btn-outline btn-primary btn-sm"
+					onclick={() => onAddGoal(category.id)}
+				>
+					<Plus class="w-4 h-4" />
+					Nueva meta
+				</button>
+			</div>
+		{/if}
 	</div>
 </div>
