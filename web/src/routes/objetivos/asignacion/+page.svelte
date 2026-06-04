@@ -270,10 +270,10 @@
 	<div class="flex flex-wrap items-start justify-between gap-4">
 		<div class="min-w-0 flex-1">
 			<h1 class="text-2xl font-bold text-base-content">
-				{phase === 'avance' ? 'Avance de metas' : 'Asignación anual'}
+				{phase === 'medio-anio' ? 'Avance de metas' : 'Asignación anual'}
 			</h1>
 			<p class="text-sm text-base-content/50 mt-1">
-				{phase === 'avance'
+				{phase === 'medio-anio'
 					? 'Registre el avance de sus metas y agregue comentarios.'
 					: 'Defina las categorías y metas para el período de evaluación.'}
 			</p>
@@ -287,7 +287,7 @@
 					onSelect={handleAssigneeSelect}
 				/>
 			{/if}
-			{#if phase !== 'avance'}
+			{#if phase !== 'medio-anio'}
 				<button
 					class="btn btn-ghost btn-sm"
 					onclick={() => (showKpiLibrary = true)}
@@ -297,7 +297,7 @@
 					Biblioteca de KPI
 				</button>
 			{/if}
-			{#if mode === 'editor' && phase !== 'avance'}
+			{#if mode === 'editor' && phase !== 'medio-anio'}
 				<button class="btn btn-primary btn-sm" disabled={!valid} onclick={handleSaveAssignment}>
 					<Save class="w-4 h-4" />
 					Guardar asignación
@@ -323,9 +323,9 @@
 	<!-- Global weight indicator (sticky) -->
 	<div class="sticky top-2 z-30 bg-base-200/95 backdrop-blur-sm rounded-lg p-4 mt-2 mb-4 border border-base-300 shadow-sm min-w-0">
 		<p class="text-sm font-semibold text-base-content mb-2">
-			{phase === 'avance' ? 'Avance global de metas' : 'Distribución global de metas'}
+			{phase === 'medio-anio' ? 'Avance global de metas' : 'Distribución global de metas'}
 		</p>
-		{#if phase === 'avance'}
+		{#if phase === 'medio-anio'}
 			{@const allGoals = goals}
 			{@const withProgress = allGoals.filter((g) => g.progress !== undefined)}
 			{@const avgProgress = withProgress.length > 0
@@ -392,7 +392,7 @@
 	{/if}
 
 	<!-- Nueva categoría button (editor only, not in avance mode) -->
-	{#if mode === 'editor' && phase !== 'avance'}
+	{#if mode === 'editor' && phase !== 'medio-anio'}
 		<div class="flex justify-center pt-2">
 			<button
 				class="btn btn-outline btn-primary"

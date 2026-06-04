@@ -26,7 +26,7 @@
 		onDelete,
 		mode = 'editor',
 		onRequestChange,
-		phase = 'asignacion',
+		phase = 'inicio-anio',
 		canEditProgress = false,
 		canComment = false,
 		canDelete = true,
@@ -64,7 +64,7 @@
 	</td>
 	<td class="text-sm text-base-content/70">{goal.weight}%</td>
 	<td>
-		{#if phase === 'avance'}
+		{#if phase === 'medio-anio'}
 			<div class="flex items-center gap-2">
 				<input
 					type="number"
@@ -98,7 +98,7 @@
 	</td>
 	<td class="text-right">
 		<div class="flex items-center justify-end gap-1">
-			{#if phase === 'avance'}
+			{#if phase === 'medio-anio'}
 				{#if canComment}
 					<button
 						class="btn btn-ghost btn-square btn-xs relative"

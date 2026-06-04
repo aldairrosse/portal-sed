@@ -7,7 +7,7 @@ export type KpiUnit = GoalUnit;
 
 // ─── Cycle Phase ──────────────────────────────────────────────────────────────
 
-export type CyclePhase = 'asignacion' | 'avance' | 'cierre';
+export type CyclePhase = 'inicio-anio' | 'medio-anio' | 'fin-anio';
 
 // ─── KPI ───────────────────────────────────────────────────────────────────────
 

@@ -1,0 +1,6 @@
+name: annual-evaluation-ui
+status: proposed
+created: 2026-06-04
+dependencies:
+  - annual-assignment-ui
+  - mid-year-progress-ui

@@ -16,7 +16,7 @@ import goalsData from '$lib/fixtures/goals/goals.json';
 import kpisData from '$lib/fixtures/goals/kpis.json';
 import goalKpiLinksData from '$lib/fixtures/goals/goal-kpi-links.json';
 import assignmentsData from '$lib/fixtures/goals/assignments.json';
-import cycleData from '$lib/fixtures/goals/cycle.json';
+import { getPhase as getDevPhase } from '$lib/stores/devContext.svelte';
 
 // ─── Tolerance ────────────────────────────────────────────────────────────────
 
@@ -30,7 +30,6 @@ let kpis = $state<KPI[]>(structuredClone(kpisData as KPI[]));
 let goalKpiLinks = $state<GoalKpiLink[]>(structuredClone(goalKpiLinksData as GoalKpiLink[]));
 let assignments = $state<EmployeeAssignment[]>(structuredClone(assignmentsData as EmployeeAssignment[]));
 let changeRequests = $state<ChangeRequest[]>([]);
-let cyclePhase = $state<CyclePhase>(structuredClone(cycleData.phase as CyclePhase));
 
 // ─── Getters: General ─────────────────────────────────────────────────────────
 
@@ -59,7 +58,7 @@ export function getChangeRequests(): ChangeRequest[] {
 }
 
 export function getCyclePhase(): CyclePhase {
-	return cyclePhase;
+	return getDevPhase();
 }
 
 // ─── Getters: Progress & Comments ─────────────────────────────────────────────
@@ -90,7 +89,7 @@ export function getGoalPermissions(
 	role: EvaluationProfile,
 	isOwner: boolean
 ): { canEditProgress: boolean; canComment: boolean; canEditWeight: boolean; canDelete: boolean } {
-	if (cyclePhase === 'asignacion') {
+	if (getDevPhase() === 'inicio-anio') {
 		return {
 			canEditProgress: false,
 			canComment: false,
@@ -198,7 +197,7 @@ export function updateCategory(id: string, updates: Partial<Omit<GoalCategory, '
 
 export function deleteCategory(id: string): void {
 	// Block deletion in 'avance' phase
-	if (cyclePhase === 'avance') return;
+	if (getDevPhase() === 'medio-anio') return;
 	// Cascade: remove goals of this category
 	const deletedGoalIds = goals.filter((g) => g.categoryId === id).map((g) => g.id);
 	goals = goals.filter((g) => g.categoryId !== id);
@@ -220,7 +219,7 @@ export function updateGoal(id: string, updates: Partial<Omit<Goal, 'id'>>): void
 
 export function deleteGoal(id: string): void {
 	// Block deletion in 'avance' phase
-	if (cyclePhase === 'avance') return;
+	if (getDevPhase() === 'medio-anio') return;
 	goals = goals.filter((g) => g.id !== id);
 	// Cascade: remove KPI links for this goal
 	goalKpiLinks = goalKpiLinks.filter((link) => link.goalId !== id);
