@@ -1,0 +1,21 @@
+schema: spec-driven
+created: 2026-06-03
+archived: 2026-06-03
+status: completed
+change: A2 — rh-competency-admin-ui
+description: >
+  RH admin UI for managing the competency framework: pillars,
+  competencies by category, scale 1-5 criteria, and acceptance levels
+  by evaluation profile. UI-first with JSON fixtures, no API/persistence.
+artifacts:
+  - proposal.md
+  - specs/spec.md
+  - design.md
+  - tasks.md
+tasks_total: 20
+tasks_completed: 20
+verification: PASS
+prs:
+  - PR 1: Foundation — types, fixtures, store, menu
+  - PR 2: Pillars & Competencies UI
+  - PR 3: Scale & Acceptance Levels UI
