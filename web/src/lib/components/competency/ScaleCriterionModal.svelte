@@ -81,6 +81,7 @@
 		const existingIds = new Set(
 			getScaleCriteriaForCell(competencyId, pillarId).map((c) => c.id)
 		);
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity
 		const finalIds = new Set<string>();
 		const newEntries: Array<Omit<ScaleCriterion, 'id'>> = [];
 		const updatePairs: Array<{ id: string; description: string }> = [];
@@ -124,7 +125,6 @@
 	bind:this={dialogEl}
 	class="modal"
 	class:modal-open={open}
-	role="dialog"
 	aria-modal="true"
 	aria-labelledby="scale-criterion-title"
 	onclick={handleBackdropClick}
@@ -150,7 +150,7 @@
 
 		<form onsubmit={handleSubmit}>
 			<div class="space-y-6">
-				{#each levels as level}
+				{#each levels as level (level)}
 					{@const levelEntries = getEntriesByLevel(level)}
 					<fieldset class="rounded-lg border border-base-300 p-4">
 						<legend class="text-sm font-semibold text-base-content px-1">Nivel {level}</legend>

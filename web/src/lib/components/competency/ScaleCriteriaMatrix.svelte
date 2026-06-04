@@ -43,7 +43,7 @@
 				<thead>
 				<tr>
 						<th class="w-48 min-w-[12rem]">Competencia</th>
-						{#each levels as level}
+								{#each levels as level (level)}
 							<th class="min-w-[10rem] text-center">
 								<span class="inline-flex items-center gap-1">
 									<Star class="w-3 h-3" strokeWidth={2} />
@@ -59,7 +59,7 @@
 							<td class="font-medium text-sm">
 								<span class="text-base-content">{competency.name}</span>
 							</td>
-							{#each levels as level}
+						{#each levels as level (level)}
 								{@const texts = getDescriptions(competency.id, pillar.id, level)}
 								<td class="p-1.5 align-top">
 									<button
@@ -69,7 +69,7 @@
 									>
 										{#if texts.length > 0}
 											<div class="space-y-1">
-												{#each texts as text}
+													{#each texts as text (text)}
 													<span class="text-xs text-base-content/60 leading-tight line-clamp-3 block">{text}</span>
 												{/each}
 											</div>

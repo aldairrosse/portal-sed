@@ -67,7 +67,6 @@
 	bind:this={dialogEl}
 	class="modal"
 	class:modal-open={open}
-	role="dialog"
 	aria-modal="true"
 	aria-labelledby="level-def-title"
 	onclick={handleBackdropClick}
@@ -98,9 +97,8 @@
 		{/if}
 
 		<div class="overflow-y-auto flex-1 pr-1 space-y-5">
-			{#each levels as level}
-				{@const def = editLabels[level]}
-				<div class="flex items-start gap-3">
+		{#each levels as level (level)}
+			<div class="flex items-start gap-3">
 					<div
 						class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-1"
 					>

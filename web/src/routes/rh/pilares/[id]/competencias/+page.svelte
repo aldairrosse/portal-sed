@@ -82,9 +82,9 @@
 
 	function handleDeleteConfirm() {
 		if (!deletingCompetency) return;
-		const name = deletingCompetency.name;
+		const { name } = deletingCompetency;
 		deleteCompetency(deletingCompetency.id);
-		successMsg = `Competencia "{name}" eliminada correctamente.`;
+		successMsg = `Competencia "${name}" eliminada correctamente.`;
 		deletingCompetency = null;
 	}
 

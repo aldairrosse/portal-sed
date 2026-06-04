@@ -17,7 +17,9 @@ import competencyAcceptanceLevelsData from '$lib/fixtures/competency/competency-
 // ─── State ───────────────────────────────────────────────────────────────────
 let pillars = $state<Pillar[]>(structuredClone(pillarsData));
 let competencies = $state<Competency[]>(structuredClone(competenciesData));
-let scaleCriteria = $state<ScaleCriterion[]>(structuredClone(scaleCriteriaData));
+let scaleCriteria = $state<ScaleCriterion[]>(
+	structuredClone(scaleCriteriaData as ScaleCriterion[])
+);
 
 /**
  * @deprecated Use levelDefinitions + competencyAcceptanceLevels instead.
@@ -28,11 +30,13 @@ let scaleCriteria = $state<ScaleCriterion[]>(structuredClone(scaleCriteriaData))
 let acceptanceLevels = $state<AcceptanceLevel[]>([]);
 
 /** Global level definitions — same labels across all profiles. */
-let levelDefinitions = $state<LevelDefinition[]>(structuredClone(levelDefinitionsData));
+let levelDefinitions = $state<LevelDefinition[]>(
+	structuredClone(levelDefinitionsData as LevelDefinition[])
+);
 
 /** Per-competency per-profile acceptance level assignments. */
 let competencyAcceptanceLevels = $state<CompetencyAcceptanceLevel[]>(
-	structuredClone(competencyAcceptanceLevelsData)
+	structuredClone(competencyAcceptanceLevelsData as CompetencyAcceptanceLevel[])
 );
 
 // ─── Getters ─────────────────────────────────────────────────────────────────

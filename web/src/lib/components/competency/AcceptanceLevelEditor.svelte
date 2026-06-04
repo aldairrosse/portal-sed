@@ -68,7 +68,7 @@
             role="tablist"
             aria-label="Perfiles de evaluación"
         >
-            {#each EVALUATION_PROFILES as profile}
+            {#each EVALUATION_PROFILES as profile (profile)}
                 <button
                     role="tab"
                     class="tab"

@@ -69,7 +69,6 @@
 	bind:this={dialogEl}
 	class="modal"
 	class:modal-open={open}
-	role="dialog"
 	aria-modal="true"
 	aria-labelledby="pillar-form-title"
 	onclick={handleBackdropClick}

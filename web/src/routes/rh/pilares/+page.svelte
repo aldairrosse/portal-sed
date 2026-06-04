@@ -71,9 +71,9 @@
 
 	function handleDeleteConfirm() {
 		if (!deletingPillar) return;
-		const name = deletingPillar.name;
+		const { name } = deletingPillar;
 		deletePillar(deletingPillar.id);
-		successMsg = `Pilar "{name}" eliminado correctamente.`;
+		successMsg = `Pilar "${name}" eliminado correctamente.`;
 		deletingPillar = null;
 	}
 

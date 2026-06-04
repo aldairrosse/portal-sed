@@ -64,7 +64,6 @@
 	bind:this={dialogEl}
 	class="modal"
 	class:modal-open={open}
-	role="dialog"
 	aria-modal="true"
 	aria-labelledby="summary-title"
 	onclick={handleBackdropClick}
@@ -93,7 +92,7 @@
 				<thead>
 					<tr>
 						<th class="min-w-[12rem]">Competencia</th>
-						{#each EVALUATION_PROFILES as profile}
+						{#each EVALUATION_PROFILES as profile (profile)}
 							<th class="text-center min-w-[4rem]" title={PROFILE_LABELS[profile]}>
 								{PROFILE_ABBREVIATIONS[profile]}
 							</th>
@@ -109,7 +108,7 @@
 									{competency.name}
 									<span class="text-xs text-base-content/40 ml-1">({pillar.name})</span>
 								</td>
-								{#each EVALUATION_PROFILES as profile}
+					{#each EVALUATION_PROFILES as profile (profile)}
 									{@const level = getLevelForCompetency(competency.id, profile)}
 									<td class="text-center">
 										<span

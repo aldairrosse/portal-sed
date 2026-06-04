@@ -110,6 +110,7 @@
 	style="anchor-name:{anchorName}"
 	aria-haspopup="listbox"
 	aria-expanded={open}
+	aria-controls={popoverId}
 	aria-label={ariaLabel}
 	class="input input-bordered input-sm w-48 text-left flex items-center justify-between gap-2 cursor-pointer h-8 min-h-0 text-xs truncate flex-shrink-0 {className}"
 >

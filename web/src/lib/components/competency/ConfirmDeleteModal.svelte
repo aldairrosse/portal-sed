@@ -49,7 +49,6 @@
 	bind:this={dialogEl}
 	class="modal"
 	class:modal-open={open}
-	role="dialog"
 	aria-modal="true"
 	aria-labelledby="delete-confirm-title"
 	onclick={handleBackdropClick}
