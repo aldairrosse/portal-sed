@@ -1,0 +1,52 @@
+[
+	{
+		"id": "rh-emp-vendedor-01-comp-comunicacion",
+		"employeeId": "emp-vendedor-01",
+		"competencyId": "comp-comunicacion",
+		"rhRating": 4,
+		"rhComment": "Comunicación efectiva con clientes, aunque puede mejorar en reportes escritos"
+	},
+	{
+		"id": "rh-emp-vendedor-01-comp-desarrollo-equipo",
+		"employeeId": "emp-vendedor-01",
+		"competencyId": "comp-desarrollo-equipo",
+		"rhRating": 3
+	},
+	{
+		"id": "rh-emp-vendedor-01-comp-toma-decisiones",
+		"employeeId": "emp-vendedor-01",
+		"competencyId": "comp-toma-decisiones",
+		"rhRating": 4
+	},
+	{
+		"id": "rh-emp-vendedor-01-comp-dominio-herramientas",
+		"employeeId": "emp-vendedor-01",
+		"competencyId": "comp-dominio-herramientas",
+		"rhRating": 3,
+		"rhComment": "Requiere capacitación en CRM"
+	},
+	{
+		"id": "rh-emp-vendedor-01-comp-resolucion-problemas",
+		"employeeId": "emp-vendedor-01",
+		"competencyId": "comp-resolucion-problemas",
+		"rhRating": 4
+	},
+	{
+		"id": "rh-emp-vendedor-01-comp-colaboracion",
+		"employeeId": "emp-vendedor-01",
+		"competencyId": "comp-colaboracion",
+		"rhRating": 4
+	},
+	{
+		"id": "rh-emp-vendedor-01-comp-adaptabilidad",
+		"employeeId": "emp-vendedor-01",
+		"competencyId": "comp-adaptabilidad",
+		"rhRating": 3
+	},
+	{
+		"id": "rh-emp-vendedor-01-comp-responsabilidad",
+		"employeeId": "emp-vendedor-01",
+		"competencyId": "comp-responsabilidad",
+		"rhRating": 5
+	}
+]

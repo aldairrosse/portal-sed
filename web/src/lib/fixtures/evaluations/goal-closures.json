@@ -1,0 +1,43 @@
+[
+	{
+		"id": "gc-emp-colaborador-01-goal-mejorar-satisfaccion",
+		"employeeId": "emp-colaborador-01",
+		"goalId": "goal-mejorar-satisfaccion",
+		"finalProgress": 85,
+		"selfAssessment": "Se logró mejorar la satisfacción del cliente significativamente",
+		"closedAt": "2026-11-20T10:00:00Z"
+	},
+	{
+		"id": "gc-emp-colaborador-01-goal-reducir-quejas",
+		"employeeId": "emp-colaborador-01",
+		"goalId": "goal-reducir-quejas",
+		"finalProgress": 70,
+		"selfAssessment": "Se redujeron las quejas aunque no se alcanzó la meta completa"
+	},
+	{
+		"id": "gc-emp-vendedor-01-goal-alcanzar-ventas",
+		"employeeId": "emp-vendedor-01",
+		"goalId": "goal-alcanzar-ventas",
+		"finalProgress": 95,
+		"selfAssessment": "Superé la meta de ventas en el último trimestre",
+		"closedAt": "2026-11-18T14:30:00Z"
+	},
+	{
+		"id": "gc-emp-jefe-01-goal-alcanzar-ventas",
+		"employeeId": "emp-jefe-01",
+		"goalId": "goal-alcanzar-ventas",
+		"finalProgress": 0
+	},
+	{
+		"id": "gc-emp-jefe-01-goal-mejorar-margen",
+		"employeeId": "emp-jefe-01",
+		"goalId": "goal-mejorar-margen",
+		"finalProgress": 0
+	},
+	{
+		"id": "gc-emp-jefe-01-goal-reducir-costos",
+		"employeeId": "emp-jefe-01",
+		"goalId": "goal-reducir-costos",
+		"finalProgress": 0
+	}
+]

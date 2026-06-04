@@ -1,0 +1,109 @@
+[
+	{
+		"id": "sr-emp-colaborador-01-comp-comunicacion",
+		"employeeId": "emp-colaborador-01",
+		"competencyId": "comp-comunicacion",
+		"selfRating": 4,
+		"selfComment": "Considero que mi comunicación ha sido clara y oportuna"
+	},
+	{
+		"id": "sr-emp-colaborador-01-comp-desarrollo-equipo",
+		"employeeId": "emp-colaborador-01",
+		"competencyId": "comp-desarrollo-equipo",
+		"selfRating": 3,
+		"selfComment": "He participado en actividades de equipo"
+	},
+	{
+		"id": "sr-emp-colaborador-01-comp-toma-decisiones",
+		"employeeId": "emp-colaborador-01",
+		"competencyId": "comp-toma-decisiones",
+		"selfRating": 4
+	},
+	{
+		"id": "sr-emp-colaborador-01-comp-dominio-herramientas",
+		"employeeId": "emp-colaborador-01",
+		"competencyId": "comp-dominio-herramientas",
+		"selfRating": 4,
+		"selfComment": "Domino las herramientas del puesto"
+	},
+	{
+		"id": "sr-emp-colaborador-01-comp-resolucion-problemas",
+		"employeeId": "emp-colaborador-01",
+		"competencyId": "comp-resolucion-problemas",
+		"selfRating": 3
+	},
+	{
+		"id": "sr-emp-colaborador-01-comp-colaboracion",
+		"employeeId": "emp-colaborador-01",
+		"competencyId": "comp-colaboracion",
+		"selfRating": 4,
+		"selfComment": "Buena colaboración con el equipo"
+	},
+	{
+		"id": "sr-emp-colaborador-01-comp-adaptabilidad",
+		"employeeId": "emp-colaborador-01",
+		"competencyId": "comp-adaptabilidad"
+	},
+	{
+		"id": "sr-emp-colaborador-01-comp-responsabilidad",
+		"employeeId": "emp-colaborador-01",
+		"competencyId": "comp-responsabilidad"
+	},
+	{
+		"id": "sr-emp-vendedor-01-comp-comunicacion",
+		"employeeId": "emp-vendedor-01",
+		"competencyId": "comp-comunicacion",
+		"selfRating": 5,
+		"selfComment": "Excelente comunicación con clientes"
+	},
+	{
+		"id": "sr-emp-vendedor-01-comp-desarrollo-equipo",
+		"employeeId": "emp-vendedor-01",
+		"competencyId": "comp-desarrollo-equipo",
+		"selfRating": 4
+	},
+	{
+		"id": "sr-emp-vendedor-01-comp-toma-decisiones",
+		"employeeId": "emp-vendedor-01",
+		"competencyId": "comp-toma-decisiones",
+		"selfRating": 4,
+		"selfComment": "Decisiones rápidas y efectivas"
+	},
+	{
+		"id": "sr-emp-vendedor-01-comp-dominio-herramientas",
+		"employeeId": "emp-vendedor-01",
+		"competencyId": "comp-dominio-herramientas",
+		"selfRating": 4
+	},
+	{
+		"id": "sr-emp-vendedor-01-comp-resolucion-problemas",
+		"employeeId": "emp-vendedor-01",
+		"competencyId": "comp-resolucion-problemas",
+		"selfRating": 5,
+		"selfComment": "Resolución efectiva de problemas"
+	},
+	{
+		"id": "sr-emp-vendedor-01-comp-colaboracion",
+		"employeeId": "emp-vendedor-01",
+		"competencyId": "comp-colaboracion",
+		"selfRating": 4
+	},
+	{
+		"id": "sr-emp-vendedor-01-comp-adaptabilidad",
+		"employeeId": "emp-vendedor-01",
+		"competencyId": "comp-adaptabilidad",
+		"selfRating": 3
+	},
+	{
+		"id": "sr-emp-vendedor-01-comp-responsabilidad",
+		"employeeId": "emp-vendedor-01",
+		"competencyId": "comp-responsabilidad",
+		"selfRating": 5,
+		"selfComment": "Siempre cumplo con mis compromisos"
+	},
+	{
+		"id": "sr-emp-jefe-01-comp-comunicacion",
+		"employeeId": "emp-jefe-01",
+		"competencyId": "comp-comunicacion"
+	}
+]

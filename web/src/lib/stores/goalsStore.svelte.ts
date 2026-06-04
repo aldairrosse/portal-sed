@@ -88,21 +88,32 @@ export function getCategoryProgressAverage(categoryId: string): number {
 export function getGoalPermissions(
 	role: EvaluationProfile,
 	isOwner: boolean
-): { canEditProgress: boolean; canComment: boolean; canEditWeight: boolean; canDelete: boolean } {
+): { canEditProgress: boolean; canComment: boolean; canEditWeight: boolean; canDelete: boolean; canClose: boolean } {
 	if (getDevPhase() === 'inicio-anio') {
 		return {
 			canEditProgress: false,
 			canComment: false,
 			canEditWeight: isOwner,
-			canDelete: isOwner
+			canDelete: isOwner,
+			canClose: false
 		};
 	}
-	// phase === 'avance'
+	if (getDevPhase() === 'fin-anio') {
+		return {
+			canEditProgress: false,
+			canComment: false,
+			canEditWeight: false,
+			canDelete: false,
+			canClose: isOwner
+		};
+	}
+	// phase === 'avance' (medio-anio)
 	return {
 		canEditProgress: true,
 		canComment: true,
 		canEditWeight: false,
-		canDelete: false
+		canDelete: false,
+		canClose: false
 	};
 }
 
@@ -196,8 +207,8 @@ export function updateCategory(id: string, updates: Partial<Omit<GoalCategory, '
 }
 
 export function deleteCategory(id: string): void {
-	// Block deletion in 'avance' phase
-	if (getDevPhase() === 'medio-anio') return;
+	// Block deletion outside 'inicio-anio' phase
+	if (getDevPhase() === 'medio-anio' || getDevPhase() === 'fin-anio') return;
 	// Cascade: remove goals of this category
 	const deletedGoalIds = goals.filter((g) => g.categoryId === id).map((g) => g.id);
 	goals = goals.filter((g) => g.categoryId !== id);
@@ -218,8 +229,8 @@ export function updateGoal(id: string, updates: Partial<Omit<Goal, 'id'>>): void
 }
 
 export function deleteGoal(id: string): void {
-	// Block deletion in 'avance' phase
-	if (getDevPhase() === 'medio-anio') return;
+	// Block deletion outside 'inicio-anio' phase
+	if (getDevPhase() === 'medio-anio' || getDevPhase() === 'fin-anio') return;
 	goals = goals.filter((g) => g.id !== id);
 	// Cascade: remove KPI links for this goal
 	goalKpiLinks = goalKpiLinks.filter((link) => link.goalId !== id);
