@@ -45,13 +45,13 @@ Decision needed before apply: No (under 400 per PR if split)
 
 > Goal: pantalla de avance completamente funcional — empleado edita avances, jefe edita avances de subordinados y comenta.
 
-- [ ] 2.1 Modify `web/src/lib/components/goals/GoalRow.svelte` — en modo avance: renderizar campo `progress` inline editable (input number), ícono de comentario con badge count, sin botones Editar/Eliminar. Props adicionales: `phase`, `permissions`. (~50 lines diff)
-- [ ] 2.2 Create `web/src/lib/components/goals/CommentPopover.svelte` — popover DaisyUI con lista de comentarios (autor, fecha relativa, contenido) + textarea para nuevo comentario + botón "Enviar". Se abre al clic en ícono de comentario. Props: `goalId`, `comments`, `onAdd`. (~80 lines)
-- [ ] 2.3 Modify `web/src/lib/components/goals/CategoryCard.svelte` — en modo avance: renderizar `ProgressIndicator` agregado en header (promedio de avances), sin botón "Nueva meta", sin Editar/Eliminar categoría. (~30 lines diff)
-- [ ] 2.4 Modify `web/src/routes/objetivos/asignacion/+page.svelte` — leer `getCyclePhase()`, pasar `phase` y `permissions` a componentes hijos. En modo avance: ocultar botones "Nueva categoría" y "Guardar asignación", mostrar `ProgressIndicator` global con promedio de avance. (~40 lines diff)
-- [ ] 2.5 Update `ReadOnlyBanner` text — en modo avance: "Estás viendo las metas de {nombre}. Puedes editar avances y agregar comentarios." (~5 lines diff)
+- [x] 2.1 Modify `web/src/lib/components/goals/GoalRow.svelte` — en modo avance: renderizar campo `progress` inline editable (input number), ícono de comentario con badge count, sin botones Editar/Eliminar. Props adicionales: `phase`, `permissions`. (~50 lines diff)
+- [x] 2.2 Create `web/src/lib/components/goals/CommentPopover.svelte` — popover DaisyUI con lista de comentarios (autor, fecha relativa, contenido) + textarea para nuevo comentario + botón "Enviar". Se abre al clic en ícono de comentario. Props: `goalId`, `comments`, `onAdd`. (~80 lines)
+- [x] 2.3 Modify `web/src/lib/components/goals/CategoryCard.svelte` — en modo avance: renderizar `ProgressIndicator` agregado en header (promedio de avances), sin botón "Nueva meta", sin Editar/Eliminar categoría. (~30 lines diff)
+- [x] 2.4 Modify `web/src/routes/objetivos/asignacion/+page.svelte` — leer `getCyclePhase()`, pasar `phase` y `permissions` a componentes hijos. En modo avance: ocultar botones "Nueva categoría" y "Guardar asignación", mostrar `ProgressIndicator` global con promedio de avance. (~40 lines diff)
+- [x] 2.5 Update `ReadOnlyBanner` text — en modo avance: "Estás viendo las metas de {nombre}. Puedes editar avances y agregar comentarios." (~5 lines diff)
 - [ ] 2.6 Write unit tests — `goalsStore`: `updateGoalProgress`, `addGoalComment`, `deleteGoalComment`, `getCategoryProgressAverage`, `getGoalPermissions`, bloqueo delete en fase avance. Vitest. (~100 lines)
-- [ ] 2.7 Run `pnpm run check` — verificar que tsc y lint pasan sin errores.
+- [x] 2.7 Run `pnpm run check` — verificar que tsc y lint pasan sin errores.
 
 **Phase 2 acceptance criteria:**
 - `/objetivos/asignacion` en fase avance muestra campo de avance por meta.
