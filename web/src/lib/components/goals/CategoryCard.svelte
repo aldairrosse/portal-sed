@@ -73,8 +73,8 @@
 				<p class="text-xs text-base-content/50 truncate">{category.description}</p>
 			</div>
 			<div class="flex items-center gap-1">
-			{#if phase === 'medio-anio'}
-					<!-- No category edit/delete in avance mode -->
+			{#if phase === 'medio-anio' || phase === 'fin-anio'}
+					<!-- No category edit/delete in avance or cierre mode -->
 				{:else if mode === 'editor' && canEditCategory}
 					<button
 						class="btn btn-ghost btn-square btn-sm"
@@ -110,7 +110,7 @@
 
 		<!-- Indicators -->
 		<div class="mb-4 flex items-center gap-4">
-			{#if phase === 'medio-anio'}
+			{#if phase === 'medio-anio' || phase === 'fin-anio'}
 				<ProgressIndicator value={categoryProgress} label="Avance promedio" />
 			{:else}
 				<WeightIndicator
@@ -130,7 +130,7 @@
 							<th class="text-xs font-semibold text-base-content/60">Valor objetivo</th>
 							<th class="text-xs font-semibold text-base-content/60">Peso</th>
 							<th class="text-xs font-semibold text-base-content/60">
-								{phase === 'medio-anio' ? 'Avance' : 'KPI'}
+								{phase === 'medio-anio' || phase === 'fin-anio' ? 'Avance' : 'KPI'}
 							</th>
 							<th class="text-xs font-semibold text-base-content/60 text-right">Acciones</th>
 						</tr>
@@ -161,8 +161,8 @@
 			</p>
 		{/if}
 
-		<!-- Add goal button (editor only, not in avance mode) -->
-		{#if mode === 'editor' && canAddGoal && phase !== 'medio-anio'}
+		<!-- Add goal button (editor only, not in avance or cierre mode) -->
+		{#if mode === 'editor' && canAddGoal && phase !== 'medio-anio' && phase !== 'fin-anio'}
 			<div class="mt-3">
 				<button
 					class="btn btn-outline btn-primary btn-sm"

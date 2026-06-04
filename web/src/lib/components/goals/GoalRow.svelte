@@ -15,6 +15,7 @@
 		canEditProgress?: boolean;
 		canComment?: boolean;
 		canDelete?: boolean;
+		canClose?: boolean;
 		onUpdateProgress?: (goalId: string, progress: number) => void;
 		onOpenComments?: (goal: Goal) => void;
 	}
@@ -30,6 +31,7 @@
 		canEditProgress = false,
 		canComment = false,
 		canDelete = true,
+		canClose = false,
 		onUpdateProgress,
 		onOpenComments
 	}: Props = $props();
@@ -64,7 +66,22 @@
 	</td>
 	<td class="text-sm text-base-content/70">{goal.weight}%</td>
 	<td>
-		{#if phase === 'medio-anio'}
+		{#if phase === 'fin-anio'}
+			<div class="flex items-center gap-2">
+				{#if canClose}
+					<input
+						type="number"
+						class="input input-bordered input-xs w-20"
+						value={progressValue}
+						min="0"
+						max={goal.unit === 'porcentaje' ? 100 : goal.targetValue}
+						oninput={handleProgressInput}
+						aria-label="Avance final de {goal.name}"
+					/>
+				{/if}
+				<ProgressIndicator value={progressValue} max={100} label="Avance final" />
+			</div>
+		{:else if phase === 'medio-anio'}
 			<div class="flex items-center gap-2">
 				<input
 					type="number"
@@ -112,7 +129,7 @@
 						{/if}
 					</button>
 				{/if}
-			{:else if mode === 'editor'}
+			{:else if mode === 'editor' && phase !== 'fin-anio'}
 				<button
 					class="btn btn-ghost btn-square btn-xs"
 					title="Editar"
@@ -131,7 +148,7 @@
 						<Trash2 class="w-3.5 h-3.5" />
 					</button>
 				{/if}
-			{:else if onRequestChange}
+			{:else if onRequestChange && phase !== 'fin-anio'}
 				<button
 					class="btn btn-ghost btn-xs text-warning"
 					title="Solicitar cambio"
