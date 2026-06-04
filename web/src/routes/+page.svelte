@@ -18,7 +18,7 @@
 	<title>Inicio — SED</title>
 </svelte:head>
 
-<div class="space-y-8 max-w-4xl">
+<div class="space-y-8 max-w-4xl mx-auto">
 	<!-- Welcome: plain text, no container -->
 	<div>
 		<h1 class="text-xl font-semibold text-base-content">Portal SED</h1>
