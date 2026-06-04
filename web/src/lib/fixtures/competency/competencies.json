@@ -1,0 +1,50 @@
+[
+	{
+		"id": "comp-comunicacion",
+		"name": "Comunicación efectiva",
+		"description": "Transmite ideas con claridad y escucha activamente",
+		"pillarId": "pilar-liderazgo"
+	},
+	{
+		"id": "comp-desarrollo-equipo",
+		"name": "Desarrollo de equipo",
+		"description": "Fomenta el crecimiento profesional de los miembros del equipo",
+		"pillarId": "pilar-liderazgo"
+	},
+	{
+		"id": "comp-toma-decisiones",
+		"name": "Toma de decisiones",
+		"description": "Analiza opciones y decide con criterio y oportunidad",
+		"pillarId": "pilar-liderazgo"
+	},
+	{
+		"id": "comp-dominio-herramientas",
+		"name": "Dominio de herramientas",
+		"description": "Maneja con solvencia las herramientas y sistemas del puesto",
+		"pillarId": "pilar-tecnico"
+	},
+	{
+		"id": "comp-resolucion-problemas",
+		"name": "Resolución de problemas",
+		"description": "Identifica causas raíz y propone soluciones efectivas",
+		"pillarId": "pilar-tecnico"
+	},
+	{
+		"id": "comp-colaboracion",
+		"name": "Colaboración",
+		"description": "Trabaja en equipo y contribuye a un ambiente positivo",
+		"pillarId": "pilar-comportamental"
+	},
+	{
+		"id": "comp-adaptabilidad",
+		"name": "Adaptabilidad",
+		"description": "Se ajusta a cambios con flexibilidad y actitud constructiva",
+		"pillarId": "pilar-comportamental"
+	},
+	{
+		"id": "comp-responsabilidad",
+		"name": "Responsabilidad",
+		"description": "Cumple compromisos y asume las consecuencias de sus actos",
+		"pillarId": "pilar-comportamental"
+	}
+]

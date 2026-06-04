@@ -1,0 +1,7 @@
+[
+	{ "level": 1, "label": "No aceptable", "description": "No cumple con el estándar mínimo esperado" },
+	{ "level": 2, "label": "En desarrollo", "description": "Muestra avances pero requiere mejora consistente" },
+	{ "level": 3, "label": "Cumple expectativas", "description": "Cumple con lo esperado para su rol" },
+	{ "level": 4, "label": "Sobre expectativas", "description": "Supera consistentemente lo esperado" },
+	{ "level": 5, "label": "Excepcional", "description": "Es referente y modelo a seguir" }
+]

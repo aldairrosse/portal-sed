@@ -1,0 +1,49 @@
+[
+	{ "id": "sc-comp-comunicacion-pilar-liderazgo-1", "competencyId": "comp-comunicacion", "pillarId": "pilar-liderazgo", "level": 1, "description": "Se expresa de forma confusa y no escucha a los demás" },
+	{ "id": "sc-comp-comunicacion-pilar-liderazgo-2", "competencyId": "comp-comunicacion", "pillarId": "pilar-liderazgo", "level": 2, "description": "Se expresa con poca claridad y escucha de forma selectiva" },
+	{ "id": "sc-comp-comunicacion-pilar-liderazgo-3", "competencyId": "comp-comunicacion", "pillarId": "pilar-liderazgo", "level": 3, "description": "Se expresa con claridad y escucha activamente en la mayoría de las situaciones" },
+	{ "id": "sc-comp-comunicacion-pilar-liderazgo-4", "competencyId": "comp-comunicacion", "pillarId": "pilar-liderazgo", "level": 4, "description": "Comunica ideas de forma efectiva y adapta su mensaje según la audiencia" },
+	{ "id": "sc-comp-comunicacion-pilar-liderazgo-5", "competencyId": "comp-comunicacion", "pillarId": "pilar-liderazgo", "level": 5, "description": "Inspira y persuade mediante una comunicación excepcional en toda la organización" },
+
+	{ "id": "sc-comp-desarrollo-equipo-pilar-liderazgo-1", "competencyId": "comp-desarrollo-equipo", "pillarId": "pilar-liderazgo", "level": 1, "description": "No muestra interés en el desarrollo de otros" },
+	{ "id": "sc-comp-desarrollo-equipo-pilar-liderazgo-2", "competencyId": "comp-desarrollo-equipo", "pillarId": "pilar-liderazgo", "level": 2, "description": "Ocasionalmente brinda retroalimentación a sus pares" },
+	{ "id": "sc-comp-desarrollo-equipo-pilar-liderazgo-3", "competencyId": "comp-desarrollo-equipo", "pillarId": "pilar-liderazgo", "level": 3, "description": "Retroalimenta y apoya el crecimiento de los miembros del equipo" },
+	{ "id": "sc-comp-desarrollo-equipo-pilar-liderazgo-4", "competencyId": "comp-desarrollo-equipo", "pillarId": "pilar-liderazgo", "level": 4, "description": "Busca activamente oportunidades de desarrollo y delega con propósito" },
+	{ "id": "sc-comp-desarrollo-equipo-pilar-liderazgo-5", "competencyId": "comp-desarrollo-equipo", "pillarId": "pilar-liderazgo", "level": 5, "description": "Crea una cultura de aprendizaje continuo y forma líderes en la organización" },
+
+	{ "id": "sc-comp-toma-decisiones-pilar-liderazgo-1", "competencyId": "comp-toma-decisiones", "pillarId": "pilar-liderazgo", "level": 1, "description": "Evita tomar decisiones o las pospone sin justificación" },
+	{ "id": "sc-comp-toma-decisiones-pilar-liderazgo-2", "competencyId": "comp-toma-decisiones", "pillarId": "pilar-liderazgo", "level": 2, "description": "Toma decisiones impulsivas sin analizar opciones" },
+	{ "id": "sc-comp-toma-decisiones-pilar-liderazgo-3", "competencyId": "comp-toma-decisiones", "pillarId": "pilar-liderazgo", "level": 3, "description": "Analiza opciones y toma decisiones informadas en los plazos esperados" },
+	{ "id": "sc-comp-toma-decisiones-pilar-liderazgo-4", "competencyId": "comp-toma-decisiones", "pillarId": "pilar-liderazgo", "level": 4, "description": "Evalúa riesgos y beneficios con profundidad y decide con agilidad" },
+	{ "id": "sc-comp-toma-decisiones-pilar-liderazgo-5", "competencyId": "comp-toma-decisiones", "pillarId": "pilar-liderazgo", "level": 5, "description": "Toma decisiones estratégicas de alto impacto con información incompleta y acierta consistentemente" },
+
+	{ "id": "sc-comp-dominio-herramientas-pilar-tecnico-1", "competencyId": "comp-dominio-herramientas", "pillarId": "pilar-tecnico", "level": 1, "description": "Desconoce las herramientas básicas del puesto y requiere supervisión constante" },
+	{ "id": "sc-comp-dominio-herramientas-pilar-tecnico-2", "competencyId": "comp-dominio-herramientas", "pillarId": "pilar-tecnico", "level": 2, "description": "Usa herramientas básicas con ayuda frecuente y comentete errores" },
+	{ "id": "sc-comp-dominio-herramientas-pilar-tecnico-3", "competencyId": "comp-dominio-herramientas", "pillarId": "pilar-tecnico", "level": 3, "description": "Maneja las herramientas del puesto de forma autónoma y eficiente" },
+	{ "id": "sc-comp-dominio-herramientas-pilar-tecnico-4", "competencyId": "comp-dominio-herramientas", "pillarId": "pilar-tecnico", "level": 4, "description": "Domina las herramientas y encuentra formas de optimizar su uso" },
+	{ "id": "sc-comp-dominio-herramientas-pilar-tecnico-5", "competencyId": "comp-dominio-herramientas", "pillarId": "pilar-tecnico", "level": 5, "description": "Es referente técnico y propone mejoras que elevan la productividad del equipo" },
+
+	{ "id": "sc-comp-resolucion-problemas-pilar-tecnico-1", "competencyId": "comp-resolucion-problemas", "pillarId": "pilar-tecnico", "level": 1, "description": "No identifica problemas ni propone soluciones por sí mismo" },
+	{ "id": "sc-comp-resolucion-problemas-pilar-tecnico-2", "competencyId": "comp-resolucion-problemas", "pillarId": "pilar-tecnico", "level": 2, "description": "Identifica problemas pero depende de otros para resolverlos" },
+	{ "id": "sc-comp-resolucion-problemas-pilar-tecnico-3", "competencyId": "comp-resolucion-problemas", "pillarId": "pilar-tecnico", "level": 3, "description": "Resuelve problemas habituales de forma autónoma y eficaz" },
+	{ "id": "sc-comp-resolucion-problemas-pilar-tecnico-4", "competencyId": "comp-resolucion-problemas", "pillarId": "pilar-tecnico", "level": 4, "description": "Resuelve problemas complejos con análisis estructurado y soluciones creativas" },
+	{ "id": "sc-comp-resolucion-problemas-pilar-tecnico-5", "competencyId": "comp-resolucion-problemas", "pillarId": "pilar-tecnico", "level": 5, "description": "Anticipa problemas y diseña soluciones sistémicas que benefician a toda la organización" },
+
+	{ "id": "sc-comp-colaboracion-pilar-comportamental-1", "competencyId": "comp-colaboracion", "pillarId": "pilar-comportamental", "level": 1, "description": "Trabaja de forma aislada y no comparte información con el equipo" },
+	{ "id": "sc-comp-colaboracion-pilar-comportamental-2", "competencyId": "comp-colaboracion", "pillarId": "pilar-comportamental", "level": 2, "description": "Colabora solo cuando se le solicita y de forma limitada" },
+	{ "id": "sc-comp-colaboracion-pilar-comportamental-3", "competencyId": "comp-colaboracion", "pillarId": "pilar-comportamental", "level": 3, "description": "Colabora activamente y comparte información de forma oportuna" },
+	{ "id": "sc-comp-colaboracion-pilar-comportamental-4", "competencyId": "comp-colaboracion", "pillarId": "pilar-comportamental", "level": 4, "description": "Fomenta la colaboración y genera sinergia en el equipo" },
+	{ "id": "sc-comp-colaboracion-pilar-comportamental-5", "competencyId": "comp-colaboracion", "pillarId": "pilar-comportamental", "level": 5, "description": "Construye redes de colaboración que trascienden su equipo y area" },
+
+	{ "id": "sc-comp-adaptabilidad-pilar-comportamental-1", "competencyId": "comp-adaptabilidad", "pillarId": "pilar-comportamental", "level": 1, "description": "Se resiste al cambio y se frustra ante situaciones nuevas" },
+	{ "id": "sc-comp-adaptabilidad-pilar-comportamental-2", "competencyId": "comp-adaptabilidad", "pillarId": "pilar-comportamental", "level": 2, "description": "Acepta el cambio con reticencia y tarda en adaptarse" },
+	{ "id": "sc-comp-adaptabilidad-pilar-comportamental-3", "competencyId": "comp-adaptabilidad", "pillarId": "pilar-comportamental", "level": 3, "description": "Se adapta a los cambios con una actitud positiva y aprende rápido" },
+	{ "id": "sc-comp-adaptabilidad-pilar-comportamental-4", "competencyId": "comp-adaptabilidad", "pillarId": "pilar-comportamental", "level": 4, "description": "Abraza el cambio y ayuda a otros a navegar la transición" },
+	{ "id": "sc-comp-adaptabilidad-pilar-comportamental-5", "competencyId": "comp-adaptabilidad", "pillarId": "pilar-comportamental", "level": 5, "description": "Lidera el cambio y convierte la incertidumbre en oportunidad para el equipo" },
+
+	{ "id": "sc-comp-responsabilidad-pilar-comportamental-1", "competencyId": "comp-responsabilidad", "pillarId": "pilar-comportamental", "level": 1, "description": "No cumple plazos ni asume la responsabilidad de sus acciones" },
+	{ "id": "sc-comp-responsabilidad-pilar-comportamental-2", "competencyId": "comp-responsabilidad", "pillarId": "pilar-comportamental", "level": 2, "description": "Cumple de forma inconsistente y busca excusas ante errores" },
+	{ "id": "sc-comp-responsabilidad-pilar-comportamental-3", "competencyId": "comp-responsabilidad", "pillarId": "pilar-comportamental", "level": 3, "description": "Cumple sus compromisos y asume sus resultados con honestidad" },
+	{ "id": "sc-comp-responsabilidad-pilar-comportamental-4", "competencyId": "comp-responsabilidad", "pillarId": "pilar-comportamental", "level": 4, "description": "Supera expectativas en sus compromisos y promueve la rendición de cuentas" },
+	{ "id": "sc-comp-responsabilidad-pilar-comportamental-5", "competencyId": "comp-responsabilidad", "pillarId": "pilar-comportamental", "level": 5, "description": "Es modelo de integridad y responsabilidad, inspirando a otros con su ejemplo" }
+]

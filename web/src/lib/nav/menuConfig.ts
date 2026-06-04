@@ -46,9 +46,21 @@ export const MENU_ITEMS: MenuItem[] = [
 		profiles: ['jefe', 'divisional', 'regional', 'director']
 	},
 	{
-		label: 'Competencias',
-		href: '/rh/competencias',
+		label: 'Pilares',
+		href: '/rh/pilares',
 		icon: 'Award',
+		profiles: ['rh']
+	},
+	{
+		label: 'Criterios escala',
+		href: '/rh/criterios-escala',
+		icon: 'Grid3x3',
+		profiles: ['rh']
+	},
+	{
+		label: 'Niveles aceptación',
+		href: '/rh/niveles-aceptacion',
+		icon: 'FileText',
 		profiles: ['rh']
 	},
 	{

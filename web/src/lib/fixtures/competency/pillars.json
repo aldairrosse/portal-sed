@@ -1,0 +1,17 @@
+[
+	{
+		"id": "pilar-liderazgo",
+		"name": "Liderazgo",
+		"description": "Capacidad de guiar, motivar y desarrollar equipos de alto rendimiento"
+	},
+	{
+		"id": "pilar-tecnico",
+		"name": "Técnico",
+		"description": "Conocimientos y habilidades técnicas necesarias para el rol"
+	},
+	{
+		"id": "pilar-comportamental",
+		"name": "Comportamental",
+		"description": "Actitudes y comportamientos esperados en el entorno laboral"
+	}
+]
