@@ -76,6 +76,7 @@ func (Employee) Edges() []ent.Edge {
 func (Employee) Index() []ent.Index {
 	return []ent.Index{
 		index.Fields("org_node_id", "manager_id"),
+		index.Fields("org_node_id", "profile_id"),
 		index.Fields("profile_id"),
 		index.Fields("manager_id", "is_active"),
 	}

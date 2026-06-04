@@ -56,7 +56,10 @@ func (Evaluation) Edges() []ent.Edge {
 			Annotations(entsql.Annotation{
 				OnDelete: entsql.Cascade,
 			}),
-		edge.To("goal_ratings", EvaluationGoal.Type),
+		edge.To("goal_ratings", EvaluationGoal.Type).
+			Annotations(entsql.Annotation{
+				OnDelete: entsql.Cascade,
+			}),
 	}
 }
 
