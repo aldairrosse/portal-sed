@@ -1,0 +1,62 @@
+[
+	{
+		"id": "kpi-ventas-mensuales",
+		"name": "Ventas mensuales",
+		"description": "Ingresos totales por ventas en el mes",
+		"unit": "moneda",
+		"direction": "ascendente",
+		"targetValue": 1000000,
+		"minValue": 0,
+		"maxValue": null
+	},
+	{
+		"id": "kpi-satisfaccion-cliente",
+		"name": "Satisfacción del cliente",
+		"description": "Porcentaje de clientes satisfechos según encuesta NPS",
+		"unit": "porcentaje",
+		"direction": "ascendente",
+		"targetValue": 90,
+		"minValue": 0,
+		"maxValue": 100
+	},
+	{
+		"id": "kpi-productividad",
+		"name": "Productividad del equipo",
+		"description": "Porcentaje de metas del equipo alcanzadas en el período",
+		"unit": "porcentaje",
+		"direction": "ascendente",
+		"targetValue": 85,
+		"minValue": 0,
+		"maxValue": 100
+	},
+	{
+		"id": "kpi-rotacion-inventario",
+		"name": "Rotación de inventario",
+		"description": "Veces que se renueva el inventario en el período",
+		"unit": "numero",
+		"direction": "ascendente",
+		"targetValue": 4.5,
+		"minValue": 0,
+		"maxValue": null
+	},
+	{
+		"id": "kpi-ausentismo",
+		"name": "Ausentismo",
+		"description": "Porcentaje de horas no trabajadas sobre horas programadas",
+		"unit": "porcentaje",
+		"direction": "descendente",
+		"targetValue": 3,
+		"minValue": 0,
+		"maxValue": 100
+	},
+	{
+		"id": "kpi-margen-operativo",
+		"name": "Margen operativo",
+		"description": "Margen de utilidad operativa como porcentaje de ingresos",
+		"unit": "porcentaje",
+		"direction": "ascendente",
+		"targetValue": 25,
+		"minValue": 0,
+		"maxValue": 100
+	}
+]

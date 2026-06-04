@@ -1,0 +1,26 @@
+[
+	{
+		"id": "cat-ventas-finanzas",
+		"name": "Ventas y resultados financieros",
+		"description": "Objetivos relacionados con ingresos, rentabilidad y gestión financiera",
+		"weight": 40
+	},
+	{
+		"id": "cat-clientes-calidad",
+		"name": "Clientes y calidad",
+		"description": "Objetivos enfocados en satisfacción del cliente y calidad del servicio",
+		"weight": 30
+	},
+	{
+		"id": "cat-personas-equipo",
+		"name": "Personas y equipo",
+		"description": "Objetivos de desarrollo del talento, clima y liderazgo",
+		"weight": 20
+	},
+	{
+		"id": "cat-operaciones-procesos",
+		"name": "Operaciones y procesos",
+		"description": "Objetivos de eficiencia operativa, mejora continua y procesos",
+		"weight": 10
+	}
+]

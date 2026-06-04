@@ -19,7 +19,7 @@ export const MENU_ITEMS: MenuItem[] = [
 		label: 'Asignación anual',
 		href: '/objetivos/asignacion',
 		icon: 'Target',
-		profiles: ['colaborador', 'jefe', 'vendedor', 'gerente-tienda', 'divisional', 'regional', 'director']
+		profiles: ['colaborador', 'jefe', 'vendedor', 'gerente-tienda', 'divisional', 'regional', 'director', 'rh']
 	},
 	{
 		label: 'Avance medio año',

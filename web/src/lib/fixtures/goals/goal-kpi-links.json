@@ -1,0 +1,13 @@
+[
+	{ "goalId": "goal-alcanzar-ventas", "kpiId": "kpi-ventas-mensuales", "weight": 100 },
+	{ "goalId": "goal-alcanzar-ventas", "kpiId": "kpi-margen-operativo", "weight": null },
+	{ "goalId": "goal-mejorar-margen", "kpiId": "kpi-margen-operativo", "weight": 100 },
+	{ "goalId": "goal-reducir-costos", "kpiId": "kpi-rotacion-inventario", "weight": null },
+	{ "goalId": "goal-mejorar-satisfaccion", "kpiId": "kpi-satisfaccion-cliente", "weight": 100 },
+	{ "goalId": "goal-reducir-quejas", "kpiId": "kpi-satisfaccion-cliente", "weight": null },
+	{ "goalId": "goal-fidelizacion", "kpiId": "kpi-satisfaccion-cliente", "weight": null },
+	{ "goalId": "goal-reducir-rotacion", "kpiId": "kpi-ausentismo", "weight": null },
+	{ "goalId": "goal-capacitaciones", "kpiId": "kpi-productividad", "weight": 100 },
+	{ "goalId": "goal-optimizar-inventario", "kpiId": "kpi-rotacion-inventario", "weight": 100 },
+	{ "goalId": "goal-reducir-ausentismo", "kpiId": "kpi-ausentismo", "weight": 100 }
+]

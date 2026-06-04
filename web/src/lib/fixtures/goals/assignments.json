@@ -1,0 +1,88 @@
+[
+	{
+		"id": "asign-colaborador-01",
+		"employeeId": "emp-colaborador-01",
+		"employeeName": "Juan Pérez",
+		"profileId": "colaborador",
+		"managerId": "emp-jefe-01",
+		"goalIds": ["goal-mejorar-satisfaccion", "goal-reducir-quejas"],
+		"createdAt": "2026-01-02T09:00:00Z",
+		"updatedAt": "2026-01-02T09:00:00Z"
+	},
+	{
+		"id": "asign-vendedor-01",
+		"employeeId": "emp-vendedor-01",
+		"employeeName": "Carlos López",
+		"profileId": "vendedor",
+		"managerId": "emp-jefe-01",
+		"goalIds": ["goal-alcanzar-ventas"],
+		"createdAt": "2026-01-02T09:00:00Z",
+		"updatedAt": "2026-01-02T09:00:00Z"
+	},
+	{
+		"id": "asign-jefe-01",
+		"employeeId": "emp-jefe-01",
+		"employeeName": "María García",
+		"profileId": "jefe",
+		"managerId": "emp-director-01",
+		"goalIds": ["goal-alcanzar-ventas", "goal-mejorar-margen", "goal-reducir-costos"],
+		"createdAt": "2026-01-02T09:00:00Z",
+		"updatedAt": "2026-01-02T09:00:00Z"
+	},
+	{
+		"id": "asign-gerente-tienda-01",
+		"employeeId": "emp-gerente-tienda-01",
+		"employeeName": "Roberto Díaz",
+		"profileId": "gerente-tienda",
+		"managerId": "emp-director-01",
+		"goalIds": ["goal-alcanzar-ventas", "goal-mejorar-satisfaccion", "goal-optimizar-inventario"],
+		"createdAt": "2026-01-02T09:00:00Z",
+		"updatedAt": "2026-01-02T09:00:00Z"
+	},
+	{
+		"id": "asign-divisional-01",
+		"employeeId": "emp-divisional-01",
+		"employeeName": "Ana Martínez",
+		"profileId": "divisional",
+		"managerId": "emp-director-01",
+		"goalIds": ["goal-mejorar-margen", "goal-mejorar-satisfaccion", "goal-fidelizacion"],
+		"createdAt": "2026-01-02T09:00:00Z",
+		"updatedAt": "2026-01-02T09:00:00Z"
+	},
+	{
+		"id": "asign-regional-01",
+		"employeeId": "emp-regional-01",
+		"employeeName": "Pedro Sánchez",
+		"profileId": "regional",
+		"managerId": "emp-director-01",
+		"goalIds": ["goal-alcanzar-ventas", "goal-mejorar-margen"],
+		"createdAt": "2026-01-02T09:00:00Z",
+		"updatedAt": "2026-01-02T09:00:00Z"
+	},
+	{
+		"id": "asign-director-01",
+		"employeeId": "emp-director-01",
+		"employeeName": "Laura Torres",
+		"profileId": "director",
+		"managerId": null,
+		"goalIds": [
+			"goal-alcanzar-ventas",
+			"goal-mejorar-margen",
+			"goal-mejorar-satisfaccion",
+			"goal-reducir-rotacion",
+			"goal-optimizar-inventario"
+		],
+		"createdAt": "2026-01-02T09:00:00Z",
+		"updatedAt": "2026-01-02T09:00:00Z"
+	},
+	{
+		"id": "asign-rh-01",
+		"employeeId": "emp-rh-01",
+		"employeeName": "Sofía Ramírez",
+		"profileId": "rh",
+		"managerId": "emp-director-01",
+		"goalIds": ["goal-reducir-rotacion", "goal-capacitaciones"],
+		"createdAt": "2026-01-02T09:00:00Z",
+		"updatedAt": "2026-01-02T09:00:00Z"
+	}
+]
