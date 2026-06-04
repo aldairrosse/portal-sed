@@ -2,6 +2,7 @@ package schema
 
 import (
 	"entgo.io/ent"
+	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
@@ -61,9 +62,14 @@ func (Employee) Edges() []ent.Edge {
 			Required().
 			Field("profile_id"),
 		edge.To("evaluator_scopes", EvaluatorScope.Type),
-		// Forward references to future schemas (placeholder edges)
-		// GoalAssignments, Evaluations, NineBoxMatrices, NineBoxEntries
-		// will be added from the inverse side when those schemas exist
+		edge.To("goal_categories", GoalCategory.Type).
+			Annotations(entsql.Annotation{
+				OnDelete: entsql.Cascade,
+			}),
+		edge.To("goal_assignments", GoalAssignment.Type),
+		edge.To("evaluations", Evaluation.Type),
+		edge.To("nine_box_matrices", NineBoxMatrix.Type),
+		edge.To("nine_box_entries", NineBoxEntry.Type),
 	}
 }
 

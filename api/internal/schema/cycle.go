@@ -47,6 +47,9 @@ func (Cycle) Edges() []ent.Edge {
 		edge.To("phase_transitions", PhaseTransition.Type),
 		edge.To("phase_definitions", PhaseDefinition.Type),
 		edge.To("evaluator_scopes", EvaluatorScope.Type),
+		edge.To("goal_assignments", GoalAssignment.Type),
+		edge.To("evaluations", Evaluation.Type),
+		edge.To("nine_box_matrices", NineBoxMatrix.Type),
 	}
 }
 

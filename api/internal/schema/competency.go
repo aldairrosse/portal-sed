@@ -48,6 +48,7 @@ func (Competency) Edges() []ent.Edge {
 			Annotations(entsql.Annotation{
 				OnDelete: entsql.Cascade,
 			}),
+		edge.To("evaluation_competencies", EvaluationCompetency.Type),
 	}
 }
 
