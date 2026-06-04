@@ -10,10 +10,14 @@ Decisiones de producto cerradas, convenciones OpenSpec y orden de changes con co
 
 | # | Tema | Decisión |
 |---|------|----------|
-| 1 | **Ponderación** | Las **categorías / pilares** solo agrupan y muestran **escalas de competencia** (1-5). **Solo las metas** llevan ponderación: deben sumar **100%** (o monto total acordado) dentro del alcance definido en spec. |
+| 1 | **Ponderación** | **Doble ponderación 100%:** categorías de metas suman 100%, y metas dentro de cada categoría (ponderadas) suman 100%. Categorías de metas son **independientes** de pilares de competencias. |
 | 2 | **Pilares** | **Todos los perfiles** (corporativo, tiendas, RH, etc.) usan el **mismo catálogo de pilares** y competencias. El perfil de evaluación cambia criterios de escala y niveles de aceptación, no el catálogo base. |
 | 3 | **Medio año** | Permite **editar metas** y registrar **avances**. **No** permite **eliminar** metas ya creadas (solo ajuste de campos permitidos en spec). |
 | 4 | **Fin de año** | **Autoevaluación del empleado** + **evaluación RH** (competencias / cierre formal). El **jefe** evalúa **potenciales** para matriz **9×9** (desempeño vs potencial), no sustituye la evaluación RH de competencias. |
+| 5 | **Categorías de metas** | Cada **usuario define sus propias categorías** de metas (independientes de pilares). Categorías son agrupaciones custom para organizar metas. |
+| 6 | **KPIs** | KPIs son **indicadores** (numérico, porcentaje o moneda) que pueden vincularse a **1 o más metas**. Cada meta puede tener un KPI asociado. |
+| 7 | **Roles evaluables** | **RH también tiene metas** y puede ser evaluado. Todos los perfiles (incluido RH) son evaluables con el mismo modelo de metas. |
+| 8 | **Jerarquía de edición** | Cada usuario define sus metas, categorías, ponderaciones y KPIs. **Jefe/director/gerente pueden VER** definiciones de personas a cargo y **SOLICITAR CAMBIOS** (ajustar KPIs y ponderaciones), **NO borrar ni agregar metas**. |
 
 ### Jerarquías (contexto, sin decisión pendiente)
 
@@ -107,14 +111,14 @@ Ejecutar en orden. No saltar fases A→B sin cerrar decisiones de dominio que af
 **Contexto propose:**
 
 ```text
-/opsx:propose "Pantalla inicio de año: empleado ve competencias asignadas por RH por pilar, crea y edita metas con KPI (porcentaje o moneda), ponderación de metas que suma 100% dentro del empleado. Categorías solo muestran escalas sin peso. Fixtures JSON, sin API. Non-goals: medio año, evaluación final, 9x9."
+/opsx:propose "Pantalla inicio de año: empleado crea y edita metas agrupadas en categorías custom (independientes de pilares). Doble ponderación 100%: categorías suman 100%, metas dentro de cada categoría suman 100%. KPIs indicadores (numérico/porcentaje/moneda) vinculables a 1+ metas. Unidades porcentaje o moneda por meta. Todos los perfiles (incluido RH) pueden tener metas. Jefe/director/gerente pueden ver definiciones de personas a cargo y solicitar cambios (ajustar KPIs y ponderaciones, no borrar/agregar metas). Fixtures JSON, sin API. Non-goals: medio año, evaluación final, 9x9."
 ```
 
-**Entrega:** formulario metas por pilar, validación suma 100%, unidades %/$.
+**Entrega:** formulario metas por categoría, KPI vinculado, doble validación 100%, vista de solo lectura para jefes.
 
-**Depende de:** A1, A2 (fixtures de pilares/competencias).
+**Depende de:** A1.
 
-**Refleja decisiones:** #1, #2.
+**Refleja decisiones:** #1 (doble ponderación), #2 (catálogo único), #5 (categorías custom), #6 (KPIs), #7 (roles evaluables), #8 (jerarquía de edición).
 
 ---
 
