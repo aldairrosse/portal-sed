@@ -10,7 +10,7 @@
 <div class="drawer lg:drawer-open">
 	<input id="main-drawer" type="checkbox" class="drawer-toggle" bind:checked={mobileMenuOpen} />
 
-	<div class="drawer-content flex flex-col min-h-screen">
+	<div class="drawer-content flex flex-col h-screen overflow-hidden">
 		<!-- Mobile-only header -->
 		<header class="navbar bg-base-100 lg:hidden sticky top-0 z-40 px-4 py-3">
 			<div class="flex-none">
@@ -36,7 +36,7 @@
 			</div>
 		</header>
 
-		<main class="flex-1 p-4 lg:p-8">
+		<main class="flex-1 p-4 lg:p-8 overflow-y-auto min-w-0">
 			{@render children()}
 		</main>
 

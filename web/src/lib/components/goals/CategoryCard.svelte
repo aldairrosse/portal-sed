@@ -33,21 +33,22 @@
 	}: Props = $props();
 </script>
 
-<div class="card bg-base-100 border border-base-300">
-	<div class="card-body p-5">
+<div class="card bg-base-100 border border-base-300 max-w-full">
+	<div class="card-body px-0 py-5 min-w-0">
 		<!-- Header -->
-		<div class="flex items-start justify-between gap-4 mb-4">
+		<div class="flex flex-wrap items-start justify-between gap-4 mb-4">
 			<div class="flex-1 min-w-0">
 				<div class="flex items-center gap-2 mb-1">
-					<h3 class="text-base font-semibold text-base-content">{category.name}</h3>
+					<h3 class="text-lg font-semibold text-base-content">{category.name}</h3>
 					<span class="badge badge-md font-mono">{category.weight}%</span>
 				</div>
 				<p class="text-xs text-base-content/50 truncate">{category.description}</p>
 			</div>
-			<div class="flex items-center gap-1 flex-shrink-0">
+			<div class="flex items-center gap-1">
 				{#if mode === 'editor'}
 					<button
 						class="btn btn-ghost btn-square btn-sm"
+						title="Editar"
 						onclick={() => onEditCategory(category)}
 						aria-label="Editar categoría {category.name}"
 					>
@@ -55,6 +56,7 @@
 					</button>
 					<button
 						class="btn btn-ghost btn-square btn-sm text-error"
+						title="Eliminar"
 						onclick={() => onDeleteCategory(category.id)}
 						aria-label="Eliminar categoría {category.name}"
 					>
@@ -63,6 +65,7 @@
 				{:else if onRequestChangeCategory}
 					<button
 						class="btn btn-ghost btn-sm text-warning"
+						title="Solicitar cambio"
 						onclick={() => onRequestChangeCategory(category)}
 						aria-label="Solicitar cambio en categoría {category.name}"
 					>
@@ -83,8 +86,8 @@
 
 		<!-- Goals table -->
 		{#if goals.length > 0}
-			<div class="overflow-x-auto">
-				<table class="table table-sm" aria-label="Metas de {category.name}">
+			<div class="w-full max-w-full overflow-x-auto">
+				<table class="table table-sm w-full" aria-label="Metas de {category.name}">
 					<thead>
 						<tr>
 							<th class="text-xs font-semibold text-base-content/60">Meta</th>

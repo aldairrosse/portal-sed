@@ -44,6 +44,7 @@
 			{#if mode === 'editor'}
 				<button
 					class="btn btn-ghost btn-square btn-xs"
+					title="Editar"
 					onclick={() => onEdit(goal)}
 					aria-label="Editar {goal.name}"
 				>
@@ -51,6 +52,7 @@
 				</button>
 				<button
 					class="btn btn-ghost btn-square btn-xs text-error"
+					title="Eliminar"
 					onclick={() => onDelete(goal.id)}
 					aria-label="Eliminar {goal.name}"
 				>
@@ -59,6 +61,7 @@
 			{:else if onRequestChange}
 				<button
 					class="btn btn-ghost btn-xs text-warning"
+					title="Solicitar cambio"
 					onclick={() => onRequestChange(goal)}
 					aria-label="Solicitar cambio en {goal.name}"
 				>

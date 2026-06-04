@@ -225,10 +225,10 @@
 	<title>Asignación anual — SED</title>
 </svelte:head>
 
-<div class="space-y-6">
+<div class="space-y-6 max-w-full min-w-0">
 	<!-- Page header -->
 	<div class="flex flex-wrap items-start justify-between gap-4">
-		<div>
+		<div class="min-w-0 flex-1">
 			<h1 class="text-2xl font-bold text-base-content">Asignación anual</h1>
 			<p class="text-sm text-base-content/50 mt-1">
 				Defina las categorías y metas para el período de evaluación.
@@ -274,9 +274,9 @@
 		<ReadOnlyBanner employeeName={targetEmployeeName} />
 	{/if}
 
-	<!-- Global weight indicator -->
-	<div class="bg-base-200/50 rounded-lg p-4">
-		<p class="text-sm font-semibold text-base-content mb-2">Distribución global de pesos</p>
+	<!-- Global weight indicator (sticky) -->
+	<div class="sticky top-2 z-30 bg-base-200/95 backdrop-blur-sm rounded-lg p-4 mt-2 mb-4 border border-base-300 shadow-sm min-w-0">
+		<p class="text-sm font-semibold text-base-content mb-2">Distribución global de metas</p>
 		<WeightIndicator current={globalSum} label="Suma total de categorías" />
 		{#if !valid}
 			<p class="text-xs text-warning mt-1">
@@ -299,7 +299,7 @@
 
 	<!-- Category cards -->
 	{#if categories.length > 0}
-		<div class="space-y-4">
+		<div class="space-y-4 min-w-0">
 			{#each categories as cat (cat.id)}
 				{@const catGoals = getGoalsByCategory(cat.id)}
 				<CategoryCard
