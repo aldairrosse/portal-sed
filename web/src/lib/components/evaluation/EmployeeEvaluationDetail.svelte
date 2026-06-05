@@ -93,6 +93,10 @@
 	// Unique name for radio group so multiple instances don't conflict
 	const radioName = $derived(`eval_tabs_${employeeId}`);
 
+	const sectionLabel = $derived(
+		viewerMode === 'manager' ? 'Mis evaluados' : 'Evaluaciones RH'
+	);
+
 	function getCompetencies(pillarId: string) {
 		return getCompetenciesByPillar(pillarId);
 	}
@@ -128,9 +132,9 @@
 							type="button"
 							class="link link-hover"
 							onclick={onBack}
-							aria-label="Volver a la lista"
+							aria-label="Volver a {sectionLabel}"
 						>
-							Lista
+							{sectionLabel}
 						</button>
 					</li>
 					<li>{assignment?.employeeName ?? 'Evaluado'}</li>
@@ -140,8 +144,15 @@
 	{/if}
 
 	<!-- Header -->
-	<div class="flex items-center gap-2 flex-wrap">
-		<h2 class="text-lg font-semibold text-base-content">
+	<div class="flex items-center gap-3 flex-wrap">
+		<div class="avatar placeholder">
+			<div class="bg-primary text-primary-content rounded-full w-9 flex items-center justify-center">
+				<span class="text-sm font-semibold">
+					{(assignment?.employeeName ?? 'E').charAt(0).toUpperCase()}
+				</span>
+			</div>
+		</div>
+		<h2 class="{showBreadcrumb ? 'text-xl' : 'text-lg'} font-semibold text-base-content">
 			{assignment?.employeeName ?? 'Evaluación'}
 		</h2>
 		<EvaluationStatusBadge {status} />

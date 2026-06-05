@@ -10,10 +10,11 @@
 		employees: EmployeeAssignment[];
 		onSelect: (employeeId: string) => void;
 		selectedEmployeeId?: string;
+		disabled?: boolean;
 		detail?: Snippet;
 	}
 
-	let { employees, onSelect, selectedEmployeeId = '', detail }: Props = $props();
+	let { employees, onSelect, selectedEmployeeId = '', disabled = false, detail }: Props = $props();
 
 	let searchQuery = $state('');
 
@@ -43,17 +44,19 @@
 </script>
 
 <div class="flex flex-col gap-6">
-	<!-- Search input -->
-	<div class="w-full max-w-sm">
-		<input
-			id="employee-search"
-			type="text"
-			class="input input-bordered input-sm w-full"
-			placeholder="Buscar por nombre o área..."
-			bind:value={searchQuery}
-			aria-label="Buscar empleado"
-		/>
-	</div>
+	{#if !selectedEmployeeId}
+		<!-- Search input -->
+		<div class="w-full max-w-sm">
+			<input
+				id="employee-search"
+				type="text"
+				class="input input-bordered input-sm w-full"
+				placeholder="Buscar por nombre o área..."
+				bind:value={searchQuery}
+				aria-label="Buscar empleado"
+			/>
+		</div>
+	{/if}
 
 	{#if selectedEmployeeId}
 		{@render detail?.()}
@@ -82,11 +85,12 @@
 								<EvaluationStatusBadge status={getStatus(emp.employeeId)} />
 							</td>
 							<td>
-								<button
-									type="button"
-									class="btn btn-primary btn-xs"
-									onclick={() => onSelect(emp.employeeId)}
-								>
+							<button
+								type="button"
+								class="btn btn-primary btn-xs"
+								onclick={() => onSelect(emp.employeeId)}
+								disabled={disabled}
+							>
 									Evaluar
 								</button>
 							</td>
