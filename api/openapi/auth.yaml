@@ -1,0 +1,229 @@
+openapi: 3.1.0
+info:
+  title: SED Auth API
+  description: Authentication and session management API for the SED evaluation platform.
+  version: 1.0.0
+servers:
+  - url: /api/v1
+    description: API v1 base path
+paths:
+  /auth/login:
+    post:
+      operationId: login
+      summary: Authenticate user (dev mode)
+      description: >
+        Authenticates an employee by email. Dev mode accepts email only —
+        no password required. Returns a session token and sets an httpOnly
+        cookie. The token must be sent as `Authorization: Bearer <token>` for
+        subsequent requests.
+        TODO(auth:prod): Replace with password/SSO authentication.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: Employee corporate email
+              example:
+                email: juan.perez@empresa.com
+      responses:
+        "200":
+          description: Successfully authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+              description: >
+                `session_token=<token>; HttpOnly; Secure; SameSite=Strict; Path=/`
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /auth/logout:
+    post:
+      operationId: logout
+      summary: Revoke current session
+      description: Revokes the authenticated session and clears the session cookie.
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Session revoked successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: session revoked
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /auth/refresh:
+    post:
+      operationId: refreshSession
+      summary: Extend session expiry
+      description: Extends the current session's expiry time by 24 hours.
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Session refreshed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: session refreshed
+                  expires_at:
+                    type: string
+                    format: date-time
+                    example: "2026-06-06T15:00:00Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /auth/me:
+    get:
+      operationId: getCurrentUser
+      summary: Get current user information
+      description: Returns the authenticated employee's details, role, and profile.
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Current user information
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MeResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: UUID
+      description: >
+        Session token obtained from POST /auth/login.
+        Send as `Authorization: Bearer <token>`.
+
+  schemas:
+    LoginResponse:
+      type: object
+      required: [session, token, employee, role]
+      properties:
+        session:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+              description: Session ID
+            expires_at:
+              type: string
+              format: date-time
+              description: Session expiry timestamp
+        token:
+          type: string
+          description: Raw session token (shown only once at login)
+        employee:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+              description: Employee UUID
+        role:
+          type: string
+          enum:
+            - colaborador
+            - jefe
+            - vendedor
+            - gerente-tienda
+            - divisional
+            - regional
+            - director
+            - director-general
+            - rh
+          description: Evaluation profile / role
+
+    MeResponse:
+      type: object
+      required: [employee, role, profile]
+      properties:
+        employee:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            first_name:
+              type: string
+            last_name:
+              type: string
+            email:
+              type: string
+              format: email
+        role:
+          type: string
+          description: Current user role
+        profile:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            name:
+              type: string
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            details:
+              type: array
+              items:
+                type: string
+            trace_id:
+              type: string
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
