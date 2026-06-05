@@ -106,5 +106,6 @@ export const MANAGER_MAP: Partial<Record<EvaluationProfile, EvaluationProfile>> 
 	'gerente-tienda': 'director',
 	divisional: 'director',
 	regional: 'director',
+	director: 'director-general',
 	rh: 'director'
 };

@@ -244,6 +244,7 @@ const DEFAULT_MIN_LEVELS: Record<EvaluationProfile, number> = {
 	divisional: 4,
 	regional: 4,
 	director: 4,
+	'director-general': 4,
 	rh: 3
 };
 

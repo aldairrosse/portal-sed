@@ -84,5 +84,15 @@
 		"goalIds": ["goal-reducir-rotacion", "goal-capacitaciones"],
 		"createdAt": "2026-01-02T09:00:00Z",
 		"updatedAt": "2026-01-02T09:00:00Z"
+	},
+	{
+		"id": "asign-dg-01",
+		"employeeId": "emp-dg-01",
+		"employeeName": "Carlos Mendoza",
+		"profileId": "director-general",
+		"managerId": null,
+		"goalIds": ["goal-alcanzar-ventas", "goal-mejorar-margen", "goal-reducir-rotacion"],
+		"createdAt": "2026-01-02T09:00:00Z",
+		"updatedAt": "2026-01-02T09:00:00Z"
 	}
 ]

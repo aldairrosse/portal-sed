@@ -1,0 +1,110 @@
+[
+	{
+		"id": "nb-dg-01",
+		"employeeId": "emp-dg-01",
+		"employeeName": "Carlos Mendoza",
+		"profileId": "director-general",
+		"performance": 9,
+		"potential": 8,
+		"quadrant": "star"
+	},
+	{
+		"id": "nb-director-01",
+		"employeeId": "emp-director-01",
+		"employeeName": "Laura Torres",
+		"profileId": "director",
+		"performance": 8,
+		"potential": 7,
+		"quadrant": "star"
+	},
+	{
+		"id": "nb-jefe-01",
+		"employeeId": "emp-jefe-01",
+		"employeeName": "María García",
+		"profileId": "jefe",
+		"performance": 7,
+		"potential": 6,
+		"quadrant": "growth"
+	},
+	{
+		"id": "nb-colaborador-01",
+		"employeeId": "emp-colaborador-01",
+		"employeeName": "Juan Pérez",
+		"profileId": "colaborador",
+		"performance": 5,
+		"potential": 6,
+		"quadrant": "core-player"
+	},
+	{
+		"id": "nb-vendedor-01",
+		"employeeId": "emp-vendedor-01",
+		"employeeName": "Carlos López",
+		"profileId": "vendedor",
+		"performance": 8,
+		"potential": 5,
+		"quadrant": "growth"
+	},
+	{
+		"id": "nb-gerente-tienda-01",
+		"employeeId": "emp-gerente-tienda-01",
+		"employeeName": "Roberto Díaz",
+		"profileId": "gerente-tienda",
+		"performance": 6,
+		"potential": 8,
+		"quadrant": "high-potential"
+	},
+	{
+		"id": "nb-divisional-01",
+		"employeeId": "emp-divisional-01",
+		"employeeName": "Ana Martínez",
+		"profileId": "divisional",
+		"performance": 4,
+		"potential": 4,
+		"quadrant": "core-player"
+	},
+	{
+		"id": "nb-regional-01",
+		"employeeId": "emp-regional-01",
+		"employeeName": "Pedro Sánchez",
+		"profileId": "regional",
+		"performance": 7,
+		"potential": 8,
+		"quadrant": "star"
+	},
+	{
+		"id": "nb-rh-01",
+		"employeeId": "emp-rh-01",
+		"employeeName": "Sofía Ramírez",
+		"profileId": "rh",
+		"performance": 3,
+		"potential": 7,
+		"quadrant": "risk"
+	},
+	{
+		"id": "nb-extra-01",
+		"employeeId": "emp-extra-01",
+		"employeeName": "Luis Hernández",
+		"profileId": "colaborador",
+		"performance": 2,
+		"potential": 3,
+		"quadrant": "underperformer"
+	},
+	{
+		"id": "nb-extra-02",
+		"employeeId": "emp-extra-02",
+		"employeeName": "Carmen Flores",
+		"profileId": "colaborador",
+		"performance": 4,
+		"potential": 2,
+		"quadrant": "effective"
+	},
+	{
+		"id": "nb-extra-03",
+		"employeeId": "emp-extra-03",
+		"employeeName": "Diego Morales",
+		"profileId": "vendedor",
+		"performance": 9,
+		"potential": 4,
+		"quadrant": "growth"
+	}
+]

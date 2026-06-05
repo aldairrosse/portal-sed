@@ -6,6 +6,7 @@ export type EvaluationProfile =
 	| 'divisional'
 	| 'regional'
 	| 'director'
+	| 'director-general'
 	| 'rh';
 
 export type CyclePhase = 'inicio-anio' | 'medio-anio' | 'fin-anio';
@@ -18,6 +19,7 @@ export const EVALUATION_PROFILES: EvaluationProfile[] = [
 	'divisional',
 	'regional',
 	'director',
+	'director-general',
 	'rh'
 ];
 
@@ -31,6 +33,7 @@ export const PROFILE_LABELS: Record<EvaluationProfile, string> = {
 	divisional: 'Divisional',
 	regional: 'Regional',
 	director: 'Director',
+	'director-general': 'Director General',
 	rh: 'Recursos Humanos'
 };
 

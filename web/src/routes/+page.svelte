@@ -49,7 +49,7 @@
 	);
 
 	const hasReports = $derived(
-		['jefe', 'gerente-tienda', 'divisional', 'regional', 'director'].includes(profile)
+		['jefe', 'gerente-tienda', 'divisional', 'regional', 'director', 'director-general'].includes(profile)
 	);
 	const isRh = $derived(profile === 'rh');
 
@@ -61,6 +61,7 @@
 		divisional: 'División Comercial',
 		regional: 'Región Centro',
 		director: 'Dirección General',
+		'director-general': 'Dirección General Corporativa',
 		rh: 'Recursos Humanos'
 	};
 	const myArea = $derived(areaMap[profile]);

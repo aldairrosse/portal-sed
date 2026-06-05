@@ -16,6 +16,7 @@
 		divisional: 'DIV',
 		regional: 'REG',
 		director: 'DIR',
+		'director-general': 'DGN',
 		rh: 'RH'
 	};
 

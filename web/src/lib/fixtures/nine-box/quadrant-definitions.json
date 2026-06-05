@@ -1,0 +1,58 @@
+[
+	{
+		"id": "star",
+		"label": "Estrella",
+		"description": "Alto desempeño, alto potencial",
+		"colorClass": "bg-success/20",
+		"perfRange": [7, 9],
+		"potRange": [7, 9]
+	},
+	{
+		"id": "growth",
+		"label": "Crecimiento",
+		"description": "Alto desempeño, potencial medio",
+		"colorClass": "bg-info/20",
+		"perfRange": [7, 9],
+		"potRange": [4, 6]
+	},
+	{
+		"id": "high-potential",
+		"label": "Alto Potencial",
+		"description": "Desempeño medio, alto potencial",
+		"colorClass": "bg-accent/20",
+		"perfRange": [4, 6],
+		"potRange": [7, 9]
+	},
+	{
+		"id": "core-player",
+		"label": "Jugador Clave",
+		"description": "Desempeño medio, potencial medio",
+		"colorClass": "bg-primary/10",
+		"perfRange": [4, 6],
+		"potRange": [4, 6]
+	},
+	{
+		"id": "risk",
+		"label": "Riesgo",
+		"description": "Bajo desempeño, alto potencial",
+		"colorClass": "bg-warning/20",
+		"perfRange": [1, 3],
+		"potRange": [7, 9]
+	},
+	{
+		"id": "effective",
+		"label": "Efectivo",
+		"description": "Bajo desempeño, potencial medio / Desempeño medio, bajo potencial",
+		"colorClass": "bg-secondary/20",
+		"perfRange": [1, 6],
+		"potRange": [1, 6]
+	},
+	{
+		"id": "underperformer",
+		"label": "Bajo Rendimiento",
+		"description": "Bajo desempeño, bajo potencial",
+		"colorClass": "bg-error/20",
+		"perfRange": [1, 3],
+		"potRange": [1, 3]
+	}
+]

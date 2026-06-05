@@ -13,5 +13,6 @@ export const PROFILE_USERS: Record<EvaluationProfile, SimulatedUser> = {
 	divisional: { name: 'Patricia Fernández Díaz', email: 'patricia.fernandez@empresa.com' },
 	regional: { name: 'Roberto Sánchez Ruiz', email: 'roberto.sanchez@empresa.com' },
 	director: { name: 'Carmen Jiménez Castro', email: 'carmen.jimenez@empresa.com' },
+	'director-general': { name: 'Carlos Mendoza', email: 'carlos.mendoza@empresa.com' },
 	rh: { name: 'Laura Moreno Peña', email: 'laura.moreno@empresa.com' }
 };

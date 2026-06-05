@@ -1,0 +1,11 @@
+[
+	{ "level": 1, "label": "Muy bajo", "description": "No cumple expectativas" },
+	{ "level": 2, "label": "Bajo", "description": "Requiere mejora significativa" },
+	{ "level": 3, "label": "Por debajo", "description": "Debajo del estándar esperado" },
+	{ "level": 4, "label": "Aceptable", "description": "Cumple mínimamente" },
+	{ "level": 5, "label": "Moderado", "description": "Cumple parcialmente" },
+	{ "level": 6, "label": "Bueno", "description": "Cumple consistentemente" },
+	{ "level": 7, "label": "Notable", "description": "Supera expectativas" },
+	{ "level": 8, "label": "Sobresaliente", "description": "Supera consistentemente" },
+	{ "level": 9, "label": "Excepcional", "description": "Referente en la organización" }
+]

@@ -37,7 +37,19 @@ export const MENU_ITEMS: MenuItem[] = [
 		label: 'Matriz 9×9',
 		href: '/evaluacion/9x9',
 		icon: 'Grid3x3',
-		profiles: ['jefe', 'divisional', 'regional', 'director']
+		profiles: ['jefe', 'divisional', 'regional', 'director', 'director-general']
+	},
+	{
+		label: 'Jerarquía',
+		href: '/evaluacion/9x9/jerarquia',
+		icon: 'Users',
+		profiles: ['director', 'director-general']
+	},
+	{
+		label: 'Competencias',
+		href: '/evaluacion/9x9/competencias',
+		icon: 'ClipboardCheck',
+		profiles: ['jefe', 'director', 'director-general']
 	},
 	{
 		label: 'Pilares',
