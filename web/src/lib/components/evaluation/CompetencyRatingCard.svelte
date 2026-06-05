@@ -13,6 +13,7 @@
 		onRate: (competencyId: string, level: 1 | 2 | 3 | 4 | 5, comment?: string) => void;
 		onRhRate?: (competencyId: string, level: 1 | 2 | 3 | 4 | 5, comment?: string) => void;
 		disabled?: boolean;
+		showCommentInput?: boolean;
 	}
 
 	let {
@@ -24,7 +25,8 @@
 		mode,
 		onRate,
 		onRhRate,
-		disabled = false
+		disabled = false,
+		showCommentInput = true
 	}: Props = $props();
 
 	function getRating(competencyId: string): CompetencyRating | undefined {
@@ -54,29 +56,32 @@
 				{@const rating = getRating(competency.id)}
 				{@const acceptanceLevel = acceptanceLevels[competency.id]}
 				<div class="border-t border-base-200 pt-3 first:border-t-0 first:pt-0">
-					<div class="flex flex-col gap-2">
-						<div class="flex items-start justify-between gap-2">
-							<div>
-								<p class="text-sm font-medium text-base-content">{competency.name}</p>
-								<p class="text-xs text-base-content/50">{competency.description}</p>
-							</div>
-							{#if mode === 'rh' && rating?.selfRating}
-								<span class="badge badge-ghost badge-sm shrink-0" title="Autoevaluación">
-									Auto: {rating.selfRating}
-								</span>
-							{/if}
+					<div class="flex items-center gap-3">
+						<!-- Name + description (left) -->
+						<div class="flex-1 min-w-0">
+							<p class="text-sm font-medium text-base-content">{competency.name}</p>
+							<p class="text-xs text-base-content/50">{competency.description}</p>
 						</div>
+						<!-- Rating selector (right) -->
+						<div class="shrink-0">
+							<ScaleRatingSelector
+								value={mode === 'rh' ? rating?.rhRating : rating?.selfRating}
+								{acceptanceLevel}
+								{disabled}
+								{levelDefinitions}
+								onChange={(level) => handleRatingChange(competency.id, level)}
+							/>
+						</div>
+						{#if mode === 'rh' && rating?.selfRating}
+							<span class="badge badge-ghost badge-sm shrink-0" title="Autoevaluación">
+								Auto: {rating.selfRating}
+							</span>
+						{/if}
+					</div>
 
-						<ScaleRatingSelector
-							value={mode === 'rh' ? rating?.rhRating : rating?.selfRating}
-							{acceptanceLevel}
-							{disabled}
-							{levelDefinitions}
-							onChange={(level) => handleRatingChange(competency.id, level)}
-						/>
-
+					{#if showCommentInput}
 						<textarea
-							class="textarea textarea-bordered textarea-xs w-full mt-1"
+							class="textarea textarea-bordered textarea-xs w-full mt-2"
 							placeholder={mode === 'rh' ? 'Comentario RH (opcional)' : 'Comentario personal (opcional)'}
 							value={mode === 'rh' ? (rating?.rhComment ?? '') : (rating?.selfComment ?? '')}
 							oninput={(e) => {
@@ -90,7 +95,7 @@
 							rows="2"
 							aria-label={mode === 'rh' ? 'Comentario RH' : 'Comentario personal'}
 						></textarea>
-					</div>
+					{/if}
 				</div>
 			{/each}
 		</div>

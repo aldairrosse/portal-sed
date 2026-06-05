@@ -10,6 +10,7 @@
 		closure?: GoalClosure;
 		mode: 'self' | 'rh' | 'manager';
 		canEdit?: boolean;
+		showSelfAssessment?: boolean;
 		employeeId?: string;
 		onSaveClosure?: (goalId: string, finalProgress: number, selfAssessment: string) => void;
 		onRhAssessGoal?: (goalId: string, rhAssessment: string) => void;
@@ -22,6 +23,7 @@
 		closure,
 		mode,
 		canEdit = false,
+		showSelfAssessment = true,
 		employeeId,
 		onSaveClosure,
 		onRhAssessGoal,
@@ -79,16 +81,14 @@
 					Valor objetivo: {goal.targetValue}{unitLabels[goal.unit] ?? goal.unit} · Peso: {goal.weight}%
 				</p>
 			</div>
+			{#if kpis.length > 0}
+				<div class="flex flex-wrap gap-1 shrink-0">
+					{#each kpis as kpi (kpi.id)}
+						<KpiBadge {kpi} />
+					{/each}
+				</div>
+			{/if}
 		</div>
-
-		<!-- KPIs -->
-		{#if kpis.length > 0}
-			<div class="flex flex-wrap gap-1 mb-3">
-				{#each kpis as kpi (kpi.id)}
-					<KpiBadge {kpi} />
-				{/each}
-			</div>
-		{/if}
 
 		<!-- Progress -->
 		<div class="mb-3">
@@ -124,7 +124,7 @@
 		</div>
 
 		<!-- Self assessment (editable in self mode, read-only in rh/manager mode) -->
-		{#if mode === 'self'}
+		{#if mode === 'self' && showSelfAssessment}
 			<div class="mb-2">
 				<label class="label px-0 py-1" for={selfAssessmentId}>
 					<span class="label-text text-xs">Autoevaluación</span>

@@ -104,6 +104,7 @@
 												{closure}
 												mode="self"
 												canEdit={isFinAnio}
+												showSelfAssessment={isFinAnio}
 												onSaveClosure={handleCloseGoal}
 											/>
 										{/each}
@@ -137,6 +138,7 @@
 							mode="self"
 							onRate={handleRate}
 							disabled={!isFinAnio}
+							showCommentInput={isFinAnio}
 						/>
 					{/each}
 				</div>
