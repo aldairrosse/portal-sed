@@ -8,6 +8,11 @@ import type {
 	GoalComment,
 	CyclePhase
 } from '$lib/types/goal';
+// AUDIT: MANAGER_MAP consumers (to be replaced by orgHierarchyStore in B4)
+// 1. web/src/routes/mis-evaluados/+page.svelte — inverse map for subordinate lookup
+// 2. web/src/routes/objetivos/asignacion/+page.svelte — subordinate profile detection
+// 3. web/src/lib/stores/goalsStore.svelte.ts — getManagerOf() helper
+// 4. web/src/lib/types/goal.ts — MANAGER_MAP definition
 import { MANAGER_MAP } from '$lib/types/goal';
 import type { EvaluationProfile } from '$lib/types/evaluation';
 
