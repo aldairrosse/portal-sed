@@ -2,8 +2,6 @@
 	import { Save, Plus, Library, MessageSquare } from '@lucide/svelte';
 	import type { Goal, GoalCategory, GoalUnit, GoalComment } from '$lib/types/goal';
 	import type { ChangeRequest } from '$lib/types/goal';
-	import { MANAGER_MAP } from '$lib/types/goal';
-	import type { EvaluationProfile } from '$lib/types/evaluation';
 	import {
 		getCategories,
 		getGoals,
@@ -20,6 +18,7 @@
 		linkKpiToGoal,
 		unlinkKpiFromGoal,
 		getAssignmentsByProfile,
+		getAssignments,
 		getCyclePhase,
 		getGoalPermissions,
 		updateGoalProgress,
@@ -28,6 +27,7 @@
 		getGoalComments
 	} from '$lib/stores/goalsStore.svelte';
 	import { getProfile } from '$lib/stores/devContext.svelte';
+	import { getChildren } from '$lib/stores/orgHierarchyStore.svelte';
 	import WeightIndicator from '$lib/components/goals/WeightIndicator.svelte';
 	import ProgressIndicator from '$lib/components/goals/ProgressIndicator.svelte';
 	import CategoryCard from '$lib/components/goals/CategoryCard.svelte';
@@ -43,24 +43,22 @@
 
 	const viewerProfile = $derived(getProfile());
 
-	// Build inverse manager map: which profiles report to the current viewer
-	const subordinateProfiles = $derived<EvaluationProfile[]>(
-		(Object.entries(MANAGER_MAP) as [EvaluationProfile, EvaluationProfile][])
-			.filter(([, mgr]) => mgr === viewerProfile)
-			.map(([sub]) => sub)
-	);
-
 	const ownAssignment = $derived(getAssignmentsByProfile(viewerProfile)[0]);
+	const currentUserId = $derived(ownAssignment?.employeeId ?? '');
 
+	const children = $derived(getChildren(currentUserId));
+	const childIds = $derived(children.map((c) => c.id));
+
+	const allAssignments = $derived(getAssignments());
 	const subordinateAssignments = $derived(
-		subordinateProfiles.flatMap((p) => getAssignmentsByProfile(p))
+		allAssignments.filter((a) => childIds.includes(a.employeeId))
 	);
 
 	const availableAssignments = $derived(
 		ownAssignment ? [ownAssignment, ...subordinateAssignments] : [...subordinateAssignments]
 	);
 
-	const showAssigneePicker = $derived(subordinateProfiles.length > 0);
+	const showAssigneePicker = $derived(children.length > 0);
 
 	let selectedEmployeeId = $state('');
 

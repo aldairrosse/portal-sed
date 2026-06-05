@@ -92,20 +92,3 @@ export interface ChangeRequest {
 	approvedBy?: string;
 	approvedAt?: string;
 }
-
-// ─── MANAGER_MAP ───────────────────────────────────────────────────────────────
-
-/**
- * Mock hierarchy for editor/reader mode detection.
- * Maps a profile to the profile of their direct manager.
- */
-export const MANAGER_MAP: Partial<Record<EvaluationProfile, EvaluationProfile>> = {
-	colaborador: 'jefe',
-	vendedor: 'jefe',
-	jefe: 'director',
-	'gerente-tienda': 'director',
-	divisional: 'director',
-	regional: 'director',
-	director: 'director-general',
-	rh: 'director'
-};

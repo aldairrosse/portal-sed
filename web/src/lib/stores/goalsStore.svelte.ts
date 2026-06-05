@@ -8,12 +8,6 @@ import type {
 	GoalComment,
 	CyclePhase
 } from '$lib/types/goal';
-// AUDIT: MANAGER_MAP consumers (to be replaced by orgHierarchyStore in B4)
-// 1. web/src/routes/mis-evaluados/+page.svelte — inverse map for subordinate lookup
-// 2. web/src/routes/objetivos/asignacion/+page.svelte — subordinate profile detection
-// 3. web/src/lib/stores/goalsStore.svelte.ts — getManagerOf() helper
-// 4. web/src/lib/types/goal.ts — MANAGER_MAP definition
-import { MANAGER_MAP } from '$lib/types/goal';
 import type { EvaluationProfile } from '$lib/types/evaluation';
 
 import categoriesData from '$lib/fixtures/goals/goal-categories.json';
@@ -190,15 +184,6 @@ export function isCategoryGoalsWeightValid(categoryId: string): boolean {
 	if (catGoals.length === 0) return true;
 	const sum = catGoals.reduce((acc, g) => acc + g.weight, 0);
 	return Math.abs(sum - 100) <= EPSILON;
-}
-
-// ─── Getters: Manager Hierarchy ───────────────────────────────────────────────
-
-/**
- * Returns the manager profile for a given profile, or undefined if none.
- */
-export function getManagerOf(profile: EvaluationProfile): EvaluationProfile | undefined {
-	return MANAGER_MAP[profile];
 }
 
 // ─── Mutations: Categories ────────────────────────────────────────────────────
