@@ -1,0 +1,452 @@
+openapi: 3.1.0
+info:
+  title: SED Cycle API
+  description: API for managing evaluation cycles and phase transitions.
+  version: 1.0.0
+servers:
+  - url: /api/v1
+    description: API v1 base path
+paths:
+  /cycles:
+    get:
+      operationId: listCycles
+      summary: List evaluation cycles
+      description: Returns a paginated list of cycles for an organization.
+      parameters:
+        - name: organization_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Organization UUID
+        - name: year
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 2000
+            maximum: 2100
+          description: Filter by year
+        - name: current_phase
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [asignacion, avance, cierre]
+          description: Filter by current phase
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Cursor for pagination (base64-encoded JSON)
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 100
+          description: Maximum number of results per page
+      responses:
+        "200":
+          description: Paginated list of cycles
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/CycleLight"
+                  pagination:
+                    $ref: "#/components/schemas/CursorPagination"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "429":
+          $ref: "#/components/responses/RateLimit"
+    post:
+      operationId: createCycle
+      summary: Create a new evaluation cycle
+      description: Creates a new cycle in the 'asignacion' phase.
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Unique idempotency key (UUID v4)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCycleRequest"
+      responses:
+        "201":
+          description: Cycle created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Cycle"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "429":
+          $ref: "#/components/responses/RateLimit"
+  /cycles/{id}:
+    get:
+      operationId: getCycle
+      summary: Get a cycle by ID
+      description: Returns the full cycle details.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Cycle UUID
+      responses:
+        "200":
+          description: Cycle details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Cycle"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /cycles/{id}/transition:
+    put:
+      operationId: transitionPhase
+      summary: Transition a cycle's phase
+      description: Advances the cycle to the next phase with optimistic locking.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Cycle UUID
+        - name: If-Match
+          in: header
+          required: true
+          schema:
+            type: string
+          description: Current version number for optimistic locking
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Unique idempotency key (UUID v4)
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TransitionPhaseRequest"
+      responses:
+        "200":
+          description: Phase transitioned successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Cycle"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "428":
+          $ref: "#/components/responses/PreconditionRequired"
+        "429":
+          $ref: "#/components/responses/RateLimit"
+  /phases:
+    get:
+      operationId: getPhaseDefinitions
+      summary: Get phase definitions catalog
+      description: Returns the static catalog of phase definitions with ETag caching.
+      responses:
+        "200":
+          description: Phase definitions
+          headers:
+            ETag:
+              schema:
+                type: string
+              description: Entity tag for caching
+            Cache-Control:
+              schema:
+                type: string
+                example: max-age=3600
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/PhaseDefinition"
+        "304":
+          description: Not Modified (ETag match)
+  /cycles/{id}/transitions:
+    get:
+      operationId: getAvailableTransitions
+      summary: Get available transitions for a cycle
+      description: Returns transitions available from the cycle's current phase.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Cycle UUID
+      responses:
+        "200":
+          description: Available transitions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/PhaseTransition"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+components:
+  schemas:
+    Cycle:
+      type: object
+      required:
+        - id
+        - year
+        - organization_id
+        - current_phase
+        - version
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique cycle identifier
+        year:
+          type: integer
+          description: Evaluation year
+        organization_id:
+          type: string
+          format: uuid
+          description: Organization owning this cycle
+        current_phase:
+          type: string
+          enum: [asignacion, avance, cierre]
+          description: Current cycle phase
+        version:
+          type: integer
+          description: Optimistic locking version
+        started_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: When the cycle started
+        finished_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: When the cycle finished
+        created_at:
+          type: string
+          format: date-time
+          description: Creation timestamp
+        updated_at:
+          type: string
+          format: date-time
+          description: Last update timestamp
+    CycleLight:
+      type: object
+      required:
+        - id
+        - year
+        - current_phase
+        - organization_id
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        year:
+          type: integer
+        current_phase:
+          type: string
+          enum: [asignacion, avance, cierre]
+        organization_id:
+          type: string
+          format: uuid
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    CreateCycleRequest:
+      type: object
+      required:
+        - year
+        - organization_id
+      properties:
+        year:
+          type: integer
+          minimum: 2000
+          maximum: 2100
+          description: Evaluation year
+        organization_id:
+          type: string
+          format: uuid
+          description: Organization UUID
+    TransitionPhaseRequest:
+      type: object
+      properties:
+        trigger:
+          type: string
+          enum: [auto, manual_rh]
+          default: manual_rh
+          description: Transition trigger type
+        reason:
+          type: string
+          maxLength: 500
+          description: Reason for the transition
+    PhaseDefinition:
+      type: object
+      required:
+        - phase
+        - label
+        - order
+      properties:
+        phase:
+          type: string
+          enum: [asignacion, avance, cierre]
+        label:
+          type: string
+        order:
+          type: integer
+        allowed_actors:
+          type: array
+          items:
+            type: string
+        allowed_actions:
+          type: array
+          items:
+            type: string
+        blocked_actions:
+          type: array
+          items:
+            type: string
+    PhaseTransition:
+      type: object
+      required:
+        - from_phase
+        - to_phase
+        - trigger
+      properties:
+        from_phase:
+          type: string
+          enum: [asignacion, avance, cierre]
+        to_phase:
+          type: string
+          enum: [asignacion, avance, cierre]
+        trigger:
+          type: string
+          enum: [auto, manual_rh]
+        conditions:
+          type: object
+          additionalProperties: true
+    CursorPagination:
+      type: object
+      properties:
+        next_cursor:
+          type: string
+          nullable: true
+          description: Cursor for the next page (null if no more results)
+        has_more:
+          type: boolean
+          description: Whether there are more results
+    Error:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: object
+          required:
+            - code
+            - message
+          properties:
+            code:
+              type: string
+              description: Machine-readable error code
+            message:
+              type: string
+              description: Human-readable error description
+            details:
+              type: array
+              items:
+                type: string
+              description: Additional error details
+            trace_id:
+              type: string
+              description: Request trace ID for debugging
+  responses:
+    BadRequest:
+      description: Bad Request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    NotFound:
+      description: Not Found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Conflict:
+      description: Conflict
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    PreconditionRequired:
+      description: Precondition Required
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    RateLimit:
+      description: Rate Limit Exceeded
+      headers:
+        X-RateLimit-Limit:
+          schema:
+            type: integer
+        X-RateLimit-Remaining:
+          schema:
+            type: integer
+        X-RateLimit-Reset:
+          schema:
+            type: integer
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"

@@ -1,0 +1,756 @@
+openapi: 3.1.0
+info:
+  title: SED Competency Framework API
+  version: 1.0.0
+  description: REST API for managing the competency catalog (C3).
+servers:
+  - url: https://api.sed.example.com/api/v1
+    description: Production
+paths:
+  /pillars:
+    get:
+      operationId: listPillars
+      summary: List pillars
+      description: Returns a paginated list of pillars with optional competency eager loading.
+      parameters:
+        - name: include
+          in: query
+          schema:
+            type: string
+            enum: [competencies]
+        - name: cursor
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+            minimum: 1
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PillarListResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '408':
+          $ref: '#/components/responses/RequestTimeout'
+      security: []
+    post:
+      operationId: createPillar
+      summary: Create a new pillar
+      description: Creates a competency pillar. Idempotency-Key is required.
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePillarRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PillarDetail'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/RateLimit'
+  /pillars/{id}:
+    get:
+      operationId: getPillar
+      summary: Get pillar by ID
+      description: Returns the full pillar detail, optionally with competencies.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: include
+          in: query
+          schema:
+            type: string
+            enum: [competencies]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PillarDetail'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      operationId: updatePillar
+      summary: Update pillar
+      description: Updates pillar name and/or description. Requires If-Match for optimistic locking.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: If-Match
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePillarRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PillarDetail'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '428':
+          $ref: '#/components/responses/PreconditionRequired'
+    delete:
+      operationId: deletePillar
+      summary: Delete pillar
+      description: Deletes a pillar. If force=false, only empty pillars can be deleted.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: force
+          in: query
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '204':
+          description: No Content
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /pillars/{pillarId}/competencies:
+    get:
+      operationId: listCompetenciesByPillar
+      summary: List competencies in a pillar
+      description: Returns a paginated list of competencies for a given pillar.
+      parameters:
+        - name: pillarId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: cursor
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+            minimum: 1
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetencyListResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    post:
+      operationId: createCompetency
+      summary: Create competency in a pillar
+      description: Creates a new competency within a pillar. Idempotency-Key is required.
+      parameters:
+        - name: pillarId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCompetencyRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetencyDetail'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /competencies/{id}:
+    get:
+      operationId: getCompetency
+      summary: Get competency detail
+      description: Returns the full competency detail with scale criteria grouped by level.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetencyDetail'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      operationId: updateCompetency
+      summary: Update competency
+      description: Updates competency name, description, and optionally moves it to another pillar.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: If-Match
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCompetencyRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetencyDetail'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '428':
+          $ref: '#/components/responses/PreconditionRequired'
+    delete:
+      operationId: deleteCompetency
+      summary: Delete competency
+      description: Deletes a competency. If force=false, only competencies without scale criteria can be deleted.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: force
+          in: query
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '204':
+          description: No Content
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /competencies/{id}/scale-criteria:
+    get:
+      operationId: getScaleCriteria
+      summary: Get scale criteria for a competency
+      description: Returns scale criteria grouped by level (1-5) with the current version.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScaleCriteriaResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    post:
+      operationId: upsertScaleCriteria
+      summary: Replace scale criteria (bulk)
+      description: Replaces ALL scale criteria for a competency atomically. Increments the competency version.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScaleCriteriaBulkRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScaleCriteriaResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /levels:
+    get:
+      operationId: listLevels
+      summary: List global level definitions
+      description: Returns the 5 fixed level definitions (1-5). Cacheable with ETag.
+      responses:
+        '200':
+          description: OK
+          headers:
+            ETag:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LevelDefinition'
+        '304':
+          description: Not Modified
+  /acceptance-levels:
+    get:
+      operationId: listAcceptanceLevels
+      summary: List acceptance levels
+      description: Lists competency acceptance levels, optionally filtered by profile_id and/or competency_id.
+      parameters:
+        - name: profile_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: competency_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AcceptanceLevel'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+    post:
+      operationId: upsertAcceptanceLevel
+      summary: Upsert acceptance level
+      description: Creates or updates the acceptance level for a competency × profile pair.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpsertAcceptanceRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AcceptanceLevel'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /profiles:
+    get:
+      operationId: listProfiles
+      summary: List evaluation profiles
+      description: Returns the fixed evaluation profiles. Cacheable with ETag.
+      responses:
+        '200':
+          description: OK
+          headers:
+            ETag:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EvaluationProfile'
+        '304':
+          description: Not Modified
+
+components:
+  schemas:
+    PillarListItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        competency_count:
+          type: integer
+    PillarListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/PillarListItem'
+        pagination:
+          type: object
+          properties:
+            next_cursor:
+              type: string
+            has_more:
+              type: boolean
+    PillarDetail:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        competencies:
+          type: array
+          items:
+            $ref: '#/components/schemas/CompetencyLite'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    CreatePillarRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        description:
+          type: string
+          maxLength: 2000
+    UpdatePillarRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        description:
+          type: string
+          maxLength: 2000
+    CompetencyLite:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+    CompetencyListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/CompetencyLite'
+        pagination:
+          type: object
+          properties:
+            next_cursor:
+              type: string
+            has_more:
+              type: boolean
+    CreateCompetencyRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        description:
+          type: string
+          maxLength: 2000
+    UpdateCompetencyRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        description:
+          type: string
+          maxLength: 2000
+        pillar_id:
+          type: string
+          format: uuid
+    CompetencyDetail:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        pillar_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        scale_criteria:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    ScaleCriterionItem:
+      type: object
+      required: [level, description]
+      properties:
+        level:
+          type: integer
+          minimum: 1
+          maximum: 5
+        description:
+          type: string
+          maxLength: 2000
+    ScaleCriteriaBulkRequest:
+      type: object
+      required: [criteria]
+      properties:
+        criteria:
+          type: array
+          items:
+            $ref: '#/components/schemas/ScaleCriterionItem'
+    ScaleCriteriaResponse:
+      type: object
+      properties:
+        competency_id:
+          type: string
+          format: uuid
+        criteria:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+        version:
+          type: integer
+        updated_at:
+          type: string
+          format: date-time
+    LevelDefinition:
+      type: object
+      properties:
+        level:
+          type: integer
+          minimum: 1
+          maximum: 5
+        label:
+          type: string
+        description:
+          type: string
+    EvaluationProfile:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+    AcceptanceLevel:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        competency_id:
+          type: string
+          format: uuid
+        profile_id:
+          type: string
+          format: uuid
+        level:
+          type: integer
+          minimum: 1
+          maximum: 5
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    UpsertAcceptanceRequest:
+      type: object
+      required: [competency_id, profile_id, level]
+      properties:
+        competency_id:
+          type: string
+          format: uuid
+        profile_id:
+          type: string
+          format: uuid
+        level:
+          type: integer
+          minimum: 1
+          maximum: 5
+    Error:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            details:
+              type: array
+              items:
+                type: string
+            trace_id:
+              type: string
+  responses:
+    BadRequest:
+      description: Bad Request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Not Found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Conflict:
+      description: Conflict
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    PreconditionRequired:
+      description: Precondition Required
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    RateLimit:
+      description: Too Many Requests
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    RequestTimeout:
+      description: Request Timeout
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

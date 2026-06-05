@@ -1,0 +1,573 @@
+openapi: 3.1.0
+info:
+  title: SED Evaluación y 9×9 API
+  version: "1.0.0"
+  description: |
+    Year-end closing API for SED Evaluación de Desempeño.
+    Handles self-evaluations, RH evaluations, and 9×9 manager matrices.
+
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Local development
+
+paths:
+  /evaluations:
+    get:
+      operationId: listEvaluations
+      summary: List evaluations by cycle
+      parameters:
+        - name: cycle_id
+          in: query
+          required: true
+          schema: { type: string, format: uuid }
+        - name: state
+          in: query
+          schema: { type: string }
+        - name: cursor
+          in: query
+          schema: { type: string }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 20, maximum: 100 }
+      responses:
+        "200":
+          description: Paginated evaluation list
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/EvaluationListResponse" }
+        "429": { $ref: "#/components/responses/RateLimit" }
+
+  /evaluations/{id}:
+    get:
+      operationId: getEvaluation
+      summary: Get evaluation detail
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Evaluation with competencies and goals
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/EvaluationDetailResponse" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /evaluations/{id}/self-evaluation:
+    post:
+      operationId: submitSelfEvaluation
+      summary: Submit self-evaluation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SelfEvaluationRequest" }
+      responses:
+        "200":
+          description: Updated evaluation
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/EvaluationDetailResponse" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "429": { $ref: "#/components/responses/RateLimit" }
+    put:
+      operationId: updateSelfEvaluation
+      summary: Update self-evaluation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: If-Match
+          in: header
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SelfEvaluationRequest" }
+      responses:
+        "200":
+          description: Updated evaluation
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/EvaluationDetailResponse" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
+  /evaluations/{id}/rh-evaluation:
+    post:
+      operationId: submitRHEvaluation
+      summary: Submit RH evaluation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RHEvaluationRequest" }
+      responses:
+        "200":
+          description: Updated evaluation
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/EvaluationDetailResponse" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "429": { $ref: "#/components/responses/RateLimit" }
+    put:
+      operationId: updateRHEvaluation
+      summary: Update RH evaluation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: If-Match
+          in: header
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RHEvaluationRequest" }
+      responses:
+        "200":
+          description: Updated evaluation
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/EvaluationDetailResponse" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
+  /evaluations/{id}/finalize:
+    post:
+      operationId: finalizeEvaluation
+      summary: Finalize evaluation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/FinalizeEvaluationRequest" }
+      responses:
+        "200":
+          description: Finalized evaluation
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/EvaluationDetailResponse" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "503": { $ref: "#/components/responses/ServiceUnavailable" }
+
+  /evaluations/summary:
+    get:
+      operationId: getEvaluationSummary
+      summary: Dashboard summary counts
+      parameters:
+        - name: cycle_id
+          in: query
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Counts by state
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/EvaluationSummaryResponse" }
+
+  /nine-box/matrices:
+    get:
+      operationId: listMatrices
+      summary: List 9×9 matrices
+      parameters:
+        - name: cycle_id
+          in: query
+          schema: { type: string, format: uuid }
+        - name: evaluator_id
+          in: query
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Matrix list
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/NineBoxMatrixResponse" }
+    post:
+      operationId: createMatrix
+      summary: Create a 9×9 matrix
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                cycleId: { type: string, format: uuid }
+                evaluatorId: { type: string, format: uuid }
+              required: [cycleId, evaluatorId]
+      responses:
+        "201":
+          description: Created matrix
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/NineBoxMatrixResponse" }
+
+  /nine-box/matrices/{matrixId}:
+    get:
+      operationId: getMatrix
+      summary: Get matrix with entries
+      parameters:
+        - name: matrixId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Matrix detail
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/NineBoxMatrixResponse" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /nine-box/matrices/{matrixId}/entries:
+    get:
+      operationId: listMatrixEntries
+      summary: List entries in a matrix
+      parameters:
+        - name: matrixId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Entry list
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/NineBoxEntryDTO" }
+    post:
+      operationId: upsertMatrixEntry
+      summary: Upsert a matrix entry
+      parameters:
+        - name: matrixId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/NineBoxEntryInput" }
+      responses:
+        "200":
+          description: Created or updated entry
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/NineBoxEntryDTO" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+
+  /nine-box/entries/{entryId}:
+    put:
+      operationId: updateEntry
+      summary: Update an existing entry
+      parameters:
+        - name: entryId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: If-Match
+          in: header
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/NineBoxEntryInput" }
+      responses:
+        "200":
+          description: Updated entry
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/NineBoxEntryDTO" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
+  /nine-box/batch:
+    post:
+      operationId: batchSubmitEntries
+      summary: Batch submit 9×9 entries
+      parameters:
+        - name: matrixId
+          in: query
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/NineBoxBatchRequest" }
+      responses:
+        "200":
+          description: Processed entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/NineBoxEntryDTO" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "503": { $ref: "#/components/responses/ServiceUnavailable" }
+
+  /nine-box/scales:
+    get:
+      operationId: getScales
+      summary: Get 9×9 scale definitions
+      responses:
+        "200":
+          description: Scale list
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/NineBoxScaleDTO" }
+
+  /nine-box/quadrants:
+    get:
+      operationId: getQuadrants
+      summary: Get 9×9 quadrant definitions
+      responses:
+        "200":
+          description: Quadrant list
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/NineBoxQuadrantDTO" }
+
+components:
+  schemas:
+    EvaluationListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items: { $ref: "#/components/schemas/EvaluationListItem" }
+        nextCursor: { type: string }
+
+    EvaluationListItem:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        employeeId: { type: string, format: uuid }
+        cycleId: { type: string, format: uuid }
+        state: { type: string }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    EvaluationDetailResponse:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        employeeId: { type: string, format: uuid }
+        cycleId: { type: string, format: uuid }
+        state: { type: string }
+        selfEvaluationCompletedAt: { type: string, format: date-time, nullable: true }
+        rhEvaluationCompletedAt: { type: string, format: date-time, nullable: true }
+        competencies:
+          type: array
+          items: { $ref: "#/components/schemas/CompetencyRatingDTO" }
+        goals:
+          type: array
+          items: { $ref: "#/components/schemas/GoalRatingDTO" }
+        version: { type: integer }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    CompetencyRatingDTO:
+      type: object
+      properties:
+        competencyId: { type: string, format: uuid }
+        rating: { type: integer, minimum: 1, maximum: 5 }
+        comments: { type: string }
+
+    GoalRatingDTO:
+      type: object
+      properties:
+        goalId: { type: string, format: uuid }
+        finalRating: { type: integer, minimum: 1, maximum: 5, nullable: true }
+        finalComments: { type: string }
+
+    SelfEvaluationRequest:
+      type: object
+      properties:
+        competencies:
+          type: array
+          items: { $ref: "#/components/schemas/CompetencyRatingInput" }
+        goalComments:
+          type: array
+          items: { $ref: "#/components/schemas/GoalCommentInput" }
+      required: [competencies]
+
+    CompetencyRatingInput:
+      type: object
+      properties:
+        competencyId: { type: string, format: uuid }
+        rating: { type: integer, minimum: 1, maximum: 5 }
+        comments: { type: string }
+      required: [competencyId, rating]
+
+    GoalCommentInput:
+      type: object
+      properties:
+        goalId: { type: string, format: uuid }
+        comment: { type: string }
+      required: [goalId]
+
+    RHEvaluationRequest:
+      type: object
+      properties:
+        competencies:
+          type: array
+          items: { $ref: "#/components/schemas/CompetencyRatingInput" }
+        finalComments: { type: string }
+      required: [competencies]
+
+    FinalizeEvaluationRequest:
+      type: object
+      properties:
+        reason: { type: string }
+
+    EvaluationSummaryResponse:
+      type: object
+      properties:
+        cycleId: { type: string, format: uuid }
+        counts:
+          type: object
+          additionalProperties: { type: integer }
+
+    NineBoxMatrixResponse:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        cycleId: { type: string, format: uuid }
+        evaluatorId: { type: string, format: uuid }
+        entries:
+          type: array
+          items: { $ref: "#/components/schemas/NineBoxEntryDTO" }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    NineBoxEntryDTO:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        evaluateeId: { type: string, format: uuid }
+        performanceScore: { type: integer, minimum: 1, maximum: 9 }
+        potentialScore: { type: integer, minimum: 1, maximum: 9 }
+        quadrant: { type: integer, minimum: 1, maximum: 9 }
+        quadrantLabel: { type: string }
+        quadrantColor: { type: string }
+        comments: { type: string }
+        version: { type: integer }
+
+    NineBoxEntryInput:
+      type: object
+      properties:
+        evaluateeId: { type: string, format: uuid }
+        performanceScore: { type: integer, minimum: 1, maximum: 9 }
+        potentialScore: { type: integer, minimum: 1, maximum: 9 }
+        comments: { type: string }
+      required: [evaluateeId, performanceScore, potentialScore]
+
+    NineBoxBatchRequest:
+      type: object
+      properties:
+        entries:
+          type: array
+          items: { $ref: "#/components/schemas/NineBoxEntryInput" }
+          maxItems: 20
+      required: [entries]
+
+    NineBoxScaleDTO:
+      type: object
+      properties:
+        axis: { type: string, enum: [performance, potential] }
+        level: { type: integer, minimum: 1, maximum: 9 }
+        label: { type: string }
+        description: { type: string }
+
+    NineBoxQuadrantDTO:
+      type: object
+      properties:
+        quadrant: { type: integer, minimum: 1, maximum: 9 }
+        label: { type: string }
+        description: { type: string }
+        color: { type: string }
+        actionRecommendation: { type: string }
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code: { type: string }
+            message: { type: string }
+            details:
+              type: array
+              items: { type: string }
+            trace_id: { type: string }
+
+  responses:
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorResponse" }
+    BadRequest:
+      description: Validation error
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorResponse" }
+    Conflict:
+      description: Concurrent update or business rule conflict
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorResponse" }
+    RateLimit:
+      description: Too many requests
+      headers:
+        Retry-After:
+          schema: { type: integer }
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorResponse" }
+    ServiceUnavailable:
+      description: Circuit breaker open or pool saturated
+      headers:
+        Retry-After:
+          schema: { type: integer }
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorResponse" }

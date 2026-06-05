@@ -1,0 +1,899 @@
+openapi: 3.1.0
+info:
+  title: SED Org Hierarchy API
+  description: |
+    Organizational hierarchy, employees, and evaluator scope API for SED.
+    This is the backbone that determines who evaluates whom across the entire system.
+  version: 1.0.0
+  contact:
+    name: SED Team
+servers:
+  - url: /api/v1
+    description: API v1 base path
+
+paths:
+  # ============ Organization Trees ============
+  /org-trees:
+    get:
+      operationId: listOrgTrees
+      summary: List organizational trees
+      description: Returns all organizational trees (corporate, retail, or both).
+      parameters:
+        - name: type
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [corporate, retail]
+          description: Filter by tree type
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/OrgTree'
+
+  /org-trees/{treeId}:
+    get:
+      operationId: getOrgTree
+      summary: Get organization tree detail
+      description: Returns a single organizational tree with node count.
+      parameters:
+        - name: treeId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Organization (tree) UUID
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/OrgTree'
+        '404':
+          $ref: '#/components/responses/TreeNotFound'
+
+  /org-trees/{treeId}/nodes:
+    get:
+      operationId: getOrgTreeNodes
+      summary: Get tree nodes
+      description: Returns all nodes for an organization tree in flat or nested format.
+      parameters:
+        - name: treeId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: format
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [flat, nested]
+            default: flat
+          description: Output format
+        - name: depth
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: -1
+          description: Maximum depth (-1 for all)
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/OrgNodeFlatList'
+                  - $ref: '#/components/schemas/OrgNodeNested'
+        '404':
+          $ref: '#/components/responses/TreeNotFound'
+
+  /org-trees/{treeId}/export:
+    get:
+      operationId: exportOrgTree
+      summary: Export organization tree
+      description: Streams the entire org tree as a JSON array (Transfer-Encoding: chunked).
+      parameters:
+        - name: treeId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Streaming JSON export
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  nodes:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/OrgNode'
+        '404':
+          $ref: '#/components/responses/TreeNotFound'
+
+  # ============ Org Nodes ============
+  /org-nodes/{nodeId}:
+    get:
+      operationId: getOrgNode
+      summary: Get org node detail
+      description: Returns a single org node with employee count.
+      parameters:
+        - name: nodeId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/OrgNode'
+        '404':
+          $ref: '#/components/responses/NodeNotFound'
+    put:
+      operationId: updateOrgNode
+      summary: Update org node
+      description: Updates an org node's name, code, or metadata with optimistic locking.
+      parameters:
+        - name: nodeId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateOrgNodeRequest'
+      responses:
+        '200':
+          description: Updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/OrgNode'
+        '404':
+          $ref: '#/components/responses/NodeNotFound'
+        '409':
+          $ref: '#/components/responses/StaleVersion'
+    delete:
+      operationId: deleteOrgNode
+      summary: Delete org node
+      description: Deletes an org node. Only succeeds if the node has no children.
+      parameters:
+        - name: nodeId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Deleted successfully
+        '404':
+          $ref: '#/components/responses/NodeNotFound'
+        '409':
+          $ref: '#/components/responses/NodeHasChildren'
+
+  /org-nodes:
+    post:
+      operationId: createOrgNode
+      summary: Create org node
+      description: Creates a new org node under the specified parent.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOrgNodeRequest'
+      responses:
+        '201':
+          description: Created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/OrgNode'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /org-nodes/{nodeId}/move:
+    post:
+      operationId: moveOrgNode
+      summary: Move org node
+      description: Moves an org node (and its subtree) to a new parent.
+      parameters:
+        - name: nodeId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MoveOrgNodeRequest'
+      responses:
+        '200':
+          description: Moved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/OrgNode'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NodeNotFound'
+
+  # ============ Employees ============
+  /employees:
+    get:
+      operationId: listEmployees
+      summary: List employees
+      description: Returns a cursor-paginated list of employees with optional filters.
+      parameters:
+        - name: treeId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: nodeId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: profileId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: isActive
+          in: query
+          required: false
+          schema:
+            type: boolean
+        - name: q
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Cursor for pagination (UUID of last item)
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 50
+            minimum: 1
+            maximum: 200
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmployeeListResponse'
+
+  /employees/{empId}:
+    get:
+      operationId: getEmployee
+      summary: Get employee detail
+      description: Returns a single employee with nested org node and manager info.
+      parameters:
+        - name: empId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/EmployeeDetail'
+        '404':
+          $ref: '#/components/responses/EmployeeNotFound'
+
+  /employees/{empId}/evaluatees:
+    get:
+      operationId: getMyEvaluatees
+      summary: Get my evaluatees
+      description: Returns direct reports (active only) for the given evaluator.
+      parameters:
+        - name: empId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Employee'
+        '404':
+          $ref: '#/components/responses/EmployeeNotFound'
+
+  /employees/{empId}/manager:
+    get:
+      operationId: getManager
+      summary: Get employee's manager
+      description: Returns the direct manager of the specified employee.
+      parameters:
+        - name: empId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/EmployeeDetail'
+        '404':
+          $ref: '#/components/responses/EmployeeNotFound'
+
+  /employees/{empId}/ancestors:
+    get:
+      operationId: getChainOfCommand
+      summary: Get chain of command
+      description: Returns the ancestor chain from the employee to the root.
+      parameters:
+        - name: empId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Ancestor'
+        '404':
+          $ref: '#/components/responses/EmployeeNotFound'
+
+  /employees/search:
+    get:
+      operationId: searchEmployees
+      summary: Search employees
+      description: Full-text search across employee names, emails, and employee numbers.
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 2
+          description: Search query (minimum 2 characters)
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 50
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmployeeListResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /employees/batch:
+    post:
+      operationId: batchLookupEmployees
+      summary: Batch employee lookup
+      description: Resolves up to 100 employee IDs in a single call.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ids]
+              properties:
+                ids:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+                  maxItems: 100
+                  description: Employee UUIDs to resolve
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmployeeListResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  # ============ Evaluator Scopes ============
+  /evaluator-scopes:
+    get:
+      operationId: getEvaluatorScope
+      summary: Get evaluator scope
+      description: Returns the evaluation scope for a given evaluator and optional cycle.
+      parameters:
+        - name: evaluatorId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: cycleId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/EvaluatorScope'
+        '404':
+          $ref: '#/components/responses/EmployeeNotFound'
+
+  /evaluator-scopes/{scopeId}:
+    get:
+      operationId: getEvaluatorScopeById
+      summary: Get evaluator scope by ID
+      description: Returns a single evaluator scope by its unique ID.
+      parameters:
+        - name: scopeId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/EvaluatorScope'
+        '404':
+          $ref: '#/components/responses/ScopeNotFound'
+
+components:
+  schemas:
+    OrgTree:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Organization UUID
+        name:
+          type: string
+          description: Organization name
+        type:
+          type: string
+          enum: [corporate, retail]
+          description: Tree type
+        nodeCount:
+          type: integer
+          description: Number of nodes in this tree
+
+    OrgNode:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        parentId:
+          type: string
+          format: uuid
+          nullable: true
+        name:
+          type: string
+        type:
+          type: string
+          enum: [corporate, retail]
+        code:
+          type: string
+        depth:
+          type: integer
+          description: Node depth (0 = root)
+        path:
+          type: string
+          description: ltree materialized path
+        employeeCount:
+          type: integer
+          description: Number of active employees in this node
+        metadata:
+          type: object
+          additionalProperties: true
+
+    OrgNodeFlatList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrgNode'
+        meta:
+          type: object
+          properties:
+            format:
+              type: string
+              enum: [flat]
+            total:
+              type: integer
+
+    OrgNodeNested:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/OrgNode'
+        meta:
+          type: object
+          properties:
+            format:
+              type: string
+              enum: [nested]
+
+    CreateOrgNodeRequest:
+      type: object
+      required: [organizationId, name, type, code]
+      properties:
+        organizationId:
+          type: string
+          format: uuid
+        parentId:
+          type: string
+          format: uuid
+          nullable: true
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        type:
+          type: string
+          enum: [corporate, retail]
+        code:
+          type: string
+          minLength: 1
+          maxLength: 100
+        metadata:
+          type: object
+          additionalProperties: true
+
+    UpdateOrgNodeRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        code:
+          type: string
+          minLength: 1
+          maxLength: 100
+        metadata:
+          type: object
+          additionalProperties: true
+        version:
+          type: integer
+          description: Expected version for optimistic locking
+
+    MoveOrgNodeRequest:
+      type: object
+      required: [newParentId]
+      properties:
+        newParentId:
+          type: string
+          format: uuid
+
+    Employee:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        firstName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: string
+          format: email
+        employeeNumber:
+          type: string
+        orgNodeId:
+          type: string
+          format: uuid
+        managerId:
+          type: string
+          format: uuid
+          nullable: true
+        profileId:
+          type: string
+          format: uuid
+        isActive:
+          type: boolean
+
+    EmployeeDetail:
+      allOf:
+        - $ref: '#/components/schemas/Employee'
+        - type: object
+          properties:
+            orgNode:
+              type: object
+              nullable: true
+              properties:
+                id:
+                  type: string
+                  format: uuid
+                name:
+                  type: string
+                path:
+                  type: string
+            manager:
+              type: object
+              nullable: true
+              properties:
+                id:
+                  type: string
+                  format: uuid
+                firstName:
+                  type: string
+                lastName:
+                  type: string
+
+    EmployeeListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Employee'
+        meta:
+          type: object
+          properties:
+            nextCursor:
+              type: string
+              nullable: true
+              description: Cursor for the next page
+            hasMore:
+              type: boolean
+            limit:
+              type: integer
+
+    Ancestor:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          description: Node name
+        depth:
+          type: integer
+          description: Distance from employee (0 = self)
+        relation:
+          type: string
+          enum: [self, direct_manager, director, vp, ceo]
+          description: Relation label
+
+    EvaluatorScope:
+      type: object
+      properties:
+        evaluatorId:
+          type: string
+          format: uuid
+        cycleId:
+          type: string
+          format: uuid
+          nullable: true
+        scopeType:
+          type: string
+          enum: [department, team, individual]
+        scopeData:
+          type: object
+          properties:
+            orgNodeIds:
+              type: array
+              items:
+                type: string
+                format: uuid
+            employeeIds:
+              type: array
+              items:
+                type: string
+                format: uuid
+        evaluateeCount:
+          type: integer
+          description: Number of evaluatees in scope
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            details:
+              type: array
+              items:
+                type: string
+            trace_id:
+              type: string
+
+  responses:
+    TreeNotFound:
+      description: Organizational tree not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              code: TREE_NOT_FOUND
+              message: Organizational tree not found
+              details: ["treeId: 550e8400-e29b-41d4-a716-446655440000"]
+              trace_id: abc12345
+
+    NodeNotFound:
+      description: Org node not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              code: NODE_NOT_FOUND
+              message: Org node not found
+              trace_id: abc12345
+
+    EmployeeNotFound:
+      description: Employee not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              code: EMPLOYEE_NOT_FOUND
+              message: Employee not found
+              trace_id: abc12345
+
+    BadRequest:
+      description: Invalid request parameters or body
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              code: INVALID_REQUEST
+              message: Invalid request parameters
+              trace_id: abc12345
+
+    StaleVersion:
+      description: Optimistic lock version mismatch
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              code: STALE_VERSION
+              message: Optimistic lock failed; version mismatch
+              details: ["expected_version: 2", "actual_version: 3"]
+              trace_id: abc12345
+
+    NodeHasChildren:
+      description: Cannot delete node with children
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              code: NODE_HAS_CHILDREN
+              message: Cannot delete node with children
+              trace_id: abc12345
+
+    ScopeNotFound:
+      description: Evaluator scope not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              code: SCOPE_NOT_FOUND
+              message: Evaluator scope not found
+              trace_id: abc12345
