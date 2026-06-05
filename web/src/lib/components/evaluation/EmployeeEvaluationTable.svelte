@@ -22,14 +22,11 @@
 				)
 	);
 
-	const selectedEmployeeName = $derived(
-		employees.find((e) => e.employeeId === selectedEmployeeId)?.employeeName ?? ''
-	);
-
 	function handleSelect(employeeId: string) {
-		onSelect(employeeId);
-		searchQuery = selectedEmployeeName;
+		const emp = employees.find((e) => e.employeeId === employeeId);
+		searchQuery = emp?.employeeName ?? '';
 		showDropdown = false;
+		onSelect(employeeId);
 	}
 </script>
 
