@@ -67,7 +67,7 @@
 </script>
 
 <div class="card bg-base-100 border border-base-300">
-	<div class="card-body px-4 py-4">
+	<div class="card-body px-0 py-4">
 		<!-- Goal header -->
 		<div class="flex items-start justify-between gap-2 mb-3">
 			<div class="flex-1 min-w-0">

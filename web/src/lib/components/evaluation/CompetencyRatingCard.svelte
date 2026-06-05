@@ -47,7 +47,7 @@
 </script>
 
 <div class="card bg-base-100 border border-base-300">
-	<div class="card-body">
+	<div class="card-body px-0">
 		<h3 class="text-base font-semibold text-base-content mb-1">{pillar.name}</h3>
 		<p class="text-xs text-base-content/50 mb-4">{pillar.description}</p>
 

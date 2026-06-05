@@ -1,4 +1,8 @@
 <script lang="ts">
+	import EvaluationStatusBadge from './EvaluationStatusBadge.svelte';
+	import { getEvaluationStatus } from '$lib/stores/evaluationStore.svelte';
+	import { getPillars, getCompetenciesByPillar } from '$lib/stores/competencyStore.svelte';
+	import { getNodeById } from '$lib/stores/orgHierarchyStore.svelte';
 	import type { EmployeeAssignment } from '$lib/types/goal';
 	import type { Snippet } from 'svelte';
 
@@ -12,76 +16,84 @@
 	let { employees, onSelect, selectedEmployeeId = '', detail }: Props = $props();
 
 	let searchQuery = $state('');
-	let showDropdown = $state(false);
+
+	const pillars = $derived(getPillars());
+	const allCompetencies = $derived(pillars.flatMap((p) => getCompetenciesByPillar(p.id)));
 
 	const filteredEmployees = $derived(
 		searchQuery.trim() === ''
 			? employees
-			: employees.filter((e) =>
-					e.employeeName.toLowerCase().includes(searchQuery.toLowerCase())
+			: employees.filter(
+					(e) =>
+						e.employeeName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+						getArea(e.employeeId).toLowerCase().includes(searchQuery.toLowerCase())
 				)
 	);
 
-	function handleSelect(employeeId: string) {
-		const emp = employees.find((e) => e.employeeId === employeeId);
-		searchQuery = emp?.employeeName ?? '';
-		showDropdown = false;
-		onSelect(employeeId);
+	function getArea(employeeId: string): string {
+		const node = getNodeById(employeeId);
+		if (!node) return '—';
+		return node.profileId;
+	}
+
+	function getStatus(employeeId: string) {
+		const assignment = employees.find((e) => e.employeeId === employeeId);
+		return getEvaluationStatus(employeeId, allCompetencies.length, assignment?.goalIds ?? []);
 	}
 </script>
 
 <div class="flex flex-col gap-6">
 	<!-- Search input -->
-	<div class="relative w-full max-w-sm">
-		<label class="label" for="employee-search">
-			<span class="label-text">Buscar evaluado</span>
-		</label>
+	<div class="w-full max-w-sm">
 		<input
 			id="employee-search"
 			type="text"
 			class="input input-bordered input-sm w-full"
-			placeholder="Escribí un nombre..."
-			value={searchQuery}
-			oninput={(e) => {
-				searchQuery = (e.target as HTMLInputElement).value;
-				showDropdown = true;
-			}}
-			onfocus={() => (showDropdown = true)}
-			onblur={() => setTimeout(() => (showDropdown = false), 150)}
-			aria-label="Buscar evaluado"
-			aria-expanded={showDropdown}
-			aria-autocomplete="list"
-			role="combobox"
-			aria-controls="employee-listbox"
+			placeholder="Buscar por nombre o área..."
+			bind:value={searchQuery}
+			aria-label="Buscar empleado"
 		/>
-		{#if showDropdown && filteredEmployees.length > 0}
-			<ul
-				id="employee-listbox"
-				class="absolute z-50 mt-1 w-full bg-base-100 border border-base-300 rounded-lg shadow-lg max-h-60 overflow-auto"
-				role="listbox"
-			>
-				{#each filteredEmployees as employee (employee.employeeId)}
-					<li>
-						<button
-							type="button"
-							class="w-full text-left px-4 py-2 text-sm hover:bg-base-200 {selectedEmployeeId === employee.employeeId ? 'bg-base-200 font-semibold' : ''}"
-							onmousedown={() => handleSelect(employee.employeeId)}
-							role="option"
-							aria-selected={selectedEmployeeId === employee.employeeId}
-						>
-							{employee.employeeName}
-						</button>
-					</li>
-				{/each}
-			</ul>
-		{/if}
 	</div>
 
 	{#if selectedEmployeeId}
 		{@render detail?.()}
-	{:else}
+	{:else if filteredEmployees.length === 0}
 		<p class="text-sm text-base-content/30 italic text-center py-8">
-			Selecciona un evaluado para comenzar.
+			No se encontraron empleados.
 		</p>
+	{:else}
+		<!-- Table -->
+		<div class="overflow-x-auto">
+			<table class="table table-sm">
+				<thead>
+					<tr>
+						<th class="text-xs font-semibold text-base-content/60">Nombre</th>
+						<th class="text-xs font-semibold text-base-content/60">Área</th>
+						<th class="text-xs font-semibold text-base-content/60">Estado</th>
+						<th class="text-xs font-semibold text-base-content/60">Acción</th>
+					</tr>
+				</thead>
+				<tbody>
+					{#each filteredEmployees as emp (emp.employeeId)}
+						<tr class="hover:bg-base-200">
+							<td class="font-medium">{emp.employeeName}</td>
+							<td>{getArea(emp.employeeId)}</td>
+							<td>
+								<EvaluationStatusBadge status={getStatus(emp.employeeId)} />
+							</td>
+							<td>
+								<button
+									type="button"
+									class="btn btn-primary btn-xs"
+									onclick={() => onSelect(emp.employeeId)}
+								>
+									Evaluar
+								</button>
+							</td>
+						</tr>
+					{/each}
+				</tbody>
+			</table>
+		</div>
 	{/if}
 </div>
