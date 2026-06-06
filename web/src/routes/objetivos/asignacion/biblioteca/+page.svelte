@@ -3,6 +3,7 @@
 	import { Plus, Trash2, Save, X, Pencil, Library, TrendingUp, TrendingDown } from '@lucide/svelte';
 	import type { KPI, KpiUnit } from '$lib/types/goal';
 	import { getKpis, addKpi, updateKpi, deleteKpi } from '$lib/stores/goalsStore.svelte';
+	import CustomSelect from '$lib/components/ui/CustomSelect.svelte';
 
 	// ─── KPI list ──────────────────────────────────────────────────────────────
 
@@ -23,6 +24,11 @@
 		{ value: 'moneda', label: 'Moneda ($)' },
 		{ value: 'numero', label: 'Número' },
 		{ value: 'binario', label: 'Binario (Sí/No)' }
+	];
+
+	const directionOptions = [
+		{ value: 'ascendente', label: 'Ascendente (mayor es mejor)' },
+		{ value: 'descendente', label: 'Descendente (menor es mejor)' }
 	];
 
 	function resetAddForm() {
@@ -215,17 +221,20 @@
 									/>
 								</td>
 								<td>
-									<select class="select select-bordered select-sm w-full" bind:value={editUnit}>
-										{#each unitOptions as opt (opt.value)}
-											<option value={opt.value}>{opt.label}</option>
-										{/each}
-									</select>
+									<CustomSelect
+										options={unitOptions}
+										value={editUnit}
+										onChange={(v) => (editUnit = v as KpiUnit)}
+										ariaLabel="Unidad"
+									/>
 								</td>
 								<td>
-									<select class="select select-bordered select-sm w-full" bind:value={editDirection}>
-										<option value="ascendente">Ascendente</option>
-										<option value="descendente">Descendente</option>
-									</select>
+									<CustomSelect
+										options={directionOptions}
+										value={editDirection}
+										onChange={(v) => (editDirection = v as 'ascendente' | 'descendente')}
+										ariaLabel="Dirección"
+									/>
 								</td>
 								<td>
 									<input
@@ -328,7 +337,7 @@
 				<div class="grid grid-cols-1 md:grid-cols-2 gap-3">
 					<div class="form-control">
 						<label class="label" for="add-kpi-name">
-							<span class="label-text">Nombre</span>
+							<span class="label-text text-xs">Nombre</span>
 						</label>
 						<input
 							id="add-kpi-name"
@@ -343,7 +352,7 @@
 
 					<div class="form-control">
 						<label class="label" for="add-kpi-description">
-							<span class="label-text">Descripción</span>
+							<span class="label-text text-xs">Descripción</span>
 						</label>
 						<input
 							id="add-kpi-description"
@@ -360,37 +369,32 @@
 				<div class="grid grid-cols-1 md:grid-cols-3 gap-3">
 					<div class="form-control">
 						<label class="label" for="add-kpi-unit">
-							<span class="label-text">Unidad</span>
+							<span class="label-text text-xs">Unidad</span>
 						</label>
-						<select
-							id="add-kpi-unit"
-							class="select select-bordered select-sm w-full"
-							bind:value={addFormUnit}
-						>
-							{#each unitOptions as opt (opt.value)}
-								<option value={opt.value}>{opt.label}</option>
-							{/each}
-						</select>
+						<CustomSelect
+							options={unitOptions}
+							value={addFormUnit}
+							onChange={(v) => (addFormUnit = v as KpiUnit)}
+							ariaLabel="Unidad"
+						/>
 					</div>
 
 					<div class="form-control">
 						<label class="label" for="add-kpi-direction">
-							<span class="label-text">Dirección</span>
+							<span class="label-text text-xs">Dirección</span>
 						</label>
-						<select
-							id="add-kpi-direction"
-							class="select select-bordered select-sm w-full"
-							bind:value={addFormDirection}
-						>
-							<option value="ascendente">Ascendente (mayor es mejor)</option>
-							<option value="descendente">Descendente (menor es mejor)</option>
-						</select>
+						<CustomSelect
+							options={directionOptions}
+							value={addFormDirection}
+							onChange={(v) => (addFormDirection = v as 'ascendente' | 'descendente')}
+							ariaLabel="Dirección"
+						/>
 					</div>
 
 					<div class="form-control">
 						<label class="label" for="add-kpi-target">
-							<span class="label-text">Valor objetivo</span>
-							<span class="label-text-alt text-base-content/30">Opcional</span>
+							<span class="label-text text-xs">Valor objetivo</span>
+							<span class="label-text-alt text-base-content/30 text-xs">Opcional</span>
 						</label>
 						<input
 							id="add-kpi-target"
