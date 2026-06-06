@@ -148,47 +148,61 @@ context: |
 
 testing:
   strict_tdd: false
-  runner: go-test
+  runner: go test (backend only; frontend has no runner configured)
   frameworks:
     frontend:
-      unit: vitest
-      e2e: playwright
+      unit: none
+      e2e: none
     backend:
-      unit: gotest
-      integration: testcontainers
+      unit: go test
       assert: testify
   commands:
     unit_go: go test ./... -v -race -count=1
-    lint_go: golangci-lint run ./...
     lint_fe: pnpm lint
     type_check: pnpm check
     format: pnpm format
-    coverage_go: go test ./... -coverprofile=coverage.out
-    coverage_fe: pnpm vitest run --coverage
   layers:
     - layer: Unit (Go)
       available: true
       tool: go test + testify
+      note: Test files exist in api/internal/service/*
     - layer: Unit (FE)
       available: false
-      tool: Vitest (not yet configured)
+      tool: "—"
+      note: Vitest not configured; no test files in web/src
     - layer: Integration (API)
       available: false
-      tool: testcontainers PostgreSQL (planned)
+      tool: "—"
+      note: Not configured
     - layer: Contract
       available: false
-      tool: OpenAPI diff (planned)
+      tool: "—"
+      note: Not configured
     - layer: E2E
       available: false
-      tool: Playwright (planned)
+      tool: "—"
+      note: Playwright not configured
   coverage:
     available: false
-    command: go test -coverprofile=coverage.out
+    command: "—"
+    note: No coverage tooling configured for frontend; backend can use go test -cover but no threshold set
   quality:
-    linter_fe: eslint
-    linter_go: golangci-lint
-    type_checker: svelte-check
-    formatter: prettier
+    linter_fe:
+      tool: eslint
+      available: true
+      config: web/eslint.config.js
+    linter_go:
+      tool: golangci-lint
+      available: false
+      note: Referenced in AGENTS.md but no config file found
+    type_checker:
+      tool: svelte-check
+      available: true
+      config: pnpm check (svelte-kit sync && svelte-check)
+    formatter:
+      tool: prettier
+      available: true
+      note: Command in package.json; no config file (uses defaults)
 
 rules:
   proposal:

@@ -264,10 +264,10 @@
 								<td class="font-medium">{kpi.name}</td>
 								<td class="text-sm text-base-content/70">{kpi.description}</td>
 							<td>
-								<span class="badge badge-sm badge-primary/10 text-primary">{unitLabels[kpi.unit]}</span>
+								<span class="badge badge-sm bg-primary/20 text-primary">{unitLabels[kpi.unit]}</span>
 							</td>
 							<td>
-								<span class="badge badge-sm badge-primary/10 text-primary">
+								<span class="badge badge-sm bg-primary/20 text-primary">
 									{#if kpi.direction === 'ascendente'}
 										<TrendingUp class="w-3 h-3" />
 									{:else}
