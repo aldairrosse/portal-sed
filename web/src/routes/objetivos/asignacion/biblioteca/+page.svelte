@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { Plus, Trash2, Save, X, Pencil, Library } from '@lucide/svelte';
+	import { Plus, Trash2, Save, X, Pencil, Library, TrendingUp, TrendingDown } from '@lucide/svelte';
 	import type { KPI, KpiUnit } from '$lib/types/goal';
 	import { getKpis, addKpi, updateKpi, deleteKpi } from '$lib/stores/goalsStore.svelte';
 
@@ -185,12 +185,12 @@
 			<table class="table table-zebra w-full">
 				<thead>
 					<tr>
-						<th>Nombre</th>
-						<th>Descripción</th>
-						<th>Unidad</th>
-						<th>Dirección</th>
-						<th class="text-center">Meta</th>
-						<th class="text-center">Acciones</th>
+						<th class="text-xs font-semibold text-base-content/60">Nombre</th>
+						<th class="text-xs font-semibold text-base-content/60">Descripción</th>
+						<th class="text-xs font-semibold text-base-content/60">Unidad</th>
+						<th class="text-xs font-semibold text-base-content/60">Dirección</th>
+						<th class="text-xs font-semibold text-base-content/60 text-center">Meta</th>
+						<th class="text-xs font-semibold text-base-content/60 text-center">Acciones</th>
 					</tr>
 				</thead>
 				<tbody>
@@ -263,12 +263,19 @@
 							<tr>
 								<td class="font-medium">{kpi.name}</td>
 								<td class="text-sm text-base-content/70">{kpi.description}</td>
-								<td>
-									<span class="badge badge-ghost badge-sm">{unitLabels[kpi.unit]}</span>
-								</td>
-								<td>
-									<span class="badge badge-ghost badge-sm">{directionLabels[kpi.direction]}</span>
-								</td>
+							<td>
+								<span class="badge badge-sm badge-primary/10 text-primary">{unitLabels[kpi.unit]}</span>
+							</td>
+							<td>
+								<span class="badge badge-sm badge-primary/10 text-primary">
+									{#if kpi.direction === 'ascendente'}
+										<TrendingUp class="w-3 h-3" />
+									{:else}
+										<TrendingDown class="w-3 h-3" />
+									{/if}
+									{directionLabels[kpi.direction]}
+								</span>
+							</td>
 								<td class="text-center">
 									{#if kpi.targetValue !== undefined && kpi.targetValue !== null}
 										{kpi.targetValue}
