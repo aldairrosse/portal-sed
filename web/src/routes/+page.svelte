@@ -181,13 +181,9 @@
 				<!-- Inicio de año -->
 				<li>
 					{#if phase === 'inicio-anio'}
-						<div class="timeline-start timeline-box border-primary bg-primary/10 text-primary font-semibold">
-							Inicio de año
-						</div>
+						<div class="timeline-start text-xs font-semibold text-primary">Inicio de año</div>
 					{:else}
-						<div class="timeline-start timeline-box">
-							Inicio de año
-						</div>
+						<div class="timeline-start text-xs text-base-content/40">Inicio de año</div>
 					{/if}
 					<div class="timeline-middle">
 						{#if phase === 'inicio-anio'}
@@ -216,19 +212,15 @@
 								<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" />
 							</svg>
 						{:else}
-							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-5 w-5 text-base-content/30">
-								<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" />
-							</svg>
+							<div class="w-5 h-5 rounded-full border-2 border-primary/40 flex items-center justify-center">
+								<span class="text-primary/40 text-[10px] font-bold">2</span>
+							</div>
 						{/if}
 					</div>
 					{#if phase === 'medio-anio'}
-						<div class="timeline-end timeline-box border-primary bg-primary/10 text-primary font-semibold">
-							Medio año
-						</div>
+						<div class="timeline-end text-xs font-semibold text-primary">Medio año</div>
 					{:else}
-						<div class="timeline-end timeline-box">
-							Medio año
-						</div>
+						<div class="timeline-end text-xs text-base-content/40">Medio año</div>
 					{/if}
 					<hr class="{phase === 'fin-anio' ? 'bg-primary/40' : 'bg-base-300'}" />
 				</li>
@@ -242,19 +234,15 @@
 								<span class="text-primary-content text-[10px] font-bold">3</span>
 							</div>
 						{:else}
-							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-5 w-5 text-base-content/30">
-								<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" />
-							</svg>
+							<div class="w-5 h-5 rounded-full border-2 border-primary/40 flex items-center justify-center">
+								<span class="text-primary/40 text-[10px] font-bold">3</span>
+							</div>
 						{/if}
 					</div>
 					{#if phase === 'fin-anio'}
-						<div class="timeline-start timeline-box border-primary bg-primary/10 text-primary font-semibold">
-							Fin de año
-						</div>
+						<div class="timeline-start text-xs font-semibold text-primary">Fin de año</div>
 					{:else}
-						<div class="timeline-start timeline-box">
-							Fin de año
-						</div>
+						<div class="timeline-start text-xs text-base-content/40">Fin de año</div>
 					{/if}
 				</li>
 			</ul>
