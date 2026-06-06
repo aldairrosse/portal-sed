@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
 	import { Save, Plus, Library, MessageSquare } from '@lucide/svelte';
 	import type { Goal, GoalCategory, GoalUnit, GoalComment } from '$lib/types/goal';
 	import type { ChangeRequest } from '$lib/types/goal';
@@ -33,7 +34,6 @@
 	import CategoryCard from '$lib/components/goals/CategoryCard.svelte';
 	import CategoryFormModal from '$lib/components/goals/CategoryFormModal.svelte';
 	import GoalFormModal from '$lib/components/goals/GoalFormModal.svelte';
-	import KpiFormModal from '$lib/components/goals/KpiFormModal.svelte';
 	import ReadOnlyBanner from '$lib/components/goals/ReadOnlyBanner.svelte';
 	import AssigneePicker from '$lib/components/goals/AssigneePicker.svelte';
 	import RequestChangeModal from '$lib/components/goals/RequestChangeModal.svelte';
@@ -111,7 +111,6 @@
 
 	let showCategoryForm = $state(false);
 	let showGoalForm = $state(false);
-	let showKpiLibrary = $state(false);
 	let editingCategory: GoalCategory | null = $state(null);
 	let editingGoal: Goal | null = $state(null);
 	let goalFormCategoryId = $state('');
@@ -288,7 +287,7 @@
 			{#if phase !== 'medio-anio'}
 				<button
 					class="btn btn-ghost btn-sm"
-					onclick={() => (showKpiLibrary = true)}
+					onclick={() => goto('/objetivos/asignacion/biblioteca')}
 					aria-label="Biblioteca de KPI"
 				>
 					<Library class="w-4 h-4" />
@@ -427,11 +426,6 @@
 		showGoalForm = false;
 		editingGoal = null;
 	}}
-/>
-
-<KpiFormModal
-	open={showKpiLibrary}
-	onClose={() => (showKpiLibrary = false)}
 />
 
 {#if targetAssignment}
