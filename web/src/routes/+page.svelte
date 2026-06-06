@@ -179,19 +179,19 @@
 			</h2>
 			<!-- Timeline -->
 			<div class="relative w-full pt-2.5 pb-1">
-				<!-- Line behind dots -->
-				<div class="absolute top-[14px] left-0 right-0 h-0.5 bg-base-300"></div>
+				<!-- Line behind dots (centered: 10px padding + 10px half of 20px dot = 20px) -->
+				<div class="absolute top-[20px] left-0 right-0 h-0.5 bg-base-300 -translate-y-1/2"></div>
 				<div
-					class="absolute top-[14px] left-0 h-0.5 bg-primary transition-all"
-					style="width: {phase === 'inicio-anio' ? '0%' : phase === 'medio-anio' ? '50%' : '100%'}"
+					class="absolute top-[20px] left-0 h-0.5 bg-success/70 transition-all -translate-y-1/2"
+					style="width: {phase === 'inicio-anio' ? '33%' : phase === 'medio-anio' ? '66%' : '100%'}"
 				></div>
 
 				<!-- Dots row -->
 				<div class="relative flex w-full">
 					<!-- Step 1 -->
 					<div class="flex-1 flex justify-center">
-						<div class="w-5 h-5 rounded-full bg-primary flex items-center justify-center relative z-10">
-							<Check class="w-3 h-3 text-primary-content" />
+						<div class="w-5 h-5 rounded-full bg-success flex items-center justify-center relative z-10">
+							<Check class="w-3 h-3 text-success-content" />
 						</div>
 					</div>
 					<!-- Step 2 -->
@@ -201,16 +201,16 @@
 								<span class="text-primary/40 text-[10px] font-bold">2</span>
 							</div>
 						{:else}
-							<div class="w-5 h-5 rounded-full bg-primary flex items-center justify-center relative z-10">
-								<Check class="w-3 h-3 text-primary-content" />
+							<div class="w-5 h-5 rounded-full bg-success flex items-center justify-center relative z-10">
+								<Check class="w-3 h-3 text-success-content" />
 							</div>
 						{/if}
 					</div>
 					<!-- Step 3 -->
 					<div class="flex-1 flex justify-center">
 						{#if phase === 'fin-anio'}
-							<div class="w-5 h-5 rounded-full bg-primary flex items-center justify-center relative z-10">
-								<Check class="w-3 h-3 text-primary-content" />
+							<div class="w-5 h-5 rounded-full bg-success flex items-center justify-center relative z-10">
+								<Check class="w-3 h-3 text-success-content" />
 							</div>
 						{:else}
 							<div class="w-5 h-5 rounded-full border-2 border-primary/40 bg-base-100 flex items-center justify-center relative z-10">
