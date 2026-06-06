@@ -177,75 +177,65 @@
 			<h2 class="text-xs font-semibold text-base-content/50 tracking-wide mb-3">
 				Ciclo {year}
 			</h2>
-			<ul class="timeline">
-				<!-- Inicio de año -->
-				<li>
+			<!-- Timeline: dots + line row -->
+			<div class="flex items-center w-full">
+				<!-- Step 1: always completed or current → check -->
+				<div class="flex-1 flex flex-col items-center">
+					<div class="w-5 h-5 rounded-full bg-primary flex items-center justify-center">
+						<Check class="w-3 h-3 text-primary-content" />
+					</div>
+				</div>
+				<!-- Line 1→2 -->
+				<div class="flex-1 h-0.5 {phase === 'inicio-anio' ? 'bg-primary' : 'bg-primary/40'}"></div>
+				<!-- Step 2 -->
+				<div class="flex-1 flex flex-col items-center">
 					{#if phase === 'inicio-anio'}
-						<div class="timeline-start text-xs font-semibold text-primary">Inicio de año</div>
+						<!-- Future -->
+						<div class="w-5 h-5 rounded-full border-2 border-primary/40 flex items-center justify-center">
+							<span class="text-primary/40 text-[10px] font-bold">2</span>
+						</div>
 					{:else}
-						<div class="timeline-start text-xs text-base-content/40">Inicio de año</div>
+						<!-- Completed or current -->
+						<div class="w-5 h-5 rounded-full bg-primary flex items-center justify-center">
+							<Check class="w-3 h-3 text-primary-content" />
+						</div>
 					{/if}
-					<div class="timeline-middle">
-						{#if phase === 'inicio-anio'}
-							<div class="w-5 h-5 rounded-full bg-primary flex items-center justify-center">
-								<span class="text-primary-content text-[10px] font-bold">1</span>
-							</div>
-						{:else}
-							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="text-primary h-5 w-5">
-								<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" />
-							</svg>
-						{/if}
-					</div>
-					<hr class="{phase === 'inicio-anio' ? 'bg-primary' : 'bg-primary/40'}" />
-				</li>
-
-				<!-- Medio año -->
-				<li>
-					<hr class="{phase === 'inicio-anio' ? 'bg-base-300' : 'bg-primary/40'}" />
-					<div class="timeline-middle">
-						{#if phase === 'medio-anio'}
-							<div class="w-5 h-5 rounded-full bg-primary flex items-center justify-center">
-								<span class="text-primary-content text-[10px] font-bold">2</span>
-							</div>
-						{:else if phase === 'fin-anio'}
-							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="text-primary h-5 w-5">
-								<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" />
-							</svg>
-						{:else}
-							<div class="w-5 h-5 rounded-full border-2 border-primary/40 flex items-center justify-center">
-								<span class="text-primary/40 text-[10px] font-bold">2</span>
-							</div>
-						{/if}
-					</div>
-					{#if phase === 'medio-anio'}
-						<div class="timeline-end text-xs font-semibold text-primary">Medio año</div>
-					{:else}
-						<div class="timeline-end text-xs text-base-content/40">Medio año</div>
-					{/if}
-					<hr class="{phase === 'fin-anio' ? 'bg-primary/40' : 'bg-base-300'}" />
-				</li>
-
-				<!-- Fin de año -->
-				<li>
-					<hr class="{phase === 'fin-anio' ? 'bg-primary/40' : 'bg-base-300'}" />
-					<div class="timeline-middle">
-						{#if phase === 'fin-anio'}
-							<div class="w-5 h-5 rounded-full bg-primary flex items-center justify-center">
-								<span class="text-primary-content text-[10px] font-bold">3</span>
-							</div>
-						{:else}
-							<div class="w-5 h-5 rounded-full border-2 border-primary/40 flex items-center justify-center">
-								<span class="text-primary/40 text-[10px] font-bold">3</span>
-							</div>
-						{/if}
-					</div>
+				</div>
+				<!-- Line 2→3 -->
+				<div class="flex-1 h-0.5 {phase === 'fin-anio' ? 'bg-primary/40' : 'bg-base-300'}"></div>
+				<!-- Step 3 -->
+				<div class="flex-1 flex flex-col items-center">
 					{#if phase === 'fin-anio'}
-						<div class="timeline-start text-xs font-semibold text-primary">Fin de año</div>
+						<!-- Current -->
+						<div class="w-5 h-5 rounded-full bg-primary flex items-center justify-center">
+							<Check class="w-3 h-3 text-primary-content" />
+						</div>
 					{:else}
-						<div class="timeline-start text-xs text-base-content/40">Fin de año</div>
+						<!-- Future -->
+						<div class="w-5 h-5 rounded-full border-2 border-primary/40 flex items-center justify-center">
+							<span class="text-primary/40 text-[10px] font-bold">3</span>
+						</div>
 					{/if}
-				</li>
-			</ul>
+				</div>
+			</div>
+			<!-- Labels row (all below) -->
+			<div class="flex w-full mt-2">
+				<div class="flex-1 text-center">
+					<span class="text-xs {phase === 'inicio-anio' ? 'font-semibold text-primary' : 'text-base-content/40'}">
+						Inicio de año
+					</span>
+				</div>
+				<div class="flex-1 text-center">
+					<span class="text-xs {phase === 'medio-anio' ? 'font-semibold text-primary' : 'text-base-content/40'}">
+						Medio año
+					</span>
+				</div>
+				<div class="flex-1 text-center">
+					<span class="text-xs {phase === 'fin-anio' ? 'font-semibold text-primary' : 'text-base-content/40'}">
+						Fin de año
+					</span>
+				</div>
+			</div>
 			<p class="mt-3 text-sm text-base-content/70">{phaseGuidance[phase]}</p>
 		</section>
 
