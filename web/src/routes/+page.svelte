@@ -177,63 +177,66 @@
 			<h2 class="text-xs font-semibold text-base-content/50 tracking-wide mb-3">
 				Ciclo {year}
 			</h2>
-			<!-- Timeline: dots + line row -->
-			<div class="flex items-center w-full">
-				<!-- Step 1: always completed or current → check -->
-				<div class="flex-1 flex flex-col items-center">
-					<div class="w-5 h-5 rounded-full bg-primary flex items-center justify-center">
-						<Check class="w-3 h-3 text-primary-content" />
+			<!-- Timeline -->
+			<div class="relative w-full pt-2.5 pb-1">
+				<!-- Line behind dots -->
+				<div class="absolute top-[14px] left-0 right-0 h-0.5 bg-base-300"></div>
+				<div
+					class="absolute top-[14px] left-0 h-0.5 bg-primary transition-all"
+					style="width: {phase === 'inicio-anio' ? '0%' : phase === 'medio-anio' ? '50%' : '100%'}"
+				></div>
+
+				<!-- Dots row -->
+				<div class="relative flex w-full">
+					<!-- Step 1 -->
+					<div class="flex-1 flex justify-center">
+						<div class="w-5 h-5 rounded-full bg-primary flex items-center justify-center relative z-10">
+							<Check class="w-3 h-3 text-primary-content" />
+						</div>
+					</div>
+					<!-- Step 2 -->
+					<div class="flex-1 flex justify-center">
+						{#if phase === 'inicio-anio'}
+							<div class="w-5 h-5 rounded-full border-2 border-primary/40 bg-base-100 flex items-center justify-center relative z-10">
+								<span class="text-primary/40 text-[10px] font-bold">2</span>
+							</div>
+						{:else}
+							<div class="w-5 h-5 rounded-full bg-primary flex items-center justify-center relative z-10">
+								<Check class="w-3 h-3 text-primary-content" />
+							</div>
+						{/if}
+					</div>
+					<!-- Step 3 -->
+					<div class="flex-1 flex justify-center">
+						{#if phase === 'fin-anio'}
+							<div class="w-5 h-5 rounded-full bg-primary flex items-center justify-center relative z-10">
+								<Check class="w-3 h-3 text-primary-content" />
+							</div>
+						{:else}
+							<div class="w-5 h-5 rounded-full border-2 border-primary/40 bg-base-100 flex items-center justify-center relative z-10">
+								<span class="text-primary/40 text-[10px] font-bold">3</span>
+							</div>
+						{/if}
 					</div>
 				</div>
-				<!-- Line 1→2 -->
-				<div class="flex-1 h-0.5 {phase === 'inicio-anio' ? 'bg-primary' : 'bg-primary/40'}"></div>
-				<!-- Step 2 -->
-				<div class="flex-1 flex flex-col items-center">
-					{#if phase === 'inicio-anio'}
-						<!-- Future -->
-						<div class="w-5 h-5 rounded-full border-2 border-primary/40 flex items-center justify-center">
-							<span class="text-primary/40 text-[10px] font-bold">2</span>
-						</div>
-					{:else}
-						<!-- Completed or current -->
-						<div class="w-5 h-5 rounded-full bg-primary flex items-center justify-center">
-							<Check class="w-3 h-3 text-primary-content" />
-						</div>
-					{/if}
-				</div>
-				<!-- Line 2→3 -->
-				<div class="flex-1 h-0.5 {phase === 'fin-anio' ? 'bg-primary/40' : 'bg-base-300'}"></div>
-				<!-- Step 3 -->
-				<div class="flex-1 flex flex-col items-center">
-					{#if phase === 'fin-anio'}
-						<!-- Current -->
-						<div class="w-5 h-5 rounded-full bg-primary flex items-center justify-center">
-							<Check class="w-3 h-3 text-primary-content" />
-						</div>
-					{:else}
-						<!-- Future -->
-						<div class="w-5 h-5 rounded-full border-2 border-primary/40 flex items-center justify-center">
-							<span class="text-primary/40 text-[10px] font-bold">3</span>
-						</div>
-					{/if}
-				</div>
-			</div>
-			<!-- Labels row (all below) -->
-			<div class="flex w-full mt-2">
-				<div class="flex-1 text-center">
-					<span class="text-xs {phase === 'inicio-anio' ? 'font-semibold text-primary' : 'text-base-content/40'}">
-						Inicio de año
-					</span>
-				</div>
-				<div class="flex-1 text-center">
-					<span class="text-xs {phase === 'medio-anio' ? 'font-semibold text-primary' : 'text-base-content/40'}">
-						Medio año
-					</span>
-				</div>
-				<div class="flex-1 text-center">
-					<span class="text-xs {phase === 'fin-anio' ? 'font-semibold text-primary' : 'text-base-content/40'}">
-						Fin de año
-					</span>
+
+				<!-- Labels row -->
+				<div class="relative flex w-full mt-2">
+					<div class="flex-1 text-center">
+						<span class="text-xs {phase === 'inicio-anio' ? 'font-semibold text-primary' : 'text-base-content/40'}">
+							Inicio de año
+						</span>
+					</div>
+					<div class="flex-1 text-center">
+						<span class="text-xs {phase === 'medio-anio' ? 'font-semibold text-primary' : 'text-base-content/40'}">
+							Medio año
+						</span>
+					</div>
+					<div class="flex-1 text-center">
+						<span class="text-xs {phase === 'fin-anio' ? 'font-semibold text-primary' : 'text-base-content/40'}">
+							Fin de año
+						</span>
+					</div>
 				</div>
 			</div>
 			<p class="mt-3 text-sm text-base-content/70">{phaseGuidance[phase]}</p>
