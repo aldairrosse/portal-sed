@@ -1,35 +1,31 @@
 <script lang="ts">
+	import CustomSelect from '$lib/components/ui/CustomSelect.svelte';
 	import type { EmployeeAssignment } from '$lib/types/goal';
 
 	interface Props {
 		assignments: EmployeeAssignment[];
 		selectedEmployeeId: string;
 		onSelect: (employeeId: string) => void;
+		currentUserId: string;
 	}
 
-	let { assignments, selectedEmployeeId, onSelect }: Props = $props();
+	let { assignments, selectedEmployeeId, onSelect, currentUserId }: Props = $props();
 
-	function handleChange(e: Event) {
-		const target = e.target as HTMLSelectElement;
-		onSelect(target.value);
-	}
+	const options = $derived(
+		assignments.map((a) => ({
+			value: a.employeeId,
+			label: a.employeeId === currentUserId ? `${a.employeeName} (yo)` : a.employeeName
+		}))
+	);
 </script>
 
-<div class="form-control">
-	<label class="label" for="assignee-picker">
-		<span class="label-text">Evaluado</span>
-	</label>
-	<select
-		id="assignee-picker"
-		class="select select-bordered select-sm w-full max-w-xs"
+<div class="flex items-center gap-2">
+	<span class="text-xs font-semibold text-base-content/60">Empleado</span>
+	<CustomSelect
+		{options}
 		value={selectedEmployeeId}
-		onchange={handleChange}
-		aria-label="Seleccionar evaluado"
-	>
-		{#each assignments as assignment (assignment.employeeId)}
-			<option value={assignment.employeeId}>
-				{assignment.employeeName}
-			</option>
-		{/each}
-	</select>
+		onChange={onSelect}
+		placeholder="Seleccionar empleado"
+		ariaLabel="Seleccionar empleado"
+	/>
 </div>

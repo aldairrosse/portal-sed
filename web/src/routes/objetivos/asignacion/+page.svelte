@@ -265,8 +265,8 @@
 
 <div class="space-y-6 max-w-full min-w-0">
 	<!-- Page header -->
-	<div class="flex flex-wrap items-start justify-between gap-4">
-		<div class="min-w-0 flex-1">
+	<div>
+		<div>
 			<h1 class="text-2xl font-bold text-base-content">
 				{phase === 'medio-anio' ? 'Avance de metas' : 'Asignación anual'}
 			</h1>
@@ -276,13 +276,13 @@
 					: 'Defina las categorías y metas para el período de evaluación.'}
 			</p>
 		</div>
-		<div class="flex items-center gap-2">
-			<!-- AssigneePicker for profiles with subordinates -->
+		<div class="flex items-center gap-2 mt-3">
 			{#if showAssigneePicker}
 				<AssigneePicker
 					assignments={availableAssignments}
 					selectedEmployeeId={selectedEmployeeId}
 					onSelect={handleAssigneeSelect}
+					currentUserId={currentUserId}
 				/>
 			{/if}
 			{#if phase !== 'medio-anio'}

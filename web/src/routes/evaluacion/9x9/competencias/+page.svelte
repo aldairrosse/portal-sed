@@ -1,18 +1,51 @@
 <script lang="ts">
     import {
         getRoot,
+        getChildren,
         getDescendants,
     } from "$lib/stores/orgHierarchyStore.svelte";
     import { getCompetencyRatings } from "$lib/stores/evaluationStore.svelte";
     import {
         PROFILE_LABELS,
+        type EvaluationProfile,
     } from "$lib/types/evaluation";
+    import { getProfile } from "$lib/stores/devContext.svelte";
     import { ChevronRight } from "@lucide/svelte";
 
+    const PROFILE_NODE_ID: Partial<Record<EvaluationProfile, string>> = {
+        'director-general': 'emp-dg-01',
+        director: 'emp-director-01',
+        jefe: 'emp-jefe-01',
+        rh: 'emp-rh-01',
+    };
+
+    const profile = $derived(getProfile());
+
+    const scopeNodes = $derived(() => {
+        switch (profile) {
+            case 'jefe': {
+                const nodeId = PROFILE_NODE_ID[profile];
+                if (!nodeId) return [];
+                return getChildren(nodeId);
+            }
+            case 'director': {
+                const nodeId = PROFILE_NODE_ID[profile];
+                if (!nodeId) return [];
+                return getDescendants(nodeId);
+            }
+            case 'director-general':
+            case 'rh': {
+                const root = getRoot();
+                return [root, ...getDescendants(root.id)];
+            }
+            default:
+                return [];
+        }
+    });
+
     const employees = $derived(() => {
-        const root = getRoot();
-        const all = [root, ...getDescendants(root.id)];
-        return all.map((node) => {
+        const nodes = scopeNodes();
+        return nodes.map((node) => {
             const ratings = getCompetencyRatings(node.id);
             const selfRatings = ratings.filter((r) => r.selfRating != null);
             const rhRatings = ratings.filter((r) => r.rhRating != null);
@@ -99,11 +132,11 @@
                     <tr>
                         <th class="text-xs font-semibold text-base-content/60">Empleado</th>
                         <th class="text-xs font-semibold text-base-content/60">Perfil</th>
-                        <th class="text-xs font-semibold text-base-content/60"
+                        <th class="text-xs font-semibold text-base-content/60 text-center"
                             >Autoevaluación</th
                         >
-                        <th class="text-xs font-semibold text-base-content/60">RH</th>
-                        <th class="text-xs font-semibold text-base-content/60">Estado</th>
+                        <th class="text-xs font-semibold text-base-content/60 text-center">RH</th>
+                        <th class="text-xs font-semibold text-base-content/60 text-center">Estado</th>
                         <th class="w-10"></th>
                     </tr>
                 </thead>
