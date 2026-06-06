@@ -1,9 +1,12 @@
 <script lang="ts">
 	import EvaluationStatusBadge from './EvaluationStatusBadge.svelte';
+	import ProgressIndicator from '$lib/components/goals/ProgressIndicator.svelte';
 	import { getEvaluationStatus } from '$lib/stores/evaluationStore.svelte';
 	import { getPillars, getCompetenciesByPillar } from '$lib/stores/competencyStore.svelte';
 	import { getNodeById } from '$lib/stores/orgHierarchyStore.svelte';
-	import { PROFILE_LABELS } from '$lib/types/evaluation';
+	import { getGoals, getAssignments } from '$lib/stores/goalsStore.svelte';
+	import { PROFILE_LABELS, PHASE_LABELS, type CyclePhase } from '$lib/types/evaluation';
+	import { getPhase } from '$lib/stores/devContext.svelte';
 	import type { EmployeeAssignment } from '$lib/types/goal';
 	import type { Snippet } from 'svelte';
 
@@ -21,6 +24,8 @@
 
 	const pillars = $derived(getPillars());
 	const allCompetencies = $derived(pillars.flatMap((p) => getCompetenciesByPillar(p.id)));
+	const goals = $derived(getGoals());
+	const assignments = $derived(getAssignments());
 
 	const filteredEmployees = $derived(
 		searchQuery.trim() === ''
@@ -31,6 +36,42 @@
 						getProfileLabel(e.employeeId).toLowerCase().includes(searchQuery.toLowerCase())
 				)
 	);
+
+	const progressMap = $derived(new Map(
+		filteredEmployees.map((emp) => {
+			const empGoals = goals.filter((g) => emp.goalIds.includes(g.id));
+			const totalTarget = empGoals.reduce((sum, g) => sum + g.targetValue, 0);
+			const totalProgress = empGoals.reduce((sum, g) => sum + (g.progress ?? 0), 0);
+			const pct = totalTarget > 0 ? Math.min((totalProgress / totalTarget) * 100, 100) : null;
+			return [emp.employeeId, pct] as const;
+		})
+	));
+
+	const currentPhase = $derived(getPhase());
+
+	const completionSummary = $derived({
+		total: filteredEmployees.length,
+		completed: filteredEmployees.filter((e) => hasCompletedPhase(e.employeeId)).length
+	});
+
+	function hasCompletedPhase(employeeId: string): boolean {
+		const assignment = employees.find((e) => e.employeeId === employeeId);
+		const empGoals = goals.filter((g) => assignment?.goalIds.includes(g.id));
+
+		switch (currentPhase) {
+			case 'inicio-anio':
+				// Completed if has goals assigned
+				return assignment !== undefined && assignment.goalIds.length > 0;
+			case 'medio-anio':
+				// Completed if has updated progress on any goal
+				return empGoals.some((g) => g.progress !== undefined && g.progress > 0);
+			case 'fin-anio':
+				// Completed if all competencies rated and all goals closed
+				return getStatus(employeeId) === 'completed';
+			default:
+				return false;
+		}
+	}
 
 	function getProfileLabel(employeeId: string): string {
 		const node = getNodeById(employeeId);
@@ -46,6 +87,14 @@
 
 <div class="flex flex-col gap-6">
 	{#if !selectedEmployeeId}
+		{#if completionSummary.total > 0}
+			<div class="flex items-center gap-2">
+				<span class="text-xs font-semibold text-base-content/60">{PHASE_LABELS[currentPhase]}:</span>
+				<span class="badge badge-sm {completionSummary.completed / completionSummary.total >= 0.8 ? 'badge-success' : 'badge-warning'}">
+					{completionSummary.completed} de {completionSummary.total} completaron
+				</span>
+			</div>
+		{/if}
 		<!-- Search input -->
 		<div class="w-full max-w-sm">
 			<input
@@ -73,6 +122,7 @@
 					<tr>
 						<th class="text-xs font-semibold text-base-content/60">Empleado</th>
 						<th class="text-xs font-semibold text-base-content/60">Perfil</th>
+						<th class="text-xs font-semibold text-base-content/60">Progreso global</th>
 						<th class="text-xs font-semibold text-base-content/60">Estado</th>
 						<th class="text-xs font-semibold text-base-content/60">Acción</th>
 					</tr>
@@ -94,6 +144,13 @@
 							</td>
 							<td>
 								<span class="text-xs text-base-content/50">{getProfileLabel(emp.employeeId)}</span>
+							</td>
+							<td>
+								{#if progressMap.get(emp.employeeId) !== null}
+									<ProgressIndicator value={progressMap.get(emp.employeeId)!} />
+								{:else}
+									<span class="text-xs text-base-content/30">—</span>
+								{/if}
 							</td>
 							<td>
 								<EvaluationStatusBadge status={getStatus(emp.employeeId)} />

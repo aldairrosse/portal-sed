@@ -146,6 +146,50 @@ context: |
   - Commits o push sin pedido explícito del usuario.
   - Sobre-ingeniería: helpers de una línea, abstracciones prematuras.
 
+testing:
+  strict_tdd: false
+  runner: go-test
+  frameworks:
+    frontend:
+      unit: vitest
+      e2e: playwright
+    backend:
+      unit: gotest
+      integration: testcontainers
+      assert: testify
+  commands:
+    unit_go: go test ./... -v -race -count=1
+    lint_go: golangci-lint run ./...
+    lint_fe: pnpm lint
+    type_check: pnpm check
+    format: pnpm format
+    coverage_go: go test ./... -coverprofile=coverage.out
+    coverage_fe: pnpm vitest run --coverage
+  layers:
+    - layer: Unit (Go)
+      available: true
+      tool: go test + testify
+    - layer: Unit (FE)
+      available: false
+      tool: Vitest (not yet configured)
+    - layer: Integration (API)
+      available: false
+      tool: testcontainers PostgreSQL (planned)
+    - layer: Contract
+      available: false
+      tool: OpenAPI diff (planned)
+    - layer: E2E
+      available: false
+      tool: Playwright (planned)
+  coverage:
+    available: false
+    command: go test -coverprofile=coverage.out
+  quality:
+    linter_fe: eslint
+    linter_go: golangci-lint
+    type_checker: svelte-check
+    formatter: prettier
+
 rules:
   proposal:
     - Incluir sección Non-goals explícita.
@@ -167,3 +211,14 @@ rules:
     - Una spec duradera por bounded context o módulo; nombre kebab-case.
     - Cerrar reglas de negocio abiertas antes de handlers públicos.
     - Incluir checklist security-baseline por change (ver principles/security.md).
+  apply:
+    - Follow existing code patterns
+    tdd: false
+    test_command: go test ./... -v -race -count=1
+    test_command_fe: pnpm vitest run
+  verify:
+    test_command: go test ./... -v -race -count=1
+    build_command: pnpm build
+    coverage_threshold: 0
+  archive:
+    - Warn before merging destructive deltas

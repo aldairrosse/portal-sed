@@ -1,5 +1,6 @@
 name: annual-evaluation-ui
-status: proposed
+status: archived
+archived: 2026-06-05
 created: 2026-06-04
 dependencies:
   - annual-assignment-ui
