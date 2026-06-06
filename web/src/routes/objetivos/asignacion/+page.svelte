@@ -1,6 +1,6 @@
 <script lang="ts">
     import { goto } from "$app/navigation";
-    import { Save, Plus, Library, MessageSquare } from "@lucide/svelte";
+    import { Save, Plus, Library, MessageSquare, Check } from "@lucide/svelte";
     import type {
         Goal,
         GoalCategory,
@@ -36,9 +36,8 @@
     import { getChildren } from "$lib/stores/orgHierarchyStore.svelte";
     import WeightIndicator from "$lib/components/goals/WeightIndicator.svelte";
     import ProgressIndicator from "$lib/components/goals/ProgressIndicator.svelte";
+    import { validateCategory, validateGoal, UNIT_OPTIONS } from "$lib/components/goals/goalValidation";
     import CategoryCard from "$lib/components/goals/CategoryCard.svelte";
-    import CategoryFormModal from "$lib/components/goals/CategoryFormModal.svelte";
-    import GoalFormModal from "$lib/components/goals/GoalFormModal.svelte";
     import ReadOnlyBanner from "$lib/components/goals/ReadOnlyBanner.svelte";
     import AssigneePicker from "$lib/components/goals/AssigneePicker.svelte";
     import RequestChangeModal from "$lib/components/goals/RequestChangeModal.svelte";
@@ -116,13 +115,14 @@
 
     // ─── Existing page state ─────────────────────────────────────────────────
 
-    let showCategoryForm = $state(false);
-    let showGoalForm = $state(false);
-    let editingCategory: GoalCategory | null = $state(null);
-    let editingGoal: Goal | null = $state(null);
-    let goalFormCategoryId = $state("");
     let successMsg = $state("");
     let errorMsg = $state("");
+    let creatingCategory = $state(false);
+    let isAnyInlineEditing = $state(false);
+    let newCatName = $state('');
+    let newCatDesc = $state('');
+    let newCatWeight = $state(0);
+    let newCatError = $state('');
 
     const categories = $derived(getCategories());
     const goals = $derived(getGoals());
@@ -160,101 +160,43 @@
         selectedEmployeeId = employeeId;
     }
 
-    function handleSaveCategory(data: {
-        name: string;
-        description: string;
-        weight: number;
-    }) {
-        if (editingCategory) {
-            updateCategory(editingCategory.id, data);
+    function handleSaveCategory(data: { id?: string; name: string; description: string; weight: number }) {
+        if (data.id) {
+            updateCategory(data.id, { name: data.name, description: data.description, weight: data.weight });
         } else {
-            const newCat: GoalCategory = {
-                id: `cat-${Date.now()}`,
-                name: data.name,
-                description: data.description,
-                weight: data.weight,
-            };
+            const newCat: GoalCategory = { id: `cat-${Date.now()}`, name: data.name, description: data.description, weight: data.weight };
             addCategory(newCat);
         }
-        showCategoryForm = false;
-        editingCategory = null;
-    }
-
-    function handleEditCategory(cat: GoalCategory) {
-        editingCategory = cat;
-        showCategoryForm = true;
+        creatingCategory = false;
+        isAnyInlineEditing = false;
+        successMsg = data.id ? 'Categoría actualizada correctamente.' : 'Categoría creada correctamente.';
+        setTimeout(() => (successMsg = ""), 3000);
     }
 
     function handleDeleteCategory(catId: string) {
         deleteCategory(catId);
     }
 
-    function handleAddGoal(catId: string) {
-        goalFormCategoryId = catId;
-        editingGoal = null;
-        showGoalForm = true;
-    }
-
-    function handleEditGoal(goal: Goal) {
-        goalFormCategoryId = goal.categoryId;
-        editingGoal = goal;
-        showGoalForm = true;
-    }
-
     function handleDeleteGoal(goalId: string) {
         deleteGoal(goalId);
     }
 
-    function handleSaveGoal(data: {
-        name: string;
-        description: string;
-        unit: GoalUnit;
-        weight: number;
-        targetValue: number;
-        linkedKpiIds: string[];
-    }) {
-        if (editingGoal) {
-            updateGoal(editingGoal.id, {
-                name: data.name,
-                description: data.description,
-                unit: data.unit,
-                weight: data.weight,
-                targetValue: data.targetValue,
-            });
-            // Sync KPI links
-            const currentLinked = getKpisForGoal(editingGoal.id).map(
-                (k) => k.id,
-            );
-            const toAdd = data.linkedKpiIds.filter(
-                (id) => !currentLinked.includes(id),
-            );
-            const toRemove = currentLinked.filter(
-                (id) => !data.linkedKpiIds.includes(id),
-            );
-            for (const kpiId of toAdd) {
-                linkKpiToGoal(editingGoal.id, kpiId);
-            }
-            for (const kpiId of toRemove) {
-                unlinkKpiFromGoal(editingGoal.id, kpiId);
-            }
+    function handleSaveGoal(data: { id?: string; categoryId: string; name: string; description: string; unit: GoalUnit; weight: number; targetValue: number; linkedKpiIds: string[] }) {
+        if (data.id) {
+            updateGoal(data.id, { name: data.name, description: data.description, unit: data.unit, weight: data.weight, targetValue: data.targetValue });
+            const currentLinked = getKpisForGoal(data.id).map(k => k.id);
+            const toAdd = data.linkedKpiIds.filter(id => !currentLinked.includes(id));
+            const toRemove = currentLinked.filter(id => !data.linkedKpiIds.includes(id));
+            for (const kpiId of toAdd) linkKpiToGoal(data.id, kpiId);
+            for (const kpiId of toRemove) unlinkKpiFromGoal(data.id, kpiId);
         } else {
-            const newGoal: Goal = {
-                id: `goal-${Date.now()}`,
-                name: data.name,
-                description: data.description,
-                categoryId: goalFormCategoryId,
-                weight: data.weight,
-                unit: data.unit,
-                targetValue: data.targetValue,
-            };
+            const newGoal: Goal = { id: `goal-${Date.now()}`, name: data.name, description: data.description, categoryId: data.categoryId, weight: data.weight, unit: data.unit, targetValue: data.targetValue };
             addGoal(newGoal);
-            // Link selected KPIs
-            for (const kpiId of data.linkedKpiIds) {
-                linkKpiToGoal(newGoal.id, kpiId);
-            }
+            for (const kpiId of data.linkedKpiIds) linkKpiToGoal(newGoal.id, kpiId);
         }
-        showGoalForm = false;
-        editingGoal = null;
+        isAnyInlineEditing = false;
+        successMsg = data.id ? 'Meta actualizada correctamente.' : 'Meta creada correctamente.';
+        setTimeout(() => (successMsg = ""), 3000);
     }
 
     function handleSaveAssignment() {
@@ -411,10 +353,9 @@
                     category={cat}
                     goals={catGoals}
                     {getKpisForGoal}
-                    onEditCategory={handleEditCategory}
+                    onSaveCategory={handleSaveCategory}
                     onDeleteCategory={handleDeleteCategory}
-                    onAddGoal={handleAddGoal}
-                    onEditGoal={handleEditGoal}
+                    onSaveGoal={handleSaveGoal}
                     onDeleteGoal={handleDeleteGoal}
                     {mode}
                     onRequestChangeCategory={handleRequestChangeCategory}
@@ -425,6 +366,8 @@
                     canEditCategory={permissions.canEditWeight}
                     canEditProgress={permissions.canEditProgress}
                     canComment={permissions.canComment}
+                    {allKpis}
+                    bind:isAnyInlineEditing
                     onUpdateProgress={handleUpdateProgress}
                     onOpenComments={openComments}
                 />
@@ -437,45 +380,47 @@
         </div>
     {/if}
 
-    <!-- Nueva categoría button (editor only, not in avance or cierre mode) -->
+    <!-- Nueva categoría inline form (editor only, not in avance or cierre mode) -->
     {#if mode === "editor" && phase !== "medio-anio" && phase !== "fin-anio"}
-        <div class="flex justify-center pt-2">
-            <button
-                class="btn btn-outline btn-primary"
-                onclick={() => {
-                    editingCategory = null;
-                    showCategoryForm = true;
-                }}
-            >
-                <Plus class="w-4 h-4" />
-                Nueva categoría
-            </button>
+        <div class="pt-2">
+            {#if creatingCategory}
+                <div class="w-full border border-base-300 rounded-lg p-4 bg-base-200/50">
+                    <form onsubmit={(e) => { e.preventDefault(); const err = validateCategory({ name: newCatName, description: newCatDesc, weight: newCatWeight }); if (err) { newCatError = err; return; } handleSaveCategory({ name: newCatName, description: newCatDesc, weight: newCatWeight }); }}>
+                        {#if newCatError}<div class="alert alert-error text-sm mb-3" role="alert"><span>{newCatError}</span></div>{/if}
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                            <div class="form-control">
+                                <label class="label" for="new-cat-name"><span class="label-text text-xs">Nombre</span></label>
+                                <input id="new-cat-name" type="text" class="input input-bordered input-sm w-full" bind:value={newCatName} placeholder="Nombre de la categoría" required />
+                            </div>
+                            <div class="form-control">
+                                <label class="label" for="new-cat-desc"><span class="label-text text-xs">Descripción</span></label>
+                                <textarea id="new-cat-desc" class="textarea textarea-bordered textarea-sm w-full" rows={1} bind:value={newCatDesc} placeholder="Descripción" required></textarea>
+                            </div>
+                            <div class="form-control">
+                                <label class="label" for="new-cat-weight"><span class="label-text text-xs">Peso (%)</span></label>
+                                <input id="new-cat-weight" type="number" class="input input-bordered input-sm w-full" bind:value={newCatWeight} min={0} max={100} step={0.1} placeholder="0" required />
+                            </div>
+                        </div>
+                        <div class="flex justify-end gap-2 mt-3">
+                            <button type="button" class="btn btn-ghost btn-sm" onclick={() => { creatingCategory = false; isAnyInlineEditing = false; }}>
+                                Cancelar
+                            </button>
+                            <button type="submit" class="btn btn-primary btn-sm">
+                                <Check class="w-4 h-4" /> Guardar categoría
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            {:else}
+                <div class="flex justify-center">
+                    <button class="btn btn-outline btn-primary" disabled={isAnyInlineEditing} onclick={() => { creatingCategory = true; isAnyInlineEditing = true; newCatName = ''; newCatDesc = ''; newCatWeight = 0; newCatError = ''; }}>
+                        <Plus class="w-4 h-4" /> Nueva categoría
+                    </button>
+                </div>
+            {/if}
         </div>
     {/if}
 </div>
-
-<!-- Modals -->
-<CategoryFormModal
-    open={showCategoryForm}
-    category={editingCategory}
-    onSave={handleSaveCategory}
-    onCancel={() => {
-        showCategoryForm = false;
-        editingCategory = null;
-    }}
-/>
-
-<GoalFormModal
-    open={showGoalForm}
-    goal={editingGoal}
-    categoryId={goalFormCategoryId}
-    {allKpis}
-    onSave={handleSaveGoal}
-    onCancel={() => {
-        showGoalForm = false;
-        editingGoal = null;
-    }}
-/>
 
 {#if targetAssignment}
     <RequestChangeModal
