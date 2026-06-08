@@ -108,7 +108,7 @@ paths:
     get:
       operationId: exportOrgTree
       summary: Export organization tree
-      description: Streams the entire org tree as a JSON array (Transfer-Encoding: chunked).
+      description: "Streams the entire org tree as a JSON array (Transfer-Encoding: chunked)."
       parameters:
         - name: treeId
           in: path
