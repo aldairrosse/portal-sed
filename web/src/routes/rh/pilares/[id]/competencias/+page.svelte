@@ -10,7 +10,6 @@
 	} from '$lib/stores/competencyStore.svelte';
 	import type { Competency } from '$lib/types/competency';
 	import CompetencyTable from '$lib/components/competency/CompetencyTable.svelte';
-	import CompetencyFormModal from '$lib/components/competency/CompetencyFormModal.svelte';
 	import ConfirmDeleteModal from '$lib/components/competency/ConfirmDeleteModal.svelte';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
 	import PageSkeleton from '$lib/components/ui/PageSkeleton.svelte';
@@ -21,11 +20,11 @@
 	const competencies = $derived(getCompetenciesByPillar(pillarId));
 
 	let loading = $state(true);
-	let showFormModal = $state(false);
-	let editingCompetency: Competency | null = $state(null);
+	let editingId = $state<string | null>(null);
 	let deletingCompetency: Competency | null = $state(null);
 	let successMsg = $state('');
 
+	let isAnyInlineEditing = $derived(editingId !== null);
 	let compLen = $derived(competencies.length);
 
 	$effect(() => {
@@ -45,35 +44,23 @@
 	}
 
 	function handleNew() {
-		editingCompetency = null;
-		showFormModal = true;
+		editingId = '__new__';
 	}
 
-	function handleEdit(competency: Competency) {
-		editingCompetency = competency;
-		showFormModal = true;
-	}
-
-	function handleFormSave(data: { name: string; description: string }) {
-		if (editingCompetency) {
-			updateCompetency(editingCompetency.id, data);
-			successMsg = `Competencia "{data.name}" actualizada correctamente.`;
+	function handleSave(data: { name: string; description: string; id?: string }) {
+		if (data.id) {
+			updateCompetency(data.id, { name: data.name, description: data.description });
+			successMsg = `Competencia "${data.name}" actualizada correctamente.`;
 		} else {
 			const newComp: Competency = {
 				id: generateId(),
 				pillarId,
-				...data
+				name: data.name,
+				description: data.description
 			};
 			addCompetency(newComp);
-			successMsg = `Competencia "{data.name}" creada correctamente.`;
+			successMsg = `Competencia "${data.name}" creada correctamente.`;
 		}
-		showFormModal = false;
-		editingCompetency = null;
-	}
-
-	function handleFormCancel() {
-		showFormModal = false;
-		editingCompetency = null;
 	}
 
 	function handleDelete(competency: Competency) {
@@ -110,7 +97,7 @@
 				<h1 class="text-2xl font-bold text-base-content">{pillar.name}</h1>
 				<p class="text-base-content/50 text-sm mt-1">{pillar.description}</p>
 			</div>
-			<button class="btn btn-primary btn-sm" onclick={handleNew}>
+			<button class="btn btn-primary btn-sm" onclick={handleNew} disabled={isAnyInlineEditing}>
 				<Plus class="w-4 h-4" />
 				Nueva competencia
 			</button>
@@ -127,7 +114,7 @@
 
 	{#if loading}
 		<PageSkeleton rows={3} />
-	{:else if pillar && compLen === 0}
+	{:else if pillar && compLen === 0 && editingId !== '__new__'}
 		<EmptyState
 			title="Sin competencias"
 			message="Este pilar aún no tiene competencias definidas."
@@ -135,21 +122,14 @@
 	{:else if pillar}
 		<CompetencyTable
 			competencies={competencies}
+			{pillarId}
 			pillarName={pillar.name}
-			onEdit={handleEdit}
+			bind:editingId
+			onSave={handleSave}
 			onDelete={handleDelete}
-			onAdd={handleNew}
 		/>
 	{/if}
 </div>
-
-<CompetencyFormModal
-	open={showFormModal}
-	competency={editingCompetency}
-	{pillarId}
-	onSave={handleFormSave}
-	onCancel={handleFormCancel}
-/>
 
 {#if deletingCompetency}
 	<ConfirmDeleteModal

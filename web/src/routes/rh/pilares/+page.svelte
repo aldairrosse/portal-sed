@@ -3,18 +3,17 @@
 	import { getPillars, addPillar, updatePillar, deletePillar } from '$lib/stores/competencyStore.svelte';
 	import type { Pillar } from '$lib/types/competency';
 	import PillarTable from '$lib/components/competency/PillarTable.svelte';
-	import PillarFormModal from '$lib/components/competency/PillarFormModal.svelte';
 	import ConfirmDeleteModal from '$lib/components/competency/ConfirmDeleteModal.svelte';
 	import PageSkeleton from '$lib/components/ui/PageSkeleton.svelte';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
 
 	const pillars = $derived(getPillars());
 	let loading = $state(true);
-	let showFormModal = $state(false);
-	let editingPillar: Pillar | null = $state(null);
+	let editingId = $state<string | null>(null);
 	let deletingPillar: Pillar | null = $state(null);
 	let successMsg = $state('');
 
+	let isAnyInlineEditing = $derived(editingId !== null);
 	let pillarlen = $derived(pillars.length);
 
 	// Simulate initial load
@@ -35,34 +34,18 @@
 	}
 
 	function handleNew() {
-		editingPillar = null;
-		showFormModal = true;
+		editingId = '__new__';
 	}
 
-	function handleEdit(pillar: Pillar) {
-		editingPillar = pillar;
-		showFormModal = true;
-	}
-
-	function handleFormSave(data: { name: string; description: string }) {
-		if (editingPillar) {
-			updatePillar(editingPillar.id, data);
-			successMsg = `Pilar "{data.name}" actualizado correctamente.`;
+	function handlePillarSave(data: { name: string; description: string; id?: string }) {
+		if (data.id) {
+			updatePillar(data.id, { name: data.name, description: data.description });
+			successMsg = `Pilar "${data.name}" actualizado correctamente.`;
 		} else {
-			const newPillar: Pillar = {
-				id: generateId(),
-				...data
-			};
+			const newPillar: Pillar = { id: generateId(), name: data.name, description: data.description };
 			addPillar(newPillar);
-			successMsg = `Pilar "{data.name}" creado correctamente.`;
+			successMsg = `Pilar "${data.name}" creado correctamente.`;
 		}
-		showFormModal = false;
-		editingPillar = null;
-	}
-
-	function handleFormCancel() {
-		showFormModal = false;
-		editingPillar = null;
 	}
 
 	function handleDelete(pillar: Pillar) {
@@ -94,7 +77,7 @@
 				Gestiona los pilares del marco de competencias.
 			</p>
 		</div>
-		<button class="btn btn-primary btn-sm" onclick={handleNew}>
+		<button class="btn btn-primary btn-sm" onclick={handleNew} disabled={isAnyInlineEditing}>
 			<Plus class="w-4 h-4" />
 			Nuevo pilar
 		</button>
@@ -108,22 +91,15 @@
 
 	{#if loading}
 		<PageSkeleton rows={3} />
-	{:else if pillarlen === 0}
+	{:else if pillarlen === 0 && editingId !== '__new__'}
 		<EmptyState
 			title="Sin pilares"
 			message="Aún no hay pilares creados. Crea el primer pilar para comenzar."
 		/>
 	{:else}
-		<PillarTable {pillars} onEdit={handleEdit} onDelete={handleDelete} />
+		<PillarTable {pillars} bind:editingId onSave={handlePillarSave} onDelete={handleDelete} />
 	{/if}
 </div>
-
-<PillarFormModal
-	open={showFormModal}
-	pillar={editingPillar}
-	onSave={handleFormSave}
-	onCancel={handleFormCancel}
-/>
 
 {#if deletingPillar}
 	<ConfirmDeleteModal

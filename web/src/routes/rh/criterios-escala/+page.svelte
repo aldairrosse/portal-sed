@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { Edit3 } from '@lucide/svelte';
 	import ScaleCriteriaMatrix from '$lib/components/competency/ScaleCriteriaMatrix.svelte';
-	import ScaleCriterionModal from '$lib/components/competency/ScaleCriterionModal.svelte';
 	import LevelDefinitionModal from '$lib/components/competency/LevelDefinitionModal.svelte';
 	import PageSkeleton from '$lib/components/ui/PageSkeleton.svelte';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
@@ -11,13 +10,9 @@
 	const competencies = $derived(getCompetencies());
 
 	let loading = $state(true);
-	let showModal = $state(false);
 	let showLevelDefModal = $state(false);
-	let modalCompetencyId = $state('');
-	let modalPillarId = $state('');
-	let modalCompetencyName = $state('');
-	let modalPillarName = $state('');
 	let successMsg = $state('');
+	let isAnyInlineEditing = $state(false);
 
 	let pillarCount = $derived(pillars.length);
 	let competencyCount = $derived(competencies.length);
@@ -33,28 +28,6 @@
 			return () => clearTimeout(t);
 		}
 	});
-
-	function handleEditCell(
-		competencyId: string,
-		pillarId: string,
-		competencyName: string,
-		pillarName: string
-	) {
-		modalCompetencyId = competencyId;
-		modalPillarId = pillarId;
-		modalCompetencyName = competencyName;
-		modalPillarName = pillarName;
-		showModal = true;
-	}
-
-	function handleModalSave() {
-		showModal = false;
-		successMsg = 'Criterios de escala actualizados correctamente.';
-	}
-
-	function handleModalCancel() {
-		showModal = false;
-	}
 </script>
 
 <svelte:head>
@@ -71,6 +44,7 @@
 		</div>
 		<button
 			class="btn btn-ghost btn-sm"
+			disabled={isAnyInlineEditing}
 			onclick={() => (showLevelDefModal = true)}
 			aria-label="Editar definiciones de nivel"
 		>
@@ -93,18 +67,8 @@
 			message="Se requieren pilares y competencias para mostrar la matriz de criterios de escala."
 		/>
 	{:else}
-		<ScaleCriteriaMatrix onEditCell={handleEditCell} />
+		<ScaleCriteriaMatrix bind:isAnyInlineEditing />
 	{/if}
 </div>
-
-<ScaleCriterionModal
-	open={showModal}
-	competencyId={modalCompetencyId}
-	pillarId={modalPillarId}
-	competencyName={modalCompetencyName}
-	pillarName={modalPillarName}
-	onSave={handleModalSave}
-	onCancel={handleModalCancel}
-/>
 
 <LevelDefinitionModal open={showLevelDefModal} onClose={() => (showLevelDefModal = false)} />
