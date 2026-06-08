@@ -42,6 +42,7 @@
     import AssigneePicker from "$lib/components/goals/AssigneePicker.svelte";
     import RequestChangeModal from "$lib/components/goals/RequestChangeModal.svelte";
     import CommentPopover from "$lib/components/goals/GoalCommentModal.svelte";
+    import { toCsv } from "$lib/utils/export";
 
     // ─── Mode detection ──────────────────────────────────────────────────────
 
@@ -221,6 +222,28 @@
     function handleUpdateProgress(goalId: string, progress: number) {
         updateGoalProgress(goalId, progress);
     }
+
+    function handleExportCsv() {
+        const rows: Record<string, string | number | null>[] = [];
+        for (const cat of categories) {
+            const catGoals = getGoalsByCategory(cat.id);
+            for (const goal of catGoals) {
+                const kpis = getKpisForGoal(goal.id);
+                const kpiNames = kpis.map((k) => k.name).join(", ");
+                rows.push({
+                    Categoría: cat.name,
+                    "Peso categoría %": cat.weight,
+                    Meta: goal.name,
+                    Descripción: goal.description,
+                    Unidad: goal.unit,
+                    "Peso meta %": goal.weight,
+                    "Valor objetivo": goal.targetValue,
+                    KPIs: kpiNames || "",
+                });
+            }
+        }
+        toCsv(rows, "asignacion-anual.csv");
+    }
 </script>
 
 <svelte:head>
@@ -261,6 +284,13 @@
                     Biblioteca de KPI
                 </button>
             {/if}
+            <button
+                class="btn btn-outline btn-sm"
+                disabled={categories.length === 0}
+                onclick={handleExportCsv}
+            >
+                Exportar CSV
+            </button>
             {#if mode === "editor" && phase !== "medio-anio" && phase !== "fin-anio"}
                 <button
                     class="btn btn-primary btn-sm ml-auto"

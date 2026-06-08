@@ -9,6 +9,7 @@
 	import { getPhase } from '$lib/stores/devContext.svelte';
 	import type { EmployeeAssignment } from '$lib/types/goal';
 	import type { Snippet } from 'svelte';
+	import { toCsv } from '$lib/utils/export';
 
 	interface Props {
 		employees: EmployeeAssignment[];
@@ -83,6 +84,27 @@
 		const assignment = employees.find((e) => e.employeeId === employeeId);
 		return getEvaluationStatus(employeeId, allCompetencies.length, assignment?.goalIds ?? []);
 	}
+
+	const statusLabelMap: Record<string, string> = {
+		pending: 'Pendiente',
+		'in-progress': 'En progreso',
+		completed: 'Completada'
+	};
+
+	function handleExportCsv() {
+		toCsv(
+			filteredEmployees.map((emp) => ({
+				Empleado: emp.employeeName,
+				Perfil: getProfileLabel(emp.employeeId),
+				'Progreso global %':
+					progressMap.get(emp.employeeId) !== null
+						? `${Math.round(progressMap.get(emp.employeeId)!)}%`
+						: '',
+				Estado: statusLabelMap[getStatus(emp.employeeId)]
+			})),
+			'evaluaciones.csv'
+		);
+	}
 </script>
 
 <div class="flex flex-col gap-6">
@@ -95,16 +117,25 @@
 				</span>
 			</div>
 		{/if}
-		<!-- Search input -->
-		<div class="w-full max-w-sm">
-			<input
-				id="employee-search"
-				type="text"
-				class="input input-bordered input-sm w-full"
-				placeholder="Buscar por nombre o perfil..."
-				bind:value={searchQuery}
-				aria-label="Buscar empleado"
-			/>
+		<!-- Search input + export -->
+		<div class="flex items-center gap-2">
+			<div class="w-full max-w-sm">
+				<input
+					id="employee-search"
+					type="text"
+					class="input input-bordered input-sm w-full"
+					placeholder="Buscar por nombre o perfil..."
+					bind:value={searchQuery}
+					aria-label="Buscar empleado"
+				/>
+			</div>
+			<button
+				class="btn btn-outline btn-sm"
+				disabled={filteredEmployees.length === 0}
+				onclick={handleExportCsv}
+			>
+				Exportar CSV
+			</button>
 		</div>
 	{/if}
 
