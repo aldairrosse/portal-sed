@@ -1,5 +1,5 @@
 ﻿<script lang="ts">
-	import { Check, Plus, Trash2, Star } from '@lucide/svelte';
+	import { Check, Plus, Trash2, Star, X, Save } from '@lucide/svelte';
 	import {
 		getPillars,
 		getCompetencies,
@@ -32,6 +32,7 @@
 	let editCellLevel = $state<number>(1);
 	let tempIdCounter = $state(0);
 	let errorMsg = $state('');
+	let canAdd = $derived(editEntries.length === 0 || editEntries.every((e) => e.description.trim().length > 0));
 
 	$effect(() => {
 		isAnyInlineEditing = editingCellKey !== null;
@@ -173,46 +174,41 @@
 								{@const isEditing = editingCellKey === cellKey}
 								<td class="p-1.5 align-top">
 									{#if isEditing}
-										<div class="border border-base-300 rounded-lg p-4 bg-base-200/50">
-											{#if errorMsg}
-												<div class="alert alert-error text-sm mb-3" role="alert"><span>{errorMsg}</span></div>
-											{/if}
+										{#if errorMsg}
+											<div class="alert alert-error text-sm mb-2" role="alert"><span>{errorMsg}</span></div>
+										{/if}
 
+										<div class="grid gap-1">
 											{#each editEntries as entry (entry.localId)}
-												<div class="form-control">
-													<label class="label" for="criterion-{cellKey}-{entry.localId}">
-														<span class="label-text text-xs">Criterio</span>
-													</label>
-													<div class="flex items-start gap-2">
-														<textarea
-															id="criterion-{cellKey}-{entry.localId}"
-															class="textarea textarea-bordered textarea-sm w-full"
-															rows={2}
-															bind:value={entry.description}
-															required
-														></textarea>
-														<button
-															type="button"
-															class="btn btn-ghost btn-square btn-xs text-error flex-shrink-0 mt-1"
-															onclick={() => removeEntry(entry.localId)}
-															aria-label="Eliminar criterio"
-														>
-															<Trash2 class="w-4 h-4" />
-														</button>
-													</div>
+												<div class="grid grid-cols-[1fr_auto] gap-1">
+													<textarea
+														class="textarea textarea-bordered textarea-sm w-full"
+														rows={2}
+														bind:value={entry.description}
+														required
+													></textarea>
+													<button
+														type="button"
+														class="btn btn-ghost btn-square btn-xs text-error h-full"
+														onclick={() => removeEntry(entry.localId)}
+														aria-label="Eliminar criterio"
+													>
+														<Trash2 class="w-4 h-4" />
+													</button>
 												</div>
 											{/each}
+										</div>
 
-											<button type="button" class="btn btn-ghost btn-xs mt-2 text-primary" onclick={addEntry}>
-												<Plus class="w-3 h-3" /> Agregar criterio
+										<div class="grid grid-cols-3 gap-1 mt-1">
+											<button type="button" class="btn btn-ghost btn-xs" onclick={addEntry} disabled={!canAdd} title="Agregar criterio">
+												<Plus class="w-3 h-3" />
 											</button>
-
-											<div class="flex justify-end gap-2 mt-3">
-												<button class="btn btn-ghost btn-sm" onclick={cancelEditing}>Cancelar</button>
-												<button class="btn btn-primary btn-sm" onclick={saveEditing}>
-													<Check class="w-4 h-4" /> Guardar
-												</button>
-											</div>
+											<button class="btn btn-ghost btn-xs" onclick={cancelEditing} title="Cancelar edición">
+												<X class="w-3 h-3" />
+											</button>
+											<button class="btn btn-primary btn-xs" onclick={saveEditing} title="Guardar criterios">
+												<Save class="w-3 h-3" />
+											</button>
 										</div>
 									{:else}
 										<button
