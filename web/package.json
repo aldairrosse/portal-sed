@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "lint": "eslint .",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "gen:api": "openapi-typescript ../api/openapi/auth.yaml -o src/lib/api/schemas/auth.d.ts && openapi-typescript ../api/openapi/cycle.yaml -o src/lib/api/schemas/cycle.d.ts && openapi-typescript ../api/openapi/goals-api.yaml -o src/lib/api/schemas/goals.d.ts && openapi-typescript ../api/openapi/evaluations-and-9x9.yaml -o src/lib/api/schemas/evaluations.d.ts && openapi-typescript ../api/openapi/competency-framework-api.yaml -o src/lib/api/schemas/competency.d.ts && openapi-typescript ../api/openapi/org-hierarchy.yaml -o src/lib/api/schemas/org-hierarchy.d.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
@@ -22,6 +23,7 @@
     "eslint": "^10.4.1",
     "eslint-plugin-svelte": "^3.19.0",
     "globals": "^17.6.0",
+    "openapi-typescript": "^7.6.0",
     "postcss": "^8.5.3",
     "svelte": "^5.28.2",
     "svelte-check": "^4.2.1",
@@ -32,6 +34,8 @@
   },
   "dependencies": {
     "@lucide/svelte": "^1.17.0",
-    "@tailwindcss/vite": "^4.3.0"
+    "@tailwindcss/vite": "^4.3.0",
+    "chart.js": "^4.5.1",
+    "openapi-fetch": "^0.12.0"
   }
 }
