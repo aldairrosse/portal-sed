@@ -74,7 +74,8 @@
 
 <div class="flex flex-col gap-6">
 	<!-- tabs-box -->
-	<div class="tabs tabs-box" role="tablist" aria-label="Selector de vista" onkeydown={handleTabKeydown} tabindex="0">
+	<div class="flex justify-end">
+		<div class="tabs" role="tablist" aria-label="Selector de vista" onkeydown={handleTabKeydown} tabindex="0">
 		<button role="tab"
 			id="view-table"
 			class="tab"
@@ -99,6 +100,7 @@
 			Gráfica radar
 		</button>
 	</div>
+</div>
 
 	{#if activeTab === 'table'}
 		<div id="panel-table" role="tabpanel" aria-labelledby="view-table">

@@ -9,6 +9,7 @@
 	import { getPhase } from '$lib/stores/devContext.svelte';
 	import type { EmployeeAssignment } from '$lib/types/goal';
 	import type { Snippet } from 'svelte';
+	import { FileDown } from '@lucide/svelte';
 	import { toCsv } from '$lib/utils/export';
 
 	interface Props {
@@ -134,6 +135,7 @@
 				disabled={filteredEmployees.length === 0}
 				onclick={handleExportCsv}
 			>
+				<FileDown class="w-4 h-4" />
 				Exportar CSV
 			</button>
 		</div>

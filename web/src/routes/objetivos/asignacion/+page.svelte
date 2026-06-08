@@ -1,6 +1,6 @@
 <script lang="ts">
     import { goto } from "$app/navigation";
-    import { Save, Plus, Library, MessageSquare, Check } from "@lucide/svelte";
+    import { Save, Plus, Library, MessageSquare, Check, FileDown } from "@lucide/svelte";
     import type {
         Goal,
         GoalCategory,
@@ -289,6 +289,7 @@
                 disabled={categories.length === 0}
                 onclick={handleExportCsv}
             >
+                <FileDown class="w-4 h-4" />
                 Exportar CSV
             </button>
             {#if mode === "editor" && phase !== "medio-anio" && phase !== "fin-anio"}
