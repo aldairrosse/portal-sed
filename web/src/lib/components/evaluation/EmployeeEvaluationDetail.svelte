@@ -26,6 +26,7 @@
 		getKpisForGoal,
 		getAssignmentByEmployee,
 	} from '$lib/stores/goalsStore.svelte';
+	import { Star } from '@lucide/svelte';
 
 	interface Props {
 		employeeId: string;
@@ -242,9 +243,15 @@
 
 				<!-- Tab: Competencias -->
 				{#if tab === 'competencias'}
-					<h3 class="text-lg font-semibold text-base-content mb-4">
-						{viewerMode === 'self' ? 'Mis competencias' : 'Competencias'}
-					</h3>
+					<div class="flex items-center justify-between mb-4">
+						<h3 class="text-lg font-semibold text-base-content">
+							{viewerMode === 'self' ? 'Mis competencias' : 'Competencias'}
+						</h3>
+						<a href="/evaluacion/9x9/competencias/{employeeId}" class="btn btn-outline btn-sm gap-1.5">
+							<Star class="w-4 h-4" />
+							Gráfico
+						</a>
+					</div>
 					{#if pillars.length === 0}
 						<p class="text-sm text-base-content/30 italic">No hay pilares configurados.</p>
 					{:else}

@@ -5,7 +5,7 @@
 	import { PROFILE_LABELS, type EvaluationProfile } from '$lib/types/evaluation';
 	import type { OrgNode } from '$lib/types/org-hierarchy';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
-	import { MapPin, Target, ArrowUpRight, Briefcase, Users } from '@lucide/svelte';
+	import { MapPin, Target, ArrowUpRight, Briefcase, Network, Users } from '@lucide/svelte';
 
 	// ─── Profile guard ─────────────────────────────────────────────────────
 
@@ -89,7 +89,10 @@
 	<!-- Header -->
 	<div class="flex items-center justify-between">
 		<div>
-			<h1 class="text-2xl font-bold text-base-content">Jerarquía organizacional</h1>
+			<h1 class="text-2xl font-bold text-base-content flex items-center gap-2">
+				<Network class="w-6 h-6" />
+				Jerarquía organizacional
+			</h1>
 			<p class="text-sm text-base-content/50 mt-1">Explora la estructura de tu organización</p>
 		</div>
 		<a href="/evaluacion/9x9" class="btn btn-ghost btn-sm gap-1.5">

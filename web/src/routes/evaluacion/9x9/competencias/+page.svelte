@@ -10,7 +10,7 @@
         type EvaluationProfile,
     } from "$lib/types/evaluation";
     import { getProfile } from "$lib/stores/devContext.svelte";
-    import { ChevronRight } from "@lucide/svelte";
+    import { ChevronRight, Star } from "@lucide/svelte";
 
     const PROFILE_NODE_ID: Partial<Record<EvaluationProfile, string>> = {
         'director-general': 'emp-dg-01',
@@ -108,15 +108,16 @@
 </script>
 
 <svelte:head>
-    <title>Competencias — SED</title>
+    <title>Resultados de competencias — SED</title>
 </svelte:head>
 
 <div class="flex flex-col gap-6">
     <!-- Header -->
     <div class="flex items-center gap-3">
         <div>
-            <h1 class="text-2xl font-bold text-base-content">
-                Red de competencias
+            <h1 class="text-2xl font-bold text-base-content flex items-center gap-2">
+                <Star class="w-6 h-6" />
+                Resultados de competencias
             </h1>
             <p class="text-sm text-base-content/50">
                 Vista general de competencias por empleado

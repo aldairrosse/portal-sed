@@ -4,6 +4,7 @@
 	import { getProfile, getPhase } from '$lib/stores/devContext.svelte';
 	import { getAssignments, getAssignmentsByProfile } from '$lib/stores/goalsStore.svelte';
 	import { getChildren } from '$lib/stores/orgHierarchyStore.svelte';
+	import { Users } from '@lucide/svelte';
 
 	const profile = $derived(getProfile());
 	const phase = $derived(getPhase());
@@ -45,7 +46,10 @@
 <div class="flex flex-col gap-6">
 	{#if !selectedEmployeeId}
 		<div>
-			<h1 class="text-2xl font-bold text-base-content">Mis evaluados</h1>
+			<h1 class="text-2xl font-bold text-base-content flex items-center gap-2">
+				<Users class="w-6 h-6" />
+				Mis evaluados
+			</h1>
 			<p class="text-sm text-base-content/50 mt-1">
 				{phaseDescription}
 			</p>

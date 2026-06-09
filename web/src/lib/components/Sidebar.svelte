@@ -15,6 +15,9 @@
         Grid3x3,
         Award,
         FileText,
+        ClipboardList,
+        Star,
+        Network,
     } from "@lucide/svelte";
     import { version } from "../../../package.json";
 
@@ -42,6 +45,9 @@
         Grid3x3,
         Award,
         FileText,
+        ClipboardList,
+        Star,
+        Network,
     };
 
     function getIcon(name: string) {

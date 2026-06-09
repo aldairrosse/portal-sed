@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Edit3 } from '@lucide/svelte';
+	import { Edit3, Grid3x3 } from '@lucide/svelte';
 	import ScaleCriteriaMatrix from '$lib/components/competency/ScaleCriteriaMatrix.svelte';
 	import LevelDefinitionModal from '$lib/components/competency/LevelDefinitionModal.svelte';
 	import PageSkeleton from '$lib/components/ui/PageSkeleton.svelte';
@@ -37,7 +37,10 @@
 <div class="max-w-6xl mx-auto">
 	<div class="flex items-start justify-between mb-6">
 		<div>
-			<h1 class="text-2xl font-bold text-base-content">Criterios de escala</h1>
+			<h1 class="text-2xl font-bold text-base-content flex items-center gap-2">
+				<Grid3x3 class="w-6 h-6" />
+				Criterios de escala
+			</h1>
 			<p class="text-base-content/50 text-sm mt-1">
 				Define los criterios de evaluación del nivel 1 al 5 para cada competencia en todos los pilares.
 			</p>

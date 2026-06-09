@@ -11,6 +11,7 @@
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
 	import NineBoxMatrix from '$lib/components/nine-box/NineBoxMatrix.svelte';
 	import NineBoxEntryCard from '$lib/components/nine-box/NineBoxEntryCard.svelte';
+	import { Grid3x3 } from '@lucide/svelte';
 
 	// ─── Profile-to-employee mapping (dev fixtures) ───────────────────────────
 
@@ -81,7 +82,10 @@
 	<!-- Header -->
 	<div class="flex items-center justify-between">
 		<div>
-			<h1 class="text-2xl font-bold text-base-content">Matriz 9×9</h1>
+			<h1 class="text-2xl font-bold text-base-content flex items-center gap-2">
+				<Grid3x3 class="w-6 h-6" />
+				Matriz 9×9
+			</h1>
 			<p class="text-sm text-base-content/50 mt-1">
 				Desempeño vs Potencial
 			</p>

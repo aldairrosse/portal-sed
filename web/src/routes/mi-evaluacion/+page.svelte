@@ -2,6 +2,7 @@
     import EmployeeEvaluationDetail from "$lib/components/evaluation/EmployeeEvaluationDetail.svelte";
     import { getProfile } from "$lib/stores/devContext.svelte";
     import { getAssignmentsByProfile } from "$lib/stores/goalsStore.svelte";
+    import { ClipboardCheck } from "@lucide/svelte";
 
     const profile = $derived(getProfile());
     const assignments = $derived(getAssignmentsByProfile(profile));
@@ -14,7 +15,10 @@
 
 <div class="flex flex-col gap-6">
     <div>
-        <h1 class="text-2xl font-bold text-base-content">Mi evaluación</h1>
+        <h1 class="text-2xl font-bold text-base-content flex items-center gap-2">
+            <ClipboardCheck class="w-6 h-6" />
+            Mi evaluación
+        </h1>
         <p class="text-sm text-base-content/50 mt-1">
             Autoevaluación de competencias y cierre de metas
         </p>

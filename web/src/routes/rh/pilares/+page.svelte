@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Plus } from '@lucide/svelte';
+	import { Plus, Award } from '@lucide/svelte';
 	import { getPillars, addPillar, updatePillar, deletePillar } from '$lib/stores/competencyStore.svelte';
 	import type { Pillar } from '$lib/types/competency';
 	import PillarTable from '$lib/components/competency/PillarTable.svelte';
@@ -72,7 +72,10 @@
 <div class="max-w-4xl mx-auto">
 	<div class="flex items-center justify-between mb-6">
 		<div>
-			<h1 class="text-2xl font-bold text-base-content">Pilares</h1>
+			<h1 class="text-2xl font-bold text-base-content flex items-center gap-2">
+				<Award class="w-6 h-6" />
+				Pilares
+			</h1>
 			<p class="text-base-content/50 text-sm mt-1">
 				Gestiona los pilares del marco de competencias.
 			</p>

@@ -6,19 +6,19 @@
 	"children": [
 		{
 			"id": "emp-director-01",
-			"name": "Laura Torres",
+			"name": "Carmen Jiménez Castro",
 			"profileId": "director",
 			"managerId": "emp-dg-01",
 			"children": [
 				{
 					"id": "emp-jefe-01",
-					"name": "María García",
+					"name": "Carlos Rodríguez Pérez",
 					"profileId": "jefe",
 					"managerId": "emp-director-01",
 					"children": [
 						{
 							"id": "emp-colaborador-01",
-							"name": "Juan Pérez",
+							"name": "María López García",
 							"profileId": "colaborador",
 							"managerId": "emp-jefe-01",
 							"children": []
@@ -32,7 +32,7 @@
 						},
 						{
 							"id": "emp-vendedor-01",
-							"name": "Carlos Ruiz",
+							"name": "Ana Martínez Simón",
 							"profileId": "vendedor",
 							"managerId": "emp-jefe-01",
 							"children": []
@@ -219,7 +219,7 @@
 		},
 		{
 			"id": "emp-rh-01",
-			"name": "Sofía Ramírez",
+			"name": "Laura Moreno Peña",
 			"profileId": "rh",
 			"managerId": "emp-dg-01",
 			"children": []

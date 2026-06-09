@@ -137,7 +137,7 @@
 	});
 
 	function syncChart() {
-		if (!chart || !browser) return;
+		if (!chart || !browser || !chart.canvas) return;
 		chart.data.labels = allCompetencies.map((c) => c.competencyName);
 		chart.data.datasets = [];
 		pushDatasets(chart.data.datasets);

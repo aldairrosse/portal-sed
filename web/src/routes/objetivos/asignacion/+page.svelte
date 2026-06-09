@@ -1,6 +1,6 @@
 <script lang="ts">
     import { goto } from "$app/navigation";
-    import { Save, Plus, Library, MessageSquare, Check, FileDown } from "@lucide/svelte";
+    import { Save, Plus, Library, MessageSquare, Check, FileDown, Target } from "@lucide/svelte";
     import type {
         Goal,
         GoalCategory,
@@ -254,10 +254,13 @@
     <!-- Page header -->
     <div>
         <div>
-            <h1 class="text-2xl font-bold text-base-content">
+            <h1 class="text-2xl font-bold text-base-content flex items-center gap-2">
+                <Target class="w-6 h-6" />
                 {phase === "medio-anio"
                     ? "Avance de metas"
-                    : "Asignación anual"}
+                    : phase === "fin-anio"
+                        ? "Evaluación anual"
+                        : "Asignación anual"}
             </h1>
             <p class="text-sm text-base-content/50 mt-1">
                 {phase === "medio-anio"

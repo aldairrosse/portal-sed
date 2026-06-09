@@ -16,7 +16,7 @@ export const MENU_ITEMS: MenuItem[] = [
 		profiles: ['colaborador', 'jefe', 'vendedor', 'gerente-tienda', 'divisional', 'regional', 'director', 'rh']
 	},
 	{
-		label: 'Asignación anual',
+		label: 'Metas',
 		href: '/objetivos/asignacion',
 		icon: 'Target',
 		profiles: ['colaborador', 'jefe', 'vendedor', 'gerente-tienda', 'divisional', 'regional', 'director', 'rh']
@@ -42,13 +42,13 @@ export const MENU_ITEMS: MenuItem[] = [
 	{
 		label: 'Jerarquía',
 		href: '/evaluacion/9x9/jerarquia',
-		icon: 'Users',
+		icon: 'Network',
 		profiles: ['director', 'director-general']
 	},
 	{
 		label: 'Competencias',
 		href: '/evaluacion/9x9/competencias',
-		icon: 'ClipboardCheck',
+		icon: 'Star',
 		profiles: ['jefe', 'director', 'director-general']
 	},
 	{
@@ -72,7 +72,7 @@ export const MENU_ITEMS: MenuItem[] = [
 	{
 		label: 'Evaluaciones RH',
 		href: '/rh/evaluaciones',
-		icon: 'FileText',
+		icon: 'ClipboardList',
 		profiles: ['rh']
 	}
 ];

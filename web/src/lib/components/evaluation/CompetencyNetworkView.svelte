@@ -1,7 +1,6 @@
 <script lang="ts">
 	import ComparisonTable from './ComparisonTable.svelte';
 	import RadarChart from './RadarChart.svelte';
-	import { Table, Network } from '@lucide/svelte';
 	import {
 		getPillars,
 		getCompetenciesByPillar,
@@ -17,11 +16,10 @@
 	interface Props {
 		employeeId: string;
 		employeeName?: string;
+		activeTab: 'radar' | 'table';
 	}
 
-	let { employeeId, employeeName = '' }: Props = $props();
-
-	let activeTab: 'table' | 'radar' = $state('table');
+	let { employeeId, employeeName = '', activeTab }: Props = $props();
 
 	// ─── Derived data ──────────────────────────────────────────────────────
 
@@ -61,49 +59,11 @@
 			})
 			.filter((g) => g.competencies.length > 0);
 	});
-
-	function handleTabKeydown(e: KeyboardEvent) {
-		if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
-			e.preventDefault();
-			const next = e.key === 'ArrowRight' ? 'radar' : 'table';
-			activeTab = next;
-			document.getElementById(`view-${next}`)?.focus();
-		}
-	}
 </script>
 
 <div class="flex flex-col gap-6">
-	<!-- tabs-box -->
-	<div class="flex justify-end">
-		<div class="tabs" role="tablist" aria-label="Selector de vista" onkeydown={handleTabKeydown} tabindex="0">
-		<button role="tab"
-			id="view-table"
-			class="tab"
-			class:tab-active={activeTab === 'table'}
-			aria-selected={activeTab === 'table'}
-			aria-controls="panel-table"
-			tabindex={activeTab === 'table' ? 0 : -1}
-			onclick={() => activeTab = 'table'}>
-			<Table class="w-4 h-4" />
-			Vista actual
-		</button>
-
-		<button role="tab"
-			id="view-radar"
-			class="tab"
-			class:tab-active={activeTab === 'radar'}
-			aria-selected={activeTab === 'radar'}
-			aria-controls="panel-radar"
-			tabindex={activeTab === 'radar' ? 0 : -1}
-			onclick={() => activeTab = 'radar'}>
-			<Network class="w-4 h-4" />
-			Gráfica radar
-		</button>
-	</div>
-</div>
-
 	{#if activeTab === 'table'}
-		<div id="panel-table" role="tabpanel" aria-labelledby="view-table">
+		<div id="panel-table" role="tabpanel" aria-labelledby="view-table" class="flex flex-col gap-10">
 			{#each pillars as pillar (pillar.id)}
 				{@const pillarCompetencies = getCompetenciesByPillar(pillar.id)}
 				{#if pillarCompetencies.length > 0}

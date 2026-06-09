@@ -3,6 +3,7 @@
 	import EmployeeEvaluationTable from '$lib/components/evaluation/EmployeeEvaluationTable.svelte';
 	import { getPhase } from '$lib/stores/devContext.svelte';
 	import { getAssignments } from '$lib/stores/goalsStore.svelte';
+	import { ClipboardList } from '@lucide/svelte';
 
 	const phase = $derived(getPhase());
 	const isFinAnio = $derived(phase === 'fin-anio');
@@ -36,7 +37,10 @@
 <div class="flex flex-col gap-6">
 	{#if !selectedEmployeeId}
 		<div>
-			<h1 class="text-2xl font-bold text-base-content">Evaluaciones RH</h1>
+			<h1 class="text-2xl font-bold text-base-content flex items-center gap-2">
+				<ClipboardList class="w-6 h-6" />
+				Evaluaciones RH
+			</h1>
 			<p class="text-sm text-base-content/50 mt-1">
 				{phaseDescription}
 			</p>
