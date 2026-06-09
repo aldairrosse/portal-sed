@@ -1,6 +1,8 @@
 <script lang="ts">
 	import Sidebar from './Sidebar.svelte';
 	import DevToolbar from './DevToolbar.svelte';
+	import logoBlack from '$lib/assets/logo_black.png';
+	import logoWhite from '$lib/assets/logo_white.png';
 
 	let { children } = $props();
 
@@ -31,8 +33,9 @@
 					</svg>
 				</label>
 			</div>
-			<div class="flex-1">
-				<span class="text-lg font-semibold text-primary">SED</span>
+			<div class="flex-1 flex items-center">
+				<img src={logoBlack} alt="SED" class="logo-theme-light h-[18px] w-auto max-w-full object-contain" />
+				<img src={logoWhite} alt="SED" class="logo-theme-dark h-[18px] w-auto max-w-full object-contain" />
 			</div>
 		</header>
 

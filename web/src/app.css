@@ -3,7 +3,7 @@
 @plugin "@tailwindcss/typography";
 
 @plugin "daisyui" {
-	themes: sed --default;
+	themes: sed --default, sed-dark;
 }
 
 @plugin "daisyui/theme" {
@@ -48,6 +48,65 @@
 
 	/* Borders */
 	--border: 1px;
+
+	/* Radar chart */
+	--color-radar-self: #0d9488;
+	--color-radar-rh: #f59e0b;
+	--color-chart-grid: rgba(0, 0, 0, 0.08);
+
+	/* Inputs */
+	--color-input-base: #ffffff;
+}
+
+@plugin "daisyui/theme" {
+	name: "sed-dark";
+	color-scheme: dark;
+
+	/* Base — dark slate */
+	--color-base-100: #0f172a;
+	--color-base-200: #1e293b;
+	--color-base-300: #334155;
+	--color-base-content: #e2e8f0;
+
+	/* Primary — brighter blue for contrast on dark */
+	--color-primary: #3b82f6;
+	--color-primary-content: #ffffff;
+
+	--color-secondary: #5eead4;
+	--color-secondary-content: #0f172a;
+
+	--color-accent: #fbbf24;
+	--color-accent-content: #0f172a;
+
+	--color-neutral: #1e293b;
+	--color-neutral-content: #e2e8f0;
+
+	--color-info: #60a5fa;
+	--color-info-content: #0f172a;
+
+	--color-success: #4ade80;
+	--color-success-content: #0f172a;
+
+	--color-warning: #fbbf24;
+	--color-warning-content: #0f172a;
+
+	--color-error: #f87171;
+	--color-error-content: #0f172a;
+
+	/* Radius */
+	--radius-selector: 0.75rem;
+	--radius-field: 0.6rem;
+	--radius-box: 1rem;
+
+	--border: 1px;
+
+	/* Radar chart */
+	--color-radar-self: #2dd4bf;
+	--color-radar-rh: #fbbf24;
+	--color-chart-grid: rgba(255, 255, 255, 0.12);
+
+	/* Inputs */
+	--color-input-base: #1e293b;
 }
 
 /* === GLOBAL RESETS === */
@@ -97,8 +156,8 @@ body {
 	/* Inputs: soft bg, no hard border */
 	.input,
 	.textarea {
-		border: 1.5px solid rgba(0, 0, 0, 0.08) !important;
-		background-color: #ffffff !important;
+		border: 1.5px solid color-mix(in srgb, var(--color-base-content) 12%, transparent) !important;
+		background-color: var(--color-input-base) !important;
 		box-shadow: none !important;
 		transition: border-color 0.15s ease, box-shadow 0.15s ease;
 	}
@@ -106,7 +165,7 @@ body {
 	.input:focus,
 	.textarea:focus {
 		border-color: var(--color-primary) !important;
-		box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12) !important;
+		box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 15%, transparent) !important;
 	}
 
 	/* Navbar: clean, no border */
@@ -145,3 +204,22 @@ body {
 		0 1px 3px rgba(0, 0, 0, 0.04),
 		0 8px 24px rgba(0, 0, 0, 0.06) !important;
 }
+
+/* ─── Logo theme visibility (global) ─────────────────────────── */
+.logo-theme-light { display: block; }
+.logo-theme-dark { display: none; }
+
+@media (prefers-color-scheme: dark) {
+	.logo-theme-light { display: none; }
+	.logo-theme-dark { display: block; }
+}
+
+[data-theme="dark"] .logo-theme-light,
+[data-theme="night"] .logo-theme-light,
+[data-theme="dim"] .logo-theme-light,
+[data-theme="sed-dark"] .logo-theme-light { display: none; }
+
+[data-theme="dark"] .logo-theme-dark,
+[data-theme="night"] .logo-theme-dark,
+[data-theme="dim"] .logo-theme-dark,
+[data-theme="sed-dark"] .logo-theme-dark { display: block; }

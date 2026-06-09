@@ -2,7 +2,7 @@
 	{
 		"id": "asign-colaborador-01",
 		"employeeId": "emp-colaborador-01",
-		"employeeName": "Juan Pérez",
+		"employeeName": "María López García",
 		"profileId": "colaborador",
 		"managerId": "emp-jefe-01",
 		"goalIds": ["goal-mejorar-satisfaccion", "goal-reducir-quejas"],
@@ -22,7 +22,7 @@
 	{
 		"id": "asign-vendedor-01",
 		"employeeId": "emp-vendedor-01",
-		"employeeName": "Carlos Ruiz",
+		"employeeName": "Ana Martínez Simón",
 		"profileId": "vendedor",
 		"managerId": "emp-jefe-01",
 		"goalIds": ["goal-alcanzar-ventas"],
@@ -32,7 +32,7 @@
 	{
 		"id": "asign-jefe-01",
 		"employeeId": "emp-jefe-01",
-		"employeeName": "María García",
+		"employeeName": "Carlos Rodríguez Pérez",
 		"profileId": "jefe",
 		"managerId": "emp-director-01",
 		"goalIds": ["goal-alcanzar-ventas", "goal-mejorar-margen", "goal-reducir-costos"],
@@ -42,7 +42,7 @@
 	{
 		"id": "asign-gerente-tienda-01",
 		"employeeId": "emp-gerente-tienda-01",
-		"employeeName": "Roberto Díaz",
+		"employeeName": "Luis González Villa",
 		"profileId": "gerente-tienda",
 		"managerId": "emp-director-01",
 		"goalIds": ["goal-alcanzar-ventas", "goal-mejorar-satisfaccion", "goal-optimizar-inventario"],
@@ -52,7 +52,7 @@
 	{
 		"id": "asign-divisional-01",
 		"employeeId": "emp-divisional-01",
-		"employeeName": "Ana Martínez",
+		"employeeName": "Patricia Fernández Díaz",
 		"profileId": "divisional",
 		"managerId": "emp-director-01",
 		"goalIds": ["goal-mejorar-margen", "goal-mejorar-satisfaccion", "goal-fidelizacion"],
