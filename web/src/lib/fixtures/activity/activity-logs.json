@@ -1,0 +1,202 @@
+[
+	{
+		"id": "log-001",
+		"profileId": "colaborador",
+		"action": "evaluation_started",
+		"description": "Iniciaste tu autoevaluación de competencias",
+		"timestamp": "2026-06-09T10:15:00Z",
+		"module": "Mi evaluación"
+	},
+	{
+		"id": "log-002",
+		"profileId": "colaborador",
+		"action": "goal_viewed",
+		"description": "Consultaste el detalle de la meta 'Mejorar satisfacción del cliente'",
+		"timestamp": "2026-06-09T09:30:00Z",
+		"module": "Metas"
+	},
+	{
+		"id": "log-003",
+		"profileId": "colaborador",
+		"action": "comment_added",
+		"description": "Agregaste un comentario en la meta 'Reducir quejas'",
+		"timestamp": "2026-06-08T16:45:00Z",
+		"module": "Metas"
+	},
+	{
+		"id": "log-004",
+		"profileId": "colaborador",
+		"action": "login",
+		"description": "Inicio de sesión exitoso",
+		"timestamp": "2026-06-08T08:00:00Z",
+		"module": "Sesión"
+	},
+	{
+		"id": "log-005",
+		"profileId": "colaborador",
+		"action": "profile_viewed",
+		"description": "Consultaste tu perfil",
+		"timestamp": "2026-06-07T14:20:00Z",
+		"module": "Perfil"
+	},
+	{
+		"id": "log-010",
+		"profileId": "jefe",
+		"action": "evaluation_completed",
+		"description": "Completaste la evaluación de María López García",
+		"timestamp": "2026-06-09T11:00:00Z",
+		"module": "Mis evaluados"
+	},
+	{
+		"id": "log-011",
+		"profileId": "jefe",
+		"action": "goal_approved",
+		"description": "Aprobaste la meta 'Alcanzar ventas' de Ana Martínez",
+		"timestamp": "2026-06-09T10:30:00Z",
+		"module": "Metas"
+	},
+	{
+		"id": "log-012",
+		"profileId": "jefe",
+		"action": "competency_viewed",
+		"description": "Revisaste la gráfica de competencias de tu equipo",
+		"timestamp": "2026-06-08T15:00:00Z",
+		"module": "Competencias"
+	},
+	{
+		"id": "log-013",
+		"profileId": "jefe",
+		"action": "comment_added",
+		"description": "Agregaste feedback en la evaluación de Carlos Rodríguez",
+		"timestamp": "2026-06-07T09:15:00Z",
+		"module": "Mis evaluados"
+	},
+	{
+		"id": "log-020",
+		"profileId": "rh",
+		"action": "cycle_configured",
+		"description": "Configuraste el ciclo de evaluación 'Inicio 2026'",
+		"timestamp": "2026-06-09T08:00:00Z",
+		"module": "Evaluaciones RH"
+	},
+	{
+		"id": "log-021",
+		"profileId": "rh",
+		"action": "pillar_edited",
+		"description": "Actualizaste el pilar 'Liderazgo' con nuevos criterios",
+		"timestamp": "2026-06-08T14:30:00Z",
+		"module": "Pilares"
+	},
+	{
+		"id": "log-022",
+		"profileId": "rh",
+		"action": "scale_modified",
+		"description": "Modificaste la escala de criterios para nivel 'Avanzado'",
+		"timestamp": "2026-06-07T11:00:00Z",
+		"module": "Criterios escala"
+	},
+	{
+		"id": "log-023",
+		"profileId": "rh",
+		"action": "report_exported",
+		"description": "Exportaste el reporte de evaluaciones del Q2",
+		"timestamp": "2026-06-06T16:00:00Z",
+		"module": "Evaluaciones RH"
+	},
+	{
+		"id": "log-030",
+		"profileId": "director",
+		"action": "hierarchy_viewed",
+		"description": "Consultaste la jerarquía organizacional",
+		"timestamp": "2026-06-09T09:00:00Z",
+		"module": "Jerarquía"
+	},
+	{
+		"id": "log-031",
+		"profileId": "director",
+		"action": "evaluation_reviewed",
+		"description": "Revisaste la evaluación 9×9 del equipo regional",
+		"timestamp": "2026-06-08T10:00:00Z",
+		"module": "Matriz 9×9"
+	},
+	{
+		"id": "log-032",
+		"profileId": "director",
+		"action": "goal_overview",
+		"description": "Revisaste el avance general de metas del equipo",
+		"timestamp": "2026-06-07T08:30:00Z",
+		"module": "Metas"
+	},
+	{
+		"id": "log-040",
+		"profileId": "vendedor",
+		"action": "goal_progress",
+		"description": "Actualizaste el progreso de la meta 'Alcanzar ventas'",
+		"timestamp": "2026-06-09T08:45:00Z",
+		"module": "Metas"
+	},
+	{
+		"id": "log-041",
+		"profileId": "vendedor",
+		"action": "evaluation_started",
+		"description": "Iniciaste tu autoevaluación de competencias",
+		"timestamp": "2026-06-08T09:00:00Z",
+		"module": "Mi evaluación"
+	},
+	{
+		"id": "log-050",
+		"profileId": "divisional",
+		"action": "evaluation_completed",
+		"description": "Completaste la evaluación de Patricia Fernández",
+		"timestamp": "2026-06-09T10:00:00Z",
+		"module": "Mis evaluados"
+	},
+	{
+		"id": "log-051",
+		"profileId": "divisional",
+		"action": "competency_viewed",
+		"description": "Revisaste la gráfica de competencias de tu división",
+		"timestamp": "2026-06-08T11:30:00Z",
+		"module": "Competencias"
+	},
+	{
+		"id": "log-060",
+		"profileId": "regional",
+		"action": "goal_approved",
+		"description": "Aprobaste la meta 'Mejorar margen' de tu equipo",
+		"timestamp": "2026-06-09T09:15:00Z",
+		"module": "Metas"
+	},
+	{
+		"id": "log-070",
+		"profileId": "gerente-tienda",
+		"action": "evaluation_completed",
+		"description": "Completaste la evaluación de tu equipo de tienda",
+		"timestamp": "2026-06-09T08:30:00Z",
+		"module": "Mis evaluados"
+	},
+	{
+		"id": "log-071",
+		"profileId": "gerente-tienda",
+		"action": "goal_progress",
+		"description": "Revisaste el avance de metas de la tienda",
+		"timestamp": "2026-06-08T14:00:00Z",
+		"module": "Metas"
+	},
+	{
+		"id": "log-080",
+		"profileId": "director-general",
+		"action": "hierarchy_viewed",
+		"description": "Consultaste la estructura organizacional completa",
+		"timestamp": "2026-06-09T08:00:00Z",
+		"module": "Jerarquía"
+	},
+	{
+		"id": "log-081",
+		"profileId": "director-general",
+		"action": "evaluation_reviewed",
+		"description": "Revisaste el consolidado de evaluaciones 9×9",
+		"timestamp": "2026-06-08T09:00:00Z",
+		"module": "Matriz 9×9"
+	}
+]
