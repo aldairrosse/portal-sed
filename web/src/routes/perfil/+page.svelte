@@ -72,36 +72,7 @@
         return ACTION_ICONS[action] ?? Clock;
     }
 
-    function formatRelativeTime(timestamp: string): string {
-        const now = new Date();
-        const date = new Date(timestamp);
-        const diffMs = now.getTime() - date.getTime();
-        const diffMins = Math.floor(diffMs / 60000);
-        const diffHours = Math.floor(diffMins / 60);
-        const diffDays = Math.floor(diffHours / 24);
-
-        if (diffMins < 1) return "Ahora mismo";
-        if (diffMins < 60) return `Hace ${diffMins} min`;
-        if (diffHours < 24) return `Hace ${diffHours}h`;
-        if (diffDays === 1) return "Ayer";
-        if (diffDays < 7) return `Hace ${diffDays} días`;
-        return date.toLocaleDateString("es-AR", {
-            day: "numeric",
-            month: "short",
-        });
-    }
-
-    function formatFullDate(timestamp: string): string {
-        return new Date(timestamp).toLocaleString("es-AR", {
-            day: "numeric",
-            month: "long",
-            year: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-        });
-    }
-
-    function formatTimeLabel(timestamp: string): string {
+	function formatTimeLabel(timestamp: string): string {
         const now = new Date();
         const date = new Date(timestamp);
         const diffMs = now.getTime() - date.getTime();

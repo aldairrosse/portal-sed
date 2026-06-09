@@ -24,7 +24,6 @@
 		mode,
 		canEdit = false,
 		showSelfAssessment = true,
-		employeeId,
 		onSaveClosure,
 		onRhAssessGoal,
 		onManagerComment

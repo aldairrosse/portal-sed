@@ -14,7 +14,6 @@
 		ratings,
 		competencies,
 		acceptanceLevels,
-		levelDefinitions,
 		showRhColumn = true
 	}: Props = $props();
 

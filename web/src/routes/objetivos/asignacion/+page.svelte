@@ -36,7 +36,7 @@
     import { getChildren } from "$lib/stores/orgHierarchyStore.svelte";
     import WeightIndicator from "$lib/components/goals/WeightIndicator.svelte";
     import ProgressIndicator from "$lib/components/goals/ProgressIndicator.svelte";
-    import { validateCategory, validateGoal, UNIT_OPTIONS } from "$lib/components/goals/goalValidation";
+	import { validateCategory } from "$lib/components/goals/goalValidation";
     import CategoryCard from "$lib/components/goals/CategoryCard.svelte";
     import ReadOnlyBanner from "$lib/components/goals/ReadOnlyBanner.svelte";
     import AssigneePicker from "$lib/components/goals/AssigneePicker.svelte";

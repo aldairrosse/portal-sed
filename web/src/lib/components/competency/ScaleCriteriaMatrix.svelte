@@ -1,5 +1,5 @@
 ﻿<script lang="ts">
-	import { Check, Plus, Trash2, Star, X, Save } from '@lucide/svelte';
+	import { Plus, Trash2, Star, X, Save } from '@lucide/svelte';
 	import {
 		getPillars,
 		getCompetencies,
@@ -17,7 +17,8 @@
 		isAnyInlineEditing?: boolean;
 	}
 
-	let { isAnyInlineEditing = $bindable(false) }: Props = $props();
+	// eslint-disable-next-line no-useless-assignment
+	let { isAnyInlineEditing = $bindable() }: Props = $props();
 
 	const pillars = $derived(getPillars());
 	const competencies = $derived(getCompetencies());
@@ -102,6 +103,7 @@
 		}
 
 		const existingIds = new Set(getLevelCriteria(editCellCompetencyId, editCellPillarId, editCellLevel).map((c) => c.id));
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity
 		const finalIds = new Set<string>();
 		const newEntries: Array<Omit<ScaleCriterion, 'id'>> = [];
 		const updatePairs: Array<{ id: string; description: string }> = [];

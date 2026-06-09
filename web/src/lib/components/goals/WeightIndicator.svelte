@@ -10,7 +10,6 @@
 
 	const isExact = $derived(Math.abs(current - 100) <= EPSILON);
 	const isOver = $derived(current > 100 + EPSILON);
-	const isUnder = $derived(current < 100 - EPSILON);
 	const clamped = $derived(Math.min(100, Math.max(0, current)));
 
 	const barColor = $derived(

@@ -1,5 +1,3 @@
-import type { EvaluationProfile } from './evaluation';
-
 export type EvaluationStatus = 'pending' | 'in-progress' | 'completed';
 
 export interface CompetencyRating {

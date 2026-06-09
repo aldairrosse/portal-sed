@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
 	import { Plus, Trash2, Save, X, Pencil, Library, TrendingUp, TrendingDown } from '@lucide/svelte';
 	import type { KPI, KpiUnit } from '$lib/types/goal';
 	import { getKpis, addKpi, updateKpi, deleteKpi } from '$lib/stores/goalsStore.svelte';

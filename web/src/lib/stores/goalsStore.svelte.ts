@@ -274,6 +274,7 @@ export function updateAssignment(
 	updates: Partial<Omit<EmployeeAssignment, 'id'>>
 ): void {
 	assignments = assignments.map((a) =>
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity
 		a.id === id ? { ...a, ...updates, updatedAt: new Date().toISOString() } : a
 	);
 }
@@ -285,6 +286,7 @@ export function deleteAssignment(id: string): void {
 export function assignGoalToEmployee(employeeId: string, goalId: string): void {
 	assignments = assignments.map((a) =>
 		a.employeeId === employeeId && !a.goalIds.includes(goalId)
+			// eslint-disable-next-line svelte/prefer-svelte-reactivity
 			? { ...a, goalIds: [...a.goalIds, goalId], updatedAt: new Date().toISOString() }
 			: a
 	);
@@ -296,6 +298,7 @@ export function unassignGoalFromEmployee(employeeId: string, goalId: string): vo
 			? {
 					...a,
 					goalIds: a.goalIds.filter((gid) => gid !== goalId),
+					// eslint-disable-next-line svelte/prefer-svelte-reactivity
 					updatedAt: new Date().toISOString()
 				}
 			: a
@@ -311,6 +314,7 @@ export function recordChangeRequest(request: ChangeRequest): void {
 export function approveChangeRequest(id: string, approvedBy: string): void {
 	changeRequests = changeRequests.map((cr) =>
 		cr.id === id
+			// eslint-disable-next-line svelte/prefer-svelte-reactivity
 			? { ...cr, status: 'approved', approvedBy, approvedAt: new Date().toISOString() }
 			: cr
 	);
@@ -327,6 +331,7 @@ export function rejectChangeRequest(id: string): void {
 export function updateGoalProgress(goalId: string, progress: number): void {
 	goals = goals.map((g) =>
 		g.id === goalId
+			// eslint-disable-next-line svelte/prefer-svelte-reactivity
 			? { ...g, progress, progressUpdatedAt: new Date().toISOString() }
 			: g
 	);
@@ -343,6 +348,7 @@ export function addGoalComment(
 		authorId,
 		authorName,
 		content,
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity
 		createdAt: new Date().toISOString()
 	};
 	goals = goals.map((g) =>

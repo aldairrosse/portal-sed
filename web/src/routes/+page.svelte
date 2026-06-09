@@ -10,16 +10,13 @@
 	import {
 		ClipboardCheck,
 		Target,
-		TrendingUp,
 		Users,
-		Grid3x3,
-		Award,
 		BarChart3,
 		Building,
 		User,
 		Check
 	} from '@lucide/svelte';
-	import type { Goal, GoalCategory, KPI } from '$lib/types/goal';
+	import type { Goal, KPI } from '$lib/types/goal';
 	import type { Pillar, Competency, LevelDefinition } from '$lib/types/competency';
 
 	const profile = $derived(getProfile());
@@ -52,8 +49,6 @@
 	const hasReports = $derived(
 		['jefe', 'gerente-tienda', 'divisional', 'regional', 'director', 'director-general'].includes(profile)
 	);
-	const isRh = $derived(profile === 'rh');
-
 	const areaMap: Record<EvaluationProfile, string> = {
 		colaborador: 'Operaciones · Sucursal Centro',
 		jefe: 'Servicio al Cliente',
@@ -77,7 +72,8 @@
 
 	const myKpis = $derived(
 		(() => {
-			const kpiIds = new Set<string>();
+			// eslint-disable-next-line svelte/prefer-svelte-reactivity
+		const kpiIds = new Set<string>();
 			myGoals.forEach((g) => {
 				allLinks
 					.filter((l) => l.goalId === g.id)

@@ -44,9 +44,9 @@
 		onOpenComments
 	}: Props = $props();
 
-	let progressValue = $state(0);
+	// eslint-disable-next-line svelte/prefer-writable-derived
+	let progressValue = $state(goal.progress ?? 0);
 
-	// Sync when goal prop changes
 	$effect(() => {
 		progressValue = goal.progress ?? 0;
 	});

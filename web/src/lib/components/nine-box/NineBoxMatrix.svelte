@@ -16,6 +16,7 @@
 	// ─── Reactive derived data ─────────────────────────────────────────────────
 
 	const entriesByCell = $derived.by(() => {
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity
 		const map = new Map<string, NineBoxEntry[]>();
 		for (const entry of entries) {
 			const key = `${entry.performance}-${entry.potential}`;
@@ -62,12 +63,12 @@
 			case 'ArrowRight':
 				if (perf < 9) { perf = (perf + 1) as NineBoxScale; moved = true; }
 				break;
-			case 'Enter':
-			case ' ':
-				e.preventDefault();
-				const cellEntries = getCellEntries(activePerf, activePot);
-				if (cellEntries.length > 0) onCellClick(cellEntries, activePerf, activePot);
-				return;
+		case 'Enter':
+		case ' ':
+			e.preventDefault();
+			{const cellEntries = getCellEntries(activePerf, activePot);
+			if (cellEntries.length > 0) onCellClick(cellEntries, activePerf, activePot);}
+			return;
 			default:
 				return;
 		}

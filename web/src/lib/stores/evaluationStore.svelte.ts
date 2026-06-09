@@ -1,7 +1,5 @@
 import type { CompetencyRating, GoalClosure, EvaluationStatus } from '$lib/types/evaluation-result';
-import type { EvaluationProfile } from '$lib/types/evaluation';
 import { getPhase } from '$lib/stores/devContext.svelte';
-import { getGoalsByCategory } from '$lib/stores/goalsStore.svelte';
 
 import selfEvaluationsData from '$lib/fixtures/evaluations/self-evaluations.json';
 import goalClosuresData from '$lib/fixtures/evaluations/goal-closures.json';
@@ -30,10 +28,6 @@ for (const rh of rhEvaluationsData as CompetencyRating[]) {
 
 function isFinAnio(): boolean {
 	return getPhase() === 'fin-anio';
-}
-
-function isRhProfile(profile: EvaluationProfile): boolean {
-	return profile === 'rh';
 }
 
 // ─── Getters ───────────────────────────────────────────────────────────────────
@@ -128,7 +122,8 @@ export function closeGoal(
 						...gc,
 						finalProgress,
 						selfAssessment,
-						closedAt: gc.closedAt ?? new Date().toISOString()
+						// eslint-disable-next-line svelte/prefer-svelte-reactivity
+	closedAt: gc.closedAt ?? new Date().toISOString()
 					}
 				: gc
 		);
@@ -141,10 +136,11 @@ export function closeGoal(
 				goalId,
 				finalProgress,
 				selfAssessment,
-				closedAt: new Date().toISOString()
-			}
-		];
-	}
+			// eslint-disable-next-line svelte/prefer-svelte-reactivity
+			closedAt: new Date().toISOString()
+		}
+	];
+}
 }
 
 // ─── Mutations: RH Evaluation ─────────────────────────────────────────────────

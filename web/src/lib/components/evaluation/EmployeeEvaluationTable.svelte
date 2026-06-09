@@ -4,8 +4,8 @@
 	import { getEvaluationStatus } from '$lib/stores/evaluationStore.svelte';
 	import { getPillars, getCompetenciesByPillar } from '$lib/stores/competencyStore.svelte';
 	import { getNodeById } from '$lib/stores/orgHierarchyStore.svelte';
-	import { getGoals, getAssignments } from '$lib/stores/goalsStore.svelte';
-	import { PROFILE_LABELS, PHASE_LABELS, type CyclePhase } from '$lib/types/evaluation';
+	import { getGoals } from '$lib/stores/goalsStore.svelte';
+	import { PROFILE_LABELS, PHASE_LABELS } from '$lib/types/evaluation';
 	import { getPhase } from '$lib/stores/devContext.svelte';
 	import type { EmployeeAssignment } from '$lib/types/goal';
 	import type { Snippet } from 'svelte';
@@ -27,7 +27,6 @@
 	const pillars = $derived(getPillars());
 	const allCompetencies = $derived(pillars.flatMap((p) => getCompetenciesByPillar(p.id)));
 	const goals = $derived(getGoals());
-	const assignments = $derived(getAssignments());
 
 	const filteredEmployees = $derived(
 		searchQuery.trim() === ''

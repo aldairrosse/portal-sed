@@ -28,7 +28,7 @@
 	// Local state to persist open/close across re-renders
 	let isOpen = $state(initialExpanded);
 
-	function handleSummaryClick(e: MouseEvent) {
+	function handleSummaryClick(_e: MouseEvent) {
 		// Toggle is handled natively by <details>
 		// Just select the node
 		onNodeSelect(node);
