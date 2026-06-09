@@ -126,6 +126,30 @@ body {
 
 /* === COMPONENT STYLES === */
 @layer components {
+	/* Timeline left-aligned: override DaisyUI default center */
+	.timeline-vertical.timeline-left > li {
+		justify-items: start;
+		--timeline-col-end: 1fr;
+	}
+	.timeline-vertical.timeline-left > li:has(.timeline-start) {
+		--timeline-col-start: 100px;
+	}
+	.timeline-vertical.timeline-left > li:not(:has(.timeline-start)) {
+		--timeline-col-start: 0;
+	}
+	.timeline-vertical.timeline-left .timeline-start,
+	.timeline-vertical.timeline-left .timeline-end {
+		justify-self: start;
+		width: auto;
+	}
+	.timeline-vertical.timeline-left .timeline-start {
+		text-align: left;
+	}
+	.timeline-vertical.timeline-left .timeline-middle {
+		justify-self: center;
+		place-self: center;
+	}
+
 	/* Cards: flat by default, no border, no shadow, no padding */
 	.card {
 		border: none !important;
