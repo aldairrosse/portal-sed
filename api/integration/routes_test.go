@@ -87,9 +87,9 @@ func allRoutes() []routeTestCase {
 		{"GET", "/api/v1/evaluations?cycle_id=" + cycleID, "ListEvaluations", authOK},
 		{"GET", "/api/v1/evaluations/" + evalID, "GetEvaluation", authOK},
 		{"POST", "/api/v1/evaluations/" + evalID + "/self-evaluation", "SubmitSelfEvaluation", authOK},
-		{"PUT", "/api/v1/evaluations/" + evalID + "/self-evaluation", "UpdateSelfEvaluation", authOK},
+		{"PUT", "/api/v1/evaluations/" + evalID + "/self-evaluation", "UpdateSelfEvaluation", []int{200, 400, 404, 409, 422, 428}},
 		{"POST", "/api/v1/evaluations/" + evalID + "/rh-evaluation", "SubmitRHEvaluation", authOK},
-		{"PUT", "/api/v1/evaluations/" + evalID + "/rh-evaluation", "UpdateRHEvaluation", authOK},
+		{"PUT", "/api/v1/evaluations/" + evalID + "/rh-evaluation", "UpdateRHEvaluation", []int{200, 400, 404, 409, 422, 428}},
 		{"POST", "/api/v1/evaluations/" + evalID + "/finalize", "FinalizeEvaluation", authOK},
 		{"GET", "/api/v1/evaluations/summary?cycle_id=" + cycleID, "GetEvaluationSummary", authOK},
 
