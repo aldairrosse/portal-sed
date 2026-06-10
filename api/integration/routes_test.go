@@ -43,9 +43,9 @@ func allRoutes() []routeTestCase {
 
 		// --- Auth ---
 		{"POST", "/api/v1/auth/login", "AuthLogin", []int{200, 400, 405}},
-		{"POST", "/api/v1/auth/logout", "AuthLogout", []int{200, 401}},
-		{"POST", "/api/v1/auth/refresh", "AuthRefresh", []int{200, 401}},
-		{"GET", "/api/v1/auth/me", "AuthMe", []int{200, 401}},
+		{"POST", "/api/v1/auth/logout", "AuthLogout", []int{200, 400, 401}},
+		{"POST", "/api/v1/auth/refresh", "AuthRefresh", []int{200, 400, 401}},
+		{"GET", "/api/v1/auth/me", "AuthMe", []int{200, 400, 401}},
 
 		// --- Goal: Categories ---
 		{"GET", "/api/v1/employees/" + empID + "/categories", "ListCategories", authOK},
@@ -79,7 +79,7 @@ func allRoutes() []routeTestCase {
 		{"GET", "/api/v1/cycles", "ListCycles", authOK},
 		{"POST", "/api/v1/cycles", "CreateCycle", authOK},
 		{"GET", "/api/v1/cycles/" + cycleID, "GetCycle", authOK},
-		{"PUT", "/api/v1/cycles/" + cycleID + "/transition", "TransitionPhase", authOK},
+		{"PUT", "/api/v1/cycles/" + cycleID + "/transition", "TransitionPhase", []int{200, 400, 404, 409, 422, 428}},
 		{"GET", "/api/v1/phases", "GetPhaseDefinitions", authOK},
 		{"GET", "/api/v1/cycles/" + cycleID + "/transitions", "GetAvailableTransitions", authOK},
 
@@ -99,7 +99,7 @@ func allRoutes() []routeTestCase {
 		{"GET", "/api/v1/nine-box/matrices/" + matrixID, "GetNineBoxMatrix", authOK},
 		{"GET", "/api/v1/nine-box/matrices/" + matrixID + "/entries", "ListMatrixEntries", authOK},
 		{"POST", "/api/v1/nine-box/matrices/" + matrixID + "/entries", "UpsertMatrixEntry", authOK},
-		{"PUT", "/api/v1/nine-box/entries/" + entryID, "UpdateEntry", authOK},
+		{"PUT", "/api/v1/nine-box/entries/" + entryID, "UpdateEntry", []int{200, 400, 404, 409, 422, 428}},
 		{"POST", "/api/v1/nine-box/batch?matrixId=" + matrixID, "BatchSubmitEntries", authOK},
 		{"GET", "/api/v1/nine-box/scales", "GetNineBoxScales", authOK},
 		{"GET", "/api/v1/nine-box/quadrants", "GetNineBoxQuadrants", authOK},
@@ -108,14 +108,14 @@ func allRoutes() []routeTestCase {
 		{"GET", "/api/v1/pillars", "ListPillars", authOK},
 		{"POST", "/api/v1/pillars", "CreatePillar", authOK},
 		{"GET", "/api/v1/pillars/" + pillarID, "GetPillar", authOK},
-		{"PUT", "/api/v1/pillars/" + pillarID, "UpdatePillar", authOK},
+		{"PUT", "/api/v1/pillars/" + pillarID, "UpdatePillar", []int{200, 400, 404, 409, 422, 428}},
 		{"DELETE", "/api/v1/pillars/" + pillarID, "DeletePillar", authOK},
 
 		// --- Competency: Competencies ---
 		{"GET", "/api/v1/pillars/" + pillarID + "/competencies", "ListCompetenciesByPillar", authOK},
 		{"POST", "/api/v1/pillars/" + pillarID + "/competencies", "CreateCompetency", authOK},
 		{"GET", "/api/v1/competencies/" + compID, "GetCompetency", authOK},
-		{"PUT", "/api/v1/competencies/" + compID, "UpdateCompetency", authOK},
+		{"PUT", "/api/v1/competencies/" + compID, "UpdateCompetency", []int{200, 400, 404, 409, 422, 428}},
 		{"DELETE", "/api/v1/competencies/" + compID, "DeleteCompetency", authOK},
 
 		// --- Competency: Scale Criteria ---

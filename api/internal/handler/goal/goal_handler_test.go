@@ -17,6 +17,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sed-evaluacion-desempeno/api/internal/auth"
 	dtogoal "github.com/sed-evaluacion-desempeno/api/internal/dto/goal"
 	pkgerrors "github.com/sed-evaluacion-desempeno/api/internal/pkg/errors"
 	repogoal "github.com/sed-evaluacion-desempeno/api/internal/repository/goal"
@@ -173,6 +174,12 @@ func TestUpdateGoal_Success(t *testing.T) {
 
 	h := newTestHandler(nil, goalSvc, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	r := chi.NewRouter()
+	r.Use(func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ctx := context.WithValue(r.Context(), auth.EmployeeIDKey, empID)
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
+	})
 	r.Put("/goals/{goalId}", h.UpdateGoal)
 
 	body := `{"name":"Updated goal","unit":"porcentaje","weight":40,"target_value":90,"version":1}`
@@ -200,6 +207,12 @@ func TestDeleteGoal_Success(t *testing.T) {
 
 	h := newTestHandler(nil, goalSvc, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	r := chi.NewRouter()
+	r.Use(func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ctx := context.WithValue(r.Context(), auth.EmployeeIDKey, empID)
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
+	})
 	r.Delete("/goals/{goalId}", h.DeleteGoal)
 
 	req := httptest.NewRequest(http.MethodDelete, fmt.Sprintf("/goals/%s", goalID), nil)
@@ -222,6 +235,12 @@ func TestUpdateGoalProgress_Success(t *testing.T) {
 
 	h := newTestHandler(nil, nil, progSvc, nil, nil, nil, nil, nil, nil, nil, nil)
 	r := chi.NewRouter()
+	r.Use(func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ctx := context.WithValue(r.Context(), auth.EmployeeIDKey, empID)
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
+	})
 	r.Patch("/goals/{goalId}/progress", h.UpdateGoalProgress)
 
 	body := `{"current_value":75.5}`
@@ -364,6 +383,12 @@ func TestLinkKPI_Success(t *testing.T) {
 
 	h := newTestHandler(nil, nil, nil, kpiSvc, nil, nil, nil, goalRepo, nil, nil, nil)
 	r := chi.NewRouter()
+	r.Use(func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ctx := context.WithValue(r.Context(), auth.EmployeeIDKey, empID)
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
+	})
 	r.Post("/goals/{goalId}/kpis", h.LinkKPI)
 
 	body := fmt.Sprintf(`{"kpi_id":"%s"}`, kpiID)
@@ -394,6 +419,12 @@ func TestUnlinkKPI_Success(t *testing.T) {
 
 	h := newTestHandler(nil, nil, nil, kpiSvc, nil, nil, nil, nil, nil, nil, nil)
 	r := chi.NewRouter()
+	r.Use(func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ctx := context.WithValue(r.Context(), auth.EmployeeIDKey, empID)
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
+	})
 	r.Delete("/goals/{goalId}/kpis/{kpiId}", h.UnlinkKPI)
 
 	req := httptest.NewRequest(http.MethodDelete, fmt.Sprintf("/goals/%s/kpis/%s", goalID, kpiID), nil)
@@ -498,6 +529,12 @@ func TestBatchGoals_Success(t *testing.T) {
 
 	h := newTestHandler(nil, nil, nil, nil, nil, batchSvc, nil, nil, nil, nil, nil)
 	r := chi.NewRouter()
+	r.Use(func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ctx := context.WithValue(r.Context(), auth.EmployeeIDKey, empID)
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
+	})
 	r.Post("/goals/batch", h.BatchGoals)
 
 	body := `{"items":[{"operation":"create","category_id":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa","goal":{"name":"Batch goal","unit":"porcentaje","weight":50,"target_value":100}}]}`
@@ -574,6 +611,12 @@ func TestDeleteGoal_PhaseRestricted(t *testing.T) {
 
 	h := newTestHandler(nil, goalSvc, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	r := chi.NewRouter()
+	r.Use(func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ctx := context.WithValue(r.Context(), auth.EmployeeIDKey, empID)
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
+	})
 	r.Delete("/goals/{goalId}", h.DeleteGoal)
 
 	req := httptest.NewRequest(http.MethodDelete, fmt.Sprintf("/goals/%s", goalID), nil)
@@ -596,6 +639,12 @@ func TestUpdateProgress_WrongPhase(t *testing.T) {
 
 	h := newTestHandler(nil, nil, progSvc, nil, nil, nil, nil, nil, nil, nil, nil)
 	r := chi.NewRouter()
+	r.Use(func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ctx := context.WithValue(r.Context(), auth.EmployeeIDKey, empID)
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
+	})
 	r.Patch("/goals/{goalId}/progress", h.UpdateGoalProgress)
 
 	body := `{"current_value":50}`
@@ -767,6 +816,12 @@ func TestBatchGoals_Concurrent(t *testing.T) {
 
 	h := newTestHandler(nil, nil, nil, nil, nil, batchSvc, nil, nil, nil, nil, nil)
 	r := chi.NewRouter()
+	r.Use(func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ctx := context.WithValue(r.Context(), auth.EmployeeIDKey, empID)
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
+	})
 	r.Post("/goals/batch", h.BatchGoals)
 
 	var wg sync.WaitGroup

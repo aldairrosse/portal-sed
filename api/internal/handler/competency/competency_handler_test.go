@@ -77,7 +77,7 @@ func decodeResponse(t *testing.T, w *httptest.ResponseRecorder, v interface{}) {
 func TestListPillars_Success(t *testing.T) {
 	t.Parallel()
 	w := httptest.NewRecorder()
-	req := makeRequest("GET", "/api/v1/pillars", nil)
+	_ = makeRequest("GET", "/api/v1/pillars", nil)
 
 	// Simulate handler response
 	w.WriteHeader(http.StatusOK)
@@ -98,7 +98,7 @@ func TestCreatePillar_Success(t *testing.T) {
 	t.Parallel()
 	body := map[string]string{"name": "Comportamental", "description": "Pilar comportamental"}
 	w := httptest.NewRecorder()
-	req := makeRequest("POST", "/api/v1/pillars", body)
+	_ = makeRequest("POST", "/api/v1/pillars", body)
 
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w.Body).Encode(mockPillar{
@@ -159,6 +159,7 @@ func TestListCompetencies_Success(t *testing.T) {
 func TestCreateCompetency_Success(t *testing.T) {
 	t.Parallel()
 	body := map[string]string{"name": "Negociación", "description": "Competencia de negociación"}
+	_ = body
 	w := httptest.NewRecorder()
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w.Body).Encode(mockCompetency{

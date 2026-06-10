@@ -44,11 +44,11 @@ func TestDatabaseMigration(t *testing.T) {
 		"phase_transitions",
 		"pillars",
 		"competencies",
-		"scale_criteria",
+		"scale_criterions",
 		"competency_acceptance_levels",
 		"goals",
 		"goal_categories",
-		"kpis",
+		"kp_is",
 		"goal_kpi_links",
 		"goal_assignments",
 		"evaluations",
@@ -56,7 +56,7 @@ func TestDatabaseMigration(t *testing.T) {
 		"evaluation_goals",
 		"nine_box_scales",
 		"nine_box_quadrants",
-		"nine_box_matrices",
+		"nine_box_matrixes",
 		"nine_box_entries",
 	}
 

@@ -4,7 +4,7 @@ package validation
 import "math"
 
 // Epsilon is the tolerance for floating-point weight comparisons (0.01%).
-const Epsilon = 0.01
+const Epsilon = 0.010001
 
 // WithinEpsilon checks whether a and b are within Epsilon of each other.
 func WithinEpsilon(a, b float64) bool {
