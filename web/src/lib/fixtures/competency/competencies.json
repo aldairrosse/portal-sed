@@ -1,50 +1,56 @@
 [
 	{
+		"id": "comp-gestion-cambio",
+		"name": "Gestión del cambio",
+		"description": "Se adapta y lidera procesos de transformación organizacional con flexibilidad y actitud positiva",
+		"pillarId": "pilar-innovamos"
+	},
+	{
 		"id": "comp-comunicacion",
-		"name": "Comunicación efectiva",
-		"description": "Transmite ideas con claridad y escucha activamente",
-		"pillarId": "pilar-liderazgo"
+		"name": "Comunicación",
+		"description": "Transmite ideas con claridad y escucha activamente a los demás",
+		"pillarId": "pilar-innovamos"
 	},
 	{
-		"id": "comp-desarrollo-equipo",
-		"name": "Desarrollo de equipo",
-		"description": "Fomenta el crecimiento profesional de los miembros del equipo",
-		"pillarId": "pilar-liderazgo"
+		"id": "comp-accountability",
+		"name": "Accountability",
+		"description": "Asume la responsabilidad de sus acciones y resultados con compromiso y transparencia",
+		"pillarId": "pilar-somos-proactivos"
 	},
 	{
-		"id": "comp-toma-decisiones",
-		"name": "Toma de decisiones",
-		"description": "Analiza opciones y decide con criterio y oportunidad",
-		"pillarId": "pilar-liderazgo"
+		"id": "comp-liderazgo",
+		"name": "Liderazgo",
+		"description": "Guía, motiva e inspira a otros para alcanzar objetivos comunes",
+		"pillarId": "pilar-somos-proactivos"
 	},
 	{
-		"id": "comp-dominio-herramientas",
-		"name": "Dominio de herramientas",
-		"description": "Maneja con solvencia las herramientas y sistemas del puesto",
-		"pillarId": "pilar-tecnico"
+		"id": "comp-people-management",
+		"name": "People Management",
+		"description": "Gestiona el talento y desarrollo de las personas del equipo",
+		"pillarId": "pilar-somos-agiles"
+	},
+	{
+		"id": "comp-trabajo-equipo",
+		"name": "Trabajo en equipo",
+		"description": "Colabora activamente y contribuye al logro de metas colectivas",
+		"pillarId": "pilar-somos-agiles"
 	},
 	{
 		"id": "comp-resolucion-problemas",
 		"name": "Resolución de problemas",
-		"description": "Identifica causas raíz y propone soluciones efectivas",
-		"pillarId": "pilar-tecnico"
+		"description": "Identifica causas raíz y propone soluciones efectivas basadas en datos",
+		"pillarId": "pilar-somos-agiles"
 	},
 	{
-		"id": "comp-colaboracion",
-		"name": "Colaboración",
-		"description": "Trabaja en equipo y contribuye a un ambiente positivo",
-		"pillarId": "pilar-comportamental"
+		"id": "comp-etica-organizacional",
+		"name": "Ética Organizacional",
+		"description": "Actúa con integridad, honestidad y alineado a los valores de la organización",
+		"pillarId": "pilar-apoyamos-desarrollo"
 	},
 	{
-		"id": "comp-adaptabilidad",
-		"name": "Adaptabilidad",
-		"description": "Se ajusta a cambios con flexibilidad y actitud constructiva",
-		"pillarId": "pilar-comportamental"
-	},
-	{
-		"id": "comp-responsabilidad",
-		"name": "Responsabilidad",
-		"description": "Cumple compromisos y asume las consecuencias de sus actos",
-		"pillarId": "pilar-comportamental"
+		"id": "comp-inteligencia-emocional",
+		"name": "Inteligencia emocional",
+		"description": "Reconoce, comprende y gestiona sus emociones y las de los demás",
+		"pillarId": "pilar-apoyamos-desarrollo"
 	}
 ]

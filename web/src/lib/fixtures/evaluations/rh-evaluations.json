@@ -7,23 +7,17 @@
 		"rhComment": "Comunicación efectiva con clientes, aunque puede mejorar en reportes escritos"
 	},
 	{
-		"id": "rh-emp-vendedor-01-comp-desarrollo-equipo",
+		"id": "rh-emp-vendedor-01-comp-accountability",
 		"employeeId": "emp-vendedor-01",
-		"competencyId": "comp-desarrollo-equipo",
-		"rhRating": 3
-	},
-	{
-		"id": "rh-emp-vendedor-01-comp-toma-decisiones",
-		"employeeId": "emp-vendedor-01",
-		"competencyId": "comp-toma-decisiones",
-		"rhRating": 4
-	},
-	{
-		"id": "rh-emp-vendedor-01-comp-dominio-herramientas",
-		"employeeId": "emp-vendedor-01",
-		"competencyId": "comp-dominio-herramientas",
+		"competencyId": "comp-accountability",
 		"rhRating": 3,
-		"rhComment": "Requiere capacitación en CRM"
+		"rhComment": "Cumple metas pero debe anticiparse más a sus objetivos"
+	},
+	{
+		"id": "rh-emp-vendedor-01-comp-trabajo-equipo",
+		"employeeId": "emp-vendedor-01",
+		"competencyId": "comp-trabajo-equipo",
+		"rhRating": 4
 	},
 	{
 		"id": "rh-emp-vendedor-01-comp-resolucion-problemas",
@@ -32,21 +26,9 @@
 		"rhRating": 4
 	},
 	{
-		"id": "rh-emp-vendedor-01-comp-colaboracion",
+		"id": "rh-emp-vendedor-01-comp-etica-organizacional",
 		"employeeId": "emp-vendedor-01",
-		"competencyId": "comp-colaboracion",
-		"rhRating": 4
-	},
-	{
-		"id": "rh-emp-vendedor-01-comp-adaptabilidad",
-		"employeeId": "emp-vendedor-01",
-		"competencyId": "comp-adaptabilidad",
-		"rhRating": 3
-	},
-	{
-		"id": "rh-emp-vendedor-01-comp-responsabilidad",
-		"employeeId": "emp-vendedor-01",
-		"competencyId": "comp-responsabilidad",
+		"competencyId": "comp-etica-organizacional",
 		"rhRating": 5
 	}
 ]

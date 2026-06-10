@@ -6,7 +6,7 @@ export interface SimulatedUser {
 }
 
 export const PROFILE_USERS: Record<EvaluationProfile, SimulatedUser> = {
-	colaborador: { name: 'María López García', email: 'maria.lopez@empresa.com' },
+	colaborador: { name: 'Frankil Aldair Perez Rosales', email: 'maria.lopez@empresa.com' },
 	jefe: { name: 'Carlos Rodríguez Pérez', email: 'carlos.rodriguez@empresa.com' },
 	vendedor: { name: 'Ana Martínez Simón', email: 'ana.martinez@empresa.com' },
 	'gerente-tienda': { name: 'Luis González Villa', email: 'luis.gonzalez@empresa.com' },

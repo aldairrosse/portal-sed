@@ -1,17 +1,22 @@
 [
 	{
-		"id": "pilar-liderazgo",
-		"name": "Liderazgo",
-		"description": "Capacidad de guiar, motivar y desarrollar equipos de alto rendimiento"
+		"id": "pilar-innovamos",
+		"name": "Innovamos",
+		"description": "Desarrollar colaboradores innovadores, creativos, que aprendan de los errores y descubran nuevas maneras de hacer las cosas."
 	},
 	{
-		"id": "pilar-tecnico",
-		"name": "Técnico",
-		"description": "Conocimientos y habilidades técnicas necesarias para el rol"
+		"id": "pilar-somos-proactivos",
+		"name": "Somos Proactivos",
+		"description": "Buscamos anticiparnos a algún acontecimiento, de manera que se pueda intervenir, actuar y adaptarse frente a las situaciones, buscando la calidad de las intervenciones, sobresaliendo y logrando la excelencia."
 	},
 	{
-		"id": "pilar-comportamental",
-		"name": "Comportamental",
-		"description": "Actitudes y comportamientos esperados en el entorno laboral"
+		"id": "pilar-somos-agiles",
+		"name": "Somos Ágiles",
+		"description": "La toma de decisiones basadas en datos, partiendo de un análisis detallado para conocer la estructura de la información, con el fin de evaluar alternativas prácticas y resolver problemas de manera eficaz."
+	},
+	{
+		"id": "pilar-apoyamos-desarrollo",
+		"name": "Apoyamos el Desarrollo",
+		"description": "Colaboración y acompañamiento de los colaboradores para su desarrollo, es decir la adquisición de nuevos conocimientos, habilidades y actitudes para desenvolverse de manera óptima en sus funciones, centrando en un plan que impulse sus fortalezas y mejore sus áreas de oportunidad."
 	}
 ]

@@ -1,5 +1,12 @@
 [
 	{
+		"id": "sr-emp-colaborador-01-comp-gestion-cambio",
+		"employeeId": "emp-colaborador-01",
+		"competencyId": "comp-gestion-cambio",
+		"selfRating": 3,
+		"selfComment": "Me he adaptado bien a los cambios recientes en el equipo"
+	},
+	{
 		"id": "sr-emp-colaborador-01-comp-comunicacion",
 		"employeeId": "emp-colaborador-01",
 		"competencyId": "comp-comunicacion",
@@ -7,24 +14,18 @@
 		"selfComment": "Considero que mi comunicación ha sido clara y oportuna"
 	},
 	{
-		"id": "sr-emp-colaborador-01-comp-desarrollo-equipo",
+		"id": "sr-emp-colaborador-01-comp-accountability",
 		"employeeId": "emp-colaborador-01",
-		"competencyId": "comp-desarrollo-equipo",
-		"selfRating": 3,
-		"selfComment": "He participado en actividades de equipo"
-	},
-	{
-		"id": "sr-emp-colaborador-01-comp-toma-decisiones",
-		"employeeId": "emp-colaborador-01",
-		"competencyId": "comp-toma-decisiones",
-		"selfRating": 4
-	},
-	{
-		"id": "sr-emp-colaborador-01-comp-dominio-herramientas",
-		"employeeId": "emp-colaborador-01",
-		"competencyId": "comp-dominio-herramientas",
+		"competencyId": "comp-accountability",
 		"selfRating": 4,
-		"selfComment": "Domino las herramientas del puesto"
+		"selfComment": "Asumo mis responsabilidades y cumple con mis compromisos"
+	},
+	{
+		"id": "sr-emp-colaborador-01-comp-trabajo-equipo",
+		"employeeId": "emp-colaborador-01",
+		"competencyId": "comp-trabajo-equipo",
+		"selfRating": 4,
+		"selfComment": "Buena colaboración con el equipo"
 	},
 	{
 		"id": "sr-emp-colaborador-01-comp-resolucion-problemas",
@@ -33,21 +34,17 @@
 		"selfRating": 3
 	},
 	{
-		"id": "sr-emp-colaborador-01-comp-colaboracion",
+		"id": "sr-emp-colaborador-01-comp-etica-organizacional",
 		"employeeId": "emp-colaborador-01",
-		"competencyId": "comp-colaboracion",
-		"selfRating": 4,
-		"selfComment": "Buena colaboración con el equipo"
+		"competencyId": "comp-etica-organizacional",
+		"selfRating": 5,
+		"selfComment": "Actúo siempre con integridad y alineado a los valores"
 	},
 	{
-		"id": "sr-emp-colaborador-01-comp-adaptabilidad",
+		"id": "sr-emp-colaborador-01-comp-inteligencia-emocional",
 		"employeeId": "emp-colaborador-01",
-		"competencyId": "comp-adaptabilidad"
-	},
-	{
-		"id": "sr-emp-colaborador-01-comp-responsabilidad",
-		"employeeId": "emp-colaborador-01",
-		"competencyId": "comp-responsabilidad"
+		"competencyId": "comp-inteligencia-emocional",
+		"selfRating": 3
 	},
 	{
 		"id": "sr-emp-vendedor-01-comp-comunicacion",
@@ -57,22 +54,16 @@
 		"selfComment": "Excelente comunicación con clientes"
 	},
 	{
-		"id": "sr-emp-vendedor-01-comp-desarrollo-equipo",
+		"id": "sr-emp-vendedor-01-comp-accountability",
 		"employeeId": "emp-vendedor-01",
-		"competencyId": "comp-desarrollo-equipo",
-		"selfRating": 4
-	},
-	{
-		"id": "sr-emp-vendedor-01-comp-toma-decisiones",
-		"employeeId": "emp-vendedor-01",
-		"competencyId": "comp-toma-decisiones",
+		"competencyId": "comp-accountability",
 		"selfRating": 4,
-		"selfComment": "Decisiones rápidas y efectivas"
+		"selfComment": "Cumplo mis metas de ventas con responsabilidad"
 	},
 	{
-		"id": "sr-emp-vendedor-01-comp-dominio-herramientas",
+		"id": "sr-emp-vendedor-01-comp-trabajo-equipo",
 		"employeeId": "emp-vendedor-01",
-		"competencyId": "comp-dominio-herramientas",
+		"competencyId": "comp-trabajo-equipo",
 		"selfRating": 4
 	},
 	{
@@ -80,30 +71,17 @@
 		"employeeId": "emp-vendedor-01",
 		"competencyId": "comp-resolucion-problemas",
 		"selfRating": 5,
-		"selfComment": "Resolución efectiva de problemas"
+		"selfComment": "Resolución efectiva de problemas con clientes"
 	},
 	{
-		"id": "sr-emp-vendedor-01-comp-colaboracion",
+		"id": "sr-emp-vendedor-01-comp-etica-organizacional",
 		"employeeId": "emp-vendedor-01",
-		"competencyId": "comp-colaboracion",
+		"competencyId": "comp-etica-organizacional",
 		"selfRating": 4
 	},
 	{
-		"id": "sr-emp-vendedor-01-comp-adaptabilidad",
-		"employeeId": "emp-vendedor-01",
-		"competencyId": "comp-adaptabilidad",
-		"selfRating": 3
-	},
-	{
-		"id": "sr-emp-vendedor-01-comp-responsabilidad",
-		"employeeId": "emp-vendedor-01",
-		"competencyId": "comp-responsabilidad",
-		"selfRating": 5,
-		"selfComment": "Siempre cumplo con mis compromisos"
-	},
-	{
-		"id": "sr-emp-jefe-01-comp-comunicacion",
+		"id": "sr-emp-jefe-01-comp-liderazgo",
 		"employeeId": "emp-jefe-01",
-		"competencyId": "comp-comunicacion"
+		"competencyId": "comp-liderazgo"
 	}
 ]

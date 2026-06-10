@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { EVALUATION_PROFILES, CYCLE_PHASES, PROFILE_LABELS, PHASE_LABELS, type EvaluationProfile, type CyclePhase } from '$lib/types/evaluation';
 	import { setProfile, setPhase, getProfile, getPhase } from '$lib/stores/devContext.svelte';
-	import { Code } from '@lucide/svelte';
+	import { Code, FileText } from '@lucide/svelte';
 	import { onMount } from 'svelte';
 
 	const profiles = EVALUATION_PROFILES;
@@ -45,6 +45,14 @@
 				</div>
 				<span class="text-[10px] text-base-content/30">Ctrl+Shift+D</span>
 			</div>
+
+			<a
+				href="/dev/requisitos"
+				class="btn btn-ghost btn-xs justify-start gap-2 text-warning/70 hover:text-warning"
+			>
+				<FileText class="w-3.5 h-3.5" />
+				Requisitos
+			</a>
 
 			<label class="flex items-center gap-2">
 				<span class="text-base-content/40 text-xs">Perfil:</span>

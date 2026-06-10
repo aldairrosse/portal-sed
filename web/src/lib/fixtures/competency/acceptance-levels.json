@@ -1,7 +1,27 @@
 [
-	{ "level": 1, "label": "No aceptable", "description": "No cumple con el estándar mínimo esperado" },
-	{ "level": 2, "label": "En desarrollo", "description": "Muestra avances pero requiere mejora consistente" },
-	{ "level": 3, "label": "Cumple expectativas", "description": "Cumple con lo esperado para su rol" },
-	{ "level": 4, "label": "Sobre expectativas", "description": "Supera consistentemente lo esperado" },
-	{ "level": 5, "label": "Excepcional", "description": "Es referente y modelo a seguir" }
+    {
+        "level": 1,
+        "label": "Cimienta",
+        "description": "No demuestra el comportamiento esperado, impactando negativamente la operación, el equipo o la experiencia del cliente"
+    },
+    {
+        "level": 2,
+        "label": "Construye",
+        "description": "Muestra inconsistencias en la ejecución del comportamiento, afectando en ocasiones la operación o resultados, requiriendo acompañamiento para mejorar."
+    },
+    {
+        "level": 3,
+        "label": "Expande",
+        "description": "Cumple de manera constante con los comportamientos esperados, asegurando una correcta ejecución y contribuyendo a los resultados del área."
+    },
+    {
+        "level": 4,
+        "label": "Consolida",
+        "description": "Domina el comportamiento de forma consistente en la operación diaria, logrando resultados superiores y siendo un referente confiable en su equipo."
+    },
+    {
+        "level": 5,
+        "label": "Transforma",
+        "description": "Demuestra dominio total del comportamiento, incluso en situaciones complejas, influyendo en otros y elevando resultados, experiencia del cliente y ejecución del equipo."
+    }
 ]
