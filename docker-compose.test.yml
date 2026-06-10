@@ -1,0 +1,25 @@
+services:
+  postgres-test:
+    image: postgres:16-alpine
+    ports: ["5433:5432"]
+    environment:
+      POSTGRES_USER: sed_test
+      POSTGRES_PASSWORD: sed_test
+      POSTGRES_DB: sed_test
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sed_test"]
+      interval: 2s
+      retries: 10
+
+  api-test:
+    build: ./api
+    ports: ["8081:8080"]
+    depends_on:
+      postgres-test: { condition: service_healthy }
+    environment:
+      DATABASE_URL: postgres://sed_test:sed_test@postgres-test:5432/sed_test?sslmode=disable
+      API_PORT: "8080"
+      CORS_ORIGINS: http://localhost:5173
+      SEED_ON_START: "true"
