@@ -1,4 +1,5 @@
 import type { EvaluationProfile, CyclePhase } from '$lib/types/evaluation';
+import { isDev } from '$lib/dev/devEnv';
 
 const STORAGE_KEY = 'sed-dev-context';
 
@@ -13,7 +14,7 @@ const DEFAULT_STATE: DevContextState = {
 };
 
 function loadFromStorage(): DevContextState | null {
-	if (!import.meta.env.DEV) return null;
+	if (!isDev()) return null;
 	try {
 		const raw = sessionStorage.getItem(STORAGE_KEY);
 		if (!raw) return null;
@@ -24,7 +25,7 @@ function loadFromStorage(): DevContextState | null {
 }
 
 function saveToStorage(state: DevContextState): void {
-	if (!import.meta.env.DEV) return;
+	if (!isDev()) return;
 	try {
 		sessionStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 	} catch {

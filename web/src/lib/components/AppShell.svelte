@@ -1,6 +1,7 @@
 <script lang="ts">
 	import Sidebar from './Sidebar.svelte';
 	import DevToolbar from './DevToolbar.svelte';
+	import { isDev } from '$lib/dev/devEnv';
 	import logoBlack from '$lib/assets/logo_black.png';
 	import logoWhite from '$lib/assets/logo_white.png';
 
@@ -43,7 +44,7 @@
 			{@render children()}
 		</main>
 
-		{#if import.meta.env.DEV}
+		{#if isDev()}
 			<DevToolbar />
 		{/if}
 	</div>
