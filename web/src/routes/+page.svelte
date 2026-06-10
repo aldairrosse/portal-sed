@@ -268,7 +268,7 @@
 			<h2 class="text-xs font-semibold text-base-content/50 tracking-wide mb-3">
 				Competencias
 			</h2>
-			<div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+			<div class="grid grid-cols-1 sm:grid-cols-4 gap-6">
 				{#each competenciesByPillar as group (group.pilar.id)}
 					{#if group.items.length > 0}
 						<div>
