@@ -41,6 +41,8 @@ func init() {
 	competencyMixin := schema.Competency{}.Mixin()
 	competencyMixinFields0 := competencyMixin[0].Fields()
 	_ = competencyMixinFields0
+	competencyMixinFields1 := competencyMixin[1].Fields()
+	_ = competencyMixinFields1
 	competencyFields := schema.Competency{}.Fields()
 	_ = competencyFields
 	// competencyDescCreatedAt is the schema descriptor for created_at field.
@@ -53,6 +55,12 @@ func init() {
 	competency.DefaultUpdatedAt = competencyDescUpdatedAt.Default.(func() time.Time)
 	// competency.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	competency.UpdateDefaultUpdatedAt = competencyDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// competencyDescVersion is the schema descriptor for version field.
+	competencyDescVersion := competencyMixinFields1[0].Descriptor()
+	// competency.DefaultVersion holds the default value on creation for the version field.
+	competency.DefaultVersion = competencyDescVersion.Default.(int)
+	// competency.VersionValidator is a validator for the "version" field. It is called by the builders before save.
+	competency.VersionValidator = competencyDescVersion.Validators[0].(func(int) error)
 	// competencyDescName is the schema descriptor for name field.
 	competencyDescName := competencyFields[1].Descriptor()
 	// competency.NameValidator is a validator for the "name" field. It is called by the builders before save.
@@ -87,6 +95,8 @@ func init() {
 	cycleMixin := schema.Cycle{}.Mixin()
 	cycleMixinFields0 := cycleMixin[0].Fields()
 	_ = cycleMixinFields0
+	cycleMixinFields1 := cycleMixin[1].Fields()
+	_ = cycleMixinFields1
 	cycleFields := schema.Cycle{}.Fields()
 	_ = cycleFields
 	// cycleDescCreatedAt is the schema descriptor for created_at field.
@@ -99,6 +109,12 @@ func init() {
 	cycle.DefaultUpdatedAt = cycleDescUpdatedAt.Default.(func() time.Time)
 	// cycle.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	cycle.UpdateDefaultUpdatedAt = cycleDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// cycleDescVersion is the schema descriptor for version field.
+	cycleDescVersion := cycleMixinFields1[0].Descriptor()
+	// cycle.DefaultVersion holds the default value on creation for the version field.
+	cycle.DefaultVersion = cycleDescVersion.Default.(int)
+	// cycle.VersionValidator is a validator for the "version" field. It is called by the builders before save.
+	cycle.VersionValidator = cycleDescVersion.Validators[0].(func(int) error)
 	// cycleDescID is the schema descriptor for id field.
 	cycleDescID := cycleFields[0].Descriptor()
 	// cycle.DefaultID holds the default value on creation for the id field.
@@ -145,6 +161,8 @@ func init() {
 	evaluationMixin := schema.Evaluation{}.Mixin()
 	evaluationMixinFields0 := evaluationMixin[0].Fields()
 	_ = evaluationMixinFields0
+	evaluationMixinFields1 := evaluationMixin[1].Fields()
+	_ = evaluationMixinFields1
 	evaluationFields := schema.Evaluation{}.Fields()
 	_ = evaluationFields
 	// evaluationDescCreatedAt is the schema descriptor for created_at field.
@@ -157,6 +175,12 @@ func init() {
 	evaluation.DefaultUpdatedAt = evaluationDescUpdatedAt.Default.(func() time.Time)
 	// evaluation.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	evaluation.UpdateDefaultUpdatedAt = evaluationDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// evaluationDescVersion is the schema descriptor for version field.
+	evaluationDescVersion := evaluationMixinFields1[0].Descriptor()
+	// evaluation.DefaultVersion holds the default value on creation for the version field.
+	evaluation.DefaultVersion = evaluationDescVersion.Default.(int)
+	// evaluation.VersionValidator is a validator for the "version" field. It is called by the builders before save.
+	evaluation.VersionValidator = evaluationDescVersion.Validators[0].(func(int) error)
 	// evaluationDescID is the schema descriptor for id field.
 	evaluationDescID := evaluationFields[0].Descriptor()
 	// evaluation.DefaultID holds the default value on creation for the id field.
@@ -239,6 +263,8 @@ func init() {
 	goalMixin := schema.Goal{}.Mixin()
 	goalMixinFields0 := goalMixin[0].Fields()
 	_ = goalMixinFields0
+	goalMixinFields1 := goalMixin[1].Fields()
+	_ = goalMixinFields1
 	goalFields := schema.Goal{}.Fields()
 	_ = goalFields
 	// goalDescCreatedAt is the schema descriptor for created_at field.
@@ -251,6 +277,12 @@ func init() {
 	goal.DefaultUpdatedAt = goalDescUpdatedAt.Default.(func() time.Time)
 	// goal.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	goal.UpdateDefaultUpdatedAt = goalDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// goalDescVersion is the schema descriptor for version field.
+	goalDescVersion := goalMixinFields1[0].Descriptor()
+	// goal.DefaultVersion holds the default value on creation for the version field.
+	goal.DefaultVersion = goalDescVersion.Default.(int)
+	// goal.VersionValidator is a validator for the "version" field. It is called by the builders before save.
+	goal.VersionValidator = goalDescVersion.Validators[0].(func(int) error)
 	// goalDescName is the schema descriptor for name field.
 	goalDescName := goalFields[1].Descriptor()
 	// goal.NameValidator is a validator for the "name" field. It is called by the builders before save.
@@ -359,6 +391,8 @@ func init() {
 	nineboxentryMixin := schema.NineBoxEntry{}.Mixin()
 	nineboxentryMixinFields0 := nineboxentryMixin[0].Fields()
 	_ = nineboxentryMixinFields0
+	nineboxentryMixinFields1 := nineboxentryMixin[1].Fields()
+	_ = nineboxentryMixinFields1
 	nineboxentryFields := schema.NineBoxEntry{}.Fields()
 	_ = nineboxentryFields
 	// nineboxentryDescCreatedAt is the schema descriptor for created_at field.
@@ -371,6 +405,12 @@ func init() {
 	nineboxentry.DefaultUpdatedAt = nineboxentryDescUpdatedAt.Default.(func() time.Time)
 	// nineboxentry.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	nineboxentry.UpdateDefaultUpdatedAt = nineboxentryDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// nineboxentryDescVersion is the schema descriptor for version field.
+	nineboxentryDescVersion := nineboxentryMixinFields1[0].Descriptor()
+	// nineboxentry.DefaultVersion holds the default value on creation for the version field.
+	nineboxentry.DefaultVersion = nineboxentryDescVersion.Default.(int)
+	// nineboxentry.VersionValidator is a validator for the "version" field. It is called by the builders before save.
+	nineboxentry.VersionValidator = nineboxentryDescVersion.Validators[0].(func(int) error)
 	// nineboxentryDescPerformanceScore is the schema descriptor for performance_score field.
 	nineboxentryDescPerformanceScore := nineboxentryFields[1].Descriptor()
 	// nineboxentry.PerformanceScoreValidator is a validator for the "performance_score" field. It is called by the builders before save.
@@ -441,6 +481,8 @@ func init() {
 	orgnodeMixin := schema.OrgNode{}.Mixin()
 	orgnodeMixinFields0 := orgnodeMixin[0].Fields()
 	_ = orgnodeMixinFields0
+	orgnodeMixinFields1 := orgnodeMixin[1].Fields()
+	_ = orgnodeMixinFields1
 	orgnodeFields := schema.OrgNode{}.Fields()
 	_ = orgnodeFields
 	// orgnodeDescCreatedAt is the schema descriptor for created_at field.
@@ -453,6 +495,12 @@ func init() {
 	orgnode.DefaultUpdatedAt = orgnodeDescUpdatedAt.Default.(func() time.Time)
 	// orgnode.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	orgnode.UpdateDefaultUpdatedAt = orgnodeDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// orgnodeDescVersion is the schema descriptor for version field.
+	orgnodeDescVersion := orgnodeMixinFields1[0].Descriptor()
+	// orgnode.DefaultVersion holds the default value on creation for the version field.
+	orgnode.DefaultVersion = orgnodeDescVersion.Default.(int)
+	// orgnode.VersionValidator is a validator for the "version" field. It is called by the builders before save.
+	orgnode.VersionValidator = orgnodeDescVersion.Validators[0].(func(int) error)
 	// orgnodeDescName is the schema descriptor for name field.
 	orgnodeDescName := orgnodeFields[1].Descriptor()
 	// orgnode.NameValidator is a validator for the "name" field. It is called by the builders before save.
@@ -532,6 +580,8 @@ func init() {
 	pillarMixin := schema.Pillar{}.Mixin()
 	pillarMixinFields0 := pillarMixin[0].Fields()
 	_ = pillarMixinFields0
+	pillarMixinFields1 := pillarMixin[1].Fields()
+	_ = pillarMixinFields1
 	pillarFields := schema.Pillar{}.Fields()
 	_ = pillarFields
 	// pillarDescCreatedAt is the schema descriptor for created_at field.
@@ -544,6 +594,12 @@ func init() {
 	pillar.DefaultUpdatedAt = pillarDescUpdatedAt.Default.(func() time.Time)
 	// pillar.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	pillar.UpdateDefaultUpdatedAt = pillarDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// pillarDescVersion is the schema descriptor for version field.
+	pillarDescVersion := pillarMixinFields1[0].Descriptor()
+	// pillar.DefaultVersion holds the default value on creation for the version field.
+	pillar.DefaultVersion = pillarDescVersion.Default.(int)
+	// pillar.VersionValidator is a validator for the "version" field. It is called by the builders before save.
+	pillar.VersionValidator = pillarDescVersion.Validators[0].(func(int) error)
 	// pillarDescName is the schema descriptor for name field.
 	pillarDescName := pillarFields[1].Descriptor()
 	// pillar.NameValidator is a validator for the "name" field. It is called by the builders before save.
@@ -555,6 +611,8 @@ func init() {
 	scalecriterionMixin := schema.ScaleCriterion{}.Mixin()
 	scalecriterionMixinFields0 := scalecriterionMixin[0].Fields()
 	_ = scalecriterionMixinFields0
+	scalecriterionMixinFields1 := scalecriterionMixin[1].Fields()
+	_ = scalecriterionMixinFields1
 	scalecriterionFields := schema.ScaleCriterion{}.Fields()
 	_ = scalecriterionFields
 	// scalecriterionDescCreatedAt is the schema descriptor for created_at field.
@@ -567,6 +625,12 @@ func init() {
 	scalecriterion.DefaultUpdatedAt = scalecriterionDescUpdatedAt.Default.(func() time.Time)
 	// scalecriterion.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	scalecriterion.UpdateDefaultUpdatedAt = scalecriterionDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// scalecriterionDescVersion is the schema descriptor for version field.
+	scalecriterionDescVersion := scalecriterionMixinFields1[0].Descriptor()
+	// scalecriterion.DefaultVersion holds the default value on creation for the version field.
+	scalecriterion.DefaultVersion = scalecriterionDescVersion.Default.(int)
+	// scalecriterion.VersionValidator is a validator for the "version" field. It is called by the builders before save.
+	scalecriterion.VersionValidator = scalecriterionDescVersion.Validators[0].(func(int) error)
 	// scalecriterionDescLevel is the schema descriptor for level field.
 	scalecriterionDescLevel := scalecriterionFields[1].Descriptor()
 	// scalecriterion.LevelValidator is a validator for the "level" field. It is called by the builders before save.

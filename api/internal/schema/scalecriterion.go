@@ -17,6 +17,7 @@ type ScaleCriterion struct {
 func (ScaleCriterion) Mixin() []ent.Mixin {
 	return []ent.Mixin{
 		TimeMixin{},
+		VersionMixin{},
 	}
 }
 

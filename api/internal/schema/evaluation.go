@@ -17,6 +17,7 @@ type Evaluation struct {
 func (Evaluation) Mixin() []ent.Mixin {
 	return []ent.Mixin{
 		AuditMixin{},
+		VersionMixin{},
 	}
 }
 

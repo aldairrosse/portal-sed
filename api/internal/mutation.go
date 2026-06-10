@@ -84,6 +84,8 @@ type CompetencyMutation struct {
 	id                             *uuid.UUID
 	created_at                     *time.Time
 	updated_at                     *time.Time
+	version                        *int
+	addversion                     *int
 	name                           *string
 	description                    *string
 	clearedFields                  map[string]struct{}
@@ -277,6 +279,62 @@ func (m *CompetencyMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err
 // ResetUpdatedAt resets all changes to the "updated_at" field.
 func (m *CompetencyMutation) ResetUpdatedAt() {
 	m.updated_at = nil
+}
+
+// SetVersion sets the "version" field.
+func (m *CompetencyMutation) SetVersion(i int) {
+	m.version = &i
+	m.addversion = nil
+}
+
+// Version returns the value of the "version" field in the mutation.
+func (m *CompetencyMutation) Version() (r int, exists bool) {
+	v := m.version
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldVersion returns the old "version" field's value of the Competency entity.
+// If the Competency object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CompetencyMutation) OldVersion(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldVersion is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldVersion requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldVersion: %w", err)
+	}
+	return oldValue.Version, nil
+}
+
+// AddVersion adds i to the "version" field.
+func (m *CompetencyMutation) AddVersion(i int) {
+	if m.addversion != nil {
+		*m.addversion += i
+	} else {
+		m.addversion = &i
+	}
+}
+
+// AddedVersion returns the value that was added to the "version" field in this mutation.
+func (m *CompetencyMutation) AddedVersion() (r int, exists bool) {
+	v := m.addversion
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetVersion resets all changes to the "version" field.
+func (m *CompetencyMutation) ResetVersion() {
+	m.version = nil
+	m.addversion = nil
 }
 
 // SetName sets the "name" field.
@@ -623,12 +681,15 @@ func (m *CompetencyMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *CompetencyMutation) Fields() []string {
-	fields := make([]string, 0, 5)
+	fields := make([]string, 0, 6)
 	if m.created_at != nil {
 		fields = append(fields, competency.FieldCreatedAt)
 	}
 	if m.updated_at != nil {
 		fields = append(fields, competency.FieldUpdatedAt)
+	}
+	if m.version != nil {
+		fields = append(fields, competency.FieldVersion)
 	}
 	if m.name != nil {
 		fields = append(fields, competency.FieldName)
@@ -651,6 +712,8 @@ func (m *CompetencyMutation) Field(name string) (ent.Value, bool) {
 		return m.CreatedAt()
 	case competency.FieldUpdatedAt:
 		return m.UpdatedAt()
+	case competency.FieldVersion:
+		return m.Version()
 	case competency.FieldName:
 		return m.Name()
 	case competency.FieldDescription:
@@ -670,6 +733,8 @@ func (m *CompetencyMutation) OldField(ctx context.Context, name string) (ent.Val
 		return m.OldCreatedAt(ctx)
 	case competency.FieldUpdatedAt:
 		return m.OldUpdatedAt(ctx)
+	case competency.FieldVersion:
+		return m.OldVersion(ctx)
 	case competency.FieldName:
 		return m.OldName(ctx)
 	case competency.FieldDescription:
@@ -699,6 +764,13 @@ func (m *CompetencyMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetUpdatedAt(v)
 		return nil
+	case competency.FieldVersion:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetVersion(v)
+		return nil
 	case competency.FieldName:
 		v, ok := value.(string)
 		if !ok {
@@ -727,13 +799,21 @@ func (m *CompetencyMutation) SetField(name string, value ent.Value) error {
 // AddedFields returns all numeric fields that were incremented/decremented during
 // this mutation.
 func (m *CompetencyMutation) AddedFields() []string {
-	return nil
+	var fields []string
+	if m.addversion != nil {
+		fields = append(fields, competency.FieldVersion)
+	}
+	return fields
 }
 
 // AddedField returns the numeric value that was incremented/decremented on a field
 // with the given name. The second boolean return value indicates that this field
 // was not set, or was not defined in the schema.
 func (m *CompetencyMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case competency.FieldVersion:
+		return m.AddedVersion()
+	}
 	return nil, false
 }
 
@@ -742,6 +822,13 @@ func (m *CompetencyMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *CompetencyMutation) AddField(name string, value ent.Value) error {
 	switch name {
+	case competency.FieldVersion:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddVersion(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Competency numeric field %s", name)
 }
@@ -783,6 +870,9 @@ func (m *CompetencyMutation) ResetField(name string) error {
 		return nil
 	case competency.FieldUpdatedAt:
 		m.ResetUpdatedAt()
+		return nil
+	case competency.FieldVersion:
+		m.ResetVersion()
 		return nil
 	case competency.FieldName:
 		m.ResetName()
@@ -1643,6 +1733,8 @@ type CycleMutation struct {
 	id                       *uuid.UUID
 	created_at               *time.Time
 	updated_at               *time.Time
+	version                  *int
+	addversion               *int
 	year                     *int
 	addyear                  *int
 	current_phase            *cycle.CurrentPhase
@@ -1848,6 +1940,62 @@ func (m *CycleMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err erro
 // ResetUpdatedAt resets all changes to the "updated_at" field.
 func (m *CycleMutation) ResetUpdatedAt() {
 	m.updated_at = nil
+}
+
+// SetVersion sets the "version" field.
+func (m *CycleMutation) SetVersion(i int) {
+	m.version = &i
+	m.addversion = nil
+}
+
+// Version returns the value of the "version" field in the mutation.
+func (m *CycleMutation) Version() (r int, exists bool) {
+	v := m.version
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldVersion returns the old "version" field's value of the Cycle entity.
+// If the Cycle object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CycleMutation) OldVersion(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldVersion is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldVersion requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldVersion: %w", err)
+	}
+	return oldValue.Version, nil
+}
+
+// AddVersion adds i to the "version" field.
+func (m *CycleMutation) AddVersion(i int) {
+	if m.addversion != nil {
+		*m.addversion += i
+	} else {
+		m.addversion = &i
+	}
+}
+
+// AddedVersion returns the value that was added to the "version" field in this mutation.
+func (m *CycleMutation) AddedVersion() (r int, exists bool) {
+	v := m.addversion
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetVersion resets all changes to the "version" field.
+func (m *CycleMutation) ResetVersion() {
+	m.version = nil
+	m.addversion = nil
 }
 
 // SetYear sets the "year" field.
@@ -2461,12 +2609,15 @@ func (m *CycleMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *CycleMutation) Fields() []string {
-	fields := make([]string, 0, 7)
+	fields := make([]string, 0, 8)
 	if m.created_at != nil {
 		fields = append(fields, cycle.FieldCreatedAt)
 	}
 	if m.updated_at != nil {
 		fields = append(fields, cycle.FieldUpdatedAt)
+	}
+	if m.version != nil {
+		fields = append(fields, cycle.FieldVersion)
 	}
 	if m.year != nil {
 		fields = append(fields, cycle.FieldYear)
@@ -2495,6 +2646,8 @@ func (m *CycleMutation) Field(name string) (ent.Value, bool) {
 		return m.CreatedAt()
 	case cycle.FieldUpdatedAt:
 		return m.UpdatedAt()
+	case cycle.FieldVersion:
+		return m.Version()
 	case cycle.FieldYear:
 		return m.Year()
 	case cycle.FieldCurrentPhase:
@@ -2518,6 +2671,8 @@ func (m *CycleMutation) OldField(ctx context.Context, name string) (ent.Value, e
 		return m.OldCreatedAt(ctx)
 	case cycle.FieldUpdatedAt:
 		return m.OldUpdatedAt(ctx)
+	case cycle.FieldVersion:
+		return m.OldVersion(ctx)
 	case cycle.FieldYear:
 		return m.OldYear(ctx)
 	case cycle.FieldCurrentPhase:
@@ -2550,6 +2705,13 @@ func (m *CycleMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetUpdatedAt(v)
+		return nil
+	case cycle.FieldVersion:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetVersion(v)
 		return nil
 	case cycle.FieldYear:
 		v, ok := value.(int)
@@ -2594,6 +2756,9 @@ func (m *CycleMutation) SetField(name string, value ent.Value) error {
 // this mutation.
 func (m *CycleMutation) AddedFields() []string {
 	var fields []string
+	if m.addversion != nil {
+		fields = append(fields, cycle.FieldVersion)
+	}
 	if m.addyear != nil {
 		fields = append(fields, cycle.FieldYear)
 	}
@@ -2605,6 +2770,8 @@ func (m *CycleMutation) AddedFields() []string {
 // was not set, or was not defined in the schema.
 func (m *CycleMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
+	case cycle.FieldVersion:
+		return m.AddedVersion()
 	case cycle.FieldYear:
 		return m.AddedYear()
 	}
@@ -2616,6 +2783,13 @@ func (m *CycleMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *CycleMutation) AddField(name string, value ent.Value) error {
 	switch name {
+	case cycle.FieldVersion:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddVersion(v)
+		return nil
 	case cycle.FieldYear:
 		v, ok := value.(int)
 		if !ok {
@@ -2670,6 +2844,9 @@ func (m *CycleMutation) ResetField(name string) error {
 		return nil
 	case cycle.FieldUpdatedAt:
 		m.ResetUpdatedAt()
+		return nil
+	case cycle.FieldVersion:
+		m.ResetVersion()
 		return nil
 	case cycle.FieldYear:
 		m.ResetYear()
@@ -4609,6 +4786,8 @@ type EvaluationMutation struct {
 	updated_at                   *time.Time
 	created_by                   *uuid.UUID
 	updated_by                   *uuid.UUID
+	version                      *int
+	addversion                   *int
 	phase                        *evaluation.Phase
 	state                        *evaluation.State
 	self_evaluation_completed_at *time.Time
@@ -4875,6 +5054,62 @@ func (m *EvaluationMutation) OldUpdatedBy(ctx context.Context) (v uuid.UUID, err
 // ResetUpdatedBy resets all changes to the "updated_by" field.
 func (m *EvaluationMutation) ResetUpdatedBy() {
 	m.updated_by = nil
+}
+
+// SetVersion sets the "version" field.
+func (m *EvaluationMutation) SetVersion(i int) {
+	m.version = &i
+	m.addversion = nil
+}
+
+// Version returns the value of the "version" field in the mutation.
+func (m *EvaluationMutation) Version() (r int, exists bool) {
+	v := m.version
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldVersion returns the old "version" field's value of the Evaluation entity.
+// If the Evaluation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EvaluationMutation) OldVersion(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldVersion is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldVersion requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldVersion: %w", err)
+	}
+	return oldValue.Version, nil
+}
+
+// AddVersion adds i to the "version" field.
+func (m *EvaluationMutation) AddVersion(i int) {
+	if m.addversion != nil {
+		*m.addversion += i
+	} else {
+		m.addversion = &i
+	}
+}
+
+// AddedVersion returns the value that was added to the "version" field in this mutation.
+func (m *EvaluationMutation) AddedVersion() (r int, exists bool) {
+	v := m.addversion
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetVersion resets all changes to the "version" field.
+func (m *EvaluationMutation) ResetVersion() {
+	m.version = nil
+	m.addversion = nil
 }
 
 // SetPhase sets the "phase" field.
@@ -5315,7 +5550,7 @@ func (m *EvaluationMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *EvaluationMutation) Fields() []string {
-	fields := make([]string, 0, 10)
+	fields := make([]string, 0, 11)
 	if m.created_at != nil {
 		fields = append(fields, evaluation.FieldCreatedAt)
 	}
@@ -5327,6 +5562,9 @@ func (m *EvaluationMutation) Fields() []string {
 	}
 	if m.updated_by != nil {
 		fields = append(fields, evaluation.FieldUpdatedBy)
+	}
+	if m.version != nil {
+		fields = append(fields, evaluation.FieldVersion)
 	}
 	if m.phase != nil {
 		fields = append(fields, evaluation.FieldPhase)
@@ -5362,6 +5600,8 @@ func (m *EvaluationMutation) Field(name string) (ent.Value, bool) {
 		return m.CreatedBy()
 	case evaluation.FieldUpdatedBy:
 		return m.UpdatedBy()
+	case evaluation.FieldVersion:
+		return m.Version()
 	case evaluation.FieldPhase:
 		return m.Phase()
 	case evaluation.FieldState:
@@ -5391,6 +5631,8 @@ func (m *EvaluationMutation) OldField(ctx context.Context, name string) (ent.Val
 		return m.OldCreatedBy(ctx)
 	case evaluation.FieldUpdatedBy:
 		return m.OldUpdatedBy(ctx)
+	case evaluation.FieldVersion:
+		return m.OldVersion(ctx)
 	case evaluation.FieldPhase:
 		return m.OldPhase(ctx)
 	case evaluation.FieldState:
@@ -5439,6 +5681,13 @@ func (m *EvaluationMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetUpdatedBy(v)
+		return nil
+	case evaluation.FieldVersion:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetVersion(v)
 		return nil
 	case evaluation.FieldPhase:
 		v, ok := value.(evaluation.Phase)
@@ -5489,13 +5738,21 @@ func (m *EvaluationMutation) SetField(name string, value ent.Value) error {
 // AddedFields returns all numeric fields that were incremented/decremented during
 // this mutation.
 func (m *EvaluationMutation) AddedFields() []string {
-	return nil
+	var fields []string
+	if m.addversion != nil {
+		fields = append(fields, evaluation.FieldVersion)
+	}
+	return fields
 }
 
 // AddedField returns the numeric value that was incremented/decremented on a field
 // with the given name. The second boolean return value indicates that this field
 // was not set, or was not defined in the schema.
 func (m *EvaluationMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case evaluation.FieldVersion:
+		return m.AddedVersion()
+	}
 	return nil, false
 }
 
@@ -5504,6 +5761,13 @@ func (m *EvaluationMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *EvaluationMutation) AddField(name string, value ent.Value) error {
 	switch name {
+	case evaluation.FieldVersion:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddVersion(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Evaluation numeric field %s", name)
 }
@@ -5557,6 +5821,9 @@ func (m *EvaluationMutation) ResetField(name string) error {
 		return nil
 	case evaluation.FieldUpdatedBy:
 		m.ResetUpdatedBy()
+		return nil
+	case evaluation.FieldVersion:
+		m.ResetVersion()
 		return nil
 	case evaluation.FieldPhase:
 		m.ResetPhase()
@@ -8786,6 +9053,8 @@ type GoalMutation struct {
 	updated_at              *time.Time
 	created_by              *uuid.UUID
 	updated_by              *uuid.UUID
+	version                 *int
+	addversion              *int
 	name                    *string
 	description             *string
 	unit                    *goal.Unit
@@ -9056,6 +9325,62 @@ func (m *GoalMutation) OldUpdatedBy(ctx context.Context) (v uuid.UUID, err error
 // ResetUpdatedBy resets all changes to the "updated_by" field.
 func (m *GoalMutation) ResetUpdatedBy() {
 	m.updated_by = nil
+}
+
+// SetVersion sets the "version" field.
+func (m *GoalMutation) SetVersion(i int) {
+	m.version = &i
+	m.addversion = nil
+}
+
+// Version returns the value of the "version" field in the mutation.
+func (m *GoalMutation) Version() (r int, exists bool) {
+	v := m.version
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldVersion returns the old "version" field's value of the Goal entity.
+// If the Goal object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GoalMutation) OldVersion(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldVersion is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldVersion requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldVersion: %w", err)
+	}
+	return oldValue.Version, nil
+}
+
+// AddVersion adds i to the "version" field.
+func (m *GoalMutation) AddVersion(i int) {
+	if m.addversion != nil {
+		*m.addversion += i
+	} else {
+		m.addversion = &i
+	}
+}
+
+// AddedVersion returns the value that was added to the "version" field in this mutation.
+func (m *GoalMutation) AddedVersion() (r int, exists bool) {
+	v := m.addversion
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetVersion resets all changes to the "version" field.
+func (m *GoalMutation) ResetVersion() {
+	m.version = nil
+	m.addversion = nil
 }
 
 // SetName sets the "name" field.
@@ -9588,7 +9913,7 @@ func (m *GoalMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *GoalMutation) Fields() []string {
-	fields := make([]string, 0, 12)
+	fields := make([]string, 0, 13)
 	if m.created_at != nil {
 		fields = append(fields, goal.FieldCreatedAt)
 	}
@@ -9600,6 +9925,9 @@ func (m *GoalMutation) Fields() []string {
 	}
 	if m.updated_by != nil {
 		fields = append(fields, goal.FieldUpdatedBy)
+	}
+	if m.version != nil {
+		fields = append(fields, goal.FieldVersion)
 	}
 	if m.name != nil {
 		fields = append(fields, goal.FieldName)
@@ -9641,6 +9969,8 @@ func (m *GoalMutation) Field(name string) (ent.Value, bool) {
 		return m.CreatedBy()
 	case goal.FieldUpdatedBy:
 		return m.UpdatedBy()
+	case goal.FieldVersion:
+		return m.Version()
 	case goal.FieldName:
 		return m.Name()
 	case goal.FieldDescription:
@@ -9674,6 +10004,8 @@ func (m *GoalMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldCreatedBy(ctx)
 	case goal.FieldUpdatedBy:
 		return m.OldUpdatedBy(ctx)
+	case goal.FieldVersion:
+		return m.OldVersion(ctx)
 	case goal.FieldName:
 		return m.OldName(ctx)
 	case goal.FieldDescription:
@@ -9726,6 +10058,13 @@ func (m *GoalMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetUpdatedBy(v)
+		return nil
+	case goal.FieldVersion:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetVersion(v)
 		return nil
 	case goal.FieldName:
 		v, ok := value.(string)
@@ -9791,6 +10130,9 @@ func (m *GoalMutation) SetField(name string, value ent.Value) error {
 // this mutation.
 func (m *GoalMutation) AddedFields() []string {
 	var fields []string
+	if m.addversion != nil {
+		fields = append(fields, goal.FieldVersion)
+	}
 	if m.addweight != nil {
 		fields = append(fields, goal.FieldWeight)
 	}
@@ -9808,6 +10150,8 @@ func (m *GoalMutation) AddedFields() []string {
 // was not set, or was not defined in the schema.
 func (m *GoalMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
+	case goal.FieldVersion:
+		return m.AddedVersion()
 	case goal.FieldWeight:
 		return m.AddedWeight()
 	case goal.FieldTargetValue:
@@ -9823,6 +10167,13 @@ func (m *GoalMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *GoalMutation) AddField(name string, value ent.Value) error {
 	switch name {
+	case goal.FieldVersion:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddVersion(v)
+		return nil
 	case goal.FieldWeight:
 		v, ok := value.(float64)
 		if !ok {
@@ -9891,6 +10242,9 @@ func (m *GoalMutation) ResetField(name string) error {
 		return nil
 	case goal.FieldUpdatedBy:
 		m.ResetUpdatedBy()
+		return nil
+	case goal.FieldVersion:
+		m.ResetVersion()
 		return nil
 	case goal.FieldName:
 		m.ResetName()
@@ -13248,6 +13602,8 @@ type NineBoxEntryMutation struct {
 	updated_at           *time.Time
 	created_by           *uuid.UUID
 	updated_by           *uuid.UUID
+	version              *int
+	addversion           *int
 	performance_score    *int
 	addperformance_score *int
 	potential_score      *int
@@ -13511,6 +13867,62 @@ func (m *NineBoxEntryMutation) OldUpdatedBy(ctx context.Context) (v uuid.UUID, e
 // ResetUpdatedBy resets all changes to the "updated_by" field.
 func (m *NineBoxEntryMutation) ResetUpdatedBy() {
 	m.updated_by = nil
+}
+
+// SetVersion sets the "version" field.
+func (m *NineBoxEntryMutation) SetVersion(i int) {
+	m.version = &i
+	m.addversion = nil
+}
+
+// Version returns the value of the "version" field in the mutation.
+func (m *NineBoxEntryMutation) Version() (r int, exists bool) {
+	v := m.version
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldVersion returns the old "version" field's value of the NineBoxEntry entity.
+// If the NineBoxEntry object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NineBoxEntryMutation) OldVersion(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldVersion is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldVersion requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldVersion: %w", err)
+	}
+	return oldValue.Version, nil
+}
+
+// AddVersion adds i to the "version" field.
+func (m *NineBoxEntryMutation) AddVersion(i int) {
+	if m.addversion != nil {
+		*m.addversion += i
+	} else {
+		m.addversion = &i
+	}
+}
+
+// AddedVersion returns the value that was added to the "version" field in this mutation.
+func (m *NineBoxEntryMutation) AddedVersion() (r int, exists bool) {
+	v := m.addversion
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetVersion resets all changes to the "version" field.
+func (m *NineBoxEntryMutation) ResetVersion() {
+	m.version = nil
+	m.addversion = nil
 }
 
 // SetPerformanceScore sets the "performance_score" field.
@@ -13890,7 +14302,7 @@ func (m *NineBoxEntryMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *NineBoxEntryMutation) Fields() []string {
-	fields := make([]string, 0, 10)
+	fields := make([]string, 0, 11)
 	if m.created_at != nil {
 		fields = append(fields, nineboxentry.FieldCreatedAt)
 	}
@@ -13902,6 +14314,9 @@ func (m *NineBoxEntryMutation) Fields() []string {
 	}
 	if m.updated_by != nil {
 		fields = append(fields, nineboxentry.FieldUpdatedBy)
+	}
+	if m.version != nil {
+		fields = append(fields, nineboxentry.FieldVersion)
 	}
 	if m.performance_score != nil {
 		fields = append(fields, nineboxentry.FieldPerformanceScore)
@@ -13937,6 +14352,8 @@ func (m *NineBoxEntryMutation) Field(name string) (ent.Value, bool) {
 		return m.CreatedBy()
 	case nineboxentry.FieldUpdatedBy:
 		return m.UpdatedBy()
+	case nineboxentry.FieldVersion:
+		return m.Version()
 	case nineboxentry.FieldPerformanceScore:
 		return m.PerformanceScore()
 	case nineboxentry.FieldPotentialScore:
@@ -13966,6 +14383,8 @@ func (m *NineBoxEntryMutation) OldField(ctx context.Context, name string) (ent.V
 		return m.OldCreatedBy(ctx)
 	case nineboxentry.FieldUpdatedBy:
 		return m.OldUpdatedBy(ctx)
+	case nineboxentry.FieldVersion:
+		return m.OldVersion(ctx)
 	case nineboxentry.FieldPerformanceScore:
 		return m.OldPerformanceScore(ctx)
 	case nineboxentry.FieldPotentialScore:
@@ -14014,6 +14433,13 @@ func (m *NineBoxEntryMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetUpdatedBy(v)
+		return nil
+	case nineboxentry.FieldVersion:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetVersion(v)
 		return nil
 	case nineboxentry.FieldPerformanceScore:
 		v, ok := value.(int)
@@ -14065,6 +14491,9 @@ func (m *NineBoxEntryMutation) SetField(name string, value ent.Value) error {
 // this mutation.
 func (m *NineBoxEntryMutation) AddedFields() []string {
 	var fields []string
+	if m.addversion != nil {
+		fields = append(fields, nineboxentry.FieldVersion)
+	}
 	if m.addperformance_score != nil {
 		fields = append(fields, nineboxentry.FieldPerformanceScore)
 	}
@@ -14082,6 +14511,8 @@ func (m *NineBoxEntryMutation) AddedFields() []string {
 // was not set, or was not defined in the schema.
 func (m *NineBoxEntryMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
+	case nineboxentry.FieldVersion:
+		return m.AddedVersion()
 	case nineboxentry.FieldPerformanceScore:
 		return m.AddedPerformanceScore()
 	case nineboxentry.FieldPotentialScore:
@@ -14097,6 +14528,13 @@ func (m *NineBoxEntryMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *NineBoxEntryMutation) AddField(name string, value ent.Value) error {
 	switch name {
+	case nineboxentry.FieldVersion:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddVersion(v)
+		return nil
 	case nineboxentry.FieldPerformanceScore:
 		v, ok := value.(int)
 		if !ok {
@@ -14165,6 +14603,9 @@ func (m *NineBoxEntryMutation) ResetField(name string) error {
 		return nil
 	case nineboxentry.FieldUpdatedBy:
 		m.ResetUpdatedBy()
+		return nil
+	case nineboxentry.FieldVersion:
+		m.ResetVersion()
 		return nil
 	case nineboxentry.FieldPerformanceScore:
 		m.ResetPerformanceScore()
@@ -16144,6 +16585,8 @@ type OrgNodeMutation struct {
 	id                  *uuid.UUID
 	created_at          *time.Time
 	updated_at          *time.Time
+	version             *int
+	addversion          *int
 	name                *string
 	_type               *orgnode.Type
 	code                *string
@@ -16338,6 +16781,62 @@ func (m *OrgNodeMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err er
 // ResetUpdatedAt resets all changes to the "updated_at" field.
 func (m *OrgNodeMutation) ResetUpdatedAt() {
 	m.updated_at = nil
+}
+
+// SetVersion sets the "version" field.
+func (m *OrgNodeMutation) SetVersion(i int) {
+	m.version = &i
+	m.addversion = nil
+}
+
+// Version returns the value of the "version" field in the mutation.
+func (m *OrgNodeMutation) Version() (r int, exists bool) {
+	v := m.version
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldVersion returns the old "version" field's value of the OrgNode entity.
+// If the OrgNode object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *OrgNodeMutation) OldVersion(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldVersion is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldVersion requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldVersion: %w", err)
+	}
+	return oldValue.Version, nil
+}
+
+// AddVersion adds i to the "version" field.
+func (m *OrgNodeMutation) AddVersion(i int) {
+	if m.addversion != nil {
+		*m.addversion += i
+	} else {
+		m.addversion = &i
+	}
+}
+
+// AddedVersion returns the value that was added to the "version" field in this mutation.
+func (m *OrgNodeMutation) AddedVersion() (r int, exists bool) {
+	v := m.addversion
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetVersion resets all changes to the "version" field.
+func (m *OrgNodeMutation) ResetVersion() {
+	m.version = nil
+	m.addversion = nil
 }
 
 // SetName sets the "name" field.
@@ -16778,12 +17277,15 @@ func (m *OrgNodeMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *OrgNodeMutation) Fields() []string {
-	fields := make([]string, 0, 8)
+	fields := make([]string, 0, 9)
 	if m.created_at != nil {
 		fields = append(fields, orgnode.FieldCreatedAt)
 	}
 	if m.updated_at != nil {
 		fields = append(fields, orgnode.FieldUpdatedAt)
+	}
+	if m.version != nil {
+		fields = append(fields, orgnode.FieldVersion)
 	}
 	if m.name != nil {
 		fields = append(fields, orgnode.FieldName)
@@ -16815,6 +17317,8 @@ func (m *OrgNodeMutation) Field(name string) (ent.Value, bool) {
 		return m.CreatedAt()
 	case orgnode.FieldUpdatedAt:
 		return m.UpdatedAt()
+	case orgnode.FieldVersion:
+		return m.Version()
 	case orgnode.FieldName:
 		return m.Name()
 	case orgnode.FieldType:
@@ -16840,6 +17344,8 @@ func (m *OrgNodeMutation) OldField(ctx context.Context, name string) (ent.Value,
 		return m.OldCreatedAt(ctx)
 	case orgnode.FieldUpdatedAt:
 		return m.OldUpdatedAt(ctx)
+	case orgnode.FieldVersion:
+		return m.OldVersion(ctx)
 	case orgnode.FieldName:
 		return m.OldName(ctx)
 	case orgnode.FieldType:
@@ -16874,6 +17380,13 @@ func (m *OrgNodeMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetUpdatedAt(v)
+		return nil
+	case orgnode.FieldVersion:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetVersion(v)
 		return nil
 	case orgnode.FieldName:
 		v, ok := value.(string)
@@ -16924,13 +17437,21 @@ func (m *OrgNodeMutation) SetField(name string, value ent.Value) error {
 // AddedFields returns all numeric fields that were incremented/decremented during
 // this mutation.
 func (m *OrgNodeMutation) AddedFields() []string {
-	return nil
+	var fields []string
+	if m.addversion != nil {
+		fields = append(fields, orgnode.FieldVersion)
+	}
+	return fields
 }
 
 // AddedField returns the numeric value that was incremented/decremented on a field
 // with the given name. The second boolean return value indicates that this field
 // was not set, or was not defined in the schema.
 func (m *OrgNodeMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case orgnode.FieldVersion:
+		return m.AddedVersion()
+	}
 	return nil, false
 }
 
@@ -16939,6 +17460,13 @@ func (m *OrgNodeMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *OrgNodeMutation) AddField(name string, value ent.Value) error {
 	switch name {
+	case orgnode.FieldVersion:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddVersion(v)
+		return nil
 	}
 	return fmt.Errorf("unknown OrgNode numeric field %s", name)
 }
@@ -16986,6 +17514,9 @@ func (m *OrgNodeMutation) ResetField(name string) error {
 		return nil
 	case orgnode.FieldUpdatedAt:
 		m.ResetUpdatedAt()
+		return nil
+	case orgnode.FieldVersion:
+		m.ResetVersion()
 		return nil
 	case orgnode.FieldName:
 		m.ResetName()
@@ -19870,6 +20401,8 @@ type PillarMutation struct {
 	id                    *uuid.UUID
 	created_at            *time.Time
 	updated_at            *time.Time
+	version               *int
+	addversion            *int
 	name                  *string
 	description           *string
 	clearedFields         map[string]struct{}
@@ -20058,6 +20591,62 @@ func (m *PillarMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err err
 // ResetUpdatedAt resets all changes to the "updated_at" field.
 func (m *PillarMutation) ResetUpdatedAt() {
 	m.updated_at = nil
+}
+
+// SetVersion sets the "version" field.
+func (m *PillarMutation) SetVersion(i int) {
+	m.version = &i
+	m.addversion = nil
+}
+
+// Version returns the value of the "version" field in the mutation.
+func (m *PillarMutation) Version() (r int, exists bool) {
+	v := m.version
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldVersion returns the old "version" field's value of the Pillar entity.
+// If the Pillar object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PillarMutation) OldVersion(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldVersion is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldVersion requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldVersion: %w", err)
+	}
+	return oldValue.Version, nil
+}
+
+// AddVersion adds i to the "version" field.
+func (m *PillarMutation) AddVersion(i int) {
+	if m.addversion != nil {
+		*m.addversion += i
+	} else {
+		m.addversion = &i
+	}
+}
+
+// AddedVersion returns the value that was added to the "version" field in this mutation.
+func (m *PillarMutation) AddedVersion() (r int, exists bool) {
+	v := m.addversion
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetVersion resets all changes to the "version" field.
+func (m *PillarMutation) ResetVersion() {
+	m.version = nil
+	m.addversion = nil
 }
 
 // SetName sets the "name" field.
@@ -20287,12 +20876,15 @@ func (m *PillarMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *PillarMutation) Fields() []string {
-	fields := make([]string, 0, 4)
+	fields := make([]string, 0, 5)
 	if m.created_at != nil {
 		fields = append(fields, pillar.FieldCreatedAt)
 	}
 	if m.updated_at != nil {
 		fields = append(fields, pillar.FieldUpdatedAt)
+	}
+	if m.version != nil {
+		fields = append(fields, pillar.FieldVersion)
 	}
 	if m.name != nil {
 		fields = append(fields, pillar.FieldName)
@@ -20312,6 +20904,8 @@ func (m *PillarMutation) Field(name string) (ent.Value, bool) {
 		return m.CreatedAt()
 	case pillar.FieldUpdatedAt:
 		return m.UpdatedAt()
+	case pillar.FieldVersion:
+		return m.Version()
 	case pillar.FieldName:
 		return m.Name()
 	case pillar.FieldDescription:
@@ -20329,6 +20923,8 @@ func (m *PillarMutation) OldField(ctx context.Context, name string) (ent.Value, 
 		return m.OldCreatedAt(ctx)
 	case pillar.FieldUpdatedAt:
 		return m.OldUpdatedAt(ctx)
+	case pillar.FieldVersion:
+		return m.OldVersion(ctx)
 	case pillar.FieldName:
 		return m.OldName(ctx)
 	case pillar.FieldDescription:
@@ -20356,6 +20952,13 @@ func (m *PillarMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetUpdatedAt(v)
 		return nil
+	case pillar.FieldVersion:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetVersion(v)
+		return nil
 	case pillar.FieldName:
 		v, ok := value.(string)
 		if !ok {
@@ -20377,13 +20980,21 @@ func (m *PillarMutation) SetField(name string, value ent.Value) error {
 // AddedFields returns all numeric fields that were incremented/decremented during
 // this mutation.
 func (m *PillarMutation) AddedFields() []string {
-	return nil
+	var fields []string
+	if m.addversion != nil {
+		fields = append(fields, pillar.FieldVersion)
+	}
+	return fields
 }
 
 // AddedField returns the numeric value that was incremented/decremented on a field
 // with the given name. The second boolean return value indicates that this field
 // was not set, or was not defined in the schema.
 func (m *PillarMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case pillar.FieldVersion:
+		return m.AddedVersion()
+	}
 	return nil, false
 }
 
@@ -20392,6 +21003,13 @@ func (m *PillarMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *PillarMutation) AddField(name string, value ent.Value) error {
 	switch name {
+	case pillar.FieldVersion:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddVersion(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Pillar numeric field %s", name)
 }
@@ -20433,6 +21051,9 @@ func (m *PillarMutation) ResetField(name string) error {
 		return nil
 	case pillar.FieldUpdatedAt:
 		m.ResetUpdatedAt()
+		return nil
+	case pillar.FieldVersion:
+		m.ResetVersion()
 		return nil
 	case pillar.FieldName:
 		m.ResetName()
@@ -20562,6 +21183,8 @@ type ScaleCriterionMutation struct {
 	id                *uuid.UUID
 	created_at        *time.Time
 	updated_at        *time.Time
+	version           *int
+	addversion        *int
 	level             *int
 	addlevel          *int
 	description       *string
@@ -20749,6 +21372,62 @@ func (m *ScaleCriterionMutation) OldUpdatedAt(ctx context.Context) (v time.Time,
 // ResetUpdatedAt resets all changes to the "updated_at" field.
 func (m *ScaleCriterionMutation) ResetUpdatedAt() {
 	m.updated_at = nil
+}
+
+// SetVersion sets the "version" field.
+func (m *ScaleCriterionMutation) SetVersion(i int) {
+	m.version = &i
+	m.addversion = nil
+}
+
+// Version returns the value of the "version" field in the mutation.
+func (m *ScaleCriterionMutation) Version() (r int, exists bool) {
+	v := m.version
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldVersion returns the old "version" field's value of the ScaleCriterion entity.
+// If the ScaleCriterion object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ScaleCriterionMutation) OldVersion(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldVersion is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldVersion requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldVersion: %w", err)
+	}
+	return oldValue.Version, nil
+}
+
+// AddVersion adds i to the "version" field.
+func (m *ScaleCriterionMutation) AddVersion(i int) {
+	if m.addversion != nil {
+		*m.addversion += i
+	} else {
+		m.addversion = &i
+	}
+}
+
+// AddedVersion returns the value that was added to the "version" field in this mutation.
+func (m *ScaleCriterionMutation) AddedVersion() (r int, exists bool) {
+	v := m.addversion
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetVersion resets all changes to the "version" field.
+func (m *ScaleCriterionMutation) ResetVersion() {
+	m.version = nil
+	m.addversion = nil
 }
 
 // SetLevel sets the "level" field.
@@ -21003,12 +21682,15 @@ func (m *ScaleCriterionMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ScaleCriterionMutation) Fields() []string {
-	fields := make([]string, 0, 6)
+	fields := make([]string, 0, 7)
 	if m.created_at != nil {
 		fields = append(fields, scalecriterion.FieldCreatedAt)
 	}
 	if m.updated_at != nil {
 		fields = append(fields, scalecriterion.FieldUpdatedAt)
+	}
+	if m.version != nil {
+		fields = append(fields, scalecriterion.FieldVersion)
 	}
 	if m.level != nil {
 		fields = append(fields, scalecriterion.FieldLevel)
@@ -21034,6 +21716,8 @@ func (m *ScaleCriterionMutation) Field(name string) (ent.Value, bool) {
 		return m.CreatedAt()
 	case scalecriterion.FieldUpdatedAt:
 		return m.UpdatedAt()
+	case scalecriterion.FieldVersion:
+		return m.Version()
 	case scalecriterion.FieldLevel:
 		return m.Level()
 	case scalecriterion.FieldDescription:
@@ -21055,6 +21739,8 @@ func (m *ScaleCriterionMutation) OldField(ctx context.Context, name string) (ent
 		return m.OldCreatedAt(ctx)
 	case scalecriterion.FieldUpdatedAt:
 		return m.OldUpdatedAt(ctx)
+	case scalecriterion.FieldVersion:
+		return m.OldVersion(ctx)
 	case scalecriterion.FieldLevel:
 		return m.OldLevel(ctx)
 	case scalecriterion.FieldDescription:
@@ -21085,6 +21771,13 @@ func (m *ScaleCriterionMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetUpdatedAt(v)
+		return nil
+	case scalecriterion.FieldVersion:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetVersion(v)
 		return nil
 	case scalecriterion.FieldLevel:
 		v, ok := value.(int)
@@ -21122,6 +21815,9 @@ func (m *ScaleCriterionMutation) SetField(name string, value ent.Value) error {
 // this mutation.
 func (m *ScaleCriterionMutation) AddedFields() []string {
 	var fields []string
+	if m.addversion != nil {
+		fields = append(fields, scalecriterion.FieldVersion)
+	}
 	if m.addlevel != nil {
 		fields = append(fields, scalecriterion.FieldLevel)
 	}
@@ -21133,6 +21829,8 @@ func (m *ScaleCriterionMutation) AddedFields() []string {
 // was not set, or was not defined in the schema.
 func (m *ScaleCriterionMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
+	case scalecriterion.FieldVersion:
+		return m.AddedVersion()
 	case scalecriterion.FieldLevel:
 		return m.AddedLevel()
 	}
@@ -21144,6 +21842,13 @@ func (m *ScaleCriterionMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *ScaleCriterionMutation) AddField(name string, value ent.Value) error {
 	switch name {
+	case scalecriterion.FieldVersion:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddVersion(v)
+		return nil
 	case scalecriterion.FieldLevel:
 		v, ok := value.(int)
 		if !ok {
@@ -21183,6 +21888,9 @@ func (m *ScaleCriterionMutation) ResetField(name string) error {
 		return nil
 	case scalecriterion.FieldUpdatedAt:
 		m.ResetUpdatedAt()
+		return nil
+	case scalecriterion.FieldVersion:
+		m.ResetVersion()
 		return nil
 	case scalecriterion.FieldLevel:
 		m.ResetLevel()

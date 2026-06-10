@@ -64,6 +64,20 @@ func (_c *GoalCreate) SetUpdatedBy(v uuid.UUID) *GoalCreate {
 	return _c
 }
 
+// SetVersion sets the "version" field.
+func (_c *GoalCreate) SetVersion(v int) *GoalCreate {
+	_c.mutation.SetVersion(v)
+	return _c
+}
+
+// SetNillableVersion sets the "version" field if the given value is not nil.
+func (_c *GoalCreate) SetNillableVersion(v *int) *GoalCreate {
+	if v != nil {
+		_c.SetVersion(*v)
+	}
+	return _c
+}
+
 // SetName sets the "name" field.
 func (_c *GoalCreate) SetName(v string) *GoalCreate {
 	_c.mutation.SetName(v)
@@ -220,6 +234,10 @@ func (_c *GoalCreate) defaults() {
 		v := goal.DefaultUpdatedAt()
 		_c.mutation.SetUpdatedAt(v)
 	}
+	if _, ok := _c.mutation.Version(); !ok {
+		v := goal.DefaultVersion
+		_c.mutation.SetVersion(v)
+	}
 	if _, ok := _c.mutation.CurrentValue(); !ok {
 		v := goal.DefaultCurrentValue
 		_c.mutation.SetCurrentValue(v)
@@ -243,6 +261,14 @@ func (_c *GoalCreate) check() error {
 	}
 	if _, ok := _c.mutation.UpdatedBy(); !ok {
 		return &ValidationError{Name: "updated_by", err: errors.New(`internal: missing required field "Goal.updated_by"`)}
+	}
+	if _, ok := _c.mutation.Version(); !ok {
+		return &ValidationError{Name: "version", err: errors.New(`internal: missing required field "Goal.version"`)}
+	}
+	if v, ok := _c.mutation.Version(); ok {
+		if err := goal.VersionValidator(v); err != nil {
+			return &ValidationError{Name: "version", err: fmt.Errorf(`internal: validator failed for field "Goal.version": %w`, err)}
+		}
 	}
 	if _, ok := _c.mutation.Name(); !ok {
 		return &ValidationError{Name: "name", err: errors.New(`internal: missing required field "Goal.name"`)}
@@ -343,6 +369,10 @@ func (_c *GoalCreate) createSpec() (*Goal, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.UpdatedBy(); ok {
 		_spec.SetField(goal.FieldUpdatedBy, field.TypeUUID, value)
 		_node.UpdatedBy = value
+	}
+	if value, ok := _c.mutation.Version(); ok {
+		_spec.SetField(goal.FieldVersion, field.TypeInt, value)
+		_node.Version = value
 	}
 	if value, ok := _c.mutation.Name(); ok {
 		_spec.SetField(goal.FieldName, field.TypeString, value)

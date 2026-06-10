@@ -32,9 +32,12 @@ import (
 //	GET    /api/v1/nine-box/quadrants               → AuthPlaceholder → RateLimit(read) → ReadReplica
 func NewRouter(handler *EvaluationHandler) chi.Router {
 	r := chi.NewRouter()
+	RegisterRoutes(r, handler)
+	return r
+}
 
-	// Shared middleware for auth (TODO(auth:C7): replace with real auth)
-	r.Use(middleware.AuthPlaceholder)
+// RegisterRoutes registers all evaluation and 9x9 endpoints on an existing router.
+func RegisterRoutes(r chi.Router, handler *EvaluationHandler) {
 
 	// Rate limit configurations
 	readRateLimit := middleware.RateLimitConfig{
@@ -170,8 +173,6 @@ func NewRouter(handler *EvaluationHandler) chi.Router {
 		r.Use(readReplicaMiddleware)
 		r.Get("/nine-box/quadrants", handler.GetQuadrants)
 	})
-
-	return r
 }
 
 // readReplicaMiddleware sets the db role hint to "replica" so repository

@@ -23,6 +23,8 @@ type Competency struct {
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
+	// Version holds the value of the "version" field.
+	Version int `json:"version,omitempty"`
 	// Name holds the value of the "name" field.
 	Name string `json:"name,omitempty"`
 	// Description holds the value of the "description" field.
@@ -93,6 +95,8 @@ func (*Competency) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case competency.FieldVersion:
+			values[i] = new(sql.NullInt64)
 		case competency.FieldName, competency.FieldDescription:
 			values[i] = new(sql.NullString)
 		case competency.FieldCreatedAt, competency.FieldUpdatedAt:
@@ -131,6 +135,12 @@ func (_m *Competency) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field updated_at", values[i])
 			} else if value.Valid {
 				_m.UpdatedAt = value.Time
+			}
+		case competency.FieldVersion:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field version", values[i])
+			} else if value.Valid {
+				_m.Version = int(value.Int64)
 			}
 		case competency.FieldName:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -211,6 +221,9 @@ func (_m *Competency) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("updated_at=")
 	builder.WriteString(_m.UpdatedAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("version=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Version))
 	builder.WriteString(", ")
 	builder.WriteString("name=")
 	builder.WriteString(_m.Name)

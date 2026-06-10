@@ -63,6 +63,20 @@ func (_c *NineBoxEntryCreate) SetUpdatedBy(v uuid.UUID) *NineBoxEntryCreate {
 	return _c
 }
 
+// SetVersion sets the "version" field.
+func (_c *NineBoxEntryCreate) SetVersion(v int) *NineBoxEntryCreate {
+	_c.mutation.SetVersion(v)
+	return _c
+}
+
+// SetNillableVersion sets the "version" field if the given value is not nil.
+func (_c *NineBoxEntryCreate) SetNillableVersion(v *int) *NineBoxEntryCreate {
+	if v != nil {
+		_c.SetVersion(*v)
+	}
+	return _c
+}
+
 // SetPerformanceScore sets the "performance_score" field.
 func (_c *NineBoxEntryCreate) SetPerformanceScore(v int) *NineBoxEntryCreate {
 	_c.mutation.SetPerformanceScore(v)
@@ -174,6 +188,10 @@ func (_c *NineBoxEntryCreate) defaults() {
 		v := nineboxentry.DefaultUpdatedAt()
 		_c.mutation.SetUpdatedAt(v)
 	}
+	if _, ok := _c.mutation.Version(); !ok {
+		v := nineboxentry.DefaultVersion
+		_c.mutation.SetVersion(v)
+	}
 	if _, ok := _c.mutation.ID(); !ok {
 		v := nineboxentry.DefaultID()
 		_c.mutation.SetID(v)
@@ -193,6 +211,14 @@ func (_c *NineBoxEntryCreate) check() error {
 	}
 	if _, ok := _c.mutation.UpdatedBy(); !ok {
 		return &ValidationError{Name: "updated_by", err: errors.New(`internal: missing required field "NineBoxEntry.updated_by"`)}
+	}
+	if _, ok := _c.mutation.Version(); !ok {
+		return &ValidationError{Name: "version", err: errors.New(`internal: missing required field "NineBoxEntry.version"`)}
+	}
+	if v, ok := _c.mutation.Version(); ok {
+		if err := nineboxentry.VersionValidator(v); err != nil {
+			return &ValidationError{Name: "version", err: fmt.Errorf(`internal: validator failed for field "NineBoxEntry.version": %w`, err)}
+		}
 	}
 	if _, ok := _c.mutation.PerformanceScore(); !ok {
 		return &ValidationError{Name: "performance_score", err: errors.New(`internal: missing required field "NineBoxEntry.performance_score"`)}
@@ -280,6 +306,10 @@ func (_c *NineBoxEntryCreate) createSpec() (*NineBoxEntry, *sqlgraph.CreateSpec)
 	if value, ok := _c.mutation.UpdatedBy(); ok {
 		_spec.SetField(nineboxentry.FieldUpdatedBy, field.TypeUUID, value)
 		_node.UpdatedBy = value
+	}
+	if value, ok := _c.mutation.Version(); ok {
+		_spec.SetField(nineboxentry.FieldVersion, field.TypeInt, value)
+		_node.Version = value
 	}
 	if value, ok := _c.mutation.PerformanceScore(); ok {
 		_spec.SetField(nineboxentry.FieldPerformanceScore, field.TypeInt, value)

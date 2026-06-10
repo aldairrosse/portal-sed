@@ -67,6 +67,27 @@ func (_u *EvaluationUpdate) SetNillableUpdatedBy(v *uuid.UUID) *EvaluationUpdate
 	return _u
 }
 
+// SetVersion sets the "version" field.
+func (_u *EvaluationUpdate) SetVersion(v int) *EvaluationUpdate {
+	_u.mutation.ResetVersion()
+	_u.mutation.SetVersion(v)
+	return _u
+}
+
+// SetNillableVersion sets the "version" field if the given value is not nil.
+func (_u *EvaluationUpdate) SetNillableVersion(v *int) *EvaluationUpdate {
+	if v != nil {
+		_u.SetVersion(*v)
+	}
+	return _u
+}
+
+// AddVersion adds value to the "version" field.
+func (_u *EvaluationUpdate) AddVersion(v int) *EvaluationUpdate {
+	_u.mutation.AddVersion(v)
+	return _u
+}
+
 // SetPhase sets the "phase" field.
 func (_u *EvaluationUpdate) SetPhase(v evaluation.Phase) *EvaluationUpdate {
 	_u.mutation.SetPhase(v)
@@ -300,6 +321,11 @@ func (_u *EvaluationUpdate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *EvaluationUpdate) check() error {
+	if v, ok := _u.mutation.Version(); ok {
+		if err := evaluation.VersionValidator(v); err != nil {
+			return &ValidationError{Name: "version", err: fmt.Errorf(`internal: validator failed for field "Evaluation.version": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.Phase(); ok {
 		if err := evaluation.PhaseValidator(v); err != nil {
 			return &ValidationError{Name: "phase", err: fmt.Errorf(`internal: validator failed for field "Evaluation.phase": %w`, err)}
@@ -339,6 +365,12 @@ func (_u *EvaluationUpdate) sqlSave(ctx context.Context) (_node int, err error) 
 	}
 	if value, ok := _u.mutation.UpdatedBy(); ok {
 		_spec.SetField(evaluation.FieldUpdatedBy, field.TypeUUID, value)
+	}
+	if value, ok := _u.mutation.Version(); ok {
+		_spec.SetField(evaluation.FieldVersion, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedVersion(); ok {
+		_spec.AddField(evaluation.FieldVersion, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.Phase(); ok {
 		_spec.SetField(evaluation.FieldPhase, field.TypeEnum, value)
@@ -557,6 +589,27 @@ func (_u *EvaluationUpdateOne) SetNillableUpdatedBy(v *uuid.UUID) *EvaluationUpd
 	if v != nil {
 		_u.SetUpdatedBy(*v)
 	}
+	return _u
+}
+
+// SetVersion sets the "version" field.
+func (_u *EvaluationUpdateOne) SetVersion(v int) *EvaluationUpdateOne {
+	_u.mutation.ResetVersion()
+	_u.mutation.SetVersion(v)
+	return _u
+}
+
+// SetNillableVersion sets the "version" field if the given value is not nil.
+func (_u *EvaluationUpdateOne) SetNillableVersion(v *int) *EvaluationUpdateOne {
+	if v != nil {
+		_u.SetVersion(*v)
+	}
+	return _u
+}
+
+// AddVersion adds value to the "version" field.
+func (_u *EvaluationUpdateOne) AddVersion(v int) *EvaluationUpdateOne {
+	_u.mutation.AddVersion(v)
 	return _u
 }
 
@@ -806,6 +859,11 @@ func (_u *EvaluationUpdateOne) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *EvaluationUpdateOne) check() error {
+	if v, ok := _u.mutation.Version(); ok {
+		if err := evaluation.VersionValidator(v); err != nil {
+			return &ValidationError{Name: "version", err: fmt.Errorf(`internal: validator failed for field "Evaluation.version": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.Phase(); ok {
 		if err := evaluation.PhaseValidator(v); err != nil {
 			return &ValidationError{Name: "phase", err: fmt.Errorf(`internal: validator failed for field "Evaluation.phase": %w`, err)}
@@ -862,6 +920,12 @@ func (_u *EvaluationUpdateOne) sqlSave(ctx context.Context) (_node *Evaluation, 
 	}
 	if value, ok := _u.mutation.UpdatedBy(); ok {
 		_spec.SetField(evaluation.FieldUpdatedBy, field.TypeUUID, value)
+	}
+	if value, ok := _u.mutation.Version(); ok {
+		_spec.SetField(evaluation.FieldVersion, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedVersion(); ok {
+		_spec.AddField(evaluation.FieldVersion, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.Phase(); ok {
 		_spec.SetField(evaluation.FieldPhase, field.TypeEnum, value)

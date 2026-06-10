@@ -28,6 +28,8 @@ type NineBoxEntry struct {
 	CreatedBy uuid.UUID `json:"created_by,omitempty"`
 	// UpdatedBy holds the value of the "updated_by" field.
 	UpdatedBy uuid.UUID `json:"updated_by,omitempty"`
+	// Version holds the value of the "version" field.
+	Version int `json:"version,omitempty"`
 	// PerformanceScore holds the value of the "performance_score" field.
 	PerformanceScore int `json:"performance_score,omitempty"`
 	// PotentialScore holds the value of the "potential_score" field.
@@ -84,7 +86,7 @@ func (*NineBoxEntry) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case nineboxentry.FieldPerformanceScore, nineboxentry.FieldPotentialScore, nineboxentry.FieldQuadrant:
+		case nineboxentry.FieldVersion, nineboxentry.FieldPerformanceScore, nineboxentry.FieldPotentialScore, nineboxentry.FieldQuadrant:
 			values[i] = new(sql.NullInt64)
 		case nineboxentry.FieldComments:
 			values[i] = new(sql.NullString)
@@ -136,6 +138,12 @@ func (_m *NineBoxEntry) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field updated_by", values[i])
 			} else if value != nil {
 				_m.UpdatedBy = *value
+			}
+		case nineboxentry.FieldVersion:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field version", values[i])
+			} else if value.Valid {
+				_m.Version = int(value.Int64)
 			}
 		case nineboxentry.FieldPerformanceScore:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -230,6 +238,9 @@ func (_m *NineBoxEntry) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("updated_by=")
 	builder.WriteString(fmt.Sprintf("%v", _m.UpdatedBy))
+	builder.WriteString(", ")
+	builder.WriteString("version=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Version))
 	builder.WriteString(", ")
 	builder.WriteString("performance_score=")
 	builder.WriteString(fmt.Sprintf("%v", _m.PerformanceScore))

@@ -13,6 +13,7 @@ var (
 		{Name: "id", Type: field.TypeUUID},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "version", Type: field.TypeInt, Default: 1},
 		{Name: "name", Type: field.TypeString},
 		{Name: "description", Type: field.TypeString, Nullable: true, Size: 2147483647},
 		{Name: "pillar_id", Type: field.TypeUUID},
@@ -25,7 +26,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "competencies_pillars_competencies",
-				Columns:    []*schema.Column{CompetenciesColumns[5]},
+				Columns:    []*schema.Column{CompetenciesColumns[6]},
 				RefColumns: []*schema.Column{PillarsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
@@ -65,6 +66,7 @@ var (
 		{Name: "id", Type: field.TypeUUID},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "version", Type: field.TypeInt, Default: 1},
 		{Name: "year", Type: field.TypeInt},
 		{Name: "current_phase", Type: field.TypeEnum, Enums: []string{"asignacion", "avance", "cierre"}},
 		{Name: "started_at", Type: field.TypeTime, Nullable: true},
@@ -79,7 +81,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "cycles_organizations_cycles",
-				Columns:    []*schema.Column{CyclesColumns[7]},
+				Columns:    []*schema.Column{CyclesColumns[8]},
 				RefColumns: []*schema.Column{OrganizationsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -134,6 +136,7 @@ var (
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "created_by", Type: field.TypeUUID},
 		{Name: "updated_by", Type: field.TypeUUID},
+		{Name: "version", Type: field.TypeInt, Default: 1},
 		{Name: "phase", Type: field.TypeEnum, Enums: []string{"asignacion", "avance", "cierre"}},
 		{Name: "state", Type: field.TypeEnum, Enums: []string{"pendiente_asignacion", "pendiente_avance", "pendiente_evaluacion_final", "completada"}},
 		{Name: "self_evaluation_completed_at", Type: field.TypeTime, Nullable: true},
@@ -149,13 +152,13 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "evaluations_cycles_evaluations",
-				Columns:    []*schema.Column{EvaluationsColumns[9]},
+				Columns:    []*schema.Column{EvaluationsColumns[10]},
 				RefColumns: []*schema.Column{CyclesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "evaluations_employees_evaluations",
-				Columns:    []*schema.Column{EvaluationsColumns[10]},
+				Columns:    []*schema.Column{EvaluationsColumns[11]},
 				RefColumns: []*schema.Column{EmployeesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -277,6 +280,7 @@ var (
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "created_by", Type: field.TypeUUID},
 		{Name: "updated_by", Type: field.TypeUUID},
+		{Name: "version", Type: field.TypeInt, Default: 1},
 		{Name: "name", Type: field.TypeString},
 		{Name: "description", Type: field.TypeString, Nullable: true, Size: 2147483647},
 		{Name: "unit", Type: field.TypeEnum, Enums: []string{"porcentaje", "moneda", "numero"}},
@@ -294,7 +298,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "goals_goal_categories_goals",
-				Columns:    []*schema.Column{GoalsColumns[12]},
+				Columns:    []*schema.Column{GoalsColumns[13]},
 				RefColumns: []*schema.Column{GoalCategoriesColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
@@ -416,6 +420,7 @@ var (
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "created_by", Type: field.TypeUUID},
 		{Name: "updated_by", Type: field.TypeUUID},
+		{Name: "version", Type: field.TypeInt, Default: 1},
 		{Name: "performance_score", Type: field.TypeInt},
 		{Name: "potential_score", Type: field.TypeInt},
 		{Name: "quadrant", Type: field.TypeInt},
@@ -431,13 +436,13 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "nine_box_entries_employees_nine_box_entries",
-				Columns:    []*schema.Column{NineBoxEntriesColumns[9]},
+				Columns:    []*schema.Column{NineBoxEntriesColumns[10]},
 				RefColumns: []*schema.Column{EmployeesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "nine_box_entries_nine_box_matrixes_entries",
-				Columns:    []*schema.Column{NineBoxEntriesColumns[10]},
+				Columns:    []*schema.Column{NineBoxEntriesColumns[11]},
 				RefColumns: []*schema.Column{NineBoxMatrixesColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
@@ -505,6 +510,7 @@ var (
 		{Name: "id", Type: field.TypeUUID},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "version", Type: field.TypeInt, Default: 1},
 		{Name: "name", Type: field.TypeString},
 		{Name: "type", Type: field.TypeEnum, Enums: []string{"corporate", "retail"}},
 		{Name: "code", Type: field.TypeString},
@@ -520,13 +526,13 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "org_nodes_org_nodes_parent",
-				Columns:    []*schema.Column{OrgNodesColumns[7]},
+				Columns:    []*schema.Column{OrgNodesColumns[8]},
 				RefColumns: []*schema.Column{OrgNodesColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "org_nodes_organizations_org_nodes",
-				Columns:    []*schema.Column{OrgNodesColumns[8]},
+				Columns:    []*schema.Column{OrgNodesColumns[9]},
 				RefColumns: []*schema.Column{OrganizationsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
@@ -616,6 +622,7 @@ var (
 		{Name: "id", Type: field.TypeUUID},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "version", Type: field.TypeInt, Default: 1},
 		{Name: "name", Type: field.TypeString, Unique: true},
 		{Name: "description", Type: field.TypeString, Nullable: true, Size: 2147483647},
 	}
@@ -630,6 +637,7 @@ var (
 		{Name: "id", Type: field.TypeUUID},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "version", Type: field.TypeInt, Default: 1},
 		{Name: "level", Type: field.TypeInt},
 		{Name: "description", Type: field.TypeString, Size: 2147483647},
 		{Name: "competency_id", Type: field.TypeUUID},
@@ -643,13 +651,13 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "scale_criterions_competencies_scale_criteria",
-				Columns:    []*schema.Column{ScaleCriterionsColumns[5]},
+				Columns:    []*schema.Column{ScaleCriterionsColumns[6]},
 				RefColumns: []*schema.Column{CompetenciesColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "scale_criterions_pillars_scale_criteria",
-				Columns:    []*schema.Column{ScaleCriterionsColumns[6]},
+				Columns:    []*schema.Column{ScaleCriterionsColumns[7]},
 				RefColumns: []*schema.Column{PillarsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},

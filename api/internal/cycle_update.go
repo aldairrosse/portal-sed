@@ -42,6 +42,27 @@ func (_u *CycleUpdate) SetUpdatedAt(v time.Time) *CycleUpdate {
 	return _u
 }
 
+// SetVersion sets the "version" field.
+func (_u *CycleUpdate) SetVersion(v int) *CycleUpdate {
+	_u.mutation.ResetVersion()
+	_u.mutation.SetVersion(v)
+	return _u
+}
+
+// SetNillableVersion sets the "version" field if the given value is not nil.
+func (_u *CycleUpdate) SetNillableVersion(v *int) *CycleUpdate {
+	if v != nil {
+		_u.SetVersion(*v)
+	}
+	return _u
+}
+
+// AddVersion adds value to the "version" field.
+func (_u *CycleUpdate) AddVersion(v int) *CycleUpdate {
+	_u.mutation.AddVersion(v)
+	return _u
+}
+
 // SetYear sets the "year" field.
 func (_u *CycleUpdate) SetYear(v int) *CycleUpdate {
 	_u.mutation.ResetYear()
@@ -401,6 +422,11 @@ func (_u *CycleUpdate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *CycleUpdate) check() error {
+	if v, ok := _u.mutation.Version(); ok {
+		if err := cycle.VersionValidator(v); err != nil {
+			return &ValidationError{Name: "version", err: fmt.Errorf(`internal: validator failed for field "Cycle.version": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.CurrentPhase(); ok {
 		if err := cycle.CurrentPhaseValidator(v); err != nil {
 			return &ValidationError{Name: "current_phase", err: fmt.Errorf(`internal: validator failed for field "Cycle.current_phase": %w`, err)}
@@ -426,6 +452,12 @@ func (_u *CycleUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(cycle.FieldUpdatedAt, field.TypeTime, value)
+	}
+	if value, ok := _u.mutation.Version(); ok {
+		_spec.SetField(cycle.FieldVersion, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedVersion(); ok {
+		_spec.AddField(cycle.FieldVersion, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.Year(); ok {
 		_spec.SetField(cycle.FieldYear, field.TypeInt, value)
@@ -770,6 +802,27 @@ type CycleUpdateOne struct {
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *CycleUpdateOne) SetUpdatedAt(v time.Time) *CycleUpdateOne {
 	_u.mutation.SetUpdatedAt(v)
+	return _u
+}
+
+// SetVersion sets the "version" field.
+func (_u *CycleUpdateOne) SetVersion(v int) *CycleUpdateOne {
+	_u.mutation.ResetVersion()
+	_u.mutation.SetVersion(v)
+	return _u
+}
+
+// SetNillableVersion sets the "version" field if the given value is not nil.
+func (_u *CycleUpdateOne) SetNillableVersion(v *int) *CycleUpdateOne {
+	if v != nil {
+		_u.SetVersion(*v)
+	}
+	return _u
+}
+
+// AddVersion adds value to the "version" field.
+func (_u *CycleUpdateOne) AddVersion(v int) *CycleUpdateOne {
+	_u.mutation.AddVersion(v)
 	return _u
 }
 
@@ -1145,6 +1198,11 @@ func (_u *CycleUpdateOne) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *CycleUpdateOne) check() error {
+	if v, ok := _u.mutation.Version(); ok {
+		if err := cycle.VersionValidator(v); err != nil {
+			return &ValidationError{Name: "version", err: fmt.Errorf(`internal: validator failed for field "Cycle.version": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.CurrentPhase(); ok {
 		if err := cycle.CurrentPhaseValidator(v); err != nil {
 			return &ValidationError{Name: "current_phase", err: fmt.Errorf(`internal: validator failed for field "Cycle.current_phase": %w`, err)}
@@ -1187,6 +1245,12 @@ func (_u *CycleUpdateOne) sqlSave(ctx context.Context) (_node *Cycle, err error)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(cycle.FieldUpdatedAt, field.TypeTime, value)
+	}
+	if value, ok := _u.mutation.Version(); ok {
+		_spec.SetField(cycle.FieldVersion, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedVersion(); ok {
+		_spec.AddField(cycle.FieldVersion, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.Year(); ok {
 		_spec.SetField(cycle.FieldYear, field.TypeInt, value)

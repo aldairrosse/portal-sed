@@ -39,6 +39,27 @@ func (_u *CompetencyUpdate) SetUpdatedAt(v time.Time) *CompetencyUpdate {
 	return _u
 }
 
+// SetVersion sets the "version" field.
+func (_u *CompetencyUpdate) SetVersion(v int) *CompetencyUpdate {
+	_u.mutation.ResetVersion()
+	_u.mutation.SetVersion(v)
+	return _u
+}
+
+// SetNillableVersion sets the "version" field if the given value is not nil.
+func (_u *CompetencyUpdate) SetNillableVersion(v *int) *CompetencyUpdate {
+	if v != nil {
+		_u.SetVersion(*v)
+	}
+	return _u
+}
+
+// AddVersion adds value to the "version" field.
+func (_u *CompetencyUpdate) AddVersion(v int) *CompetencyUpdate {
+	_u.mutation.AddVersion(v)
+	return _u
+}
+
 // SetName sets the "name" field.
 func (_u *CompetencyUpdate) SetName(v string) *CompetencyUpdate {
 	_u.mutation.SetName(v)
@@ -249,6 +270,11 @@ func (_u *CompetencyUpdate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *CompetencyUpdate) check() error {
+	if v, ok := _u.mutation.Version(); ok {
+		if err := competency.VersionValidator(v); err != nil {
+			return &ValidationError{Name: "version", err: fmt.Errorf(`internal: validator failed for field "Competency.version": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.Name(); ok {
 		if err := competency.NameValidator(v); err != nil {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`internal: validator failed for field "Competency.name": %w`, err)}
@@ -274,6 +300,12 @@ func (_u *CompetencyUpdate) sqlSave(ctx context.Context) (_node int, err error) 
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(competency.FieldUpdatedAt, field.TypeTime, value)
+	}
+	if value, ok := _u.mutation.Version(); ok {
+		_spec.SetField(competency.FieldVersion, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedVersion(); ok {
+		_spec.AddField(competency.FieldVersion, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(competency.FieldName, field.TypeString, value)
@@ -471,6 +503,27 @@ type CompetencyUpdateOne struct {
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *CompetencyUpdateOne) SetUpdatedAt(v time.Time) *CompetencyUpdateOne {
 	_u.mutation.SetUpdatedAt(v)
+	return _u
+}
+
+// SetVersion sets the "version" field.
+func (_u *CompetencyUpdateOne) SetVersion(v int) *CompetencyUpdateOne {
+	_u.mutation.ResetVersion()
+	_u.mutation.SetVersion(v)
+	return _u
+}
+
+// SetNillableVersion sets the "version" field if the given value is not nil.
+func (_u *CompetencyUpdateOne) SetNillableVersion(v *int) *CompetencyUpdateOne {
+	if v != nil {
+		_u.SetVersion(*v)
+	}
+	return _u
+}
+
+// AddVersion adds value to the "version" field.
+func (_u *CompetencyUpdateOne) AddVersion(v int) *CompetencyUpdateOne {
+	_u.mutation.AddVersion(v)
 	return _u
 }
 
@@ -697,6 +750,11 @@ func (_u *CompetencyUpdateOne) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *CompetencyUpdateOne) check() error {
+	if v, ok := _u.mutation.Version(); ok {
+		if err := competency.VersionValidator(v); err != nil {
+			return &ValidationError{Name: "version", err: fmt.Errorf(`internal: validator failed for field "Competency.version": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.Name(); ok {
 		if err := competency.NameValidator(v); err != nil {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`internal: validator failed for field "Competency.name": %w`, err)}
@@ -739,6 +797,12 @@ func (_u *CompetencyUpdateOne) sqlSave(ctx context.Context) (_node *Competency, 
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(competency.FieldUpdatedAt, field.TypeTime, value)
+	}
+	if value, ok := _u.mutation.Version(); ok {
+		_spec.SetField(competency.FieldVersion, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedVersion(); ok {
+		_spec.AddField(competency.FieldVersion, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(competency.FieldName, field.TypeString, value)

@@ -42,3 +42,16 @@ func (AuditMixin) Fields() []ent.Field {
 		field.UUID("updated_by", uuid.UUID{}),
 	}
 }
+
+// VersionMixin adds an integer version field for optimistic locking.
+type VersionMixin struct {
+	mixin.Schema
+}
+
+func (VersionMixin) Fields() []ent.Field {
+	return []ent.Field{
+		field.Int("version").
+			Default(1).
+			Positive(),
+	}
+}

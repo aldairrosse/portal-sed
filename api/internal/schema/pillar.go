@@ -16,6 +16,7 @@ type Pillar struct {
 func (Pillar) Mixin() []ent.Mixin {
 	return []ent.Mixin{
 		TimeMixin{},
+		VersionMixin{},
 	}
 }
 

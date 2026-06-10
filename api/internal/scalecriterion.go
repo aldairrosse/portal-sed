@@ -24,6 +24,8 @@ type ScaleCriterion struct {
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
+	// Version holds the value of the "version" field.
+	Version int `json:"version,omitempty"`
 	// Level holds the value of the "level" field.
 	Level int `json:"level,omitempty"`
 	// Description holds the value of the "description" field.
@@ -76,7 +78,7 @@ func (*ScaleCriterion) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case scalecriterion.FieldLevel:
+		case scalecriterion.FieldVersion, scalecriterion.FieldLevel:
 			values[i] = new(sql.NullInt64)
 		case scalecriterion.FieldDescription:
 			values[i] = new(sql.NullString)
@@ -116,6 +118,12 @@ func (_m *ScaleCriterion) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field updated_at", values[i])
 			} else if value.Valid {
 				_m.UpdatedAt = value.Time
+			}
+		case scalecriterion.FieldVersion:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field version", values[i])
+			} else if value.Valid {
+				_m.Version = int(value.Int64)
 			}
 		case scalecriterion.FieldLevel:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -192,6 +200,9 @@ func (_m *ScaleCriterion) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("updated_at=")
 	builder.WriteString(_m.UpdatedAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("version=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Version))
 	builder.WriteString(", ")
 	builder.WriteString("level=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Level))

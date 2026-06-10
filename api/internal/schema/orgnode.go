@@ -17,6 +17,7 @@ type OrgNode struct {
 func (OrgNode) Mixin() []ent.Mixin {
 	return []ent.Mixin{
 		TimeMixin{},
+		VersionMixin{},
 	}
 }
 

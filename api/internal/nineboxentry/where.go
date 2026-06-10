@@ -76,6 +76,11 @@ func UpdatedBy(v uuid.UUID) predicate.NineBoxEntry {
 	return predicate.NineBoxEntry(sql.FieldEQ(FieldUpdatedBy, v))
 }
 
+// Version applies equality check predicate on the "version" field. It's identical to VersionEQ.
+func Version(v int) predicate.NineBoxEntry {
+	return predicate.NineBoxEntry(sql.FieldEQ(FieldVersion, v))
+}
+
 // PerformanceScore applies equality check predicate on the "performance_score" field. It's identical to PerformanceScoreEQ.
 func PerformanceScore(v int) predicate.NineBoxEntry {
 	return predicate.NineBoxEntry(sql.FieldEQ(FieldPerformanceScore, v))
@@ -264,6 +269,46 @@ func UpdatedByLT(v uuid.UUID) predicate.NineBoxEntry {
 // UpdatedByLTE applies the LTE predicate on the "updated_by" field.
 func UpdatedByLTE(v uuid.UUID) predicate.NineBoxEntry {
 	return predicate.NineBoxEntry(sql.FieldLTE(FieldUpdatedBy, v))
+}
+
+// VersionEQ applies the EQ predicate on the "version" field.
+func VersionEQ(v int) predicate.NineBoxEntry {
+	return predicate.NineBoxEntry(sql.FieldEQ(FieldVersion, v))
+}
+
+// VersionNEQ applies the NEQ predicate on the "version" field.
+func VersionNEQ(v int) predicate.NineBoxEntry {
+	return predicate.NineBoxEntry(sql.FieldNEQ(FieldVersion, v))
+}
+
+// VersionIn applies the In predicate on the "version" field.
+func VersionIn(vs ...int) predicate.NineBoxEntry {
+	return predicate.NineBoxEntry(sql.FieldIn(FieldVersion, vs...))
+}
+
+// VersionNotIn applies the NotIn predicate on the "version" field.
+func VersionNotIn(vs ...int) predicate.NineBoxEntry {
+	return predicate.NineBoxEntry(sql.FieldNotIn(FieldVersion, vs...))
+}
+
+// VersionGT applies the GT predicate on the "version" field.
+func VersionGT(v int) predicate.NineBoxEntry {
+	return predicate.NineBoxEntry(sql.FieldGT(FieldVersion, v))
+}
+
+// VersionGTE applies the GTE predicate on the "version" field.
+func VersionGTE(v int) predicate.NineBoxEntry {
+	return predicate.NineBoxEntry(sql.FieldGTE(FieldVersion, v))
+}
+
+// VersionLT applies the LT predicate on the "version" field.
+func VersionLT(v int) predicate.NineBoxEntry {
+	return predicate.NineBoxEntry(sql.FieldLT(FieldVersion, v))
+}
+
+// VersionLTE applies the LTE predicate on the "version" field.
+func VersionLTE(v int) predicate.NineBoxEntry {
+	return predicate.NineBoxEntry(sql.FieldLTE(FieldVersion, v))
 }
 
 // PerformanceScoreEQ applies the EQ predicate on the "performance_score" field.

@@ -21,9 +21,13 @@ import (
 //	GET    /api/v1/cycles/{id}/transitions → AuthPlaceholder → RateLimit(read) → ReadReplica
 func NewRouter(handler *CycleHandler) chi.Router {
 	r := chi.NewRouter()
+	RegisterRoutes(r, handler)
+	return r
+}
 
-	// Shared middleware for auth (TODO(auth:C7): replace with real auth)
-	r.Use(middleware.AuthPlaceholder)
+// RegisterRoutes registers all cycle/phase endpoints on an existing router.
+// The caller is responsible for applying AuthPlaceholder and any other shared middleware.
+func RegisterRoutes(r chi.Router, handler *CycleHandler) {
 
 	// Rate limit configurations
 	readRateLimit := middleware.RateLimitConfig{
@@ -87,8 +91,6 @@ func NewRouter(handler *CycleHandler) chi.Router {
 		r.Use(readReplicaMiddleware)
 		r.Get("/cycles/{id}/transitions", handler.GetAvailableTransitions)
 	})
-
-	return r
 }
 
 // readReplicaMiddleware sets the db role hint to "replica" so repository

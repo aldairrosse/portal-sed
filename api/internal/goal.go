@@ -27,6 +27,8 @@ type Goal struct {
 	CreatedBy uuid.UUID `json:"created_by,omitempty"`
 	// UpdatedBy holds the value of the "updated_by" field.
 	UpdatedBy uuid.UUID `json:"updated_by,omitempty"`
+	// Version holds the value of the "version" field.
+	Version int `json:"version,omitempty"`
 	// Name holds the value of the "name" field.
 	Name string `json:"name,omitempty"`
 	// Description holds the value of the "description" field.
@@ -98,6 +100,8 @@ func (*Goal) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case goal.FieldWeight, goal.FieldTargetValue, goal.FieldCurrentValue:
 			values[i] = new(sql.NullFloat64)
+		case goal.FieldVersion:
+			values[i] = new(sql.NullInt64)
 		case goal.FieldName, goal.FieldDescription, goal.FieldUnit, goal.FieldState:
 			values[i] = new(sql.NullString)
 		case goal.FieldCreatedAt, goal.FieldUpdatedAt:
@@ -148,6 +152,12 @@ func (_m *Goal) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field updated_by", values[i])
 			} else if value != nil {
 				_m.UpdatedBy = *value
+			}
+		case goal.FieldVersion:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field version", values[i])
+			} else if value.Valid {
+				_m.Version = int(value.Int64)
 			}
 		case goal.FieldName:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -259,6 +269,9 @@ func (_m *Goal) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("updated_by=")
 	builder.WriteString(fmt.Sprintf("%v", _m.UpdatedBy))
+	builder.WriteString(", ")
+	builder.WriteString("version=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Version))
 	builder.WriteString(", ")
 	builder.WriteString("name=")
 	builder.WriteString(_m.Name)

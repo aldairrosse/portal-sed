@@ -17,6 +17,7 @@ type Competency struct {
 func (Competency) Mixin() []ent.Mixin {
 	return []ent.Mixin{
 		TimeMixin{},
+		VersionMixin{},
 	}
 }
 

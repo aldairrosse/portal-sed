@@ -37,6 +37,27 @@ func (_u *ScaleCriterionUpdate) SetUpdatedAt(v time.Time) *ScaleCriterionUpdate 
 	return _u
 }
 
+// SetVersion sets the "version" field.
+func (_u *ScaleCriterionUpdate) SetVersion(v int) *ScaleCriterionUpdate {
+	_u.mutation.ResetVersion()
+	_u.mutation.SetVersion(v)
+	return _u
+}
+
+// SetNillableVersion sets the "version" field if the given value is not nil.
+func (_u *ScaleCriterionUpdate) SetNillableVersion(v *int) *ScaleCriterionUpdate {
+	if v != nil {
+		_u.SetVersion(*v)
+	}
+	return _u
+}
+
+// AddVersion adds value to the "version" field.
+func (_u *ScaleCriterionUpdate) AddVersion(v int) *ScaleCriterionUpdate {
+	_u.mutation.AddVersion(v)
+	return _u
+}
+
 // SetLevel sets the "level" field.
 func (_u *ScaleCriterionUpdate) SetLevel(v int) *ScaleCriterionUpdate {
 	_u.mutation.ResetLevel()
@@ -165,6 +186,11 @@ func (_u *ScaleCriterionUpdate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *ScaleCriterionUpdate) check() error {
+	if v, ok := _u.mutation.Version(); ok {
+		if err := scalecriterion.VersionValidator(v); err != nil {
+			return &ValidationError{Name: "version", err: fmt.Errorf(`internal: validator failed for field "ScaleCriterion.version": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.Level(); ok {
 		if err := scalecriterion.LevelValidator(v); err != nil {
 			return &ValidationError{Name: "level", err: fmt.Errorf(`internal: validator failed for field "ScaleCriterion.level": %w`, err)}
@@ -198,6 +224,12 @@ func (_u *ScaleCriterionUpdate) sqlSave(ctx context.Context) (_node int, err err
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(scalecriterion.FieldUpdatedAt, field.TypeTime, value)
+	}
+	if value, ok := _u.mutation.Version(); ok {
+		_spec.SetField(scalecriterion.FieldVersion, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedVersion(); ok {
+		_spec.AddField(scalecriterion.FieldVersion, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.Level(); ok {
 		_spec.SetField(scalecriterion.FieldLevel, field.TypeInt, value)
@@ -289,6 +321,27 @@ type ScaleCriterionUpdateOne struct {
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *ScaleCriterionUpdateOne) SetUpdatedAt(v time.Time) *ScaleCriterionUpdateOne {
 	_u.mutation.SetUpdatedAt(v)
+	return _u
+}
+
+// SetVersion sets the "version" field.
+func (_u *ScaleCriterionUpdateOne) SetVersion(v int) *ScaleCriterionUpdateOne {
+	_u.mutation.ResetVersion()
+	_u.mutation.SetVersion(v)
+	return _u
+}
+
+// SetNillableVersion sets the "version" field if the given value is not nil.
+func (_u *ScaleCriterionUpdateOne) SetNillableVersion(v *int) *ScaleCriterionUpdateOne {
+	if v != nil {
+		_u.SetVersion(*v)
+	}
+	return _u
+}
+
+// AddVersion adds value to the "version" field.
+func (_u *ScaleCriterionUpdateOne) AddVersion(v int) *ScaleCriterionUpdateOne {
+	_u.mutation.AddVersion(v)
 	return _u
 }
 
@@ -433,6 +486,11 @@ func (_u *ScaleCriterionUpdateOne) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *ScaleCriterionUpdateOne) check() error {
+	if v, ok := _u.mutation.Version(); ok {
+		if err := scalecriterion.VersionValidator(v); err != nil {
+			return &ValidationError{Name: "version", err: fmt.Errorf(`internal: validator failed for field "ScaleCriterion.version": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.Level(); ok {
 		if err := scalecriterion.LevelValidator(v); err != nil {
 			return &ValidationError{Name: "level", err: fmt.Errorf(`internal: validator failed for field "ScaleCriterion.level": %w`, err)}
@@ -483,6 +541,12 @@ func (_u *ScaleCriterionUpdateOne) sqlSave(ctx context.Context) (_node *ScaleCri
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(scalecriterion.FieldUpdatedAt, field.TypeTime, value)
+	}
+	if value, ok := _u.mutation.Version(); ok {
+		_spec.SetField(scalecriterion.FieldVersion, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedVersion(); ok {
+		_spec.AddField(scalecriterion.FieldVersion, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.Level(); ok {
 		_spec.SetField(scalecriterion.FieldLevel, field.TypeInt, value)

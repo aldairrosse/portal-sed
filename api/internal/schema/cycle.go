@@ -16,6 +16,7 @@ type Cycle struct {
 func (Cycle) Mixin() []ent.Mixin {
 	return []ent.Mixin{
 		TimeMixin{},
+		VersionMixin{},
 	}
 }
 

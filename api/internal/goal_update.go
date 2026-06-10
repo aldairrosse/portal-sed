@@ -66,6 +66,27 @@ func (_u *GoalUpdate) SetNillableUpdatedBy(v *uuid.UUID) *GoalUpdate {
 	return _u
 }
 
+// SetVersion sets the "version" field.
+func (_u *GoalUpdate) SetVersion(v int) *GoalUpdate {
+	_u.mutation.ResetVersion()
+	_u.mutation.SetVersion(v)
+	return _u
+}
+
+// SetNillableVersion sets the "version" field if the given value is not nil.
+func (_u *GoalUpdate) SetNillableVersion(v *int) *GoalUpdate {
+	if v != nil {
+		_u.SetVersion(*v)
+	}
+	return _u
+}
+
+// AddVersion adds value to the "version" field.
+func (_u *GoalUpdate) AddVersion(v int) *GoalUpdate {
+	_u.mutation.AddVersion(v)
+	return _u
+}
+
 // SetName sets the "name" field.
 func (_u *GoalUpdate) SetName(v string) *GoalUpdate {
 	_u.mutation.SetName(v)
@@ -331,6 +352,11 @@ func (_u *GoalUpdate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *GoalUpdate) check() error {
+	if v, ok := _u.mutation.Version(); ok {
+		if err := goal.VersionValidator(v); err != nil {
+			return &ValidationError{Name: "version", err: fmt.Errorf(`internal: validator failed for field "Goal.version": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.Name(); ok {
 		if err := goal.NameValidator(v); err != nil {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`internal: validator failed for field "Goal.name": %w`, err)}
@@ -382,6 +408,12 @@ func (_u *GoalUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.UpdatedBy(); ok {
 		_spec.SetField(goal.FieldUpdatedBy, field.TypeUUID, value)
+	}
+	if value, ok := _u.mutation.Version(); ok {
+		_spec.SetField(goal.FieldVersion, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedVersion(); ok {
+		_spec.AddField(goal.FieldVersion, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(goal.FieldName, field.TypeString, value)
@@ -586,6 +618,27 @@ func (_u *GoalUpdateOne) SetNillableUpdatedBy(v *uuid.UUID) *GoalUpdateOne {
 	if v != nil {
 		_u.SetUpdatedBy(*v)
 	}
+	return _u
+}
+
+// SetVersion sets the "version" field.
+func (_u *GoalUpdateOne) SetVersion(v int) *GoalUpdateOne {
+	_u.mutation.ResetVersion()
+	_u.mutation.SetVersion(v)
+	return _u
+}
+
+// SetNillableVersion sets the "version" field if the given value is not nil.
+func (_u *GoalUpdateOne) SetNillableVersion(v *int) *GoalUpdateOne {
+	if v != nil {
+		_u.SetVersion(*v)
+	}
+	return _u
+}
+
+// AddVersion adds value to the "version" field.
+func (_u *GoalUpdateOne) AddVersion(v int) *GoalUpdateOne {
+	_u.mutation.AddVersion(v)
 	return _u
 }
 
@@ -867,6 +920,11 @@ func (_u *GoalUpdateOne) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *GoalUpdateOne) check() error {
+	if v, ok := _u.mutation.Version(); ok {
+		if err := goal.VersionValidator(v); err != nil {
+			return &ValidationError{Name: "version", err: fmt.Errorf(`internal: validator failed for field "Goal.version": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.Name(); ok {
 		if err := goal.NameValidator(v); err != nil {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`internal: validator failed for field "Goal.name": %w`, err)}
@@ -935,6 +993,12 @@ func (_u *GoalUpdateOne) sqlSave(ctx context.Context) (_node *Goal, err error) {
 	}
 	if value, ok := _u.mutation.UpdatedBy(); ok {
 		_spec.SetField(goal.FieldUpdatedBy, field.TypeUUID, value)
+	}
+	if value, ok := _u.mutation.Version(); ok {
+		_spec.SetField(goal.FieldVersion, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedVersion(); ok {
+		_spec.AddField(goal.FieldVersion, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(goal.FieldName, field.TypeString, value)

@@ -65,6 +65,27 @@ func (_u *NineBoxEntryUpdate) SetNillableUpdatedBy(v *uuid.UUID) *NineBoxEntryUp
 	return _u
 }
 
+// SetVersion sets the "version" field.
+func (_u *NineBoxEntryUpdate) SetVersion(v int) *NineBoxEntryUpdate {
+	_u.mutation.ResetVersion()
+	_u.mutation.SetVersion(v)
+	return _u
+}
+
+// SetNillableVersion sets the "version" field if the given value is not nil.
+func (_u *NineBoxEntryUpdate) SetNillableVersion(v *int) *NineBoxEntryUpdate {
+	if v != nil {
+		_u.SetVersion(*v)
+	}
+	return _u
+}
+
+// AddVersion adds value to the "version" field.
+func (_u *NineBoxEntryUpdate) AddVersion(v int) *NineBoxEntryUpdate {
+	_u.mutation.AddVersion(v)
+	return _u
+}
+
 // SetPerformanceScore sets the "performance_score" field.
 func (_u *NineBoxEntryUpdate) SetPerformanceScore(v int) *NineBoxEntryUpdate {
 	_u.mutation.ResetPerformanceScore()
@@ -241,6 +262,11 @@ func (_u *NineBoxEntryUpdate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *NineBoxEntryUpdate) check() error {
+	if v, ok := _u.mutation.Version(); ok {
+		if err := nineboxentry.VersionValidator(v); err != nil {
+			return &ValidationError{Name: "version", err: fmt.Errorf(`internal: validator failed for field "NineBoxEntry.version": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.PerformanceScore(); ok {
 		if err := nineboxentry.PerformanceScoreValidator(v); err != nil {
 			return &ValidationError{Name: "performance_score", err: fmt.Errorf(`internal: validator failed for field "NineBoxEntry.performance_score": %w`, err)}
@@ -285,6 +311,12 @@ func (_u *NineBoxEntryUpdate) sqlSave(ctx context.Context) (_node int, err error
 	}
 	if value, ok := _u.mutation.UpdatedBy(); ok {
 		_spec.SetField(nineboxentry.FieldUpdatedBy, field.TypeUUID, value)
+	}
+	if value, ok := _u.mutation.Version(); ok {
+		_spec.SetField(nineboxentry.FieldVersion, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedVersion(); ok {
+		_spec.AddField(nineboxentry.FieldVersion, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.PerformanceScore(); ok {
 		_spec.SetField(nineboxentry.FieldPerformanceScore, field.TypeInt, value)
@@ -419,6 +451,27 @@ func (_u *NineBoxEntryUpdateOne) SetNillableUpdatedBy(v *uuid.UUID) *NineBoxEntr
 	if v != nil {
 		_u.SetUpdatedBy(*v)
 	}
+	return _u
+}
+
+// SetVersion sets the "version" field.
+func (_u *NineBoxEntryUpdateOne) SetVersion(v int) *NineBoxEntryUpdateOne {
+	_u.mutation.ResetVersion()
+	_u.mutation.SetVersion(v)
+	return _u
+}
+
+// SetNillableVersion sets the "version" field if the given value is not nil.
+func (_u *NineBoxEntryUpdateOne) SetNillableVersion(v *int) *NineBoxEntryUpdateOne {
+	if v != nil {
+		_u.SetVersion(*v)
+	}
+	return _u
+}
+
+// AddVersion adds value to the "version" field.
+func (_u *NineBoxEntryUpdateOne) AddVersion(v int) *NineBoxEntryUpdateOne {
+	_u.mutation.AddVersion(v)
 	return _u
 }
 
@@ -611,6 +664,11 @@ func (_u *NineBoxEntryUpdateOne) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *NineBoxEntryUpdateOne) check() error {
+	if v, ok := _u.mutation.Version(); ok {
+		if err := nineboxentry.VersionValidator(v); err != nil {
+			return &ValidationError{Name: "version", err: fmt.Errorf(`internal: validator failed for field "NineBoxEntry.version": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.PerformanceScore(); ok {
 		if err := nineboxentry.PerformanceScoreValidator(v); err != nil {
 			return &ValidationError{Name: "performance_score", err: fmt.Errorf(`internal: validator failed for field "NineBoxEntry.performance_score": %w`, err)}
@@ -672,6 +730,12 @@ func (_u *NineBoxEntryUpdateOne) sqlSave(ctx context.Context) (_node *NineBoxEnt
 	}
 	if value, ok := _u.mutation.UpdatedBy(); ok {
 		_spec.SetField(nineboxentry.FieldUpdatedBy, field.TypeUUID, value)
+	}
+	if value, ok := _u.mutation.Version(); ok {
+		_spec.SetField(nineboxentry.FieldVersion, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedVersion(); ok {
+		_spec.AddField(nineboxentry.FieldVersion, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.PerformanceScore(); ok {
 		_spec.SetField(nineboxentry.FieldPerformanceScore, field.TypeInt, value)

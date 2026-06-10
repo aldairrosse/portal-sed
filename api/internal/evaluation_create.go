@@ -65,6 +65,20 @@ func (_c *EvaluationCreate) SetUpdatedBy(v uuid.UUID) *EvaluationCreate {
 	return _c
 }
 
+// SetVersion sets the "version" field.
+func (_c *EvaluationCreate) SetVersion(v int) *EvaluationCreate {
+	_c.mutation.SetVersion(v)
+	return _c
+}
+
+// SetNillableVersion sets the "version" field if the given value is not nil.
+func (_c *EvaluationCreate) SetNillableVersion(v *int) *EvaluationCreate {
+	if v != nil {
+		_c.SetVersion(*v)
+	}
+	return _c
+}
+
 // SetPhase sets the "phase" field.
 func (_c *EvaluationCreate) SetPhase(v evaluation.Phase) *EvaluationCreate {
 	_c.mutation.SetPhase(v)
@@ -214,6 +228,10 @@ func (_c *EvaluationCreate) defaults() {
 		v := evaluation.DefaultUpdatedAt()
 		_c.mutation.SetUpdatedAt(v)
 	}
+	if _, ok := _c.mutation.Version(); !ok {
+		v := evaluation.DefaultVersion
+		_c.mutation.SetVersion(v)
+	}
 	if _, ok := _c.mutation.ID(); !ok {
 		v := evaluation.DefaultID()
 		_c.mutation.SetID(v)
@@ -233,6 +251,14 @@ func (_c *EvaluationCreate) check() error {
 	}
 	if _, ok := _c.mutation.UpdatedBy(); !ok {
 		return &ValidationError{Name: "updated_by", err: errors.New(`internal: missing required field "Evaluation.updated_by"`)}
+	}
+	if _, ok := _c.mutation.Version(); !ok {
+		return &ValidationError{Name: "version", err: errors.New(`internal: missing required field "Evaluation.version"`)}
+	}
+	if v, ok := _c.mutation.Version(); ok {
+		if err := evaluation.VersionValidator(v); err != nil {
+			return &ValidationError{Name: "version", err: fmt.Errorf(`internal: validator failed for field "Evaluation.version": %w`, err)}
+		}
 	}
 	if _, ok := _c.mutation.Phase(); !ok {
 		return &ValidationError{Name: "phase", err: errors.New(`internal: missing required field "Evaluation.phase"`)}
@@ -312,6 +338,10 @@ func (_c *EvaluationCreate) createSpec() (*Evaluation, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.UpdatedBy(); ok {
 		_spec.SetField(evaluation.FieldUpdatedBy, field.TypeUUID, value)
 		_node.UpdatedBy = value
+	}
+	if value, ok := _c.mutation.Version(); ok {
+		_spec.SetField(evaluation.FieldVersion, field.TypeInt, value)
+		_node.Version = value
 	}
 	if value, ok := _c.mutation.Phase(); ok {
 		_spec.SetField(evaluation.FieldPhase, field.TypeEnum, value)

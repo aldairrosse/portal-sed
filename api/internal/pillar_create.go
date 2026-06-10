@@ -51,6 +51,20 @@ func (_c *PillarCreate) SetNillableUpdatedAt(v *time.Time) *PillarCreate {
 	return _c
 }
 
+// SetVersion sets the "version" field.
+func (_c *PillarCreate) SetVersion(v int) *PillarCreate {
+	_c.mutation.SetVersion(v)
+	return _c
+}
+
+// SetNillableVersion sets the "version" field if the given value is not nil.
+func (_c *PillarCreate) SetNillableVersion(v *int) *PillarCreate {
+	if v != nil {
+		_c.SetVersion(*v)
+	}
+	return _c
+}
+
 // SetName sets the "name" field.
 func (_c *PillarCreate) SetName(v string) *PillarCreate {
 	_c.mutation.SetName(v)
@@ -158,6 +172,10 @@ func (_c *PillarCreate) defaults() {
 		v := pillar.DefaultUpdatedAt()
 		_c.mutation.SetUpdatedAt(v)
 	}
+	if _, ok := _c.mutation.Version(); !ok {
+		v := pillar.DefaultVersion
+		_c.mutation.SetVersion(v)
+	}
 	if _, ok := _c.mutation.ID(); !ok {
 		v := pillar.DefaultID()
 		_c.mutation.SetID(v)
@@ -171,6 +189,14 @@ func (_c *PillarCreate) check() error {
 	}
 	if _, ok := _c.mutation.UpdatedAt(); !ok {
 		return &ValidationError{Name: "updated_at", err: errors.New(`internal: missing required field "Pillar.updated_at"`)}
+	}
+	if _, ok := _c.mutation.Version(); !ok {
+		return &ValidationError{Name: "version", err: errors.New(`internal: missing required field "Pillar.version"`)}
+	}
+	if v, ok := _c.mutation.Version(); ok {
+		if err := pillar.VersionValidator(v); err != nil {
+			return &ValidationError{Name: "version", err: fmt.Errorf(`internal: validator failed for field "Pillar.version": %w`, err)}
+		}
 	}
 	if _, ok := _c.mutation.Name(); !ok {
 		return &ValidationError{Name: "name", err: errors.New(`internal: missing required field "Pillar.name"`)}
@@ -222,6 +248,10 @@ func (_c *PillarCreate) createSpec() (*Pillar, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.UpdatedAt(); ok {
 		_spec.SetField(pillar.FieldUpdatedAt, field.TypeTime, value)
 		_node.UpdatedAt = value
+	}
+	if value, ok := _c.mutation.Version(); ok {
+		_spec.SetField(pillar.FieldVersion, field.TypeInt, value)
+		_node.Version = value
 	}
 	if value, ok := _c.mutation.Name(); ok {
 		_spec.SetField(pillar.FieldName, field.TypeString, value)

@@ -33,9 +33,12 @@ import (
 //   GET    /api/v1/evaluator-scopes/{scopeId}       → GetEvaluatorScopeByID
 func NewRouter(handler *OrgHandler) chi.Router {
 	r := chi.NewRouter()
+	RegisterRoutes(r, handler)
+	return r
+}
 
-	// Shared middleware for auth (TODO(auth:C7): replace with real auth)
-	r.Use(middleware.AuthPlaceholder)
+// RegisterRoutes registers all org hierarchy endpoints on an existing router.
+func RegisterRoutes(r chi.Router, handler *OrgHandler) {
 
 	// Rate limit configurations
 	readRateLimit := middleware.RateLimitConfig{
@@ -160,8 +163,6 @@ func NewRouter(handler *OrgHandler) chi.Router {
 		r.Use(readReplicaMiddleware)
 		r.Get("/evaluator-scopes/{scopeId}", handler.GetEvaluatorScopeByID)
 	})
-
-	return r
 }
 
 // readReplicaMiddleware sets the db role hint to "replica" so repository

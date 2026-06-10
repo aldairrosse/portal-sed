@@ -37,6 +37,27 @@ func (_u *OrgNodeUpdate) SetUpdatedAt(v time.Time) *OrgNodeUpdate {
 	return _u
 }
 
+// SetVersion sets the "version" field.
+func (_u *OrgNodeUpdate) SetVersion(v int) *OrgNodeUpdate {
+	_u.mutation.ResetVersion()
+	_u.mutation.SetVersion(v)
+	return _u
+}
+
+// SetNillableVersion sets the "version" field if the given value is not nil.
+func (_u *OrgNodeUpdate) SetNillableVersion(v *int) *OrgNodeUpdate {
+	if v != nil {
+		_u.SetVersion(*v)
+	}
+	return _u
+}
+
+// AddVersion adds value to the "version" field.
+func (_u *OrgNodeUpdate) AddVersion(v int) *OrgNodeUpdate {
+	_u.mutation.AddVersion(v)
+	return _u
+}
+
 // SetName sets the "name" field.
 func (_u *OrgNodeUpdate) SetName(v string) *OrgNodeUpdate {
 	_u.mutation.SetName(v)
@@ -262,6 +283,11 @@ func (_u *OrgNodeUpdate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *OrgNodeUpdate) check() error {
+	if v, ok := _u.mutation.Version(); ok {
+		if err := orgnode.VersionValidator(v); err != nil {
+			return &ValidationError{Name: "version", err: fmt.Errorf(`internal: validator failed for field "OrgNode.version": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.Name(); ok {
 		if err := orgnode.NameValidator(v); err != nil {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`internal: validator failed for field "OrgNode.name": %w`, err)}
@@ -297,6 +323,12 @@ func (_u *OrgNodeUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(orgnode.FieldUpdatedAt, field.TypeTime, value)
+	}
+	if value, ok := _u.mutation.Version(); ok {
+		_spec.SetField(orgnode.FieldVersion, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedVersion(); ok {
+		_spec.AddField(orgnode.FieldVersion, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(orgnode.FieldName, field.TypeString, value)
@@ -484,6 +516,27 @@ type OrgNodeUpdateOne struct {
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *OrgNodeUpdateOne) SetUpdatedAt(v time.Time) *OrgNodeUpdateOne {
 	_u.mutation.SetUpdatedAt(v)
+	return _u
+}
+
+// SetVersion sets the "version" field.
+func (_u *OrgNodeUpdateOne) SetVersion(v int) *OrgNodeUpdateOne {
+	_u.mutation.ResetVersion()
+	_u.mutation.SetVersion(v)
+	return _u
+}
+
+// SetNillableVersion sets the "version" field if the given value is not nil.
+func (_u *OrgNodeUpdateOne) SetNillableVersion(v *int) *OrgNodeUpdateOne {
+	if v != nil {
+		_u.SetVersion(*v)
+	}
+	return _u
+}
+
+// AddVersion adds value to the "version" field.
+func (_u *OrgNodeUpdateOne) AddVersion(v int) *OrgNodeUpdateOne {
+	_u.mutation.AddVersion(v)
 	return _u
 }
 
@@ -725,6 +778,11 @@ func (_u *OrgNodeUpdateOne) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *OrgNodeUpdateOne) check() error {
+	if v, ok := _u.mutation.Version(); ok {
+		if err := orgnode.VersionValidator(v); err != nil {
+			return &ValidationError{Name: "version", err: fmt.Errorf(`internal: validator failed for field "OrgNode.version": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.Name(); ok {
 		if err := orgnode.NameValidator(v); err != nil {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`internal: validator failed for field "OrgNode.name": %w`, err)}
@@ -777,6 +835,12 @@ func (_u *OrgNodeUpdateOne) sqlSave(ctx context.Context) (_node *OrgNode, err er
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(orgnode.FieldUpdatedAt, field.TypeTime, value)
+	}
+	if value, ok := _u.mutation.Version(); ok {
+		_spec.SetField(orgnode.FieldVersion, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedVersion(); ok {
+		_spec.AddField(orgnode.FieldVersion, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(orgnode.FieldName, field.TypeString, value)

@@ -28,6 +28,8 @@ type Evaluation struct {
 	CreatedBy uuid.UUID `json:"created_by,omitempty"`
 	// UpdatedBy holds the value of the "updated_by" field.
 	UpdatedBy uuid.UUID `json:"updated_by,omitempty"`
+	// Version holds the value of the "version" field.
+	Version int `json:"version,omitempty"`
 	// Phase holds the value of the "phase" field.
 	Phase evaluation.Phase `json:"phase,omitempty"`
 	// State holds the value of the "state" field.
@@ -106,6 +108,8 @@ func (*Evaluation) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case evaluation.FieldVersion:
+			values[i] = new(sql.NullInt64)
 		case evaluation.FieldPhase, evaluation.FieldState:
 			values[i] = new(sql.NullString)
 		case evaluation.FieldCreatedAt, evaluation.FieldUpdatedAt, evaluation.FieldSelfEvaluationCompletedAt, evaluation.FieldRhEvaluationCompletedAt:
@@ -156,6 +160,12 @@ func (_m *Evaluation) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field updated_by", values[i])
 			} else if value != nil {
 				_m.UpdatedBy = *value
+			}
+		case evaluation.FieldVersion:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field version", values[i])
+			} else if value.Valid {
+				_m.Version = int(value.Int64)
 			}
 		case evaluation.FieldPhase:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -262,6 +272,9 @@ func (_m *Evaluation) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("updated_by=")
 	builder.WriteString(fmt.Sprintf("%v", _m.UpdatedBy))
+	builder.WriteString(", ")
+	builder.WriteString("version=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Version))
 	builder.WriteString(", ")
 	builder.WriteString("phase=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Phase))

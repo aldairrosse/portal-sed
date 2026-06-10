@@ -24,6 +24,8 @@ const (
 	FieldCreatedBy = "created_by"
 	// FieldUpdatedBy holds the string denoting the updated_by field in the database.
 	FieldUpdatedBy = "updated_by"
+	// FieldVersion holds the string denoting the version field in the database.
+	FieldVersion = "version"
 	// FieldPhase holds the string denoting the phase field in the database.
 	FieldPhase = "phase"
 	// FieldState holds the string denoting the state field in the database.
@@ -83,6 +85,7 @@ var Columns = []string{
 	FieldUpdatedAt,
 	FieldCreatedBy,
 	FieldUpdatedBy,
+	FieldVersion,
 	FieldPhase,
 	FieldState,
 	FieldSelfEvaluationCompletedAt,
@@ -108,6 +111,10 @@ var (
 	DefaultUpdatedAt func() time.Time
 	// UpdateDefaultUpdatedAt holds the default value on update for the "updated_at" field.
 	UpdateDefaultUpdatedAt func() time.Time
+	// DefaultVersion holds the default value on creation for the "version" field.
+	DefaultVersion int
+	// VersionValidator is a validator for the "version" field. It is called by the builders before save.
+	VersionValidator func(int) error
 	// DefaultID holds the default value on creation for the "id" field.
 	DefaultID func() uuid.UUID
 )
@@ -187,6 +194,11 @@ func ByCreatedBy(opts ...sql.OrderTermOption) OrderOption {
 // ByUpdatedBy orders the results by the updated_by field.
 func ByUpdatedBy(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldUpdatedBy, opts...).ToFunc()
+}
+
+// ByVersion orders the results by the version field.
+func ByVersion(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldVersion, opts...).ToFunc()
 }
 
 // ByPhase orders the results by the phase field.

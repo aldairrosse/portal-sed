@@ -51,6 +51,20 @@ func (_c *ScaleCriterionCreate) SetNillableUpdatedAt(v *time.Time) *ScaleCriteri
 	return _c
 }
 
+// SetVersion sets the "version" field.
+func (_c *ScaleCriterionCreate) SetVersion(v int) *ScaleCriterionCreate {
+	_c.mutation.SetVersion(v)
+	return _c
+}
+
+// SetNillableVersion sets the "version" field if the given value is not nil.
+func (_c *ScaleCriterionCreate) SetNillableVersion(v *int) *ScaleCriterionCreate {
+	if v != nil {
+		_c.SetVersion(*v)
+	}
+	return _c
+}
+
 // SetLevel sets the "level" field.
 func (_c *ScaleCriterionCreate) SetLevel(v int) *ScaleCriterionCreate {
 	_c.mutation.SetLevel(v)
@@ -142,6 +156,10 @@ func (_c *ScaleCriterionCreate) defaults() {
 		v := scalecriterion.DefaultUpdatedAt()
 		_c.mutation.SetUpdatedAt(v)
 	}
+	if _, ok := _c.mutation.Version(); !ok {
+		v := scalecriterion.DefaultVersion
+		_c.mutation.SetVersion(v)
+	}
 	if _, ok := _c.mutation.ID(); !ok {
 		v := scalecriterion.DefaultID()
 		_c.mutation.SetID(v)
@@ -155,6 +173,14 @@ func (_c *ScaleCriterionCreate) check() error {
 	}
 	if _, ok := _c.mutation.UpdatedAt(); !ok {
 		return &ValidationError{Name: "updated_at", err: errors.New(`internal: missing required field "ScaleCriterion.updated_at"`)}
+	}
+	if _, ok := _c.mutation.Version(); !ok {
+		return &ValidationError{Name: "version", err: errors.New(`internal: missing required field "ScaleCriterion.version"`)}
+	}
+	if v, ok := _c.mutation.Version(); ok {
+		if err := scalecriterion.VersionValidator(v); err != nil {
+			return &ValidationError{Name: "version", err: fmt.Errorf(`internal: validator failed for field "ScaleCriterion.version": %w`, err)}
+		}
 	}
 	if _, ok := _c.mutation.Level(); !ok {
 		return &ValidationError{Name: "level", err: errors.New(`internal: missing required field "ScaleCriterion.level"`)}
@@ -226,6 +252,10 @@ func (_c *ScaleCriterionCreate) createSpec() (*ScaleCriterion, *sqlgraph.CreateS
 	if value, ok := _c.mutation.UpdatedAt(); ok {
 		_spec.SetField(scalecriterion.FieldUpdatedAt, field.TypeTime, value)
 		_node.UpdatedAt = value
+	}
+	if value, ok := _c.mutation.Version(); ok {
+		_spec.SetField(scalecriterion.FieldVersion, field.TypeInt, value)
+		_node.Version = value
 	}
 	if value, ok := _c.mutation.Level(); ok {
 		_spec.SetField(scalecriterion.FieldLevel, field.TypeInt, value)

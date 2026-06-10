@@ -17,6 +17,7 @@ type Goal struct {
 func (Goal) Mixin() []ent.Mixin {
 	return []ent.Mixin{
 		AuditMixin{},
+		VersionMixin{},
 	}
 }
 

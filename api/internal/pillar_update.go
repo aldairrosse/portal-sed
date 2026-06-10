@@ -37,6 +37,27 @@ func (_u *PillarUpdate) SetUpdatedAt(v time.Time) *PillarUpdate {
 	return _u
 }
 
+// SetVersion sets the "version" field.
+func (_u *PillarUpdate) SetVersion(v int) *PillarUpdate {
+	_u.mutation.ResetVersion()
+	_u.mutation.SetVersion(v)
+	return _u
+}
+
+// SetNillableVersion sets the "version" field if the given value is not nil.
+func (_u *PillarUpdate) SetNillableVersion(v *int) *PillarUpdate {
+	if v != nil {
+		_u.SetVersion(*v)
+	}
+	return _u
+}
+
+// AddVersion adds value to the "version" field.
+func (_u *PillarUpdate) AddVersion(v int) *PillarUpdate {
+	_u.mutation.AddVersion(v)
+	return _u
+}
+
 // SetName sets the "name" field.
 func (_u *PillarUpdate) SetName(v string) *PillarUpdate {
 	_u.mutation.SetName(v)
@@ -186,6 +207,11 @@ func (_u *PillarUpdate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *PillarUpdate) check() error {
+	if v, ok := _u.mutation.Version(); ok {
+		if err := pillar.VersionValidator(v); err != nil {
+			return &ValidationError{Name: "version", err: fmt.Errorf(`internal: validator failed for field "Pillar.version": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.Name(); ok {
 		if err := pillar.NameValidator(v); err != nil {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`internal: validator failed for field "Pillar.name": %w`, err)}
@@ -208,6 +234,12 @@ func (_u *PillarUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(pillar.FieldUpdatedAt, field.TypeTime, value)
+	}
+	if value, ok := _u.mutation.Version(); ok {
+		_spec.SetField(pillar.FieldVersion, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedVersion(); ok {
+		_spec.AddField(pillar.FieldVersion, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(pillar.FieldName, field.TypeString, value)
@@ -331,6 +363,27 @@ type PillarUpdateOne struct {
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *PillarUpdateOne) SetUpdatedAt(v time.Time) *PillarUpdateOne {
 	_u.mutation.SetUpdatedAt(v)
+	return _u
+}
+
+// SetVersion sets the "version" field.
+func (_u *PillarUpdateOne) SetVersion(v int) *PillarUpdateOne {
+	_u.mutation.ResetVersion()
+	_u.mutation.SetVersion(v)
+	return _u
+}
+
+// SetNillableVersion sets the "version" field if the given value is not nil.
+func (_u *PillarUpdateOne) SetNillableVersion(v *int) *PillarUpdateOne {
+	if v != nil {
+		_u.SetVersion(*v)
+	}
+	return _u
+}
+
+// AddVersion adds value to the "version" field.
+func (_u *PillarUpdateOne) AddVersion(v int) *PillarUpdateOne {
+	_u.mutation.AddVersion(v)
 	return _u
 }
 
@@ -496,6 +549,11 @@ func (_u *PillarUpdateOne) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *PillarUpdateOne) check() error {
+	if v, ok := _u.mutation.Version(); ok {
+		if err := pillar.VersionValidator(v); err != nil {
+			return &ValidationError{Name: "version", err: fmt.Errorf(`internal: validator failed for field "Pillar.version": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.Name(); ok {
 		if err := pillar.NameValidator(v); err != nil {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`internal: validator failed for field "Pillar.name": %w`, err)}
@@ -535,6 +593,12 @@ func (_u *PillarUpdateOne) sqlSave(ctx context.Context) (_node *Pillar, err erro
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(pillar.FieldUpdatedAt, field.TypeTime, value)
+	}
+	if value, ok := _u.mutation.Version(); ok {
+		_spec.SetField(pillar.FieldVersion, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedVersion(); ok {
+		_spec.AddField(pillar.FieldVersion, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(pillar.FieldName, field.TypeString, value)

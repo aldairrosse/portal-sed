@@ -53,6 +53,20 @@ func (_c *CompetencyCreate) SetNillableUpdatedAt(v *time.Time) *CompetencyCreate
 	return _c
 }
 
+// SetVersion sets the "version" field.
+func (_c *CompetencyCreate) SetVersion(v int) *CompetencyCreate {
+	_c.mutation.SetVersion(v)
+	return _c
+}
+
+// SetNillableVersion sets the "version" field if the given value is not nil.
+func (_c *CompetencyCreate) SetNillableVersion(v *int) *CompetencyCreate {
+	if v != nil {
+		_c.SetVersion(*v)
+	}
+	return _c
+}
+
 // SetName sets the "name" field.
 func (_c *CompetencyCreate) SetName(v string) *CompetencyCreate {
 	_c.mutation.SetName(v)
@@ -186,6 +200,10 @@ func (_c *CompetencyCreate) defaults() {
 		v := competency.DefaultUpdatedAt()
 		_c.mutation.SetUpdatedAt(v)
 	}
+	if _, ok := _c.mutation.Version(); !ok {
+		v := competency.DefaultVersion
+		_c.mutation.SetVersion(v)
+	}
 	if _, ok := _c.mutation.ID(); !ok {
 		v := competency.DefaultID()
 		_c.mutation.SetID(v)
@@ -199,6 +217,14 @@ func (_c *CompetencyCreate) check() error {
 	}
 	if _, ok := _c.mutation.UpdatedAt(); !ok {
 		return &ValidationError{Name: "updated_at", err: errors.New(`internal: missing required field "Competency.updated_at"`)}
+	}
+	if _, ok := _c.mutation.Version(); !ok {
+		return &ValidationError{Name: "version", err: errors.New(`internal: missing required field "Competency.version"`)}
+	}
+	if v, ok := _c.mutation.Version(); ok {
+		if err := competency.VersionValidator(v); err != nil {
+			return &ValidationError{Name: "version", err: fmt.Errorf(`internal: validator failed for field "Competency.version": %w`, err)}
+		}
 	}
 	if _, ok := _c.mutation.Name(); !ok {
 		return &ValidationError{Name: "name", err: errors.New(`internal: missing required field "Competency.name"`)}
@@ -256,6 +282,10 @@ func (_c *CompetencyCreate) createSpec() (*Competency, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.UpdatedAt(); ok {
 		_spec.SetField(competency.FieldUpdatedAt, field.TypeTime, value)
 		_node.UpdatedAt = value
+	}
+	if value, ok := _c.mutation.Version(); ok {
+		_spec.SetField(competency.FieldVersion, field.TypeInt, value)
+		_node.Version = value
 	}
 	if value, ok := _c.mutation.Name(); ok {
 		_spec.SetField(competency.FieldName, field.TypeString, value)
