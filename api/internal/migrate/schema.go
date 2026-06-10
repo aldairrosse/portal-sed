@@ -515,6 +515,7 @@ var (
 		{Name: "type", Type: field.TypeEnum, Enums: []string{"corporate", "retail"}},
 		{Name: "code", Type: field.TypeString},
 		{Name: "metadata", Type: field.TypeJSON, Nullable: true},
+		{Name: "path", Type: field.TypeString, Nullable: true},
 		{Name: "parent_id", Type: field.TypeUUID, Nullable: true},
 		{Name: "organization_id", Type: field.TypeUUID},
 	}
@@ -526,13 +527,13 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "org_nodes_org_nodes_parent",
-				Columns:    []*schema.Column{OrgNodesColumns[8]},
+				Columns:    []*schema.Column{OrgNodesColumns[9]},
 				RefColumns: []*schema.Column{OrgNodesColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "org_nodes_organizations_org_nodes",
-				Columns:    []*schema.Column{OrgNodesColumns[9]},
+				Columns:    []*schema.Column{OrgNodesColumns[10]},
 				RefColumns: []*schema.Column{OrganizationsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},

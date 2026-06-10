@@ -34,6 +34,8 @@ const (
 	FieldOrganizationID = "organization_id"
 	// FieldParentID holds the string denoting the parent_id field in the database.
 	FieldParentID = "parent_id"
+	// FieldPath holds the string denoting the path field in the database.
+	FieldPath = "path"
 	// EdgeOrganization holds the string denoting the organization edge name in mutations.
 	EdgeOrganization = "organization"
 	// EdgeParent holds the string denoting the parent edge name in mutations.
@@ -80,6 +82,7 @@ var Columns = []string{
 	FieldMetadata,
 	FieldOrganizationID,
 	FieldParentID,
+	FieldPath,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -180,6 +183,11 @@ func ByOrganizationID(opts ...sql.OrderTermOption) OrderOption {
 // ByParentID orders the results by the parent_id field.
 func ByParentID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldParentID, opts...).ToFunc()
+}
+
+// ByPath orders the results by the path field.
+func ByPath(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPath, opts...).ToFunc()
 }
 
 // ByOrganizationField orders the results by organization field.

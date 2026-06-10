@@ -3,6 +3,7 @@ package cycle
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"time"
 
 	"github.com/google/uuid"
@@ -147,10 +148,26 @@ func (r *PhaseRepo) queryPhaseDefinitions(ctx context.Context, query string, arg
 	var results []*PhaseDefinitionRow
 	for rows.Next() {
 		row := &PhaseDefinitionRow{}
+		var actors, actions, blocked []byte
 		err := rows.Scan(&row.ID, &row.CreatedAt, &row.UpdatedAt, &row.Phase, &row.Label,
-			&row.Order, &row.AllowedActors, &row.AllowedActions, &row.BlockedActions, &row.CycleID)
+			&row.Order, &actors, &actions, &blocked, &row.CycleID)
 		if err != nil {
 			return nil, err
+		}
+		if len(actors) > 0 {
+			if err := json.Unmarshal(actors, &row.AllowedActors); err != nil {
+				return nil, err
+			}
+		}
+		if len(actions) > 0 {
+			if err := json.Unmarshal(actions, &row.AllowedActions); err != nil {
+				return nil, err
+			}
+		}
+		if len(blocked) > 0 {
+			if err := json.Unmarshal(blocked, &row.BlockedActions); err != nil {
+				return nil, err
+			}
 		}
 		results = append(results, row)
 	}

@@ -146,6 +146,26 @@ func (_u *OrgNodeUpdate) ClearParentID() *OrgNodeUpdate {
 	return _u
 }
 
+// SetPath sets the "path" field.
+func (_u *OrgNodeUpdate) SetPath(v string) *OrgNodeUpdate {
+	_u.mutation.SetPath(v)
+	return _u
+}
+
+// SetNillablePath sets the "path" field if the given value is not nil.
+func (_u *OrgNodeUpdate) SetNillablePath(v *string) *OrgNodeUpdate {
+	if v != nil {
+		_u.SetPath(*v)
+	}
+	return _u
+}
+
+// ClearPath clears the value of the "path" field.
+func (_u *OrgNodeUpdate) ClearPath() *OrgNodeUpdate {
+	_u.mutation.ClearPath()
+	return _u
+}
+
 // SetOrganization sets the "organization" edge to the Organization entity.
 func (_u *OrgNodeUpdate) SetOrganization(v *Organization) *OrgNodeUpdate {
 	return _u.SetOrganizationID(v.ID)
@@ -344,6 +364,12 @@ func (_u *OrgNodeUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.MetadataCleared() {
 		_spec.ClearField(orgnode.FieldMetadata, field.TypeJSON)
+	}
+	if value, ok := _u.mutation.Path(); ok {
+		_spec.SetField(orgnode.FieldPath, field.TypeString, value)
+	}
+	if _u.mutation.PathCleared() {
+		_spec.ClearField(orgnode.FieldPath, field.TypeString)
 	}
 	if _u.mutation.OrganizationCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -628,6 +654,26 @@ func (_u *OrgNodeUpdateOne) ClearParentID() *OrgNodeUpdateOne {
 	return _u
 }
 
+// SetPath sets the "path" field.
+func (_u *OrgNodeUpdateOne) SetPath(v string) *OrgNodeUpdateOne {
+	_u.mutation.SetPath(v)
+	return _u
+}
+
+// SetNillablePath sets the "path" field if the given value is not nil.
+func (_u *OrgNodeUpdateOne) SetNillablePath(v *string) *OrgNodeUpdateOne {
+	if v != nil {
+		_u.SetPath(*v)
+	}
+	return _u
+}
+
+// ClearPath clears the value of the "path" field.
+func (_u *OrgNodeUpdateOne) ClearPath() *OrgNodeUpdateOne {
+	_u.mutation.ClearPath()
+	return _u
+}
+
 // SetOrganization sets the "organization" edge to the Organization entity.
 func (_u *OrgNodeUpdateOne) SetOrganization(v *Organization) *OrgNodeUpdateOne {
 	return _u.SetOrganizationID(v.ID)
@@ -856,6 +902,12 @@ func (_u *OrgNodeUpdateOne) sqlSave(ctx context.Context) (_node *OrgNode, err er
 	}
 	if _u.mutation.MetadataCleared() {
 		_spec.ClearField(orgnode.FieldMetadata, field.TypeJSON)
+	}
+	if value, ok := _u.mutation.Path(); ok {
+		_spec.SetField(orgnode.FieldPath, field.TypeString, value)
+	}
+	if _u.mutation.PathCleared() {
+		_spec.ClearField(orgnode.FieldPath, field.TypeString)
 	}
 	if _u.mutation.OrganizationCleared() {
 		edge := &sqlgraph.EdgeSpec{

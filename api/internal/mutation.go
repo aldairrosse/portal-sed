@@ -16591,6 +16591,7 @@ type OrgNodeMutation struct {
 	_type               *orgnode.Type
 	code                *string
 	metadata            *map[string]interface{}
+	_path               *string
 	clearedFields       map[string]struct{}
 	organization        *uuid.UUID
 	clearedorganization bool
@@ -17081,6 +17082,55 @@ func (m *OrgNodeMutation) ResetParentID() {
 	delete(m.clearedFields, orgnode.FieldParentID)
 }
 
+// SetPath sets the "path" field.
+func (m *OrgNodeMutation) SetPath(s string) {
+	m._path = &s
+}
+
+// Path returns the value of the "path" field in the mutation.
+func (m *OrgNodeMutation) Path() (r string, exists bool) {
+	v := m._path
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPath returns the old "path" field's value of the OrgNode entity.
+// If the OrgNode object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *OrgNodeMutation) OldPath(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPath is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPath requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPath: %w", err)
+	}
+	return oldValue.Path, nil
+}
+
+// ClearPath clears the value of the "path" field.
+func (m *OrgNodeMutation) ClearPath() {
+	m._path = nil
+	m.clearedFields[orgnode.FieldPath] = struct{}{}
+}
+
+// PathCleared returns if the "path" field was cleared in this mutation.
+func (m *OrgNodeMutation) PathCleared() bool {
+	_, ok := m.clearedFields[orgnode.FieldPath]
+	return ok
+}
+
+// ResetPath resets all changes to the "path" field.
+func (m *OrgNodeMutation) ResetPath() {
+	m._path = nil
+	delete(m.clearedFields, orgnode.FieldPath)
+}
+
 // ClearOrganization clears the "organization" edge to the Organization entity.
 func (m *OrgNodeMutation) ClearOrganization() {
 	m.clearedorganization = true
@@ -17277,7 +17327,7 @@ func (m *OrgNodeMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *OrgNodeMutation) Fields() []string {
-	fields := make([]string, 0, 9)
+	fields := make([]string, 0, 10)
 	if m.created_at != nil {
 		fields = append(fields, orgnode.FieldCreatedAt)
 	}
@@ -17305,6 +17355,9 @@ func (m *OrgNodeMutation) Fields() []string {
 	if m.parent != nil {
 		fields = append(fields, orgnode.FieldParentID)
 	}
+	if m._path != nil {
+		fields = append(fields, orgnode.FieldPath)
+	}
 	return fields
 }
 
@@ -17331,6 +17384,8 @@ func (m *OrgNodeMutation) Field(name string) (ent.Value, bool) {
 		return m.OrganizationID()
 	case orgnode.FieldParentID:
 		return m.ParentID()
+	case orgnode.FieldPath:
+		return m.Path()
 	}
 	return nil, false
 }
@@ -17358,6 +17413,8 @@ func (m *OrgNodeMutation) OldField(ctx context.Context, name string) (ent.Value,
 		return m.OldOrganizationID(ctx)
 	case orgnode.FieldParentID:
 		return m.OldParentID(ctx)
+	case orgnode.FieldPath:
+		return m.OldPath(ctx)
 	}
 	return nil, fmt.Errorf("unknown OrgNode field %s", name)
 }
@@ -17430,6 +17487,13 @@ func (m *OrgNodeMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetParentID(v)
 		return nil
+	case orgnode.FieldPath:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPath(v)
+		return nil
 	}
 	return fmt.Errorf("unknown OrgNode field %s", name)
 }
@@ -17481,6 +17545,9 @@ func (m *OrgNodeMutation) ClearedFields() []string {
 	if m.FieldCleared(orgnode.FieldParentID) {
 		fields = append(fields, orgnode.FieldParentID)
 	}
+	if m.FieldCleared(orgnode.FieldPath) {
+		fields = append(fields, orgnode.FieldPath)
+	}
 	return fields
 }
 
@@ -17500,6 +17567,9 @@ func (m *OrgNodeMutation) ClearField(name string) error {
 		return nil
 	case orgnode.FieldParentID:
 		m.ClearParentID()
+		return nil
+	case orgnode.FieldPath:
+		m.ClearPath()
 		return nil
 	}
 	return fmt.Errorf("unknown OrgNode nullable field %s", name)
@@ -17535,6 +17605,9 @@ func (m *OrgNodeMutation) ResetField(name string) error {
 		return nil
 	case orgnode.FieldParentID:
 		m.ResetParentID()
+		return nil
+	case orgnode.FieldPath:
+		m.ResetPath()
 		return nil
 	}
 	return fmt.Errorf("unknown OrgNode field %s", name)

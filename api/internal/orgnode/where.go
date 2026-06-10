@@ -91,6 +91,11 @@ func ParentID(v uuid.UUID) predicate.OrgNode {
 	return predicate.OrgNode(sql.FieldEQ(FieldParentID, v))
 }
 
+// Path applies equality check predicate on the "path" field. It's identical to PathEQ.
+func Path(v string) predicate.OrgNode {
+	return predicate.OrgNode(sql.FieldEQ(FieldPath, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.OrgNode {
 	return predicate.OrgNode(sql.FieldEQ(FieldCreatedAt, v))
@@ -419,6 +424,81 @@ func ParentIDIsNil() predicate.OrgNode {
 // ParentIDNotNil applies the NotNil predicate on the "parent_id" field.
 func ParentIDNotNil() predicate.OrgNode {
 	return predicate.OrgNode(sql.FieldNotNull(FieldParentID))
+}
+
+// PathEQ applies the EQ predicate on the "path" field.
+func PathEQ(v string) predicate.OrgNode {
+	return predicate.OrgNode(sql.FieldEQ(FieldPath, v))
+}
+
+// PathNEQ applies the NEQ predicate on the "path" field.
+func PathNEQ(v string) predicate.OrgNode {
+	return predicate.OrgNode(sql.FieldNEQ(FieldPath, v))
+}
+
+// PathIn applies the In predicate on the "path" field.
+func PathIn(vs ...string) predicate.OrgNode {
+	return predicate.OrgNode(sql.FieldIn(FieldPath, vs...))
+}
+
+// PathNotIn applies the NotIn predicate on the "path" field.
+func PathNotIn(vs ...string) predicate.OrgNode {
+	return predicate.OrgNode(sql.FieldNotIn(FieldPath, vs...))
+}
+
+// PathGT applies the GT predicate on the "path" field.
+func PathGT(v string) predicate.OrgNode {
+	return predicate.OrgNode(sql.FieldGT(FieldPath, v))
+}
+
+// PathGTE applies the GTE predicate on the "path" field.
+func PathGTE(v string) predicate.OrgNode {
+	return predicate.OrgNode(sql.FieldGTE(FieldPath, v))
+}
+
+// PathLT applies the LT predicate on the "path" field.
+func PathLT(v string) predicate.OrgNode {
+	return predicate.OrgNode(sql.FieldLT(FieldPath, v))
+}
+
+// PathLTE applies the LTE predicate on the "path" field.
+func PathLTE(v string) predicate.OrgNode {
+	return predicate.OrgNode(sql.FieldLTE(FieldPath, v))
+}
+
+// PathContains applies the Contains predicate on the "path" field.
+func PathContains(v string) predicate.OrgNode {
+	return predicate.OrgNode(sql.FieldContains(FieldPath, v))
+}
+
+// PathHasPrefix applies the HasPrefix predicate on the "path" field.
+func PathHasPrefix(v string) predicate.OrgNode {
+	return predicate.OrgNode(sql.FieldHasPrefix(FieldPath, v))
+}
+
+// PathHasSuffix applies the HasSuffix predicate on the "path" field.
+func PathHasSuffix(v string) predicate.OrgNode {
+	return predicate.OrgNode(sql.FieldHasSuffix(FieldPath, v))
+}
+
+// PathIsNil applies the IsNil predicate on the "path" field.
+func PathIsNil() predicate.OrgNode {
+	return predicate.OrgNode(sql.FieldIsNull(FieldPath))
+}
+
+// PathNotNil applies the NotNil predicate on the "path" field.
+func PathNotNil() predicate.OrgNode {
+	return predicate.OrgNode(sql.FieldNotNull(FieldPath))
+}
+
+// PathEqualFold applies the EqualFold predicate on the "path" field.
+func PathEqualFold(v string) predicate.OrgNode {
+	return predicate.OrgNode(sql.FieldEqualFold(FieldPath, v))
+}
+
+// PathContainsFold applies the ContainsFold predicate on the "path" field.
+func PathContainsFold(v string) predicate.OrgNode {
+	return predicate.OrgNode(sql.FieldContainsFold(FieldPath, v))
 }
 
 // HasOrganization applies the HasEdge predicate on the "organization" edge.

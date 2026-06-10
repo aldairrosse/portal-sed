@@ -120,12 +120,7 @@ func (r *EvaluationRepo) GetByID(ctx context.Context, id uuid.UUID) (*Evaluation
 		return nil, err
 	}
 
-	version, err := r.getVersion(ctx, id)
-	if err != nil {
-		version = 0
-	}
-
-	return rowFromEnt(ev, version), nil
+	return rowFromEnt(ev, ev.Version), nil
 }
 
 // GetDetail retrieves an evaluation with preloaded competency and goal ratings.
@@ -142,12 +137,7 @@ func (r *EvaluationRepo) GetDetail(ctx context.Context, id uuid.UUID) (*Evaluati
 		return nil, nil, nil, err
 	}
 
-	version, err := r.getVersion(ctx, id)
-	if err != nil {
-		version = 0
-	}
-
-	row := rowFromEnt(ev, version)
+	row := rowFromEnt(ev, ev.Version)
 
 	comps := ev.Edges.CompetencyRatings
 	if comps == nil {
@@ -182,9 +172,8 @@ func (r *EvaluationRepo) ListByCycle(ctx context.Context, cycleID uuid.UUID, sta
 
 	query := `SELECT e.id, e.created_at, e.updated_at, e.phase, e.state,
 		e.self_evaluation_completed_at, e.rh_evaluation_completed_at,
-		e.employee_id, e.cycle_id, COALESCE(ev.version, 0) as version
+		e.employee_id, e.cycle_id, e.version
 		FROM evaluations e
-		LEFT JOIN evaluation_versions ev ON ev.evaluation_id = e.id
 		WHERE e.cycle_id = $1`
 	args := []interface{}{cycleID}
 	idx := 2
@@ -262,9 +251,8 @@ func (r *EvaluationRepo) LockEvalForUpdate(ctx context.Context, tx *sql.Tx, eval
 	err := tx.QueryRowContext(ctx,
 		`SELECT e.id, e.created_at, e.updated_at, e.phase, e.state,
 			e.self_evaluation_completed_at, e.rh_evaluation_completed_at,
-			e.employee_id, e.cycle_id, COALESCE(ev.version, 0) as version
+			e.employee_id, e.cycle_id, e.version
 		 FROM evaluations e
-		 LEFT JOIN evaluation_versions ev ON ev.evaluation_id = e.id
 		 WHERE e.id = $1 FOR UPDATE`,
 		evalID,
 	).Scan(&row.ID, &row.CreatedAt, &row.UpdatedAt,
@@ -416,7 +404,7 @@ func (r *EvaluationRepo) BeginTx(ctx context.Context, opts *sql.TxOptions) (*sql
 func (r *EvaluationRepo) getVersion(ctx context.Context, evalID uuid.UUID) (int, error) {
 	var version int
 	err := r.db.QueryRowContext(ctx,
-		`SELECT COALESCE(version, 0) FROM evaluation_versions WHERE evaluation_id = $1`, evalID,
+		`SELECT version FROM evaluations WHERE id = $1`, evalID,
 	).Scan(&version)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -427,12 +415,10 @@ func (r *EvaluationRepo) getVersion(ctx context.Context, evalID uuid.UUID) (int,
 	return version, nil
 }
 
-// upsertVersion creates or increments the version tracking row.
+// upsertVersion increments the version on the evaluations row.
 func (r *EvaluationRepo) upsertVersion(ctx context.Context, tx *sql.Tx, evalID uuid.UUID) error {
 	_, err := tx.ExecContext(ctx,
-		`INSERT INTO evaluation_versions (evaluation_id, version, updated_at)
-		 VALUES ($1, 1, NOW())
-		 ON CONFLICT (evaluation_id) DO UPDATE SET version = evaluation_versions.version + 1, updated_at = NOW()`,
+		`UPDATE evaluations SET version = version + 1, updated_at = NOW() WHERE id = $1`,
 		evalID,
 	)
 	return err

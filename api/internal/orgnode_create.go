@@ -109,6 +109,20 @@ func (_c *OrgNodeCreate) SetNillableParentID(v *uuid.UUID) *OrgNodeCreate {
 	return _c
 }
 
+// SetPath sets the "path" field.
+func (_c *OrgNodeCreate) SetPath(v string) *OrgNodeCreate {
+	_c.mutation.SetPath(v)
+	return _c
+}
+
+// SetNillablePath sets the "path" field if the given value is not nil.
+func (_c *OrgNodeCreate) SetNillablePath(v *string) *OrgNodeCreate {
+	if v != nil {
+		_c.SetPath(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *OrgNodeCreate) SetID(v uuid.UUID) *OrgNodeCreate {
 	_c.mutation.SetID(v)
@@ -324,6 +338,10 @@ func (_c *OrgNodeCreate) createSpec() (*OrgNode, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.Metadata(); ok {
 		_spec.SetField(orgnode.FieldMetadata, field.TypeJSON, value)
 		_node.Metadata = value
+	}
+	if value, ok := _c.mutation.Path(); ok {
+		_spec.SetField(orgnode.FieldPath, field.TypeString, value)
+		_node.Path = value
 	}
 	if nodes := _c.mutation.OrganizationIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

@@ -142,6 +142,19 @@ func setupTestServer(t *testing.T) *testServer {
 		t.Fatalf("failed to auto-migrate: %v", err)
 	}
 
+	// Create ltree extension and set up materialized views (not managed by Ent)
+	for _, stmt := range []string{
+		`CREATE EXTENSION IF NOT EXISTS ltree`,
+		`CREATE MATERIALIZED VIEW IF NOT EXISTS evaluation_summary AS
+		 SELECT cycle_id, state, COUNT(1) as count
+		 FROM evaluations GROUP BY cycle_id, state WITH DATA`,
+	} {
+		if _, err := db.ExecContext(context.Background(), stmt); err != nil {
+			db.Close()
+			t.Fatalf("failed to run post-migration setup %q: %v", stmt[:60], err)
+		}
+	}
+
 	// Seed data
 	if err := seed.Run(context.Background(), client); err != nil {
 		log.Printf("[seed] warning: %v", err)

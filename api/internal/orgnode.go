@@ -38,6 +38,8 @@ type OrgNode struct {
 	OrganizationID uuid.UUID `json:"organization_id,omitempty"`
 	// ParentID holds the value of the "parent_id" field.
 	ParentID *uuid.UUID `json:"parent_id,omitempty"`
+	// Path holds the value of the "path" field.
+	Path string `json:"path,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the OrgNodeQuery when eager-loading is set.
 	Edges        OrgNodeEdges `json:"edges"`
@@ -110,7 +112,7 @@ func (*OrgNode) scanValues(columns []string) ([]any, error) {
 			values[i] = new([]byte)
 		case orgnode.FieldVersion:
 			values[i] = new(sql.NullInt64)
-		case orgnode.FieldName, orgnode.FieldType, orgnode.FieldCode:
+		case orgnode.FieldName, orgnode.FieldType, orgnode.FieldCode, orgnode.FieldPath:
 			values[i] = new(sql.NullString)
 		case orgnode.FieldCreatedAt, orgnode.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -193,6 +195,12 @@ func (_m *OrgNode) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.ParentID = new(uuid.UUID)
 				*_m.ParentID = *value.S.(*uuid.UUID)
+			}
+		case orgnode.FieldPath:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field path", values[i])
+			} else if value.Valid {
+				_m.Path = value.String
 			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
@@ -278,6 +286,9 @@ func (_m *OrgNode) String() string {
 		builder.WriteString("parent_id=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
+	builder.WriteString(", ")
+	builder.WriteString("path=")
+	builder.WriteString(_m.Path)
 	builder.WriteByte(')')
 	return builder.String()
 }

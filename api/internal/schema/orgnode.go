@@ -38,6 +38,8 @@ func (OrgNode) Fields() []ent.Field {
 		field.UUID("parent_id", uuid.UUID{}).
 			Optional().
 			Nillable(),
+		field.String("path").
+			Optional(),
 	}
 }
 
