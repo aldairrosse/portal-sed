@@ -43,7 +43,7 @@
 					<Code class="w-4 h-4 text-warning/60" />
 					<span class="font-medium text-warning/80 text-xs uppercase tracking-wider">Dev</span>
 				</div>
-				<span class="text-[10px] text-base-content/30">Ctrl+Shift+D</span>
+				<span class="inline-flex items-center gap-0.5"><kbd class="kbd kbd-sm">Ctrl</kbd><span class="text-base-content/30">+</span><kbd class="kbd kbd-sm">Shift</kbd><span class="text-base-content/30">+</span><kbd class="kbd kbd-sm">D</kbd></span>
 			</div>
 
 			<a
