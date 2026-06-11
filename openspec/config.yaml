@@ -148,7 +148,7 @@ context: |
 
 testing:
   strict_tdd: false
-  runner: go test (backend only; frontend has no runner configured)
+  runner: go test (backend); frontend has no runner
   frameworks:
     frontend:
       unit: none
@@ -156,36 +156,47 @@ testing:
     backend:
       unit: go test
       assert: testify
+      mock: sqlmock (DATA-DOG/go-sqlmock)
   commands:
-    unit_go: go test ./... -v -race -count=1
-    lint_fe: pnpm lint
-    type_check: pnpm check
-    format: pnpm format
+    unit_go: cd api && go test ./... -short -v -race -count=1
+    integration_go: cd api && go test ./integration/... -v -race -count=1 -timeout=60s
+    all_go: cd api && go test ./... -v -race -count=1 -timeout=120s
+    lint_go: cd api && go vet ./...
+    lint_fe: cd web && pnpm lint
+    type_check: cd web && pnpm check
+    format_fe: cd web && pnpm format
+    format_go: cd api && gofmt -w .
+    docker_test: make test-docker-integration
   layers:
     - layer: Unit (Go)
       available: true
       tool: go test + testify
-      note: Test files exist in api/internal/service/*
+      note: Test files in api/internal/service/*, api/internal/handler/*, api/internal/repository/*, api/internal/pkg/*
     - layer: Unit (FE)
       available: false
       tool: "—"
-      note: Vitest not configured; no test files in web/src
+      note: Vitest not installed; no test files in web/src
     - layer: Integration (API)
-      available: false
-      tool: "—"
-      note: Not configured
+      available: true
+      tool: go test + docker-compose.test.yml
+      note: Tests in api/integration/ (db, server, routes); require PostgreSQL
     - layer: Contract
       available: false
       tool: "—"
-      note: Not configured
+      note: OpenAPI is spec source-of-truth; no contract tests yet
     - layer: E2E
       available: false
       tool: "—"
-      note: Playwright not configured
+      note: Playwright not installed
   coverage:
-    available: false
-    command: "—"
-    note: No coverage tooling configured for frontend; backend can use go test -cover but no threshold set
+    available: true
+    backend:
+      tool: go test -cover
+      command: cd api && go test ./... -cover
+      threshold: 0
+    frontend:
+      tool: none
+      available: false
   quality:
     linter_fe:
       tool: eslint
@@ -194,15 +205,15 @@ testing:
     linter_go:
       tool: golangci-lint
       available: false
-      note: Referenced in AGENTS.md but no config file found
+      note: Referenced in AGENTS.md but no .golangci.yml found
     type_checker:
       tool: svelte-check
       available: true
-      config: pnpm check (svelte-kit sync && svelte-check)
+      config: pnpm check (svelte-kit sync + svelte-check --tsconfig)
     formatter:
       tool: prettier
       available: true
-      note: Command in package.json; no config file (uses defaults)
+      note: Command in web/package.json; no explicit config (defaults)
 
 rules:
   proposal:
@@ -228,11 +239,12 @@ rules:
   apply:
     - Follow existing code patterns
     tdd: false
-    test_command: go test ./... -v -race -count=1
-    test_command_fe: pnpm vitest run
+    test_command: cd api && go test ./... -v -race -count=1
+    test_command_fe: none
+    test_command_integration: cd api && go test ./integration/... -v -race -count=1 -timeout=60s
   verify:
-    test_command: go test ./... -v -race -count=1
-    build_command: pnpm build
+    test_command: cd api && go test ./... -v -race -count=1
+    build_command: cd web && pnpm build
     coverage_threshold: 0
   archive:
     - Warn before merging destructive deltas
