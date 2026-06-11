@@ -146,6 +146,16 @@ export function reload(): Promise<void> {
 	return load();
 }
 
+// ─── Loading / error state accessors ──────────────────────────────────────────
+
+export function isLoading(): boolean {
+	return loading;
+}
+
+export function getError(): string | null {
+	return error;
+}
+
 // ─── Getters ──────────────────────────────────────────────────────────────────
 
 export function getAllEntries(): NineBoxEntry[] {

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { getQuadrantDefs, computeQuadrant } from '$lib/stores/nineBoxStore.svelte';
+	import { getQuadrantDefs, computeQuadrant, isLoading } from '$lib/stores/nineBoxStore.svelte';
 	import type { NineBoxScale } from '$lib/types/nine-box';
 
 	interface Props {
@@ -10,6 +10,9 @@
 	}
 
 	let { performance, potential, onScoreChange, disabled = false }: Props = $props();
+
+	let loading = $derived(isLoading());
+	let isDisabled = $derived(disabled || loading);
 
 	const quadrantDefs = $derived(getQuadrantDefs());
 	const quadrantLabel = $derived.by(() => {
@@ -44,7 +47,7 @@
 			max="9"
 			step="1"
 			bind:value={performance}
-			disabled={disabled}
+			disabled={isDisabled}
 			class="range range-sm range-primary w-full"
 			aria-label="Desempeño: {performance} de 9"
 			oninput={handlePerfChange}
@@ -69,7 +72,7 @@
 			max="9"
 			step="1"
 			bind:value={potential}
-			disabled={disabled}
+			disabled={isDisabled}
 			class="range range-sm range-secondary w-full"
 			aria-label="Potencial: {potential} de 9"
 			oninput={handlePotChange}

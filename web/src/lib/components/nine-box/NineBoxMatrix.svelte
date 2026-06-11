@@ -1,6 +1,8 @@
 <script lang="ts">
-	import { computeQuadrant } from '$lib/stores/nineBoxStore.svelte';
+	import { computeQuadrant, isLoading, getError, reload } from '$lib/stores/nineBoxStore.svelte';
 	import type { NineBoxEntry, NineBoxScale, NineBoxQuadrantDef } from '$lib/types/nine-box';
+	import PageSkeleton from '$lib/components/ui/PageSkeleton.svelte';
+	import ErrorState from '$lib/components/ui/ErrorState.svelte';
 
 	interface Props {
 		entries: NineBoxEntry[];
@@ -9,6 +11,9 @@
 	}
 
 	let { entries, quadrantDefs, onCellClick }: Props = $props();
+
+	let loading = $derived(isLoading());
+	let error = $derived(getError());
 
 	const perfValues: NineBoxScale[] = [1, 2, 3, 4, 5, 6, 7, 8, 9];
 	const potValues: NineBoxScale[] = [9, 8, 7, 6, 5, 4, 3, 2, 1];
@@ -82,16 +87,26 @@
 	}
 </script>
 
-<div
-	role="grid"
-	aria-label="Matriz 9×9 de desempeño y potencial"
-	aria-rowcount="9"
-	aria-colcount="9"
-	class="grid gap-px w-full max-w-[40rem] mx-auto select-none"
-	style="grid-template-columns: 2rem 1rem 2.25rem repeat(9, 1fr)"
-	tabindex="0"
-	onkeydown={handleKeydown}
->
+{#if loading}
+	<PageSkeleton variant="card" rows={9} />
+{:else if error}
+	<ErrorState
+		title="Error al cargar la matriz"
+		message={error}
+		retryLabel="Reintentar"
+		onretry={reload}
+	/>
+{:else}
+	<div
+		role="grid"
+		aria-label="Matriz 9×9 de desempeño y potencial"
+		aria-rowcount="9"
+		aria-colcount="9"
+		class="grid gap-px w-full max-w-[40rem] mx-auto select-none"
+		style="grid-template-columns: 2rem 1rem 2.25rem repeat(9, 1fr)"
+		tabindex="0"
+		onkeydown={handleKeydown}
+	>
 	<!-- Row 1: Corner + empty top cells -->
 	<div role="presentation" class="min-h-[1.5rem]"></div>
 	<div role="presentation" class="min-h-[1.5rem]"></div>
@@ -227,3 +242,4 @@
 		Desempeño
 	</div>
 </div>
+{/if}
