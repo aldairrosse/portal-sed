@@ -258,9 +258,17 @@ func setupTestServer(t *testing.T) *testServer {
 	r.Mount("/", goalhandler.NewRouter(goalH, authSvc))
 
 	apiV1 := chi.NewRouter()
-	cyclehandler.RegisterRoutes(apiV1, cycleH, authSvc)
-	evalhandler.RegisterRoutes(apiV1, evalH, authSvc)
-	orghandler.RegisterRoutes(apiV1, orgH, authSvc)
+	// Each RegisterRoutes calls r.Use() internally — wrap in Group so each
+	// gets a clean inline sub-router (same pattern as comphandler, line 254).
+	apiV1.Group(func(r chi.Router) {
+		cyclehandler.RegisterRoutes(r, cycleH, authSvc)
+	})
+	apiV1.Group(func(r chi.Router) {
+		evalhandler.RegisterRoutes(r, evalH, authSvc)
+	})
+	apiV1.Group(func(r chi.Router) {
+		orghandler.RegisterRoutes(r, orgH, authSvc)
+	})
 	r.Mount("/api/v1", apiV1)
 
 	// Health check

@@ -34,8 +34,8 @@ func allRoutes() []routeTestCase {
 	scopeID := "88888888-8888-8888-8888-888888888888"
 	entryID := "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
 
-	// Routes behind RequireAuth (test mode with nil authSvc) return 200 (passthrough).
-	authOK := []int{200, 201, 400, 404, 409, 422}
+	// Routes behind RequireAuth return 401 without a valid session token.
+	authOK := []int{200, 201, 400, 401, 404, 409, 422}
 
 	return []routeTestCase{
 		// --- Health ---
@@ -79,7 +79,7 @@ func allRoutes() []routeTestCase {
 		{"GET", "/api/v1/cycles", "ListCycles", authOK},
 		{"POST", "/api/v1/cycles", "CreateCycle", authOK},
 		{"GET", "/api/v1/cycles/" + cycleID, "GetCycle", authOK},
-		{"PUT", "/api/v1/cycles/" + cycleID + "/transition", "TransitionPhase", []int{200, 400, 404, 409, 422, 428}},
+		{"PUT", "/api/v1/cycles/" + cycleID + "/transition", "TransitionPhase", []int{200, 400, 401, 404, 409, 422, 428}},
 		{"GET", "/api/v1/phases", "GetPhaseDefinitions", authOK},
 		{"GET", "/api/v1/cycles/" + cycleID + "/transitions", "GetAvailableTransitions", authOK},
 
@@ -87,9 +87,9 @@ func allRoutes() []routeTestCase {
 		{"GET", "/api/v1/evaluations?cycle_id=" + cycleID, "ListEvaluations", authOK},
 		{"GET", "/api/v1/evaluations/" + evalID, "GetEvaluation", authOK},
 		{"POST", "/api/v1/evaluations/" + evalID + "/self-evaluation", "SubmitSelfEvaluation", authOK},
-		{"PUT", "/api/v1/evaluations/" + evalID + "/self-evaluation", "UpdateSelfEvaluation", []int{200, 400, 404, 409, 422, 428}},
+		{"PUT", "/api/v1/evaluations/" + evalID + "/self-evaluation", "UpdateSelfEvaluation", []int{200, 400, 401, 404, 409, 422, 428}},
 		{"POST", "/api/v1/evaluations/" + evalID + "/rh-evaluation", "SubmitRHEvaluation", authOK},
-		{"PUT", "/api/v1/evaluations/" + evalID + "/rh-evaluation", "UpdateRHEvaluation", []int{200, 400, 404, 409, 422, 428}},
+		{"PUT", "/api/v1/evaluations/" + evalID + "/rh-evaluation", "UpdateRHEvaluation", []int{200, 400, 401, 404, 409, 422, 428}},
 		{"POST", "/api/v1/evaluations/" + evalID + "/finalize", "FinalizeEvaluation", authOK},
 		{"GET", "/api/v1/evaluations/summary?cycle_id=" + cycleID, "GetEvaluationSummary", authOK},
 
@@ -99,7 +99,7 @@ func allRoutes() []routeTestCase {
 		{"GET", "/api/v1/nine-box/matrices/" + matrixID, "GetNineBoxMatrix", authOK},
 		{"GET", "/api/v1/nine-box/matrices/" + matrixID + "/entries", "ListMatrixEntries", authOK},
 		{"POST", "/api/v1/nine-box/matrices/" + matrixID + "/entries", "UpsertMatrixEntry", authOK},
-		{"PUT", "/api/v1/nine-box/entries/" + entryID, "UpdateEntry", []int{200, 400, 404, 409, 422, 428}},
+		{"PUT", "/api/v1/nine-box/entries/" + entryID, "UpdateEntry", []int{200, 400, 401, 404, 409, 422, 428}},
 		{"POST", "/api/v1/nine-box/batch?matrixId=" + matrixID, "BatchSubmitEntries", authOK},
 		{"GET", "/api/v1/nine-box/scales", "GetNineBoxScales", authOK},
 		{"GET", "/api/v1/nine-box/quadrants", "GetNineBoxQuadrants", authOK},
@@ -108,14 +108,14 @@ func allRoutes() []routeTestCase {
 		{"GET", "/api/v1/pillars", "ListPillars", authOK},
 		{"POST", "/api/v1/pillars", "CreatePillar", authOK},
 		{"GET", "/api/v1/pillars/" + pillarID, "GetPillar", authOK},
-		{"PUT", "/api/v1/pillars/" + pillarID, "UpdatePillar", []int{200, 400, 404, 409, 422, 428}},
+		{"PUT", "/api/v1/pillars/" + pillarID, "UpdatePillar", []int{200, 400, 401, 404, 409, 422, 428}},
 		{"DELETE", "/api/v1/pillars/" + pillarID, "DeletePillar", authOK},
 
 		// --- Competency: Competencies ---
 		{"GET", "/api/v1/pillars/" + pillarID + "/competencies", "ListCompetenciesByPillar", authOK},
 		{"POST", "/api/v1/pillars/" + pillarID + "/competencies", "CreateCompetency", authOK},
 		{"GET", "/api/v1/competencies/" + compID, "GetCompetency", authOK},
-		{"PUT", "/api/v1/competencies/" + compID, "UpdateCompetency", []int{200, 400, 404, 409, 422, 428}},
+		{"PUT", "/api/v1/competencies/" + compID, "UpdateCompetency", []int{200, 400, 401, 404, 409, 422, 428}},
 		{"DELETE", "/api/v1/competencies/" + compID, "DeleteCompetency", authOK},
 
 		// --- Competency: Scale Criteria ---

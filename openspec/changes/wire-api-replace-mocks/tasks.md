@@ -232,12 +232,14 @@ Estrategia: **5 PRs encadenados**. Cada PR depende del anterior. Total: ~18 tare
 - Testear que `addCategory()` llama POST y luego reload
 - **AC:** Tests unitarios pasan
 
-### T5.3 Test de integración backend: 401 sin token
+### T5.3 Test de integración backend: 401 sin token ✅
 
-- En `api/internal/handler/goal/routes_test.go` (o archivo similar existente)
-- Crear test que envía request a endpoint protegido sin token
-- Verificar response `401 Unauthorized` con body error JSON
-- **AC:** Tests Go pasan con `go test ./...`
+- [x] Crear `api/integration/auth_test.go` con test `TestUnauthenticatedRequestsReturn401`
+- [x] Testea GET/POST a cycles, evaluations y org-trees sin credenciales → `401 Unauthorized`
+- [x] Verifica response body es JSON con campo `error.message`
+- [x] Repara `setupTestServer` envolviendo `RegisterRoutes` en `Group` (Chi no permite `Use` tras rutas)
+- [x] Actualiza `routes_test.go` para incluir `401` en `AllowStatus` de rutas protegidas
+- **AC:** `go test ./...` pasa sin errores
 
 ---
 
