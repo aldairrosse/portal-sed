@@ -7,6 +7,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/sed-evaluacion-desempeno/api/internal/middleware"
 	repo "github.com/sed-evaluacion-desempeno/api/internal/repository/org"
+	authsvc "github.com/sed-evaluacion-desempeno/api/internal/service/auth"
 )
 
 // NewRouter creates a Chi router with all org hierarchy endpoints registered.
@@ -31,14 +32,16 @@ import (
 //   GET    /api/v1/employees/search                → SearchEmployees
 //   GET    /api/v1/evaluator-scopes                 → GetEvaluatorScope
 //   GET    /api/v1/evaluator-scopes/{scopeId}       → GetEvaluatorScopeByID
-func NewRouter(handler *OrgHandler) chi.Router {
+func NewRouter(handler *OrgHandler, authSvc *authsvc.AuthService) chi.Router {
 	r := chi.NewRouter()
-	RegisterRoutes(r, handler)
+	RegisterRoutes(r, handler, authSvc)
 	return r
 }
 
 // RegisterRoutes registers all org hierarchy endpoints on an existing router.
-func RegisterRoutes(r chi.Router, handler *OrgHandler) {
+func RegisterRoutes(r chi.Router, handler *OrgHandler, authSvc *authsvc.AuthService) {
+	// Shared auth middleware for all org endpoints
+	r.Use(middleware.RequireAuth(authSvc))
 
 	// Rate limit configurations
 	readRateLimit := middleware.RateLimitConfig{

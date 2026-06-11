@@ -6,24 +6,24 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/sed-evaluacion-desempeno/api/internal/auth"
 	"github.com/sed-evaluacion-desempeno/api/internal/middleware"
+	authsvc "github.com/sed-evaluacion-desempeno/api/internal/service/auth"
 )
 
 // Dependencies holds the shared resources needed by the competency handlers.
-// In production, these would be wired via dependency injection.
 type Dependencies struct {
 	Handler *Handler
+	AuthSvc *authsvc.AuthService
 }
 
 // RegisterRoutes mounts all 16 competency endpoints on the given router using
 // chi's subrouter pattern. Middleware is applied per endpoint group:
 //
-//	GET endpoints:  AuthPlaceholder → RateLimit(read) → read replica
-//	POST endpoints: AuthPlaceholder → RateLimit(write) → Idempotency
-//	PUT endpoints:  AuthPlaceholder → RateLimit(write) → OptimisticLock
-//	DELETE endpoints: AuthPlaceholder → RateLimit(write)
-//
-// TODO(auth:C7): Replace AuthPlaceholder with real RBAC middleware.
+//	GET endpoints:  RequireAuth → RateLimit(read) → read replica
+//	POST endpoints: RequireAuth → RequirePermission(write) → RateLimit(write) → Idempotency
+//	PUT endpoints:  RequireAuth → RequirePermission(write) → RateLimit(write) → OptimisticLock
+//	DELETE endpoints: RequireAuth → RequirePermission(write) → RateLimit(write)
 func RegisterRoutes(r chi.Router, deps *Dependencies) {
 	// Rate-limit configurations
 	readRateLimit := middleware.RateLimitConfig{
@@ -41,8 +41,8 @@ func RegisterRoutes(r chi.Router, deps *Dependencies) {
 	// Idempotency store (in-memory for dev; Redis in production)
 	idempStore := middleware.NewInMemoryIdempotencyStore()
 
-	// Common auth placeholder (applied to all routes below)
-	r.Use(middleware.AuthPlaceholder)
+	// Common auth middleware (applied to all routes below)
+	r.Use(middleware.RequireAuth(deps.AuthSvc))
 
 	// -----------------------------------------------------------------------
 	// Pillar endpoints
@@ -55,6 +55,7 @@ func RegisterRoutes(r chi.Router, deps *Dependencies) {
 	})
 
 	r.Group(func(r chi.Router) {
+		r.Use(middleware.RequirePermission(auth.PermCompetencyWrite))
 		r.Use(middleware.RateLimit(writeRateLimit))
 		r.Use(middleware.Idempotency(idempStore, 24*time.Hour))
 		r.Post("/api/v1/pillars", deps.Handler.CreatePillar)
@@ -67,12 +68,14 @@ func RegisterRoutes(r chi.Router, deps *Dependencies) {
 	})
 
 	r.Group(func(r chi.Router) {
+		r.Use(middleware.RequirePermission(auth.PermCompetencyWrite))
 		r.Use(middleware.RateLimit(writeRateLimit))
 		r.Use(middleware.OptimisticLock)
 		r.Put("/api/v1/pillars/{id}", deps.Handler.UpdatePillar)
 	})
 
 	r.Group(func(r chi.Router) {
+		r.Use(middleware.RequirePermission(auth.PermCompetencyWrite))
 		r.Use(middleware.RateLimit(writeRateLimit))
 		r.Delete("/api/v1/pillars/{id}", deps.Handler.DeletePillar)
 	})
@@ -88,6 +91,7 @@ func RegisterRoutes(r chi.Router, deps *Dependencies) {
 	})
 
 	r.Group(func(r chi.Router) {
+		r.Use(middleware.RequirePermission(auth.PermCompetencyWrite))
 		r.Use(middleware.RateLimit(writeRateLimit))
 		r.Use(middleware.Idempotency(idempStore, 24*time.Hour))
 		r.Post("/api/v1/pillars/{pillarId}/competencies", deps.Handler.CreateCompetency)
@@ -104,12 +108,14 @@ func RegisterRoutes(r chi.Router, deps *Dependencies) {
 	})
 
 	r.Group(func(r chi.Router) {
+		r.Use(middleware.RequirePermission(auth.PermCompetencyWrite))
 		r.Use(middleware.RateLimit(writeRateLimit))
 		r.Use(middleware.OptimisticLock)
 		r.Put("/api/v1/competencies/{id}", deps.Handler.UpdateCompetency)
 	})
 
 	r.Group(func(r chi.Router) {
+		r.Use(middleware.RequirePermission(auth.PermCompetencyWrite))
 		r.Use(middleware.RateLimit(writeRateLimit))
 		r.Delete("/api/v1/competencies/{id}", deps.Handler.DeleteCompetency)
 	})
@@ -125,6 +131,7 @@ func RegisterRoutes(r chi.Router, deps *Dependencies) {
 	})
 
 	r.Group(func(r chi.Router) {
+		r.Use(middleware.RequirePermission(auth.PermCompetencyWrite))
 		r.Use(middleware.RateLimit(writeRateLimit))
 		r.Use(middleware.Idempotency(idempStore, 24*time.Hour))
 		r.Post("/api/v1/competencies/{id}/scale-criteria", deps.Handler.UpsertScaleCriteria)
@@ -157,6 +164,7 @@ func RegisterRoutes(r chi.Router, deps *Dependencies) {
 	})
 
 	r.Group(func(r chi.Router) {
+		r.Use(middleware.RequirePermission(auth.PermCompetencyWrite))
 		r.Use(middleware.RateLimit(writeRateLimit))
 		r.Post("/api/v1/acceptance-levels", deps.Handler.UpsertAcceptanceLevel)
 	})

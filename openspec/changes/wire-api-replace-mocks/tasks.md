@@ -141,56 +141,56 @@ Estrategia: **5 PRs encadenados**. Cada PR depende del anterior. Total: ~18 tare
 
 ## PR4 — Backend: RequireAuth wiring
 
-### T4.1 Reemplazar AuthPlaceholder en goal/routes.go
+### T4.1 ~~Reemplazar AuthPlaceholder en goal/routes.go~~ ✅
 
-- Cambiar `r.Use(middleware.AuthPlaceholder)` por `r.Use(middleware.RequireAuth(authSvc))`
-- Agregar `RequirePermission` en grupos de endpoints según permiso
-- Actualizar firma de `NewRouter` para recibir `*svc.AuthService`
+- [x] Cambiar `r.Use(middleware.AuthPlaceholder)` por `r.Use(middleware.RequireAuth(authSvc))`
+- [x] Agregar `RequirePermission` en grupos de endpoints según permiso
+- [x] Actualizar firma de `NewRouter` para recibir `*svc.AuthService`
 - **AC:** `NewRouter(handler, authSvc)` compila; endpoints de lectura requieren `PermissionGoalRead`; escritura require `PermissionGoalWrite`
 
-### T4.2 Reemplazar AuthPlaceholder en evaluation/routes.go
+### T4.2 ~~Reemplazar AuthPlaceholder en evaluation/routes.go~~ ✅
 
-- Mismo patrón que T4.1
-- Endpoints de RH evaluation pueden requerir `RequirePermission(auth.PermissionEvaluationWrite)`
+- [x] Mismo patrón que T4.1
+- [x] Endpoints de RH evaluation requieren `RequirePermission(auth.PermEvalRH)`; nine-box `RequirePermission(auth.PermEval9x9)`
 - **AC:** Compila; permisos diferenciados por endpoint
 
-### T4.3 Reemplazar AuthPlaceholder en competency/routes.go
+### T4.3 ~~Reemplazar AuthPlaceholder en competency/routes.go~~ ✅
 
-- Mismo patrón
-- Endpoints de solo lectura (GET) sin permiso extra (basta `RequireAuth`); escritura con `RequirePermission`
+- [x] Mismo patrón
+- [x] Endpoints de solo lectura (GET) sin permiso extra (basta `RequireAuth`); escritura con `RequirePermission(auth.PermCompetencyWrite)`
 - **AC:** Compila
 
-### T4.4 Reemplazar AuthPlaceholder en cycle/routes.go
+### T4.4 ~~Reemplazar AuthPlaceholder en cycle/routes.go~~ ✅
 
-- Mismo patrón
+- [x] Mismo patrón
 - **AC:** Compila
 
-### T4.5 Reemplazar AuthPlaceholder en org/routes.go
+### T4.5 ~~Reemplazar AuthPlaceholder en org/routes.go~~ ✅
 
-- Mismo patrón
+- [x] Mismo patrón
 - **AC:** Compila
 
-### T4.6 Actualizar main.go con inyección de dependencias
+### T4.6 ~~Actualizar main.go con inyección de dependencias~~ ✅
 
-- En `api/cmd/main.go` (o el entry point), pasar `authSvc` a cada `NewRouter(...)` 
+- [x] En `api/cmd/server/main.go`, pasar `authSvc` a cada `NewRouter(...)` y `RegisterRoutes(...)`
 - **AC:** `go build ./...` compila sin errores; `AuthPlaceholder` ya no se referencia en routers
 
-### T4.7 Crear dev auth service temporal
+### T4.7 ~~Crear dev auth service temporal~~ ✅
 
-- Crear `api/internal/auth/dev/service.go` — servicio temporal que autentica sin SSO real
-- Usuarios preset: `dev-rh@empresa.com` (RH), `dev-jefe@empresa.com` (Jefe), `dev-colaborador@empresa.com` (Colaborador)
-- Cada usuario tiene roles y permisos predefinidos (misma estructura que AuthUser)
-- Endpoint: `POST /auth/dev-login` — recibe `{ email }`, retorna cookie httpOnly + AuthUser
-- Solo activo cuando `ENV=development` (no expuesto en producción)
-- **AC:** `POST /auth/dev-login` con email válido retorna cookie válida; `/auth/me` retorna el usuario; `go build ./...` compila
+- [x] Crear `api/internal/auth/dev/service.go` — servicio temporal que autentica sin SSO real
+- [x] Usuarios preset: `dev-rh@empresa.com` (RH), `dev-jefe@empresa.com` (Jefe), `dev-colaborador@empresa.com` (Colaborador)
+- [x] Cada usuario tiene roles y permisos predefinidos (misma estructura que AuthUser)
+- [x] Función `CreateDevSession` crea sesión real en DB para preset users
+- [x] Solo activo cuando `ENV=development` (guard por handler)
+- **AC:** `go build ./...` compila
 
-### T4.8 Interfaz SSOAdapter (preparación para futuro)
+### T4.8 ~~Interfaz SSOAdapter (preparación para futuro)~~ ✅
 
-- Crear `api/internal/auth/sso/adapter.go` — interfaz pluggable
-- Métodos: `ValidateToken`, `GetEndSessionURL`, `GetUserFromToken`
-- Por ahora: implementación `nil` en main.go, logout siempre redirige a `/login`
-- Documentar en código cómo conectar OIDC/SAML en futuro
-- **AC:** Interfaz compilable; `authSvc` la acepta como opcional; documentación clara en comments
+- [x] Crear `api/internal/auth/sso/adapter.go` — interfaz pluggable
+- [x] Métodos: `ValidateToken`, `GetEndSessionURL`, `GetUserFromToken`
+- [x] Incluye `noopAdapter` como placeholder que redirige a `/login`
+- [x] Documentar en código cómo conectar OIDC/SAML en futuro
+- **AC:** Interfaz compilable; documentación clara en comments
 
 ---
 

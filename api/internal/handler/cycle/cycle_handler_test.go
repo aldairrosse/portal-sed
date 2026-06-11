@@ -67,7 +67,8 @@ func (m *mockPhaseService) GetAvailableTransitions(ctx context.Context, cycleID 
 
 func newTestRouter(ms *mockService, mps *mockPhaseService) http.Handler {
 	h := handler.NewCycleHandler(ms, mps)
-	return handler.NewRouter(h)
+	// Pass nil authSvc — RequireAuth middleware skips auth in test mode.
+	return handler.NewRouter(h, nil)
 }
 
 func mustMarshal(v interface{}) []byte {

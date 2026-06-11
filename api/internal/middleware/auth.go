@@ -51,9 +51,19 @@ func RolesFromContext(ctx context.Context) []string {
 // Usage:
 //
 //	r.Use(middleware.RequireAuth(authSvc))
+//
+// When authSvc is nil (test mode), the middleware passes the request through
+// without authentication. This allows unit tests to test handler logic without
+// setting up a full auth service.
 func RequireAuth(authSvc *svc.AuthService) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// Test mode: skip auth when no service is provided.
+			if authSvc == nil {
+				next.ServeHTTP(w, r)
+				return
+			}
+
 			token, err := extractBearerToken(r)
 			if err != nil {
 				w.Header().Set("Content-Type", "application/json")

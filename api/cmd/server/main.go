@@ -24,7 +24,6 @@ import (
 
 	"github.com/sed-evaluacion-desempeno/api/internal"
 	"github.com/sed-evaluacion-desempeno/api/internal/auth"
-	"github.com/sed-evaluacion-desempeno/api/internal/middleware"
 	authsvc "github.com/sed-evaluacion-desempeno/api/internal/service/auth"
 
 	// Repositories
@@ -279,18 +278,17 @@ func main() {
 	// Mount handler routes
 	// competency.RegisterRoutes calls r.Use() internally — wrap in Group for a clean subrouter.
 	r.Group(func(r chi.Router) {
-		comphandler.RegisterRoutes(r, &comphandler.Dependencies{Handler: compH})
+		comphandler.RegisterRoutes(r, &comphandler.Dependencies{Handler: compH, AuthSvc: authSvc})
 	})
 	r.Mount("/api/v1/auth", authhandler.AuthRoutes(authH))
-	r.Mount("/", goalhandler.NewRouter(goalH))
+	r.Mount("/", goalhandler.NewRouter(goalH, authSvc))
 
 	// Cycle, evaluation, and org: register all on a single apiV1 subrouter.
-	// Apply shared AuthPlaceholder middleware once for all three.
+	// Each handler applies its own RequireAuth middleware.
 	apiV1 := chi.NewRouter()
-	apiV1.Use(middleware.AuthPlaceholder)
-	cyclehandler.RegisterRoutes(apiV1, cycleH)
-	evalhandler.RegisterRoutes(apiV1, evalH)
-	orghandler.RegisterRoutes(apiV1, orgH)
+	cyclehandler.RegisterRoutes(apiV1, cycleH, authSvc)
+	evalhandler.RegisterRoutes(apiV1, evalH, authSvc)
+	orghandler.RegisterRoutes(apiV1, orgH, authSvc)
 	r.Mount("/api/v1", apiV1)
 
 	// Health check

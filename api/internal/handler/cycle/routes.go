@@ -7,27 +7,29 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/sed-evaluacion-desempeno/api/internal/middleware"
 	repo "github.com/sed-evaluacion-desempeno/api/internal/repository/cycle"
+	authsvc "github.com/sed-evaluacion-desempeno/api/internal/service/auth"
 )
 
 // NewRouter creates a Chi router with all cycle/phase endpoints registered.
 //
 // Middleware stacks per endpoint (from design section 3.1):
 //
-//	GET    /api/v1/cycles                  → AuthPlaceholder → RateLimit(read) → ReadReplica
-//	POST   /api/v1/cycles                  → AuthPlaceholder → RateLimit(write) → Idempotency
-//	GET    /api/v1/cycles/{id}             → AuthPlaceholder → RateLimit(read) → ReadReplica
-//	PUT    /api/v1/cycles/{id}/transition  → AuthPlaceholder → RateLimit(write) → Idempotency → OptimisticLock
-//	GET    /api/v1/phases                  → AuthPlaceholder → RateLimit(read) → ReadReplica
-//	GET    /api/v1/cycles/{id}/transitions → AuthPlaceholder → RateLimit(read) → ReadReplica
-func NewRouter(handler *CycleHandler) chi.Router {
+//	GET    /api/v1/cycles                  → RequireAuth → RateLimit(read) → ReadReplica
+//	POST   /api/v1/cycles                  → RequireAuth → RateLimit(write) → Idempotency
+//	GET    /api/v1/cycles/{id}             → RequireAuth → RateLimit(read) → ReadReplica
+//	PUT    /api/v1/cycles/{id}/transition  → RequireAuth → RateLimit(write) → Idempotency → OptimisticLock
+//	GET    /api/v1/phases                  → RequireAuth → RateLimit(read) → ReadReplica
+//	GET    /api/v1/cycles/{id}/transitions → RequireAuth → RateLimit(read) → ReadReplica
+func NewRouter(handler *CycleHandler, authSvc *authsvc.AuthService) chi.Router {
 	r := chi.NewRouter()
-	RegisterRoutes(r, handler)
+	RegisterRoutes(r, handler, authSvc)
 	return r
 }
 
 // RegisterRoutes registers all cycle/phase endpoints on an existing router.
-// The caller is responsible for applying AuthPlaceholder and any other shared middleware.
-func RegisterRoutes(r chi.Router, handler *CycleHandler) {
+func RegisterRoutes(r chi.Router, handler *CycleHandler, authSvc *authsvc.AuthService) {
+	// Shared auth middleware for all cycle endpoints
+	r.Use(middleware.RequireAuth(authSvc))
 
 	// Rate limit configurations
 	readRateLimit := middleware.RateLimitConfig{

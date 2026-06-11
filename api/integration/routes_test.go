@@ -34,7 +34,7 @@ func allRoutes() []routeTestCase {
 	scopeID := "88888888-8888-8888-8888-888888888888"
 	entryID := "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
 
-	// Routes behind AuthPlaceholder return 200 (passthrough).
+	// Routes behind RequireAuth (test mode with nil authSvc) return 200 (passthrough).
 	authOK := []int{200, 201, 400, 404, 409, 422}
 
 	return []routeTestCase{

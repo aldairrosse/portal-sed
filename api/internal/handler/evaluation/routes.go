@@ -5,39 +5,43 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/sed-evaluacion-desempeno/api/internal/auth"
 	"github.com/sed-evaluacion-desempeno/api/internal/middleware"
 	repo "github.com/sed-evaluacion-desempeno/api/internal/repository/evaluation"
+	authsvc "github.com/sed-evaluacion-desempeno/api/internal/service/auth"
 )
 
 // NewRouter creates a Chi router with all evaluation and 9×9 endpoints registered.
 //
 // # Middleware stacks
 //
-//	GET    /api/v1/evaluations                    → AuthPlaceholder → RateLimit(read) → ReadReplica
-//	GET    /api/v1/evaluations/{id}               → AuthPlaceholder → RateLimit(read) → ReadReplica
-//	POST   /api/v1/evaluations/{id}/self-evaluation → AuthPlaceholder → RateLimit(write) → Idempotency
-//	PUT    /api/v1/evaluations/{id}/self-evaluation → AuthPlaceholder → RateLimit(write) → OptimisticLock
-//	POST   /api/v1/evaluations/{id}/rh-evaluation   → AuthPlaceholder → RateLimit(write) → Idempotency
-//	PUT    /api/v1/evaluations/{id}/rh-evaluation   → AuthPlaceholder → RateLimit(write) → OptimisticLock
-//	POST   /api/v1/evaluations/{id}/finalize        → AuthPlaceholder → RateLimit(write)
-//	GET    /api/v1/evaluations/summary              → AuthPlaceholder → RateLimit(read) → ReadReplica
-//	GET    /api/v1/nine-box/matrices                → AuthPlaceholder → RateLimit(read) → ReadReplica
-//	POST   /api/v1/nine-box/matrices                → AuthPlaceholder → RateLimit(write)
-//	GET    /api/v1/nine-box/matrices/{matrixId}     → AuthPlaceholder → RateLimit(read) → ReadReplica
-//	GET    /api/v1/nine-box/matrices/{matrixId}/entries → AuthPlaceholder → RateLimit(read) → ReadReplica
-//	POST   /api/v1/nine-box/matrices/{matrixId}/entries → AuthPlaceholder → RateLimit(write)
-//	PUT    /api/v1/nine-box/entries/{entryId}       → AuthPlaceholder → RateLimit(write) → OptimisticLock
-//	POST   /api/v1/nine-box/batch                   → AuthPlaceholder → RateLimit(write)
-//	GET    /api/v1/nine-box/scales                  → AuthPlaceholder → RateLimit(read) → ReadReplica
-//	GET    /api/v1/nine-box/quadrants               → AuthPlaceholder → RateLimit(read) → ReadReplica
-func NewRouter(handler *EvaluationHandler) chi.Router {
+//	GET    /api/v1/evaluations                    → RequireAuth → RateLimit(read) → ReadReplica
+//	GET    /api/v1/evaluations/{id}               → RequireAuth → RateLimit(read) → ReadReplica
+//	POST   /api/v1/evaluations/{id}/self-evaluation → RequireAuth → RateLimit(write) → Idempotency
+//	PUT    /api/v1/evaluations/{id}/self-evaluation → RequireAuth → RateLimit(write) → OptimisticLock
+//	POST   /api/v1/evaluations/{id}/rh-evaluation   → RequireAuth → RequirePermission(rh) → RateLimit(write) → Idempotency
+//	PUT    /api/v1/evaluations/{id}/rh-evaluation   → RequireAuth → RequirePermission(rh) → RateLimit(write) → OptimisticLock
+//	POST   /api/v1/evaluations/{id}/finalize        → RequireAuth → RequirePermission(rh) → RateLimit(write)
+//	GET    /api/v1/evaluations/summary              → RequireAuth → RateLimit(read) → ReadReplica
+//	GET    /api/v1/nine-box/matrices                → RequireAuth → RateLimit(read) → ReadReplica
+//	POST   /api/v1/nine-box/matrices                → RequireAuth → RequirePermission(9x9) → RateLimit(write)
+//	GET    /api/v1/nine-box/matrices/{matrixId}     → RequireAuth → RateLimit(read) → ReadReplica
+//	GET    /api/v1/nine-box/matrices/{matrixId}/entries → RequireAuth → RateLimit(read) → ReadReplica
+//	POST   /api/v1/nine-box/matrices/{matrixId}/entries → RequireAuth → RequirePermission(9x9) → RateLimit(write)
+//	PUT    /api/v1/nine-box/entries/{entryId}       → RequireAuth → RequirePermission(9x9) → RateLimit(write) → OptimisticLock
+//	POST   /api/v1/nine-box/batch                   → RequireAuth → RequirePermission(9x9) → RateLimit(write)
+//	GET    /api/v1/nine-box/scales                  → RequireAuth → RateLimit(read) → ReadReplica
+//	GET    /api/v1/nine-box/quadrants               → RequireAuth → RateLimit(read) → ReadReplica
+func NewRouter(handler *EvaluationHandler, authSvc *authsvc.AuthService) chi.Router {
 	r := chi.NewRouter()
-	RegisterRoutes(r, handler)
+	RegisterRoutes(r, handler, authSvc)
 	return r
 }
 
 // RegisterRoutes registers all evaluation and 9x9 endpoints on an existing router.
-func RegisterRoutes(r chi.Router, handler *EvaluationHandler) {
+func RegisterRoutes(r chi.Router, handler *EvaluationHandler, authSvc *authsvc.AuthService) {
+	// Shared auth middleware for all evaluation endpoints
+	r.Use(middleware.RequireAuth(authSvc))
 
 	// Rate limit configurations
 	readRateLimit := middleware.RateLimitConfig{
@@ -87,6 +91,7 @@ func RegisterRoutes(r chi.Router, handler *EvaluationHandler) {
 
 	// POST /api/v1/evaluations/{id}/rh-evaluation
 	r.Group(func(r chi.Router) {
+		r.Use(middleware.RequirePermission(auth.PermEvalRH))
 		r.Use(middleware.RateLimit(writeRateLimit))
 		r.Use(middleware.Idempotency(idempStore, 24*time.Hour))
 		r.Post("/evaluations/{id}/rh-evaluation", handler.SubmitRHEvaluation)
@@ -94,6 +99,7 @@ func RegisterRoutes(r chi.Router, handler *EvaluationHandler) {
 
 	// PUT /api/v1/evaluations/{id}/rh-evaluation
 	r.Group(func(r chi.Router) {
+		r.Use(middleware.RequirePermission(auth.PermEvalRH))
 		r.Use(middleware.RateLimit(writeRateLimit))
 		r.Use(middleware.OptimisticLock)
 		r.Put("/evaluations/{id}/rh-evaluation", handler.UpdateRHEvaluation)
@@ -101,6 +107,7 @@ func RegisterRoutes(r chi.Router, handler *EvaluationHandler) {
 
 	// POST /api/v1/evaluations/{id}/finalize
 	r.Group(func(r chi.Router) {
+		r.Use(middleware.RequirePermission(auth.PermEvalRH))
 		r.Use(middleware.RateLimit(writeRateLimit))
 		r.Post("/evaluations/{id}/finalize", handler.FinalizeEvaluation)
 	})
@@ -123,6 +130,7 @@ func RegisterRoutes(r chi.Router, handler *EvaluationHandler) {
 
 	// POST /api/v1/nine-box/matrices
 	r.Group(func(r chi.Router) {
+		r.Use(middleware.RequirePermission(auth.PermEval9x9))
 		r.Use(middleware.RateLimit(writeRateLimit))
 		r.Post("/nine-box/matrices", handler.CreateMatrix)
 	})
@@ -143,12 +151,14 @@ func RegisterRoutes(r chi.Router, handler *EvaluationHandler) {
 
 	// POST /api/v1/nine-box/matrices/{matrixId}/entries
 	r.Group(func(r chi.Router) {
+		r.Use(middleware.RequirePermission(auth.PermEval9x9))
 		r.Use(middleware.RateLimit(writeRateLimit))
 		r.Post("/nine-box/matrices/{matrixId}/entries", handler.UpsertMatrixEntry)
 	})
 
 	// PUT /api/v1/nine-box/entries/{entryId}
 	r.Group(func(r chi.Router) {
+		r.Use(middleware.RequirePermission(auth.PermEval9x9))
 		r.Use(middleware.RateLimit(writeRateLimit))
 		r.Use(middleware.OptimisticLock)
 		r.Put("/nine-box/entries/{entryId}", handler.UpdateEntry)
@@ -156,6 +166,7 @@ func RegisterRoutes(r chi.Router, handler *EvaluationHandler) {
 
 	// POST /api/v1/nine-box/batch
 	r.Group(func(r chi.Router) {
+		r.Use(middleware.RequirePermission(auth.PermEval9x9))
 		r.Use(middleware.RateLimit(writeRateLimit))
 		r.Post("/nine-box/batch", handler.BatchSubmitEntries)
 	})

@@ -19,7 +19,6 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 
 	"github.com/sed-evaluacion-desempeno/api/internal"
-	"github.com/sed-evaluacion-desempeno/api/internal/middleware"
 	"github.com/sed-evaluacion-desempeno/api/internal/seed"
 
 	// Repositories
@@ -253,16 +252,15 @@ func setupTestServer(t *testing.T) *testServer {
 
 	// Mount routes (same order as main.go)
 	r.Group(func(r chi.Router) {
-		comphandler.RegisterRoutes(r, &comphandler.Dependencies{Handler: compH})
+		comphandler.RegisterRoutes(r, &comphandler.Dependencies{Handler: compH, AuthSvc: authSvc})
 	})
 	r.Mount("/api/v1/auth", authhandler.AuthRoutes(authH))
-	r.Mount("/", goalhandler.NewRouter(goalH))
+	r.Mount("/", goalhandler.NewRouter(goalH, authSvc))
 
 	apiV1 := chi.NewRouter()
-	apiV1.Use(middleware.AuthPlaceholder)
-	cyclehandler.RegisterRoutes(apiV1, cycleH)
-	evalhandler.RegisterRoutes(apiV1, evalH)
-	orghandler.RegisterRoutes(apiV1, orgH)
+	cyclehandler.RegisterRoutes(apiV1, cycleH, authSvc)
+	evalhandler.RegisterRoutes(apiV1, evalH, authSvc)
+	orghandler.RegisterRoutes(apiV1, orgH, authSvc)
 	r.Mount("/api/v1", apiV1)
 
 	// Health check
