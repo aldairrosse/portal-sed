@@ -40,6 +40,21 @@ Estrategia: **5 PRs encadenados**. Cada PR depende del anterior. Total: ~18 tare
 - Pasar sesión vía context o directamente como state global
 - **AC:** Al cargar la app, se invoca `ensureSession()`; si falla, componentes pueden leer `error`
 
+### T1.6 Crear página `/login` (UI SSO limpia)
+
+- Crear `web/src/routes/login/+page.svelte` — UI sin formularios, solo redirect/status
+- En PROD: redirect automático a SSO (futuro OIDC/SAML), mostrar spinner "Iniciando sesión con SSO..."
+- En DEV: botón "Acceso demo" que llama `POST /auth/dev-login` al dev auth service
+- afterNavigate: si ya hay sesión activa, redirigir a `/`
+- **AC:** `/login` renderiza sin 404; en DEV muestra botón demo; en PROD redirige a SSO; post-login redirige a home
+
+### T1.7 Agregar logout en Sidebar
+
+- Modificar `web/src/lib/components/Sidebar.svelte` — agregar botón de logout
+- Implementar `logout()` en `session.svelte.ts` que llama `POST /auth/logout`
+- Limpiar estado local (user = null) y redirigir a `/login`
+- **AC:** Botón logout visible en sidebar; al hacer click, limpia sesión y redirige a `/login`
+
 ---
 
 ## PR2 — Migración de stores (5 stores async)
@@ -160,6 +175,23 @@ Estrategia: **5 PRs encadenados**. Cada PR depende del anterior. Total: ~18 tare
 - En `api/cmd/main.go` (o el entry point), pasar `authSvc` a cada `NewRouter(...)` 
 - **AC:** `go build ./...` compila sin errores; `AuthPlaceholder` ya no se referencia en routers
 
+### T4.7 Crear dev auth service temporal
+
+- Crear `api/internal/auth/dev/service.go` — servicio temporal que autentica sin SSO real
+- Usuarios preset: `dev-rh@empresa.com` (RH), `dev-jefe@empresa.com` (Jefe), `dev-colaborador@empresa.com` (Colaborador)
+- Cada usuario tiene roles y permisos predefinidos (misma estructura que AuthUser)
+- Endpoint: `POST /auth/dev-login` — recibe `{ email }`, retorna cookie httpOnly + AuthUser
+- Solo activo cuando `ENV=development` (no expuesto en producción)
+- **AC:** `POST /auth/dev-login` con email válido retorna cookie válida; `/auth/me` retorna el usuario; `go build ./...` compila
+
+### T4.8 Interfaz SSOAdapter (preparación para futuro)
+
+- Crear `api/internal/auth/sso/adapter.go` — interfaz pluggable
+- Métodos: `ValidateToken`, `GetEndSessionURL`, `GetUserFromToken`
+- Por ahora: implementación `nil` en main.go, logout siempre redirige a `/login`
+- Documentar en código cómo conectar OIDC/SAML en futuro
+- **AC:** Interfaz compilable; `authSvc` la acepta como opcional; documentación clara en comments
+
 ---
 
 ## PR5 — Tests y verificación
@@ -193,10 +225,10 @@ Estrategia: **5 PRs encadenados**. Cada PR depende del anterior. Total: ~18 tare
 
 | PR | Archivos | Tareas | Depende de |
 |---|---|---|---|
-| PR1 — Setup | ~8 archivos | T1.1–T1.5 | Ninguna |
+| PR1 — Setup | ~10 archivos | T1.1–T1.7 | Ninguna |
 | PR2 — Stores | 5 archivos | T2.1–T2.5 | PR1 |
 | PR3 — Componentes | ~10 archivos | T3.1–T3.6 | PR2 |
-| PR4 — Backend Auth | 6 archivos | T4.1–T4.6 | Ninguna (independiente) |
+| PR4 — Backend Auth | ~8 archivos | T4.1–T4.8 | Ninguna (independiente) |
 | PR5 — Tests | 3 archivos | T5.1–T5.3 | PR1 + PR2 + PR4 |
 
 PR4 puede hacerse en paralelo con PR2/PR3 porque no comparte archivos con el frontend.

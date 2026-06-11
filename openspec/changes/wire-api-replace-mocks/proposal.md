@@ -18,10 +18,14 @@ Reemplazar los datos sincrónicos de fixture (`$lib/fixtures/`) en los stores de
 
 - **Instalar dependencias:** `openapi-fetch` (cliente HTTP tipado) + `openapi-typescript` (generador de tipos desde OpenAPI).
 - **Generar tipos TypeScript** desde cada spec YAML en `api/openapi/` usando `openapi-typescript`.
-- **Crear `web/src/lib/api/client.ts`:** Cliente HTTP tipado con base URL configurable, interceptors para adjuntar token de sesión (desde cookie/httpOnly), y manejo de errores estándar.
+- **Crear `web/src/lib/api/client.ts`:** Cliente HTTP tipado con base URL configurable, interceptores para adjuntar token de sesión (desde cookie/httpOnly), y manejo de errores estándar.
 - **Crear `web/src/lib/api/schemas/`:** Tipos generados por `openapi-typescript` para cada dominio.
 - **Crear `web/src/lib/session.svelte.ts`:** Store runa (`$state`) que expone el usuario autenticado, expiración de sesión y método `ensureSession()` que llama a `GET /auth/me` (con redirect a login si 401).
 - **Crear `web/src/lib/cycle.svelte.ts`:** Store runa que expone la fase activa del ciclo desde `GET /cycle/current`, reemplazando la lógica de `devContext` para fase.
+- **Crear página `/login`:** UI limpia sin formularios, basada en SSO. En PROD redirige automáticamente al proveedor SSO con spinner de status. En DEV muestra botón "Acceso demo" que usa el dev auth service.
+- **Agregar logout en Sidebar:** Botón que llama `POST /auth/logout`, limpia estado local y redirige a `/login`.
+- **Crear dev auth service temporal:** Servicio backend que autentica usuarios preset (como DevToolbar) sin SSO real. Solo activo en `ENV=development`. Permite validar el flujo completo de auth/roles/permisos en desarrollo.
+- **Interfaz SSOAdapter:** Contrato pluggable para futuro OIDC/SAML/LDAP. Por ahora `nil`, preparada para conexión real.
 - **Reescribir cada store a async** con el siguiente patrón:
 
   ```ts
@@ -64,7 +68,7 @@ Reemplazar los datos sincrónicos de fixture (`$lib/fixtures/`) en los stores de
 
 - **No se modifican los handlers del backend** (`api/internal/handler/`) — las APIs ya entregan los datos que el frontend necesita.
 - **No se eliminan los fixtures** — se conservan como fallback en `import.meta.env.DEV` y se documenta su propósito.
-- **No se implementa UI de login** — eso es un change futuro. C8 asume que el usuario ya está autenticado (sesión existente) y solo conecta el token a los requests.
+- **No se implementa SSO real** (OIDC/SAML/LDAP) — el dev auth service cubre desarrollo; la conexión real es change posterior.
 - **No se implementa caching avanzado** (SWR, React Query style) — la primera iteración es fetch directo + loading state. El caching y optimistic updates se abordan en change posterior si se justifica.
 - **No se implementan tests E2E** — se prioriza que el refactor compile y funcione correctamente; los tests E2E se agregan como change separado.
 - **No se toca `devContext.svelte.ts`** — sigue existiendo para desarrollo local (selector de perfil/fase mockeada). En producción, los stores toman la fase desde `cycle.svelte.ts` y el perfil desde `session.svelte.ts`.
@@ -177,6 +181,10 @@ C7 documentó los placeholders `TODO(auth:C7)` en C2–C6. C8:
 - [ ] `client.ts` configurado con base URL desde `VITE_API_URL`, `credentials: 'include'`, y manejo de `401`.
 - [ ] `session.svelte.ts` expone `user`, `loading`, `error` y llama `GET /auth/me` al inicializar.
 - [ ] `cycle.svelte.ts` expone `activePhase`, `loading`, `error` desde `GET /cycle/current`.
+- [ ] Página `/login` renderiza sin 404; en DEV muestra botón "Acceso demo"; en PROD redirige a SSO.
+- [ ] Botón logout en sidebar limpia sesión y redirige a `/login`.
+- [ ] Dev auth service: `POST /auth/dev-login` retorna cookie válida; `/auth/me` retorna usuario preset.
+- [ ] Interfaz `SSOAdapter` compilable y documentada para futuro OIDC/SAML.
 - [ ] Los 5 stores migrados (goals, nineBox, competency, evaluation, orgHierarchy) son asíncronos con triplete `data`/`loading`/`error`.
 - [ ] En `import.meta.env.DEV` sin `VITE_USE_API=true`, los stores cargan desde fixtures (mismo comportamiento actual).
 - [ ] En producción (o con `VITE_USE_API=true`), los stores fetch desde el backend real.
