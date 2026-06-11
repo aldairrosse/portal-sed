@@ -31,6 +31,9 @@
         addGoalComment,
         deleteGoalComment,
         getGoalComments,
+        loading,
+        error,
+        load,
     } from "$lib/stores/goalsStore.svelte";
     import { getProfile } from "$lib/stores/devContext.svelte";
     import { getChildren } from "$lib/stores/orgHierarchyStore.svelte";
@@ -42,7 +45,14 @@
     import AssigneePicker from "$lib/components/goals/AssigneePicker.svelte";
     import RequestChangeModal from "$lib/components/goals/RequestChangeModal.svelte";
     import CommentPopover from "$lib/components/goals/GoalCommentModal.svelte";
+    import PageSkeleton from "$lib/components/ui/PageSkeleton.svelte";
+    import ErrorState from "$lib/components/ui/ErrorState.svelte";
+    import * as notifications from "$lib/stores/notifications.svelte";
     import { toCsv } from "$lib/utils/export";
+
+    // ─── Load data ────────────────────────────────────────────────────────────
+
+    $effect(() => { load(); });
 
     // ─── Mode detection ──────────────────────────────────────────────────────
 
@@ -117,7 +127,6 @@
     // ─── Existing page state ─────────────────────────────────────────────────
 
     let successMsg = $state("");
-    let errorMsg = $state("");
     let creatingCategory = $state(false);
     let isAnyInlineEditing = $state(false);
     let newCatName = $state('');
@@ -202,7 +211,6 @@
 
     function handleSaveAssignment() {
         successMsg = "Asignación guardada correctamente.";
-        errorMsg = "";
         setTimeout(() => (successMsg = ""), 3000);
     }
 
@@ -249,6 +257,12 @@
 <svelte:head>
     <title>Asignación anual — SED</title>
 </svelte:head>
+
+{#if loading}
+    <PageSkeleton variant="table" rows={6} />
+{:else if error}
+    <ErrorState message={error} onretry={load} />
+{:else}
 
 <div class="space-y-6 max-w-full min-w-0">
     <!-- Page header -->
@@ -372,11 +386,6 @@
             <span>{successMsg}</span>
         </div>
     {/if}
-    {#if errorMsg}
-        <div class="alert alert-error text-sm" role="alert">
-            <span>{errorMsg}</span>
-        </div>
-    {/if}
 
     <!-- Category cards -->
     {#if categories.length > 0}
@@ -455,6 +464,8 @@
         </div>
     {/if}
 </div>
+
+{/if}
 
 {#if targetAssignment}
     <RequestChangeModal

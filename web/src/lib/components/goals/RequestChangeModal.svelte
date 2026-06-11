@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { X } from '@lucide/svelte';
 	import { recordChangeRequest } from '$lib/stores/goalsStore.svelte';
+	import * as notifications from '$lib/stores/notifications.svelte';
 	import type { ChangeRequest } from '$lib/types/goal';
 
 	interface Props {
@@ -17,7 +18,6 @@
 	let dialogEl: HTMLDialogElement | undefined = $state();
 	let reason = $state('');
 	let submitted = $state(false);
-	let error = $state('');
 
 	const title = $derived(
 		entityType === 'category'
@@ -40,7 +40,6 @@
 		if (open) {
 			reason = '';
 			submitted = false;
-			error = '';
 			dialogEl.showModal();
 		} else {
 			dialogEl.close();
@@ -58,7 +57,7 @@
 	function handleSubmit(e: Event) {
 		e.preventDefault();
 		if (!reason.trim()) {
-			error = 'Debe indicar el motivo del cambio.';
+			notifications.error('Debe indicar el motivo del cambio.');
 			return;
 		}
 		const changeRequest: ChangeRequest = {
@@ -109,12 +108,6 @@
 			</p>
 
 			<form onsubmit={handleSubmit}>
-				{#if error}
-					<div class="alert alert-error mb-4 text-sm" role="alert">
-						<span>{error}</span>
-					</div>
-				{/if}
-
 				<div class="form-control mb-4">
 					<label class="label" for="request-reason">
 						<span class="label-text">Motivo del cambio</span>

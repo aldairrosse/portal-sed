@@ -2,6 +2,7 @@
 	import { X, Plus, Trash2, Save } from '@lucide/svelte';
 	import type { KPI, KpiUnit } from '$lib/types/goal';
 	import { getKpis, addKpi, updateKpi, deleteKpi } from '$lib/stores/goalsStore.svelte';
+	import * as notifications from '$lib/stores/notifications.svelte';
 
 	interface Props {
 		open: boolean;
@@ -17,7 +18,6 @@
 	let formUnit = $state<KpiUnit>('porcentaje');
 	let formDirection = $state<'ascendente' | 'descendente'>('ascendente');
 	let formTargetValue = $state<number | undefined>(undefined);
-	let formError = $state('');
 
 	const unitOptions: Array<{ value: KpiUnit; label: string }> = [
 		{ value: 'porcentaje', label: 'Porcentaje (%)' },
@@ -45,7 +45,6 @@
 		formUnit = 'porcentaje';
 		formDirection = 'ascendente';
 		formTargetValue = undefined;
-		formError = '';
 	}
 
 	function startEdit(kpi: KPI) {
@@ -55,7 +54,6 @@
 		formUnit = kpi.unit;
 		formDirection = kpi.direction;
 		formTargetValue = kpi.targetValue;
-		formError = '';
 	}
 
 	function cancelEdit() {
@@ -83,7 +81,7 @@
 		e.preventDefault();
 		const err = validate();
 		if (err) {
-			formError = err;
+			notifications.error(err);
 			return;
 		}
 
@@ -179,12 +177,6 @@
 
 		<!-- Form for adding/editing -->
 		<form onsubmit={handleFormSubmit}>
-			{#if formError}
-				<div class="alert alert-error mb-4 text-sm" role="alert">
-					<span>{formError}</span>
-				</div>
-			{/if}
-
 			<h4 class="text-sm font-semibold text-base-content mb-3">
 				{editingKpi ? 'Editar KPI' : 'Nuevo KPI'}
 			</h4>

@@ -1,8 +1,15 @@
 <script lang="ts">
 	import { Plus, Trash2, Save, X, Pencil, Library, TrendingUp, TrendingDown } from '@lucide/svelte';
 	import type { KPI, KpiUnit } from '$lib/types/goal';
-	import { getKpis, addKpi, updateKpi, deleteKpi } from '$lib/stores/goalsStore.svelte';
+	import { getKpis, addKpi, updateKpi, deleteKpi, loading, error, load } from '$lib/stores/goalsStore.svelte';
+	import PageSkeleton from '$lib/components/ui/PageSkeleton.svelte';
+	import ErrorState from '$lib/components/ui/ErrorState.svelte';
+	import * as notifications from '$lib/stores/notifications.svelte';
 	import CustomSelect from '$lib/components/ui/CustomSelect.svelte';
+
+	// ─── Load data ──────────────────────────────────────────────────────────────
+
+	$effect(() => { load(); });
 
 	// ─── KPI list ──────────────────────────────────────────────────────────────
 
@@ -16,8 +23,6 @@
 	let addFormUnit = $state<KpiUnit>('porcentaje');
 	let addFormDirection = $state<'ascendente' | 'descendente'>('ascendente');
 	let addFormTargetValue = $state<number | undefined>(undefined);
-	let addFormError = $state('');
-
 	const unitOptions: Array<{ value: KpiUnit; label: string }> = [
 		{ value: 'porcentaje', label: 'Porcentaje (%)' },
 		{ value: 'moneda', label: 'Moneda ($)' },
@@ -36,7 +41,6 @@
 		addFormUnit = 'porcentaje';
 		addFormDirection = 'ascendente';
 		addFormTargetValue = undefined;
-		addFormError = '';
 	}
 
 	function openAddForm() {
@@ -59,7 +63,7 @@
 		e.preventDefault();
 		const err = validateAddForm();
 		if (err) {
-			addFormError = err;
+			notifications.error(err);
 			return;
 		}
 		const newKpi: KPI = {
@@ -83,7 +87,6 @@
 	let editUnit = $state<KpiUnit>('porcentaje');
 	let editDirection = $state<'ascendente' | 'descendente'>('ascendente');
 	let editTargetValue = $state<number | undefined>(undefined);
-	let editError = $state('');
 
 	function startEdit(kpi: KPI) {
 		editingId = kpi.id;
@@ -92,22 +95,20 @@
 		editUnit = kpi.unit;
 		editDirection = kpi.direction;
 		editTargetValue = kpi.targetValue;
-		editError = '';
 	}
 
 	function cancelEdit() {
 		editingId = null;
-		editError = '';
 	}
 
 	function handleEditSubmit(e: Event) {
 		e.preventDefault();
 		if (!editName.trim()) {
-			editError = 'El nombre es obligatorio.';
+			notifications.error('El nombre es obligatorio.');
 			return;
 		}
 		if (!editDescription.trim()) {
-			editError = 'La descripción es obligatoria.';
+			notifications.error('La descripción es obligatoria.');
 			return;
 		}
 		if (!editingId) return;
@@ -119,7 +120,6 @@
 			targetValue: editTargetValue
 		});
 		editingId = null;
-		editError = '';
 	}
 
 	// ─── Delete confirmation ───────────────────────────────────────────────────
@@ -163,6 +163,12 @@
 <svelte:head>
 	<title>Biblioteca de KPI — SED</title>
 </svelte:head>
+
+{#if loading}
+	<PageSkeleton variant="table" rows={5} />
+{:else if error}
+	<ErrorState message={error} onretry={load} />
+{:else}
 
 <div class="space-y-6 max-w-full min-w-0">
 	<!-- Breadcrumbs -->
@@ -245,9 +251,6 @@
 									/>
 								</td>
 								<td>
-									{#if editError}
-										<p class="text-xs text-error mb-1">{editError}</p>
-									{/if}
 									<div class="flex items-center justify-center gap-1">
 										<button
 											class="btn btn-primary btn-xs"
@@ -325,12 +328,6 @@
 	{#if showAddForm}
 		<div class="border border-base-300 rounded-lg p-4 bg-base-200/50">
 			<h3 class="text-sm font-semibold text-base-content mb-3">Nuevo KPI</h3>
-
-			{#if addFormError}
-				<div class="alert alert-error mb-3 text-sm" role="alert">
-					<span>{addFormError}</span>
-				</div>
-			{/if}
 
 			<form onsubmit={handleAddSubmit} class="space-y-3">
 				<div class="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -429,6 +426,8 @@
 		</div>
 	{/if}
 </div>
+
+{/if}
 
 <!-- Delete confirmation modal -->
 <dialog class="modal" class:modal-open={deleteTargetId !== null}>

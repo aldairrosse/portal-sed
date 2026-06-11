@@ -112,17 +112,20 @@ Estrategia: **5 PRs encadenados**. Cada PR depende del anterior. Total: ~18 tare
 
 ## PR3 — Componentes: loading/error states
 
-### T3.1 Actualizar componentes de goals
+### T3.1 ~~Actualizar componentes de goals~~ ✅
 
-- En componentes de `web/src/lib/components/goals/`, agregar `{#if loading}` con `<PageSkeleton />`
-- Agregar `{:else if error}` con `<ErrorState message={error} onretry={load} />`
-- Reemplazar imports de `getPhase()` de devContext por `getActivePhase()` de cycle store
+- [x] Exportar `loading` y `error` desde goalsStore
+- [x] Página de asignación: envolver contenido con `{#if loading}`/`{:else if error}`/`{:else}`
+- [x] Biblioteca de KPI: envolver contenido con loading/error states
+- [x] Reemplazar `alert alert-error` inline por `notifications.error()` en componentes que consumen goalsStore
 - **AC:** Cada componente muestra skeleton durante carga, error state en fallo, contenido normal en éxito
 
-### T3.2 Actualizar componentes de evaluación
+### T3.2 Actualizar componentes de evaluación ✅
 
-- En `web/src/lib/components/evaluation/*.svelte`, agregar loading/error wrappers
-- `EmployeeEvaluationTable.svelte`, `CompetencyRatingCard.svelte`, `EmployeeEvaluationDetail.svelte`, `GoalClosureCard.svelte`
+- [x] En `web/src/lib/components/evaluation/*.svelte`, agregar loading/error wrappers
+- [x] `EmployeeEvaluationTable.svelte`, `CompetencyRatingCard.svelte`, `EmployeeEvaluationDetail.svelte`, `GoalClosureCard.svelte`
+- [x] Reemplazar inline error alerts con notificaciones en `EmployeeEvaluationDetail`
+- [x] Agregar `isLoading()` y `getError()` a `evaluationStore.svelte.ts`
 - **AC:** Mismo comportamiento que T3.1 para evaluación
 
 ### T3.3 Actualizar componentes de competency ✅

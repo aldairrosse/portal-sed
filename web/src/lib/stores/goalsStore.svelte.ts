@@ -39,8 +39,8 @@ const EPSILON = 0.01;
 // ─── Triplete state ───────────────────────────────────────────────────────────
 
 let data = $state<StoreData | null>(null);
-let loading = $state(true);
-let error = $state<string | null>(null);
+export let loading = $state(true);
+export let error = $state<string | null>(null);
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
