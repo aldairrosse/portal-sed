@@ -1,11 +1,11 @@
 <script lang="ts">
 	import EmployeeEvaluationDetail from '$lib/components/evaluation/EmployeeEvaluationDetail.svelte';
 	import EmployeeEvaluationTable from '$lib/components/evaluation/EmployeeEvaluationTable.svelte';
-	import { getPhase } from '$lib/stores/devContext.svelte';
+	import { getActivePhase } from '$lib/api/cycle.svelte';
 	import { getAssignments } from '$lib/stores/goalsStore.svelte';
 	import { ClipboardList } from '@lucide/svelte';
 
-	const phase = $derived(getPhase());
+	const phase = $derived(getActivePhase() ?? 'inicio-anio');
 	const isFinAnio = $derived(phase === 'fin-anio');
 	const isMedioAnio = $derived(phase === 'medio-anio');
 

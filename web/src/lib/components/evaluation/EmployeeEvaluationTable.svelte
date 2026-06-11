@@ -1,12 +1,20 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import EvaluationStatusBadge from './EvaluationStatusBadge.svelte';
 	import ProgressIndicator from '$lib/components/goals/ProgressIndicator.svelte';
-	import { getEvaluationStatus } from '$lib/stores/evaluationStore.svelte';
+	import {
+		getEvaluationStatus,
+		isLoading,
+		getError,
+		load as loadEvaluations,
+	} from '$lib/stores/evaluationStore.svelte';
 	import { getPillars, getCompetenciesByPillar } from '$lib/stores/competencyStore.svelte';
 	import { getNodeById } from '$lib/stores/orgHierarchyStore.svelte';
 	import { getGoals } from '$lib/stores/goalsStore.svelte';
+	import PageSkeleton from '$lib/components/ui/PageSkeleton.svelte';
+	import ErrorState from '$lib/components/ui/ErrorState.svelte';
 	import { PROFILE_LABELS, PHASE_LABELS } from '$lib/types/evaluation';
-	import { getPhase } from '$lib/stores/devContext.svelte';
+	import { getActivePhase } from '$lib/api/cycle.svelte';
 	import type { EmployeeAssignment } from '$lib/types/goal';
 	import type { Snippet } from 'svelte';
 	import { FileDown } from '@lucide/svelte';
@@ -21,6 +29,13 @@
 	}
 
 	let { employees, onSelect, selectedEmployeeId = '', disabled = false, detail }: Props = $props();
+
+	const loadingEval = $derived(isLoading());
+	const errorEval = $derived(getError());
+
+	onMount(() => {
+		loadEvaluations();
+	});
 
 	let searchQuery = $state('');
 
@@ -48,7 +63,7 @@
 		})
 	));
 
-	const currentPhase = $derived(getPhase());
+	const currentPhase = $derived(getActivePhase() ?? 'inicio-anio');
 
 	const completionSummary = $derived({
 		total: filteredEmployees.length,
@@ -107,6 +122,11 @@
 	}
 </script>
 
+{#if loadingEval}
+	<PageSkeleton variant="table" rows={Math.max(employees.length, 3)} />
+{:else if errorEval}
+	<ErrorState message={errorEval} onretry={loadEvaluations} />
+{:else}
 <div class="flex flex-col gap-6">
 	{#if !selectedEmployeeId}
 		{#if completionSummary.total > 0}
@@ -204,3 +224,4 @@
 		</div>
 	{/if}
 </div>
+{/if}

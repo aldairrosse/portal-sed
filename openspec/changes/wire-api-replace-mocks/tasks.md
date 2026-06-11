@@ -150,12 +150,12 @@ Estrategia: **5 PRs encadenados**. Cada PR depende del anterior. Total: ~18 tare
 - [x] `jerarquia/+page.svelte`: usa `isLoading()`, `getError()`, `reload()` del store
 - **AC:** Mismo comportamiento
 
-### T3.6 Reemplazar getPhase() de devContext por cycle store en todos los componentes
+### T3.6 Reemplazar getPhase() de devContext por cycle store en todos los componentes ✅
 
-- Buscar todos los usos de `getPhase()` de `$lib/stores/devContext.svelte` en componentes
-- Reemplazar por `getActivePhase()` de `$lib/api/cycle.svelte`
-- En DEV, `getActivePhase()` retorna el valor de `devContext` (cycle store hace fallback a devContext cuando `import.meta.env.DEV && !VITE_USE_API`)
-- **AC:** Cero imports de devContext en componentes de producción; ciclo funcional en ambos modos
+- [x] Buscar todos los usos de `getPhase()` de `$lib/stores/devContext.svelte` en componentes
+- [x] Reemplazar por `getActivePhase()` de `$lib/api/cycle.svelte`
+- [x] En DEV, `getActivePhase()` retorna el valor de `devContext` (cycle store hace fallback a devContext cuando `import.meta.env.DEV && !VITE_USE_API`)
+- [x] **AC:** Cero imports de devContext en componentes de producción; ciclo funcional en ambos modos
 
 ---
 

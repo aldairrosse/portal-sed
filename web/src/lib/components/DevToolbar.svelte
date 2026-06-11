@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { EVALUATION_PROFILES, CYCLE_PHASES, PROFILE_LABELS, PHASE_LABELS, type EvaluationProfile, type CyclePhase } from '$lib/types/evaluation';
-	import { setProfile, setPhase, getProfile, getPhase } from '$lib/stores/devContext.svelte';
+	import { setProfile, setPhase, getProfile } from '$lib/stores/devContext.svelte';
+	import { getActivePhase } from '$lib/api/cycle.svelte';
 	import { Code, FileText } from '@lucide/svelte';
 	import { onMount } from 'svelte';
 
@@ -8,7 +9,7 @@
 	const phases = CYCLE_PHASES;
 
 	const currentProfile = $derived(getProfile());
-	const currentPhase = $derived(getPhase());
+	const currentPhase = $derived(getActivePhase() ?? 'inicio-anio');
 
 	let visible = $state(true);
 

@@ -1,9 +1,13 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import CompetencyRatingCard from './CompetencyRatingCard.svelte';
 	import GoalClosureCard from './GoalClosureCard.svelte';
 	import ComparisonTable from './ComparisonTable.svelte';
 	import EvaluationStatusBadge from './EvaluationStatusBadge.svelte';
-	import { getPhase } from '$lib/stores/devContext.svelte';
+	import PageSkeleton from '$lib/components/ui/PageSkeleton.svelte';
+	import ErrorState from '$lib/components/ui/ErrorState.svelte';
+	import * as notifications from '$lib/stores/notifications.svelte';
+	import { getActivePhase } from '$lib/api/cycle.svelte';
 	import {
 		getPillars,
 		getCompetenciesByPillar,
@@ -19,6 +23,9 @@
 		rhRateCompetency,
 		rhAssessGoal,
 		addManagerComment,
+		isLoading,
+		getError,
+		load as loadEvaluations,
 	} from '$lib/stores/evaluationStore.svelte';
 	import {
 		getGoalsByCategory,
@@ -27,7 +34,6 @@
 		getAssignmentByEmployee,
 	} from '$lib/stores/goalsStore.svelte';
 	import { Star } from '@lucide/svelte';
-
 	interface Props {
 		employeeId: string;
 		viewerMode: 'self' | 'manager' | 'rh';
@@ -42,7 +48,14 @@
 		onBack,
 	}: Props = $props();
 
-	const phase = $derived(getPhase());
+	const loadingEval = $derived(isLoading());
+	const errorEval = $derived(getError());
+
+	onMount(() => {
+		loadEvaluations();
+	});
+
+	const phase = $derived(getActivePhase() ?? 'inicio-anio');
 	const isFinAnio = $derived(phase === 'fin-anio');
 	const pillars = $derived(getPillars());
 	const levelDefinitions = $derived(getLevelDefinitions());
@@ -102,27 +115,52 @@
 		return getCompetenciesByPillar(pillarId);
 	}
 
-	function handleSelfRate(competencyId: string, level: 1 | 2 | 3 | 4 | 5, comment?: string) {
-		rateCompetency(employeeId, competencyId, level, comment);
+	async function handleSelfRate(competencyId: string, level: 1 | 2 | 3 | 4 | 5, comment?: string) {
+		try {
+			await rateCompetency(employeeId, competencyId, level, comment);
+		} catch (e) {
+			notifications.error(e instanceof Error ? e.message : 'Error al guardar autoevaluación');
+		}
 	}
 
-	function handleRhRate(competencyId: string, level: 1 | 2 | 3 | 4 | 5, comment?: string) {
-		rhRateCompetency(employeeId, competencyId, level, comment);
+	async function handleRhRate(competencyId: string, level: 1 | 2 | 3 | 4 | 5, comment?: string) {
+		try {
+			await rhRateCompetency(employeeId, competencyId, level, comment);
+		} catch (e) {
+			notifications.error(e instanceof Error ? e.message : 'Error al guardar evaluación RH');
+		}
 	}
 
-	function handleCloseGoal(goalId: string, finalProgress: number, selfAssessment: string) {
-		closeGoal(employeeId, goalId, finalProgress, selfAssessment);
+	async function handleCloseGoal(goalId: string, finalProgress: number, selfAssessment: string) {
+		try {
+			await closeGoal(employeeId, goalId, finalProgress, selfAssessment);
+		} catch (e) {
+			notifications.error(e instanceof Error ? e.message : 'Error al cerrar meta');
+		}
 	}
 
-	function handleRhAssessGoal(goalId: string, rhAssessment: string) {
-		rhAssessGoal(employeeId, goalId, rhAssessment);
+	async function handleRhAssessGoal(goalId: string, rhAssessment: string) {
+		try {
+			await rhAssessGoal(employeeId, goalId, rhAssessment);
+		} catch (e) {
+			notifications.error(e instanceof Error ? e.message : 'Error al guardar evaluación RH');
+		}
 	}
 
-	function handleManagerComment(goalId: string, comment: string) {
-		addManagerComment(employeeId, goalId, comment);
+	async function handleManagerComment(goalId: string, comment: string) {
+		try {
+			await addManagerComment(employeeId, goalId, comment);
+		} catch (e) {
+			notifications.error(e instanceof Error ? e.message : 'Error al guardar comentario');
+		}
 	}
 </script>
 
+{#if loadingEval}
+	<PageSkeleton variant="card" rows={3} />
+{:else if errorEval}
+	<ErrorState message={errorEval} onretry={loadEvaluations} />
+{:else}
 <div class="flex flex-col gap-6">
 	{#if showBreadcrumb}
 		<nav aria-label="Breadcrumb">
@@ -280,3 +318,4 @@
 		{/each}
 	</div>
 </div>
+{/if}

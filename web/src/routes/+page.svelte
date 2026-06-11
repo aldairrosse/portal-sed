@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { getProfile, getPhase } from '$lib/stores/devContext.svelte';
+	import { getProfile } from '$lib/stores/devContext.svelte';
+	import { getActivePhase } from '$lib/api/cycle.svelte';
 	import { PROFILE_LABELS, type EvaluationProfile, type CyclePhase } from '$lib/types/evaluation';
 	import { PROFILE_USERS } from '$lib/dev/profileUsers';
 	import { getGoals, getCategories, getAssignments, getKpis, getGoalKpiLinks } from '$lib/stores/goalsStore.svelte';
@@ -20,7 +21,7 @@
 	import type { Pillar, Competency, LevelDefinition } from '$lib/types/competency';
 
 	const profile = $derived(getProfile());
-	const phase = $derived(getPhase());
+	const phase = $derived(getActivePhase() ?? 'inicio-anio');
 	const user = $derived(PROFILE_USERS[profile]);
 	const profileLabel = $derived(PROFILE_LABELS[profile]);
 
