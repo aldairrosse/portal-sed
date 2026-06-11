@@ -2,8 +2,9 @@ import createClient from 'openapi-fetch';
 import type { paths as AuthPaths } from './schemas/auth.d.ts';
 import type { paths as CyclePaths } from './schemas/cycle.d.ts';
 import type { paths as GoalsPaths } from './schemas/goals.d.ts';
+import type { paths as CompetencyPaths } from './schemas/competency.d.ts';
 
-type AppPaths = AuthPaths & CyclePaths & GoalsPaths;
+type AppPaths = AuthPaths & CyclePaths & GoalsPaths & CompetencyPaths;
 
 export const baseURL: string = import.meta.env.VITE_API_URL ?? '/api/v1';
 
