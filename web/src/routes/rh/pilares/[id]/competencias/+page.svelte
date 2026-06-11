@@ -6,37 +6,34 @@
 		getCompetenciesByPillar,
 		addCompetency,
 		updateCompetency,
-		deleteCompetency
+		deleteCompetency,
+		load,
+		isLoading,
+		getError
 	} from '$lib/stores/competencyStore.svelte';
 	import type { Competency } from '$lib/types/competency';
 	import CompetencyTable from '$lib/components/competency/CompetencyTable.svelte';
 	import ConfirmDeleteModal from '$lib/components/competency/ConfirmDeleteModal.svelte';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
+	import ErrorState from '$lib/components/ui/ErrorState.svelte';
 	import PageSkeleton from '$lib/components/ui/PageSkeleton.svelte';
+	import * as notifications from '$lib/stores/notifications.svelte';
 
 	const pillarId = $derived($page.params.id);
 	const pillars = $derived(getPillars());
 	const pillar = $derived(pillars.find((p) => p.id === pillarId));
 	const competencies = $derived(getCompetenciesByPillar(pillarId));
+	const loading = $derived(isLoading());
+	const storeError = $derived(getError());
 
-	let loading = $state(true);
 	let editingId = $state<string | null>(null);
 	let deletingCompetency: Competency | null = $state(null);
-	let successMsg = $state('');
 
 	let isAnyInlineEditing = $derived(editingId !== null);
 	let compLen = $derived(competencies.length);
 
 	$effect(() => {
-		const t = setTimeout(() => (loading = false), 300);
-		return () => clearTimeout(t);
-	});
-
-	$effect(() => {
-		if (successMsg) {
-			const t = setTimeout(() => (successMsg = ''), 3000);
-			return () => clearTimeout(t);
-		}
+		load();
 	});
 
 	function generateId(): string {
@@ -50,7 +47,7 @@
 	function handleSave(data: { name: string; description: string; id?: string }) {
 		if (data.id) {
 			updateCompetency(data.id, { name: data.name, description: data.description });
-			successMsg = `Competencia "${data.name}" actualizada correctamente.`;
+			notifications.success(`Competencia "${data.name}" actualizada correctamente.`);
 		} else {
 			const newComp: Competency = {
 				id: generateId(),
@@ -59,7 +56,7 @@
 				description: data.description
 			};
 			addCompetency(newComp);
-			successMsg = `Competencia "${data.name}" creada correctamente.`;
+			notifications.success(`Competencia "${data.name}" creada correctamente.`);
 		}
 	}
 
@@ -71,7 +68,7 @@
 		if (!deletingCompetency) return;
 		const { name } = deletingCompetency;
 		deleteCompetency(deletingCompetency.id);
-		successMsg = `Competencia "${name}" eliminada correctamente.`;
+		notifications.success(`Competencia "${name}" eliminada correctamente.`);
 		deletingCompetency = null;
 	}
 
@@ -106,14 +103,10 @@
 		<EmptyState title="Pilar no encontrado" message="El pilar especificado no existe." />
 	{/if}
 
-	{#if successMsg}
-		<div class="alert alert-success mb-4 text-sm" role="status">
-			<span>{successMsg}</span>
-		</div>
-	{/if}
-
 	{#if loading}
 		<PageSkeleton rows={3} />
+	{:else if storeError}
+		<ErrorState message={storeError} onretry={load} />
 	{:else if pillar && compLen === 0 && editingId !== '__new__'}
 		<EmptyState
 			title="Sin competencias"

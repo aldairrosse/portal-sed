@@ -132,9 +132,12 @@ Estrategia: **5 PRs encadenados**. Cada PR depende del anterior. Total: ~18 tare
 - [x] Reemplazar success alerts por `notifications.success()`
 - **AC:** Mismo comportamiento
 
-### T3.4 Actualizar componentes de nine-box
+### T3.4 Actualizar componentes de nine-box ✅
 
-- En `web/src/lib/components/nine-box/*.svelte`, agregar loading/error wrappers
+- [x] Exportar `isLoading()` y `getError()` desde nineBoxStore
+- [x] NineBoxMatrix envuelto con PageSkeleton / ErrorState (reload callback)
+- [x] NineBoxSliders usa `isLoading()` para auto-disabled
+- [x] Page 9x9 maneja loading/error antes de EmptyState
 - **AC:** Mismo comportamiento
 
 ### T3.5 ~~Actualizar componentes de org-hierarchy~~ ✅

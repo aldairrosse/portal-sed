@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { Save, X } from '@lucide/svelte';
 	import { getLevelDefinitions, updateLevelDefinition } from '$lib/stores/competencyStore.svelte';
+	import * as notifications from '$lib/stores/notifications.svelte';
 
 	interface Props {
 		open: boolean;
@@ -17,7 +18,6 @@
 	let editLabels: Record<number, string> = $state({});
 	let editDescriptions: Record<number, string> = $state({});
 	let hasChanges = $state(false);
-	let successMsg = $state('');
 
 	function resetForm() {
 		const defs = getLevelDefinitions();
@@ -48,8 +48,7 @@
 			updateLevelDefinition(level, editLabels[level].trim(), editDescriptions[level].trim());
 		});
 		hasChanges = false;
-		successMsg = 'Definiciones de nivel guardadas correctamente.';
-		setTimeout(() => (successMsg = ''), 3000);
+		notifications.success('Definiciones de nivel guardadas correctamente.');
 	}
 
 	function handleClose() {
@@ -89,12 +88,6 @@
 		<p class="text-xs text-base-content/50 mb-4 flex-shrink-0">
 			Estas definiciones aplican a todos los perfiles de evaluación.
 		</p>
-
-		{#if successMsg}
-			<div class="alert alert-success mb-4 text-sm flex-shrink-0" role="status">
-				<span>{successMsg}</span>
-			</div>
-		{/if}
 
 		<div class="overflow-y-auto flex-1 pr-1 space-y-5">
 		{#each levels as level (level)}

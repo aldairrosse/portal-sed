@@ -12,9 +12,9 @@
     import LevelDefinitionModal from "./LevelDefinitionModal.svelte";
     import AcceptanceLevelSummaryModal from "./AcceptanceLevelSummaryModal.svelte";
     import CustomSelect from "$lib/components/ui/CustomSelect.svelte";
+    import * as notifications from "$lib/stores/notifications.svelte";
 
     let selectedProfile = $state<EvaluationProfile>("colaborador");
-    let successMsg = $state("");
     let hasChanges = $state(false);
     let showLevelDefModal = $state(false);
     let showSummary = $state(false);
@@ -55,8 +55,7 @@
 
     function handleSave() {
         hasChanges = false;
-        successMsg = "Niveles de aceptación guardados correctamente.";
-        setTimeout(() => (successMsg = ""), 3000);
+        notifications.success("Niveles de aceptación guardados correctamente.");
     }
 </script>
 
@@ -101,13 +100,6 @@
             </button>
         </div>
     </div>
-
-    <!-- Success alert -->
-    {#if successMsg}
-        <div class="alert alert-success mb-4 text-sm" role="status">
-            <span>{successMsg}</span>
-        </div>
-    {/if}
 
     <!-- Selected profile and description -->
     <div class="mb-6">
