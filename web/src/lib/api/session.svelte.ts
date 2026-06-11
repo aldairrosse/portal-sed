@@ -32,7 +32,7 @@ export async function ensureSession(): Promise<void> {
 	}
 
 	try {
-		const { data, error: apiError } = await client.GET('/auth/me' as never);
+		const { data, error: apiError } = await (client as any).GET('/auth/me');
 		if (apiError) {
 			throw new Error(typeof apiError === 'string' ? apiError : 'Error de autenticación');
 		}
@@ -102,7 +102,7 @@ export async function devLogin(email: string): Promise<void> {
 		return;
 	}
 
-	const { error: apiError } = await client.POST('/auth/dev-login' as never, {
+	const { error: apiError } = await (client as any).POST('/auth/dev-login', {
 		body: { email }
 	});
 	if (apiError) {
@@ -116,7 +116,7 @@ export async function devLogin(email: string): Promise<void> {
 export async function logout(): Promise<void> {
 	try {
 		if (!(import.meta.env.DEV && !import.meta.env.VITE_USE_API)) {
-			await client.POST('/auth/logout' as never);
+			await (client as any).POST('/auth/logout');
 		}
 	} catch {
 		// Even if backend fails, clear local state

@@ -59,15 +59,15 @@ Estrategia: **5 PRs encadenados**. Cada PR depende del anterior. Total: ~18 tare
 
 ## PR2 — Migración de stores (5 stores async)
 
-### T2.1 Migrar goalsStore.svelte.ts
+### T2.1 ~~Migrar goalsStore.svelte.ts~~ ✅
 
-- Reemplazar `$state` de fixtures por triplete `data`/`loading`/`error` tipado con `paths` desde `goals.d.ts`
-- Implementar `load()`: en DEV usa `structuredClone(fixtureGoalsData)`, en producción fetch real
-- Implementar `reload()` como alias de `load()`
-- Migrar getters (getCategories, getGoals, getKpis, etc.) a derivaciones de `data`
-- Migrar mutaciones (addCategory, updateGoal, etc.) a POST/PUT/DELETE + `await reload()`
-- Reemplazar `getCyclePhase()` de devContext por `getActivePhase()` de cycle store
-- **AC:** `load()` populat data desde fixture en DEV; `addCategory()` hace POST y reload; getters mantienen misma API pública
+- [x] Reemplazar `$state` de fixtures por triplete `data`/`loading`/`error` tipado con `paths` desde `goals.d.ts`
+- [x] Implementar `load()`: en DEV usa `structuredClone(fixtureGoalsData)`, en producción fetch real
+- [x] Implementar `reload()` como alias de `load()`
+- [x] Migrar getters (getCategories, getGoals, getKpis, etc.) a derivaciones de `data`
+- [x] Migrar mutaciones (addCategory, updateGoal, etc.) a POST/PUT/DELETE + `await reload()`
+- [x] Reemplazar `getCyclePhase()` de devContext por `getActivePhase()` de cycle store
+- [x] **AC:** `load()` popular data desde fixture en DEV; `addCategory()` hace POST y reload; getters mantienen misma API pública
 
 ### T2.2 Migrar competencyStore.svelte.ts
 
