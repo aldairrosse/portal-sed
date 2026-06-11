@@ -3,6 +3,7 @@
 	import { ensureSession } from '$lib/api/session.svelte';
 	import '../app.css';
 	import AppShell from '$lib/components/AppShell.svelte';
+	import ToastContainer from '$lib/components/ui/ToastContainer.svelte';
 
 	let { children } = $props();
 
@@ -14,3 +15,5 @@
 <AppShell>
 	{@render children()}
 </AppShell>
+
+<ToastContainer />
