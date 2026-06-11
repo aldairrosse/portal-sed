@@ -60,3 +60,67 @@ export async function ensureSession(): Promise<void> {
 export function getSession(): { user: AuthUser | null; loading: boolean; error: string | null } {
 	return { user, loading, error };
 }
+
+export async function devLogin(email: string): Promise<void> {
+	loading = true;
+	error = null;
+
+	if (import.meta.env.DEV && !import.meta.env.VITE_USE_API) {
+		const userMap: Record<string, AuthUser> = {
+			'dev-rh@empresa.com': {
+				employeeId: '00000000-0000-0000-0000-000000000001',
+				email: 'dev-rh@empresa.com',
+				name: 'Frankil Perez',
+				profileId: 'rh',
+				organizationId: '00000000-0000-0000-0000-000000000001'
+			},
+			'dev-jefe@empresa.com': {
+				employeeId: '00000000-0000-0000-0000-000000000002',
+				email: 'dev-jefe@empresa.com',
+				name: 'Juan Carlos',
+				profileId: 'jefe',
+				organizationId: '00000000-0000-0000-0000-000000000001'
+			},
+			'dev-colaborador@empresa.com': {
+				employeeId: '00000000-0000-0000-0000-000000000003',
+				email: 'dev-colaborador@empresa.com',
+				name: 'Maria Lopez',
+				profileId: 'colaborador',
+				organizationId: '00000000-0000-0000-0000-000000000001'
+			}
+		};
+
+		const match = userMap[email];
+		if (!match) {
+			error = 'Usuario demo no válido';
+			loading = false;
+			throw new Error('Usuario demo no válido');
+		}
+
+		user = { ...match };
+		loading = false;
+		return;
+	}
+
+	const { error: apiError } = await client.POST('/auth/dev-login' as never, {
+		body: { email }
+	});
+	if (apiError) {
+		error = typeof apiError === 'string' ? apiError : 'Error al iniciar sesión';
+		loading = false;
+		throw new Error(error);
+	}
+	await ensureSession();
+}
+
+export async function logout(): Promise<void> {
+	try {
+		if (!(import.meta.env.DEV && !import.meta.env.VITE_USE_API)) {
+			await client.POST('/auth/logout' as never);
+		}
+	} catch {
+		// Even if backend fails, clear local state
+	}
+	user = null;
+	window.location.href = '/login';
+}

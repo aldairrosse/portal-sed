@@ -6,6 +6,8 @@
     import { getProfile } from "$lib/stores/devContext.svelte";
     import { PROFILE_LABELS } from "$lib/types/evaluation";
     import { PROFILE_USERS } from "$lib/dev/profileUsers";
+    import { logout } from "$lib/api/session.svelte";
+    import { LogOut } from "@lucide/svelte";
     import {
         Home,
         Target,
@@ -115,6 +117,17 @@
             {/each}
         </ul>
     </nav>
+
+    <!-- Logout -->
+    <div class="px-3 mb-1">
+        <button
+            class="flex w-full items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-colors text-base-content/60 hover:bg-base-200 hover:text-error"
+            onclick={logout}
+        >
+            <LogOut class="w-[18px] h-[18px] flex-shrink-0" />
+            Cerrar sesión
+        </button>
+    </div>
 
     <!-- Footer -->
     <div class="px-5 py-4">

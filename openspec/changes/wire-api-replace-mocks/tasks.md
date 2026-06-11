@@ -34,25 +34,25 @@ Estrategia: **5 PRs encadenados**. Cada PR depende del anterior. Total: ~18 tare
 - [x] Exponer `getActivePhase()` y `getCycleState()`
 - **AC:** `loadCycle()` settea `activePhase` correctamente; coincide con valores de `CyclePhase`
 
-### T1.5 Integrar session en layout raíz
+### T1.5 Integrar session en layout raíz ✅
 
-- En `web/src/routes/+layout.svelte` (o +layout.ts), llamar `ensureSession()` antes de renderizar
-- Pasar sesión vía context o directamente como state global
+- [x] En `web/src/routes/+layout.svelte`, llamar `ensureSession()` en `onMount`
+- [x] Pasar sesión como state global vía `getSession()`
 - **AC:** Al cargar la app, se invoca `ensureSession()`; si falla, componentes pueden leer `error`
 
-### T1.6 Crear página `/login` (UI SSO limpia)
+### T1.6 Crear página `/login` (UI SSO limpia) ✅
 
-- Crear `web/src/routes/login/+page.svelte` — UI sin formularios, solo redirect/status
-- En PROD: redirect automático a SSO (futuro OIDC/SAML), mostrar spinner "Iniciando sesión con SSO..."
-- En DEV: botón "Acceso demo" que llama `POST /auth/dev-login` al dev auth service
-- afterNavigate: si ya hay sesión activa, redirigir a `/`
+- [x] Crear `web/src/routes/login/+page.svelte` — UI sin formularios, solo redirect/status
+- [x] En PROD: redirect automático a SSO (futuro OIDC/SAML), mostrar spinner "Iniciando sesión con SSO..."
+- [x] En DEV: botón "Acceso demo" que llama `devLogin()` a `session.svelte.ts`
+- [x] `$effect` reactivo: si ya hay sesión activa, redirigir a `/`
 - **AC:** `/login` renderiza sin 404; en DEV muestra botón demo; en PROD redirige a SSO; post-login redirige a home
 
-### T1.7 Agregar logout en Sidebar
+### T1.7 Agregar logout en Sidebar ✅
 
-- Modificar `web/src/lib/components/Sidebar.svelte` — agregar botón de logout
-- Implementar `logout()` en `session.svelte.ts` que llama `POST /auth/logout`
-- Limpiar estado local (user = null) y redirigir a `/login`
+- [x] Modificar `web/src/lib/components/Sidebar.svelte` — agregar botón de logout
+- [x] Implementar `logout()` en `session.svelte.ts` que llama `POST /auth/logout`
+- [x] Limpiar estado local (user = null) y redirigir a `/login`
 - **AC:** Botón logout visible en sidebar; al hacer click, limpia sesión y redirige a `/login`
 
 ---
