@@ -76,26 +76,34 @@ Estrategia: **5 PRs encadenados**. Cada PR depende del anterior. Total: ~18 tare
 - Migrar getters y mutaciones al patrón async
 - **AC:** Misma API pública; `load()` executa 2-4 requests paralelos; mutations via API + reload
 
-### T2.3 Migrar evaluationStore.svelte.ts
+### T2.3 ~~Migrar evaluationStore.svelte.ts~~ ✅
 
-- Triplete `data`/`loading`/`error` con tipo desde `evaluations.d.ts`
-- `load()` hace `GET /evaluations` + `GET /evaluations/summary`
-- Migrar `submitSelfEvaluation()`, `submitRHEvaluation()`, `finalizeEvaluation()` a llamadas API
-- Merge de RH evaluations en competencyRatings se mantiene como lógica local post-fetch
+- [x] Triplete `data`/`loading`/`error` con tipo `StoreData` desde `evaluations.d.ts`
+- [x] `load()` con guard DEV que carga fixtures + merge RH; en PROD llama `GET /evaluations/{id}`
+- [x] `reload()` como alias de `load()`
+- [x] Getters migrados a derivaciones de `data` (getCompetencyRatings, getGoalClosures, getEvaluationStatus)
+- [x] Mutaciones migradas a `async`: `rateCompetency`, `closeGoal`, `rhRateCompetency`, `rhAssessGoal`, `addManagerComment`
+- [x] Nuevas funciones `submitSelfEvaluation()`, `submitRHEvaluation()`, `finalizeEvaluation()` con llamadas POST + reload
+- [x] Merge de RH evaluations en competencyRatings se mantiene como lógica local post-fetch
+- [x] Referencia a `getPhase()` de devContext reemplazada por `getActivePhase()` de cycle store
 - **AC:** Carga fixture en DEV; submit via POST; reload tras mutación
 
-### T2.4 Migrar nineBoxStore.svelte.ts
+### T2.4 ~~Migrar nineBoxStore.svelte.ts~~ ✅
 
-- Triplete `data`/`loading`/`error` con tipo desde `evaluations.d.ts` (o spec propio nine-box)
-- `load()` hace `GET /nine-box/matrices`, `GET /nine-box/scales`, `GET /nine-box/quadrants`
-- Migrar `computeQuadrant()` como función pura (sin cambios)
+- [x] Triplete `data`/`loading`/`error` con tipo desde `evaluations.d.ts`
+- [x] `load()` hace `GET /nine-box/matrices`, `GET /nine-box/quadrants`
+- [x] `computeQuadrant()` se mantiene como función pura (sin cambios)
+- [x] Getters migrados a derivaciones de `data?.entries ?? []`, `data?.quadrantDefs ?? []`
+- [x] Mutaciones migradas a async con DEV fallback local y API call + reload
 - **AC:** computeQuadrant funciona igual; load obtiene matrices reales en prod
 
-### T2.5 Migrar orgHierarchyStore.svelte.ts
+### T2.5 ~~Migrar orgHierarchyStore.svelte.ts~~ ✅
 
-- Triplete `data`/`loading`/`error`
-- `load()` hace `GET /org-tree`
-- Traversal helpers (findNode, getDescendants, getLeafIds) se mantienen como funciones puras sobre `data`
+- [x] Triplete `data`/`loading`/`error`
+- [x] `load()`: DEV fixture → structuredClone; API → descubre árbol vía `/org-trees`, luego fetch `/org-trees/{treeId}/nodes?format=nested&depth=-1`
+- [x] Traversal helpers (findNode, getDescendants, getLeafIds) se mantienen como funciones puras sobre `data`
+- [x] Getters migrados a `data?.x ?? fallback`
+- [x] `reload()` alias, `isLoading()`, `getError()` para componentes (T3.5)
 - **AC:** Árbol se carga desde API en prod; traversal helpers funcionan idéntico
 
 ---
