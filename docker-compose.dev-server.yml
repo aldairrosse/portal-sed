@@ -1,0 +1,12 @@
+services:
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile.dev
+      args:
+        VITE_SHOW_DEV_TOOLBAR: ${VITE_SHOW_DEV_TOOLBAR:-false}
+    ports:
+      - "${WEB_PORT:-5173}:5173"
+    volumes:
+      - ./data:/data
+      - /app/node_modules
