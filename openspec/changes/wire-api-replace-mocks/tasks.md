@@ -216,13 +216,13 @@ Estrategia: **5 PRs encadenados**. Cada PR depende del anterior. Total: ~18 tare
 
 ## PR5 — Tests y verificación
 
-### T5.1 Tests de client.ts
+### T5.1 ~~Tests de client.ts~~ ✅
 
-- Crear `web/src/lib/api/client.test.ts`
-- Testear que interceptor 401 invoca `window.location.href = '/login'`
-- Testear que `baseURL` usa `VITE_API_URL` cuando está seteado
-- Testear que `credentials: 'include'` se aplica en cada request
-- **AC:** Tests pasan con Vitest
+- [x] Crear `web/src/lib/api/client.test.ts`
+- [x] Testear que interceptor 401 invoca `window.location.href = '/login'`
+- [x] Testear que `baseURL` usa `VITE_API_URL` cuando está seteado
+- [x] Testear que `credentials: 'include'` se aplica en cada request
+- **AC:** Tests pasan con Vitest ✅
 
 ### T5.2 Tests de goalsStore (dev fallback + API load)
 
