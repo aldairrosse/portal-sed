@@ -1,10 +1,11 @@
 <script lang="ts">
 	import OrgHierarchyTree from '$lib/components/org-hierarchy/OrgHierarchyTree.svelte';
-	import { getRoot, getNodeById } from '$lib/stores/orgHierarchyStore.svelte';
+	import { getRoot, getNodeById, isLoading, getError, reload } from '$lib/stores/orgHierarchyStore.svelte';
 	import { getProfile } from '$lib/stores/devContext.svelte';
 	import { PROFILE_LABELS, type EvaluationProfile } from '$lib/types/evaluation';
 	import type { OrgNode } from '$lib/types/org-hierarchy';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
+	import PageSkeleton from '$lib/components/ui/PageSkeleton.svelte';
 	import { MapPin, Target, ArrowUpRight, Briefcase, Network, Users } from '@lucide/svelte';
 
 	// ─── Profile guard ─────────────────────────────────────────────────────
@@ -108,6 +109,39 @@
 			actionLabel="Volver al inicio"
 			actionHref="/"
 		/>
+	{:else if isLoading()}
+		<div class="flex flex-col lg:flex-row gap-8">
+			<div class="lg:w-1/2 xl:w-2/5">
+				<div class="card bg-base-100 border border-base-300">
+					<div class="card-body p-0">
+						<h2 class="card-title text-xs font-semibold text-base-content/50 tracking-wide px-4 pt-4">
+							Organigrama
+						</h2>
+						<OrgHierarchyTree loading={true} />
+					</div>
+				</div>
+			</div>
+			<div class="lg:w-1/2 xl:w-3/5">
+				<div class="card bg-base-100 border border-base-300">
+					<div class="card-body p-8 text-center">
+						<PageSkeleton variant="default" rows={5} />
+					</div>
+				</div>
+			</div>
+		</div>
+	{:else if getError()}
+		<div class="flex flex-col lg:flex-row gap-8">
+			<div class="lg:w-1/2 xl:w-2/5">
+				<div class="card bg-base-100 border border-base-300">
+					<div class="card-body p-0">
+						<h2 class="card-title text-xs font-semibold text-base-content/50 tracking-wide px-4 pt-4">
+							Organigrama
+						</h2>
+						<OrgHierarchyTree error={getError()} onretry={reload} />
+					</div>
+				</div>
+			</div>
+		</div>
 	{:else if !treeRoot}
 		<EmptyState
 			title="Sin datos"

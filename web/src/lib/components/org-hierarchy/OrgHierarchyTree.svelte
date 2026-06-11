@@ -1,33 +1,52 @@
 <script lang="ts">
 	import type { OrgNode } from '$lib/types/org-hierarchy';
 	import TreeNode from './TreeNode.svelte';
+	import PageSkeleton from '$lib/components/ui/PageSkeleton.svelte';
+	import ErrorState from '$lib/components/ui/ErrorState.svelte';
 
 	interface Props {
-		node: OrgNode;
+		node?: OrgNode | null;
 		onNodeSelect?: (node: OrgNode) => void;
 		selectedNodeId?: string;
 		maxDepth?: number;
 		/** IDs of nodes that start expanded (default: root only) */
 		initialExpandedIds?: string[];
+		/** Show loading skeleton instead of tree */
+		loading?: boolean;
+		/** Show error state with optional retry */
+		error?: string | null;
+		/** Called when the retry button is clicked */
+		onretry?: () => void;
 	}
 
 	let {
-		node,
+		node = null,
 		onNodeSelect = () => {},
 		selectedNodeId = '',
 		maxDepth = 99,
-		initialExpandedIds = [node.id]
+		initialExpandedIds = [],
+		loading = false,
+		error = null,
+		onretry
 	}: Props = $props();
 </script>
 
-<ul class="menu bg-base-100 w-full text-sm p-0">
-	<TreeNode
-		{node}
-		{onNodeSelect}
-		{selectedNodeId}
-		{maxDepth}
-		depth={0}
-		initialExpanded={initialExpandedIds.includes(node.id)}
-		{initialExpandedIds}
-	/>
-</ul>
+{#if loading}
+	<div class="p-4">
+		<PageSkeleton variant="card" rows={4} />
+	</div>
+{:else if error}
+	<ErrorState message={error} {onretry} />
+{:else if node}
+	<ul class="menu bg-base-100 w-full text-sm p-0">
+		<TreeNode
+			{node}
+			{onNodeSelect}
+			{selectedNodeId}
+			{maxDepth}
+			depth={0}
+			initialExpanded={initialExpandedIds.includes(node.id)}
+			{initialExpandedIds}
+		/>
+	</ul>
+{/if}

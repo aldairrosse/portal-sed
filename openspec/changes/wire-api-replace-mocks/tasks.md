@@ -125,9 +125,11 @@ Estrategia: **5 PRs encadenados**. Cada PR depende del anterior. Total: ~18 tare
 - `EmployeeEvaluationTable.svelte`, `CompetencyRatingCard.svelte`, `EmployeeEvaluationDetail.svelte`, `GoalClosureCard.svelte`
 - **AC:** Mismo comportamiento que T3.1 para evaluación
 
-### T3.3 Actualizar componentes de competency
+### T3.3 Actualizar componentes de competency ✅
 
-- En `web/src/lib/components/competency/*.svelte`, agregar loading/error wrappers
+- [x] Exportar `isLoading()` y `getError()` desde competencyStore
+- [x] Pages de pillars/competencias usan loading/error del store con PageSkeleton/ErrorState
+- [x] Reemplazar success alerts por `notifications.success()`
 - **AC:** Mismo comportamiento
 
 ### T3.4 Actualizar componentes de nine-box
@@ -135,9 +137,11 @@ Estrategia: **5 PRs encadenados**. Cada PR depende del anterior. Total: ~18 tare
 - En `web/src/lib/components/nine-box/*.svelte`, agregar loading/error wrappers
 - **AC:** Mismo comportamiento
 
-### T3.5 Actualizar componentes de org-hierarchy
+### T3.5 ~~Actualizar componentes de org-hierarchy~~ ✅
 
-- En `web/src/lib/components/org-hierarchy/*.svelte`, agregar loading/error wrappers
+- [x] En `web/src/lib/components/org-hierarchy/*.svelte`, agregar loading/error wrappers
+- [x] `OrgHierarchyTree.svelte`: props `loading`, `error`, `onretry` con `PageSkeleton`/`ErrorState`
+- [x] `jerarquia/+page.svelte`: usa `isLoading()`, `getError()`, `reload()` del store
 - **AC:** Mismo comportamiento
 
 ### T3.6 Reemplazar getPhase() de devContext por cycle store en todos los componentes
