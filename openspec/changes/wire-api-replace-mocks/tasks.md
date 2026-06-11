@@ -69,12 +69,14 @@ Estrategia: **5 PRs encadenados**. Cada PR depende del anterior. Total: ~18 tare
 - [x] Reemplazar `getCyclePhase()` de devContext por `getActivePhase()` de cycle store
 - [x] **AC:** `load()` popular data desde fixture en DEV; `addCategory()` hace POST y reload; getters mantienen misma API pública
 
-### T2.2 Migrar competencyStore.svelte.ts
+### T2.2 ~~Migrar competencyStore.svelte.ts~~ ✅
 
-- Triplete `data`/`loading`/`error` con tipo desde `competency.d.ts`
-- `load()` hace `GET /pillars`, `GET /competencies`, `GET /levels`, `GET /acceptance-levels` (o endpoints batch si existen)
-- Migrar getters y mutaciones al patrón async
-- **AC:** Misma API pública; `load()` executa 2-4 requests paralelos; mutations via API + reload
+- [x] Triplete `data`/`loading`/`error` con `StoreData` interface
+- [x] `load()` con guard DEV + 3 requests paralelos (pillars + levels + acceptance-levels), con fase 2 de competencias por pilar
+- [x] Migrar getters a derivaciones null-safe desde `data`
+- [x] Migrar mutaciones a async: pillars (POST/PUT/DELETE), competencies (POST/PUT/DELETE), acceptance levels (POST), otras local-only
+- [x] Agregar `CompetencyPaths` a `client.ts` para tipado de endpoints
+- **AC:** Misma API pública; `load()` executa requests en fases; mutations via API + reload en modo producción
 
 ### T2.3 ~~Migrar evaluationStore.svelte.ts~~ ✅
 
