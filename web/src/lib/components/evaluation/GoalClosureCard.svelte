@@ -3,6 +3,8 @@
 	import type { GoalClosure } from '$lib/types/evaluation-result';
 	import ProgressIndicator from '$lib/components/goals/ProgressIndicator.svelte';
 	import KpiBadge from '$lib/components/goals/KpiBadge.svelte';
+	import PageSkeleton from '$lib/components/ui/PageSkeleton.svelte';
+	import ErrorState from '$lib/components/ui/ErrorState.svelte';
 
 	interface Props {
 		goal: Goal;
@@ -15,6 +17,8 @@
 		onSaveClosure?: (goalId: string, finalProgress: number, selfAssessment: string) => void;
 		onRhAssessGoal?: (goalId: string, rhAssessment: string) => void;
 		onManagerComment?: (goalId: string, comment: string) => void;
+		loading?: boolean;
+		error?: string | null;
 	}
 
 	let {
@@ -26,7 +30,9 @@
 		showSelfAssessment = true,
 		onSaveClosure,
 		onRhAssessGoal,
-		onManagerComment
+		onManagerComment,
+		loading = false,
+		error = null,
 	}: Props = $props();
 
 	const progressId = `progress-${goal.id}`;
@@ -65,6 +71,11 @@
 	}
 </script>
 
+{#if loading}
+	<PageSkeleton variant="card" rows={1} />
+{:else if error}
+	<ErrorState message={error} />
+{:else}
 <div class="card bg-base-100 border border-base-300">
 	<div class="card-body px-0 py-4">
 		<!-- Goal header -->
@@ -235,3 +246,4 @@
 		{/if}
 	</div>
 </div>
+{/if}

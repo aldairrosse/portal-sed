@@ -2,6 +2,8 @@
 	import type { Pillar, Competency, LevelDefinition } from '$lib/types/competency';
 	import type { CompetencyRating } from '$lib/types/evaluation-result';
 	import ScaleRatingSelector from './ScaleRatingSelector.svelte';
+	import PageSkeleton from '$lib/components/ui/PageSkeleton.svelte';
+	import ErrorState from '$lib/components/ui/ErrorState.svelte';
 
 	interface Props {
 		pillar: Pillar;
@@ -14,6 +16,8 @@
 		onRhRate?: (competencyId: string, level: 1 | 2 | 3 | 4 | 5, comment?: string) => void;
 		disabled?: boolean;
 		showCommentInput?: boolean;
+		loading?: boolean;
+		error?: string | null;
 	}
 
 	let {
@@ -26,7 +30,9 @@
 		onRate,
 		onRhRate,
 		disabled = false,
-		showCommentInput = true
+		showCommentInput = true,
+		loading = false,
+		error = null,
 	}: Props = $props();
 
 	function getRating(competencyId: string): CompetencyRating | undefined {
@@ -46,6 +52,11 @@
 	}
 </script>
 
+{#if loading}
+	<PageSkeleton variant="card" rows={1} />
+{:else if error}
+	<ErrorState message={error} />
+{:else}
 <div class="card bg-base-100 border border-base-300">
 	<div class="card-body px-0">
 		<h3 class="text-base font-semibold text-base-content mb-1">{pillar.name}</h3>
@@ -117,3 +128,4 @@
 		</div>
 	</div>
 </div>
+{/if}

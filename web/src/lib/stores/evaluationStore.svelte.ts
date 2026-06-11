@@ -20,6 +20,16 @@ let data = $state<StoreData | null>(null);
 let loading = $state(true);
 let error = $state<string | null>(null);
 
+/** @returns true while load() is in progress. */
+export function isLoading(): boolean {
+	return loading;
+}
+
+/** @returns the current error message, or null if no error. */
+export function getError(): string | null {
+	return error;
+}
+
 // ─── Fixture loaders ──────────────────────────────────────────────────────────
 
 function mergeRHEvaluations(
