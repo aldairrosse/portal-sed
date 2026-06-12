@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Plus, Trash2, Save, X, Pencil, Library, TrendingUp, TrendingDown } from '@lucide/svelte';
 	import type { KPI, KpiUnit } from '$lib/types/goal';
-	import { getKpis, addKpi, updateKpi, deleteKpi, loading, error, load } from '$lib/stores/goalsStore.svelte';
+	import { getKpis, addKpi, updateKpi, deleteKpi, storeState, load } from '$lib/stores/goalsStore.svelte';
 	import PageSkeleton from '$lib/components/ui/PageSkeleton.svelte';
 	import ErrorState from '$lib/components/ui/ErrorState.svelte';
 	import * as notifications from '$lib/stores/notifications.svelte';
@@ -164,10 +164,10 @@
 	<title>Biblioteca de KPI — SED</title>
 </svelte:head>
 
-{#if loading}
+{#if storeState.loading}
 	<PageSkeleton variant="table" rows={5} />
-{:else if error}
-	<ErrorState message={error} onretry={load} />
+{:else if storeState.error}
+	<ErrorState message={storeState.error} onretry={load} />
 {:else}
 
 <div class="space-y-6 max-w-full min-w-0">

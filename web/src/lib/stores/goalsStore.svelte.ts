@@ -37,10 +37,16 @@ interface StoreData {
 const EPSILON = 0.01;
 
 // ─── Triplete state ───────────────────────────────────────────────────────────
+// Svelte 5 idiomatic pattern: use a class with $state fields so that
+// reassignable reactive state can be safely exported from a .svelte.ts module.
 
-let data = $state<StoreData | null>(null);
-export let loading = $state(true);
-export let error = $state<string | null>(null);
+class StoreState {
+	data = $state<StoreData | null>(null);
+	loading = $state(true);
+	error = $state<string | null>(null);
+}
+
+export const storeState = new StoreState();
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -204,12 +210,12 @@ function normalizeApiData(
  * In production / VITE_USE_API=true: fetches from the real API endpoints.
  */
 export async function load(): Promise<void> {
-	loading = true;
-	error = null;
+	storeState.loading = true;
+	storeState.error = null;
 
 	if (import.meta.env.DEV && !import.meta.env.VITE_USE_API) {
-		data = loadFixtures();
-		loading = false;
+		storeState.data = loadFixtures();
+		storeState.loading = false;
 		return;
 	}
 
@@ -246,15 +252,15 @@ export async function load(): Promise<void> {
 			| null
 			| undefined;
 
-		data = normalizeApiData(
+		storeState.data = normalizeApiData(
 			apiCategories as Parameters<typeof normalizeApiData>[0],
 			apiKpis as Parameters<typeof normalizeApiData>[1],
 			apiAssignment ?? null
 		);
 	} catch (e) {
-		error = e instanceof Error ? e.message : 'Error desconocido al cargar datos de objetivos';
+		storeState.error = e instanceof Error ? e.message : 'Error desconocido al cargar datos de objetivos';
 	} finally {
-		loading = false;
+		storeState.loading = false;
 	}
 }
 
@@ -266,27 +272,27 @@ export function reload(): Promise<void> {
 // ─── Getters: General ─────────────────────────────────────────────────────────
 
 export function getCategories(): GoalCategory[] {
-	return data?.categories ?? [];
+	return storeState.data?.categories ?? [];
 }
 
 export function getGoals(): Goal[] {
-	return data?.goals ?? [];
+	return storeState.data?.goals ?? [];
 }
 
 export function getKpis(): KPI[] {
-	return data?.kpis ?? [];
+	return storeState.data?.kpis ?? [];
 }
 
 export function getGoalKpiLinks(): GoalKpiLink[] {
-	return data?.goalKpiLinks ?? [];
+	return storeState.data?.goalKpiLinks ?? [];
 }
 
 export function getAssignments(): EmployeeAssignment[] {
-	return data?.assignments ?? [];
+	return storeState.data?.assignments ?? [];
 }
 
 export function getChangeRequests(): ChangeRequest[] {
-	return data?.changeRequests ?? [];
+	return storeState.data?.changeRequests ?? [];
 }
 
 export function getCyclePhase(): CyclePhase {
@@ -296,15 +302,15 @@ export function getCyclePhase(): CyclePhase {
 // ─── Getters: Progress & Comments ─────────────────────────────────────────────
 
 export function getGoalProgress(goalId: string): number | undefined {
-	return data?.goals.find((g) => g.id === goalId)?.progress;
+	return storeState.data?.goals.find((g) => g.id === goalId)?.progress;
 }
 
 export function getGoalComments(goalId: string): GoalComment[] {
-	return data?.goals.find((g) => g.id === goalId)?.comments ?? [];
+	return storeState.data?.goals.find((g) => g.id === goalId)?.comments ?? [];
 }
 
 export function getCategoryProgressAverage(categoryId: string): number {
-	const catGoals = (data?.goals ?? []).filter((g) => g.categoryId === categoryId);
+	const catGoals = (storeState.data?.goals ?? []).filter((g) => g.categoryId === categoryId);
 	if (catGoals.length === 0) return 0;
 	const withProgress = catGoals.filter((g) => g.progress !== undefined);
 	if (withProgress.length === 0) return 0;
@@ -351,30 +357,30 @@ export function getGoalPermissions(
 // ─── Getters: Filtered ────────────────────────────────────────────────────────
 
 export function getGoalsByCategory(categoryId: string): Goal[] {
-	return (data?.goals ?? []).filter((g) => g.categoryId === categoryId);
+	return (storeState.data?.goals ?? []).filter((g) => g.categoryId === categoryId);
 }
 
 export function getKpisForGoal(goalId: string): KPI[] {
-	const linkKpiIds = (data?.goalKpiLinks ?? [])
+	const linkKpiIds = (storeState.data?.goalKpiLinks ?? [])
 		.filter((link) => link.goalId === goalId)
 		.map((link) => link.kpiId);
-	return (data?.kpis ?? []).filter((kpi) => linkKpiIds.includes(kpi.id));
+	return (storeState.data?.kpis ?? []).filter((kpi) => linkKpiIds.includes(kpi.id));
 }
 
 export function getLinksForGoal(goalId: string): GoalKpiLink[] {
-	return (data?.goalKpiLinks ?? []).filter((link) => link.goalId === goalId);
+	return (storeState.data?.goalKpiLinks ?? []).filter((link) => link.goalId === goalId);
 }
 
 export function getLinksForKpi(kpiId: string): GoalKpiLink[] {
-	return (data?.goalKpiLinks ?? []).filter((link) => link.kpiId === kpiId);
+	return (storeState.data?.goalKpiLinks ?? []).filter((link) => link.kpiId === kpiId);
 }
 
 export function getAssignmentsByProfile(profileId: EvaluationProfile): EmployeeAssignment[] {
-	return (data?.assignments ?? []).filter((a) => a.profileId === profileId);
+	return (storeState.data?.assignments ?? []).filter((a) => a.profileId === profileId);
 }
 
 export function getAssignmentByEmployee(employeeId: string): EmployeeAssignment | undefined {
-	return (data?.assignments ?? []).find((a) => a.employeeId === employeeId);
+	return (storeState.data?.assignments ?? []).find((a) => a.employeeId === employeeId);
 }
 
 // ─── Getters: Validation ──────────────────────────────────────────────────────
@@ -383,7 +389,7 @@ export function getAssignmentByEmployee(employeeId: string): EmployeeAssignment 
  * Sum of all category weights equals 100 ± ε.
  */
 function doCategoryWeightsSumTo100(): boolean {
-	const sum = (data?.categories ?? []).reduce((acc, c) => acc + c.weight, 0);
+	const sum = (storeState.data?.categories ?? []).reduce((acc, c) => acc + c.weight, 0);
 	return Math.abs(sum - 100) <= EPSILON;
 }
 
@@ -391,8 +397,8 @@ function doCategoryWeightsSumTo100(): boolean {
  * For each category, the goals within it sum to 100 ± ε.
  */
 function areAllCategoryGoalWeightsValid(): boolean {
-	for (const cat of data?.categories ?? []) {
-		const catGoals = (data?.goals ?? []).filter((g) => g.categoryId === cat.id);
+	for (const cat of storeState.data?.categories ?? []) {
+		const catGoals = (storeState.data?.goals ?? []).filter((g) => g.categoryId === cat.id);
 		if (catGoals.length === 0) continue;
 		const sum = catGoals.reduce((acc, g) => acc + g.weight, 0);
 		if (Math.abs(sum - 100) > EPSILON) return false;
@@ -412,7 +418,7 @@ export function isAssignmentValid(): boolean {
  * Returns true when the goals in the given category sum to 100 ± ε.
  */
 export function isCategoryGoalsWeightValid(categoryId: string): boolean {
-	const catGoals = (data?.goals ?? []).filter((g) => g.categoryId === categoryId);
+	const catGoals = (storeState.data?.goals ?? []).filter((g) => g.categoryId === categoryId);
 	if (catGoals.length === 0) return true;
 	const sum = catGoals.reduce((acc, g) => acc + g.weight, 0);
 	return Math.abs(sum - 100) <= EPSILON;
@@ -422,7 +428,7 @@ export function isCategoryGoalsWeightValid(categoryId: string): boolean {
 
 export async function addCategory(category: GoalCategory): Promise<void> {
 	if (import.meta.env.DEV && !import.meta.env.VITE_USE_API) {
-		data = { ...data!, categories: [...(data?.categories ?? []), category] };
+		storeState.data = { ...storeState.data!, categories: [...(storeState.data?.categories ?? []), category] };
 		return;
 	}
 	const empId = getEmployeeId();
@@ -436,9 +442,9 @@ export async function addCategory(category: GoalCategory): Promise<void> {
 
 export async function updateCategory(id: string, updates: Partial<Omit<GoalCategory, 'id'>>): Promise<void> {
 	if (import.meta.env.DEV && !import.meta.env.VITE_USE_API) {
-		data = {
-			...data!,
-			categories: (data?.categories ?? []).map((c) => (c.id === id ? { ...c, ...updates } : c))
+		storeState.data = {
+			...storeState.data!,
+			categories: (storeState.data?.categories ?? []).map((c) => (c.id === id ? { ...c, ...updates } : c))
 		};
 		return;
 	}
@@ -462,12 +468,12 @@ export async function deleteCategory(id: string): Promise<void> {
 
 	if (import.meta.env.DEV && !import.meta.env.VITE_USE_API) {
 		// Cascade: remove goals of this category
-		const deletedGoalIds = (data?.goals ?? []).filter((g) => g.categoryId === id).map((g) => g.id);
-		data = {
-			...data!,
-			goals: (data?.goals ?? []).filter((g) => g.categoryId !== id),
-			goalKpiLinks: (data?.goalKpiLinks ?? []).filter((link) => !deletedGoalIds.includes(link.goalId)),
-			categories: (data?.categories ?? []).filter((c) => c.id !== id)
+		const deletedGoalIds = (storeState.data?.goals ?? []).filter((g) => g.categoryId === id).map((g) => g.id);
+		storeState.data = {
+			...storeState.data!,
+			goals: (storeState.data?.goals ?? []).filter((g) => g.categoryId !== id),
+			goalKpiLinks: (storeState.data?.goalKpiLinks ?? []).filter((link) => !deletedGoalIds.includes(link.goalId)),
+			categories: (storeState.data?.categories ?? []).filter((c) => c.id !== id)
 		};
 		return;
 	}
@@ -483,7 +489,7 @@ export async function deleteCategory(id: string): Promise<void> {
 
 export async function addGoal(goal: Goal): Promise<void> {
 	if (import.meta.env.DEV && !import.meta.env.VITE_USE_API) {
-		data = { ...data!, goals: [...(data?.goals ?? []), goal] };
+		storeState.data = { ...storeState.data!, goals: [...(storeState.data?.goals ?? []), goal] };
 		return;
 	}
 	const empId = getEmployeeId();
@@ -503,9 +509,9 @@ export async function addGoal(goal: Goal): Promise<void> {
 
 export async function updateGoal(id: string, updates: Partial<Omit<Goal, 'id'>>): Promise<void> {
 	if (import.meta.env.DEV && !import.meta.env.VITE_USE_API) {
-		data = {
-			...data!,
-			goals: (data?.goals ?? []).map((g) => (g.id === id ? { ...g, ...updates } : g))
+		storeState.data = {
+			...storeState.data!,
+			goals: (storeState.data?.goals ?? []).map((g) => (g.id === id ? { ...g, ...updates } : g))
 		};
 		return;
 	}
@@ -530,10 +536,10 @@ export async function deleteGoal(id: string): Promise<void> {
 	if (phase === 'medio-anio' || phase === 'fin-anio') return;
 
 	if (import.meta.env.DEV && !import.meta.env.VITE_USE_API) {
-		data = {
-			...data!,
-			goals: (data?.goals ?? []).filter((g) => g.id !== id),
-			goalKpiLinks: (data?.goalKpiLinks ?? []).filter((link) => link.goalId !== id)
+		storeState.data = {
+			...storeState.data!,
+			goals: (storeState.data?.goals ?? []).filter((g) => g.id !== id),
+			goalKpiLinks: (storeState.data?.goalKpiLinks ?? []).filter((link) => link.goalId !== id)
 		};
 		return;
 	}
@@ -548,7 +554,7 @@ export async function deleteGoal(id: string): Promise<void> {
 
 export async function addKpi(kpi: KPI): Promise<void> {
 	if (import.meta.env.DEV && !import.meta.env.VITE_USE_API) {
-		data = { ...data!, kpis: [...(data?.kpis ?? []), kpi] };
+		storeState.data = { ...storeState.data!, kpis: [...(storeState.data?.kpis ?? []), kpi] };
 		return;
 	}
 	const { error: apiError } = await client.POST('/kpis', {
@@ -564,9 +570,9 @@ export async function addKpi(kpi: KPI): Promise<void> {
 
 export async function updateKpi(id: string, updates: Partial<Omit<KPI, 'id'>>): Promise<void> {
 	if (import.meta.env.DEV && !import.meta.env.VITE_USE_API) {
-		data = {
-			...data!,
-			kpis: (data?.kpis ?? []).map((k) => (k.id === id ? { ...k, ...updates } : k))
+		storeState.data = {
+			...storeState.data!,
+			kpis: (storeState.data?.kpis ?? []).map((k) => (k.id === id ? { ...k, ...updates } : k))
 		};
 		return;
 	}
@@ -584,10 +590,10 @@ export async function updateKpi(id: string, updates: Partial<Omit<KPI, 'id'>>): 
 
 export async function deleteKpi(id: string): Promise<void> {
 	if (import.meta.env.DEV && !import.meta.env.VITE_USE_API) {
-		data = {
-			...data!,
-			kpis: (data?.kpis ?? []).filter((k) => k.id !== id),
-			goalKpiLinks: (data?.goalKpiLinks ?? []).filter((link) => link.kpiId !== id)
+		storeState.data = {
+			...storeState.data!,
+			kpis: (storeState.data?.kpis ?? []).filter((k) => k.id !== id),
+			goalKpiLinks: (storeState.data?.goalKpiLinks ?? []).filter((link) => link.kpiId !== id)
 		};
 		return;
 	}
@@ -602,11 +608,11 @@ export async function deleteKpi(id: string): Promise<void> {
 
 export async function linkKpiToGoal(goalId: string, kpiId: string, weight?: number): Promise<void> {
 	// Idempotent: skip if link already exists
-	const exists = (data?.goalKpiLinks ?? []).some((link) => link.goalId === goalId && link.kpiId === kpiId);
+	const exists = (storeState.data?.goalKpiLinks ?? []).some((link) => link.goalId === goalId && link.kpiId === kpiId);
 	if (exists) return;
 
 	if (import.meta.env.DEV && !import.meta.env.VITE_USE_API) {
-		data = { ...data!, goalKpiLinks: [...(data?.goalKpiLinks ?? []), { goalId, kpiId, weight }] };
+		storeState.data = { ...storeState.data!, goalKpiLinks: [...(storeState.data?.goalKpiLinks ?? []), { goalId, kpiId, weight }] };
 		return;
 	}
 	const { error: apiError } = await client.POST('/goals/{goalId}/kpis', {
@@ -619,9 +625,9 @@ export async function linkKpiToGoal(goalId: string, kpiId: string, weight?: numb
 
 export async function unlinkKpiFromGoal(goalId: string, kpiId: string): Promise<void> {
 	if (import.meta.env.DEV && !import.meta.env.VITE_USE_API) {
-		data = {
-			...data!,
-			goalKpiLinks: (data?.goalKpiLinks ?? []).filter((link) => !(link.goalId === goalId && link.kpiId === kpiId))
+		storeState.data = {
+			...storeState.data!,
+			goalKpiLinks: (storeState.data?.goalKpiLinks ?? []).filter((link) => !(link.goalId === goalId && link.kpiId === kpiId))
 		};
 		return;
 	}
@@ -635,18 +641,18 @@ export async function unlinkKpiFromGoal(goalId: string, kpiId: string): Promise<
 export async function updateLinkWeight(goalId: string, kpiId: string, weight: number | undefined): Promise<void> {
 	// No dedicated API endpoint for link weight. Local-only for now.
 	if (import.meta.env.DEV && !import.meta.env.VITE_USE_API) {
-		data = {
-			...data!,
-			goalKpiLinks: (data?.goalKpiLinks ?? []).map((link) =>
+		storeState.data = {
+			...storeState.data!,
+			goalKpiLinks: (storeState.data?.goalKpiLinks ?? []).map((link) =>
 				link.goalId === goalId && link.kpiId === kpiId ? { ...link, weight } : link
 			)
 		};
 		return;
 	}
 	// In API mode, update locally and rely on next reload() for consistency
-	data = {
-		...data!,
-		goalKpiLinks: (data?.goalKpiLinks ?? []).map((link) =>
+	storeState.data = {
+		...storeState.data!,
+		goalKpiLinks: (storeState.data?.goalKpiLinks ?? []).map((link) =>
 			link.goalId === goalId && link.kpiId === kpiId ? { ...link, weight } : link
 		)
 	};
@@ -656,7 +662,7 @@ export async function updateLinkWeight(goalId: string, kpiId: string, weight: nu
 
 export async function addAssignment(assignment: EmployeeAssignment): Promise<void> {
 	if (import.meta.env.DEV && !import.meta.env.VITE_USE_API) {
-		data = { ...data!, assignments: [...(data?.assignments ?? []), assignment] };
+		storeState.data = { ...storeState.data!, assignments: [...(storeState.data?.assignments ?? []), assignment] };
 		return;
 	}
 	const empId = getEmployeeId();
@@ -673,9 +679,9 @@ export async function updateAssignment(
 	updates: Partial<Omit<EmployeeAssignment, 'id'>>
 ): Promise<void> {
 	// No dedicated API endpoint for partial assignment update. Local-only for now.
-	data = {
-		...data!,
-		assignments: (data?.assignments ?? []).map((a) =>
+	storeState.data = {
+		...storeState.data!,
+		assignments: (storeState.data?.assignments ?? []).map((a) =>
 			a.id === id
 				? { ...a, ...updates, updatedAt: new Date().toISOString() }
 				: a
@@ -685,17 +691,17 @@ export async function updateAssignment(
 
 export async function deleteAssignment(id: string): Promise<void> {
 	// No dedicated API endpoint for assignment deletion. Local-only for now.
-	data = {
-		...data!,
-		assignments: (data?.assignments ?? []).filter((a) => a.id !== id)
+	storeState.data = {
+		...storeState.data!,
+		assignments: (storeState.data?.assignments ?? []).filter((a) => a.id !== id)
 	};
 }
 
 export async function assignGoalToEmployee(employeeId: string, goalId: string): Promise<void> {
 	// No dedicated API endpoint. Local-only for now.
-	data = {
-		...data!,
-		assignments: (data?.assignments ?? []).map((a) =>
+	storeState.data = {
+		...storeState.data!,
+		assignments: (storeState.data?.assignments ?? []).map((a) =>
 			a.employeeId === employeeId && !a.goalIds.includes(goalId)
 				? { ...a, goalIds: [...a.goalIds, goalId], updatedAt: new Date().toISOString() }
 				: a
@@ -705,9 +711,9 @@ export async function assignGoalToEmployee(employeeId: string, goalId: string): 
 
 export async function unassignGoalFromEmployee(employeeId: string, goalId: string): Promise<void> {
 	// No dedicated API endpoint. Local-only for now.
-	data = {
-		...data!,
-		assignments: (data?.assignments ?? []).map((a) =>
+	storeState.data = {
+		...storeState.data!,
+		assignments: (storeState.data?.assignments ?? []).map((a) =>
 			a.employeeId === employeeId
 				? {
 						...a,
@@ -723,14 +729,14 @@ export async function unassignGoalFromEmployee(employeeId: string, goalId: strin
 
 export async function recordChangeRequest(request: ChangeRequest): Promise<void> {
 	// UI-only concept, no API endpoint. Local-only.
-	data = { ...data!, changeRequests: [...(data?.changeRequests ?? []), request] };
+	storeState.data = { ...storeState.data!, changeRequests: [...(storeState.data?.changeRequests ?? []), request] };
 }
 
 export async function approveChangeRequest(id: string, approvedBy: string): Promise<void> {
 	// UI-only concept, no API endpoint. Local-only.
-	data = {
-		...data!,
-		changeRequests: (data?.changeRequests ?? []).map((cr) =>
+	storeState.data = {
+		...storeState.data!,
+		changeRequests: (storeState.data?.changeRequests ?? []).map((cr) =>
 			cr.id === id
 				? { ...cr, status: 'approved' as const, approvedBy, approvedAt: new Date().toISOString() }
 				: cr
@@ -740,9 +746,9 @@ export async function approveChangeRequest(id: string, approvedBy: string): Prom
 
 export async function rejectChangeRequest(id: string): Promise<void> {
 	// UI-only concept, no API endpoint. Local-only.
-	data = {
-		...data!,
-		changeRequests: (data?.changeRequests ?? []).map((cr) =>
+	storeState.data = {
+		...storeState.data!,
+		changeRequests: (storeState.data?.changeRequests ?? []).map((cr) =>
 			cr.id === id ? { ...cr, status: 'rejected' as const } : cr
 		)
 	};
@@ -752,9 +758,9 @@ export async function rejectChangeRequest(id: string): Promise<void> {
 
 export async function updateGoalProgress(goalId: string, progress: number): Promise<void> {
 	if (import.meta.env.DEV && !import.meta.env.VITE_USE_API) {
-		data = {
-			...data!,
-			goals: (data?.goals ?? []).map((g) =>
+		storeState.data = {
+			...storeState.data!,
+			goals: (storeState.data?.goals ?? []).map((g) =>
 				g.id === goalId
 					? { ...g, progress, progressUpdatedAt: new Date().toISOString() }
 					: g
@@ -784,9 +790,9 @@ export async function addGoalComment(
 		content,
 		createdAt: new Date().toISOString()
 	};
-	data = {
-		...data!,
-		goals: (data?.goals ?? []).map((g) =>
+	storeState.data = {
+		...storeState.data!,
+		goals: (storeState.data?.goals ?? []).map((g) =>
 			g.id === goalId ? { ...g, comments: [...(g.comments ?? []), comment] } : g
 		)
 	};
@@ -794,9 +800,9 @@ export async function addGoalComment(
 
 export async function deleteGoalComment(goalId: string, commentId: string): Promise<void> {
 	// No dedicated API endpoint for comments. Local-only for now.
-	data = {
-		...data!,
-		goals: (data?.goals ?? []).map((g) =>
+	storeState.data = {
+		...storeState.data!,
+		goals: (storeState.data?.goals ?? []).map((g) =>
 			g.id === goalId
 				? { ...g, comments: (g.comments ?? []).filter((c) => c.id !== commentId) }
 				: g

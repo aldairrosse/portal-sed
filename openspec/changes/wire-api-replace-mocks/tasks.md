@@ -224,13 +224,15 @@ Estrategia: **5 PRs encadenados**. Cada PR depende del anterior. Total: ~18 tare
 - [x] Testear que `credentials: 'include'` se aplica en cada request
 - **AC:** Tests pasan con Vitest ✅
 
-### T5.2 Tests de goalsStore (dev fallback + API load)
+### T5.2 ~~Tests de goalsStore (dev fallback + API load)~~ ✅
 
-- Crear `web/src/lib/stores/__tests__/goalsStore.test.ts`
-- Testear que en `import.meta.env.DEV` sin `VITE_USE_API`, `load()` carga desde fixture
-- Testear que en modo API, `load()` llama al endpoint correcto
-- Testear que `addCategory()` llama POST y luego reload
-- **AC:** Tests unitarios pasan
+- [x] Crear `web/src/lib/stores/__tests__/goalsStore.test.ts`
+- [x] Testear que en `import.meta.env.DEV` sin `VITE_USE_API`, `load()` carga desde fixture
+- [x] Testear que en modo API, `load()` llama al endpoint correcto
+- [x] Testear que `addCategory()` llama POST y luego reload
+- [x] Refactor: migrar `export let loading/error = $state()` a `export const storeState = new StoreState()` para cumplir restricción Svelte 5 en `.svelte.ts`
+- [x] Actualizar los 2 consumidores de `loading`/`error` a `storeState.loading`/`storeState.error`
+- **AC:** Tests unitarios pasan ✅
 
 ### T5.3 Test de integración backend: 401 sin token ✅
 

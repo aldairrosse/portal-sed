@@ -8,33 +8,32 @@
         GoalComment,
     } from "$lib/types/goal";
     import type { ChangeRequest } from "$lib/types/goal";
-    import {
-        getCategories,
-        getGoals,
-        getKpis,
-        getGoalsByCategory,
-        getKpisForGoal,
-        addCategory,
-        updateCategory,
-        deleteCategory,
-        addGoal,
-        updateGoal,
-        deleteGoal,
-        isAssignmentValid,
-        linkKpiToGoal,
-        unlinkKpiFromGoal,
-        getAssignmentsByProfile,
-        getAssignments,
-        getCyclePhase,
-        getGoalPermissions,
-        updateGoalProgress,
-        addGoalComment,
-        deleteGoalComment,
-        getGoalComments,
-        loading,
-        error,
-        load,
-    } from "$lib/stores/goalsStore.svelte";
+	import {
+		getCategories,
+		getGoals,
+		getKpis,
+		getGoalsByCategory,
+		getKpisForGoal,
+		addCategory,
+		updateCategory,
+		deleteCategory,
+		addGoal,
+		updateGoal,
+		deleteGoal,
+		isAssignmentValid,
+		linkKpiToGoal,
+		unlinkKpiFromGoal,
+		getAssignmentsByProfile,
+		getAssignments,
+		getCyclePhase,
+		getGoalPermissions,
+		updateGoalProgress,
+		addGoalComment,
+		deleteGoalComment,
+		getGoalComments,
+		storeState,
+		load,
+	} from "$lib/stores/goalsStore.svelte";
     import { getProfile } from "$lib/stores/devContext.svelte";
     import { getChildren } from "$lib/stores/orgHierarchyStore.svelte";
     import WeightIndicator from "$lib/components/goals/WeightIndicator.svelte";
@@ -258,10 +257,10 @@
     <title>Asignación anual — SED</title>
 </svelte:head>
 
-{#if loading}
+{#if storeState.loading}
     <PageSkeleton variant="table" rows={6} />
-{:else if error}
-    <ErrorState message={error} onretry={load} />
+{:else if storeState.error}
+    <ErrorState message={storeState.error} onretry={load} />
 {:else}
 
 <div class="space-y-6 max-w-full min-w-0">
