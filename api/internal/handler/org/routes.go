@@ -40,9 +40,6 @@ func NewRouter(handler *OrgHandler, authSvc *authsvc.AuthService) chi.Router {
 
 // RegisterRoutes registers all org hierarchy endpoints on an existing router.
 func RegisterRoutes(r chi.Router, handler *OrgHandler, authSvc *authsvc.AuthService) {
-	// Shared auth middleware for all org endpoints
-	r.Use(middleware.RequireAuth(authSvc))
-
 	// Rate limit configurations
 	readRateLimit := middleware.RateLimitConfig{
 		Window:   time.Minute,
@@ -56,115 +53,120 @@ func RegisterRoutes(r chi.Router, handler *OrgHandler, authSvc *authsvc.AuthServ
 		Store:    middleware.NewInMemoryRateLimitStore(),
 	}
 
-	// --- Organization Tree endpoints (read) ---
-
+	// All org endpoints require auth
 	r.Group(func(r chi.Router) {
-		r.Use(middleware.RateLimit(readRateLimit))
-		r.Use(readReplicaMiddleware)
-		r.Get("/org-trees", handler.ListOrgTrees)
-	})
+		r.Use(middleware.RequireAuth(authSvc))
 
-	r.Group(func(r chi.Router) {
-		r.Use(middleware.RateLimit(readRateLimit))
-		r.Use(readReplicaMiddleware)
-		r.Get("/org-trees/{treeId}", handler.GetOrgTree)
-	})
+		// --- Organization Tree endpoints (read) ---
 
-	r.Group(func(r chi.Router) {
-		r.Use(middleware.RateLimit(readRateLimit))
-		r.Use(readReplicaMiddleware)
-		r.Get("/org-trees/{treeId}/nodes", handler.GetOrgTreeNodes)
-	})
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.RateLimit(readRateLimit))
+			r.Use(readReplicaMiddleware)
+			r.Get("/org-trees", handler.ListOrgTrees)
+		})
 
-	r.Group(func(r chi.Router) {
-		r.Use(middleware.RateLimit(readRateLimit))
-		r.Use(readReplicaMiddleware)
-		r.Get("/org-trees/{treeId}/export", handler.ExportOrgTree)
-	})
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.RateLimit(readRateLimit))
+			r.Use(readReplicaMiddleware)
+			r.Get("/org-trees/{treeId}", handler.GetOrgTree)
+		})
 
-	// --- Org Node endpoints (read + write) ---
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.RateLimit(readRateLimit))
+			r.Use(readReplicaMiddleware)
+			r.Get("/org-trees/{treeId}/nodes", handler.GetOrgTreeNodes)
+		})
 
-	r.Group(func(r chi.Router) {
-		r.Use(middleware.RateLimit(readRateLimit))
-		r.Use(readReplicaMiddleware)
-		r.Get("/org-nodes/{nodeId}", handler.GetOrgNode)
-	})
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.RateLimit(readRateLimit))
+			r.Use(readReplicaMiddleware)
+			r.Get("/org-trees/{treeId}/export", handler.ExportOrgTree)
+		})
 
-	r.Group(func(r chi.Router) {
-		r.Use(middleware.RateLimit(writeRateLimit))
-		r.Post("/org-nodes", handler.CreateOrgNode)
-	})
+		// --- Org Node endpoints (read + write) ---
 
-	r.Group(func(r chi.Router) {
-		r.Use(middleware.RateLimit(writeRateLimit))
-		r.Put("/org-nodes/{nodeId}", handler.UpdateOrgNode)
-	})
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.RateLimit(readRateLimit))
+			r.Use(readReplicaMiddleware)
+			r.Get("/org-nodes/{nodeId}", handler.GetOrgNode)
+		})
 
-	r.Group(func(r chi.Router) {
-		r.Use(middleware.RateLimit(writeRateLimit))
-		r.Delete("/org-nodes/{nodeId}", handler.DeleteOrgNode)
-	})
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.RateLimit(writeRateLimit))
+			r.Post("/org-nodes", handler.CreateOrgNode)
+		})
 
-	r.Group(func(r chi.Router) {
-		r.Use(middleware.RateLimit(writeRateLimit))
-		r.Post("/org-nodes/{nodeId}/move", handler.MoveOrgNode)
-	})
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.RateLimit(writeRateLimit))
+			r.Put("/org-nodes/{nodeId}", handler.UpdateOrgNode)
+		})
 
-	// --- Employee endpoints (read + batch) ---
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.RateLimit(writeRateLimit))
+			r.Delete("/org-nodes/{nodeId}", handler.DeleteOrgNode)
+		})
 
-	r.Group(func(r chi.Router) {
-		r.Use(middleware.RateLimit(readRateLimit))
-		r.Use(readReplicaMiddleware)
-		r.Get("/employees", handler.ListEmployees)
-	})
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.RateLimit(writeRateLimit))
+			r.Post("/org-nodes/{nodeId}/move", handler.MoveOrgNode)
+		})
 
-	r.Group(func(r chi.Router) {
-		r.Use(middleware.RateLimit(readRateLimit))
-		r.Use(readReplicaMiddleware)
-		r.Get("/employees/{empId}", handler.GetEmployee)
-	})
+		// --- Employee endpoints (read + batch) ---
 
-	r.Group(func(r chi.Router) {
-		r.Use(middleware.RateLimit(readRateLimit))
-		r.Use(readReplicaMiddleware)
-		r.Get("/employees/{empId}/evaluatees", handler.GetMyEvaluatees)
-	})
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.RateLimit(readRateLimit))
+			r.Use(readReplicaMiddleware)
+			r.Get("/employees", handler.ListEmployees)
+		})
 
-	r.Group(func(r chi.Router) {
-		r.Use(middleware.RateLimit(readRateLimit))
-		r.Use(readReplicaMiddleware)
-		r.Get("/employees/{empId}/manager", handler.GetManager)
-	})
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.RateLimit(readRateLimit))
+			r.Use(readReplicaMiddleware)
+			r.Get("/employees/{empId}", handler.GetEmployee)
+		})
 
-	r.Group(func(r chi.Router) {
-		r.Use(middleware.RateLimit(readRateLimit))
-		r.Use(readReplicaMiddleware)
-		r.Get("/employees/{empId}/ancestors", handler.GetAncestors)
-	})
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.RateLimit(readRateLimit))
+			r.Use(readReplicaMiddleware)
+			r.Get("/employees/{empId}/evaluatees", handler.GetMyEvaluatees)
+		})
 
-	r.Group(func(r chi.Router) {
-		r.Use(middleware.RateLimit(writeRateLimit))
-		r.Post("/employees/batch", handler.BatchLookupEmployees)
-	})
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.RateLimit(readRateLimit))
+			r.Use(readReplicaMiddleware)
+			r.Get("/employees/{empId}/manager", handler.GetManager)
+		})
 
-	r.Group(func(r chi.Router) {
-		r.Use(middleware.RateLimit(readRateLimit))
-		r.Use(readReplicaMiddleware)
-		r.Get("/employees/search", handler.SearchEmployees)
-	})
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.RateLimit(readRateLimit))
+			r.Use(readReplicaMiddleware)
+			r.Get("/employees/{empId}/ancestors", handler.GetAncestors)
+		})
 
-	// --- Evaluator Scope endpoints (read) ---
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.RateLimit(writeRateLimit))
+			r.Post("/employees/batch", handler.BatchLookupEmployees)
+		})
 
-	r.Group(func(r chi.Router) {
-		r.Use(middleware.RateLimit(readRateLimit))
-		r.Use(readReplicaMiddleware)
-		r.Get("/evaluator-scopes", handler.GetEvaluatorScope)
-	})
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.RateLimit(readRateLimit))
+			r.Use(readReplicaMiddleware)
+			r.Get("/employees/search", handler.SearchEmployees)
+		})
 
-	r.Group(func(r chi.Router) {
-		r.Use(middleware.RateLimit(readRateLimit))
-		r.Use(readReplicaMiddleware)
-		r.Get("/evaluator-scopes/{scopeId}", handler.GetEvaluatorScopeByID)
+		// --- Evaluator Scope endpoints (read) ---
+
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.RateLimit(readRateLimit))
+			r.Use(readReplicaMiddleware)
+			r.Get("/evaluator-scopes", handler.GetEvaluatorScope)
+		})
+
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.RateLimit(readRateLimit))
+			r.Use(readReplicaMiddleware)
+			r.Get("/evaluator-scopes/{scopeId}", handler.GetEvaluatorScopeByID)
+		})
 	})
 }
 

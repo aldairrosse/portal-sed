@@ -28,9 +28,6 @@ func NewRouter(handler *CycleHandler, authSvc *authsvc.AuthService) chi.Router {
 
 // RegisterRoutes registers all cycle/phase endpoints on an existing router.
 func RegisterRoutes(r chi.Router, handler *CycleHandler, authSvc *authsvc.AuthService) {
-	// Shared auth middleware for all cycle endpoints
-	r.Use(middleware.RequireAuth(authSvc))
-
 	// Rate limit configurations
 	readRateLimit := middleware.RateLimitConfig{
 		Window:   time.Minute,
@@ -47,51 +44,56 @@ func RegisterRoutes(r chi.Router, handler *CycleHandler, authSvc *authsvc.AuthSe
 	// Idempotency middleware (in-memory for dev; Redis in production)
 	idempStore := middleware.NewInMemoryIdempotencyStore()
 
-	// --- Cycle endpoints ---
-
-	// GET /api/v1/cycles
+	// All cycle endpoints require auth
 	r.Group(func(r chi.Router) {
-		r.Use(middleware.RateLimit(readRateLimit))
-		r.Use(readReplicaMiddleware)
-		r.Get("/cycles", handler.ListCycles)
-	})
+		r.Use(middleware.RequireAuth(authSvc))
 
-	// POST /api/v1/cycles
-	r.Group(func(r chi.Router) {
-		r.Use(middleware.RateLimit(writeRateLimit))
-		r.Use(middleware.Idempotency(idempStore, 24*time.Hour))
-		r.Post("/cycles", handler.CreateCycle)
-	})
+		// --- Cycle endpoints ---
 
-	// GET /api/v1/cycles/{id}
-	r.Group(func(r chi.Router) {
-		r.Use(middleware.RateLimit(readRateLimit))
-		r.Use(readReplicaMiddleware)
-		r.Get("/cycles/{id}", handler.GetCycle)
-	})
+		// GET /api/v1/cycles
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.RateLimit(readRateLimit))
+			r.Use(readReplicaMiddleware)
+			r.Get("/cycles", handler.ListCycles)
+		})
 
-	// PUT /api/v1/cycles/{id}/transition
-	r.Group(func(r chi.Router) {
-		r.Use(middleware.RateLimit(writeRateLimit))
-		r.Use(middleware.Idempotency(idempStore, 24*time.Hour))
-		r.Use(middleware.OptimisticLock)
-		r.Put("/cycles/{id}/transition", handler.TransitionPhase)
-	})
+		// POST /api/v1/cycles
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.RateLimit(writeRateLimit))
+			r.Use(middleware.Idempotency(idempStore, 24*time.Hour))
+			r.Post("/cycles", handler.CreateCycle)
+		})
 
-	// --- Phase endpoints ---
+		// GET /api/v1/cycles/{id}
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.RateLimit(readRateLimit))
+			r.Use(readReplicaMiddleware)
+			r.Get("/cycles/{id}", handler.GetCycle)
+		})
 
-	// GET /api/v1/phases
-	r.Group(func(r chi.Router) {
-		r.Use(middleware.RateLimit(readRateLimit))
-		r.Use(readReplicaMiddleware)
-		r.Get("/phases", handler.GetPhaseDefinitions)
-	})
+		// PUT /api/v1/cycles/{id}/transition
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.RateLimit(writeRateLimit))
+			r.Use(middleware.Idempotency(idempStore, 24*time.Hour))
+			r.Use(middleware.OptimisticLock)
+			r.Put("/cycles/{id}/transition", handler.TransitionPhase)
+		})
 
-	// GET /api/v1/cycles/{id}/transitions
-	r.Group(func(r chi.Router) {
-		r.Use(middleware.RateLimit(readRateLimit))
-		r.Use(readReplicaMiddleware)
-		r.Get("/cycles/{id}/transitions", handler.GetAvailableTransitions)
+		// --- Phase endpoints ---
+
+		// GET /api/v1/phases
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.RateLimit(readRateLimit))
+			r.Use(readReplicaMiddleware)
+			r.Get("/phases", handler.GetPhaseDefinitions)
+		})
+
+		// GET /api/v1/cycles/{id}/transitions
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.RateLimit(readRateLimit))
+			r.Use(readReplicaMiddleware)
+			r.Get("/cycles/{id}/transitions", handler.GetAvailableTransitions)
+		})
 	})
 }
 

@@ -40,9 +40,6 @@ func NewRouter(handler *EvaluationHandler, authSvc *authsvc.AuthService) chi.Rou
 
 // RegisterRoutes registers all evaluation and 9x9 endpoints on an existing router.
 func RegisterRoutes(r chi.Router, handler *EvaluationHandler, authSvc *authsvc.AuthService) {
-	// Shared auth middleware for all evaluation endpoints
-	r.Use(middleware.RequireAuth(authSvc))
-
 	// Rate limit configurations
 	readRateLimit := middleware.RateLimitConfig{
 		Window:   time.Minute,
@@ -59,130 +56,135 @@ func RegisterRoutes(r chi.Router, handler *EvaluationHandler, authSvc *authsvc.A
 	// Idempotency middleware (in-memory for dev; Redis in production)
 	idempStore := middleware.NewInMemoryIdempotencyStore()
 
-	// --- Evaluation Endpoints ---
-
-	// GET /api/v1/evaluations
+	// All evaluation endpoints require auth
 	r.Group(func(r chi.Router) {
-		r.Use(middleware.RateLimit(readRateLimit))
-		r.Use(readReplicaMiddleware)
-		r.Get("/evaluations", handler.ListEvaluations)
-	})
+		r.Use(middleware.RequireAuth(authSvc))
 
-	// GET /api/v1/evaluations/{id}
-	r.Group(func(r chi.Router) {
-		r.Use(middleware.RateLimit(readRateLimit))
-		r.Use(readReplicaMiddleware)
-		r.Get("/evaluations/{id}", handler.GetEvaluation)
-	})
+		// --- Evaluation Endpoints ---
 
-	// POST /api/v1/evaluations/{id}/self-evaluation
-	r.Group(func(r chi.Router) {
-		r.Use(middleware.RateLimit(writeRateLimit))
-		r.Use(middleware.Idempotency(idempStore, 24*time.Hour))
-		r.Post("/evaluations/{id}/self-evaluation", handler.SubmitSelfEvaluation)
-	})
+		// GET /api/v1/evaluations
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.RateLimit(readRateLimit))
+			r.Use(readReplicaMiddleware)
+			r.Get("/evaluations", handler.ListEvaluations)
+		})
 
-	// PUT /api/v1/evaluations/{id}/self-evaluation
-	r.Group(func(r chi.Router) {
-		r.Use(middleware.RateLimit(writeRateLimit))
-		r.Use(middleware.OptimisticLock)
-		r.Put("/evaluations/{id}/self-evaluation", handler.UpdateSelfEvaluation)
-	})
+		// GET /api/v1/evaluations/{id}
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.RateLimit(readRateLimit))
+			r.Use(readReplicaMiddleware)
+			r.Get("/evaluations/{id}", handler.GetEvaluation)
+		})
 
-	// POST /api/v1/evaluations/{id}/rh-evaluation
-	r.Group(func(r chi.Router) {
-		r.Use(middleware.RequirePermission(auth.PermEvalRH))
-		r.Use(middleware.RateLimit(writeRateLimit))
-		r.Use(middleware.Idempotency(idempStore, 24*time.Hour))
-		r.Post("/evaluations/{id}/rh-evaluation", handler.SubmitRHEvaluation)
-	})
+		// POST /api/v1/evaluations/{id}/self-evaluation
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.RateLimit(writeRateLimit))
+			r.Use(middleware.Idempotency(idempStore, 24*time.Hour))
+			r.Post("/evaluations/{id}/self-evaluation", handler.SubmitSelfEvaluation)
+		})
 
-	// PUT /api/v1/evaluations/{id}/rh-evaluation
-	r.Group(func(r chi.Router) {
-		r.Use(middleware.RequirePermission(auth.PermEvalRH))
-		r.Use(middleware.RateLimit(writeRateLimit))
-		r.Use(middleware.OptimisticLock)
-		r.Put("/evaluations/{id}/rh-evaluation", handler.UpdateRHEvaluation)
-	})
+		// PUT /api/v1/evaluations/{id}/self-evaluation
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.RateLimit(writeRateLimit))
+			r.Use(middleware.OptimisticLock)
+			r.Put("/evaluations/{id}/self-evaluation", handler.UpdateSelfEvaluation)
+		})
 
-	// POST /api/v1/evaluations/{id}/finalize
-	r.Group(func(r chi.Router) {
-		r.Use(middleware.RequirePermission(auth.PermEvalRH))
-		r.Use(middleware.RateLimit(writeRateLimit))
-		r.Post("/evaluations/{id}/finalize", handler.FinalizeEvaluation)
-	})
+		// POST /api/v1/evaluations/{id}/rh-evaluation
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.RequirePermission(auth.PermEvalRH))
+			r.Use(middleware.RateLimit(writeRateLimit))
+			r.Use(middleware.Idempotency(idempStore, 24*time.Hour))
+			r.Post("/evaluations/{id}/rh-evaluation", handler.SubmitRHEvaluation)
+		})
 
-	// GET /api/v1/evaluations/summary
-	r.Group(func(r chi.Router) {
-		r.Use(middleware.RateLimit(readRateLimit))
-		r.Use(readReplicaMiddleware)
-		r.Get("/evaluations/summary", handler.GetEvaluationSummary)
-	})
+		// PUT /api/v1/evaluations/{id}/rh-evaluation
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.RequirePermission(auth.PermEvalRH))
+			r.Use(middleware.RateLimit(writeRateLimit))
+			r.Use(middleware.OptimisticLock)
+			r.Put("/evaluations/{id}/rh-evaluation", handler.UpdateRHEvaluation)
+		})
 
-	// --- Nine-Box Endpoints ---
+		// POST /api/v1/evaluations/{id}/finalize
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.RequirePermission(auth.PermEvalRH))
+			r.Use(middleware.RateLimit(writeRateLimit))
+			r.Post("/evaluations/{id}/finalize", handler.FinalizeEvaluation)
+		})
 
-	// GET /api/v1/nine-box/matrices
-	r.Group(func(r chi.Router) {
-		r.Use(middleware.RateLimit(readRateLimit))
-		r.Use(readReplicaMiddleware)
-		r.Get("/nine-box/matrices", handler.ListMatrices)
-	})
+		// GET /api/v1/evaluations/summary
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.RateLimit(readRateLimit))
+			r.Use(readReplicaMiddleware)
+			r.Get("/evaluations/summary", handler.GetEvaluationSummary)
+		})
 
-	// POST /api/v1/nine-box/matrices
-	r.Group(func(r chi.Router) {
-		r.Use(middleware.RequirePermission(auth.PermEval9x9))
-		r.Use(middleware.RateLimit(writeRateLimit))
-		r.Post("/nine-box/matrices", handler.CreateMatrix)
-	})
+		// --- Nine-Box Endpoints ---
 
-	// GET /api/v1/nine-box/matrices/{matrixId}
-	r.Group(func(r chi.Router) {
-		r.Use(middleware.RateLimit(readRateLimit))
-		r.Use(readReplicaMiddleware)
-		r.Get("/nine-box/matrices/{matrixId}", handler.GetMatrix)
-	})
+		// GET /api/v1/nine-box/matrices
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.RateLimit(readRateLimit))
+			r.Use(readReplicaMiddleware)
+			r.Get("/nine-box/matrices", handler.ListMatrices)
+		})
 
-	// GET /api/v1/nine-box/matrices/{matrixId}/entries
-	r.Group(func(r chi.Router) {
-		r.Use(middleware.RateLimit(readRateLimit))
-		r.Use(readReplicaMiddleware)
-		r.Get("/nine-box/matrices/{matrixId}/entries", handler.ListMatrixEntries)
-	})
+		// POST /api/v1/nine-box/matrices
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.RequirePermission(auth.PermEval9x9))
+			r.Use(middleware.RateLimit(writeRateLimit))
+			r.Post("/nine-box/matrices", handler.CreateMatrix)
+		})
 
-	// POST /api/v1/nine-box/matrices/{matrixId}/entries
-	r.Group(func(r chi.Router) {
-		r.Use(middleware.RequirePermission(auth.PermEval9x9))
-		r.Use(middleware.RateLimit(writeRateLimit))
-		r.Post("/nine-box/matrices/{matrixId}/entries", handler.UpsertMatrixEntry)
-	})
+		// GET /api/v1/nine-box/matrices/{matrixId}
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.RateLimit(readRateLimit))
+			r.Use(readReplicaMiddleware)
+			r.Get("/nine-box/matrices/{matrixId}", handler.GetMatrix)
+		})
 
-	// PUT /api/v1/nine-box/entries/{entryId}
-	r.Group(func(r chi.Router) {
-		r.Use(middleware.RequirePermission(auth.PermEval9x9))
-		r.Use(middleware.RateLimit(writeRateLimit))
-		r.Use(middleware.OptimisticLock)
-		r.Put("/nine-box/entries/{entryId}", handler.UpdateEntry)
-	})
+		// GET /api/v1/nine-box/matrices/{matrixId}/entries
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.RateLimit(readRateLimit))
+			r.Use(readReplicaMiddleware)
+			r.Get("/nine-box/matrices/{matrixId}/entries", handler.ListMatrixEntries)
+		})
 
-	// POST /api/v1/nine-box/batch
-	r.Group(func(r chi.Router) {
-		r.Use(middleware.RequirePermission(auth.PermEval9x9))
-		r.Use(middleware.RateLimit(writeRateLimit))
-		r.Post("/nine-box/batch", handler.BatchSubmitEntries)
-	})
+		// POST /api/v1/nine-box/matrices/{matrixId}/entries
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.RequirePermission(auth.PermEval9x9))
+			r.Use(middleware.RateLimit(writeRateLimit))
+			r.Post("/nine-box/matrices/{matrixId}/entries", handler.UpsertMatrixEntry)
+		})
 
-	// GET /api/v1/nine-box/scales
-	r.Group(func(r chi.Router) {
-		r.Use(middleware.RateLimit(readRateLimit))
-		r.Use(readReplicaMiddleware)
-		r.Get("/nine-box/scales", handler.GetScales)
-	})
+		// PUT /api/v1/nine-box/entries/{entryId}
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.RequirePermission(auth.PermEval9x9))
+			r.Use(middleware.RateLimit(writeRateLimit))
+			r.Use(middleware.OptimisticLock)
+			r.Put("/nine-box/entries/{entryId}", handler.UpdateEntry)
+		})
 
-	// GET /api/v1/nine-box/quadrants
-	r.Group(func(r chi.Router) {
-		r.Use(middleware.RateLimit(readRateLimit))
-		r.Use(readReplicaMiddleware)
-		r.Get("/nine-box/quadrants", handler.GetQuadrants)
+		// POST /api/v1/nine-box/batch
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.RequirePermission(auth.PermEval9x9))
+			r.Use(middleware.RateLimit(writeRateLimit))
+			r.Post("/nine-box/batch", handler.BatchSubmitEntries)
+		})
+
+		// GET /api/v1/nine-box/scales
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.RateLimit(readRateLimit))
+			r.Use(readReplicaMiddleware)
+			r.Get("/nine-box/scales", handler.GetScales)
+		})
+
+		// GET /api/v1/nine-box/quadrants
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.RateLimit(readRateLimit))
+			r.Use(readReplicaMiddleware)
+			r.Get("/nine-box/quadrants", handler.GetQuadrants)
+		})
 	})
 }
 
