@@ -20,6 +20,7 @@ import assignmentsData from '$lib/fixtures/goals/assignments.json';
 import { getActivePhase } from '$lib/api/cycle.svelte';
 import { getSession } from '$lib/api/session.svelte';
 import { client } from '$lib/api/client';
+import { progressPercent } from '$lib/utils/scoring';
 
 // ─── Internal data shape ──────────────────────────────────────────────────────
 
@@ -86,11 +87,15 @@ function normalizeApiData(
 			current_value?: number;
 			state?: string;
 			version?: number;
+			direction?: string;
+			baseline_value?: number;
 			kpis?: Array<{
 				id?: string;
 				name?: string;
 				unit?: string;
 				description?: string;
+				direction?: string;
+				current_value?: number;
 			}>;
 			created_at?: string;
 			updated_at?: string;
@@ -101,6 +106,8 @@ function normalizeApiData(
 		name?: string;
 		unit?: string;
 		description?: string;
+		direction?: string;
+		current_value?: number;
 	}>,
 	apiAssignment: {
 		id?: string;
@@ -123,7 +130,8 @@ function normalizeApiData(
 			name: ak.name ?? '',
 			description: ak.description ?? '',
 			unit: (ak.unit as KpiUnit) ?? 'numero',
-			direction: 'ascendente',
+			direction: (ak.direction as 'ascendente' | 'descendente') ?? 'ascendente',
+			currentValue: ak.current_value,
 			targetValue: undefined,
 			minValue: undefined,
 			maxValue: undefined
@@ -150,7 +158,9 @@ function normalizeApiData(
 				categoryId: ag.category_id ?? catId,
 				weight: ag.weight ?? 0,
 				unit: (ag.unit as GoalUnit) ?? 'numero',
+				direction: (ag.direction as 'ascendente' | 'descendente') ?? 'ascendente',
 				targetValue: ag.target_value ?? 0,
+				baselineValue: ag.baseline_value,
 				progress: ag.current_value,
 				progressUpdatedAt: ag.updated_at,
 				comments: []
@@ -167,7 +177,8 @@ function normalizeApiData(
 							name: kpiRef.name ?? '',
 							description: kpiRef.description ?? '',
 							unit: (kpiRef.unit as KpiUnit) ?? 'numero',
-							direction: 'ascendente',
+							direction: (kpiRef.direction as 'ascendente' | 'descendente') ?? 'ascendente',
+							currentValue: kpiRef.current_value,
 							targetValue: undefined,
 							minValue: undefined,
 							maxValue: undefined
@@ -315,22 +326,60 @@ export function getCategoryProgressAverage(categoryId: string): number {
 	const withProgress = catGoals.filter((g) => g.progress !== undefined);
 	if (withProgress.length === 0) return 0;
 	const total = withProgress.reduce((acc, g) => {
-		const pct = g.unit === 'porcentaje' ? (g.progress ?? 0) : ((g.progress ?? 0) / (g.targetValue || 1)) * 100;
-		return acc + Math.min(pct, 100);
+		const pct = progressPercent(g.progress ?? 0, g.targetValue, g.baselineValue, g.direction);
+		return acc + pct;
 	}, 0);
 	return total / withProgress.length;
+}
+
+/**
+ * Calculate the weighted score for the current employee across all categories.
+ *
+ * Formula: Σ(cat.weight/100 × Σ(goal.weight/100 × progressPercent(goal)))
+ *
+ * Only goals with progress data are included in the calculation.
+ */
+export function getWeightedScore(): number {
+	const cats = storeState.data?.categories ?? [];
+	const allGoals = storeState.data?.goals ?? [];
+	let total = 0;
+
+	for (const cat of cats) {
+		const catGoals = allGoals.filter((g) => g.categoryId === cat.id);
+		const withProgress = catGoals.filter((g) => g.progress !== undefined);
+		if (withProgress.length === 0) continue;
+
+		const catGoalSum = withProgress.reduce((acc, g) => {
+			const pct = progressPercent(g.progress ?? 0, g.targetValue, g.baselineValue, g.direction);
+			return acc + (g.weight / 100) * pct;
+		}, 0);
+
+		total += (cat.weight / 100) * catGoalSum;
+	}
+
+	return total;
 }
 
 export function getGoalPermissions(
 	role: EvaluationProfile,
 	isOwner: boolean
-): { canEditProgress: boolean; canComment: boolean; canEditWeight: boolean; canDelete: boolean; canClose: boolean } {
+): {
+	canEditProgress: boolean;
+	canComment: boolean;
+	canEditWeight: boolean;
+	canEditDirection: boolean;
+	canEditBaseline: boolean;
+	canDelete: boolean;
+	canClose: boolean;
+} {
 	const phase = getActivePhase() ?? 'inicio-anio';
 	if (phase === 'inicio-anio') {
 		return {
 			canEditProgress: false,
 			canComment: false,
 			canEditWeight: isOwner,
+			canEditDirection: isOwner,
+			canEditBaseline: isOwner,
 			canDelete: isOwner,
 			canClose: false
 		};
@@ -340,6 +389,8 @@ export function getGoalPermissions(
 			canEditProgress: false,
 			canComment: false,
 			canEditWeight: false,
+			canEditDirection: false,
+			canEditBaseline: false,
 			canDelete: false,
 			canClose: isOwner
 		};
@@ -349,6 +400,8 @@ export function getGoalPermissions(
 		canEditProgress: true,
 		canComment: true,
 		canEditWeight: false,
+		canEditDirection: false,
+		canEditBaseline: false,
 		canDelete: false,
 		canClose: false
 	};

@@ -23,6 +23,7 @@ function makeGoal(overrides: Partial<Goal> & { id: string }): Goal {
 		categoryId: 'cat-1',
 		weight: 0,
 		unit: 'numero',
+		direction: 'ascendente',
 		targetValue: 100,
 		progress: 50,
 		...overrides

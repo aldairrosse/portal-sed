@@ -173,17 +173,42 @@ describe('goalsStore – DEV mode', () => {
 		expect(kpis.some((k: { id: string }) => k.id === 'kpi-ventas-mensuales')).toBe(true);
 	});
 
-	it('getCategoryProgressAverage() computes average from goals with progress', async () => {
+	it('getCategoryProgressAverage() computes direction-aware average from goals with progress', async () => {
 		const store = await import('../goalsStore.svelte.ts');
 		await store.load();
 
 		// cat-ventas-finanzas has 3 goals:
-		//   - goal-alcanzar-ventas:   unit=moneda     progress=650000   target=1_000_000 → (650000/1_000_000)*100 = 65
-		//   - goal-mejorar-margen:    unit=porcentaje progress=18                         → 18 (raw value, not relative)
-		//   - goal-reducir-costos:    no progress → excluded from average
-		// avg = (65 + 18) / 2 = 41.5
+		//   - goal-alcanzar-ventas:   ascendente  progress=650000  target=1_000_000 → (650000/1_000_000)*100 = 65
+		//   - goal-mejorar-margen:    ascendente  progress=18      target=25         → (18/25)*100 = 72
+		//   - goal-reducir-costos:    descendente no progress → excluded from average
+		// avg = (65 + 72) / 2 = 68.5
 		const avg = store.getCategoryProgressAverage('cat-ventas-finanzas');
-		expect(avg).toBeCloseTo(41.5, 0);
+		expect(avg).toBeCloseTo(68.5, 0);
+	});
+
+	it('getWeightedScore() calculates total weighted score across all categories', async () => {
+		const store = await import('../goalsStore.svelte.ts');
+		await store.load();
+
+		// cat-ventas-finanzas (w=40):
+		//   goal-alcanzar-ventas (w=50): (50/100)*65 = 32.5
+		//   goal-mejorar-margen (w=30):  (30/100)*72 = 21.6
+		//   → sum: 54.1 × (40/100) = 21.64
+		// cat-clientes-calidad (w=30):
+		//   goal-mejorar-satisfaccion (w=40): (40/100)*91.11... = 36.444...
+		//   goal-reducir-quejas (w=30):      (30/100)*50 = 15
+		//   goal-fidelizacion (w=30):        (30/100)*12.5 = 3.75
+		//   → sum: 55.194... × (30/100) ≈ 16.558...
+		// cat-personas-equipo (w=20):
+		//   goal-reducir-rotacion (w=50): (50/100)*100 = 50
+		//   goal-capacitaciones (w=50):  (50/100)*50 = 25
+		//   → sum: 75 × (20/100) = 15
+		// cat-operaciones-procesos (w=10):
+		//   goal-reducir-ausentismo (w=40): (40/100)*0 = 0
+		//   → sum: 0
+		// Total ≈ 21.64 + 16.558 + 15 + 0 = 53.198
+		const score = store.getWeightedScore();
+		expect(score).toBeCloseTo(53.2, 0);
 	});
 
 	it('getGoalsByCategory() returns empty array for unknown category', async () => {
