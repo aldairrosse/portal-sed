@@ -74,6 +74,12 @@ export const MENU_ITEMS: MenuItem[] = [
 		href: '/rh/evaluaciones',
 		icon: 'ClipboardList',
 		profiles: ['rh']
+	},
+	{
+		label: 'Jerarquía',
+		href: '/rh/jerarquia',
+		icon: 'Network',
+		profiles: ['rh']
 	}
 ];
 
