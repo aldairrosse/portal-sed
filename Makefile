@@ -46,9 +46,9 @@ test-docker-integration: test-docker-up
 lint:
 	cd api && go vet ./...
 
-# Generate Ent code
+# Generate Ent code from schemas
 generate:
-	cd api && go generate ./...
+	cd api && go run -mod=mod entgo.io/ent/cmd/entc generate --target ./internal ./internal/schema
 
 # Format code
 fmt:
