@@ -237,7 +237,8 @@ rules:
     - Cerrar reglas de negocio abiertas antes de handlers públicos.
     - Incluir checklist security-baseline por change (ver principles/security.md).
   apply:
-    - Follow existing code patterns
+    notes:
+      - Follow existing code patterns
     tdd: false
     test_command: cd api && go test ./... -v -race -count=1
     test_command_fe: none

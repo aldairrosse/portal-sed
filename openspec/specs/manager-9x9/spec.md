@@ -2,126 +2,121 @@
 
 ## Purpose
 
-Define la **matriz 9×9 de desempeño vs potencial**: ejes de medición, cuadrantes, quién califica (el jefe/director/gerente) y la separación explícita de la evaluación RH. Esta spec es la fuente de verdad para la matriz de potencial que alimenta la pantalla A6 (manager-9x9-ui) y el backend C6.
+Define la **matriz 3×3 de desempeño vs potencial** (tiers 1–3 automáticos): ejes de medición derivados de datos fuente (metas, competencias), cuadrantes configurables por RH, y la separación explícita de la evaluación RH. Esta spec es la fuente de verdad para la matriz de potencial que alimenta la pantalla A6 (manager-9x9-ui) y el backend C6.
 
-**Decisiones reflejadas:** #4 (fin de año: el jefe evalúa potenciales para matriz 9×9; NO sustituye la evaluación RH de competencias).
+**Decisiones reflejadas:** #4 (fin de año: el sistema calcula automáticamente los tiers desde avance de metas + competencias; NO sustituye la evaluación RH de competencias).
 
 ## Data Model
 
 | Entity | Fields | Notes |
 |--------|--------|-------|
-| **NineBoxMatrix** | `id`, `cycleId`, `evaluatorId` | Instancia de la matriz para un evaluador en un ciclo. Un jefe tiene su propia matriz. |
-| **NineBoxEntry** | `id`, `matrixId`, `evaluateeId`, `performanceScore` (1–9), `potentialScore` (1–9), `quadrant` (calculado), `comments?` | Calificación de un evaluado. Ambos scores determinan el cuadrante. |
-| **NineBoxQuadrant** | `id`, `label`, `description`, `color`, `actionRecommendation` | Definición de cuadrante derivado de la posición en la matriz. |
-| **NineBoxScale** | `axis` (`performance` \| `potential`), `level` (1–9), `label`, `description` | Definiciones de los 9 niveles por eje. |
+| **NineBoxMatrix** | `id`, `cycleId`, `evaluatorId`, `phaseId` | Instancia de la matriz para un evaluador en un ciclo por etapa. Unique (cycle, evaluator, phase). |
+| **NineBoxEntry** | `id`, `matrixId`, `evaluateeId`, `performanceTier` (1–3), `potentialTier` (1–3), `quadrant` (calculado), `comments?` | Ubicación automática de un evaluado. Los tiers se derivan de datos fuente (metas, competencias). |
+| **NineBoxQuadrant** | `id`, `label`, `title`, `description`, `colorHex`, `color` (legacy), `actionRecommendation` | Definición de cuadrante. title, description, colorHex editables por RH. |
+| **NineBoxScale** | `axis` (`performance` \| `potential`), `level` (1–9), `label`, `description` | Definiciones de los 9 niveles por eje. Se conserva para compatibilidad histórica. Ya no se usa en la matriz activa. |
 
-### Matriz 9×9 — Layout
+### Matriz 3×3 — Layout
 
 ```
-Potencial
-  9 │ 3  │ 6  │ 9
-  8 │ 3  │ 6  │ 9
-  7 │ 3  │ 6  │ 9
-  6 │ 2  │ 5  │ 8
-  5 │ 2  │ 5  │ 8
-  4 │ 2  │ 5  │ 8
-  3 │ 1  │ 4  │ 7
-  2 │ 1  │ 4  │ 7
-  1 │ 1  │ 4  │ 7
+Potencial (tier)
+  3 │ 7  │ 8  │ 9
+  2 │ 4  │ 5  │ 6
+  1 │ 1  │ 2  │ 3
     └────┴────┴────┘
-      1-3   4-6   7-9
-          Desempeño
+      1    2    3
+   Desempeño (tier)
 ```
+
+Quadrant formula: `quadrant = (potentialTier − 1) × 3 + performanceTier`
 
 ### Cuadrantes definidos
 
-| Cuadrant | Rango (Desempeño × Potencial) | Label | Descripción | Acción recomendada |
-|----------|------------------------------|-------|-------------|-------------------|
-| 1 | Desempeño bajo (1–3) × Potencial bajo (1–3) | Bajo desempeño, bajo potencial | Requiere acción correctiva inmediata | Plan de mejora o reasignación |
-| 2 | Desempeño medio (4–6) × Potencial bajo (1–3) | Desempeño medio, bajo potencial | Estable pero sin potencial de crecimiento | Mantener, desarrollo de habilidades |
-| 3 | Desempeño alto (7–9) × Potencial bajo (1–3) | Alto desempeño, bajo potencial | Excelente rendimiento, estancado | Recompensar, evitar sobrecarga |
-| 4 | Desempeño bajo (1–3) × Potencial medio (4–6) | Bajo desempeño, potencial medio | Potencial sin materializar | Coaching, asignar mentores |
-| 5 | Desempeño medio (4–6) × Potencial medio (4-6) | Desempeño medio, potencial medio | Promedio, crecimiento gradual | Desarrollo planificado |
-| 6 | Desempeño alto (7–9) × Potencial medio (4–6) | Alto desempeño, potencial medio | Sólido,listo para más responsabilidad | Preparar para rol superior |
-| 7 | Desempeño bajo (1–3) × Potencial alto (7–9) | Bajo desempeño, alto potencial | Talento desaprovechado | Investigar causas, reasignar si necesario |
-| 8 | Desempeño medio (4–6) × Potencial alto (7–9) | Desempeño medio, alto potencial | Listo para aceleración | Reto, proyecto de alto impacto |
-| 9 | Desempeño alto (7–9) × Potencial alto (7–9) | Alto desempeño, alto potencial | Estrella, sucesor natural | Promover, plan de sucesión |
+| Cuadrante | Tiers (Desempeño × Potencial) | Label | Descripción | Acción recomendada |
+|-----------|-------------------------------|-------|-------------|-------------------|
+| 1 | Perf Bajo (1) × Pot Bajo (1) | Bajo desempeño, bajo potencial | Requiere acción correctiva inmediata | Plan de mejora o reasignación |
+| 2 | Perf Medio (2) × Pot Bajo (1) | Desempeño medio, bajo potencial | Estable pero sin potencial de crecimiento | Mantener, desarrollo de habilidades |
+| 3 | Perf Alto (3) × Pot Bajo (1) | Alto desempeño, bajo potencial | Excelente rendimiento, estancado | Recompensar, evitar sobrecarga |
+| 4 | Perf Bajo (1) × Pot Medio (2) | Bajo desempeño, potencial medio | Potencial sin materializar | Coaching, asignar mentores |
+| 5 | Perf Medio (2) × Pot Medio (2) | Desempeño medio, potencial medio | Promedio, crecimiento gradual | Desarrollo planificado |
+| 6 | Perf Alto (3) × Pot Medio (2) | Alto desempeño, potencial medio | Sólido, listo para más responsabilidad | Preparar para rol superior |
+| 7 | Perf Bajo (1) × Pot Alto (3) | Bajo desempeño, alto potencial | Talento desaprovechado | Investigar causas, reasignar si necesario |
+| 8 | Perf Medio (2) × Pot Alto (3) | Desempeño medio, alto potencial | Listo para aceleración | Reto, proyecto de alto impacto |
+| 9 | Perf Alto (3) × Pot Alto (3) | Alto desempeño, alto potencial | Estrella, sucesor natural | Promover, plan de sucesión |
 
 ## Requirements
 
 ### Requirement: Calificación de desempeño y potencial (decisión #4)
 
-El sistema SHALL permitir al jefe/director/gerente calificar a cada evaluatee en dos ejes: desempeño (1–9) y potencial (1–9). La calificación es **independiente** de la evaluación RH de competencias.
+El sistema SHALL calcular automáticamente el performance tier (1–3) desde el avance de metas del evaluatee y el potential tier (1–3) desde el promedio de autoevaluación + evaluación RH de competencias. Los tiers son de solo lectura para el jefe. La calificación ya no es manual con escala 1–9.
 
-#### Scenario: Jefe califica desempeño
+(Previously: El jefe calificaba manualmente desempeño y potencial en escala 1–9 con sliders.)
 
-- GIVEN jefe con 3 evaluatees en fase `cierre`
-- WHEN abre la matriz 9×9
-- THEN ve lista de sus evaluatees con slider o select para desempeño (1–9)
-- AND puede asignar un valor de desempeño por evaluatee
+#### Scenario: Tiers calculados automáticamente
 
-#### Scenario: Jefe califica potencial
+- GIVEN evaluatee con avance de metas 60% y promedio competencias 4.0
+- WHEN jefe abre la matriz 3×3
+- THEN performance tier = 2, potential tier = 3
+- AND los tiers NO son editables por el jefe
 
-- GIVEN jefe con 3 evaluatees
-- WHEN asigna potencial a cada uno
-- THEN el sistema calcula el cuadrante automáticamente
-- AND muestra el cuadrante con color y label correspondiente
+#### Scenario: Cálculo es independiente de la intervención del jefe
 
-#### Scenario: Calificación es independiente de evaluación RH
-
-- GIVEN empleado con autoevaluación completada y evaluación RH pendiente
-- WHEN jefe lo califica en 9×9
-- THEN las calificaciones 9×9 no dependen de la autoevaluación ni de la evaluación RH
-- AND las tres vías son paralelas e independientes
+- GIVEN evaluatee con datos de metas y competencias completos
+- WHEN se recalcula la matriz al cerrar etapa
+- THEN los tiers se derivan exclusivamente de datos existentes (metas, autoevaluación, ev. RH)
+- AND el jefe no puede modificar los tiers manualmente
 
 ### Requirement: Cálculo automático de cuadrante
 
-El sistema SHALL calcular el cuadrante automáticamente al asignar desempeño y potencial. El cuadrante se deriva de la posición en la matriz.
+El sistema SHALL calcular el cuadrante automáticamente como `(potentialTier − 1) × 3 + performanceTier`. El cuadrante se recalcula al cambiar los tiers (por cambio en datos fuente).
 
-#### Scenario: Cuadrante 9 — estrella
+(Previously: El cuadrante se calculaba desde scores manuales 1–9 de desempeño y potencial.)
 
-- GIVEN evaluatee con desempeño 8 y potencial 9
-- WHEN jefe guarda la calificación
-- THEN el cuadrante calculado es 9 ("Alto desempeño, alto potencial")
-- AND se muestra con color distinctivo y acción "Promover, plan de sucesión"
+#### Scenario: Cuadrante recalculado al actualizar datos fuente
 
-#### Scenario: Cuadrante 1 — bajo desempeño y potencial
+- GIVEN evaluatee con performance tier 2, potential tier 3 → cuadrante 8
+- WHEN se registra nuevo avance de metas que eleva performance tier a 3
+- THEN el cuadrante se recalcula a 9
 
-- GIVEN evaluatee con desempeño 2 y potencial 1
-- WHEN jefe guarda la calificación
-- THEN el cuadrante calculado es 1 ("Bajo desempeño, bajo potencial")
-- AND se muestra con color de alerta y acción "Plan de mejora o reasignación"
+#### Scenario: Cambio en evaluación de competencias
 
-#### Scenario: Cambio de calificación recalcula cuadrante
-
-- GIVEN evaluatee con desempeño 5 y potencial 5 (cuadrante 5)
-- WHEN jefe cambia desempeño a 8
-- THEN el cuadrante se recalcula a 6 ("Alto desempeño, potencial medio")
+- GIVEN evaluatee con potential tier 2
+- WHEN RH completa evaluación de competencias y avgPotential sube a 4.2 → tier 3
+- THEN el cuadrante se recalcula inmediatamente al recomputar la matriz
 
 ### Requirement: Vista de matriz por evaluador
 
-Cada jefe/director/gerente/director-general SHALL ver su propia matriz 9×9. El scope de evaluatees varía por perfil: jefe ve reportes directos; director ve todos los managers bajo su jerarquía; director-general ve toda la organización. La matriz de un evaluador no es visible para otros evaluadores del mismo nivel.
+El sistema SHALL renderizar la matriz como grilla 3×3 con 9 cuadrantes coloreados según configuración de `NineBoxQuadrant`. Cada empleado se posiciona según sus tiers calculados. Los cuadrantes son editables por RH (title, description, colorHex).
 
-(Previously: Solo jefe y director veían reportes directos; sin director-general ni scope multi-nivel.)
+(Previously: Grilla 9×9 con scores manuales 1–9 y cuadrantes con colores DaisyUI fijos.)
+
+Cada jefe/director/gerente/director-general SHALL ver su propia matriz. El scope de evaluatees varía por perfil: jefe ve reportes directos; director ve todos los managers bajo su jerarquía; director-general ve toda la organización. La matriz de un evaluador no es visible para otros evaluadores del mismo nivel.
+
+#### Scenario: Grilla 3×3 con empleados automáticos
+
+- GIVEN matriz de Carlos con 5 evaluatees en fase `cierre`
+- WHEN se renderiza
+- THEN 9 celdas coloreadas con colorHex configurado por RH
+- AND cada evaluatee aparece como dot en su celda correspondiente
+- AND clic en dot abre card de solo lectura con tiers y cuadrante
 
 #### Scenario: Jefe ve su matriz (sin cambios)
 
 - GIVEN jefe "Carlos" con 5 evaluatees directos
-- WHEN accede a la matriz 9×9
+- WHEN accede a la matriz
 - THEN ve los 5 evaluatees posicionados en la matriz
 - AND puede hacer clic en cada punto para ver comentarios
 
 #### Scenario: Director ve todos bajo su jerarquía (modificado)
 
 - GIVEN director con 2 jefes y sus colaboradores (7 personas total)
-- WHEN accede a la matriz 9×9
+- WHEN accede a la matriz
 - THEN ve los 7 evaluatees posicionados en la matriz
 - AND puede drill-down a competencias de cualquier evaluatee
 
 #### Scenario: Director-general ve toda la organización (nuevo)
 
 - GIVEN director-general activo
-- WHEN accede a la matriz 9×9
+- WHEN accede a la matriz
 - THEN ve todos los empleados del árbol corporativo bajo su mando
 - AND puede filtrar por nivel (director/jefe/colaborador)
 
@@ -134,7 +129,7 @@ Cada jefe/director/gerente/director-general SHALL ver su propia matriz 9×9. El 
 
 ### Requirement: Separación de evaluación RH (decisión #4)
 
-La matriz 9×9 es **exclusiva del jefe** y se enfoca en **potencial** para la matriz de sucesión. La evaluación formal de competencias la realiza **RH** de forma independiente. La 9×9 NO sustituye ni reemplaza la evaluación RH.
+La matriz 3×3 es **exclusiva del jefe** y se enfoca en **potencial** para la matriz de sucesión. La evaluación formal de competencias la realiza **RH** de forma independiente. La matriz NO sustituye ni reemplaza la evaluación RH.
 
 #### Scenario: RH evalúa competencias por separado
 
@@ -142,37 +137,19 @@ La matriz 9×9 es **exclusiva del jefe** y se enfoca en **potencial** para la ma
 - WHEN RH completa su evaluación formal
 - THEN registra calificación de competencias (escala 1–5) y cierre
 - AND esta evaluación es la definitiva para el empleado
-- AND es independiente de la calificación 9×9 del jefe
+- AND es independiente de la calificación del jefe en la matriz
 
 #### Scenario: Jefe no evalúa competenciasformalmente
 
 - GIVEN jefe en fase `cierre`
-- WHEN completa la calificación 9×9 de sus evaluatees
-- THEN SOLO califica desempeño y potencial (1–9)
+- WHEN revisa la matriz con los tiers calculados de sus evaluatees
+- THEN SOLO visualiza desempeño y potencial (tiers 1–3)
 - AND NO califica competencias en escala 1–5 (eso es de RH)
 - AND NO realiza cierre formal de evaluación (eso es de RH)
 
-### Requirement: Definiciones de escala por eje
-
-El sistema SHALL mantener definiciones de los 9 niveles para cada eje (desempeño y potencial). Las definiciones ayudan al jefe a calificar consistentemente.
-
-#### Scenario: Definiciones de desempeño
-
-- GIVEN jefe calificando desempeño
-- WHEN selecciona un nivel
-- THEN ve la definición del nivel (ej. nivel 7: "Supera consistentemente las expectativas")
-- AND la definición es la misma para todos los evaluadores
-
-#### Scenario: Definiciones de potencial
-
-- GIVEN jefe calificando potencial
-- WHEN selecciona un nivel
-- THEN ve la definición del nivel (ej. nivel 8: "Listo para asumir roles de mayor complejidad en 1–2 años")
-- AND la definición es la misma para todos los evaluadores
-
 ### Requirement: Comentarios opcionales por evaluatee
 
-El sistema SHALL permitir al jefe agregar comentarios opcionales por evaluatee al calificar en la matriz 9×9.
+El sistema SHALL permitir al jefe agregar comentarios opcionales por evaluatee al calificar en la matriz.
 
 #### Scenario: Agregar comentario
 
@@ -190,46 +167,46 @@ El sistema SHALL permitir al jefe agregar comentarios opcionales por evaluatee a
 
 ### Requirement: Perfil director-general y scope multi-nivel
 
-El sistema SHALL soportar el perfil `director-general` con visibilidad de toda la jerarquía bajo su mando en la matriz 9×9. El scope de la matriz varía por perfil: jefe ve reportes directos, director ve todos los managers en su tramo, director-general ve toda la organización.
+El sistema SHALL soportar el perfil `director-general` con visibilidad de toda la jerarquía bajo su mando en la matriz. El scope de la matriz varía por perfil: jefe ve reportes directos, director ve todos los managers en su tramo, director-general ve toda la organización.
 
 #### Scenario: Director-general ve toda la organización
 
 - GIVEN director-general activo con árbol de 4 niveles (DG → 2 directores → 3 jefes → 6 colaboradores)
-- WHEN accede a la matriz 9×9
+- WHEN accede a la matriz
 - THEN ve 11 evaluatees posicionados en la matriz
 - AND puede filtrar por nivel jerárquico
 
 #### Scenario: Director ve managers en su tramo
 
 - GIVEN director "A" con 2 jefes y 5 colaboradores indirectos
-- WHEN accede a la matriz 9×9
+- WHEN accede a la matriz
 - THEN ve los 2 jefes y los 5 colaboradores (todos bajo su jerarquía)
 - AND no ve empleados de otro director
 
 #### Scenario: Jefe ve solo reportes directos
 
 - GIVEN jefe con 3 colaboradores
-- WHEN accede a la matriz 9×9
+- WHEN accede a la matriz
 - THEN ve solo sus 3 reportes directos
 - AND el scope no cambia respecto al comportamiento anterior
 
-### Requirement: Vista de matriz 9×9 visual
+### Requirement: Vista de matriz 3×3 visual
 
-El sistema SHALL renderizar la matriz 9×9 como grilla visual con ejes Desempeño (X, 1–9) y Potencial (Y, 1–9). Cada empleado se posiciona como punto según sus scores. Los 9 cuadrantes se colorean según la definición de `NineBoxQuadrant`.
+El sistema SHALL renderizar la matriz 3×3 como grilla visual con ejes Desempeño (tier 1–3) y Potencial (tier 1–3). Cada empleado se posiciona como punto según sus tiers calculados. Los 9 cuadrantes se colorean según el `colorHex` configurable por RH.
 
 #### Scenario: Grilla con empleados posicionados
 
-- GIVEN matriz con 5 evaluatees con scores variados
+- GIVEN matriz con 5 evaluatees con tiers variados
 - WHEN se renderiza la grilla
 - THEN cada empleado aparece como punto en su celda correspondiente
-- AND los cuadrantes muestran color de fondo según definición (ej. cuadrante 9 verde, cuadrante 1 rojo)
+- AND los cuadrantes muestran color de fondo según colorHex (ej. cuadrante 9 verde, cuadrante 1 rojo)
 
 #### Scenario: Clic en punto muestra detalle
 
-- GIVEN empleado "María" en celda desempeño=7, potencial=8
+- GIVEN empleado "María" en performance tier=2, potential tier=3
 - WHEN se hace clic en su punto
-- THEN se muestra card con: nombre, scores, cuadrante, comentarios del jefe
-- AND botón "Ver competencias" navega a `/evaluacion/9x9/competencias/[employeeId]`
+- THEN se muestra card con: nombre, performanceTier, potentialTier, cuadrante, comentarios
+- AND botón "Ver competencias" navega a la vista de competencias del empleado
 
 #### Scenario: Celda vacía sin empleados
 
@@ -256,17 +233,6 @@ El sistema SHALL proveer una tabla de competencias para un empleado individual m
 - THEN columna RH muestra "Pendiente"
 - AND no hay comparación ni resalte de brecha
 
-### Requirement: Sliders de desempeño y potencial
-
-El sistema SHALL proveer controles duales (sliders) para ajustar scores de desempeño (1–9) y potencial (1–9) por evaluatee. Al modificar, el cuadrante se recalcula en tiempo real.
-
-#### Scenario: Ajuste de scores recalcula cuadrante
-
-- GIVEN evaluatee con desempeño=5, potencial=5 (cuadrante 5)
-- WHEN jefe mueve slider de desempeño a 8
-- THEN el cuadrante se recalcula a 6 (Alto desempeño, potencial medio)
-- AND el punto se reposiciona en la grilla sin recargar
-
 ### Requirement: Rutas de jerarquía desde 9×9
 
 El sistema SHALL exponer `/evaluacion/9x9/jerarquia` para drill-down jerárquico desde contexto 9×9. El menú lateral SHALL mostrar "Jerarquía" y "Competencias" como sub-ítems de "Matriz 9×9" para perfiles con acceso.
@@ -283,6 +249,7 @@ El sistema SHALL exponer `/evaluacion/9x9/jerarquia` para drill-down jerárquico
 - **Evaluación RH**: la evaluación formal de competencias por RH es scope de A5 y C6 (evaluations-and-9x9-api).
 - **Agregados de empresa**: no se soporta consolidar matrices de múltiples jefes en una vista global de empresa.
 - **Historial**: no se guardan versiones anteriores de la matriz (solo la última calificación del ciclo actual).
+- **Pendientes de ubicación**: empleados sin datos suficientes reciben tier 2 por defecto. El estado "pendiente" se difiere a cambio posterior.
 - **API real**: en fase UI-first, la matriz se alimenta de fixtures JSON. La API real es C6.
 - **Autenticación y RBAC**: esta spec define el behavior; la implementación de permisos es scope de C7.
 - **Exportación**: no se soporta exportar la matriz a PDF, Excel u otro formato.
