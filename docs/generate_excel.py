@@ -155,8 +155,11 @@ def write_solicitud(wb: Workbook, md_text: str):
     style_header(ws, row, len(headers))
     row += 1
 
-    # Recorrer cada sección y sus requisitos
+    # Recorrer cada sección y sus requisitos (excluir infraestructura)
+    skip_sections = {"Infraestructura del Sistema"}
     for section_name, tbl in tables.items():
+        if section_name in skip_sections:
+            continue
         # La primera fila es el encabezado original (#, Quién, Historia, Cómo, Para qué, Criterios)
         # Las siguientes filas son los datos
         for data_row in tbl[1:]:
@@ -194,27 +197,6 @@ def write_wbs(wb: Workbook, md_text: str):
     )
     ws.merge_cells(start_row=row, start_column=1, end_row=row, end_column=6)
     row += 2
-
-    # Primero: Resumen Ejecutivo
-    if "Resumen Ejecutivo" in tables:
-        ws.cell(row=row, column=1, value="Resumen Ejecutivo").font = SECTION_FONT
-        style_section_row(ws, row, 6)
-        row += 1
-        tbl = tables["Resumen Ejecutivo"]
-        for i, hdr in enumerate(tbl[0], 1):
-            ws.cell(row=row, column=i, value=hdr)
-        style_header(ws, row, len(tbl[0]))
-        row += 1
-        for data_row in tbl[1:]:
-            for i, val in enumerate(data_row, 1):
-                ws.cell(row=row, column=i, value=val)
-            # Fila de total en negrita
-            if data_row[0].startswith("**"):
-                for col in range(1, len(data_row) + 1):
-                    ws.cell(row=row, column=col).font = Font(name="Calibri", bold=True, size=10)
-            style_data_row(ws, row, len(data_row))
-            row += 1
-        row += 1
 
     # Tabla unificada de tareas
     ws.cell(row=row, column=1, value="Detalle de Tareas").font = SECTION_FONT

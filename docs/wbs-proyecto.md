@@ -4,25 +4,6 @@
 
 ---
 
-## Resumen Ejecutivo
-
-| Sección | Tareas | Estimación | Horas | Estado | Dependencias principales |
-|---------|--------|------------|-------|--------|--------------------------|
-| 1. Shell de la aplicación | 8 | 40h | 19h | ✅ Completado | Ninguna (punto de partida) |
-| 2. Metas — Asignación de inicio de año | 1 | 48h | 4.5h | ✅ Completado | Sección 1 |
-| 3. Metas — Avance de medio año | 2 | 16h | 6h | ✅ Completado | Sección 2 |
-| 4. Mi evaluación — Autoevaluación fin de año | 3 | 32h | 7h | ✅ Completado | Secciones 2, 3, 5 |
-| 5. Administración RH — Competencias | 1 | 36h | 2.5h | ✅ Completado | Sección 1 |
-| 6. Evaluación RH — Fin de año | 2 | 16h | 5h | ✅ Completado | Secciones 4, 5 |
-| 7. Matriz 9×9 — Evaluación de jefes | 3 | 28h | 7.5h | ✅ Completado | Secciones 1, 4 |
-| 8. Mis evaluados | 1 | 8h | 3h | ✅ Completado | Secciones 1, 2, 3 |
-| 9. Perfil de usuario | 1 | 6h | 3h | ✅ Completado | Sección 1 |
-| 10. Backend — Infraestructura | 8 | 56h | 22.5h | ✅ Completado | Ninguna (paralelo) |
-| 11. Pendientes finales | 3 | — | 34h | 🔲 Pendiente | Ver detalle abajo |
-| **TOTAL** | **33** | — | **112.5h** | **28/33 completado** | |
-
----
-
 ## 1. Shell de la Aplicación
 
 | ID | Tarea | Dependencias | Horas | Comentarios |
@@ -123,7 +104,7 @@
 
 ---
 
-## 11. Pendientes Finales
+## 11. Pruebas y desplieegue
 
 | ID | Tarea | Dependencias | Horas | Comentarios |
 |----|-------|--------------|-------|-------------|
