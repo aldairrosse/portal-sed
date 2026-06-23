@@ -2,65 +2,23 @@ package seed
 
 import (
 	"context"
-	"flag"
 	"log"
-	"os"
 
+	"github.com/google/uuid"
 	"github.com/sed-evaluacion-desempeno/api/internal"
 )
 
-// Run executes all domain seeders in FK-safe order.
-// Each domain runs in its own transaction; errors are logged, and execution continues.
-func Run(ctx context.Context, client *internal.Client) error {
-	// Check if DB already has data.
-	count, err := client.Employee.Query().Count(ctx)
-	if err == nil && count > 0 {
-		log.Println("[seed] database already has data, skipping")
-		return nil
-	}
+// Deterministic namespace for seed UUIDs.
+var ns = uuid.MustParse("6ba7b810-9dad-11d1-80b4-00c04fd430c8")
 
-	shouldSeed := flagSeeded() || os.Getenv("SEED_ON_START") == "true"
-	if !shouldSeed && count > 0 {
-		log.Println("[seed] skipping (data exists and no seed flag/env set)")
-		return nil
-	}
+// SeedID generates a deterministic UUID from a string.
+// Used by seed, import, export, and integration tests.
+func SeedID(s string) uuid.UUID {
+	return uuid.NewSHA1(ns, []byte(s))
+}
 
-	seeders := []struct {
-		name string
-		fn   func(context.Context, *internal.Client) error
-	}{
-		{"org", SeedOrg},
-		{"employees", SeedEmployees},
-		{"cycle", SeedCycle},
-		{"competency", SeedCompetency},
-		{"goals", SeedGoals},
-		{"evaluation", SeedEvaluation},
-		{"ninebox", SeedNineBox},
-	}
-
-	for _, s := range seeders {
-		if err := s.fn(ctx, client); err != nil {
-			log.Printf("[seed] %s: %v (continuing)", s.name, err)
-		}
-	}
-
+// Run is a no-op. Data is now imported via cmd/import from an external DB.
+func Run(_ context.Context, _ *internal.Client) error {
+	log.Println("[seed] data is imported via cmd/import — Run() is a no-op")
 	return nil
-}
-
-// flagSeeded returns true if the --seed flag was provided.
-func flagSeeded() bool {
-	seeded := false
-	if !flag.Parsed() {
-		flag.Parse()
-	}
-	flag.Visit(func(f *flag.Flag) {
-		if f.Name == "seed" {
-			seeded = true
-		}
-	})
-	return seeded
-}
-
-func init() {
-	flag.Bool("seed", false, "seed the database with fixture data")
 }
