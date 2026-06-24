@@ -273,7 +273,7 @@
 				{#each competenciesByPillar as group (group.pilar.id)}
 					{#if group.items.length > 0}
 						<div>
-							<h3 class="font-binjay text-lg font-normal text-base-content/50 mb-2">
+							<h3 class="font-binjay text-sm font-normal text-base-content/50 mb-2">
 								{group.pilar.name}
 							</h3>
 							<ul class="space-y-1">
