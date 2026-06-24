@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"os"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -58,6 +60,7 @@ type LoginResponse struct {
 	Token    string       `json:"token"`
 	Employee EmployeeInfo `json:"employee"`
 	Role     string       `json:"role"`
+	Profile  ProfileInfo  `json:"profile"`
 }
 
 // SessionInfo contains session metadata returned to the client.
@@ -128,22 +131,100 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, resp)
 }
 
-// Logout handles POST /auth/logout.
-// Revokes the current session identified by the Authorization header.
-func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
-	session, ok := auth.GetSession(r.Context())
-	if !ok || session == nil {
+// DevLogin handles POST /auth/dev-login.
+// Only available in ENV=development. Looks up an employee by email
+// and creates a session without password/SSO — just needs the email
+// to exist in the employees table.
+func (h *AuthHandler) DevLogin(w http.ResponseWriter, r *http.Request) {
+	if os.Getenv("ENV") != "development" {
 		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
-			"no authenticated session", nil))
+			"dev login not available in production", nil))
 		return
 	}
 
-	if err := h.svc.Logout(r.Context(), session.ID); err != nil {
+	var req LoginRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
+			"invalid JSON body", err))
+		return
+	}
+
+	if req.Email == "" {
+		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
+			"email is required", nil))
+		return
+	}
+
+	// Look up employee by email in the DB
+	emp, err := h.svc.EmployeeByEmail(r.Context(), req.Email)
+	if err != nil {
+		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
+			"employee not found: "+req.Email, err))
+		return
+	}
+
+	ip := r.RemoteAddr
+	ua := r.UserAgent()
+
+	// Create a real session — same as Login but skips password/SSO
+	session, token, err := h.svc.SessionStore().Create(r.Context(), emp.ID, ip, ua)
+	if err != nil {
 		writeError(w, err)
 		return
 	}
 
-	// Clear the session cookie
+	// Look up the role and profile from the employee's evaluation profile
+	role, profile, _ := h.svc.EmployeeRoleAndProfile(r.Context(), emp.ID)
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "session_token",
+		Value:    token,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   r.TLS != nil,
+		SameSite: http.SameSiteStrictMode,
+		Expires:  session.ExpiresAt,
+	})
+
+	resp := LoginResponse{
+		Session: SessionInfo{
+			ID:        session.ID.String(),
+			ExpiresAt: session.ExpiresAt.Format(time.RFC3339),
+		},
+		Token: token,
+		Employee: EmployeeInfo{
+			ID:        emp.ID.String(),
+			FirstName: emp.FirstName,
+			LastName:  emp.LastName,
+			Email:     emp.Email,
+		},
+		Role: string(role),
+		Profile: ProfileInfo{
+			ID:   profile.ID.String(),
+			Name: string(role),
+		},
+	}
+
+	writeJSON(w, http.StatusOK, resp)
+}
+
+// Logout handles POST /auth/logout.
+// Revokes the current session identified by the session_token cookie
+// or Authorization: Bearer header. Self-contained for the same reason
+// as /me — clients need to be able to log out without first going
+// through RequireAuth (which would 401 a stale or expired session).
+func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
+	token := extractSessionToken(r)
+
+	// If we have a valid session, revoke it server-side
+	if token != "" {
+		if result, err := h.svc.ValidateSession(r.Context(), token); err == nil && result != nil && result.Session != nil {
+			_ = h.svc.Logout(r.Context(), result.Session.ID)
+		}
+	}
+
+	// Always clear the session cookie, even if no session was found —
+	// the client should not see a stale cookie after a logout attempt.
 	http.SetCookie(w, &http.Cookie{
 		Name:     "session_token",
 		Value:    "",
@@ -194,18 +275,26 @@ type ProfileInfo struct {
 
 // Me handles GET /auth/me.
 // Returns the current authenticated user's information.
+// Self-contained: extracts the session token from the session_token cookie
+// or Authorization header, then validates it directly. (The /me endpoint
+// runs outside the RequireAuth middleware by design — clients need to be
+// able to ask "who am I?" to recover from a stale session.)
 func (h *AuthHandler) Me(w http.ResponseWriter, r *http.Request) {
-	empID, ok := auth.GetEmployeeID(r.Context())
-	if !ok {
+	token := extractSessionToken(r)
+	if token == "" {
 		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
 			"no authenticated session", nil))
 		return
 	}
 
-	role, _ := auth.GetRole(r.Context())
-	profileID, _ := auth.GetProfileID(r.Context())
+	result, err := h.svc.ValidateSession(r.Context(), token)
+	if err != nil || result == nil || result.Session == nil {
+		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
+			"invalid or expired session", err))
+		return
+	}
 
-	emp, err := h.svc.Employee(r.Context(), empID)
+	emp, err := h.svc.Employee(r.Context(), result.Session.EmployeeID)
 	if err != nil {
 		writeError(w, err)
 		return
@@ -218,12 +307,25 @@ func (h *AuthHandler) Me(w http.ResponseWriter, r *http.Request) {
 			LastName:  emp.LastName,
 			Email:     emp.Email,
 		},
-		Role: string(role),
+		Role: string(result.Role),
 		Profile: ProfileInfo{
-			ID:   profileID.String(),
-			Name: string(role),
+			ID:   result.ProfileID.String(),
+			Name: string(result.Role),
 		},
 	}
 
 	writeJSON(w, http.StatusOK, resp)
+}
+
+// extractSessionToken pulls the session token from the session_token cookie
+// or the Authorization: Bearer header, in that order.
+func extractSessionToken(r *http.Request) string {
+	if c, err := r.Cookie("session_token"); err == nil && c.Value != "" {
+		return c.Value
+	}
+	h := r.Header.Get("Authorization")
+	if strings.HasPrefix(h, "Bearer ") {
+		return strings.TrimPrefix(h, "Bearer ")
+	}
+	return ""
 }

@@ -6,7 +6,7 @@
     import { getProfile } from "$lib/stores/devContext.svelte";
     import { PROFILE_LABELS } from "$lib/types/evaluation";
     import { PROFILE_USERS } from "$lib/dev/profileUsers";
-    import { logout } from "$lib/api/session.svelte";
+    import { getSession, logout } from "$lib/api/session.svelte";
     import { LogOut } from "@lucide/svelte";
     import {
         Home,
@@ -20,6 +20,7 @@
         ClipboardList,
         Star,
         Network,
+        Calendar,
     } from "@lucide/svelte";
     import { version } from "../../../package.json";
 
@@ -29,6 +30,7 @@
 
     let { onclose }: Props = $props();
 
+    const session = $derived(getSession());
     const profile = $derived(getProfile());
     const visibleItems = $derived(getVisibleMenuItems(profile, "inicio-anio"));
     const profileLabel = $derived(PROFILE_LABELS[profile]);
@@ -50,6 +52,7 @@
         ClipboardList,
         Star,
         Network,
+        Calendar,
     };
 
     function getIcon(name: string) {
@@ -121,11 +124,18 @@
     <!-- Logout -->
     <div class="px-3 mb-1">
         <button
-            class="flex w-full items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-colors text-base-content/60 hover:bg-base-200 hover:text-error"
+            class="flex w-full items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-colors text-base-content/60 hover:bg-base-200 hover:text-error disabled:opacity-60 disabled:hover:bg-transparent disabled:hover:text-base-content/60"
             onclick={logout}
+            disabled={session.loggingOut}
+            aria-busy={session.loggingOut}
         >
-            <LogOut class="w-[18px] h-[18px] flex-shrink-0" />
-            Cerrar sesión
+            {#if session.loggingOut}
+                <span class="loading loading-spinner loading-xs flex-shrink-0"></span>
+                <span>Cerrando sesión…</span>
+            {:else}
+                <LogOut class="w-[18px] h-[18px] flex-shrink-0" />
+                <span>Cerrar sesión</span>
+            {/if}
         </button>
     </div>
 

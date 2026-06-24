@@ -187,6 +187,32 @@ func (s *AuthService) Employee(ctx context.Context, id uuid.UUID) (*EmployeeRow,
 	return s.employeeRepo.GetByID(ctx, id)
 }
 
+// EmployeeByEmail retrieves an employee by email.
+func (s *AuthService) EmployeeByEmail(ctx context.Context, email string) (*EmployeeRow, error) {
+	return s.employeeRepo.GetByEmail(ctx, email)
+}
+
+// EmployeeRoleAndProfile returns the role and profile for an employee based
+// on their evaluation profile. Used by the dev-login flow to populate the
+// response without going through the full Login() path.
+func (s *AuthService) EmployeeRoleAndProfile(ctx context.Context, empID uuid.UUID) (auth.Role, *ProfileInfo, error) {
+	emp, err := s.employeeRepo.GetByID(ctx, empID)
+	if err != nil {
+		return "", nil, err
+	}
+	profile, err := s.getProfileName(ctx, emp.ProfileID)
+	if err != nil {
+		return "", nil, err
+	}
+	return auth.ProfileNameToRole(profile.Name), profile, nil
+}
+
+// SessionStore returns the underlying session store for direct access
+// (e.g., dev login which bypasses the normal employee lookup).
+func (s *AuthService) SessionStore() *auth.SessionStore {
+	return s.sessionStore
+}
+
 // getProfileName retrieves the evaluation profile name for a given profile ID.
 func (s *AuthService) getProfileName(ctx context.Context, profileID uuid.UUID) (*ProfileInfo, error) {
 	p := &ProfileInfo{}

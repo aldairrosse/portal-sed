@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"database/sql"
 	"encoding/hex"
+	"net"
 	"time"
 
 	"github.com/google/uuid"
@@ -47,8 +48,8 @@ func (s *SessionStore) Create(ctx context.Context, employeeID uuid.UUID, ip, ua 
 	expiresAt := now.Add(24 * time.Hour)
 
 	var ipPtr, uaPtr *string
-	if ip != "" {
-		ipPtr = &ip
+	if host := stripPort(ip); host != "" {
+		ipPtr = &host
 	}
 	if ua != "" {
 		uaPtr = &ua
@@ -168,6 +169,18 @@ func (s *SessionStore) RevokeAllEmployeeSessions(ctx context.Context, employeeID
 func HashToken(token string) string {
 	h := sha256.Sum256([]byte(token))
 	return hex.EncodeToString(h[:])
+}
+
+// stripPort removes the port from a host:port address.
+// r.RemoteAddr returns "ip:port" but the INET column stores the host only.
+func stripPort(addr string) string {
+	if addr == "" {
+		return ""
+	}
+	if host, _, err := net.SplitHostPort(addr); err == nil {
+		return host
+	}
+	return addr
 }
 
 // GenerateToken creates a cryptographically random 32-byte token encoded as hex.

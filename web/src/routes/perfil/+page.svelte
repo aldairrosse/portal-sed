@@ -5,6 +5,7 @@
         type EvaluationProfile,
     } from "$lib/types/evaluation";
     import { PROFILE_USERS } from "$lib/dev/profileUsers";
+    import { getSession, logout } from "$lib/api/session.svelte";
     import {
         User,
         LogOut,
@@ -22,6 +23,7 @@
     } from "@lucide/svelte";
     import activityLogs from "$lib/fixtures/activity/activity-logs.json";
 
+    const session = $derived(getSession());
     const profile = $derived(getProfile());
     const user = $derived(PROFILE_USERS[profile]);
     const profileLabel = $derived(PROFILE_LABELS[profile]);
@@ -95,7 +97,7 @@
     }
 
     function handleLogout() {
-        alert("Cerrar sesión (mock): en producción redirigiría a /login");
+        logout();
     }
 </script>
 
@@ -136,9 +138,15 @@
         <button
             class="btn btn-outline btn-error btn-sm gap-2 mt-2"
             onclick={handleLogout}
+            disabled={session.loggingOut}
         >
-            <LogOut class="w-4 h-4" />
-            Cerrar sesión
+            {#if session.loggingOut}
+                <span class="loading loading-spinner loading-xs"></span>
+                Cerrando sesión…
+            {:else}
+                <LogOut class="w-4 h-4" />
+                Cerrar sesión
+            {/if}
         </button>
     </div>
 
