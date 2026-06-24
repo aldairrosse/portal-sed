@@ -71,10 +71,13 @@ type SessionInfo struct {
 
 // EmployeeInfo contains basic employee information.
 type EmployeeInfo struct {
-	ID        string `json:"id"`
-	FirstName string `json:"first_name"`
-	LastName  string `json:"last_name"`
-	Email     string `json:"email"`
+	ID          string `json:"id"`
+	FirstName   string `json:"first_name"`
+	LastName    string `json:"last_name"`
+	Email       string `json:"email"`
+	JobTitle    string `json:"job_title"`
+	OrgNodeID   string `json:"org_node_id"`
+	OrgNodeName string `json:"org_node_name"`
 }
 
 // Login handles POST /auth/login.
@@ -176,6 +179,8 @@ func (h *AuthHandler) DevLogin(w http.ResponseWriter, r *http.Request) {
 	// Look up the role and profile from the employee's evaluation profile
 	role, profile, _ := h.svc.EmployeeRoleAndProfile(r.Context(), emp.ID)
 
+	orgNodeName, _ := h.svc.OrgNodeName(r.Context(), emp.OrgNodeID)
+
 	http.SetCookie(w, &http.Cookie{
 		Name:     "session_token",
 		Value:    token,
@@ -193,10 +198,13 @@ func (h *AuthHandler) DevLogin(w http.ResponseWriter, r *http.Request) {
 		},
 		Token: token,
 		Employee: EmployeeInfo{
-			ID:        emp.ID.String(),
-			FirstName: emp.FirstName,
-			LastName:  emp.LastName,
-			Email:     emp.Email,
+			ID:          emp.ID.String(),
+			FirstName:   emp.FirstName,
+			LastName:    emp.LastName,
+			Email:       emp.Email,
+			JobTitle:    emp.JobTitle,
+			OrgNodeID:   emp.OrgNodeID.String(),
+			OrgNodeName: orgNodeName,
 		},
 		Role: string(role),
 		Profile: ProfileInfo{
@@ -300,12 +308,17 @@ func (h *AuthHandler) Me(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	orgNodeName, _ := h.svc.OrgNodeName(r.Context(), emp.OrgNodeID)
+
 	resp := MeResponse{
 		Employee: EmployeeInfo{
-			ID:        emp.ID.String(),
-			FirstName: emp.FirstName,
-			LastName:  emp.LastName,
-			Email:     emp.Email,
+			ID:          emp.ID.String(),
+			FirstName:   emp.FirstName,
+			LastName:    emp.LastName,
+			Email:       emp.Email,
+			JobTitle:    emp.JobTitle,
+			OrgNodeID:   emp.OrgNodeID.String(),
+			OrgNodeName: orgNodeName,
 		},
 		Role: string(result.Role),
 		Profile: ProfileInfo{

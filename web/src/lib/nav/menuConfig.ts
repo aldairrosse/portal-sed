@@ -13,7 +13,7 @@ export const MENU_ITEMS: MenuItem[] = [
 		label: 'Inicio',
 		href: '/',
 		icon: 'Home',
-		profiles: ['colaborador', 'jefe', 'vendedor', 'gerente-tienda', 'divisional', 'regional', 'director', 'rh']
+		profiles: ['colaborador', 'jefe', 'vendedor', 'gerente-tienda', 'divisional', 'regional', 'director', 'director-general', 'rh']
 	},
 	{
 		label: 'Metas',
@@ -67,6 +67,12 @@ export const MENU_ITEMS: MenuItem[] = [
 		label: 'Niveles aceptación',
 		href: '/rh/niveles-aceptacion',
 		icon: 'FileText',
+		profiles: ['rh']
+	},
+	{
+		label: 'Ciclos',
+		href: '/rh/ciclos',
+		icon: 'Calendar',
 		profiles: ['rh']
 	},
 	{

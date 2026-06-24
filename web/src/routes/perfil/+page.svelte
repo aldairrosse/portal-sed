@@ -1,11 +1,7 @@
 <script lang="ts">
     import { getProfile } from "$lib/stores/devContext.svelte";
-    import {
-        PROFILE_LABELS,
-        type EvaluationProfile,
-    } from "$lib/types/evaluation";
-    import { PROFILE_USERS } from "$lib/dev/profileUsers";
     import { getSession, logout } from "$lib/api/session.svelte";
+    import { titleCase } from "$lib/utils/text";
     import {
         User,
         LogOut,
@@ -20,27 +16,16 @@
         FileText,
         Download,
         CheckCircle,
+        Briefcase,
+        Building2,
+        ShieldCheck,
     } from "@lucide/svelte";
     import activityLogs from "$lib/fixtures/activity/activity-logs.json";
 
     const session = $derived(getSession());
     const profile = $derived(getProfile());
-    const user = $derived(PROFILE_USERS[profile]);
-    const profileLabel = $derived(PROFILE_LABELS[profile]);
-    const userInitial = $derived(user.name.charAt(0).toUpperCase());
-
-    const areaMap: Record<EvaluationProfile, string> = {
-        colaborador: "Operaciones · Sucursal Centro",
-        jefe: "Servicio al Cliente",
-        vendedor: "Ventas · Tienda Polanco",
-        "gerente-tienda": "Tienda Polanco",
-        divisional: "División Comercial",
-        regional: "Región Centro",
-        director: "Dirección General",
-        "director-general": "Dirección General Corporativa",
-        rh: "Recursos Humanos",
-    };
-    const myArea = $derived(areaMap[profile]);
+    const user = $derived(session.user);
+    const userInitial = $derived(user?.name.charAt(0).toUpperCase() ?? "");
 
     const filteredLogs = $derived(
         activityLogs
@@ -74,7 +59,7 @@
         return ACTION_ICONS[action] ?? Clock;
     }
 
-	function formatTimeLabel(timestamp: string): string {
+    function formatTimeLabel(timestamp: string): string {
         const now = new Date();
         const date = new Date(timestamp);
         const diffMs = now.getTime() - date.getTime();
@@ -118,21 +103,29 @@
             </div>
             <div class="flex flex-col">
                 <div class="flex items-center gap-2">
-                    <h2 class="text-lg font-semibold">{user.name}</h2>
+                    <h2 class="text-lg font-semibold">{user?.name}</h2>
                 </div>
-                <div class="flex flex-wrap items-center gap-2 mt-1">
+                <p class="text-sm text-base-content/50 mt-1.5">{user?.email}</p>
+                <div class="flex flex-wrap items-center gap-2 mt-4">
                     <span
                         class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium"
                     >
-                        {profileLabel}
+                        <Briefcase class="w-3 h-3" />
+                        {user?.jobTitle}
                     </span>
                     <span
                         class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-base-200 text-base-content/60 text-xs font-medium"
                     >
-                        {myArea}
+                        <Building2 class="w-3 h-3" />
+                        {user?.orgNodeName}
+                    </span>
+                    <span
+                        class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-secondary/10 text-secondary text-xs font-medium"
+                    >
+                        <ShieldCheck class="w-3 h-3" />
+                        {titleCase(user?.profileName ?? '')}
                     </span>
                 </div>
-                <p class="text-sm text-base-content/50 mt-1.5">{user.email}</p>
             </div>
         </div>
         <button

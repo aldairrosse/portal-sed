@@ -6,7 +6,10 @@ export interface AuthUser {
 	email: string;
 	name: string;
 	profileId: EvaluationProfile;
+	profileName: string;
 	organizationId: string;
+	jobTitle: string;
+	orgNodeName: string;
 }
 
 const FIXTURE_USER: AuthUser = {
@@ -14,7 +17,10 @@ const FIXTURE_USER: AuthUser = {
 	email: 'dev@sed.local',
 	name: 'Usuario Desarrollo',
 	profileId: 'colaborador',
-	organizationId: '00000000-0000-0000-0000-000000000001'
+	profileName: 'Colaborador',
+	organizationId: '00000000-0000-0000-0000-000000000001',
+	jobTitle: 'Desarrollador',
+	orgNodeName: 'Desarrollo'
 };
 
 // ponytail: set by logout() right before the full reload; consumed by the
@@ -51,7 +57,7 @@ export async function ensureSession(): Promise<void> {
 			throw new Error(typeof apiError === 'string' ? apiError : 'Error de autenticación');
 		}
 		const raw = data as {
-			employee: { id: string; email?: string; first_name?: string; last_name?: string };
+			employee: { id: string; email?: string; first_name?: string; last_name?: string; job_title?: string; org_node_id?: string; org_node_name?: string };
 			role: string;
 			profile?: { id?: string; name?: string };
 			organization_id?: string;
@@ -61,7 +67,10 @@ export async function ensureSession(): Promise<void> {
 			email: raw.employee.email ?? '',
 			name: [raw.employee.first_name, raw.employee.last_name].filter(Boolean).join(' ') || 'Usuario',
 			profileId: raw.role as EvaluationProfile,
-			organizationId: raw.organization_id ?? raw.employee.id ?? ''
+			profileName: raw.profile?.name ?? raw.role ?? '',
+			organizationId: raw.organization_id ?? raw.employee.id ?? '',
+			jobTitle: raw.employee.job_title ?? '',
+			orgNodeName: raw.employee.org_node_name ?? ''
 		};
 	} catch (e) {
 		error = e instanceof Error ? e.message : 'Error al cargar sesión';
@@ -92,35 +101,50 @@ export async function devLogin(email: string): Promise<void> {
 				email: 'fgarcia@mobo.mx',
 				name: 'Fernando García Domínguez',
 				profileId: 'director',
-				organizationId: '00000000-0000-0000-0000-000000000001'
+				profileName: 'Director',
+				organizationId: '00000000-0000-0000-0000-000000000001',
+				jobTitle: 'Director Comercial',
+				orgNodeName: 'División Comercial'
 			},
 			'alberto@mobo.mx': {
 				employeeId: '00000000-0000-0000-0000-000000000002',
 				email: 'alberto@mobo.mx',
 				name: 'Alberto Cohen',
 				profileId: 'director-general',
-				organizationId: '00000000-0000-0000-0000-000000000001'
+				profileName: 'Director General',
+				organizationId: '00000000-0000-0000-0000-000000000001',
+				jobTitle: 'Director General',
+				orgNodeName: 'Dirección General'
 			},
 			'abraham@mobo.mx': {
 				employeeId: '00000000-0000-0000-0000-000000000003',
 				email: 'abraham@mobo.mx',
 				name: 'Abraham Esses Cohen',
 				profileId: 'jefe',
-				organizationId: '00000000-0000-0000-0000-000000000001'
+				profileName: 'Jefe',
+				organizationId: '00000000-0000-0000-0000-000000000001',
+				jobTitle: 'Gerente de Sucursal',
+				orgNodeName: 'Sucursal Centro'
 			},
 			'agil@mobo.mx': {
 				employeeId: '00000000-0000-0000-0000-000000000004',
 				email: 'agil@mobo.mx',
 				name: 'Cristiann Gil Ruíz',
 				profileId: 'rh',
-				organizationId: '00000000-0000-0000-0000-000000000001'
+				profileName: 'RRHH',
+				organizationId: '00000000-0000-0000-0000-000000000001',
+				jobTitle: 'Analista de RRHH',
+				orgNodeName: 'Recursos Humanos'
 			},
 			'fperez@mobo.com.mx': {
 				employeeId: '00000000-0000-0000-0000-000000000005',
 				email: 'fperez@mobo.com.mx',
 				name: 'Frankil Aldair Pérez Rosales',
 				profileId: 'colaborador',
-				organizationId: '00000000-0000-0000-0000-000000000001'
+				profileName: 'Colaborador',
+				organizationId: '00000000-0000-0000-0000-000000000001',
+				jobTitle: 'Desarrollador Frontend',
+				orgNodeName: 'Sucursal Centro'
 			}
 		};
 

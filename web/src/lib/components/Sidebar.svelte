@@ -4,8 +4,6 @@
     import logoWhite from "$lib/assets/logo_white.png";
     import { getVisibleMenuItems } from "$lib/nav/menuConfig";
     import { getProfile } from "$lib/stores/devContext.svelte";
-    import { PROFILE_LABELS } from "$lib/types/evaluation";
-    import { PROFILE_USERS } from "$lib/dev/profileUsers";
     import { getSession, logout } from "$lib/api/session.svelte";
     import { LogOut } from "@lucide/svelte";
     import {
@@ -33,11 +31,10 @@
     const session = $derived(getSession());
     const profile = $derived(getProfile());
     const visibleItems = $derived(getVisibleMenuItems(profile, "inicio-anio"));
-    const profileLabel = $derived(PROFILE_LABELS[profile]);
     const year = new Date().getFullYear();
 
-    const user = $derived(PROFILE_USERS[profile]);
-    const userName = $derived(user.name);
+    const user = $derived(session.user);
+    const userName = $derived(user?.name ?? '');
     const userInitial = $derived(userName.charAt(0).toUpperCase());
 
     const iconMap: Record<string, typeof Home> = {
@@ -88,7 +85,7 @@
                 >
             </div>
             <div class="min-w-0">
-                <p class="text-xs text-base-content/60 truncate">{profileLabel}</p>
+                <p class="text-xs text-base-content/60 truncate">{user?.jobTitle}</p>
                 <p class="text-xs font-medium truncate">{userName}</p>
             </div>
         </a>

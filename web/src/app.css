@@ -213,6 +213,16 @@ body {
 }
 
 /* === UTILITIES === */
+@font-face {
+	font-family: 'Binjay';
+	src: url('/fonts/Binjay.woff2') format('woff2');
+	font-display: swap;
+}
+
+@utility font-binjay {
+	font-family: 'Binjay', system-ui, -apple-system, sans-serif !important;
+}
+
 @utility no-shadow {
 	box-shadow: none !important;
 }

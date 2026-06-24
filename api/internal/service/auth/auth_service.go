@@ -14,12 +14,14 @@ import (
 
 // EmployeeRow is a lightweight read model for employee data used during auth.
 type EmployeeRow struct {
-	ID        uuid.UUID
-	FirstName string
-	LastName  string
-	Email     string
-	ProfileID uuid.UUID
-	IsActive  bool
+	ID         uuid.UUID
+	FirstName  string
+	LastName   string
+	Email      string
+	ProfileID  uuid.UUID
+	IsActive   bool
+	JobTitle   string
+	OrgNodeID  uuid.UUID
 }
 
 // EmployeeReader defines the data access interface for employee lookups
@@ -42,31 +44,35 @@ func NewEmployeeReader(db *sql.DB) EmployeeReader {
 
 func (r *employeeReader) GetByID(ctx context.Context, id uuid.UUID) (*EmployeeRow, error) {
 	row := &EmployeeRow{}
+	var jobTitle sql.NullString
 	err := r.db.QueryRowContext(ctx,
-		`SELECT id, first_name, last_name, email, profile_id, is_active
+		`SELECT id, first_name, last_name, email, profile_id, is_active, job_title, org_node_id
 		 FROM employees WHERE id = $1`, id,
-	).Scan(&row.ID, &row.FirstName, &row.LastName, &row.Email, &row.ProfileID, &row.IsActive)
+	).Scan(&row.ID, &row.FirstName, &row.LastName, &row.Email, &row.ProfileID, &row.IsActive, &jobTitle, &row.OrgNodeID)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, pkgerrors.ErrEmployeeNotFound
 		}
 		return nil, err
 	}
+	row.JobTitle = jobTitle.String
 	return row, nil
 }
 
 func (r *employeeReader) GetByEmail(ctx context.Context, email string) (*EmployeeRow, error) {
 	row := &EmployeeRow{}
+	var jobTitle sql.NullString
 	err := r.db.QueryRowContext(ctx,
-		`SELECT id, first_name, last_name, email, profile_id, is_active
+		`SELECT id, first_name, last_name, email, profile_id, is_active, job_title, org_node_id
 		 FROM employees WHERE email = $1`, email,
-	).Scan(&row.ID, &row.FirstName, &row.LastName, &row.Email, &row.ProfileID, &row.IsActive)
+	).Scan(&row.ID, &row.FirstName, &row.LastName, &row.Email, &row.ProfileID, &row.IsActive, &jobTitle, &row.OrgNodeID)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, pkgerrors.ErrEmployeeNotFound
 		}
 		return nil, err
 	}
+	row.JobTitle = jobTitle.String
 	return row, nil
 }
 
@@ -211,6 +217,18 @@ func (s *AuthService) EmployeeRoleAndProfile(ctx context.Context, empID uuid.UUI
 // (e.g., dev login which bypasses the normal employee lookup).
 func (s *AuthService) SessionStore() *auth.SessionStore {
 	return s.sessionStore
+}
+
+// OrgNodeName returns the name of an org node by ID.
+func (s *AuthService) OrgNodeName(ctx context.Context, orgNodeID uuid.UUID) (string, error) {
+	var name string
+	err := s.db.QueryRowContext(ctx,
+		`SELECT name FROM org_nodes WHERE id = $1`, orgNodeID,
+	).Scan(&name)
+	if err != nil {
+		return "", nil // node not found → empty name, not an error
+	}
+	return name, nil
 }
 
 // getProfileName retrieves the evaluation profile name for a given profile ID.

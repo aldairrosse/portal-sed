@@ -1,8 +1,9 @@
 <script lang="ts">
 	import { getProfile } from '$lib/stores/devContext.svelte';
 	import { getActivePhase } from '$lib/api/cycle.svelte';
-	import { PROFILE_LABELS, type EvaluationProfile, type CyclePhase } from '$lib/types/evaluation';
-	import { PROFILE_USERS } from '$lib/dev/profileUsers';
+	import { getSession } from '$lib/api/session.svelte';
+	import { titleCase } from '$lib/utils/text';
+	import type { CyclePhase } from '$lib/types/evaluation';
 	import { getGoals, getCategories, getAssignments, getKpis, getGoalKpiLinks } from '$lib/stores/goalsStore.svelte';
 	import pillarsData from '$lib/fixtures/competency/pillars.json';
 	import competenciesData from '$lib/fixtures/competency/competencies.json';
@@ -13,17 +14,19 @@
 		Target,
 		Users,
 		BarChart3,
-		Building,
+		Building2,
 		User,
-		Check
+		Check,
+		Briefcase,
+		ShieldCheck
 	} from '@lucide/svelte';
 	import type { Goal, KPI } from '$lib/types/goal';
 	import type { Pillar, Competency, LevelDefinition } from '$lib/types/competency';
 
+	const session = $derived(getSession());
 	const profile = $derived(getProfile());
 	const phase = $derived(getActivePhase() ?? 'inicio-anio');
-	const user = $derived(PROFILE_USERS[profile]);
-	const profileLabel = $derived(PROFILE_LABELS[profile]);
+	const user = $derived(session.user);
 
 	const assignments = $derived(getAssignments());
 	const allGoals = $derived(getGoals());
@@ -50,18 +53,6 @@
 	const hasReports = $derived(
 		['jefe', 'gerente-tienda', 'divisional', 'regional', 'director', 'director-general'].includes(profile)
 	);
-	const areaMap: Record<EvaluationProfile, string> = {
-		colaborador: 'Operaciones · Sucursal Centro',
-		jefe: 'Servicio al Cliente',
-		vendedor: 'Ventas · Tienda Polanco',
-		'gerente-tienda': 'Tienda Polanco',
-		divisional: 'División Comercial',
-		regional: 'Región Centro',
-		director: 'Dirección General',
-		'director-general': 'Dirección General Corporativa',
-		rh: 'Recursos Humanos'
-	};
-	const myArea = $derived(areaMap[profile]);
 
 	const myGoals = $derived(
 		myAssignment
@@ -112,14 +103,20 @@
 	const today = new Date();
 	const year = today.getFullYear();
 
-	const phaseGuidance: Record<CyclePhase, string> = {
+	const phaseGuidance = $derived<Record<CyclePhase, string>>({
 		'inicio-anio':
-			'Fija tus objetivos y KPIs con tu jefe. Define metas claras para el ciclo.',
+			profile === 'director-general'
+				? 'Visualiza las metas estratégicas de la organización para el ciclo.'
+				: 'Fija tus objetivos y KPIs con tu jefe. Define metas claras para el ciclo.',
 		'medio-anio':
-			'Revisa el avance de tus objetivos. Ajusta lo necesario antes del cierre.',
+			profile === 'director-general'
+				? 'Visualiza el avance de los objetivos organizacionales.'
+				: 'Revisa el avance de tus objetivos. Ajusta lo necesario antes del cierre.',
 		'fin-anio':
-			'Evalúa tu desempeño y completa la autoevaluación.'
-	};
+			profile === 'director-general'
+				? 'Visualiza el desempeño de la organización.'
+				: 'Evalúa tu desempeño y completa la autoevaluación.'
+	});
 
 	function getGoalCategoryName(goal: Goal): string {
 		const cat = allCategories.find((c) => c.id === goal.categoryId);
@@ -142,15 +139,19 @@
 	<!-- Welcome + profile row -->
 	<header>
 		<p class="text-sm text-base-content/40">Hola,</p>
-		<h1 class="mt-1">{user.name}</h1>
+		<h1 class="mt-1">{user?.name}</h1>
 		<div class="flex flex-wrap items-center gap-3 mt-3">
 			<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
-				<ClipboardCheck class="w-3 h-3" />
-				{profileLabel}
+				<Briefcase class="w-3 h-3" />
+				{user?.jobTitle}
 			</span>
 			<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-base-200 text-base-content/60 text-xs font-medium">
-				<Building class="w-3 h-3" />
-				{myArea}
+				<Building2 class="w-3 h-3" />
+				{user?.orgNodeName}
+			</span>
+			<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-secondary/10 text-secondary text-xs font-medium">
+				<ShieldCheck class="w-3 h-3" />
+				{titleCase(user?.profileName ?? '')}
 			</span>
 			{#if hasReports && myDirectReports.length > 0}
 				<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-base-200 text-base-content/60 text-xs font-medium">
@@ -170,7 +171,7 @@
 	<!-- Cycle status + Competencies + Quick access (responsive row) -->
 	<div class="grid grid-cols-1 lg:grid-cols-3 gap-12">
 		<!-- Cycle -->
-		<section class="lg:col-span-2">
+		<section class="{profile === 'director-general' ? 'lg:col-span-3' : 'lg:col-span-2'}">
 			<h2 class="text-xs font-semibold text-base-content/50 tracking-wide mb-3">
 				Ciclo {year}
 			</h2>
@@ -240,40 +241,39 @@
 		</section>
 
 		<!-- Quick access cards -->
-		<section>
-			<h2 class="text-xs font-semibold text-base-content/50 tracking-wide mb-3">
-				Acceso rápido
-			</h2>
-			<div class="grid grid-cols-2 gap-3">
-				<a
-					href="/mi-evaluacion"
-					class="flex flex-col items-center gap-2 p-3 rounded-xl bg-base-200/50 hover:bg-base-200 transition-colors text-center"
-				>
-					<ClipboardCheck class="w-5 h-5 text-primary/70" />
-					<span class="text-xs font-medium text-base-content">Mi evaluación</span>
-				</a>
-				<a
-					href="/objetivos/asignacion"
-					class="flex flex-col items-center gap-2 p-3 rounded-xl bg-base-200/50 hover:bg-base-200 transition-colors text-center"
-				>
-					<Target class="w-5 h-5 text-primary/70" />
-					<span class="text-xs font-medium text-base-content">Asignación</span>
-				</a>
-			</div>
-		</section>
+		{#if profile !== 'director-general'}
+			<section>
+				<h2 class="text-xs font-semibold text-base-content/50 tracking-wide mb-3">
+					Acceso rápido
+				</h2>
+				<div class="grid grid-cols-2 gap-3">
+					<a
+						href="/mi-evaluacion"
+						class="flex flex-col items-center gap-2 p-3 rounded-xl bg-base-200/50 hover:bg-base-200 transition-colors text-center"
+					>
+						<ClipboardCheck class="w-5 h-5 text-primary/70" />
+						<span class="text-xs font-medium text-base-content">Mi evaluación</span>
+					</a>
+					<a
+						href="/objetivos/asignacion"
+						class="flex flex-col items-center gap-2 p-3 rounded-xl bg-base-200/50 hover:bg-base-200 transition-colors text-center"
+					>
+						<Target class="w-5 h-5 text-primary/70" />
+						<span class="text-xs font-medium text-base-content">Asignación</span>
+					</a>
+				</div>
+			</section>
+		{/if}
 	</div>
 
 	<!-- Competencies summary -->
 	{#if myCompetencies.length > 0}
 		<section>
-			<h2 class="text-xs font-semibold text-base-content/50 tracking-wide mb-3">
-				Competencias
-			</h2>
 			<div class="grid grid-cols-1 sm:grid-cols-4 gap-6">
 				{#each competenciesByPillar as group (group.pilar.id)}
 					{#if group.items.length > 0}
 						<div>
-							<h3 class="text-xs font-medium text-base-content/50 mb-2">
+							<h3 class="font-binjay text-lg font-normal text-base-content/50 mb-2">
 								{group.pilar.name}
 							</h3>
 							<ul class="space-y-1">
