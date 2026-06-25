@@ -44,6 +44,8 @@ type Employee struct {
 	ManagerID *uuid.UUID `json:"manager_id,omitempty"`
 	// ProfileID holds the value of the "profile_id" field.
 	ProfileID uuid.UUID `json:"profile_id,omitempty"`
+	// JobTitle holds the value of the "job_title" field.
+	JobTitle string `json:"job_title,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the EmployeeQuery when eager-loading is set.
 	Edges        EmployeeEdges `json:"edges"`
@@ -72,9 +74,11 @@ type EmployeeEdges struct {
 	NineBoxMatrices []*NineBoxMatrix `json:"nine_box_matrices,omitempty"`
 	// NineBoxEntries holds the value of the nine_box_entries edge.
 	NineBoxEntries []*NineBoxEntry `json:"nine_box_entries,omitempty"`
+	// HeadedDepartment holds the value of the headed_department edge.
+	HeadedDepartment []*OrgNode `json:"headed_department,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [10]bool
+	loadedTypes [11]bool
 }
 
 // OrgNodeOrErr returns the OrgNode value or an error if the edge
@@ -173,6 +177,15 @@ func (e EmployeeEdges) NineBoxEntriesOrErr() ([]*NineBoxEntry, error) {
 	return nil, &NotLoadedError{edge: "nine_box_entries"}
 }
 
+// HeadedDepartmentOrErr returns the HeadedDepartment value or an error if the edge
+// was not loaded in eager-loading.
+func (e EmployeeEdges) HeadedDepartmentOrErr() ([]*OrgNode, error) {
+	if e.loadedTypes[10] {
+		return e.HeadedDepartment, nil
+	}
+	return nil, &NotLoadedError{edge: "headed_department"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*Employee) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
@@ -182,7 +195,7 @@ func (*Employee) scanValues(columns []string) ([]any, error) {
 			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		case employee.FieldIsActive:
 			values[i] = new(sql.NullBool)
-		case employee.FieldFirstName, employee.FieldLastName, employee.FieldEmployeeNumber, employee.FieldEmail:
+		case employee.FieldFirstName, employee.FieldLastName, employee.FieldEmployeeNumber, employee.FieldEmail, employee.FieldJobTitle:
 			values[i] = new(sql.NullString)
 		case employee.FieldCreatedAt, employee.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -282,6 +295,12 @@ func (_m *Employee) assignValues(columns []string, values []any) error {
 			} else if value != nil {
 				_m.ProfileID = *value
 			}
+		case employee.FieldJobTitle:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field job_title", values[i])
+			} else if value.Valid {
+				_m.JobTitle = value.String
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -345,6 +364,11 @@ func (_m *Employee) QueryNineBoxEntries() *NineBoxEntryQuery {
 	return NewEmployeeClient(_m.config).QueryNineBoxEntries(_m)
 }
 
+// QueryHeadedDepartment queries the "headed_department" edge of the Employee entity.
+func (_m *Employee) QueryHeadedDepartment() *OrgNodeQuery {
+	return NewEmployeeClient(_m.config).QueryHeadedDepartment(_m)
+}
+
 // Update returns a builder for updating this Employee.
 // Note that you need to call Employee.Unwrap() before calling this method if this Employee
 // was returned from a transaction, and the transaction was committed or rolled back.
@@ -405,6 +429,9 @@ func (_m *Employee) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("profile_id=")
 	builder.WriteString(fmt.Sprintf("%v", _m.ProfileID))
+	builder.WriteString(", ")
+	builder.WriteString("job_title=")
+	builder.WriteString(_m.JobTitle)
 	builder.WriteByte(')')
 	return builder.String()
 }

@@ -154,6 +154,10 @@ func init() {
 	employeeDescIsActive := employeeFields[5].Descriptor()
 	// employee.DefaultIsActive holds the default value on creation for the is_active field.
 	employee.DefaultIsActive = employeeDescIsActive.Default.(bool)
+	// employeeDescJobTitle is the schema descriptor for job_title field.
+	employeeDescJobTitle := employeeFields[9].Descriptor()
+	// employee.JobTitleValidator is a validator for the "job_title" field. It is called by the builders before save.
+	employee.JobTitleValidator = employeeDescJobTitle.Validators[0].(func(string) error)
 	// employeeDescID is the schema descriptor for id field.
 	employeeDescID := employeeFields[0].Descriptor()
 	// employee.DefaultID holds the default value on creation for the id field.
@@ -411,14 +415,14 @@ func init() {
 	nineboxentry.DefaultVersion = nineboxentryDescVersion.Default.(int)
 	// nineboxentry.VersionValidator is a validator for the "version" field. It is called by the builders before save.
 	nineboxentry.VersionValidator = nineboxentryDescVersion.Validators[0].(func(int) error)
-	// nineboxentryDescPerformanceScore is the schema descriptor for performance_score field.
-	nineboxentryDescPerformanceScore := nineboxentryFields[1].Descriptor()
-	// nineboxentry.PerformanceScoreValidator is a validator for the "performance_score" field. It is called by the builders before save.
-	nineboxentry.PerformanceScoreValidator = nineboxentryDescPerformanceScore.Validators[0].(func(int) error)
-	// nineboxentryDescPotentialScore is the schema descriptor for potential_score field.
-	nineboxentryDescPotentialScore := nineboxentryFields[2].Descriptor()
-	// nineboxentry.PotentialScoreValidator is a validator for the "potential_score" field. It is called by the builders before save.
-	nineboxentry.PotentialScoreValidator = nineboxentryDescPotentialScore.Validators[0].(func(int) error)
+	// nineboxentryDescPerformanceTier is the schema descriptor for performance_tier field.
+	nineboxentryDescPerformanceTier := nineboxentryFields[1].Descriptor()
+	// nineboxentry.PerformanceTierValidator is a validator for the "performance_tier" field. It is called by the builders before save.
+	nineboxentry.PerformanceTierValidator = nineboxentryDescPerformanceTier.Validators[0].(func(int) error)
+	// nineboxentryDescPotentialTier is the schema descriptor for potential_tier field.
+	nineboxentryDescPotentialTier := nineboxentryFields[2].Descriptor()
+	// nineboxentry.PotentialTierValidator is a validator for the "potential_tier" field. It is called by the builders before save.
+	nineboxentry.PotentialTierValidator = nineboxentryDescPotentialTier.Validators[0].(func(int) error)
 	// nineboxentryDescQuadrant is the schema descriptor for quadrant field.
 	nineboxentryDescQuadrant := nineboxentryFields[3].Descriptor()
 	// nineboxentry.QuadrantValidator is a validator for the "quadrant" field. It is called by the builders before save.
@@ -456,10 +460,14 @@ func init() {
 	nineboxquadrantDescLabel := nineboxquadrantFields[2].Descriptor()
 	// nineboxquadrant.LabelValidator is a validator for the "label" field. It is called by the builders before save.
 	nineboxquadrant.LabelValidator = nineboxquadrantDescLabel.Validators[0].(func(string) error)
-	// nineboxquadrantDescColor is the schema descriptor for color field.
-	nineboxquadrantDescColor := nineboxquadrantFields[4].Descriptor()
-	// nineboxquadrant.ColorValidator is a validator for the "color" field. It is called by the builders before save.
-	nineboxquadrant.ColorValidator = nineboxquadrantDescColor.Validators[0].(func(string) error)
+	// nineboxquadrantDescTitle is the schema descriptor for title field.
+	nineboxquadrantDescTitle := nineboxquadrantFields[6].Descriptor()
+	// nineboxquadrant.TitleValidator is a validator for the "title" field. It is called by the builders before save.
+	nineboxquadrant.TitleValidator = nineboxquadrantDescTitle.Validators[0].(func(string) error)
+	// nineboxquadrantDescColorHex is the schema descriptor for color_hex field.
+	nineboxquadrantDescColorHex := nineboxquadrantFields[7].Descriptor()
+	// nineboxquadrant.ColorHexValidator is a validator for the "color_hex" field. It is called by the builders before save.
+	nineboxquadrant.ColorHexValidator = nineboxquadrantDescColorHex.Validators[0].(func(string) error)
 	// nineboxquadrantDescID is the schema descriptor for id field.
 	nineboxquadrantDescID := nineboxquadrantFields[0].Descriptor()
 	// nineboxquadrant.DefaultID holds the default value on creation for the id field.

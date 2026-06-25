@@ -13,6 +13,7 @@ import (
 	"github.com/sed-evaluacion-desempeno/api/internal/cycle"
 	"github.com/sed-evaluacion-desempeno/api/internal/employee"
 	"github.com/sed-evaluacion-desempeno/api/internal/nineboxmatrix"
+	"github.com/sed-evaluacion-desempeno/api/internal/phasedefinition"
 )
 
 // NineBoxMatrix is the model entity for the NineBoxMatrix schema.
@@ -28,6 +29,8 @@ type NineBoxMatrix struct {
 	CycleID uuid.UUID `json:"cycle_id,omitempty"`
 	// EvaluatorID holds the value of the "evaluator_id" field.
 	EvaluatorID uuid.UUID `json:"evaluator_id,omitempty"`
+	// PhaseID holds the value of the "phase_id" field.
+	PhaseID uuid.UUID `json:"phase_id,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the NineBoxMatrixQuery when eager-loading is set.
 	Edges        NineBoxMatrixEdges `json:"edges"`
@@ -40,11 +43,13 @@ type NineBoxMatrixEdges struct {
 	Cycle *Cycle `json:"cycle,omitempty"`
 	// Evaluator holds the value of the evaluator edge.
 	Evaluator *Employee `json:"evaluator,omitempty"`
+	// Phase holds the value of the phase edge.
+	Phase *PhaseDefinition `json:"phase,omitempty"`
 	// Entries holds the value of the entries edge.
 	Entries []*NineBoxEntry `json:"entries,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [3]bool
+	loadedTypes [4]bool
 }
 
 // CycleOrErr returns the Cycle value or an error if the edge
@@ -69,10 +74,21 @@ func (e NineBoxMatrixEdges) EvaluatorOrErr() (*Employee, error) {
 	return nil, &NotLoadedError{edge: "evaluator"}
 }
 
+// PhaseOrErr returns the Phase value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e NineBoxMatrixEdges) PhaseOrErr() (*PhaseDefinition, error) {
+	if e.Phase != nil {
+		return e.Phase, nil
+	} else if e.loadedTypes[2] {
+		return nil, &NotFoundError{label: phasedefinition.Label}
+	}
+	return nil, &NotLoadedError{edge: "phase"}
+}
+
 // EntriesOrErr returns the Entries value or an error if the edge
 // was not loaded in eager-loading.
 func (e NineBoxMatrixEdges) EntriesOrErr() ([]*NineBoxEntry, error) {
-	if e.loadedTypes[2] {
+	if e.loadedTypes[3] {
 		return e.Entries, nil
 	}
 	return nil, &NotLoadedError{edge: "entries"}
@@ -85,7 +101,7 @@ func (*NineBoxMatrix) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case nineboxmatrix.FieldCreatedAt, nineboxmatrix.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
-		case nineboxmatrix.FieldID, nineboxmatrix.FieldCycleID, nineboxmatrix.FieldEvaluatorID:
+		case nineboxmatrix.FieldID, nineboxmatrix.FieldCycleID, nineboxmatrix.FieldEvaluatorID, nineboxmatrix.FieldPhaseID:
 			values[i] = new(uuid.UUID)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -132,6 +148,12 @@ func (_m *NineBoxMatrix) assignValues(columns []string, values []any) error {
 			} else if value != nil {
 				_m.EvaluatorID = *value
 			}
+		case nineboxmatrix.FieldPhaseID:
+			if value, ok := values[i].(*uuid.UUID); !ok {
+				return fmt.Errorf("unexpected type %T for field phase_id", values[i])
+			} else if value != nil {
+				_m.PhaseID = *value
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -153,6 +175,11 @@ func (_m *NineBoxMatrix) QueryCycle() *CycleQuery {
 // QueryEvaluator queries the "evaluator" edge of the NineBoxMatrix entity.
 func (_m *NineBoxMatrix) QueryEvaluator() *EmployeeQuery {
 	return NewNineBoxMatrixClient(_m.config).QueryEvaluator(_m)
+}
+
+// QueryPhase queries the "phase" edge of the NineBoxMatrix entity.
+func (_m *NineBoxMatrix) QueryPhase() *PhaseDefinitionQuery {
+	return NewNineBoxMatrixClient(_m.config).QueryPhase(_m)
 }
 
 // QueryEntries queries the "entries" edge of the NineBoxMatrix entity.
@@ -194,6 +221,9 @@ func (_m *NineBoxMatrix) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("evaluator_id=")
 	builder.WriteString(fmt.Sprintf("%v", _m.EvaluatorID))
+	builder.WriteString(", ")
+	builder.WriteString("phase_id=")
+	builder.WriteString(fmt.Sprintf("%v", _m.PhaseID))
 	builder.WriteByte(')')
 	return builder.String()
 }

@@ -27,7 +27,11 @@ type NineBoxQuadrant struct {
 	Color string `json:"color,omitempty"`
 	// ActionRecommendation holds the value of the "action_recommendation" field.
 	ActionRecommendation string `json:"action_recommendation,omitempty"`
-	selectValues         sql.SelectValues
+	// Title holds the value of the "title" field.
+	Title string `json:"title,omitempty"`
+	// ColorHex holds the value of the "color_hex" field.
+	ColorHex     string `json:"color_hex,omitempty"`
+	selectValues sql.SelectValues
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -37,7 +41,7 @@ func (*NineBoxQuadrant) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case nineboxquadrant.FieldQuadrant:
 			values[i] = new(sql.NullInt64)
-		case nineboxquadrant.FieldLabel, nineboxquadrant.FieldDescription, nineboxquadrant.FieldColor, nineboxquadrant.FieldActionRecommendation:
+		case nineboxquadrant.FieldLabel, nineboxquadrant.FieldDescription, nineboxquadrant.FieldColor, nineboxquadrant.FieldActionRecommendation, nineboxquadrant.FieldTitle, nineboxquadrant.FieldColorHex:
 			values[i] = new(sql.NullString)
 		case nineboxquadrant.FieldID:
 			values[i] = new(uuid.UUID)
@@ -92,6 +96,18 @@ func (_m *NineBoxQuadrant) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.ActionRecommendation = value.String
 			}
+		case nineboxquadrant.FieldTitle:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field title", values[i])
+			} else if value.Valid {
+				_m.Title = value.String
+			}
+		case nineboxquadrant.FieldColorHex:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field color_hex", values[i])
+			} else if value.Valid {
+				_m.ColorHex = value.String
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -142,6 +158,12 @@ func (_m *NineBoxQuadrant) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("action_recommendation=")
 	builder.WriteString(_m.ActionRecommendation)
+	builder.WriteString(", ")
+	builder.WriteString("title=")
+	builder.WriteString(_m.Title)
+	builder.WriteString(", ")
+	builder.WriteString("color_hex=")
+	builder.WriteString(_m.ColorHex)
 	builder.WriteByte(')')
 	return builder.String()
 }

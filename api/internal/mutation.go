@@ -3114,6 +3114,7 @@ type EmployeeMutation struct {
 	employee_number          *string
 	email                    *string
 	is_active                *bool
+	job_title                *string
 	clearedFields            map[string]struct{}
 	org_node                 *uuid.UUID
 	clearedorg_node          bool
@@ -3142,6 +3143,9 @@ type EmployeeMutation struct {
 	nine_box_entries         map[uuid.UUID]struct{}
 	removednine_box_entries  map[uuid.UUID]struct{}
 	clearednine_box_entries  bool
+	headed_department        map[uuid.UUID]struct{}
+	removedheaded_department map[uuid.UUID]struct{}
+	clearedheaded_department bool
 	done                     bool
 	oldValue                 func(context.Context) (*Employee, error)
 	predicates               []predicate.Employee
@@ -3696,6 +3700,55 @@ func (m *EmployeeMutation) ResetProfileID() {
 	m.profile = nil
 }
 
+// SetJobTitle sets the "job_title" field.
+func (m *EmployeeMutation) SetJobTitle(s string) {
+	m.job_title = &s
+}
+
+// JobTitle returns the value of the "job_title" field in the mutation.
+func (m *EmployeeMutation) JobTitle() (r string, exists bool) {
+	v := m.job_title
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldJobTitle returns the old "job_title" field's value of the Employee entity.
+// If the Employee object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EmployeeMutation) OldJobTitle(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldJobTitle is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldJobTitle requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldJobTitle: %w", err)
+	}
+	return oldValue.JobTitle, nil
+}
+
+// ClearJobTitle clears the value of the "job_title" field.
+func (m *EmployeeMutation) ClearJobTitle() {
+	m.job_title = nil
+	m.clearedFields[employee.FieldJobTitle] = struct{}{}
+}
+
+// JobTitleCleared returns if the "job_title" field was cleared in this mutation.
+func (m *EmployeeMutation) JobTitleCleared() bool {
+	_, ok := m.clearedFields[employee.FieldJobTitle]
+	return ok
+}
+
+// ResetJobTitle resets all changes to the "job_title" field.
+func (m *EmployeeMutation) ResetJobTitle() {
+	m.job_title = nil
+	delete(m.clearedFields, employee.FieldJobTitle)
+}
+
 // ClearOrgNode clears the "org_node" edge to the OrgNode entity.
 func (m *EmployeeMutation) ClearOrgNode() {
 	m.clearedorg_node = true
@@ -4155,6 +4208,60 @@ func (m *EmployeeMutation) ResetNineBoxEntries() {
 	m.removednine_box_entries = nil
 }
 
+// AddHeadedDepartmentIDs adds the "headed_department" edge to the OrgNode entity by ids.
+func (m *EmployeeMutation) AddHeadedDepartmentIDs(ids ...uuid.UUID) {
+	if m.headed_department == nil {
+		m.headed_department = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.headed_department[ids[i]] = struct{}{}
+	}
+}
+
+// ClearHeadedDepartment clears the "headed_department" edge to the OrgNode entity.
+func (m *EmployeeMutation) ClearHeadedDepartment() {
+	m.clearedheaded_department = true
+}
+
+// HeadedDepartmentCleared reports if the "headed_department" edge to the OrgNode entity was cleared.
+func (m *EmployeeMutation) HeadedDepartmentCleared() bool {
+	return m.clearedheaded_department
+}
+
+// RemoveHeadedDepartmentIDs removes the "headed_department" edge to the OrgNode entity by IDs.
+func (m *EmployeeMutation) RemoveHeadedDepartmentIDs(ids ...uuid.UUID) {
+	if m.removedheaded_department == nil {
+		m.removedheaded_department = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.headed_department, ids[i])
+		m.removedheaded_department[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedHeadedDepartment returns the removed IDs of the "headed_department" edge to the OrgNode entity.
+func (m *EmployeeMutation) RemovedHeadedDepartmentIDs() (ids []uuid.UUID) {
+	for id := range m.removedheaded_department {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// HeadedDepartmentIDs returns the "headed_department" edge IDs in the mutation.
+func (m *EmployeeMutation) HeadedDepartmentIDs() (ids []uuid.UUID) {
+	for id := range m.headed_department {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetHeadedDepartment resets all changes to the "headed_department" edge.
+func (m *EmployeeMutation) ResetHeadedDepartment() {
+	m.headed_department = nil
+	m.clearedheaded_department = false
+	m.removedheaded_department = nil
+}
+
 // Where appends a list predicates to the EmployeeMutation builder.
 func (m *EmployeeMutation) Where(ps ...predicate.Employee) {
 	m.predicates = append(m.predicates, ps...)
@@ -4189,7 +4296,7 @@ func (m *EmployeeMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *EmployeeMutation) Fields() []string {
-	fields := make([]string, 0, 12)
+	fields := make([]string, 0, 13)
 	if m.created_at != nil {
 		fields = append(fields, employee.FieldCreatedAt)
 	}
@@ -4226,6 +4333,9 @@ func (m *EmployeeMutation) Fields() []string {
 	if m.profile != nil {
 		fields = append(fields, employee.FieldProfileID)
 	}
+	if m.job_title != nil {
+		fields = append(fields, employee.FieldJobTitle)
+	}
 	return fields
 }
 
@@ -4258,6 +4368,8 @@ func (m *EmployeeMutation) Field(name string) (ent.Value, bool) {
 		return m.ManagerID()
 	case employee.FieldProfileID:
 		return m.ProfileID()
+	case employee.FieldJobTitle:
+		return m.JobTitle()
 	}
 	return nil, false
 }
@@ -4291,6 +4403,8 @@ func (m *EmployeeMutation) OldField(ctx context.Context, name string) (ent.Value
 		return m.OldManagerID(ctx)
 	case employee.FieldProfileID:
 		return m.OldProfileID(ctx)
+	case employee.FieldJobTitle:
+		return m.OldJobTitle(ctx)
 	}
 	return nil, fmt.Errorf("unknown Employee field %s", name)
 }
@@ -4384,6 +4498,13 @@ func (m *EmployeeMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetProfileID(v)
 		return nil
+	case employee.FieldJobTitle:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetJobTitle(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Employee field %s", name)
 }
@@ -4417,6 +4538,9 @@ func (m *EmployeeMutation) ClearedFields() []string {
 	if m.FieldCleared(employee.FieldManagerID) {
 		fields = append(fields, employee.FieldManagerID)
 	}
+	if m.FieldCleared(employee.FieldJobTitle) {
+		fields = append(fields, employee.FieldJobTitle)
+	}
 	return fields
 }
 
@@ -4433,6 +4557,9 @@ func (m *EmployeeMutation) ClearField(name string) error {
 	switch name {
 	case employee.FieldManagerID:
 		m.ClearManagerID()
+		return nil
+	case employee.FieldJobTitle:
+		m.ClearJobTitle()
 		return nil
 	}
 	return fmt.Errorf("unknown Employee nullable field %s", name)
@@ -4478,13 +4605,16 @@ func (m *EmployeeMutation) ResetField(name string) error {
 	case employee.FieldProfileID:
 		m.ResetProfileID()
 		return nil
+	case employee.FieldJobTitle:
+		m.ResetJobTitle()
+		return nil
 	}
 	return fmt.Errorf("unknown Employee field %s", name)
 }
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *EmployeeMutation) AddedEdges() []string {
-	edges := make([]string, 0, 10)
+	edges := make([]string, 0, 11)
 	if m.org_node != nil {
 		edges = append(edges, employee.EdgeOrgNode)
 	}
@@ -4514,6 +4644,9 @@ func (m *EmployeeMutation) AddedEdges() []string {
 	}
 	if m.nine_box_entries != nil {
 		edges = append(edges, employee.EdgeNineBoxEntries)
+	}
+	if m.headed_department != nil {
+		edges = append(edges, employee.EdgeHeadedDepartment)
 	}
 	return edges
 }
@@ -4576,13 +4709,19 @@ func (m *EmployeeMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case employee.EdgeHeadedDepartment:
+		ids := make([]ent.Value, 0, len(m.headed_department))
+		for id := range m.headed_department {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *EmployeeMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 10)
+	edges := make([]string, 0, 11)
 	if m.removeddirect_reports != nil {
 		edges = append(edges, employee.EdgeDirectReports)
 	}
@@ -4603,6 +4742,9 @@ func (m *EmployeeMutation) RemovedEdges() []string {
 	}
 	if m.removednine_box_entries != nil {
 		edges = append(edges, employee.EdgeNineBoxEntries)
+	}
+	if m.removedheaded_department != nil {
+		edges = append(edges, employee.EdgeHeadedDepartment)
 	}
 	return edges
 }
@@ -4653,13 +4795,19 @@ func (m *EmployeeMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case employee.EdgeHeadedDepartment:
+		ids := make([]ent.Value, 0, len(m.removedheaded_department))
+		for id := range m.removedheaded_department {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *EmployeeMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 10)
+	edges := make([]string, 0, 11)
 	if m.clearedorg_node {
 		edges = append(edges, employee.EdgeOrgNode)
 	}
@@ -4690,6 +4838,9 @@ func (m *EmployeeMutation) ClearedEdges() []string {
 	if m.clearednine_box_entries {
 		edges = append(edges, employee.EdgeNineBoxEntries)
 	}
+	if m.clearedheaded_department {
+		edges = append(edges, employee.EdgeHeadedDepartment)
+	}
 	return edges
 }
 
@@ -4717,6 +4868,8 @@ func (m *EmployeeMutation) EdgeCleared(name string) bool {
 		return m.clearednine_box_matrices
 	case employee.EdgeNineBoxEntries:
 		return m.clearednine_box_entries
+	case employee.EdgeHeadedDepartment:
+		return m.clearedheaded_department
 	}
 	return false
 }
@@ -4771,6 +4924,9 @@ func (m *EmployeeMutation) ResetEdge(name string) error {
 		return nil
 	case employee.EdgeNineBoxEntries:
 		m.ResetNineBoxEntries()
+		return nil
+	case employee.EdgeHeadedDepartment:
+		m.ResetHeadedDepartment()
 		return nil
 	}
 	return fmt.Errorf("unknown Employee edge %s", name)
@@ -9064,6 +9220,9 @@ type GoalMutation struct {
 	addtarget_value         *float64
 	current_value           *float64
 	addcurrent_value        *float64
+	direction               *goal.Direction
+	baseline_value          *float64
+	addbaseline_value       *float64
 	state                   *goal.State
 	clearedFields           map[string]struct{}
 	category                *uuid.UUID
@@ -9672,6 +9831,112 @@ func (m *GoalMutation) ResetCurrentValue() {
 	m.addcurrent_value = nil
 }
 
+// SetDirection sets the "direction" field.
+func (m *GoalMutation) SetDirection(_go goal.Direction) {
+	m.direction = &_go
+}
+
+// Direction returns the value of the "direction" field in the mutation.
+func (m *GoalMutation) Direction() (r goal.Direction, exists bool) {
+	v := m.direction
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDirection returns the old "direction" field's value of the Goal entity.
+// If the Goal object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GoalMutation) OldDirection(ctx context.Context) (v goal.Direction, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDirection is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDirection requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDirection: %w", err)
+	}
+	return oldValue.Direction, nil
+}
+
+// ResetDirection resets all changes to the "direction" field.
+func (m *GoalMutation) ResetDirection() {
+	m.direction = nil
+}
+
+// SetBaselineValue sets the "baseline_value" field.
+func (m *GoalMutation) SetBaselineValue(f float64) {
+	m.baseline_value = &f
+	m.addbaseline_value = nil
+}
+
+// BaselineValue returns the value of the "baseline_value" field in the mutation.
+func (m *GoalMutation) BaselineValue() (r float64, exists bool) {
+	v := m.baseline_value
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldBaselineValue returns the old "baseline_value" field's value of the Goal entity.
+// If the Goal object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GoalMutation) OldBaselineValue(ctx context.Context) (v *float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldBaselineValue is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldBaselineValue requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldBaselineValue: %w", err)
+	}
+	return oldValue.BaselineValue, nil
+}
+
+// AddBaselineValue adds f to the "baseline_value" field.
+func (m *GoalMutation) AddBaselineValue(f float64) {
+	if m.addbaseline_value != nil {
+		*m.addbaseline_value += f
+	} else {
+		m.addbaseline_value = &f
+	}
+}
+
+// AddedBaselineValue returns the value that was added to the "baseline_value" field in this mutation.
+func (m *GoalMutation) AddedBaselineValue() (r float64, exists bool) {
+	v := m.addbaseline_value
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearBaselineValue clears the value of the "baseline_value" field.
+func (m *GoalMutation) ClearBaselineValue() {
+	m.baseline_value = nil
+	m.addbaseline_value = nil
+	m.clearedFields[goal.FieldBaselineValue] = struct{}{}
+}
+
+// BaselineValueCleared returns if the "baseline_value" field was cleared in this mutation.
+func (m *GoalMutation) BaselineValueCleared() bool {
+	_, ok := m.clearedFields[goal.FieldBaselineValue]
+	return ok
+}
+
+// ResetBaselineValue resets all changes to the "baseline_value" field.
+func (m *GoalMutation) ResetBaselineValue() {
+	m.baseline_value = nil
+	m.addbaseline_value = nil
+	delete(m.clearedFields, goal.FieldBaselineValue)
+}
+
 // SetState sets the "state" field.
 func (m *GoalMutation) SetState(_go goal.State) {
 	m.state = &_go
@@ -9913,7 +10178,7 @@ func (m *GoalMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *GoalMutation) Fields() []string {
-	fields := make([]string, 0, 13)
+	fields := make([]string, 0, 15)
 	if m.created_at != nil {
 		fields = append(fields, goal.FieldCreatedAt)
 	}
@@ -9946,6 +10211,12 @@ func (m *GoalMutation) Fields() []string {
 	}
 	if m.current_value != nil {
 		fields = append(fields, goal.FieldCurrentValue)
+	}
+	if m.direction != nil {
+		fields = append(fields, goal.FieldDirection)
+	}
+	if m.baseline_value != nil {
+		fields = append(fields, goal.FieldBaselineValue)
 	}
 	if m.state != nil {
 		fields = append(fields, goal.FieldState)
@@ -9983,6 +10254,10 @@ func (m *GoalMutation) Field(name string) (ent.Value, bool) {
 		return m.TargetValue()
 	case goal.FieldCurrentValue:
 		return m.CurrentValue()
+	case goal.FieldDirection:
+		return m.Direction()
+	case goal.FieldBaselineValue:
+		return m.BaselineValue()
 	case goal.FieldState:
 		return m.State()
 	case goal.FieldCategoryID:
@@ -10018,6 +10293,10 @@ func (m *GoalMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldTargetValue(ctx)
 	case goal.FieldCurrentValue:
 		return m.OldCurrentValue(ctx)
+	case goal.FieldDirection:
+		return m.OldDirection(ctx)
+	case goal.FieldBaselineValue:
+		return m.OldBaselineValue(ctx)
 	case goal.FieldState:
 		return m.OldState(ctx)
 	case goal.FieldCategoryID:
@@ -10108,6 +10387,20 @@ func (m *GoalMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetCurrentValue(v)
 		return nil
+	case goal.FieldDirection:
+		v, ok := value.(goal.Direction)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDirection(v)
+		return nil
+	case goal.FieldBaselineValue:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetBaselineValue(v)
+		return nil
 	case goal.FieldState:
 		v, ok := value.(goal.State)
 		if !ok {
@@ -10142,6 +10435,9 @@ func (m *GoalMutation) AddedFields() []string {
 	if m.addcurrent_value != nil {
 		fields = append(fields, goal.FieldCurrentValue)
 	}
+	if m.addbaseline_value != nil {
+		fields = append(fields, goal.FieldBaselineValue)
+	}
 	return fields
 }
 
@@ -10158,6 +10454,8 @@ func (m *GoalMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedTargetValue()
 	case goal.FieldCurrentValue:
 		return m.AddedCurrentValue()
+	case goal.FieldBaselineValue:
+		return m.AddedBaselineValue()
 	}
 	return nil, false
 }
@@ -10195,6 +10493,13 @@ func (m *GoalMutation) AddField(name string, value ent.Value) error {
 		}
 		m.AddCurrentValue(v)
 		return nil
+	case goal.FieldBaselineValue:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddBaselineValue(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Goal numeric field %s", name)
 }
@@ -10205,6 +10510,9 @@ func (m *GoalMutation) ClearedFields() []string {
 	var fields []string
 	if m.FieldCleared(goal.FieldDescription) {
 		fields = append(fields, goal.FieldDescription)
+	}
+	if m.FieldCleared(goal.FieldBaselineValue) {
+		fields = append(fields, goal.FieldBaselineValue)
 	}
 	return fields
 }
@@ -10222,6 +10530,9 @@ func (m *GoalMutation) ClearField(name string) error {
 	switch name {
 	case goal.FieldDescription:
 		m.ClearDescription()
+		return nil
+	case goal.FieldBaselineValue:
+		m.ClearBaselineValue()
 		return nil
 	}
 	return fmt.Errorf("unknown Goal nullable field %s", name)
@@ -10263,6 +10574,12 @@ func (m *GoalMutation) ResetField(name string) error {
 		return nil
 	case goal.FieldCurrentValue:
 		m.ResetCurrentValue()
+		return nil
+	case goal.FieldDirection:
+		m.ResetDirection()
+		return nil
+	case goal.FieldBaselineValue:
+		m.ResetBaselineValue()
 		return nil
 	case goal.FieldState:
 		m.ResetState()
@@ -12448,6 +12765,9 @@ type KPIMutation struct {
 	name              *string
 	unit              *kpi.Unit
 	description       *string
+	direction         *kpi.Direction
+	current_value     *float64
+	addcurrent_value  *float64
 	clearedFields     map[string]struct{}
 	goal_links        map[int]struct{}
 	removedgoal_links map[int]struct{}
@@ -12754,6 +13074,112 @@ func (m *KPIMutation) ResetDescription() {
 	delete(m.clearedFields, kpi.FieldDescription)
 }
 
+// SetDirection sets the "direction" field.
+func (m *KPIMutation) SetDirection(k kpi.Direction) {
+	m.direction = &k
+}
+
+// Direction returns the value of the "direction" field in the mutation.
+func (m *KPIMutation) Direction() (r kpi.Direction, exists bool) {
+	v := m.direction
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDirection returns the old "direction" field's value of the KPI entity.
+// If the KPI object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *KPIMutation) OldDirection(ctx context.Context) (v kpi.Direction, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDirection is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDirection requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDirection: %w", err)
+	}
+	return oldValue.Direction, nil
+}
+
+// ResetDirection resets all changes to the "direction" field.
+func (m *KPIMutation) ResetDirection() {
+	m.direction = nil
+}
+
+// SetCurrentValue sets the "current_value" field.
+func (m *KPIMutation) SetCurrentValue(f float64) {
+	m.current_value = &f
+	m.addcurrent_value = nil
+}
+
+// CurrentValue returns the value of the "current_value" field in the mutation.
+func (m *KPIMutation) CurrentValue() (r float64, exists bool) {
+	v := m.current_value
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCurrentValue returns the old "current_value" field's value of the KPI entity.
+// If the KPI object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *KPIMutation) OldCurrentValue(ctx context.Context) (v *float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCurrentValue is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCurrentValue requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCurrentValue: %w", err)
+	}
+	return oldValue.CurrentValue, nil
+}
+
+// AddCurrentValue adds f to the "current_value" field.
+func (m *KPIMutation) AddCurrentValue(f float64) {
+	if m.addcurrent_value != nil {
+		*m.addcurrent_value += f
+	} else {
+		m.addcurrent_value = &f
+	}
+}
+
+// AddedCurrentValue returns the value that was added to the "current_value" field in this mutation.
+func (m *KPIMutation) AddedCurrentValue() (r float64, exists bool) {
+	v := m.addcurrent_value
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearCurrentValue clears the value of the "current_value" field.
+func (m *KPIMutation) ClearCurrentValue() {
+	m.current_value = nil
+	m.addcurrent_value = nil
+	m.clearedFields[kpi.FieldCurrentValue] = struct{}{}
+}
+
+// CurrentValueCleared returns if the "current_value" field was cleared in this mutation.
+func (m *KPIMutation) CurrentValueCleared() bool {
+	_, ok := m.clearedFields[kpi.FieldCurrentValue]
+	return ok
+}
+
+// ResetCurrentValue resets all changes to the "current_value" field.
+func (m *KPIMutation) ResetCurrentValue() {
+	m.current_value = nil
+	m.addcurrent_value = nil
+	delete(m.clearedFields, kpi.FieldCurrentValue)
+}
+
 // AddGoalLinkIDs adds the "goal_links" edge to the GoalKpiLink entity by ids.
 func (m *KPIMutation) AddGoalLinkIDs(ids ...int) {
 	if m.goal_links == nil {
@@ -12842,7 +13268,7 @@ func (m *KPIMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *KPIMutation) Fields() []string {
-	fields := make([]string, 0, 5)
+	fields := make([]string, 0, 7)
 	if m.created_at != nil {
 		fields = append(fields, kpi.FieldCreatedAt)
 	}
@@ -12857,6 +13283,12 @@ func (m *KPIMutation) Fields() []string {
 	}
 	if m.description != nil {
 		fields = append(fields, kpi.FieldDescription)
+	}
+	if m.direction != nil {
+		fields = append(fields, kpi.FieldDirection)
+	}
+	if m.current_value != nil {
+		fields = append(fields, kpi.FieldCurrentValue)
 	}
 	return fields
 }
@@ -12876,6 +13308,10 @@ func (m *KPIMutation) Field(name string) (ent.Value, bool) {
 		return m.Unit()
 	case kpi.FieldDescription:
 		return m.Description()
+	case kpi.FieldDirection:
+		return m.Direction()
+	case kpi.FieldCurrentValue:
+		return m.CurrentValue()
 	}
 	return nil, false
 }
@@ -12895,6 +13331,10 @@ func (m *KPIMutation) OldField(ctx context.Context, name string) (ent.Value, err
 		return m.OldUnit(ctx)
 	case kpi.FieldDescription:
 		return m.OldDescription(ctx)
+	case kpi.FieldDirection:
+		return m.OldDirection(ctx)
+	case kpi.FieldCurrentValue:
+		return m.OldCurrentValue(ctx)
 	}
 	return nil, fmt.Errorf("unknown KPI field %s", name)
 }
@@ -12939,6 +13379,20 @@ func (m *KPIMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetDescription(v)
 		return nil
+	case kpi.FieldDirection:
+		v, ok := value.(kpi.Direction)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDirection(v)
+		return nil
+	case kpi.FieldCurrentValue:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCurrentValue(v)
+		return nil
 	}
 	return fmt.Errorf("unknown KPI field %s", name)
 }
@@ -12946,13 +13400,21 @@ func (m *KPIMutation) SetField(name string, value ent.Value) error {
 // AddedFields returns all numeric fields that were incremented/decremented during
 // this mutation.
 func (m *KPIMutation) AddedFields() []string {
-	return nil
+	var fields []string
+	if m.addcurrent_value != nil {
+		fields = append(fields, kpi.FieldCurrentValue)
+	}
+	return fields
 }
 
 // AddedField returns the numeric value that was incremented/decremented on a field
 // with the given name. The second boolean return value indicates that this field
 // was not set, or was not defined in the schema.
 func (m *KPIMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case kpi.FieldCurrentValue:
+		return m.AddedCurrentValue()
+	}
 	return nil, false
 }
 
@@ -12961,6 +13423,13 @@ func (m *KPIMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *KPIMutation) AddField(name string, value ent.Value) error {
 	switch name {
+	case kpi.FieldCurrentValue:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddCurrentValue(v)
+		return nil
 	}
 	return fmt.Errorf("unknown KPI numeric field %s", name)
 }
@@ -12971,6 +13440,9 @@ func (m *KPIMutation) ClearedFields() []string {
 	var fields []string
 	if m.FieldCleared(kpi.FieldDescription) {
 		fields = append(fields, kpi.FieldDescription)
+	}
+	if m.FieldCleared(kpi.FieldCurrentValue) {
+		fields = append(fields, kpi.FieldCurrentValue)
 	}
 	return fields
 }
@@ -12988,6 +13460,9 @@ func (m *KPIMutation) ClearField(name string) error {
 	switch name {
 	case kpi.FieldDescription:
 		m.ClearDescription()
+		return nil
+	case kpi.FieldCurrentValue:
+		m.ClearCurrentValue()
 		return nil
 	}
 	return fmt.Errorf("unknown KPI nullable field %s", name)
@@ -13011,6 +13486,12 @@ func (m *KPIMutation) ResetField(name string) error {
 		return nil
 	case kpi.FieldDescription:
 		m.ResetDescription()
+		return nil
+	case kpi.FieldDirection:
+		m.ResetDirection()
+		return nil
+	case kpi.FieldCurrentValue:
+		m.ResetCurrentValue()
 		return nil
 	}
 	return fmt.Errorf("unknown KPI field %s", name)
@@ -13595,30 +14076,30 @@ func (m *LevelDefinitionMutation) ResetEdge(name string) error {
 // NineBoxEntryMutation represents an operation that mutates the NineBoxEntry nodes in the graph.
 type NineBoxEntryMutation struct {
 	config
-	op                   Op
-	typ                  string
-	id                   *uuid.UUID
-	created_at           *time.Time
-	updated_at           *time.Time
-	created_by           *uuid.UUID
-	updated_by           *uuid.UUID
-	version              *int
-	addversion           *int
-	performance_score    *int
-	addperformance_score *int
-	potential_score      *int
-	addpotential_score   *int
-	quadrant             *int
-	addquadrant          *int
-	comments             *string
-	clearedFields        map[string]struct{}
-	matrix               *uuid.UUID
-	clearedmatrix        bool
-	evaluatee            *uuid.UUID
-	clearedevaluatee     bool
-	done                 bool
-	oldValue             func(context.Context) (*NineBoxEntry, error)
-	predicates           []predicate.NineBoxEntry
+	op                  Op
+	typ                 string
+	id                  *uuid.UUID
+	created_at          *time.Time
+	updated_at          *time.Time
+	created_by          *uuid.UUID
+	updated_by          *uuid.UUID
+	version             *int
+	addversion          *int
+	performance_tier    *int
+	addperformance_tier *int
+	potential_tier      *int
+	addpotential_tier   *int
+	quadrant            *int
+	addquadrant         *int
+	comments            *string
+	clearedFields       map[string]struct{}
+	matrix              *uuid.UUID
+	clearedmatrix       bool
+	evaluatee           *uuid.UUID
+	clearedevaluatee    bool
+	done                bool
+	oldValue            func(context.Context) (*NineBoxEntry, error)
+	predicates          []predicate.NineBoxEntry
 }
 
 var _ ent.Mutation = (*NineBoxEntryMutation)(nil)
@@ -13925,116 +14406,116 @@ func (m *NineBoxEntryMutation) ResetVersion() {
 	m.addversion = nil
 }
 
-// SetPerformanceScore sets the "performance_score" field.
-func (m *NineBoxEntryMutation) SetPerformanceScore(i int) {
-	m.performance_score = &i
-	m.addperformance_score = nil
+// SetPerformanceTier sets the "performance_tier" field.
+func (m *NineBoxEntryMutation) SetPerformanceTier(i int) {
+	m.performance_tier = &i
+	m.addperformance_tier = nil
 }
 
-// PerformanceScore returns the value of the "performance_score" field in the mutation.
-func (m *NineBoxEntryMutation) PerformanceScore() (r int, exists bool) {
-	v := m.performance_score
+// PerformanceTier returns the value of the "performance_tier" field in the mutation.
+func (m *NineBoxEntryMutation) PerformanceTier() (r int, exists bool) {
+	v := m.performance_tier
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldPerformanceScore returns the old "performance_score" field's value of the NineBoxEntry entity.
+// OldPerformanceTier returns the old "performance_tier" field's value of the NineBoxEntry entity.
 // If the NineBoxEntry object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *NineBoxEntryMutation) OldPerformanceScore(ctx context.Context) (v int, err error) {
+func (m *NineBoxEntryMutation) OldPerformanceTier(ctx context.Context) (v int, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldPerformanceScore is only allowed on UpdateOne operations")
+		return v, errors.New("OldPerformanceTier is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldPerformanceScore requires an ID field in the mutation")
+		return v, errors.New("OldPerformanceTier requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldPerformanceScore: %w", err)
+		return v, fmt.Errorf("querying old value for OldPerformanceTier: %w", err)
 	}
-	return oldValue.PerformanceScore, nil
+	return oldValue.PerformanceTier, nil
 }
 
-// AddPerformanceScore adds i to the "performance_score" field.
-func (m *NineBoxEntryMutation) AddPerformanceScore(i int) {
-	if m.addperformance_score != nil {
-		*m.addperformance_score += i
+// AddPerformanceTier adds i to the "performance_tier" field.
+func (m *NineBoxEntryMutation) AddPerformanceTier(i int) {
+	if m.addperformance_tier != nil {
+		*m.addperformance_tier += i
 	} else {
-		m.addperformance_score = &i
+		m.addperformance_tier = &i
 	}
 }
 
-// AddedPerformanceScore returns the value that was added to the "performance_score" field in this mutation.
-func (m *NineBoxEntryMutation) AddedPerformanceScore() (r int, exists bool) {
-	v := m.addperformance_score
+// AddedPerformanceTier returns the value that was added to the "performance_tier" field in this mutation.
+func (m *NineBoxEntryMutation) AddedPerformanceTier() (r int, exists bool) {
+	v := m.addperformance_tier
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// ResetPerformanceScore resets all changes to the "performance_score" field.
-func (m *NineBoxEntryMutation) ResetPerformanceScore() {
-	m.performance_score = nil
-	m.addperformance_score = nil
+// ResetPerformanceTier resets all changes to the "performance_tier" field.
+func (m *NineBoxEntryMutation) ResetPerformanceTier() {
+	m.performance_tier = nil
+	m.addperformance_tier = nil
 }
 
-// SetPotentialScore sets the "potential_score" field.
-func (m *NineBoxEntryMutation) SetPotentialScore(i int) {
-	m.potential_score = &i
-	m.addpotential_score = nil
+// SetPotentialTier sets the "potential_tier" field.
+func (m *NineBoxEntryMutation) SetPotentialTier(i int) {
+	m.potential_tier = &i
+	m.addpotential_tier = nil
 }
 
-// PotentialScore returns the value of the "potential_score" field in the mutation.
-func (m *NineBoxEntryMutation) PotentialScore() (r int, exists bool) {
-	v := m.potential_score
+// PotentialTier returns the value of the "potential_tier" field in the mutation.
+func (m *NineBoxEntryMutation) PotentialTier() (r int, exists bool) {
+	v := m.potential_tier
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldPotentialScore returns the old "potential_score" field's value of the NineBoxEntry entity.
+// OldPotentialTier returns the old "potential_tier" field's value of the NineBoxEntry entity.
 // If the NineBoxEntry object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *NineBoxEntryMutation) OldPotentialScore(ctx context.Context) (v int, err error) {
+func (m *NineBoxEntryMutation) OldPotentialTier(ctx context.Context) (v int, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldPotentialScore is only allowed on UpdateOne operations")
+		return v, errors.New("OldPotentialTier is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldPotentialScore requires an ID field in the mutation")
+		return v, errors.New("OldPotentialTier requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldPotentialScore: %w", err)
+		return v, fmt.Errorf("querying old value for OldPotentialTier: %w", err)
 	}
-	return oldValue.PotentialScore, nil
+	return oldValue.PotentialTier, nil
 }
 
-// AddPotentialScore adds i to the "potential_score" field.
-func (m *NineBoxEntryMutation) AddPotentialScore(i int) {
-	if m.addpotential_score != nil {
-		*m.addpotential_score += i
+// AddPotentialTier adds i to the "potential_tier" field.
+func (m *NineBoxEntryMutation) AddPotentialTier(i int) {
+	if m.addpotential_tier != nil {
+		*m.addpotential_tier += i
 	} else {
-		m.addpotential_score = &i
+		m.addpotential_tier = &i
 	}
 }
 
-// AddedPotentialScore returns the value that was added to the "potential_score" field in this mutation.
-func (m *NineBoxEntryMutation) AddedPotentialScore() (r int, exists bool) {
-	v := m.addpotential_score
+// AddedPotentialTier returns the value that was added to the "potential_tier" field in this mutation.
+func (m *NineBoxEntryMutation) AddedPotentialTier() (r int, exists bool) {
+	v := m.addpotential_tier
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// ResetPotentialScore resets all changes to the "potential_score" field.
-func (m *NineBoxEntryMutation) ResetPotentialScore() {
-	m.potential_score = nil
-	m.addpotential_score = nil
+// ResetPotentialTier resets all changes to the "potential_tier" field.
+func (m *NineBoxEntryMutation) ResetPotentialTier() {
+	m.potential_tier = nil
+	m.addpotential_tier = nil
 }
 
 // SetQuadrant sets the "quadrant" field.
@@ -14318,11 +14799,11 @@ func (m *NineBoxEntryMutation) Fields() []string {
 	if m.version != nil {
 		fields = append(fields, nineboxentry.FieldVersion)
 	}
-	if m.performance_score != nil {
-		fields = append(fields, nineboxentry.FieldPerformanceScore)
+	if m.performance_tier != nil {
+		fields = append(fields, nineboxentry.FieldPerformanceTier)
 	}
-	if m.potential_score != nil {
-		fields = append(fields, nineboxentry.FieldPotentialScore)
+	if m.potential_tier != nil {
+		fields = append(fields, nineboxentry.FieldPotentialTier)
 	}
 	if m.quadrant != nil {
 		fields = append(fields, nineboxentry.FieldQuadrant)
@@ -14354,10 +14835,10 @@ func (m *NineBoxEntryMutation) Field(name string) (ent.Value, bool) {
 		return m.UpdatedBy()
 	case nineboxentry.FieldVersion:
 		return m.Version()
-	case nineboxentry.FieldPerformanceScore:
-		return m.PerformanceScore()
-	case nineboxentry.FieldPotentialScore:
-		return m.PotentialScore()
+	case nineboxentry.FieldPerformanceTier:
+		return m.PerformanceTier()
+	case nineboxentry.FieldPotentialTier:
+		return m.PotentialTier()
 	case nineboxentry.FieldQuadrant:
 		return m.Quadrant()
 	case nineboxentry.FieldComments:
@@ -14385,10 +14866,10 @@ func (m *NineBoxEntryMutation) OldField(ctx context.Context, name string) (ent.V
 		return m.OldUpdatedBy(ctx)
 	case nineboxentry.FieldVersion:
 		return m.OldVersion(ctx)
-	case nineboxentry.FieldPerformanceScore:
-		return m.OldPerformanceScore(ctx)
-	case nineboxentry.FieldPotentialScore:
-		return m.OldPotentialScore(ctx)
+	case nineboxentry.FieldPerformanceTier:
+		return m.OldPerformanceTier(ctx)
+	case nineboxentry.FieldPotentialTier:
+		return m.OldPotentialTier(ctx)
 	case nineboxentry.FieldQuadrant:
 		return m.OldQuadrant(ctx)
 	case nineboxentry.FieldComments:
@@ -14441,19 +14922,19 @@ func (m *NineBoxEntryMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetVersion(v)
 		return nil
-	case nineboxentry.FieldPerformanceScore:
+	case nineboxentry.FieldPerformanceTier:
 		v, ok := value.(int)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetPerformanceScore(v)
+		m.SetPerformanceTier(v)
 		return nil
-	case nineboxentry.FieldPotentialScore:
+	case nineboxentry.FieldPotentialTier:
 		v, ok := value.(int)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetPotentialScore(v)
+		m.SetPotentialTier(v)
 		return nil
 	case nineboxentry.FieldQuadrant:
 		v, ok := value.(int)
@@ -14494,11 +14975,11 @@ func (m *NineBoxEntryMutation) AddedFields() []string {
 	if m.addversion != nil {
 		fields = append(fields, nineboxentry.FieldVersion)
 	}
-	if m.addperformance_score != nil {
-		fields = append(fields, nineboxentry.FieldPerformanceScore)
+	if m.addperformance_tier != nil {
+		fields = append(fields, nineboxentry.FieldPerformanceTier)
 	}
-	if m.addpotential_score != nil {
-		fields = append(fields, nineboxentry.FieldPotentialScore)
+	if m.addpotential_tier != nil {
+		fields = append(fields, nineboxentry.FieldPotentialTier)
 	}
 	if m.addquadrant != nil {
 		fields = append(fields, nineboxentry.FieldQuadrant)
@@ -14513,10 +14994,10 @@ func (m *NineBoxEntryMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
 	case nineboxentry.FieldVersion:
 		return m.AddedVersion()
-	case nineboxentry.FieldPerformanceScore:
-		return m.AddedPerformanceScore()
-	case nineboxentry.FieldPotentialScore:
-		return m.AddedPotentialScore()
+	case nineboxentry.FieldPerformanceTier:
+		return m.AddedPerformanceTier()
+	case nineboxentry.FieldPotentialTier:
+		return m.AddedPotentialTier()
 	case nineboxentry.FieldQuadrant:
 		return m.AddedQuadrant()
 	}
@@ -14535,19 +15016,19 @@ func (m *NineBoxEntryMutation) AddField(name string, value ent.Value) error {
 		}
 		m.AddVersion(v)
 		return nil
-	case nineboxentry.FieldPerformanceScore:
+	case nineboxentry.FieldPerformanceTier:
 		v, ok := value.(int)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.AddPerformanceScore(v)
+		m.AddPerformanceTier(v)
 		return nil
-	case nineboxentry.FieldPotentialScore:
+	case nineboxentry.FieldPotentialTier:
 		v, ok := value.(int)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.AddPotentialScore(v)
+		m.AddPotentialTier(v)
 		return nil
 	case nineboxentry.FieldQuadrant:
 		v, ok := value.(int)
@@ -14607,11 +15088,11 @@ func (m *NineBoxEntryMutation) ResetField(name string) error {
 	case nineboxentry.FieldVersion:
 		m.ResetVersion()
 		return nil
-	case nineboxentry.FieldPerformanceScore:
-		m.ResetPerformanceScore()
+	case nineboxentry.FieldPerformanceTier:
+		m.ResetPerformanceTier()
 		return nil
-	case nineboxentry.FieldPotentialScore:
-		m.ResetPotentialScore()
+	case nineboxentry.FieldPotentialTier:
+		m.ResetPotentialTier()
 		return nil
 	case nineboxentry.FieldQuadrant:
 		m.ResetQuadrant()
@@ -14734,6 +15215,8 @@ type NineBoxMatrixMutation struct {
 	clearedcycle     bool
 	evaluator        *uuid.UUID
 	clearedevaluator bool
+	phase            *uuid.UUID
+	clearedphase     bool
 	entries          map[uuid.UUID]struct{}
 	removedentries   map[uuid.UUID]struct{}
 	clearedentries   bool
@@ -14990,6 +15473,42 @@ func (m *NineBoxMatrixMutation) ResetEvaluatorID() {
 	m.evaluator = nil
 }
 
+// SetPhaseID sets the "phase_id" field.
+func (m *NineBoxMatrixMutation) SetPhaseID(u uuid.UUID) {
+	m.phase = &u
+}
+
+// PhaseID returns the value of the "phase_id" field in the mutation.
+func (m *NineBoxMatrixMutation) PhaseID() (r uuid.UUID, exists bool) {
+	v := m.phase
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPhaseID returns the old "phase_id" field's value of the NineBoxMatrix entity.
+// If the NineBoxMatrix object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NineBoxMatrixMutation) OldPhaseID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPhaseID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPhaseID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPhaseID: %w", err)
+	}
+	return oldValue.PhaseID, nil
+}
+
+// ResetPhaseID resets all changes to the "phase_id" field.
+func (m *NineBoxMatrixMutation) ResetPhaseID() {
+	m.phase = nil
+}
+
 // ClearCycle clears the "cycle" edge to the Cycle entity.
 func (m *NineBoxMatrixMutation) ClearCycle() {
 	m.clearedcycle = true
@@ -15042,6 +15561,33 @@ func (m *NineBoxMatrixMutation) EvaluatorIDs() (ids []uuid.UUID) {
 func (m *NineBoxMatrixMutation) ResetEvaluator() {
 	m.evaluator = nil
 	m.clearedevaluator = false
+}
+
+// ClearPhase clears the "phase" edge to the PhaseDefinition entity.
+func (m *NineBoxMatrixMutation) ClearPhase() {
+	m.clearedphase = true
+	m.clearedFields[nineboxmatrix.FieldPhaseID] = struct{}{}
+}
+
+// PhaseCleared reports if the "phase" edge to the PhaseDefinition entity was cleared.
+func (m *NineBoxMatrixMutation) PhaseCleared() bool {
+	return m.clearedphase
+}
+
+// PhaseIDs returns the "phase" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// PhaseID instead. It exists only for internal usage by the builders.
+func (m *NineBoxMatrixMutation) PhaseIDs() (ids []uuid.UUID) {
+	if id := m.phase; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetPhase resets all changes to the "phase" edge.
+func (m *NineBoxMatrixMutation) ResetPhase() {
+	m.phase = nil
+	m.clearedphase = false
 }
 
 // AddEntryIDs adds the "entries" edge to the NineBoxEntry entity by ids.
@@ -15132,7 +15678,7 @@ func (m *NineBoxMatrixMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *NineBoxMatrixMutation) Fields() []string {
-	fields := make([]string, 0, 4)
+	fields := make([]string, 0, 5)
 	if m.created_at != nil {
 		fields = append(fields, nineboxmatrix.FieldCreatedAt)
 	}
@@ -15144,6 +15690,9 @@ func (m *NineBoxMatrixMutation) Fields() []string {
 	}
 	if m.evaluator != nil {
 		fields = append(fields, nineboxmatrix.FieldEvaluatorID)
+	}
+	if m.phase != nil {
+		fields = append(fields, nineboxmatrix.FieldPhaseID)
 	}
 	return fields
 }
@@ -15161,6 +15710,8 @@ func (m *NineBoxMatrixMutation) Field(name string) (ent.Value, bool) {
 		return m.CycleID()
 	case nineboxmatrix.FieldEvaluatorID:
 		return m.EvaluatorID()
+	case nineboxmatrix.FieldPhaseID:
+		return m.PhaseID()
 	}
 	return nil, false
 }
@@ -15178,6 +15729,8 @@ func (m *NineBoxMatrixMutation) OldField(ctx context.Context, name string) (ent.
 		return m.OldCycleID(ctx)
 	case nineboxmatrix.FieldEvaluatorID:
 		return m.OldEvaluatorID(ctx)
+	case nineboxmatrix.FieldPhaseID:
+		return m.OldPhaseID(ctx)
 	}
 	return nil, fmt.Errorf("unknown NineBoxMatrix field %s", name)
 }
@@ -15214,6 +15767,13 @@ func (m *NineBoxMatrixMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetEvaluatorID(v)
+		return nil
+	case nineboxmatrix.FieldPhaseID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPhaseID(v)
 		return nil
 	}
 	return fmt.Errorf("unknown NineBoxMatrix field %s", name)
@@ -15276,18 +15836,24 @@ func (m *NineBoxMatrixMutation) ResetField(name string) error {
 	case nineboxmatrix.FieldEvaluatorID:
 		m.ResetEvaluatorID()
 		return nil
+	case nineboxmatrix.FieldPhaseID:
+		m.ResetPhaseID()
+		return nil
 	}
 	return fmt.Errorf("unknown NineBoxMatrix field %s", name)
 }
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *NineBoxMatrixMutation) AddedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.cycle != nil {
 		edges = append(edges, nineboxmatrix.EdgeCycle)
 	}
 	if m.evaluator != nil {
 		edges = append(edges, nineboxmatrix.EdgeEvaluator)
+	}
+	if m.phase != nil {
+		edges = append(edges, nineboxmatrix.EdgePhase)
 	}
 	if m.entries != nil {
 		edges = append(edges, nineboxmatrix.EdgeEntries)
@@ -15307,6 +15873,10 @@ func (m *NineBoxMatrixMutation) AddedIDs(name string) []ent.Value {
 		if id := m.evaluator; id != nil {
 			return []ent.Value{*id}
 		}
+	case nineboxmatrix.EdgePhase:
+		if id := m.phase; id != nil {
+			return []ent.Value{*id}
+		}
 	case nineboxmatrix.EdgeEntries:
 		ids := make([]ent.Value, 0, len(m.entries))
 		for id := range m.entries {
@@ -15319,7 +15889,7 @@ func (m *NineBoxMatrixMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *NineBoxMatrixMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.removedentries != nil {
 		edges = append(edges, nineboxmatrix.EdgeEntries)
 	}
@@ -15342,12 +15912,15 @@ func (m *NineBoxMatrixMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *NineBoxMatrixMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.clearedcycle {
 		edges = append(edges, nineboxmatrix.EdgeCycle)
 	}
 	if m.clearedevaluator {
 		edges = append(edges, nineboxmatrix.EdgeEvaluator)
+	}
+	if m.clearedphase {
+		edges = append(edges, nineboxmatrix.EdgePhase)
 	}
 	if m.clearedentries {
 		edges = append(edges, nineboxmatrix.EdgeEntries)
@@ -15363,6 +15936,8 @@ func (m *NineBoxMatrixMutation) EdgeCleared(name string) bool {
 		return m.clearedcycle
 	case nineboxmatrix.EdgeEvaluator:
 		return m.clearedevaluator
+	case nineboxmatrix.EdgePhase:
+		return m.clearedphase
 	case nineboxmatrix.EdgeEntries:
 		return m.clearedentries
 	}
@@ -15379,6 +15954,9 @@ func (m *NineBoxMatrixMutation) ClearEdge(name string) error {
 	case nineboxmatrix.EdgeEvaluator:
 		m.ClearEvaluator()
 		return nil
+	case nineboxmatrix.EdgePhase:
+		m.ClearPhase()
+		return nil
 	}
 	return fmt.Errorf("unknown NineBoxMatrix unique edge %s", name)
 }
@@ -15392,6 +15970,9 @@ func (m *NineBoxMatrixMutation) ResetEdge(name string) error {
 		return nil
 	case nineboxmatrix.EdgeEvaluator:
 		m.ResetEvaluator()
+		return nil
+	case nineboxmatrix.EdgePhase:
+		m.ResetPhase()
 		return nil
 	case nineboxmatrix.EdgeEntries:
 		m.ResetEntries()
@@ -15412,6 +15993,8 @@ type NineBoxQuadrantMutation struct {
 	description           *string
 	color                 *string
 	action_recommendation *string
+	title                 *string
+	color_hex             *string
 	clearedFields         map[string]struct{}
 	done                  bool
 	oldValue              func(context.Context) (*NineBoxQuadrant, error)
@@ -15694,9 +16277,22 @@ func (m *NineBoxQuadrantMutation) OldColor(ctx context.Context) (v string, err e
 	return oldValue.Color, nil
 }
 
+// ClearColor clears the value of the "color" field.
+func (m *NineBoxQuadrantMutation) ClearColor() {
+	m.color = nil
+	m.clearedFields[nineboxquadrant.FieldColor] = struct{}{}
+}
+
+// ColorCleared returns if the "color" field was cleared in this mutation.
+func (m *NineBoxQuadrantMutation) ColorCleared() bool {
+	_, ok := m.clearedFields[nineboxquadrant.FieldColor]
+	return ok
+}
+
 // ResetColor resets all changes to the "color" field.
 func (m *NineBoxQuadrantMutation) ResetColor() {
 	m.color = nil
+	delete(m.clearedFields, nineboxquadrant.FieldColor)
 }
 
 // SetActionRecommendation sets the "action_recommendation" field.
@@ -15748,6 +16344,104 @@ func (m *NineBoxQuadrantMutation) ResetActionRecommendation() {
 	delete(m.clearedFields, nineboxquadrant.FieldActionRecommendation)
 }
 
+// SetTitle sets the "title" field.
+func (m *NineBoxQuadrantMutation) SetTitle(s string) {
+	m.title = &s
+}
+
+// Title returns the value of the "title" field in the mutation.
+func (m *NineBoxQuadrantMutation) Title() (r string, exists bool) {
+	v := m.title
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTitle returns the old "title" field's value of the NineBoxQuadrant entity.
+// If the NineBoxQuadrant object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NineBoxQuadrantMutation) OldTitle(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTitle is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTitle requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTitle: %w", err)
+	}
+	return oldValue.Title, nil
+}
+
+// ClearTitle clears the value of the "title" field.
+func (m *NineBoxQuadrantMutation) ClearTitle() {
+	m.title = nil
+	m.clearedFields[nineboxquadrant.FieldTitle] = struct{}{}
+}
+
+// TitleCleared returns if the "title" field was cleared in this mutation.
+func (m *NineBoxQuadrantMutation) TitleCleared() bool {
+	_, ok := m.clearedFields[nineboxquadrant.FieldTitle]
+	return ok
+}
+
+// ResetTitle resets all changes to the "title" field.
+func (m *NineBoxQuadrantMutation) ResetTitle() {
+	m.title = nil
+	delete(m.clearedFields, nineboxquadrant.FieldTitle)
+}
+
+// SetColorHex sets the "color_hex" field.
+func (m *NineBoxQuadrantMutation) SetColorHex(s string) {
+	m.color_hex = &s
+}
+
+// ColorHex returns the value of the "color_hex" field in the mutation.
+func (m *NineBoxQuadrantMutation) ColorHex() (r string, exists bool) {
+	v := m.color_hex
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldColorHex returns the old "color_hex" field's value of the NineBoxQuadrant entity.
+// If the NineBoxQuadrant object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NineBoxQuadrantMutation) OldColorHex(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldColorHex is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldColorHex requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldColorHex: %w", err)
+	}
+	return oldValue.ColorHex, nil
+}
+
+// ClearColorHex clears the value of the "color_hex" field.
+func (m *NineBoxQuadrantMutation) ClearColorHex() {
+	m.color_hex = nil
+	m.clearedFields[nineboxquadrant.FieldColorHex] = struct{}{}
+}
+
+// ColorHexCleared returns if the "color_hex" field was cleared in this mutation.
+func (m *NineBoxQuadrantMutation) ColorHexCleared() bool {
+	_, ok := m.clearedFields[nineboxquadrant.FieldColorHex]
+	return ok
+}
+
+// ResetColorHex resets all changes to the "color_hex" field.
+func (m *NineBoxQuadrantMutation) ResetColorHex() {
+	m.color_hex = nil
+	delete(m.clearedFields, nineboxquadrant.FieldColorHex)
+}
+
 // Where appends a list predicates to the NineBoxQuadrantMutation builder.
 func (m *NineBoxQuadrantMutation) Where(ps ...predicate.NineBoxQuadrant) {
 	m.predicates = append(m.predicates, ps...)
@@ -15782,7 +16476,7 @@ func (m *NineBoxQuadrantMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *NineBoxQuadrantMutation) Fields() []string {
-	fields := make([]string, 0, 5)
+	fields := make([]string, 0, 7)
 	if m.quadrant != nil {
 		fields = append(fields, nineboxquadrant.FieldQuadrant)
 	}
@@ -15797,6 +16491,12 @@ func (m *NineBoxQuadrantMutation) Fields() []string {
 	}
 	if m.action_recommendation != nil {
 		fields = append(fields, nineboxquadrant.FieldActionRecommendation)
+	}
+	if m.title != nil {
+		fields = append(fields, nineboxquadrant.FieldTitle)
+	}
+	if m.color_hex != nil {
+		fields = append(fields, nineboxquadrant.FieldColorHex)
 	}
 	return fields
 }
@@ -15816,6 +16516,10 @@ func (m *NineBoxQuadrantMutation) Field(name string) (ent.Value, bool) {
 		return m.Color()
 	case nineboxquadrant.FieldActionRecommendation:
 		return m.ActionRecommendation()
+	case nineboxquadrant.FieldTitle:
+		return m.Title()
+	case nineboxquadrant.FieldColorHex:
+		return m.ColorHex()
 	}
 	return nil, false
 }
@@ -15835,6 +16539,10 @@ func (m *NineBoxQuadrantMutation) OldField(ctx context.Context, name string) (en
 		return m.OldColor(ctx)
 	case nineboxquadrant.FieldActionRecommendation:
 		return m.OldActionRecommendation(ctx)
+	case nineboxquadrant.FieldTitle:
+		return m.OldTitle(ctx)
+	case nineboxquadrant.FieldColorHex:
+		return m.OldColorHex(ctx)
 	}
 	return nil, fmt.Errorf("unknown NineBoxQuadrant field %s", name)
 }
@@ -15878,6 +16586,20 @@ func (m *NineBoxQuadrantMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetActionRecommendation(v)
+		return nil
+	case nineboxquadrant.FieldTitle:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTitle(v)
+		return nil
+	case nineboxquadrant.FieldColorHex:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetColorHex(v)
 		return nil
 	}
 	return fmt.Errorf("unknown NineBoxQuadrant field %s", name)
@@ -15927,8 +16649,17 @@ func (m *NineBoxQuadrantMutation) ClearedFields() []string {
 	if m.FieldCleared(nineboxquadrant.FieldDescription) {
 		fields = append(fields, nineboxquadrant.FieldDescription)
 	}
+	if m.FieldCleared(nineboxquadrant.FieldColor) {
+		fields = append(fields, nineboxquadrant.FieldColor)
+	}
 	if m.FieldCleared(nineboxquadrant.FieldActionRecommendation) {
 		fields = append(fields, nineboxquadrant.FieldActionRecommendation)
+	}
+	if m.FieldCleared(nineboxquadrant.FieldTitle) {
+		fields = append(fields, nineboxquadrant.FieldTitle)
+	}
+	if m.FieldCleared(nineboxquadrant.FieldColorHex) {
+		fields = append(fields, nineboxquadrant.FieldColorHex)
 	}
 	return fields
 }
@@ -15947,8 +16678,17 @@ func (m *NineBoxQuadrantMutation) ClearField(name string) error {
 	case nineboxquadrant.FieldDescription:
 		m.ClearDescription()
 		return nil
+	case nineboxquadrant.FieldColor:
+		m.ClearColor()
+		return nil
 	case nineboxquadrant.FieldActionRecommendation:
 		m.ClearActionRecommendation()
+		return nil
+	case nineboxquadrant.FieldTitle:
+		m.ClearTitle()
+		return nil
+	case nineboxquadrant.FieldColorHex:
+		m.ClearColorHex()
 		return nil
 	}
 	return fmt.Errorf("unknown NineBoxQuadrant nullable field %s", name)
@@ -15972,6 +16712,12 @@ func (m *NineBoxQuadrantMutation) ResetField(name string) error {
 		return nil
 	case nineboxquadrant.FieldActionRecommendation:
 		m.ResetActionRecommendation()
+		return nil
+	case nineboxquadrant.FieldTitle:
+		m.ResetTitle()
+		return nil
+	case nineboxquadrant.FieldColorHex:
+		m.ResetColorHex()
 		return nil
 	}
 	return fmt.Errorf("unknown NineBoxQuadrant field %s", name)
@@ -16580,32 +17326,34 @@ func (m *NineBoxScaleMutation) ResetEdge(name string) error {
 // OrgNodeMutation represents an operation that mutates the OrgNode nodes in the graph.
 type OrgNodeMutation struct {
 	config
-	op                  Op
-	typ                 string
-	id                  *uuid.UUID
-	created_at          *time.Time
-	updated_at          *time.Time
-	version             *int
-	addversion          *int
-	name                *string
-	_type               *orgnode.Type
-	code                *string
-	metadata            *map[string]interface{}
-	_path               *string
-	clearedFields       map[string]struct{}
-	organization        *uuid.UUID
-	clearedorganization bool
-	parent              *uuid.UUID
-	clearedparent       bool
-	children            map[uuid.UUID]struct{}
-	removedchildren     map[uuid.UUID]struct{}
-	clearedchildren     bool
-	employees           map[uuid.UUID]struct{}
-	removedemployees    map[uuid.UUID]struct{}
-	clearedemployees    bool
-	done                bool
-	oldValue            func(context.Context) (*OrgNode, error)
-	predicates          []predicate.OrgNode
+	op                   Op
+	typ                  string
+	id                   *uuid.UUID
+	created_at           *time.Time
+	updated_at           *time.Time
+	version              *int
+	addversion           *int
+	name                 *string
+	_type                *orgnode.Type
+	code                 *string
+	metadata             *map[string]interface{}
+	_path                *string
+	clearedFields        map[string]struct{}
+	organization         *uuid.UUID
+	clearedorganization  bool
+	parent               *uuid.UUID
+	clearedparent        bool
+	children             map[uuid.UUID]struct{}
+	removedchildren      map[uuid.UUID]struct{}
+	clearedchildren      bool
+	employees            map[uuid.UUID]struct{}
+	removedemployees     map[uuid.UUID]struct{}
+	clearedemployees     bool
+	head_employee        *uuid.UUID
+	clearedhead_employee bool
+	done                 bool
+	oldValue             func(context.Context) (*OrgNode, error)
+	predicates           []predicate.OrgNode
 }
 
 var _ ent.Mutation = (*OrgNodeMutation)(nil)
@@ -17131,6 +17879,55 @@ func (m *OrgNodeMutation) ResetPath() {
 	delete(m.clearedFields, orgnode.FieldPath)
 }
 
+// SetHeadEmployeeID sets the "head_employee_id" field.
+func (m *OrgNodeMutation) SetHeadEmployeeID(u uuid.UUID) {
+	m.head_employee = &u
+}
+
+// HeadEmployeeID returns the value of the "head_employee_id" field in the mutation.
+func (m *OrgNodeMutation) HeadEmployeeID() (r uuid.UUID, exists bool) {
+	v := m.head_employee
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldHeadEmployeeID returns the old "head_employee_id" field's value of the OrgNode entity.
+// If the OrgNode object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *OrgNodeMutation) OldHeadEmployeeID(ctx context.Context) (v *uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldHeadEmployeeID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldHeadEmployeeID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldHeadEmployeeID: %w", err)
+	}
+	return oldValue.HeadEmployeeID, nil
+}
+
+// ClearHeadEmployeeID clears the value of the "head_employee_id" field.
+func (m *OrgNodeMutation) ClearHeadEmployeeID() {
+	m.head_employee = nil
+	m.clearedFields[orgnode.FieldHeadEmployeeID] = struct{}{}
+}
+
+// HeadEmployeeIDCleared returns if the "head_employee_id" field was cleared in this mutation.
+func (m *OrgNodeMutation) HeadEmployeeIDCleared() bool {
+	_, ok := m.clearedFields[orgnode.FieldHeadEmployeeID]
+	return ok
+}
+
+// ResetHeadEmployeeID resets all changes to the "head_employee_id" field.
+func (m *OrgNodeMutation) ResetHeadEmployeeID() {
+	m.head_employee = nil
+	delete(m.clearedFields, orgnode.FieldHeadEmployeeID)
+}
+
 // ClearOrganization clears the "organization" edge to the Organization entity.
 func (m *OrgNodeMutation) ClearOrganization() {
 	m.clearedorganization = true
@@ -17293,6 +18090,33 @@ func (m *OrgNodeMutation) ResetEmployees() {
 	m.removedemployees = nil
 }
 
+// ClearHeadEmployee clears the "head_employee" edge to the Employee entity.
+func (m *OrgNodeMutation) ClearHeadEmployee() {
+	m.clearedhead_employee = true
+	m.clearedFields[orgnode.FieldHeadEmployeeID] = struct{}{}
+}
+
+// HeadEmployeeCleared reports if the "head_employee" edge to the Employee entity was cleared.
+func (m *OrgNodeMutation) HeadEmployeeCleared() bool {
+	return m.HeadEmployeeIDCleared() || m.clearedhead_employee
+}
+
+// HeadEmployeeIDs returns the "head_employee" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// HeadEmployeeID instead. It exists only for internal usage by the builders.
+func (m *OrgNodeMutation) HeadEmployeeIDs() (ids []uuid.UUID) {
+	if id := m.head_employee; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetHeadEmployee resets all changes to the "head_employee" edge.
+func (m *OrgNodeMutation) ResetHeadEmployee() {
+	m.head_employee = nil
+	m.clearedhead_employee = false
+}
+
 // Where appends a list predicates to the OrgNodeMutation builder.
 func (m *OrgNodeMutation) Where(ps ...predicate.OrgNode) {
 	m.predicates = append(m.predicates, ps...)
@@ -17327,7 +18151,7 @@ func (m *OrgNodeMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *OrgNodeMutation) Fields() []string {
-	fields := make([]string, 0, 10)
+	fields := make([]string, 0, 11)
 	if m.created_at != nil {
 		fields = append(fields, orgnode.FieldCreatedAt)
 	}
@@ -17358,6 +18182,9 @@ func (m *OrgNodeMutation) Fields() []string {
 	if m._path != nil {
 		fields = append(fields, orgnode.FieldPath)
 	}
+	if m.head_employee != nil {
+		fields = append(fields, orgnode.FieldHeadEmployeeID)
+	}
 	return fields
 }
 
@@ -17386,6 +18213,8 @@ func (m *OrgNodeMutation) Field(name string) (ent.Value, bool) {
 		return m.ParentID()
 	case orgnode.FieldPath:
 		return m.Path()
+	case orgnode.FieldHeadEmployeeID:
+		return m.HeadEmployeeID()
 	}
 	return nil, false
 }
@@ -17415,6 +18244,8 @@ func (m *OrgNodeMutation) OldField(ctx context.Context, name string) (ent.Value,
 		return m.OldParentID(ctx)
 	case orgnode.FieldPath:
 		return m.OldPath(ctx)
+	case orgnode.FieldHeadEmployeeID:
+		return m.OldHeadEmployeeID(ctx)
 	}
 	return nil, fmt.Errorf("unknown OrgNode field %s", name)
 }
@@ -17494,6 +18325,13 @@ func (m *OrgNodeMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetPath(v)
 		return nil
+	case orgnode.FieldHeadEmployeeID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetHeadEmployeeID(v)
+		return nil
 	}
 	return fmt.Errorf("unknown OrgNode field %s", name)
 }
@@ -17548,6 +18386,9 @@ func (m *OrgNodeMutation) ClearedFields() []string {
 	if m.FieldCleared(orgnode.FieldPath) {
 		fields = append(fields, orgnode.FieldPath)
 	}
+	if m.FieldCleared(orgnode.FieldHeadEmployeeID) {
+		fields = append(fields, orgnode.FieldHeadEmployeeID)
+	}
 	return fields
 }
 
@@ -17570,6 +18411,9 @@ func (m *OrgNodeMutation) ClearField(name string) error {
 		return nil
 	case orgnode.FieldPath:
 		m.ClearPath()
+		return nil
+	case orgnode.FieldHeadEmployeeID:
+		m.ClearHeadEmployeeID()
 		return nil
 	}
 	return fmt.Errorf("unknown OrgNode nullable field %s", name)
@@ -17609,13 +18453,16 @@ func (m *OrgNodeMutation) ResetField(name string) error {
 	case orgnode.FieldPath:
 		m.ResetPath()
 		return nil
+	case orgnode.FieldHeadEmployeeID:
+		m.ResetHeadEmployeeID()
+		return nil
 	}
 	return fmt.Errorf("unknown OrgNode field %s", name)
 }
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *OrgNodeMutation) AddedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 5)
 	if m.organization != nil {
 		edges = append(edges, orgnode.EdgeOrganization)
 	}
@@ -17627,6 +18474,9 @@ func (m *OrgNodeMutation) AddedEdges() []string {
 	}
 	if m.employees != nil {
 		edges = append(edges, orgnode.EdgeEmployees)
+	}
+	if m.head_employee != nil {
+		edges = append(edges, orgnode.EdgeHeadEmployee)
 	}
 	return edges
 }
@@ -17655,13 +18505,17 @@ func (m *OrgNodeMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case orgnode.EdgeHeadEmployee:
+		if id := m.head_employee; id != nil {
+			return []ent.Value{*id}
+		}
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *OrgNodeMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 5)
 	if m.removedchildren != nil {
 		edges = append(edges, orgnode.EdgeChildren)
 	}
@@ -17693,7 +18547,7 @@ func (m *OrgNodeMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *OrgNodeMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 5)
 	if m.clearedorganization {
 		edges = append(edges, orgnode.EdgeOrganization)
 	}
@@ -17705,6 +18559,9 @@ func (m *OrgNodeMutation) ClearedEdges() []string {
 	}
 	if m.clearedemployees {
 		edges = append(edges, orgnode.EdgeEmployees)
+	}
+	if m.clearedhead_employee {
+		edges = append(edges, orgnode.EdgeHeadEmployee)
 	}
 	return edges
 }
@@ -17721,6 +18578,8 @@ func (m *OrgNodeMutation) EdgeCleared(name string) bool {
 		return m.clearedchildren
 	case orgnode.EdgeEmployees:
 		return m.clearedemployees
+	case orgnode.EdgeHeadEmployee:
+		return m.clearedhead_employee
 	}
 	return false
 }
@@ -17734,6 +18593,9 @@ func (m *OrgNodeMutation) ClearEdge(name string) error {
 		return nil
 	case orgnode.EdgeParent:
 		m.ClearParent()
+		return nil
+	case orgnode.EdgeHeadEmployee:
+		m.ClearHeadEmployee()
 		return nil
 	}
 	return fmt.Errorf("unknown OrgNode unique edge %s", name)
@@ -17754,6 +18616,9 @@ func (m *OrgNodeMutation) ResetEdge(name string) error {
 		return nil
 	case orgnode.EdgeEmployees:
 		m.ResetEmployees()
+		return nil
+	case orgnode.EdgeHeadEmployee:
+		m.ResetHeadEmployee()
 		return nil
 	}
 	return fmt.Errorf("unknown OrgNode edge %s", name)
@@ -18456,6 +19321,9 @@ type PhaseDefinitionMutation struct {
 	incoming_transitions        map[uuid.UUID]struct{}
 	removedincoming_transitions map[uuid.UUID]struct{}
 	clearedincoming_transitions bool
+	nine_box_matrices           map[uuid.UUID]struct{}
+	removednine_box_matrices    map[uuid.UUID]struct{}
+	clearednine_box_matrices    bool
 	done                        bool
 	oldValue                    func(context.Context) (*PhaseDefinition, error)
 	predicates                  []predicate.PhaseDefinition
@@ -19131,6 +19999,60 @@ func (m *PhaseDefinitionMutation) ResetIncomingTransitions() {
 	m.removedincoming_transitions = nil
 }
 
+// AddNineBoxMatrixIDs adds the "nine_box_matrices" edge to the NineBoxMatrix entity by ids.
+func (m *PhaseDefinitionMutation) AddNineBoxMatrixIDs(ids ...uuid.UUID) {
+	if m.nine_box_matrices == nil {
+		m.nine_box_matrices = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.nine_box_matrices[ids[i]] = struct{}{}
+	}
+}
+
+// ClearNineBoxMatrices clears the "nine_box_matrices" edge to the NineBoxMatrix entity.
+func (m *PhaseDefinitionMutation) ClearNineBoxMatrices() {
+	m.clearednine_box_matrices = true
+}
+
+// NineBoxMatricesCleared reports if the "nine_box_matrices" edge to the NineBoxMatrix entity was cleared.
+func (m *PhaseDefinitionMutation) NineBoxMatricesCleared() bool {
+	return m.clearednine_box_matrices
+}
+
+// RemoveNineBoxMatrixIDs removes the "nine_box_matrices" edge to the NineBoxMatrix entity by IDs.
+func (m *PhaseDefinitionMutation) RemoveNineBoxMatrixIDs(ids ...uuid.UUID) {
+	if m.removednine_box_matrices == nil {
+		m.removednine_box_matrices = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.nine_box_matrices, ids[i])
+		m.removednine_box_matrices[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedNineBoxMatrices returns the removed IDs of the "nine_box_matrices" edge to the NineBoxMatrix entity.
+func (m *PhaseDefinitionMutation) RemovedNineBoxMatricesIDs() (ids []uuid.UUID) {
+	for id := range m.removednine_box_matrices {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// NineBoxMatricesIDs returns the "nine_box_matrices" edge IDs in the mutation.
+func (m *PhaseDefinitionMutation) NineBoxMatricesIDs() (ids []uuid.UUID) {
+	for id := range m.nine_box_matrices {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetNineBoxMatrices resets all changes to the "nine_box_matrices" edge.
+func (m *PhaseDefinitionMutation) ResetNineBoxMatrices() {
+	m.nine_box_matrices = nil
+	m.clearednine_box_matrices = false
+	m.removednine_box_matrices = nil
+}
+
 // Where appends a list predicates to the PhaseDefinitionMutation builder.
 func (m *PhaseDefinitionMutation) Where(ps ...predicate.PhaseDefinition) {
 	m.predicates = append(m.predicates, ps...)
@@ -19436,7 +20358,7 @@ func (m *PhaseDefinitionMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *PhaseDefinitionMutation) AddedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.cycle != nil {
 		edges = append(edges, phasedefinition.EdgeCycle)
 	}
@@ -19445,6 +20367,9 @@ func (m *PhaseDefinitionMutation) AddedEdges() []string {
 	}
 	if m.incoming_transitions != nil {
 		edges = append(edges, phasedefinition.EdgeIncomingTransitions)
+	}
+	if m.nine_box_matrices != nil {
+		edges = append(edges, phasedefinition.EdgeNineBoxMatrices)
 	}
 	return edges
 }
@@ -19469,18 +20394,27 @@ func (m *PhaseDefinitionMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case phasedefinition.EdgeNineBoxMatrices:
+		ids := make([]ent.Value, 0, len(m.nine_box_matrices))
+		for id := range m.nine_box_matrices {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *PhaseDefinitionMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.removedoutgoing_transitions != nil {
 		edges = append(edges, phasedefinition.EdgeOutgoingTransitions)
 	}
 	if m.removedincoming_transitions != nil {
 		edges = append(edges, phasedefinition.EdgeIncomingTransitions)
+	}
+	if m.removednine_box_matrices != nil {
+		edges = append(edges, phasedefinition.EdgeNineBoxMatrices)
 	}
 	return edges
 }
@@ -19501,13 +20435,19 @@ func (m *PhaseDefinitionMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case phasedefinition.EdgeNineBoxMatrices:
+		ids := make([]ent.Value, 0, len(m.removednine_box_matrices))
+		for id := range m.removednine_box_matrices {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *PhaseDefinitionMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.clearedcycle {
 		edges = append(edges, phasedefinition.EdgeCycle)
 	}
@@ -19516,6 +20456,9 @@ func (m *PhaseDefinitionMutation) ClearedEdges() []string {
 	}
 	if m.clearedincoming_transitions {
 		edges = append(edges, phasedefinition.EdgeIncomingTransitions)
+	}
+	if m.clearednine_box_matrices {
+		edges = append(edges, phasedefinition.EdgeNineBoxMatrices)
 	}
 	return edges
 }
@@ -19530,6 +20473,8 @@ func (m *PhaseDefinitionMutation) EdgeCleared(name string) bool {
 		return m.clearedoutgoing_transitions
 	case phasedefinition.EdgeIncomingTransitions:
 		return m.clearedincoming_transitions
+	case phasedefinition.EdgeNineBoxMatrices:
+		return m.clearednine_box_matrices
 	}
 	return false
 }
@@ -19557,6 +20502,9 @@ func (m *PhaseDefinitionMutation) ResetEdge(name string) error {
 		return nil
 	case phasedefinition.EdgeIncomingTransitions:
 		m.ResetIncomingTransitions()
+		return nil
+	case phasedefinition.EdgeNineBoxMatrices:
+		m.ResetNineBoxMatrices()
 		return nil
 	}
 	return fmt.Errorf("unknown PhaseDefinition edge %s", name)

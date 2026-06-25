@@ -41,6 +41,10 @@ type Goal struct {
 	TargetValue float64 `json:"target_value,omitempty"`
 	// CurrentValue holds the value of the "current_value" field.
 	CurrentValue float64 `json:"current_value,omitempty"`
+	// Direction holds the value of the "direction" field.
+	Direction goal.Direction `json:"direction,omitempty"`
+	// BaselineValue holds the value of the "baseline_value" field.
+	BaselineValue *float64 `json:"baseline_value,omitempty"`
 	// State holds the value of the "state" field.
 	State goal.State `json:"state,omitempty"`
 	// CategoryID holds the value of the "category_id" field.
@@ -98,11 +102,11 @@ func (*Goal) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case goal.FieldWeight, goal.FieldTargetValue, goal.FieldCurrentValue:
+		case goal.FieldWeight, goal.FieldTargetValue, goal.FieldCurrentValue, goal.FieldBaselineValue:
 			values[i] = new(sql.NullFloat64)
 		case goal.FieldVersion:
 			values[i] = new(sql.NullInt64)
-		case goal.FieldName, goal.FieldDescription, goal.FieldUnit, goal.FieldState:
+		case goal.FieldName, goal.FieldDescription, goal.FieldUnit, goal.FieldDirection, goal.FieldState:
 			values[i] = new(sql.NullString)
 		case goal.FieldCreatedAt, goal.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -194,6 +198,19 @@ func (_m *Goal) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field current_value", values[i])
 			} else if value.Valid {
 				_m.CurrentValue = value.Float64
+			}
+		case goal.FieldDirection:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field direction", values[i])
+			} else if value.Valid {
+				_m.Direction = goal.Direction(value.String)
+			}
+		case goal.FieldBaselineValue:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field baseline_value", values[i])
+			} else if value.Valid {
+				_m.BaselineValue = new(float64)
+				*_m.BaselineValue = value.Float64
 			}
 		case goal.FieldState:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -290,6 +307,14 @@ func (_m *Goal) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("current_value=")
 	builder.WriteString(fmt.Sprintf("%v", _m.CurrentValue))
+	builder.WriteString(", ")
+	builder.WriteString("direction=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Direction))
+	builder.WriteString(", ")
+	if v := _m.BaselineValue; v != nil {
+		builder.WriteString("baseline_value=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
 	builder.WriteString(", ")
 	builder.WriteString("state=")
 	builder.WriteString(fmt.Sprintf("%v", _m.State))

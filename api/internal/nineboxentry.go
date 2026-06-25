@@ -30,10 +30,10 @@ type NineBoxEntry struct {
 	UpdatedBy uuid.UUID `json:"updated_by,omitempty"`
 	// Version holds the value of the "version" field.
 	Version int `json:"version,omitempty"`
-	// PerformanceScore holds the value of the "performance_score" field.
-	PerformanceScore int `json:"performance_score,omitempty"`
-	// PotentialScore holds the value of the "potential_score" field.
-	PotentialScore int `json:"potential_score,omitempty"`
+	// PerformanceTier holds the value of the "performance_tier" field.
+	PerformanceTier int `json:"performance_tier,omitempty"`
+	// PotentialTier holds the value of the "potential_tier" field.
+	PotentialTier int `json:"potential_tier,omitempty"`
 	// Quadrant holds the value of the "quadrant" field.
 	Quadrant int `json:"quadrant,omitempty"`
 	// Comments holds the value of the "comments" field.
@@ -86,7 +86,7 @@ func (*NineBoxEntry) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case nineboxentry.FieldVersion, nineboxentry.FieldPerformanceScore, nineboxentry.FieldPotentialScore, nineboxentry.FieldQuadrant:
+		case nineboxentry.FieldVersion, nineboxentry.FieldPerformanceTier, nineboxentry.FieldPotentialTier, nineboxentry.FieldQuadrant:
 			values[i] = new(sql.NullInt64)
 		case nineboxentry.FieldComments:
 			values[i] = new(sql.NullString)
@@ -145,17 +145,17 @@ func (_m *NineBoxEntry) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.Version = int(value.Int64)
 			}
-		case nineboxentry.FieldPerformanceScore:
+		case nineboxentry.FieldPerformanceTier:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field performance_score", values[i])
+				return fmt.Errorf("unexpected type %T for field performance_tier", values[i])
 			} else if value.Valid {
-				_m.PerformanceScore = int(value.Int64)
+				_m.PerformanceTier = int(value.Int64)
 			}
-		case nineboxentry.FieldPotentialScore:
+		case nineboxentry.FieldPotentialTier:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field potential_score", values[i])
+				return fmt.Errorf("unexpected type %T for field potential_tier", values[i])
 			} else if value.Valid {
-				_m.PotentialScore = int(value.Int64)
+				_m.PotentialTier = int(value.Int64)
 			}
 		case nineboxentry.FieldQuadrant:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -242,11 +242,11 @@ func (_m *NineBoxEntry) String() string {
 	builder.WriteString("version=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Version))
 	builder.WriteString(", ")
-	builder.WriteString("performance_score=")
-	builder.WriteString(fmt.Sprintf("%v", _m.PerformanceScore))
+	builder.WriteString("performance_tier=")
+	builder.WriteString(fmt.Sprintf("%v", _m.PerformanceTier))
 	builder.WriteString(", ")
-	builder.WriteString("potential_score=")
-	builder.WriteString(fmt.Sprintf("%v", _m.PotentialScore))
+	builder.WriteString("potential_tier=")
+	builder.WriteString(fmt.Sprintf("%v", _m.PotentialTier))
 	builder.WriteString(", ")
 	builder.WriteString("quadrant=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Quadrant))

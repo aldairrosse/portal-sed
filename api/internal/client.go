@@ -1283,6 +1283,22 @@ func (c *EmployeeClient) QueryNineBoxEntries(_m *Employee) *NineBoxEntryQuery {
 	return query
 }
 
+// QueryHeadedDepartment queries the headed_department edge of a Employee.
+func (c *EmployeeClient) QueryHeadedDepartment(_m *Employee) *OrgNodeQuery {
+	query := (&OrgNodeClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(employee.Table, employee.FieldID, id),
+			sqlgraph.To(orgnode.Table, orgnode.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, employee.HeadedDepartmentTable, employee.HeadedDepartmentColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *EmployeeClient) Hooks() []Hook {
 	return c.hooks.Employee
@@ -3460,6 +3476,22 @@ func (c *NineBoxMatrixClient) QueryEvaluator(_m *NineBoxMatrix) *EmployeeQuery {
 	return query
 }
 
+// QueryPhase queries the phase edge of a NineBoxMatrix.
+func (c *NineBoxMatrixClient) QueryPhase(_m *NineBoxMatrix) *PhaseDefinitionQuery {
+	query := (&PhaseDefinitionClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(nineboxmatrix.Table, nineboxmatrix.FieldID, id),
+			sqlgraph.To(phasedefinition.Table, phasedefinition.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, nineboxmatrix.PhaseTable, nineboxmatrix.PhaseColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryEntries queries the entries edge of a NineBoxMatrix.
 func (c *NineBoxMatrixClient) QueryEntries(_m *NineBoxMatrix) *NineBoxEntryQuery {
 	query := (&NineBoxEntryClient{config: c.config}).Query()
@@ -3939,6 +3971,22 @@ func (c *OrgNodeClient) QueryEmployees(_m *OrgNode) *EmployeeQuery {
 	return query
 }
 
+// QueryHeadEmployee queries the head_employee edge of a OrgNode.
+func (c *OrgNodeClient) QueryHeadEmployee(_m *OrgNode) *EmployeeQuery {
+	query := (&EmployeeClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(orgnode.Table, orgnode.FieldID, id),
+			sqlgraph.To(employee.Table, employee.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, orgnode.HeadEmployeeTable, orgnode.HeadEmployeeColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *OrgNodeClient) Hooks() []Hook {
 	return c.hooks.OrgNode
@@ -4278,6 +4326,22 @@ func (c *PhaseDefinitionClient) QueryIncomingTransitions(_m *PhaseDefinition) *P
 			sqlgraph.From(phasedefinition.Table, phasedefinition.FieldID, id),
 			sqlgraph.To(phasetransition.Table, phasetransition.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, phasedefinition.IncomingTransitionsTable, phasedefinition.IncomingTransitionsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryNineBoxMatrices queries the nine_box_matrices edge of a PhaseDefinition.
+func (c *PhaseDefinitionClient) QueryNineBoxMatrices(_m *PhaseDefinition) *NineBoxMatrixQuery {
+	query := (&NineBoxMatrixClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(phasedefinition.Table, phasedefinition.FieldID, id),
+			sqlgraph.To(nineboxmatrix.Table, nineboxmatrix.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, phasedefinition.NineBoxMatricesTable, phasedefinition.NineBoxMatricesColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil

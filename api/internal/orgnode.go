@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/google/uuid"
+	"github.com/sed-evaluacion-desempeno/api/internal/employee"
 	"github.com/sed-evaluacion-desempeno/api/internal/organization"
 	"github.com/sed-evaluacion-desempeno/api/internal/orgnode"
 )
@@ -40,6 +41,8 @@ type OrgNode struct {
 	ParentID *uuid.UUID `json:"parent_id,omitempty"`
 	// Path holds the value of the "path" field.
 	Path string `json:"path,omitempty"`
+	// HeadEmployeeID holds the value of the "head_employee_id" field.
+	HeadEmployeeID *uuid.UUID `json:"head_employee_id,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the OrgNodeQuery when eager-loading is set.
 	Edges        OrgNodeEdges `json:"edges"`
@@ -56,9 +59,11 @@ type OrgNodeEdges struct {
 	Children []*OrgNode `json:"children,omitempty"`
 	// Employees holds the value of the employees edge.
 	Employees []*Employee `json:"employees,omitempty"`
+	// HeadEmployee holds the value of the head_employee edge.
+	HeadEmployee *Employee `json:"head_employee,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [4]bool
+	loadedTypes [5]bool
 }
 
 // OrganizationOrErr returns the Organization value or an error if the edge
@@ -101,12 +106,23 @@ func (e OrgNodeEdges) EmployeesOrErr() ([]*Employee, error) {
 	return nil, &NotLoadedError{edge: "employees"}
 }
 
+// HeadEmployeeOrErr returns the HeadEmployee value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e OrgNodeEdges) HeadEmployeeOrErr() (*Employee, error) {
+	if e.HeadEmployee != nil {
+		return e.HeadEmployee, nil
+	} else if e.loadedTypes[4] {
+		return nil, &NotFoundError{label: employee.Label}
+	}
+	return nil, &NotLoadedError{edge: "head_employee"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*OrgNode) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case orgnode.FieldParentID:
+		case orgnode.FieldParentID, orgnode.FieldHeadEmployeeID:
 			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		case orgnode.FieldMetadata:
 			values[i] = new([]byte)
@@ -202,6 +218,13 @@ func (_m *OrgNode) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.Path = value.String
 			}
+		case orgnode.FieldHeadEmployeeID:
+			if value, ok := values[i].(*sql.NullScanner); !ok {
+				return fmt.Errorf("unexpected type %T for field head_employee_id", values[i])
+			} else if value.Valid {
+				_m.HeadEmployeeID = new(uuid.UUID)
+				*_m.HeadEmployeeID = *value.S.(*uuid.UUID)
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -233,6 +256,11 @@ func (_m *OrgNode) QueryChildren() *OrgNodeQuery {
 // QueryEmployees queries the "employees" edge of the OrgNode entity.
 func (_m *OrgNode) QueryEmployees() *EmployeeQuery {
 	return NewOrgNodeClient(_m.config).QueryEmployees(_m)
+}
+
+// QueryHeadEmployee queries the "head_employee" edge of the OrgNode entity.
+func (_m *OrgNode) QueryHeadEmployee() *EmployeeQuery {
+	return NewOrgNodeClient(_m.config).QueryHeadEmployee(_m)
 }
 
 // Update returns a builder for updating this OrgNode.
@@ -289,6 +317,11 @@ func (_m *OrgNode) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("path=")
 	builder.WriteString(_m.Path)
+	builder.WriteString(", ")
+	if v := _m.HeadEmployeeID; v != nil {
+		builder.WriteString("head_employee_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
 	builder.WriteByte(')')
 	return builder.String()
 }

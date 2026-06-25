@@ -99,6 +99,7 @@ var (
 		{Name: "employee_number", Type: field.TypeString},
 		{Name: "email", Type: field.TypeString, Unique: true},
 		{Name: "is_active", Type: field.TypeBool, Default: true},
+		{Name: "job_title", Type: field.TypeString, Nullable: true, Size: 200},
 		{Name: "manager_id", Type: field.TypeUUID, Nullable: true},
 		{Name: "profile_id", Type: field.TypeUUID},
 		{Name: "org_node_id", Type: field.TypeUUID},
@@ -111,19 +112,19 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "employees_employees_manager",
-				Columns:    []*schema.Column{EmployeesColumns[10]},
+				Columns:    []*schema.Column{EmployeesColumns[11]},
 				RefColumns: []*schema.Column{EmployeesColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "employees_evaluation_profiles_employees",
-				Columns:    []*schema.Column{EmployeesColumns[11]},
+				Columns:    []*schema.Column{EmployeesColumns[12]},
 				RefColumns: []*schema.Column{EvaluationProfilesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "employees_org_nodes_employees",
-				Columns:    []*schema.Column{EmployeesColumns[12]},
+				Columns:    []*schema.Column{EmployeesColumns[13]},
 				RefColumns: []*schema.Column{OrgNodesColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
@@ -287,6 +288,8 @@ var (
 		{Name: "weight", Type: field.TypeFloat64},
 		{Name: "target_value", Type: field.TypeFloat64},
 		{Name: "current_value", Type: field.TypeFloat64, Default: 0},
+		{Name: "direction", Type: field.TypeEnum, Enums: []string{"ascendente", "descendente"}, Default: "ascendente"},
+		{Name: "baseline_value", Type: field.TypeFloat64, Nullable: true},
 		{Name: "state", Type: field.TypeEnum, Enums: []string{"borrador", "fijada", "en_seguimiento", "evaluada", "cerrada"}},
 		{Name: "category_id", Type: field.TypeUUID},
 	}
@@ -298,7 +301,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "goals_goal_categories_goals",
-				Columns:    []*schema.Column{GoalsColumns[13]},
+				Columns:    []*schema.Column{GoalsColumns[15]},
 				RefColumns: []*schema.Column{GoalCategoriesColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
@@ -393,6 +396,8 @@ var (
 		{Name: "name", Type: field.TypeString, Unique: true},
 		{Name: "unit", Type: field.TypeEnum, Enums: []string{"porcentaje", "moneda", "numero"}},
 		{Name: "description", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "direction", Type: field.TypeEnum, Enums: []string{"ascendente", "descendente"}, Default: "ascendente"},
+		{Name: "current_value", Type: field.TypeFloat64, Nullable: true},
 	}
 	// KpIsTable holds the schema information for the "kp_is" table.
 	KpIsTable = &schema.Table{
@@ -421,8 +426,8 @@ var (
 		{Name: "created_by", Type: field.TypeUUID},
 		{Name: "updated_by", Type: field.TypeUUID},
 		{Name: "version", Type: field.TypeInt, Default: 1},
-		{Name: "performance_score", Type: field.TypeInt},
-		{Name: "potential_score", Type: field.TypeInt},
+		{Name: "performance_tier", Type: field.TypeInt},
+		{Name: "potential_tier", Type: field.TypeInt},
 		{Name: "quadrant", Type: field.TypeInt},
 		{Name: "comments", Type: field.TypeString, Nullable: true, Size: 2147483647},
 		{Name: "evaluatee_id", Type: field.TypeUUID},
@@ -455,6 +460,7 @@ var (
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "cycle_id", Type: field.TypeUUID},
 		{Name: "evaluator_id", Type: field.TypeUUID},
+		{Name: "phase_id", Type: field.TypeUUID},
 	}
 	// NineBoxMatrixesTable holds the schema information for the "nine_box_matrixes" table.
 	NineBoxMatrixesTable = &schema.Table{
@@ -474,6 +480,12 @@ var (
 				RefColumns: []*schema.Column{EmployeesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
+			{
+				Symbol:     "nine_box_matrixes_phase_definitions_nine_box_matrices",
+				Columns:    []*schema.Column{NineBoxMatrixesColumns[5]},
+				RefColumns: []*schema.Column{PhaseDefinitionsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
 		},
 	}
 	// NineBoxQuadrantsColumns holds the columns for the "nine_box_quadrants" table.
@@ -482,8 +494,10 @@ var (
 		{Name: "quadrant", Type: field.TypeInt, Unique: true},
 		{Name: "label", Type: field.TypeString},
 		{Name: "description", Type: field.TypeString, Nullable: true, Size: 2147483647},
-		{Name: "color", Type: field.TypeString},
+		{Name: "color", Type: field.TypeString, Nullable: true},
 		{Name: "action_recommendation", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "title", Type: field.TypeString, Nullable: true, Size: 100},
+		{Name: "color_hex", Type: field.TypeString, Nullable: true},
 	}
 	// NineBoxQuadrantsTable holds the schema information for the "nine_box_quadrants" table.
 	NineBoxQuadrantsTable = &schema.Table{
@@ -517,6 +531,7 @@ var (
 		{Name: "metadata", Type: field.TypeJSON, Nullable: true},
 		{Name: "path", Type: field.TypeString, Nullable: true},
 		{Name: "parent_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "head_employee_id", Type: field.TypeUUID, Nullable: true},
 		{Name: "organization_id", Type: field.TypeUUID},
 	}
 	// OrgNodesTable holds the schema information for the "org_nodes" table.
@@ -532,8 +547,14 @@ var (
 				OnDelete:   schema.SetNull,
 			},
 			{
-				Symbol:     "org_nodes_organizations_org_nodes",
+				Symbol:     "org_nodes_employees_head_employee",
 				Columns:    []*schema.Column{OrgNodesColumns[10]},
+				RefColumns: []*schema.Column{EmployeesColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
+				Symbol:     "org_nodes_organizations_org_nodes",
+				Columns:    []*schema.Column{OrgNodesColumns[11]},
 				RefColumns: []*schema.Column{OrganizationsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
@@ -721,8 +742,10 @@ func init() {
 	NineBoxEntriesTable.ForeignKeys[1].RefTable = NineBoxMatrixesTable
 	NineBoxMatrixesTable.ForeignKeys[0].RefTable = CyclesTable
 	NineBoxMatrixesTable.ForeignKeys[1].RefTable = EmployeesTable
+	NineBoxMatrixesTable.ForeignKeys[2].RefTable = PhaseDefinitionsTable
 	OrgNodesTable.ForeignKeys[0].RefTable = OrgNodesTable
-	OrgNodesTable.ForeignKeys[1].RefTable = OrganizationsTable
+	OrgNodesTable.ForeignKeys[1].RefTable = EmployeesTable
+	OrgNodesTable.ForeignKeys[2].RefTable = OrganizationsTable
 	PhaseDefinitionsTable.ForeignKeys[0].RefTable = CyclesTable
 	PhaseTransitionsTable.ForeignKeys[0].RefTable = CyclesTable
 	PhaseTransitionsTable.ForeignKeys[1].RefTable = PhaseDefinitionsTable

@@ -52,9 +52,11 @@ type PhaseDefinitionEdges struct {
 	OutgoingTransitions []*PhaseTransition `json:"outgoing_transitions,omitempty"`
 	// IncomingTransitions holds the value of the incoming_transitions edge.
 	IncomingTransitions []*PhaseTransition `json:"incoming_transitions,omitempty"`
+	// NineBoxMatrices holds the value of the nine_box_matrices edge.
+	NineBoxMatrices []*NineBoxMatrix `json:"nine_box_matrices,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [3]bool
+	loadedTypes [4]bool
 }
 
 // CycleOrErr returns the Cycle value or an error if the edge
@@ -84,6 +86,15 @@ func (e PhaseDefinitionEdges) IncomingTransitionsOrErr() ([]*PhaseTransition, er
 		return e.IncomingTransitions, nil
 	}
 	return nil, &NotLoadedError{edge: "incoming_transitions"}
+}
+
+// NineBoxMatricesOrErr returns the NineBoxMatrices value or an error if the edge
+// was not loaded in eager-loading.
+func (e PhaseDefinitionEdges) NineBoxMatricesOrErr() ([]*NineBoxMatrix, error) {
+	if e.loadedTypes[3] {
+		return e.NineBoxMatrices, nil
+	}
+	return nil, &NotLoadedError{edge: "nine_box_matrices"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -208,6 +219,11 @@ func (_m *PhaseDefinition) QueryOutgoingTransitions() *PhaseTransitionQuery {
 // QueryIncomingTransitions queries the "incoming_transitions" edge of the PhaseDefinition entity.
 func (_m *PhaseDefinition) QueryIncomingTransitions() *PhaseTransitionQuery {
 	return NewPhaseDefinitionClient(_m.config).QueryIncomingTransitions(_m)
+}
+
+// QueryNineBoxMatrices queries the "nine_box_matrices" edge of the PhaseDefinition entity.
+func (_m *PhaseDefinition) QueryNineBoxMatrices() *NineBoxMatrixQuery {
+	return NewPhaseDefinitionClient(_m.config).QueryNineBoxMatrices(_m)
 }
 
 // Update returns a builder for updating this PhaseDefinition.
