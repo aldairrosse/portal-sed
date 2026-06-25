@@ -81,14 +81,14 @@ func Version(v int) predicate.NineBoxEntry {
 	return predicate.NineBoxEntry(sql.FieldEQ(FieldVersion, v))
 }
 
-// PerformanceScore applies equality check predicate on the "performance_score" field. It's identical to PerformanceScoreEQ.
-func PerformanceScore(v int) predicate.NineBoxEntry {
-	return predicate.NineBoxEntry(sql.FieldEQ(FieldPerformanceScore, v))
+// PerformanceTier applies equality check predicate on the "performance_tier" field. It's identical to PerformanceTierEQ.
+func PerformanceTier(v int) predicate.NineBoxEntry {
+	return predicate.NineBoxEntry(sql.FieldEQ(FieldPerformanceTier, v))
 }
 
-// PotentialScore applies equality check predicate on the "potential_score" field. It's identical to PotentialScoreEQ.
-func PotentialScore(v int) predicate.NineBoxEntry {
-	return predicate.NineBoxEntry(sql.FieldEQ(FieldPotentialScore, v))
+// PotentialTier applies equality check predicate on the "potential_tier" field. It's identical to PotentialTierEQ.
+func PotentialTier(v int) predicate.NineBoxEntry {
+	return predicate.NineBoxEntry(sql.FieldEQ(FieldPotentialTier, v))
 }
 
 // Quadrant applies equality check predicate on the "quadrant" field. It's identical to QuadrantEQ.
@@ -311,84 +311,84 @@ func VersionLTE(v int) predicate.NineBoxEntry {
 	return predicate.NineBoxEntry(sql.FieldLTE(FieldVersion, v))
 }
 
-// PerformanceScoreEQ applies the EQ predicate on the "performance_score" field.
-func PerformanceScoreEQ(v int) predicate.NineBoxEntry {
-	return predicate.NineBoxEntry(sql.FieldEQ(FieldPerformanceScore, v))
+// PerformanceTierEQ applies the EQ predicate on the "performance_tier" field.
+func PerformanceTierEQ(v int) predicate.NineBoxEntry {
+	return predicate.NineBoxEntry(sql.FieldEQ(FieldPerformanceTier, v))
 }
 
-// PerformanceScoreNEQ applies the NEQ predicate on the "performance_score" field.
-func PerformanceScoreNEQ(v int) predicate.NineBoxEntry {
-	return predicate.NineBoxEntry(sql.FieldNEQ(FieldPerformanceScore, v))
+// PerformanceTierNEQ applies the NEQ predicate on the "performance_tier" field.
+func PerformanceTierNEQ(v int) predicate.NineBoxEntry {
+	return predicate.NineBoxEntry(sql.FieldNEQ(FieldPerformanceTier, v))
 }
 
-// PerformanceScoreIn applies the In predicate on the "performance_score" field.
-func PerformanceScoreIn(vs ...int) predicate.NineBoxEntry {
-	return predicate.NineBoxEntry(sql.FieldIn(FieldPerformanceScore, vs...))
+// PerformanceTierIn applies the In predicate on the "performance_tier" field.
+func PerformanceTierIn(vs ...int) predicate.NineBoxEntry {
+	return predicate.NineBoxEntry(sql.FieldIn(FieldPerformanceTier, vs...))
 }
 
-// PerformanceScoreNotIn applies the NotIn predicate on the "performance_score" field.
-func PerformanceScoreNotIn(vs ...int) predicate.NineBoxEntry {
-	return predicate.NineBoxEntry(sql.FieldNotIn(FieldPerformanceScore, vs...))
+// PerformanceTierNotIn applies the NotIn predicate on the "performance_tier" field.
+func PerformanceTierNotIn(vs ...int) predicate.NineBoxEntry {
+	return predicate.NineBoxEntry(sql.FieldNotIn(FieldPerformanceTier, vs...))
 }
 
-// PerformanceScoreGT applies the GT predicate on the "performance_score" field.
-func PerformanceScoreGT(v int) predicate.NineBoxEntry {
-	return predicate.NineBoxEntry(sql.FieldGT(FieldPerformanceScore, v))
+// PerformanceTierGT applies the GT predicate on the "performance_tier" field.
+func PerformanceTierGT(v int) predicate.NineBoxEntry {
+	return predicate.NineBoxEntry(sql.FieldGT(FieldPerformanceTier, v))
 }
 
-// PerformanceScoreGTE applies the GTE predicate on the "performance_score" field.
-func PerformanceScoreGTE(v int) predicate.NineBoxEntry {
-	return predicate.NineBoxEntry(sql.FieldGTE(FieldPerformanceScore, v))
+// PerformanceTierGTE applies the GTE predicate on the "performance_tier" field.
+func PerformanceTierGTE(v int) predicate.NineBoxEntry {
+	return predicate.NineBoxEntry(sql.FieldGTE(FieldPerformanceTier, v))
 }
 
-// PerformanceScoreLT applies the LT predicate on the "performance_score" field.
-func PerformanceScoreLT(v int) predicate.NineBoxEntry {
-	return predicate.NineBoxEntry(sql.FieldLT(FieldPerformanceScore, v))
+// PerformanceTierLT applies the LT predicate on the "performance_tier" field.
+func PerformanceTierLT(v int) predicate.NineBoxEntry {
+	return predicate.NineBoxEntry(sql.FieldLT(FieldPerformanceTier, v))
 }
 
-// PerformanceScoreLTE applies the LTE predicate on the "performance_score" field.
-func PerformanceScoreLTE(v int) predicate.NineBoxEntry {
-	return predicate.NineBoxEntry(sql.FieldLTE(FieldPerformanceScore, v))
+// PerformanceTierLTE applies the LTE predicate on the "performance_tier" field.
+func PerformanceTierLTE(v int) predicate.NineBoxEntry {
+	return predicate.NineBoxEntry(sql.FieldLTE(FieldPerformanceTier, v))
 }
 
-// PotentialScoreEQ applies the EQ predicate on the "potential_score" field.
-func PotentialScoreEQ(v int) predicate.NineBoxEntry {
-	return predicate.NineBoxEntry(sql.FieldEQ(FieldPotentialScore, v))
+// PotentialTierEQ applies the EQ predicate on the "potential_tier" field.
+func PotentialTierEQ(v int) predicate.NineBoxEntry {
+	return predicate.NineBoxEntry(sql.FieldEQ(FieldPotentialTier, v))
 }
 
-// PotentialScoreNEQ applies the NEQ predicate on the "potential_score" field.
-func PotentialScoreNEQ(v int) predicate.NineBoxEntry {
-	return predicate.NineBoxEntry(sql.FieldNEQ(FieldPotentialScore, v))
+// PotentialTierNEQ applies the NEQ predicate on the "potential_tier" field.
+func PotentialTierNEQ(v int) predicate.NineBoxEntry {
+	return predicate.NineBoxEntry(sql.FieldNEQ(FieldPotentialTier, v))
 }
 
-// PotentialScoreIn applies the In predicate on the "potential_score" field.
-func PotentialScoreIn(vs ...int) predicate.NineBoxEntry {
-	return predicate.NineBoxEntry(sql.FieldIn(FieldPotentialScore, vs...))
+// PotentialTierIn applies the In predicate on the "potential_tier" field.
+func PotentialTierIn(vs ...int) predicate.NineBoxEntry {
+	return predicate.NineBoxEntry(sql.FieldIn(FieldPotentialTier, vs...))
 }
 
-// PotentialScoreNotIn applies the NotIn predicate on the "potential_score" field.
-func PotentialScoreNotIn(vs ...int) predicate.NineBoxEntry {
-	return predicate.NineBoxEntry(sql.FieldNotIn(FieldPotentialScore, vs...))
+// PotentialTierNotIn applies the NotIn predicate on the "potential_tier" field.
+func PotentialTierNotIn(vs ...int) predicate.NineBoxEntry {
+	return predicate.NineBoxEntry(sql.FieldNotIn(FieldPotentialTier, vs...))
 }
 
-// PotentialScoreGT applies the GT predicate on the "potential_score" field.
-func PotentialScoreGT(v int) predicate.NineBoxEntry {
-	return predicate.NineBoxEntry(sql.FieldGT(FieldPotentialScore, v))
+// PotentialTierGT applies the GT predicate on the "potential_tier" field.
+func PotentialTierGT(v int) predicate.NineBoxEntry {
+	return predicate.NineBoxEntry(sql.FieldGT(FieldPotentialTier, v))
 }
 
-// PotentialScoreGTE applies the GTE predicate on the "potential_score" field.
-func PotentialScoreGTE(v int) predicate.NineBoxEntry {
-	return predicate.NineBoxEntry(sql.FieldGTE(FieldPotentialScore, v))
+// PotentialTierGTE applies the GTE predicate on the "potential_tier" field.
+func PotentialTierGTE(v int) predicate.NineBoxEntry {
+	return predicate.NineBoxEntry(sql.FieldGTE(FieldPotentialTier, v))
 }
 
-// PotentialScoreLT applies the LT predicate on the "potential_score" field.
-func PotentialScoreLT(v int) predicate.NineBoxEntry {
-	return predicate.NineBoxEntry(sql.FieldLT(FieldPotentialScore, v))
+// PotentialTierLT applies the LT predicate on the "potential_tier" field.
+func PotentialTierLT(v int) predicate.NineBoxEntry {
+	return predicate.NineBoxEntry(sql.FieldLT(FieldPotentialTier, v))
 }
 
-// PotentialScoreLTE applies the LTE predicate on the "potential_score" field.
-func PotentialScoreLTE(v int) predicate.NineBoxEntry {
-	return predicate.NineBoxEntry(sql.FieldLTE(FieldPotentialScore, v))
+// PotentialTierLTE applies the LTE predicate on the "potential_tier" field.
+func PotentialTierLTE(v int) predicate.NineBoxEntry {
+	return predicate.NineBoxEntry(sql.FieldLTE(FieldPotentialTier, v))
 }
 
 // QuadrantEQ applies the EQ predicate on the "quadrant" field.

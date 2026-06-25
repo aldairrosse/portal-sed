@@ -48,5 +48,6 @@ func (PhaseDefinition) Edges() []ent.Edge {
 			Field("cycle_id"),
 		edge.To("outgoing_transitions", PhaseTransition.Type),
 		edge.To("incoming_transitions", PhaseTransition.Type),
+		edge.To("nine_box_matrices", NineBoxMatrix.Type),
 	}
 }

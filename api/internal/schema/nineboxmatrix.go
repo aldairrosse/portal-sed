@@ -27,6 +27,7 @@ func (NineBoxMatrix) Fields() []ent.Field {
 			StorageKey("id"),
 		field.UUID("cycle_id", uuid.UUID{}),
 		field.UUID("evaluator_id", uuid.UUID{}),
+		field.UUID("phase_id", uuid.UUID{}),
 	}
 }
 
@@ -42,6 +43,11 @@ func (NineBoxMatrix) Edges() []ent.Edge {
 			Unique().
 			Required().
 			Field("evaluator_id"),
+		edge.From("phase", PhaseDefinition.Type).
+			Ref("nine_box_matrices").
+			Unique().
+			Required().
+			Field("phase_id"),
 		edge.To("entries", NineBoxEntry.Type).
 			Annotations(entsql.Annotation{
 				OnDelete: entsql.Cascade,
@@ -51,7 +57,7 @@ func (NineBoxMatrix) Edges() []ent.Edge {
 
 func (NineBoxMatrix) Index() []ent.Index {
 	return []ent.Index{
-		index.Fields("cycle_id", "evaluator_id").
+		index.Fields("cycle_id", "evaluator_id", "phase_id").
 			Unique(),
 		index.Fields("evaluator_id"),
 	}

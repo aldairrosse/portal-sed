@@ -22,6 +22,10 @@ const (
 	FieldColor = "color"
 	// FieldActionRecommendation holds the string denoting the action_recommendation field in the database.
 	FieldActionRecommendation = "action_recommendation"
+	// FieldTitle holds the string denoting the title field in the database.
+	FieldTitle = "title"
+	// FieldColorHex holds the string denoting the color_hex field in the database.
+	FieldColorHex = "color_hex"
 	// Table holds the table name of the nineboxquadrant in the database.
 	Table = "nine_box_quadrants"
 )
@@ -34,6 +38,8 @@ var Columns = []string{
 	FieldDescription,
 	FieldColor,
 	FieldActionRecommendation,
+	FieldTitle,
+	FieldColorHex,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -51,8 +57,10 @@ var (
 	QuadrantValidator func(int) error
 	// LabelValidator is a validator for the "label" field. It is called by the builders before save.
 	LabelValidator func(string) error
-	// ColorValidator is a validator for the "color" field. It is called by the builders before save.
-	ColorValidator func(string) error
+	// TitleValidator is a validator for the "title" field. It is called by the builders before save.
+	TitleValidator func(string) error
+	// ColorHexValidator is a validator for the "color_hex" field. It is called by the builders before save.
+	ColorHexValidator func(string) error
 	// DefaultID holds the default value on creation for the "id" field.
 	DefaultID func() uuid.UUID
 )
@@ -88,4 +96,14 @@ func ByColor(opts ...sql.OrderTermOption) OrderOption {
 // ByActionRecommendation orders the results by the action_recommendation field.
 func ByActionRecommendation(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldActionRecommendation, opts...).ToFunc()
+}
+
+// ByTitle orders the results by the title field.
+func ByTitle(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldTitle, opts...).ToFunc()
+}
+
+// ByColorHex orders the results by the color_hex field.
+func ByColorHex(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldColorHex, opts...).ToFunc()
 }

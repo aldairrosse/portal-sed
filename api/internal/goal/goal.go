@@ -38,6 +38,10 @@ const (
 	FieldTargetValue = "target_value"
 	// FieldCurrentValue holds the string denoting the current_value field in the database.
 	FieldCurrentValue = "current_value"
+	// FieldDirection holds the string denoting the direction field in the database.
+	FieldDirection = "direction"
+	// FieldBaselineValue holds the string denoting the baseline_value field in the database.
+	FieldBaselineValue = "baseline_value"
 	// FieldState holds the string denoting the state field in the database.
 	FieldState = "state"
 	// FieldCategoryID holds the string denoting the category_id field in the database.
@@ -87,6 +91,8 @@ var Columns = []string{
 	FieldWeight,
 	FieldTargetValue,
 	FieldCurrentValue,
+	FieldDirection,
+	FieldBaselineValue,
 	FieldState,
 	FieldCategoryID,
 }
@@ -145,6 +151,32 @@ func UnitValidator(u Unit) error {
 		return nil
 	default:
 		return fmt.Errorf("goal: invalid enum value for unit field: %q", u)
+	}
+}
+
+// Direction defines the type for the "direction" enum field.
+type Direction string
+
+// DirectionAscendente is the default value of the Direction enum.
+const DefaultDirection = DirectionAscendente
+
+// Direction values.
+const (
+	DirectionAscendente  Direction = "ascendente"
+	DirectionDescendente Direction = "descendente"
+)
+
+func (d Direction) String() string {
+	return string(d)
+}
+
+// DirectionValidator is a validator for the "direction" field enum values. It is called by the builders before save.
+func DirectionValidator(d Direction) error {
+	switch d {
+	case DirectionAscendente, DirectionDescendente:
+		return nil
+	default:
+		return fmt.Errorf("goal: invalid enum value for direction field: %q", d)
 	}
 }
 
@@ -235,6 +267,16 @@ func ByTargetValue(opts ...sql.OrderTermOption) OrderOption {
 // ByCurrentValue orders the results by the current_value field.
 func ByCurrentValue(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldCurrentValue, opts...).ToFunc()
+}
+
+// ByDirection orders the results by the direction field.
+func ByDirection(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDirection, opts...).ToFunc()
+}
+
+// ByBaselineValue orders the results by the baseline_value field.
+func ByBaselineValue(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldBaselineValue, opts...).ToFunc()
 }
 
 // ByState orders the results by the state field.

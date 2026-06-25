@@ -96,6 +96,11 @@ func Path(v string) predicate.OrgNode {
 	return predicate.OrgNode(sql.FieldEQ(FieldPath, v))
 }
 
+// HeadEmployeeID applies equality check predicate on the "head_employee_id" field. It's identical to HeadEmployeeIDEQ.
+func HeadEmployeeID(v uuid.UUID) predicate.OrgNode {
+	return predicate.OrgNode(sql.FieldEQ(FieldHeadEmployeeID, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.OrgNode {
 	return predicate.OrgNode(sql.FieldEQ(FieldCreatedAt, v))
@@ -501,6 +506,36 @@ func PathContainsFold(v string) predicate.OrgNode {
 	return predicate.OrgNode(sql.FieldContainsFold(FieldPath, v))
 }
 
+// HeadEmployeeIDEQ applies the EQ predicate on the "head_employee_id" field.
+func HeadEmployeeIDEQ(v uuid.UUID) predicate.OrgNode {
+	return predicate.OrgNode(sql.FieldEQ(FieldHeadEmployeeID, v))
+}
+
+// HeadEmployeeIDNEQ applies the NEQ predicate on the "head_employee_id" field.
+func HeadEmployeeIDNEQ(v uuid.UUID) predicate.OrgNode {
+	return predicate.OrgNode(sql.FieldNEQ(FieldHeadEmployeeID, v))
+}
+
+// HeadEmployeeIDIn applies the In predicate on the "head_employee_id" field.
+func HeadEmployeeIDIn(vs ...uuid.UUID) predicate.OrgNode {
+	return predicate.OrgNode(sql.FieldIn(FieldHeadEmployeeID, vs...))
+}
+
+// HeadEmployeeIDNotIn applies the NotIn predicate on the "head_employee_id" field.
+func HeadEmployeeIDNotIn(vs ...uuid.UUID) predicate.OrgNode {
+	return predicate.OrgNode(sql.FieldNotIn(FieldHeadEmployeeID, vs...))
+}
+
+// HeadEmployeeIDIsNil applies the IsNil predicate on the "head_employee_id" field.
+func HeadEmployeeIDIsNil() predicate.OrgNode {
+	return predicate.OrgNode(sql.FieldIsNull(FieldHeadEmployeeID))
+}
+
+// HeadEmployeeIDNotNil applies the NotNil predicate on the "head_employee_id" field.
+func HeadEmployeeIDNotNil() predicate.OrgNode {
+	return predicate.OrgNode(sql.FieldNotNull(FieldHeadEmployeeID))
+}
+
 // HasOrganization applies the HasEdge predicate on the "organization" edge.
 func HasOrganization() predicate.OrgNode {
 	return predicate.OrgNode(func(s *sql.Selector) {
@@ -585,6 +620,29 @@ func HasEmployees() predicate.OrgNode {
 func HasEmployeesWith(preds ...predicate.Employee) predicate.OrgNode {
 	return predicate.OrgNode(func(s *sql.Selector) {
 		step := newEmployeesStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasHeadEmployee applies the HasEdge predicate on the "head_employee" edge.
+func HasHeadEmployee() predicate.OrgNode {
+	return predicate.OrgNode(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, HeadEmployeeTable, HeadEmployeeColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasHeadEmployeeWith applies the HasEdge predicate on the "head_employee" edge with a given conditions (other predicates).
+func HasHeadEmployeeWith(preds ...predicate.Employee) predicate.OrgNode {
+	return predicate.OrgNode(func(s *sql.Selector) {
+		step := newHeadEmployeeStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

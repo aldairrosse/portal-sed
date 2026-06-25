@@ -40,6 +40,9 @@ func (OrgNode) Fields() []ent.Field {
 			Nillable(),
 		field.String("path").
 			Optional(),
+		field.UUID("head_employee_id", uuid.UUID{}).
+			Optional().
+			Nillable(),
 	}
 }
 
@@ -59,6 +62,9 @@ func (OrgNode) Edges() []ent.Edge {
 			Annotations(entsql.Annotation{
 				OnDelete: entsql.Cascade,
 			}),
+		edge.To("head_employee", Employee.Type).
+			Unique().
+			Field("head_employee_id"),
 	}
 }
 

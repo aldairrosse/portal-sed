@@ -32,6 +32,12 @@ func (KPI) Fields() []ent.Field {
 			Values("porcentaje", "moneda", "numero"),
 		field.Text("description").
 			Optional(),
+		field.Enum("direction").
+			Values("ascendente", "descendente").
+			Default("ascendente"),
+		field.Float("current_value").
+			Optional().
+			Nillable(),
 	}
 }
 

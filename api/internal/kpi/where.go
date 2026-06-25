@@ -76,6 +76,11 @@ func Description(v string) predicate.KPI {
 	return predicate.KPI(sql.FieldEQ(FieldDescription, v))
 }
 
+// CurrentValue applies equality check predicate on the "current_value" field. It's identical to CurrentValueEQ.
+func CurrentValue(v float64) predicate.KPI {
+	return predicate.KPI(sql.FieldEQ(FieldCurrentValue, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.KPI {
 	return predicate.KPI(sql.FieldEQ(FieldCreatedAt, v))
@@ -314,6 +319,76 @@ func DescriptionEqualFold(v string) predicate.KPI {
 // DescriptionContainsFold applies the ContainsFold predicate on the "description" field.
 func DescriptionContainsFold(v string) predicate.KPI {
 	return predicate.KPI(sql.FieldContainsFold(FieldDescription, v))
+}
+
+// DirectionEQ applies the EQ predicate on the "direction" field.
+func DirectionEQ(v Direction) predicate.KPI {
+	return predicate.KPI(sql.FieldEQ(FieldDirection, v))
+}
+
+// DirectionNEQ applies the NEQ predicate on the "direction" field.
+func DirectionNEQ(v Direction) predicate.KPI {
+	return predicate.KPI(sql.FieldNEQ(FieldDirection, v))
+}
+
+// DirectionIn applies the In predicate on the "direction" field.
+func DirectionIn(vs ...Direction) predicate.KPI {
+	return predicate.KPI(sql.FieldIn(FieldDirection, vs...))
+}
+
+// DirectionNotIn applies the NotIn predicate on the "direction" field.
+func DirectionNotIn(vs ...Direction) predicate.KPI {
+	return predicate.KPI(sql.FieldNotIn(FieldDirection, vs...))
+}
+
+// CurrentValueEQ applies the EQ predicate on the "current_value" field.
+func CurrentValueEQ(v float64) predicate.KPI {
+	return predicate.KPI(sql.FieldEQ(FieldCurrentValue, v))
+}
+
+// CurrentValueNEQ applies the NEQ predicate on the "current_value" field.
+func CurrentValueNEQ(v float64) predicate.KPI {
+	return predicate.KPI(sql.FieldNEQ(FieldCurrentValue, v))
+}
+
+// CurrentValueIn applies the In predicate on the "current_value" field.
+func CurrentValueIn(vs ...float64) predicate.KPI {
+	return predicate.KPI(sql.FieldIn(FieldCurrentValue, vs...))
+}
+
+// CurrentValueNotIn applies the NotIn predicate on the "current_value" field.
+func CurrentValueNotIn(vs ...float64) predicate.KPI {
+	return predicate.KPI(sql.FieldNotIn(FieldCurrentValue, vs...))
+}
+
+// CurrentValueGT applies the GT predicate on the "current_value" field.
+func CurrentValueGT(v float64) predicate.KPI {
+	return predicate.KPI(sql.FieldGT(FieldCurrentValue, v))
+}
+
+// CurrentValueGTE applies the GTE predicate on the "current_value" field.
+func CurrentValueGTE(v float64) predicate.KPI {
+	return predicate.KPI(sql.FieldGTE(FieldCurrentValue, v))
+}
+
+// CurrentValueLT applies the LT predicate on the "current_value" field.
+func CurrentValueLT(v float64) predicate.KPI {
+	return predicate.KPI(sql.FieldLT(FieldCurrentValue, v))
+}
+
+// CurrentValueLTE applies the LTE predicate on the "current_value" field.
+func CurrentValueLTE(v float64) predicate.KPI {
+	return predicate.KPI(sql.FieldLTE(FieldCurrentValue, v))
+}
+
+// CurrentValueIsNil applies the IsNil predicate on the "current_value" field.
+func CurrentValueIsNil() predicate.KPI {
+	return predicate.KPI(sql.FieldIsNull(FieldCurrentValue))
+}
+
+// CurrentValueNotNil applies the NotNil predicate on the "current_value" field.
+func CurrentValueNotNil() predicate.KPI {
+	return predicate.KPI(sql.FieldNotNull(FieldCurrentValue))
 }
 
 // HasGoalLinks applies the HasEdge predicate on the "goal_links" edge.

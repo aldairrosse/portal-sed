@@ -25,10 +25,10 @@ func (NineBoxEntry) Fields() []ent.Field {
 		field.UUID("id", uuid.UUID{}).
 			Default(uuid.New).
 			StorageKey("id"),
-		field.Int("performance_score").
-			Range(1, 9),
-		field.Int("potential_score").
-			Range(1, 9),
+		field.Int("performance_tier").
+			Range(1, 3),
+		field.Int("potential_tier").
+			Range(1, 3),
 		field.Int("quadrant").
 			Range(1, 9),
 		field.Text("comments").

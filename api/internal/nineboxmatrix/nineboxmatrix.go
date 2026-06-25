@@ -23,10 +23,14 @@ const (
 	FieldCycleID = "cycle_id"
 	// FieldEvaluatorID holds the string denoting the evaluator_id field in the database.
 	FieldEvaluatorID = "evaluator_id"
+	// FieldPhaseID holds the string denoting the phase_id field in the database.
+	FieldPhaseID = "phase_id"
 	// EdgeCycle holds the string denoting the cycle edge name in mutations.
 	EdgeCycle = "cycle"
 	// EdgeEvaluator holds the string denoting the evaluator edge name in mutations.
 	EdgeEvaluator = "evaluator"
+	// EdgePhase holds the string denoting the phase edge name in mutations.
+	EdgePhase = "phase"
 	// EdgeEntries holds the string denoting the entries edge name in mutations.
 	EdgeEntries = "entries"
 	// Table holds the table name of the nineboxmatrix in the database.
@@ -45,6 +49,13 @@ const (
 	EvaluatorInverseTable = "employees"
 	// EvaluatorColumn is the table column denoting the evaluator relation/edge.
 	EvaluatorColumn = "evaluator_id"
+	// PhaseTable is the table that holds the phase relation/edge.
+	PhaseTable = "nine_box_matrixes"
+	// PhaseInverseTable is the table name for the PhaseDefinition entity.
+	// It exists in this package in order to avoid circular dependency with the "phasedefinition" package.
+	PhaseInverseTable = "phase_definitions"
+	// PhaseColumn is the table column denoting the phase relation/edge.
+	PhaseColumn = "phase_id"
 	// EntriesTable is the table that holds the entries relation/edge.
 	EntriesTable = "nine_box_entries"
 	// EntriesInverseTable is the table name for the NineBoxEntry entity.
@@ -61,6 +72,7 @@ var Columns = []string{
 	FieldUpdatedAt,
 	FieldCycleID,
 	FieldEvaluatorID,
+	FieldPhaseID,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -112,6 +124,11 @@ func ByEvaluatorID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldEvaluatorID, opts...).ToFunc()
 }
 
+// ByPhaseID orders the results by the phase_id field.
+func ByPhaseID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPhaseID, opts...).ToFunc()
+}
+
 // ByCycleField orders the results by cycle field.
 func ByCycleField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -123,6 +140,13 @@ func ByCycleField(field string, opts ...sql.OrderTermOption) OrderOption {
 func ByEvaluatorField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
 		sqlgraph.OrderByNeighborTerms(s, newEvaluatorStep(), sql.OrderByField(field, opts...))
+	}
+}
+
+// ByPhaseField orders the results by phase field.
+func ByPhaseField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newPhaseStep(), sql.OrderByField(field, opts...))
 	}
 }
 
@@ -151,6 +175,13 @@ func newEvaluatorStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(EvaluatorInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2O, true, EvaluatorTable, EvaluatorColumn),
+	)
+}
+func newPhaseStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(PhaseInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, PhaseTable, PhaseColumn),
 	)
 }
 func newEntriesStep() *sqlgraph.Step {

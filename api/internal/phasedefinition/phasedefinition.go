@@ -40,6 +40,8 @@ const (
 	EdgeOutgoingTransitions = "outgoing_transitions"
 	// EdgeIncomingTransitions holds the string denoting the incoming_transitions edge name in mutations.
 	EdgeIncomingTransitions = "incoming_transitions"
+	// EdgeNineBoxMatrices holds the string denoting the nine_box_matrices edge name in mutations.
+	EdgeNineBoxMatrices = "nine_box_matrices"
 	// Table holds the table name of the phasedefinition in the database.
 	Table = "phase_definitions"
 	// CycleTable is the table that holds the cycle relation/edge.
@@ -63,6 +65,13 @@ const (
 	IncomingTransitionsInverseTable = "phase_transitions"
 	// IncomingTransitionsColumn is the table column denoting the incoming_transitions relation/edge.
 	IncomingTransitionsColumn = "to_phase_id"
+	// NineBoxMatricesTable is the table that holds the nine_box_matrices relation/edge.
+	NineBoxMatricesTable = "nine_box_matrixes"
+	// NineBoxMatricesInverseTable is the table name for the NineBoxMatrix entity.
+	// It exists in this package in order to avoid circular dependency with the "nineboxmatrix" package.
+	NineBoxMatricesInverseTable = "nine_box_matrixes"
+	// NineBoxMatricesColumn is the table column denoting the nine_box_matrices relation/edge.
+	NineBoxMatricesColumn = "phase_id"
 )
 
 // Columns holds all SQL columns for phasedefinition fields.
@@ -200,6 +209,20 @@ func ByIncomingTransitions(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOpti
 		sqlgraph.OrderByNeighborTerms(s, newIncomingTransitionsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByNineBoxMatricesCount orders the results by nine_box_matrices count.
+func ByNineBoxMatricesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newNineBoxMatricesStep(), opts...)
+	}
+}
+
+// ByNineBoxMatrices orders the results by nine_box_matrices terms.
+func ByNineBoxMatrices(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newNineBoxMatricesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newCycleStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -219,5 +242,12 @@ func newIncomingTransitionsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(IncomingTransitionsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, IncomingTransitionsTable, IncomingTransitionsColumn),
+	)
+}
+func newNineBoxMatricesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(NineBoxMatricesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, NineBoxMatricesTable, NineBoxMatricesColumn),
 	)
 }

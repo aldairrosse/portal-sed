@@ -39,6 +39,8 @@ const (
 	FieldManagerID = "manager_id"
 	// FieldProfileID holds the string denoting the profile_id field in the database.
 	FieldProfileID = "profile_id"
+	// FieldJobTitle holds the string denoting the job_title field in the database.
+	FieldJobTitle = "job_title"
 	// EdgeOrgNode holds the string denoting the org_node edge name in mutations.
 	EdgeOrgNode = "org_node"
 	// EdgeManager holds the string denoting the manager edge name in mutations.
@@ -59,6 +61,8 @@ const (
 	EdgeNineBoxMatrices = "nine_box_matrices"
 	// EdgeNineBoxEntries holds the string denoting the nine_box_entries edge name in mutations.
 	EdgeNineBoxEntries = "nine_box_entries"
+	// EdgeHeadedDepartment holds the string denoting the headed_department edge name in mutations.
+	EdgeHeadedDepartment = "headed_department"
 	// Table holds the table name of the employee in the database.
 	Table = "employees"
 	// OrgNodeTable is the table that holds the org_node relation/edge.
@@ -125,6 +129,13 @@ const (
 	NineBoxEntriesInverseTable = "nine_box_entries"
 	// NineBoxEntriesColumn is the table column denoting the nine_box_entries relation/edge.
 	NineBoxEntriesColumn = "evaluatee_id"
+	// HeadedDepartmentTable is the table that holds the headed_department relation/edge.
+	HeadedDepartmentTable = "org_nodes"
+	// HeadedDepartmentInverseTable is the table name for the OrgNode entity.
+	// It exists in this package in order to avoid circular dependency with the "orgnode" package.
+	HeadedDepartmentInverseTable = "org_nodes"
+	// HeadedDepartmentColumn is the table column denoting the headed_department relation/edge.
+	HeadedDepartmentColumn = "head_employee_id"
 )
 
 // Columns holds all SQL columns for employee fields.
@@ -142,6 +153,7 @@ var Columns = []string{
 	FieldOrgNodeID,
 	FieldManagerID,
 	FieldProfileID,
+	FieldJobTitle,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -171,6 +183,8 @@ var (
 	EmailValidator func(string) error
 	// DefaultIsActive holds the default value on creation for the "is_active" field.
 	DefaultIsActive bool
+	// JobTitleValidator is a validator for the "job_title" field. It is called by the builders before save.
+	JobTitleValidator func(string) error
 	// DefaultID holds the default value on creation for the "id" field.
 	DefaultID func() uuid.UUID
 )
@@ -241,6 +255,11 @@ func ByManagerID(opts ...sql.OrderTermOption) OrderOption {
 // ByProfileID orders the results by the profile_id field.
 func ByProfileID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldProfileID, opts...).ToFunc()
+}
+
+// ByJobTitle orders the results by the job_title field.
+func ByJobTitle(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldJobTitle, opts...).ToFunc()
 }
 
 // ByOrgNodeField orders the results by org_node field.
@@ -361,6 +380,20 @@ func ByNineBoxEntries(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newNineBoxEntriesStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByHeadedDepartmentCount orders the results by headed_department count.
+func ByHeadedDepartmentCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newHeadedDepartmentStep(), opts...)
+	}
+}
+
+// ByHeadedDepartment orders the results by headed_department terms.
+func ByHeadedDepartment(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newHeadedDepartmentStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newOrgNodeStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -429,5 +462,12 @@ func newNineBoxEntriesStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(NineBoxEntriesInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, NineBoxEntriesTable, NineBoxEntriesColumn),
+	)
+}
+func newHeadedDepartmentStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(HeadedDepartmentInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, true, HeadedDepartmentTable, HeadedDepartmentColumn),
 	)
 }

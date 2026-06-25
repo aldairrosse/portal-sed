@@ -76,6 +76,11 @@ func EvaluatorID(v uuid.UUID) predicate.NineBoxMatrix {
 	return predicate.NineBoxMatrix(sql.FieldEQ(FieldEvaluatorID, v))
 }
 
+// PhaseID applies equality check predicate on the "phase_id" field. It's identical to PhaseIDEQ.
+func PhaseID(v uuid.UUID) predicate.NineBoxMatrix {
+	return predicate.NineBoxMatrix(sql.FieldEQ(FieldPhaseID, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.NineBoxMatrix {
 	return predicate.NineBoxMatrix(sql.FieldEQ(FieldCreatedAt, v))
@@ -196,6 +201,26 @@ func EvaluatorIDNotIn(vs ...uuid.UUID) predicate.NineBoxMatrix {
 	return predicate.NineBoxMatrix(sql.FieldNotIn(FieldEvaluatorID, vs...))
 }
 
+// PhaseIDEQ applies the EQ predicate on the "phase_id" field.
+func PhaseIDEQ(v uuid.UUID) predicate.NineBoxMatrix {
+	return predicate.NineBoxMatrix(sql.FieldEQ(FieldPhaseID, v))
+}
+
+// PhaseIDNEQ applies the NEQ predicate on the "phase_id" field.
+func PhaseIDNEQ(v uuid.UUID) predicate.NineBoxMatrix {
+	return predicate.NineBoxMatrix(sql.FieldNEQ(FieldPhaseID, v))
+}
+
+// PhaseIDIn applies the In predicate on the "phase_id" field.
+func PhaseIDIn(vs ...uuid.UUID) predicate.NineBoxMatrix {
+	return predicate.NineBoxMatrix(sql.FieldIn(FieldPhaseID, vs...))
+}
+
+// PhaseIDNotIn applies the NotIn predicate on the "phase_id" field.
+func PhaseIDNotIn(vs ...uuid.UUID) predicate.NineBoxMatrix {
+	return predicate.NineBoxMatrix(sql.FieldNotIn(FieldPhaseID, vs...))
+}
+
 // HasCycle applies the HasEdge predicate on the "cycle" edge.
 func HasCycle() predicate.NineBoxMatrix {
 	return predicate.NineBoxMatrix(func(s *sql.Selector) {
@@ -234,6 +259,29 @@ func HasEvaluator() predicate.NineBoxMatrix {
 func HasEvaluatorWith(preds ...predicate.Employee) predicate.NineBoxMatrix {
 	return predicate.NineBoxMatrix(func(s *sql.Selector) {
 		step := newEvaluatorStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasPhase applies the HasEdge predicate on the "phase" edge.
+func HasPhase() predicate.NineBoxMatrix {
+	return predicate.NineBoxMatrix(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, PhaseTable, PhaseColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasPhaseWith applies the HasEdge predicate on the "phase" edge with a given conditions (other predicates).
+func HasPhaseWith(preds ...predicate.PhaseDefinition) predicate.NineBoxMatrix {
+	return predicate.NineBoxMatrix(func(s *sql.Selector) {
+		step := newPhaseStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

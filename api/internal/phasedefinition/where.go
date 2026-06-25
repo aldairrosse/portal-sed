@@ -400,6 +400,29 @@ func HasIncomingTransitionsWith(preds ...predicate.PhaseTransition) predicate.Ph
 	})
 }
 
+// HasNineBoxMatrices applies the HasEdge predicate on the "nine_box_matrices" edge.
+func HasNineBoxMatrices() predicate.PhaseDefinition {
+	return predicate.PhaseDefinition(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, NineBoxMatricesTable, NineBoxMatricesColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasNineBoxMatricesWith applies the HasEdge predicate on the "nine_box_matrices" edge with a given conditions (other predicates).
+func HasNineBoxMatricesWith(preds ...predicate.NineBoxMatrix) predicate.PhaseDefinition {
+	return predicate.PhaseDefinition(func(s *sql.Selector) {
+		step := newNineBoxMatricesStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.PhaseDefinition) predicate.PhaseDefinition {
 	return predicate.PhaseDefinition(sql.AndPredicates(predicates...))

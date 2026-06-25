@@ -73,6 +73,16 @@ func ActionRecommendation(v string) predicate.NineBoxQuadrant {
 	return predicate.NineBoxQuadrant(sql.FieldEQ(FieldActionRecommendation, v))
 }
 
+// Title applies equality check predicate on the "title" field. It's identical to TitleEQ.
+func Title(v string) predicate.NineBoxQuadrant {
+	return predicate.NineBoxQuadrant(sql.FieldEQ(FieldTitle, v))
+}
+
+// ColorHex applies equality check predicate on the "color_hex" field. It's identical to ColorHexEQ.
+func ColorHex(v string) predicate.NineBoxQuadrant {
+	return predicate.NineBoxQuadrant(sql.FieldEQ(FieldColorHex, v))
+}
+
 // QuadrantEQ applies the EQ predicate on the "quadrant" field.
 func QuadrantEQ(v int) predicate.NineBoxQuadrant {
 	return predicate.NineBoxQuadrant(sql.FieldEQ(FieldQuadrant, v))
@@ -308,6 +318,16 @@ func ColorHasSuffix(v string) predicate.NineBoxQuadrant {
 	return predicate.NineBoxQuadrant(sql.FieldHasSuffix(FieldColor, v))
 }
 
+// ColorIsNil applies the IsNil predicate on the "color" field.
+func ColorIsNil() predicate.NineBoxQuadrant {
+	return predicate.NineBoxQuadrant(sql.FieldIsNull(FieldColor))
+}
+
+// ColorNotNil applies the NotNil predicate on the "color" field.
+func ColorNotNil() predicate.NineBoxQuadrant {
+	return predicate.NineBoxQuadrant(sql.FieldNotNull(FieldColor))
+}
+
 // ColorEqualFold applies the EqualFold predicate on the "color" field.
 func ColorEqualFold(v string) predicate.NineBoxQuadrant {
 	return predicate.NineBoxQuadrant(sql.FieldEqualFold(FieldColor, v))
@@ -391,6 +411,156 @@ func ActionRecommendationEqualFold(v string) predicate.NineBoxQuadrant {
 // ActionRecommendationContainsFold applies the ContainsFold predicate on the "action_recommendation" field.
 func ActionRecommendationContainsFold(v string) predicate.NineBoxQuadrant {
 	return predicate.NineBoxQuadrant(sql.FieldContainsFold(FieldActionRecommendation, v))
+}
+
+// TitleEQ applies the EQ predicate on the "title" field.
+func TitleEQ(v string) predicate.NineBoxQuadrant {
+	return predicate.NineBoxQuadrant(sql.FieldEQ(FieldTitle, v))
+}
+
+// TitleNEQ applies the NEQ predicate on the "title" field.
+func TitleNEQ(v string) predicate.NineBoxQuadrant {
+	return predicate.NineBoxQuadrant(sql.FieldNEQ(FieldTitle, v))
+}
+
+// TitleIn applies the In predicate on the "title" field.
+func TitleIn(vs ...string) predicate.NineBoxQuadrant {
+	return predicate.NineBoxQuadrant(sql.FieldIn(FieldTitle, vs...))
+}
+
+// TitleNotIn applies the NotIn predicate on the "title" field.
+func TitleNotIn(vs ...string) predicate.NineBoxQuadrant {
+	return predicate.NineBoxQuadrant(sql.FieldNotIn(FieldTitle, vs...))
+}
+
+// TitleGT applies the GT predicate on the "title" field.
+func TitleGT(v string) predicate.NineBoxQuadrant {
+	return predicate.NineBoxQuadrant(sql.FieldGT(FieldTitle, v))
+}
+
+// TitleGTE applies the GTE predicate on the "title" field.
+func TitleGTE(v string) predicate.NineBoxQuadrant {
+	return predicate.NineBoxQuadrant(sql.FieldGTE(FieldTitle, v))
+}
+
+// TitleLT applies the LT predicate on the "title" field.
+func TitleLT(v string) predicate.NineBoxQuadrant {
+	return predicate.NineBoxQuadrant(sql.FieldLT(FieldTitle, v))
+}
+
+// TitleLTE applies the LTE predicate on the "title" field.
+func TitleLTE(v string) predicate.NineBoxQuadrant {
+	return predicate.NineBoxQuadrant(sql.FieldLTE(FieldTitle, v))
+}
+
+// TitleContains applies the Contains predicate on the "title" field.
+func TitleContains(v string) predicate.NineBoxQuadrant {
+	return predicate.NineBoxQuadrant(sql.FieldContains(FieldTitle, v))
+}
+
+// TitleHasPrefix applies the HasPrefix predicate on the "title" field.
+func TitleHasPrefix(v string) predicate.NineBoxQuadrant {
+	return predicate.NineBoxQuadrant(sql.FieldHasPrefix(FieldTitle, v))
+}
+
+// TitleHasSuffix applies the HasSuffix predicate on the "title" field.
+func TitleHasSuffix(v string) predicate.NineBoxQuadrant {
+	return predicate.NineBoxQuadrant(sql.FieldHasSuffix(FieldTitle, v))
+}
+
+// TitleIsNil applies the IsNil predicate on the "title" field.
+func TitleIsNil() predicate.NineBoxQuadrant {
+	return predicate.NineBoxQuadrant(sql.FieldIsNull(FieldTitle))
+}
+
+// TitleNotNil applies the NotNil predicate on the "title" field.
+func TitleNotNil() predicate.NineBoxQuadrant {
+	return predicate.NineBoxQuadrant(sql.FieldNotNull(FieldTitle))
+}
+
+// TitleEqualFold applies the EqualFold predicate on the "title" field.
+func TitleEqualFold(v string) predicate.NineBoxQuadrant {
+	return predicate.NineBoxQuadrant(sql.FieldEqualFold(FieldTitle, v))
+}
+
+// TitleContainsFold applies the ContainsFold predicate on the "title" field.
+func TitleContainsFold(v string) predicate.NineBoxQuadrant {
+	return predicate.NineBoxQuadrant(sql.FieldContainsFold(FieldTitle, v))
+}
+
+// ColorHexEQ applies the EQ predicate on the "color_hex" field.
+func ColorHexEQ(v string) predicate.NineBoxQuadrant {
+	return predicate.NineBoxQuadrant(sql.FieldEQ(FieldColorHex, v))
+}
+
+// ColorHexNEQ applies the NEQ predicate on the "color_hex" field.
+func ColorHexNEQ(v string) predicate.NineBoxQuadrant {
+	return predicate.NineBoxQuadrant(sql.FieldNEQ(FieldColorHex, v))
+}
+
+// ColorHexIn applies the In predicate on the "color_hex" field.
+func ColorHexIn(vs ...string) predicate.NineBoxQuadrant {
+	return predicate.NineBoxQuadrant(sql.FieldIn(FieldColorHex, vs...))
+}
+
+// ColorHexNotIn applies the NotIn predicate on the "color_hex" field.
+func ColorHexNotIn(vs ...string) predicate.NineBoxQuadrant {
+	return predicate.NineBoxQuadrant(sql.FieldNotIn(FieldColorHex, vs...))
+}
+
+// ColorHexGT applies the GT predicate on the "color_hex" field.
+func ColorHexGT(v string) predicate.NineBoxQuadrant {
+	return predicate.NineBoxQuadrant(sql.FieldGT(FieldColorHex, v))
+}
+
+// ColorHexGTE applies the GTE predicate on the "color_hex" field.
+func ColorHexGTE(v string) predicate.NineBoxQuadrant {
+	return predicate.NineBoxQuadrant(sql.FieldGTE(FieldColorHex, v))
+}
+
+// ColorHexLT applies the LT predicate on the "color_hex" field.
+func ColorHexLT(v string) predicate.NineBoxQuadrant {
+	return predicate.NineBoxQuadrant(sql.FieldLT(FieldColorHex, v))
+}
+
+// ColorHexLTE applies the LTE predicate on the "color_hex" field.
+func ColorHexLTE(v string) predicate.NineBoxQuadrant {
+	return predicate.NineBoxQuadrant(sql.FieldLTE(FieldColorHex, v))
+}
+
+// ColorHexContains applies the Contains predicate on the "color_hex" field.
+func ColorHexContains(v string) predicate.NineBoxQuadrant {
+	return predicate.NineBoxQuadrant(sql.FieldContains(FieldColorHex, v))
+}
+
+// ColorHexHasPrefix applies the HasPrefix predicate on the "color_hex" field.
+func ColorHexHasPrefix(v string) predicate.NineBoxQuadrant {
+	return predicate.NineBoxQuadrant(sql.FieldHasPrefix(FieldColorHex, v))
+}
+
+// ColorHexHasSuffix applies the HasSuffix predicate on the "color_hex" field.
+func ColorHexHasSuffix(v string) predicate.NineBoxQuadrant {
+	return predicate.NineBoxQuadrant(sql.FieldHasSuffix(FieldColorHex, v))
+}
+
+// ColorHexIsNil applies the IsNil predicate on the "color_hex" field.
+func ColorHexIsNil() predicate.NineBoxQuadrant {
+	return predicate.NineBoxQuadrant(sql.FieldIsNull(FieldColorHex))
+}
+
+// ColorHexNotNil applies the NotNil predicate on the "color_hex" field.
+func ColorHexNotNil() predicate.NineBoxQuadrant {
+	return predicate.NineBoxQuadrant(sql.FieldNotNull(FieldColorHex))
+}
+
+// ColorHexEqualFold applies the EqualFold predicate on the "color_hex" field.
+func ColorHexEqualFold(v string) predicate.NineBoxQuadrant {
+	return predicate.NineBoxQuadrant(sql.FieldEqualFold(FieldColorHex, v))
+}
+
+// ColorHexContainsFold applies the ContainsFold predicate on the "color_hex" field.
+func ColorHexContainsFold(v string) predicate.NineBoxQuadrant {
+	return predicate.NineBoxQuadrant(sql.FieldContainsFold(FieldColorHex, v))
 }
 
 // And groups predicates with the AND operator between them.

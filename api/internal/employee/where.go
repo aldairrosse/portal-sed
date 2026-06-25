@@ -116,6 +116,11 @@ func ProfileID(v uuid.UUID) predicate.Employee {
 	return predicate.Employee(sql.FieldEQ(FieldProfileID, v))
 }
 
+// JobTitle applies equality check predicate on the "job_title" field. It's identical to JobTitleEQ.
+func JobTitle(v string) predicate.Employee {
+	return predicate.Employee(sql.FieldEQ(FieldJobTitle, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.Employee {
 	return predicate.Employee(sql.FieldEQ(FieldCreatedAt, v))
@@ -616,6 +621,81 @@ func ProfileIDNotIn(vs ...uuid.UUID) predicate.Employee {
 	return predicate.Employee(sql.FieldNotIn(FieldProfileID, vs...))
 }
 
+// JobTitleEQ applies the EQ predicate on the "job_title" field.
+func JobTitleEQ(v string) predicate.Employee {
+	return predicate.Employee(sql.FieldEQ(FieldJobTitle, v))
+}
+
+// JobTitleNEQ applies the NEQ predicate on the "job_title" field.
+func JobTitleNEQ(v string) predicate.Employee {
+	return predicate.Employee(sql.FieldNEQ(FieldJobTitle, v))
+}
+
+// JobTitleIn applies the In predicate on the "job_title" field.
+func JobTitleIn(vs ...string) predicate.Employee {
+	return predicate.Employee(sql.FieldIn(FieldJobTitle, vs...))
+}
+
+// JobTitleNotIn applies the NotIn predicate on the "job_title" field.
+func JobTitleNotIn(vs ...string) predicate.Employee {
+	return predicate.Employee(sql.FieldNotIn(FieldJobTitle, vs...))
+}
+
+// JobTitleGT applies the GT predicate on the "job_title" field.
+func JobTitleGT(v string) predicate.Employee {
+	return predicate.Employee(sql.FieldGT(FieldJobTitle, v))
+}
+
+// JobTitleGTE applies the GTE predicate on the "job_title" field.
+func JobTitleGTE(v string) predicate.Employee {
+	return predicate.Employee(sql.FieldGTE(FieldJobTitle, v))
+}
+
+// JobTitleLT applies the LT predicate on the "job_title" field.
+func JobTitleLT(v string) predicate.Employee {
+	return predicate.Employee(sql.FieldLT(FieldJobTitle, v))
+}
+
+// JobTitleLTE applies the LTE predicate on the "job_title" field.
+func JobTitleLTE(v string) predicate.Employee {
+	return predicate.Employee(sql.FieldLTE(FieldJobTitle, v))
+}
+
+// JobTitleContains applies the Contains predicate on the "job_title" field.
+func JobTitleContains(v string) predicate.Employee {
+	return predicate.Employee(sql.FieldContains(FieldJobTitle, v))
+}
+
+// JobTitleHasPrefix applies the HasPrefix predicate on the "job_title" field.
+func JobTitleHasPrefix(v string) predicate.Employee {
+	return predicate.Employee(sql.FieldHasPrefix(FieldJobTitle, v))
+}
+
+// JobTitleHasSuffix applies the HasSuffix predicate on the "job_title" field.
+func JobTitleHasSuffix(v string) predicate.Employee {
+	return predicate.Employee(sql.FieldHasSuffix(FieldJobTitle, v))
+}
+
+// JobTitleIsNil applies the IsNil predicate on the "job_title" field.
+func JobTitleIsNil() predicate.Employee {
+	return predicate.Employee(sql.FieldIsNull(FieldJobTitle))
+}
+
+// JobTitleNotNil applies the NotNil predicate on the "job_title" field.
+func JobTitleNotNil() predicate.Employee {
+	return predicate.Employee(sql.FieldNotNull(FieldJobTitle))
+}
+
+// JobTitleEqualFold applies the EqualFold predicate on the "job_title" field.
+func JobTitleEqualFold(v string) predicate.Employee {
+	return predicate.Employee(sql.FieldEqualFold(FieldJobTitle, v))
+}
+
+// JobTitleContainsFold applies the ContainsFold predicate on the "job_title" field.
+func JobTitleContainsFold(v string) predicate.Employee {
+	return predicate.Employee(sql.FieldContainsFold(FieldJobTitle, v))
+}
+
 // HasOrgNode applies the HasEdge predicate on the "org_node" edge.
 func HasOrgNode() predicate.Employee {
 	return predicate.Employee(func(s *sql.Selector) {
@@ -838,6 +918,29 @@ func HasNineBoxEntries() predicate.Employee {
 func HasNineBoxEntriesWith(preds ...predicate.NineBoxEntry) predicate.Employee {
 	return predicate.Employee(func(s *sql.Selector) {
 		step := newNineBoxEntriesStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasHeadedDepartment applies the HasEdge predicate on the "headed_department" edge.
+func HasHeadedDepartment() predicate.Employee {
+	return predicate.Employee(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, HeadedDepartmentTable, HeadedDepartmentColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasHeadedDepartmentWith applies the HasEdge predicate on the "headed_department" edge with a given conditions (other predicates).
+func HasHeadedDepartmentWith(preds ...predicate.OrgNode) predicate.Employee {
+	return predicate.Employee(func(s *sql.Selector) {
+		step := newHeadedDepartmentStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

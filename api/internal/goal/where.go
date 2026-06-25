@@ -106,6 +106,11 @@ func CurrentValue(v float64) predicate.Goal {
 	return predicate.Goal(sql.FieldEQ(FieldCurrentValue, v))
 }
 
+// BaselineValue applies equality check predicate on the "baseline_value" field. It's identical to BaselineValueEQ.
+func BaselineValue(v float64) predicate.Goal {
+	return predicate.Goal(sql.FieldEQ(FieldBaselineValue, v))
+}
+
 // CategoryID applies equality check predicate on the "category_id" field. It's identical to CategoryIDEQ.
 func CategoryID(v uuid.UUID) predicate.Goal {
 	return predicate.Goal(sql.FieldEQ(FieldCategoryID, v))
@@ -589,6 +594,76 @@ func CurrentValueLT(v float64) predicate.Goal {
 // CurrentValueLTE applies the LTE predicate on the "current_value" field.
 func CurrentValueLTE(v float64) predicate.Goal {
 	return predicate.Goal(sql.FieldLTE(FieldCurrentValue, v))
+}
+
+// DirectionEQ applies the EQ predicate on the "direction" field.
+func DirectionEQ(v Direction) predicate.Goal {
+	return predicate.Goal(sql.FieldEQ(FieldDirection, v))
+}
+
+// DirectionNEQ applies the NEQ predicate on the "direction" field.
+func DirectionNEQ(v Direction) predicate.Goal {
+	return predicate.Goal(sql.FieldNEQ(FieldDirection, v))
+}
+
+// DirectionIn applies the In predicate on the "direction" field.
+func DirectionIn(vs ...Direction) predicate.Goal {
+	return predicate.Goal(sql.FieldIn(FieldDirection, vs...))
+}
+
+// DirectionNotIn applies the NotIn predicate on the "direction" field.
+func DirectionNotIn(vs ...Direction) predicate.Goal {
+	return predicate.Goal(sql.FieldNotIn(FieldDirection, vs...))
+}
+
+// BaselineValueEQ applies the EQ predicate on the "baseline_value" field.
+func BaselineValueEQ(v float64) predicate.Goal {
+	return predicate.Goal(sql.FieldEQ(FieldBaselineValue, v))
+}
+
+// BaselineValueNEQ applies the NEQ predicate on the "baseline_value" field.
+func BaselineValueNEQ(v float64) predicate.Goal {
+	return predicate.Goal(sql.FieldNEQ(FieldBaselineValue, v))
+}
+
+// BaselineValueIn applies the In predicate on the "baseline_value" field.
+func BaselineValueIn(vs ...float64) predicate.Goal {
+	return predicate.Goal(sql.FieldIn(FieldBaselineValue, vs...))
+}
+
+// BaselineValueNotIn applies the NotIn predicate on the "baseline_value" field.
+func BaselineValueNotIn(vs ...float64) predicate.Goal {
+	return predicate.Goal(sql.FieldNotIn(FieldBaselineValue, vs...))
+}
+
+// BaselineValueGT applies the GT predicate on the "baseline_value" field.
+func BaselineValueGT(v float64) predicate.Goal {
+	return predicate.Goal(sql.FieldGT(FieldBaselineValue, v))
+}
+
+// BaselineValueGTE applies the GTE predicate on the "baseline_value" field.
+func BaselineValueGTE(v float64) predicate.Goal {
+	return predicate.Goal(sql.FieldGTE(FieldBaselineValue, v))
+}
+
+// BaselineValueLT applies the LT predicate on the "baseline_value" field.
+func BaselineValueLT(v float64) predicate.Goal {
+	return predicate.Goal(sql.FieldLT(FieldBaselineValue, v))
+}
+
+// BaselineValueLTE applies the LTE predicate on the "baseline_value" field.
+func BaselineValueLTE(v float64) predicate.Goal {
+	return predicate.Goal(sql.FieldLTE(FieldBaselineValue, v))
+}
+
+// BaselineValueIsNil applies the IsNil predicate on the "baseline_value" field.
+func BaselineValueIsNil() predicate.Goal {
+	return predicate.Goal(sql.FieldIsNull(FieldBaselineValue))
+}
+
+// BaselineValueNotNil applies the NotNil predicate on the "baseline_value" field.
+func BaselineValueNotNil() predicate.Goal {
+	return predicate.Goal(sql.FieldNotNull(FieldBaselineValue))
 }
 
 // StateEQ applies the EQ predicate on the "state" field.

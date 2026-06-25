@@ -26,6 +26,10 @@ const (
 	FieldUnit = "unit"
 	// FieldDescription holds the string denoting the description field in the database.
 	FieldDescription = "description"
+	// FieldDirection holds the string denoting the direction field in the database.
+	FieldDirection = "direction"
+	// FieldCurrentValue holds the string denoting the current_value field in the database.
+	FieldCurrentValue = "current_value"
 	// EdgeGoalLinks holds the string denoting the goal_links edge name in mutations.
 	EdgeGoalLinks = "goal_links"
 	// Table holds the table name of the kpi in the database.
@@ -47,6 +51,8 @@ var Columns = []string{
 	FieldName,
 	FieldUnit,
 	FieldDescription,
+	FieldDirection,
+	FieldCurrentValue,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -96,6 +102,32 @@ func UnitValidator(u Unit) error {
 	}
 }
 
+// Direction defines the type for the "direction" enum field.
+type Direction string
+
+// DirectionAscendente is the default value of the Direction enum.
+const DefaultDirection = DirectionAscendente
+
+// Direction values.
+const (
+	DirectionAscendente  Direction = "ascendente"
+	DirectionDescendente Direction = "descendente"
+)
+
+func (d Direction) String() string {
+	return string(d)
+}
+
+// DirectionValidator is a validator for the "direction" field enum values. It is called by the builders before save.
+func DirectionValidator(d Direction) error {
+	switch d {
+	case DirectionAscendente, DirectionDescendente:
+		return nil
+	default:
+		return fmt.Errorf("kpi: invalid enum value for direction field: %q", d)
+	}
+}
+
 // OrderOption defines the ordering options for the KPI queries.
 type OrderOption func(*sql.Selector)
 
@@ -127,6 +159,16 @@ func ByUnit(opts ...sql.OrderTermOption) OrderOption {
 // ByDescription orders the results by the description field.
 func ByDescription(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldDescription, opts...).ToFunc()
+}
+
+// ByDirection orders the results by the direction field.
+func ByDirection(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDirection, opts...).ToFunc()
+}
+
+// ByCurrentValue orders the results by the current_value field.
+func ByCurrentValue(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCurrentValue, opts...).ToFunc()
 }
 
 // ByGoalLinksCount orders the results by goal_links count.

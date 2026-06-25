@@ -38,6 +38,12 @@ func (Goal) Fields() []ent.Field {
 			Positive(),
 		field.Float("current_value").
 			Default(0),
+		field.Enum("direction").
+			Values("ascendente", "descendente").
+			Default("ascendente"),
+		field.Float("baseline_value").
+			Optional().
+			Nillable(),
 		field.Enum("state").
 			Values("borrador", "fijada", "en_seguimiento", "evaluada", "cerrada"),
 		field.UUID("category_id", uuid.UUID{}),

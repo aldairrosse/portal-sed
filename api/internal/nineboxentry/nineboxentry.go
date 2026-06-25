@@ -25,10 +25,10 @@ const (
 	FieldUpdatedBy = "updated_by"
 	// FieldVersion holds the string denoting the version field in the database.
 	FieldVersion = "version"
-	// FieldPerformanceScore holds the string denoting the performance_score field in the database.
-	FieldPerformanceScore = "performance_score"
-	// FieldPotentialScore holds the string denoting the potential_score field in the database.
-	FieldPotentialScore = "potential_score"
+	// FieldPerformanceTier holds the string denoting the performance_tier field in the database.
+	FieldPerformanceTier = "performance_tier"
+	// FieldPotentialTier holds the string denoting the potential_tier field in the database.
+	FieldPotentialTier = "potential_tier"
 	// FieldQuadrant holds the string denoting the quadrant field in the database.
 	FieldQuadrant = "quadrant"
 	// FieldComments holds the string denoting the comments field in the database.
@@ -67,8 +67,8 @@ var Columns = []string{
 	FieldCreatedBy,
 	FieldUpdatedBy,
 	FieldVersion,
-	FieldPerformanceScore,
-	FieldPotentialScore,
+	FieldPerformanceTier,
+	FieldPotentialTier,
 	FieldQuadrant,
 	FieldComments,
 	FieldMatrixID,
@@ -96,10 +96,10 @@ var (
 	DefaultVersion int
 	// VersionValidator is a validator for the "version" field. It is called by the builders before save.
 	VersionValidator func(int) error
-	// PerformanceScoreValidator is a validator for the "performance_score" field. It is called by the builders before save.
-	PerformanceScoreValidator func(int) error
-	// PotentialScoreValidator is a validator for the "potential_score" field. It is called by the builders before save.
-	PotentialScoreValidator func(int) error
+	// PerformanceTierValidator is a validator for the "performance_tier" field. It is called by the builders before save.
+	PerformanceTierValidator func(int) error
+	// PotentialTierValidator is a validator for the "potential_tier" field. It is called by the builders before save.
+	PotentialTierValidator func(int) error
 	// QuadrantValidator is a validator for the "quadrant" field. It is called by the builders before save.
 	QuadrantValidator func(int) error
 	// DefaultID holds the default value on creation for the "id" field.
@@ -139,14 +139,14 @@ func ByVersion(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldVersion, opts...).ToFunc()
 }
 
-// ByPerformanceScore orders the results by the performance_score field.
-func ByPerformanceScore(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldPerformanceScore, opts...).ToFunc()
+// ByPerformanceTier orders the results by the performance_tier field.
+func ByPerformanceTier(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPerformanceTier, opts...).ToFunc()
 }
 
-// ByPotentialScore orders the results by the potential_score field.
-func ByPotentialScore(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldPotentialScore, opts...).ToFunc()
+// ByPotentialTier orders the results by the potential_tier field.
+func ByPotentialTier(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPotentialTier, opts...).ToFunc()
 }
 
 // ByQuadrant orders the results by the quadrant field.

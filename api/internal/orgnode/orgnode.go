@@ -36,6 +36,8 @@ const (
 	FieldParentID = "parent_id"
 	// FieldPath holds the string denoting the path field in the database.
 	FieldPath = "path"
+	// FieldHeadEmployeeID holds the string denoting the head_employee_id field in the database.
+	FieldHeadEmployeeID = "head_employee_id"
 	// EdgeOrganization holds the string denoting the organization edge name in mutations.
 	EdgeOrganization = "organization"
 	// EdgeParent holds the string denoting the parent edge name in mutations.
@@ -44,6 +46,8 @@ const (
 	EdgeChildren = "children"
 	// EdgeEmployees holds the string denoting the employees edge name in mutations.
 	EdgeEmployees = "employees"
+	// EdgeHeadEmployee holds the string denoting the head_employee edge name in mutations.
+	EdgeHeadEmployee = "head_employee"
 	// Table holds the table name of the orgnode in the database.
 	Table = "org_nodes"
 	// OrganizationTable is the table that holds the organization relation/edge.
@@ -68,6 +72,13 @@ const (
 	EmployeesInverseTable = "employees"
 	// EmployeesColumn is the table column denoting the employees relation/edge.
 	EmployeesColumn = "org_node_id"
+	// HeadEmployeeTable is the table that holds the head_employee relation/edge.
+	HeadEmployeeTable = "org_nodes"
+	// HeadEmployeeInverseTable is the table name for the Employee entity.
+	// It exists in this package in order to avoid circular dependency with the "employee" package.
+	HeadEmployeeInverseTable = "employees"
+	// HeadEmployeeColumn is the table column denoting the head_employee relation/edge.
+	HeadEmployeeColumn = "head_employee_id"
 )
 
 // Columns holds all SQL columns for orgnode fields.
@@ -83,6 +94,7 @@ var Columns = []string{
 	FieldOrganizationID,
 	FieldParentID,
 	FieldPath,
+	FieldHeadEmployeeID,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -190,6 +202,11 @@ func ByPath(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldPath, opts...).ToFunc()
 }
 
+// ByHeadEmployeeID orders the results by the head_employee_id field.
+func ByHeadEmployeeID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldHeadEmployeeID, opts...).ToFunc()
+}
+
 // ByOrganizationField orders the results by organization field.
 func ByOrganizationField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -231,6 +248,13 @@ func ByEmployees(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newEmployeesStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByHeadEmployeeField orders the results by head_employee field.
+func ByHeadEmployeeField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newHeadEmployeeStep(), sql.OrderByField(field, opts...))
+	}
+}
 func newOrganizationStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -257,5 +281,12 @@ func newEmployeesStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(EmployeesInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, EmployeesTable, EmployeesColumn),
+	)
+}
+func newHeadEmployeeStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(HeadEmployeeInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, false, HeadEmployeeTable, HeadEmployeeColumn),
 	)
 }

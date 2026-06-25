@@ -1,6 +1,8 @@
 package schema
 
 import (
+	"regexp"
+
 	"entgo.io/ent"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
@@ -25,9 +27,15 @@ func (NineBoxQuadrant) Fields() []ent.Field {
 		field.Text("description").
 			Optional(),
 		field.String("color").
-			NotEmpty(),
+			Optional(), // was NotEmpty — changed to Optional for backward compat (now replaced by color_hex)
 		field.Text("action_recommendation").
 			Optional(),
+		field.String("title").
+			Optional().
+			MaxLen(100),
+		field.String("color_hex").
+			Optional().
+			Match(regexp.MustCompile("^#[0-9A-Fa-f]{6}$")),
 	}
 }
 

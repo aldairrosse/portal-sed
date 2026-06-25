@@ -41,6 +41,9 @@ func (Employee) Fields() []ent.Field {
 			Optional().
 			Nillable(),
 		field.UUID("profile_id", uuid.UUID{}),
+		field.String("job_title").
+			Optional().
+			MaxLen(200),
 	}
 }
 
@@ -70,6 +73,8 @@ func (Employee) Edges() []ent.Edge {
 		edge.To("evaluations", Evaluation.Type),
 		edge.To("nine_box_matrices", NineBoxMatrix.Type),
 		edge.To("nine_box_entries", NineBoxEntry.Type),
+		edge.From("headed_department", OrgNode.Type).
+			Ref("head_employee"),
 	}
 }
 
