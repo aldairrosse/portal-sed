@@ -1,7 +1,8 @@
 <script lang="ts">
 	import OrgHierarchyTree from '$lib/components/org-hierarchy/OrgHierarchyTree.svelte';
 	import { getRoot, getNodeById } from '$lib/stores/orgHierarchyStore.svelte';
-	import { getProfile, getPhase } from '$lib/stores/devContext.svelte';
+	import { getProfile } from '$lib/stores/devContext.svelte';
+	import { getActivePhase } from '$lib/api/cycle.svelte';
 	import {
 		selectNode,
 		getMetrics,
@@ -20,7 +21,7 @@
 
 	// ─── Phase detection ────────────────────────────────────────────────────
 
-	const phase = $derived(getPhase());
+	const phase = $derived(getActivePhase() ?? 'inicio-anio');
 	const metricType = $derived(
 		phase === 'medio-anio'
 			? 'progress'

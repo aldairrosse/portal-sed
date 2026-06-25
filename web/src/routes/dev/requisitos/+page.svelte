@@ -310,8 +310,9 @@
 </div>
 
 {#if showImportModal}
-	<div class="modal modal-open" role="dialog" onclick={cancelImport}>
-		<div class="modal-box" onclick={(e) => e.stopPropagation()}>
+	<!-- svelte-ignore a11y_interactive_supports_focus -->
+	<div class="modal modal-open" role="dialog" tabindex="-1" onclick={cancelImport} onkeydown={(e) => e.key === 'Escape' && cancelImport()}>
+		<div class="modal-box" role="document" tabindex="-1" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()}>
 			<h3 class="text-lg font-bold mb-2">Importar comentarios</h3>
 
 			{#if importResult && !importResult.ok}
