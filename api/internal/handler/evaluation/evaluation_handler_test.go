@@ -90,24 +90,21 @@ func (m *mockEvalService) FinalizeEvaluation(ctx context.Context, evaluationID u
 }
 
 type mockBoxService struct {
-	listResp      []dto.NineBoxMatrixResponse
-	listErr       error
-	createResp    *dto.NineBoxMatrixResponse
-	createErr     error
-	getResp       *dto.NineBoxMatrixResponse
-	getErr        error
-	upsertResp    *dto.NineBoxEntryDTO
-	upsertErr     error
-	updateResp    *dto.NineBoxEntryDTO
-	updateErr     error
-	batchResp     []dto.NineBoxEntryDTO
-	batchErr      error
-	scalesResp    []dto.NineBoxScaleDTO
-	scalesErr     error
-	quadrantsResp []dto.NineBoxQuadrantDTO
-	quadrantsErr  error
-	mu            sync.Mutex
-	callCount     map[string]int
+	listResp        []dto.NineBoxMatrixResponse
+	listErr         error
+	createResp      *dto.NineBoxMatrixResponse
+	createErr       error
+	getResp         *dto.NineBoxMatrixResponse
+	getErr          error
+	recomputeErr    error
+	updateQuadrantResp *dto.NineBoxQuadrantDTO
+	updateQuadrantErr  error
+	scalesResp      []dto.NineBoxScaleDTO
+	scalesErr       error
+	quadrantsResp   []dto.NineBoxQuadrantDTO
+	quadrantsErr    error
+	mu              sync.Mutex
+	callCount       map[string]int
 }
 
 func (m *mockBoxService) recordCall(name string) {
@@ -119,7 +116,7 @@ func (m *mockBoxService) recordCall(name string) {
 	m.callCount[name]++
 }
 
-func (m *mockBoxService) ListMatrices(ctx context.Context, cycleID, evaluatorID uuid.UUID) ([]dto.NineBoxMatrixResponse, error) {
+func (m *mockBoxService) ListMatrices(ctx context.Context, cycleID, evaluatorID, phaseID uuid.UUID) ([]dto.NineBoxMatrixResponse, error) {
 	m.recordCall("ListMatrices")
 	return m.listResp, m.listErr
 }
@@ -134,19 +131,14 @@ func (m *mockBoxService) GetMatrix(ctx context.Context, matrixID uuid.UUID) (*dt
 	return m.getResp, m.getErr
 }
 
-func (m *mockBoxService) UpsertEntry(ctx context.Context, matrixID uuid.UUID, req dto.NineBoxEntryInput) (*dto.NineBoxEntryDTO, error) {
-	m.recordCall("UpsertEntry")
-	return m.upsertResp, m.upsertErr
+func (m *mockBoxService) RecomputeMatrix(ctx context.Context, cycleID, phaseID uuid.UUID) error {
+	m.recordCall("RecomputeMatrix")
+	return m.recomputeErr
 }
 
-func (m *mockBoxService) UpdateEntry(ctx context.Context, entryID uuid.UUID, req dto.NineBoxEntryInput, ifMatch int) (*dto.NineBoxEntryDTO, error) {
-	m.recordCall("UpdateEntry")
-	return m.updateResp, m.updateErr
-}
-
-func (m *mockBoxService) BatchSubmitEntries(ctx context.Context, matrixID uuid.UUID, req dto.NineBoxBatchRequest) ([]dto.NineBoxEntryDTO, error) {
-	m.recordCall("BatchSubmitEntries")
-	return m.batchResp, m.batchErr
+func (m *mockBoxService) UpdateQuadrantByNumber(ctx context.Context, quadrantNumber int, input dto.NineBoxQuadrantUpdateInput) (*dto.NineBoxQuadrantDTO, error) {
+	m.recordCall("UpdateQuadrantByNumber")
+	return m.updateQuadrantResp, m.updateQuadrantErr
 }
 
 func (m *mockBoxService) GetScales(ctx context.Context) ([]dto.NineBoxScaleDTO, error) {
@@ -351,52 +343,41 @@ func TestGetNineBoxMatrix_Success(t *testing.T) {
 	assert.Equal(t, http.StatusOK, rec.Code)
 }
 
-func TestUpsertNineBoxEntry_Success(t *testing.T) {
-	matrixID := uuid.New()
-	evaluateeID := uuid.New()
-	entryID := uuid.New()
+func TestUpdateQuadrant_Success(t *testing.T) {
 	mockBox := &mockBoxService{
-		upsertResp: &dto.NineBoxEntryDTO{
-			ID:               entryID,
-			EvaluateeID:      evaluateeID,
-			PerformanceScore: 5,
-			PotentialScore:   5,
-			Quadrant:         5,
+		updateQuadrantResp: &dto.NineBoxQuadrantDTO{
+			Quadrant: 5, Label: "Medium/Medium",
+			Title: "Custom Title", Description: "Updated description",
+			Color: "bg-warning/20", ColorHex: "#EAB308",
 		},
 	}
 	h, r := setupHandler(t, nil, mockBox, nil)
-	r.Post("/nine-box/matrices/{matrixId}/entries", h.UpsertMatrixEntry)
+	r.Put("/nine-box/quadrants/{quadrant}", h.UpdateQuadrant)
 
-	reqBody, _ := json.Marshal(dto.NineBoxEntryInput{
-		EvaluateeID:      evaluateeID,
-		PerformanceScore: 5,
-		PotentialScore:   5,
+	reqBody, _ := json.Marshal(dto.NineBoxQuadrantUpdateInput{
+		Title: "Custom Title", Description: "Updated description", ColorHex: "#EAB308",
 	})
-	rec := doRequest(t, r, http.MethodPost, "/nine-box/matrices/"+matrixID.String()+"/entries", reqBody, "")
+	rec := doRequest(t, r, http.MethodPut, "/nine-box/quadrants/5", reqBody, "")
 	assert.Equal(t, http.StatusOK, rec.Code)
+	var resp dto.NineBoxQuadrantDTO
+	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &resp))
+	assert.Equal(t, 5, resp.Quadrant)
+	assert.Equal(t, "#EAB308", resp.ColorHex)
 }
 
-func TestBatchNineBoxEntries_Success(t *testing.T) {
-	matrixID := uuid.New()
-	evaluateeID := uuid.New()
-	mockBox := &mockBoxService{
-		batchResp: []dto.NineBoxEntryDTO{
-			{ID: uuid.New(), EvaluateeID: evaluateeID, PerformanceScore: 7, PotentialScore: 8, Quadrant: 9},
-		},
-	}
+func TestRecomputeMatrix_Success(t *testing.T) {
+	cycleID := uuid.New()
+	phaseID := uuid.New()
+	mockBox := &mockBoxService{}
 	h, r := setupHandler(t, nil, mockBox, nil)
-	r.Post("/nine-box/batch", h.BatchSubmitEntries)
+	r.Post("/nine-box/recompute/{cycleId}/{phaseId}", h.RecomputeMatrix)
 
-	reqBody, _ := json.Marshal(dto.NineBoxBatchRequest{
-		Entries: []dto.NineBoxEntryInput{
-			{EvaluateeID: evaluateeID, PerformanceScore: 7, PotentialScore: 8},
-		},
-	})
-	rec := doRequest(t, r, http.MethodPost, "/nine-box/batch?matrixId="+matrixID.String(), reqBody, "")
+	rec := doRequest(t, r, http.MethodPost, "/nine-box/recompute/"+cycleID.String()+"/"+phaseID.String(), nil, "")
 	assert.Equal(t, http.StatusOK, rec.Code)
-	var resp []dto.NineBoxEntryDTO
+	var resp map[string]string
 	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &resp))
-	assert.Len(t, resp, 1)
+	assert.Equal(t, "ok", resp["status"])
+	assert.Equal(t, 1, mockBox.callCount["RecomputeMatrix"])
 }
 
 func TestGetNineBoxScales_Success(t *testing.T) {
@@ -476,24 +457,6 @@ func TestFinalizeEvaluation_NotAllComplete(t *testing.T) {
 
 	rec := doRequest(t, r, http.MethodPost, "/evaluations/"+evalID.String()+"/finalize", []byte(`{}`), "")
 	assert.Equal(t, http.StatusConflict, rec.Code)
-}
-
-func TestUpsertNineBoxEntry_InvalidScore(t *testing.T) {
-	matrixID := uuid.New()
-	evaluateeID := uuid.New()
-	mockBox := &mockBoxService{
-		upsertErr: repo.ErrQuadrantOutOfRange,
-	}
-	h, r := setupHandler(t, nil, mockBox, nil)
-	r.Post("/nine-box/matrices/{matrixId}/entries", h.UpsertMatrixEntry)
-
-	reqBody, _ := json.Marshal(dto.NineBoxEntryInput{
-		EvaluateeID:      evaluateeID,
-		PerformanceScore: 10,
-		PotentialScore:   5,
-	})
-	rec := doRequest(t, r, http.MethodPost, "/nine-box/matrices/"+matrixID.String()+"/entries", reqBody, "")
-	assert.Equal(t, http.StatusBadRequest, rec.Code)
 }
 
 func TestGetEvaluation_NotFound(t *testing.T) {
@@ -602,71 +565,4 @@ func TestSubmitSelfEvaluation_Concurrent(t *testing.T) {
 	assert.GreaterOrEqual(t, mockEval.callCount["SubmitSelfEvaluation"], 100, "all 100 goroutines should call the service")
 }
 
-func TestUpsertNineBoxEntry_Concurrent(t *testing.T) {
-	matrixID := uuid.New()
-	evaluateeID := uuid.New()
-	entryID := uuid.New()
-	mockBox := &mockBoxService{
-		upsertResp: &dto.NineBoxEntryDTO{
-			ID:          entryID,
-			EvaluateeID: evaluateeID,
-			Quadrant:    5,
-		},
-	}
-	h, r := setupHandler(t, nil, mockBox, nil)
-	r.Post("/nine-box/matrices/{matrixId}/entries", h.UpsertMatrixEntry)
 
-	reqBody, _ := json.Marshal(dto.NineBoxEntryInput{
-		EvaluateeID:      evaluateeID,
-		PerformanceScore: 5,
-		PotentialScore:   5,
-	})
-
-	const goroutines = 50
-	var wg sync.WaitGroup
-	wg.Add(goroutines)
-
-	for i := 0; i < goroutines; i++ {
-		go func() {
-			defer wg.Done()
-			rec := doRequest(t, r, http.MethodPost, "/nine-box/matrices/"+matrixID.String()+"/entries", reqBody, "")
-			assert.Equal(t, http.StatusOK, rec.Code)
-		}()
-	}
-
-	wg.Wait()
-	assert.GreaterOrEqual(t, mockBox.callCount["UpsertEntry"], 50, "all 50 goroutines should call the service")
-}
-
-func TestBatchNineBoxEntries_Concurrent(t *testing.T) {
-	matrixID := uuid.New()
-	evaluateeID := uuid.New()
-	mockBox := &mockBoxService{
-		batchResp: []dto.NineBoxEntryDTO{
-			{ID: uuid.New(), EvaluateeID: evaluateeID, Quadrant: 5},
-		},
-	}
-	h, r := setupHandler(t, nil, mockBox, nil)
-	r.Post("/nine-box/batch", h.BatchSubmitEntries)
-
-	reqBody, _ := json.Marshal(dto.NineBoxBatchRequest{
-		Entries: []dto.NineBoxEntryInput{
-			{EvaluateeID: evaluateeID, PerformanceScore: 5, PotentialScore: 5},
-		},
-	})
-
-	const goroutines = 30
-	var wg sync.WaitGroup
-	wg.Add(goroutines)
-
-	for i := 0; i < goroutines; i++ {
-		go func() {
-			defer wg.Done()
-			rec := doRequest(t, r, http.MethodPost, "/nine-box/batch?matrixId="+matrixID.String(), reqBody, "")
-			assert.Equal(t, http.StatusOK, rec.Code)
-		}()
-	}
-
-	wg.Wait()
-	assert.GreaterOrEqual(t, mockBox.callCount["BatchSubmitEntries"], 30, "all 30 goroutines should call the service")
-}

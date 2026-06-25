@@ -150,28 +150,6 @@ func RegisterRoutes(r chi.Router, handler *EvaluationHandler, authSvc *authsvc.A
 			r.Get("/nine-box/matrices/{matrixId}/entries", handler.ListMatrixEntries)
 		})
 
-		// POST /api/v1/nine-box/matrices/{matrixId}/entries
-		r.Group(func(r chi.Router) {
-			r.Use(middleware.RequirePermission(auth.PermEval9x9))
-			r.Use(middleware.RateLimit(writeRateLimit))
-			r.Post("/nine-box/matrices/{matrixId}/entries", handler.UpsertMatrixEntry)
-		})
-
-		// PUT /api/v1/nine-box/entries/{entryId}
-		r.Group(func(r chi.Router) {
-			r.Use(middleware.RequirePermission(auth.PermEval9x9))
-			r.Use(middleware.RateLimit(writeRateLimit))
-			r.Use(middleware.OptimisticLock)
-			r.Put("/nine-box/entries/{entryId}", handler.UpdateEntry)
-		})
-
-		// POST /api/v1/nine-box/batch
-		r.Group(func(r chi.Router) {
-			r.Use(middleware.RequirePermission(auth.PermEval9x9))
-			r.Use(middleware.RateLimit(writeRateLimit))
-			r.Post("/nine-box/batch", handler.BatchSubmitEntries)
-		})
-
 		// GET /api/v1/nine-box/scales
 		r.Group(func(r chi.Router) {
 			r.Use(middleware.RateLimit(readRateLimit))
@@ -184,6 +162,20 @@ func RegisterRoutes(r chi.Router, handler *EvaluationHandler, authSvc *authsvc.A
 			r.Use(middleware.RateLimit(readRateLimit))
 			r.Use(readReplicaMiddleware)
 			r.Get("/nine-box/quadrants", handler.GetQuadrants)
+		})
+
+		// PUT /api/v1/nine-box/quadrants/{quadrant}
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.RequirePermission(auth.PermEval9x9))
+			r.Use(middleware.RateLimit(writeRateLimit))
+			r.Put("/nine-box/quadrants/{quadrant}", handler.UpdateQuadrant)
+		})
+
+		// POST /api/v1/nine-box/recompute/{cycleId}/{phaseId}
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.RequirePermission(auth.PermEval9x9))
+			r.Use(middleware.RateLimit(writeRateLimit))
+			r.Post("/nine-box/recompute/{cycleId}/{phaseId}", handler.RecomputeMatrix)
 		})
 	})
 }

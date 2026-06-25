@@ -20,12 +20,11 @@ type EvalService interface {
 
 // BoxService defines the 9×9 matrix operations used by the handler.
 type BoxService interface {
-	ListMatrices(ctx context.Context, cycleID, evaluatorID uuid.UUID) ([]dto.NineBoxMatrixResponse, error)
+	ListMatrices(ctx context.Context, cycleID, evaluatorID, phaseID uuid.UUID) ([]dto.NineBoxMatrixResponse, error)
 	CreateMatrix(ctx context.Context, cycleID, evaluatorID uuid.UUID) (*dto.NineBoxMatrixResponse, error)
 	GetMatrix(ctx context.Context, matrixID uuid.UUID) (*dto.NineBoxMatrixResponse, error)
-	UpsertEntry(ctx context.Context, matrixID uuid.UUID, req dto.NineBoxEntryInput) (*dto.NineBoxEntryDTO, error)
-	UpdateEntry(ctx context.Context, entryID uuid.UUID, req dto.NineBoxEntryInput, ifMatch int) (*dto.NineBoxEntryDTO, error)
-	BatchSubmitEntries(ctx context.Context, matrixID uuid.UUID, req dto.NineBoxBatchRequest) ([]dto.NineBoxEntryDTO, error)
+	RecomputeMatrix(ctx context.Context, cycleID, phaseID uuid.UUID) error
+	UpdateQuadrantByNumber(ctx context.Context, quadrantNumber int, input dto.NineBoxQuadrantUpdateInput) (*dto.NineBoxQuadrantDTO, error)
 	GetScales(ctx context.Context) ([]dto.NineBoxScaleDTO, error)
 	GetQuadrants(ctx context.Context) ([]dto.NineBoxQuadrantDTO, error)
 }

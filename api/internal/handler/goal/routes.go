@@ -28,9 +28,11 @@ import (
 //	POST   /api/v1/kpis                                  → RequireAuth → RequirePermission(write) → RateLimit(write) → Idempotency
 //	PUT    /api/v1/kpis/{kpiId}                          → RequireAuth → RequirePermission(write) → RateLimit(write) → Idempotency
 //	DELETE /api/v1/kpis/{kpiId}                          → RequireAuth → RequirePermission(write) → RateLimit(write)
+//	PATCH  /api/v1/kpis/{kpiId}/value                    → RequireAuth → RequirePermission(write) → RateLimit(write)
 //	POST   /api/v1/goals/{goalId}/kpis                   → RequireAuth → RequirePermission(write) → RateLimit(write) → Idempotency
 //	DELETE /api/v1/goals/{goalId}/kpis/{kpiId}           → RequireAuth → RequirePermission(write) → RateLimit(write)
 //	GET    /api/v1/employees/{empId}/assignments         → RequireAuth → RequirePermission(read) → RateLimit(read)
+//	GET    /api/v1/employees/{empId}/score               → RequireAuth → RequirePermission(read) → RateLimit(read)
 //	POST   /api/v1/employees/{empId}/assignments         → RequireAuth → RequirePermission(write) → RateLimit(write) → Idempotency
 func NewRouter(handler *GoalHandler, authSvc *authsvc.AuthService) chi.Router {
 	r := chi.NewRouter()
@@ -156,6 +158,12 @@ func NewRouter(handler *GoalHandler, authSvc *authsvc.AuthService) chi.Router {
 		r.Delete("/api/v1/kpis/{kpiId}", handler.DeleteKPI)
 	})
 
+	r.Group(func(r chi.Router) {
+		r.Use(middleware.RequireAnyPermission(writePerms...))
+		r.Use(middleware.RateLimit(writeRateLimit))
+		r.Patch("/api/v1/kpis/{kpiId}/value", handler.UpdateKPIValue)
+	})
+
 	// --- KPI linking endpoints ---
 
 	r.Group(func(r chi.Router) {
@@ -169,6 +177,14 @@ func NewRouter(handler *GoalHandler, authSvc *authsvc.AuthService) chi.Router {
 		r.Use(middleware.RequireAnyPermission(writePerms...))
 		r.Use(middleware.RateLimit(writeRateLimit))
 		r.Delete("/api/v1/goals/{goalId}/kpis/{kpiId}", handler.UnlinkKPI)
+	})
+
+	// --- Scoring endpoints ---
+
+	r.Group(func(r chi.Router) {
+		r.Use(middleware.RequirePermission(auth.PermGoalRead))
+		r.Use(middleware.RateLimit(readRateLimit))
+		r.Get("/api/v1/employees/{empId}/score", handler.GetEmployeeScore)
 	})
 
 	// --- Assignment endpoints ---

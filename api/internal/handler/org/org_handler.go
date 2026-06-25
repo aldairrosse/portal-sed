@@ -56,6 +56,7 @@ type OrgHandler struct {
 	employeeSvc   svc.EmployeeService
 	evaluateeSvc  svc.EvaluateeService
 	evaluatorSvc  svc.EvaluatorService
+	metricsSvc    svc.MetricsService
 }
 
 // NewOrgHandler creates a new OrgHandler.
@@ -65,6 +66,7 @@ func NewOrgHandler(
 	employeeSvc svc.EmployeeService,
 	evaluateeSvc svc.EvaluateeService,
 	evaluatorSvc svc.EvaluatorService,
+	metricsSvc svc.MetricsService,
 ) *OrgHandler {
 	return &OrgHandler{
 		treeSvc:      treeSvc,
@@ -72,6 +74,7 @@ func NewOrgHandler(
 		employeeSvc:  employeeSvc,
 		evaluateeSvc: evaluateeSvc,
 		evaluatorSvc: evaluatorSvc,
+		metricsSvc:   metricsSvc,
 	}
 }
 
@@ -484,6 +487,27 @@ func (h *OrgHandler) GetEvaluatorScopeByID(w http.ResponseWriter, r *http.Reques
 
 	// This delegates to the evaluator service which looks up the scope
 	result, err := h.evaluatorSvc.GetEvaluatorScope(r.Context(), scopeID, "")
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, result)
+}
+
+// ==================== Area Metrics Endpoints ====================
+
+// GetAreaMetrics handles GET /api/v1/org-nodes/{nodeId}/area-metrics
+func (h *OrgHandler) GetAreaMetrics(w http.ResponseWriter, r *http.Request) {
+	nodeID := chi.URLParam(r, "nodeId")
+	if nodeID == "" {
+		writeError(w, errors.NewDomainError(errors.InvalidRequest, "nodeId path parameter is required", nil))
+		return
+	}
+
+	cycleID := r.URL.Query().Get("cycleId")
+
+	result, err := h.metricsSvc.GetAreaMetrics(r.Context(), nodeID, cycleID)
 	if err != nil {
 		writeError(w, err)
 		return

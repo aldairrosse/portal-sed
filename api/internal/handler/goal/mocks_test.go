@@ -88,12 +88,13 @@ func (m *mockProgressService) UpdateGoalProgress(ctx context.Context, empID, goa
 }
 
 type mockKPIService struct {
-	listFunc   func(ctx context.Context) ([]*repogoal.KpiRow, error)
-	createFunc func(ctx context.Context, req dtogoal.CreateKpiRequest) (*repogoal.KpiRow, error)
-	updateFunc func(ctx context.Context, kpiID uuid.UUID, req dtogoal.UpdateKpiRequest) (*repogoal.KpiRow, error)
-	deleteFunc func(ctx context.Context, kpiID uuid.UUID) error
-	linkFunc   func(ctx context.Context, empID, goalID, kpiID uuid.UUID) error
-	unlinkFunc func(ctx context.Context, empID, goalID, kpiID uuid.UUID) error
+	listFunc        func(ctx context.Context) ([]*repogoal.KpiRow, error)
+	createFunc      func(ctx context.Context, req dtogoal.CreateKpiRequest) (*repogoal.KpiRow, error)
+	updateFunc      func(ctx context.Context, kpiID uuid.UUID, req dtogoal.UpdateKpiRequest) (*repogoal.KpiRow, error)
+	updateValueFunc func(ctx context.Context, kpiID uuid.UUID, currentValue float64) (*repogoal.KpiRow, error)
+	deleteFunc      func(ctx context.Context, kpiID uuid.UUID) error
+	linkFunc        func(ctx context.Context, empID, goalID, kpiID uuid.UUID) error
+	unlinkFunc      func(ctx context.Context, empID, goalID, kpiID uuid.UUID) error
 }
 
 func (m *mockKPIService) ListKPIs(ctx context.Context) ([]*repogoal.KpiRow, error) {
@@ -117,6 +118,13 @@ func (m *mockKPIService) UpdateKPI(ctx context.Context, kpiID uuid.UUID, req dto
 	return nil, nil
 }
 
+func (m *mockKPIService) UpdateKPIValue(ctx context.Context, kpiID uuid.UUID, currentValue float64) (*repogoal.KpiRow, error) {
+	if m.updateValueFunc != nil {
+		return m.updateValueFunc(ctx, kpiID, currentValue)
+	}
+	return nil, nil
+}
+
 func (m *mockKPIService) DeleteKPI(ctx context.Context, kpiID uuid.UUID) error {
 	if m.deleteFunc != nil {
 		return m.deleteFunc(ctx, kpiID)
@@ -136,6 +144,17 @@ func (m *mockKPIService) UnlinkKPI(ctx context.Context, empID, goalID, kpiID uui
 		return m.unlinkFunc(ctx, empID, goalID, kpiID)
 	}
 	return nil
+}
+
+type mockScoringService struct {
+	scoreFunc func(ctx context.Context, empID uuid.UUID) (float64, error)
+}
+
+func (m *mockScoringService) GetEmployeeScore(ctx context.Context, empID uuid.UUID) (float64, error) {
+	if m.scoreFunc != nil {
+		return m.scoreFunc(ctx, empID)
+	}
+	return 0, nil
 }
 
 type mockWeightValidationService struct {
@@ -204,7 +223,7 @@ type mockGoalRepo struct {
 	listByCategoryFunc func(ctx context.Context, catID uuid.UUID) ([]*repogoal.GoalRow, error)
 }
 
-func (m *mockGoalRepo) CreateGoal(ctx context.Context, catID uuid.UUID, name, description, unit string, weight, targetValue float64) (*repogoal.GoalRow, error) {
+func (m *mockGoalRepo) CreateGoal(ctx context.Context, catID uuid.UUID, name, description, unit, direction string, weight, targetValue float64, baselineValue *float64) (*repogoal.GoalRow, error) {
 	return nil, nil
 }
 
@@ -215,7 +234,7 @@ func (m *mockGoalRepo) GetGoal(ctx context.Context, goalID uuid.UUID) (*repogoal
 	return nil, nil
 }
 
-func (m *mockGoalRepo) UpdateGoal(ctx context.Context, goalID uuid.UUID, name, description, unit string, weight, targetValue float64, expectedVersion int) (*repogoal.GoalRow, error) {
+func (m *mockGoalRepo) UpdateGoal(ctx context.Context, goalID uuid.UUID, name, description, unit, direction string, weight, targetValue float64, baselineValue *float64, expectedVersion int) (*repogoal.GoalRow, error) {
 	return nil, nil
 }
 
@@ -242,6 +261,9 @@ func (m *mockKpiRepo) CreateKPI(ctx context.Context, name, unit, description str
 	return nil, nil
 }
 func (m *mockKpiRepo) UpdateKPI(ctx context.Context, kpiID uuid.UUID, name, unit, description string) (*repogoal.KpiRow, error) {
+	return nil, nil
+}
+func (m *mockKpiRepo) UpdateKPIValue(ctx context.Context, kpiID uuid.UUID, currentValue float64) (*repogoal.KpiRow, error) {
 	return nil, nil
 }
 func (m *mockKpiRepo) DeleteKPI(ctx context.Context, kpiID uuid.UUID) error                     { return nil }
@@ -285,6 +307,7 @@ func newTestHandler(
 	goalSvc svcgoal.GoalServicer,
 	progSvc svcgoal.ProgressServicer,
 	kpiSvc svcgoal.KpiServicer,
+	scoringSvc svcgoal.ScoringServicer,
 	weightSvc svcgoal.WeightValidationServicer,
 	batchSvc svcgoal.BatchServicer,
 	catRepo svcgoal.CategoryRepository,
@@ -304,6 +327,9 @@ func newTestHandler(
 	}
 	if kpiSvc == nil {
 		kpiSvc = &mockKPIService{}
+	}
+	if scoringSvc == nil {
+		scoringSvc = &mockScoringService{}
 	}
 	if weightSvc == nil {
 		weightSvc = &mockWeightValidationService{}
@@ -326,7 +352,7 @@ func newTestHandler(
 	if assignRepo == nil {
 		assignRepo = &mockAssignmentRepo{}
 	}
-	return NewGoalHandler(catSvc, goalSvc, progSvc, kpiSvc, weightSvc, batchSvc, catRepo, goalRepo, kpiRepo, linkRepo, assignRepo)
+	return NewGoalHandler(catSvc, goalSvc, progSvc, kpiSvc, scoringSvc, weightSvc, batchSvc, catRepo, goalRepo, kpiRepo, linkRepo, assignRepo)
 }
 
 func mustParseUUID(s string) uuid.UUID {

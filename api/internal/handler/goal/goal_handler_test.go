@@ -39,7 +39,7 @@ func TestListCategories_Success(t *testing.T) {
 		},
 	}
 
-	h := newTestHandler(catSvc, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	h := newTestHandler(catSvc, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	r := chi.NewRouter()
 	r.Get("/employees/{empId}/categories", h.ListCategories)
 
@@ -66,7 +66,7 @@ func TestCreateCategory_Success(t *testing.T) {
 		},
 	}
 
-	h := newTestHandler(catSvc, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	h := newTestHandler(catSvc, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	r := chi.NewRouter()
 	r.Post("/employees/{empId}/categories", h.CreateCategory)
 
@@ -94,7 +94,7 @@ func TestUpdateCategory_Success(t *testing.T) {
 		},
 	}
 
-	h := newTestHandler(catSvc, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	h := newTestHandler(catSvc, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	r := chi.NewRouter()
 	r.Put("/employees/{empId}/categories/{catId}", h.UpdateCategory)
 
@@ -121,7 +121,7 @@ func TestDeleteCategory_Success(t *testing.T) {
 		},
 	}
 
-	h := newTestHandler(catSvc, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	h := newTestHandler(catSvc, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	r := chi.NewRouter()
 	r.Delete("/employees/{empId}/categories/{catId}", h.DeleteCategory)
 
@@ -144,7 +144,7 @@ func TestCreateGoal_Success(t *testing.T) {
 		},
 	}
 
-	h := newTestHandler(nil, goalSvc, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	h := newTestHandler(nil, goalSvc, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	r := chi.NewRouter()
 	r.Post("/employees/{empId}/categories/{catId}/goals", h.CreateGoal)
 
@@ -172,7 +172,7 @@ func TestUpdateGoal_Success(t *testing.T) {
 		},
 	}
 
-	h := newTestHandler(nil, goalSvc, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	h := newTestHandler(nil, goalSvc, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	r := chi.NewRouter()
 	r.Use(func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -205,7 +205,7 @@ func TestDeleteGoal_Success(t *testing.T) {
 		},
 	}
 
-	h := newTestHandler(nil, goalSvc, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	h := newTestHandler(nil, goalSvc, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	r := chi.NewRouter()
 	r.Use(func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -233,7 +233,7 @@ func TestUpdateGoalProgress_Success(t *testing.T) {
 		},
 	}
 
-	h := newTestHandler(nil, nil, progSvc, nil, nil, nil, nil, nil, nil, nil, nil)
+	h := newTestHandler(nil, nil, progSvc, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	r := chi.NewRouter()
 	r.Use(func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -272,7 +272,7 @@ func TestValidateWeights_Success(t *testing.T) {
 		},
 	}
 
-	h := newTestHandler(nil, nil, nil, nil, weightSvc, nil, nil, nil, nil, nil, nil)
+	h := newTestHandler(nil, nil, nil, nil, nil, weightSvc, nil, nil, nil, nil, nil, nil)
 	r := chi.NewRouter()
 	r.Post("/employees/{empId}/validate-weights", h.ValidateWeights)
 
@@ -297,7 +297,7 @@ func TestListKPIs_Success(t *testing.T) {
 		},
 	}
 
-	h := newTestHandler(nil, nil, nil, kpiSvc, nil, nil, nil, nil, nil, nil, nil)
+	h := newTestHandler(nil, nil, nil, kpiSvc, nil, nil, nil, nil, nil, nil, nil, nil)
 	r := chi.NewRouter()
 	r.Get("/kpis", h.ListKPIs)
 
@@ -320,7 +320,7 @@ func TestCreateKPI_Success(t *testing.T) {
 		},
 	}
 
-	h := newTestHandler(nil, nil, nil, kpiSvc, nil, nil, nil, nil, nil, nil, nil)
+	h := newTestHandler(nil, nil, nil, kpiSvc, nil, nil, nil, nil, nil, nil, nil, nil)
 	r := chi.NewRouter()
 	r.Post("/kpis", h.CreateKPI)
 
@@ -345,7 +345,7 @@ func TestUpdateKPI_Success(t *testing.T) {
 		},
 	}
 
-	h := newTestHandler(nil, nil, nil, kpiSvc, nil, nil, nil, nil, nil, nil, nil)
+	h := newTestHandler(nil, nil, nil, kpiSvc, nil, nil, nil, nil, nil, nil, nil, nil)
 	r := chi.NewRouter()
 	r.Put("/kpis/{kpiId}", h.UpdateKPI)
 
@@ -381,7 +381,7 @@ func TestLinkKPI_Success(t *testing.T) {
 		},
 	}
 
-	h := newTestHandler(nil, nil, nil, kpiSvc, nil, nil, nil, goalRepo, nil, nil, nil)
+	h := newTestHandler(nil, nil, nil, kpiSvc, nil, nil, nil, nil, goalRepo, nil, nil, nil)
 	r := chi.NewRouter()
 	r.Use(func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -417,7 +417,7 @@ func TestUnlinkKPI_Success(t *testing.T) {
 		},
 	}
 
-	h := newTestHandler(nil, nil, nil, kpiSvc, nil, nil, nil, nil, nil, nil, nil)
+	h := newTestHandler(nil, nil, nil, kpiSvc, nil, nil, nil, nil, nil, nil, nil, nil)
 	r := chi.NewRouter()
 	r.Use(func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -462,7 +462,7 @@ func TestGetAssignment_Success(t *testing.T) {
 		},
 	}
 
-	h := newTestHandler(nil, nil, nil, nil, nil, nil, catRepo, goalRepo, nil, nil, assignRepo)
+	h := newTestHandler(nil, nil, nil, nil, nil, nil, nil, catRepo, goalRepo, nil, nil, assignRepo)
 	r := chi.NewRouter()
 	r.Get("/employees/{empId}/assignments", h.GetAssignment)
 
@@ -498,7 +498,7 @@ func TestCreateAssignment_Success(t *testing.T) {
 		},
 	}
 
-	h := newTestHandler(nil, nil, nil, nil, nil, nil, catRepo, nil, nil, nil, assignRepo)
+	h := newTestHandler(nil, nil, nil, nil, nil, nil, nil, catRepo, nil, nil, nil, assignRepo)
 	r := chi.NewRouter()
 	r.Post("/employees/{empId}/assignments", h.CreateAssignment)
 
@@ -527,7 +527,7 @@ func TestBatchGoals_Success(t *testing.T) {
 		},
 	}
 
-	h := newTestHandler(nil, nil, nil, nil, nil, batchSvc, nil, nil, nil, nil, nil)
+	h := newTestHandler(nil, nil, nil, nil, nil, nil, batchSvc, nil, nil, nil, nil, nil)
 	r := chi.NewRouter()
 	r.Use(func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -562,7 +562,7 @@ func TestCreateCategory_DuplicateName(t *testing.T) {
 		},
 	}
 
-	h := newTestHandler(catSvc, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	h := newTestHandler(catSvc, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	r := chi.NewRouter()
 	r.Post("/employees/{empId}/categories", h.CreateCategory)
 
@@ -585,7 +585,7 @@ func TestCreateGoal_WeightOverflow(t *testing.T) {
 		},
 	}
 
-	h := newTestHandler(nil, goalSvc, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	h := newTestHandler(nil, goalSvc, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	r := chi.NewRouter()
 	r.Post("/employees/{empId}/categories/{catId}/goals", h.CreateGoal)
 
@@ -609,7 +609,7 @@ func TestDeleteGoal_PhaseRestricted(t *testing.T) {
 		},
 	}
 
-	h := newTestHandler(nil, goalSvc, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	h := newTestHandler(nil, goalSvc, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	r := chi.NewRouter()
 	r.Use(func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -637,7 +637,7 @@ func TestUpdateProgress_WrongPhase(t *testing.T) {
 		},
 	}
 
-	h := newTestHandler(nil, nil, progSvc, nil, nil, nil, nil, nil, nil, nil, nil)
+	h := newTestHandler(nil, nil, progSvc, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	r := chi.NewRouter()
 	r.Use(func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -673,7 +673,7 @@ func TestValidateWeights_InvalidSum(t *testing.T) {
 		},
 	}
 
-	h := newTestHandler(nil, nil, nil, nil, weightSvc, nil, nil, nil, nil, nil, nil)
+	h := newTestHandler(nil, nil, nil, nil, nil, weightSvc, nil, nil, nil, nil, nil, nil)
 	r := chi.NewRouter()
 	r.Post("/employees/{empId}/validate-weights", h.ValidateWeights)
 
@@ -697,7 +697,7 @@ func TestCreateGoal_NotFound(t *testing.T) {
 		},
 	}
 
-	h := newTestHandler(nil, goalSvc, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	h := newTestHandler(nil, goalSvc, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	r := chi.NewRouter()
 	r.Post("/employees/{empId}/categories/{catId}/goals", h.CreateGoal)
 
@@ -725,7 +725,7 @@ func TestListCategories_ResponseTime(t *testing.T) {
 		},
 	}
 
-	h := newTestHandler(catSvc, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	h := newTestHandler(catSvc, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	r := chi.NewRouter()
 	r.Get("/employees/{empId}/categories", h.ListCategories)
 
@@ -748,7 +748,7 @@ func TestValidateWeights_ResponseTime(t *testing.T) {
 		},
 	}
 
-	h := newTestHandler(nil, nil, nil, nil, weightSvc, nil, nil, nil, nil, nil, nil)
+	h := newTestHandler(nil, nil, nil, nil, nil, weightSvc, nil, nil, nil, nil, nil, nil)
 	r := chi.NewRouter()
 	r.Post("/employees/{empId}/validate-weights", h.ValidateWeights)
 
@@ -780,7 +780,7 @@ func TestCreateGoal_ConcurrentWeightOverflow(t *testing.T) {
 		},
 	}
 
-	h := newTestHandler(nil, goalSvc, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	h := newTestHandler(nil, goalSvc, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	r := chi.NewRouter()
 	r.Post("/employees/{empId}/categories/{catId}/goals", h.CreateGoal)
 
@@ -814,7 +814,7 @@ func TestBatchGoals_Concurrent(t *testing.T) {
 		},
 	}
 
-	h := newTestHandler(nil, nil, nil, nil, nil, batchSvc, nil, nil, nil, nil, nil)
+	h := newTestHandler(nil, nil, nil, nil, nil, nil, batchSvc, nil, nil, nil, nil, nil)
 	r := chi.NewRouter()
 	r.Use(func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

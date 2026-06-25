@@ -338,9 +338,10 @@ func (h *EvaluationHandler) GetEvaluationSummary(w http.ResponseWriter, r *http.
 // --- Nine-Box Endpoints ---
 
 // ListMatrices handles GET /api/v1/nine-box/matrices
+// Supports optional filters: cycle_id, phase_id, evaluator_id
 // TODO(auth:C7): Restrict to evaluator, rh roles.
 func (h *EvaluationHandler) ListMatrices(w http.ResponseWriter, r *http.Request) {
-	var cycleID, evaluatorID uuid.UUID
+	var cycleID, evaluatorID, phaseID uuid.UUID
 
 	if c := r.URL.Query().Get("cycle_id"); c != "" {
 		var err error
@@ -348,6 +349,16 @@ func (h *EvaluationHandler) ListMatrices(w http.ResponseWriter, r *http.Request)
 		if err != nil {
 			writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
 				"cycle_id must be a valid UUID v4", err))
+			return
+		}
+	}
+
+	if p := r.URL.Query().Get("phase_id"); p != "" {
+		var err error
+		phaseID, err = uuid.Parse(p)
+		if err != nil {
+			writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
+				"phase_id must be a valid UUID v4", err))
 			return
 		}
 	}
@@ -362,7 +373,7 @@ func (h *EvaluationHandler) ListMatrices(w http.ResponseWriter, r *http.Request)
 		}
 	}
 
-	result, err := h.nineBoxSvc.ListMatrices(r.Context(), cycleID, evaluatorID)
+	result, err := h.nineBoxSvc.ListMatrices(r.Context(), cycleID, evaluatorID, phaseID)
 	if err != nil {
 		writeError(w, err)
 		return
@@ -438,30 +449,26 @@ func (h *EvaluationHandler) ListMatrixEntries(w http.ResponseWriter, r *http.Req
 	writeJSON(w, http.StatusOK, result.Entries)
 }
 
-// UpsertMatrixEntry handles POST /api/v1/nine-box/matrices/{matrixId}/entries
-// TODO(auth:C7): Restrict to evaluator owner.
-func (h *EvaluationHandler) UpsertMatrixEntry(w http.ResponseWriter, r *http.Request) {
-	matrixID, err := uuid.Parse(chi.URLParam(r, "matrixId"))
-	if err != nil {
+// UpdateQuadrant handles PUT /api/v1/nine-box/quadrants/{quadrant}
+// RH-only: updates title, description, colorHex of a quadrant (1-9).
+// TODO(auth:C7): Restrict to rh, admin roles.
+func (h *EvaluationHandler) UpdateQuadrant(w http.ResponseWriter, r *http.Request) {
+	quadrantStr := chi.URLParam(r, "quadrant")
+	quadrantNumber, err := strconv.Atoi(quadrantStr)
+	if err != nil || quadrantNumber < 1 || quadrantNumber > 9 {
 		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
-			"matrixId must be a valid UUID v4", err))
+			"quadrant must be an integer between 1 and 9", err))
 		return
 	}
 
-	var req dto.NineBoxEntryInput
+	var req dto.NineBoxQuadrantUpdateInput
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
 			"invalid JSON body", err))
 		return
 	}
 
-	if req.EvaluateeID == uuid.Nil {
-		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
-			"evaluateeId is required", nil))
-		return
-	}
-
-	result, err := h.nineBoxSvc.UpsertEntry(r.Context(), matrixID, req)
+	result, err := h.nineBoxSvc.UpdateQuadrantByNumber(r.Context(), quadrantNumber, req)
 	if err != nil {
 		writeError(w, err)
 		return
@@ -470,72 +477,33 @@ func (h *EvaluationHandler) UpsertMatrixEntry(w http.ResponseWriter, r *http.Req
 	writeJSON(w, http.StatusOK, result)
 }
 
-// UpdateEntry handles PUT /api/v1/nine-box/entries/{entryId}
-// TODO(auth:C7): Restrict to evaluator owner.
-func (h *EvaluationHandler) UpdateEntry(w http.ResponseWriter, r *http.Request) {
-	entryID, err := uuid.Parse(chi.URLParam(r, "entryId"))
+// RecomputeMatrix handles POST /api/v1/nine-box/recompute/{cycleId}/{phaseId}
+// Triggers recalculation of all nine-box placements for all evaluators in the cycle+phase.
+// TODO(auth:C7): Restrict to rh, admin roles.
+func (h *EvaluationHandler) RecomputeMatrix(w http.ResponseWriter, r *http.Request) {
+	cycleID, err := uuid.Parse(chi.URLParam(r, "cycleId"))
 	if err != nil {
 		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
-			"entryId must be a valid UUID v4", err))
+			"cycleId must be a valid UUID v4", err))
 		return
 	}
 
-	ifMatch := middleware.ExpectedVersionFromContext(r.Context())
-
-	var req dto.NineBoxEntryInput
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	phaseID, err := uuid.Parse(chi.URLParam(r, "phaseId"))
+	if err != nil {
 		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
-			"invalid JSON body", err))
+			"phaseId must be a valid UUID v4", err))
 		return
 	}
 
-	result, err := h.nineBoxSvc.UpdateEntry(r.Context(), entryID, req, ifMatch)
-	if err != nil {
+	if err := h.nineBoxSvc.RecomputeMatrix(r.Context(), cycleID, phaseID); err != nil {
 		writeError(w, err)
 		return
 	}
 
-	writeJSON(w, http.StatusOK, result)
-}
-
-// BatchSubmitEntries handles POST /api/v1/nine-box/batch
-// TODO(auth:C7): Restrict to evaluator owner.
-func (h *EvaluationHandler) BatchSubmitEntries(w http.ResponseWriter, r *http.Request) {
-	var req dto.NineBoxBatchRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
-			"invalid JSON body", err))
-		return
-	}
-
-	if len(req.Entries) == 0 {
-		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
-			"at least one entry is required", nil))
-		return
-	}
-
-	// The batch request must be for a specific matrix; get from query param
-	matrixIDStr := r.URL.Query().Get("matrixId")
-	if matrixIDStr == "" {
-		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
-			"matrixId query parameter is required for batch submission", nil))
-		return
-	}
-
-	matrixID, err := uuid.Parse(matrixIDStr)
-	if err != nil {
-		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
-			"matrixId must be a valid UUID v4", err))
-		return
-	}
-
-	result, err := h.nineBoxSvc.BatchSubmitEntries(r.Context(), matrixID, req)
-	if err != nil {
-		writeError(w, err)
-		return
-	}
-
-	writeJSON(w, http.StatusOK, result)
+	writeJSON(w, http.StatusOK, map[string]string{
+		"status":  "ok",
+		"message": "Matrix recomputed successfully",
+	})
 }
 
 // GetScales handles GET /api/v1/nine-box/scales

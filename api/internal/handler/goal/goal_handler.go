@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
@@ -13,9 +14,9 @@ import (
 	"github.com/sed-evaluacion-desempeno/api/internal/middleware"
 	"github.com/sed-evaluacion-desempeno/api/internal/pkg/cursor"
 	pkgerrors "github.com/sed-evaluacion-desempeno/api/internal/pkg/errors"
+	"github.com/sed-evaluacion-desempeno/api/internal/pkg/scoring"
 	repogoal "github.com/sed-evaluacion-desempeno/api/internal/repository/goal"
 	svcgoal "github.com/sed-evaluacion-desempeno/api/internal/service/goal"
-	"time"
 )
 
 // generateTraceID generates a short trace ID for error responses.
@@ -52,17 +53,18 @@ func writeError(w http.ResponseWriter, err error) {
 
 // GoalHandler holds all HTTP handlers for the goals bounded context.
 type GoalHandler struct {
-	catService   svcgoal.CategoryServicer
-	goalService  svcgoal.GoalServicer
-	progressSvc  svcgoal.ProgressServicer
-	kpiService   svcgoal.KpiServicer
-	weightSvc    svcgoal.WeightValidationServicer
-	batchService svcgoal.BatchServicer
-	catRepo      svcgoal.CategoryRepository
-	goalRepo     svcgoal.GoalRepository
-	kpiRepo      svcgoal.KPIRepository
-	linkRepo     svcgoal.LinkKPIRepository
-	assignRepo   svcgoal.AssignmentRepository
+	catService    svcgoal.CategoryServicer
+	goalService   svcgoal.GoalServicer
+	progressSvc   svcgoal.ProgressServicer
+	kpiService    svcgoal.KpiServicer
+	scoringSvc    svcgoal.ScoringServicer
+	weightSvc     svcgoal.WeightValidationServicer
+	batchService  svcgoal.BatchServicer
+	catRepo       svcgoal.CategoryRepository
+	goalRepo      svcgoal.GoalRepository
+	kpiRepo       svcgoal.KPIRepository
+	linkRepo      svcgoal.LinkKPIRepository
+	assignRepo    svcgoal.AssignmentRepository
 }
 
 // NewGoalHandler creates a new GoalHandler.
@@ -71,6 +73,7 @@ func NewGoalHandler(
 	goalService svcgoal.GoalServicer,
 	progressSvc svcgoal.ProgressServicer,
 	kpiService svcgoal.KpiServicer,
+	scoringSvc svcgoal.ScoringServicer,
 	weightSvc svcgoal.WeightValidationServicer,
 	batchService svcgoal.BatchServicer,
 	catRepo svcgoal.CategoryRepository,
@@ -84,6 +87,7 @@ func NewGoalHandler(
 		goalService:  goalService,
 		progressSvc:  progressSvc,
 		kpiService:   kpiService,
+		scoringSvc:   scoringSvc,
 		weightSvc:    weightSvc,
 		batchService: batchService,
 		catRepo:      catRepo,
@@ -232,19 +236,26 @@ func (h *GoalHandler) DeleteCategory(w http.ResponseWriter, r *http.Request) {
 
 // goalRowToResponse converts a repo GoalRow to an API response.
 func goalRowToResponse(g *repogoal.GoalRow) dtogoal.GoalResponse {
+	baselineVal := 0.0
+	if g.BaselineValue != nil {
+		baselineVal = *g.BaselineValue
+	}
 	return dtogoal.GoalResponse{
-		ID:           g.ID.String(),
-		CategoryID:   g.CategoryID.String(),
-		Name:         g.Name,
-		Description:  g.Description,
-		Unit:         g.Unit,
-		Weight:       g.Weight,
-		TargetValue:  g.TargetValue,
-		CurrentValue: g.CurrentValue,
-		State:        g.State,
-		Version:      g.Version,
-		CreatedAt:    g.CreatedAt.Format(time.RFC3339),
-		UpdatedAt:    g.UpdatedAt.Format(time.RFC3339),
+		ID:              g.ID.String(),
+		CategoryID:      g.CategoryID.String(),
+		Name:            g.Name,
+		Description:     g.Description,
+		Unit:            g.Unit,
+		Weight:          g.Weight,
+		TargetValue:     g.TargetValue,
+		CurrentValue:    g.CurrentValue,
+		Direction:       g.Direction,
+		BaselineValue:   g.BaselineValue,
+		ProgressPercent: scoring.ProgressPercent(g.CurrentValue, g.TargetValue, baselineVal, g.Direction),
+		State:           g.State,
+		Version:         g.Version,
+		CreatedAt:       g.CreatedAt.Format(time.RFC3339),
+		UpdatedAt:       g.UpdatedAt.Format(time.RFC3339),
 	}
 }
 
@@ -420,13 +431,18 @@ func (h *GoalHandler) ValidateWeights(w http.ResponseWriter, r *http.Request) {
 
 // kpiRowToResponse converts a repo KpiRow to an API response.
 func kpiRowToResponse(k *repogoal.KpiRow) dtogoal.KpiResponse {
+	// KPIs don't have a target_value, so progress is 0 when not calculated
+	progressPercent := 0.0
 	return dtogoal.KpiResponse{
-		ID:          k.ID.String(),
-		Name:        k.Name,
-		Unit:        k.Unit,
-		Description: k.Description,
-		CreatedAt:   k.CreatedAt.Format(time.RFC3339),
-		UpdatedAt:   k.UpdatedAt.Format(time.RFC3339),
+		ID:              k.ID.String(),
+		Name:            k.Name,
+		Unit:            k.Unit,
+		Description:     k.Description,
+		Direction:       k.Direction,
+		CurrentValue:    k.CurrentValue,
+		ProgressPercent: progressPercent,
+		CreatedAt:       k.CreatedAt.Format(time.RFC3339),
+		UpdatedAt:       k.UpdatedAt.Format(time.RFC3339),
 	}
 }
 
@@ -540,6 +556,30 @@ func (h *GoalHandler) DeleteKPI(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// UpdateKPIValue handles PATCH /api/v1/kpis/{kpiId}/value.
+func (h *GoalHandler) UpdateKPIValue(w http.ResponseWriter, r *http.Request) {
+	kpiIDStr := chi.URLParam(r, "kpiId")
+	kpiID, err := uuid.Parse(kpiIDStr)
+	if err != nil {
+		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest, "invalid KPI ID", err))
+		return
+	}
+
+	var req dtogoal.KpiUpdateValueRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest, "invalid JSON body", err))
+		return
+	}
+
+	kpi, err := h.kpiService.UpdateKPIValue(r.Context(), kpiID, req.CurrentValue)
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, kpiRowToResponse(kpi))
+}
+
 // ============================================================================
 // KPI Linking Handlers
 // ============================================================================
@@ -614,6 +654,27 @@ func (h *GoalHandler) UnlinkKPI(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+// ============================================================================
+// Scoring Handlers
+// ============================================================================
+
+// GetEmployeeScore handles GET /api/v1/employees/{empId}/score.
+func (h *GoalHandler) GetEmployeeScore(w http.ResponseWriter, r *http.Request) {
+	empID, err := parseEmpID(r)
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+
+	score, err := h.scoringSvc.GetEmployeeScore(r.Context(), empID)
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]float64{"score": score})
 }
 
 // ============================================================================

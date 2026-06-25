@@ -214,6 +214,7 @@ func main() {
 	goalSvc := goalsvc.NewGoalService(goalRepo, catRepo, kpiRepo, linkRepo, weightQ, phaseCheck)
 	progressSvc := goalsvc.NewProgressService(goalRepo, catRepo, phaseCheck)
 	kpiSvc := goalsvc.NewKPIService(kpiRepo, linkRepo, goalRepo, catRepo, phaseCheck)
+	scoringSvc := goalsvc.NewScoringService(catRepo, goalRepo)
 	weightSvc := goalsvc.NewWeightValidationService(catRepo, goalRepo)
 	batchSvc := goalsvc.NewBatchService(goalRepo, catRepo, kpiRepo, linkRepo, weightQ, phaseCheck)
 
@@ -242,6 +243,8 @@ func main() {
 	employeeSvc := orgsvc.NewEmployeeService(employeeRepo, client)
 	evaluateeSvc := orgsvc.NewEvaluateeService(employeeRepo, orgNodeRepo, scopeRepo, client)
 	evaluatorSvc := orgsvc.NewEvaluatorService(employeeRepo, orgNodeRepo, scopeRepo, client)
+	metricsRepo := repoorganization.NewMetricsRepo(client, db)
+	metricsSvc := orgsvc.NewMetricsService(metricsRepo, orgNodeRepo, client)
 
 	// -----------------------------------------------------------------------
 	// Dependency Injection — Handlers
@@ -249,13 +252,13 @@ func main() {
 
 	authH := authhandler.NewAuthHandler(authSvc)
 	goalH := goalhandler.NewGoalHandler(
-		catSvc, goalSvc, progressSvc, kpiSvc, weightSvc, batchSvc,
+		catSvc, goalSvc, progressSvc, kpiSvc, scoringSvc, weightSvc, batchSvc,
 		catRepo, goalRepo, kpiRepo, linkRepo, assignRepo,
 	)
 	cycleH := cyclehandler.NewCycleHandler(cycleSvc, phaseSvc)
 	compH := comphandler.NewHandler(pillarSvc, competencySvc, scaleSvc, catalogSvc, acceptanceSvc)
 	evalH := evalhandler.NewEvaluationHandler(evalSvc, nineBoxSvc, dashboardSvc)
-	orgH := orghandler.NewOrgHandler(orgTreeSvc, orgNodeSvc, employeeSvc, evaluateeSvc, evaluatorSvc)
+	orgH := orghandler.NewOrgHandler(orgTreeSvc, orgNodeSvc, employeeSvc, evaluateeSvc, evaluatorSvc, metricsSvc)
 
 	// -----------------------------------------------------------------------
 	// Router

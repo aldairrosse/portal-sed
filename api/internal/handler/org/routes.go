@@ -92,6 +92,12 @@ func RegisterRoutes(r chi.Router, handler *OrgHandler, authSvc *authsvc.AuthServ
 		})
 
 		r.Group(func(r chi.Router) {
+			r.Use(middleware.RateLimit(readRateLimit))
+			r.Use(readReplicaMiddleware)
+			r.Get("/org-nodes/{nodeId}/area-metrics", handler.GetAreaMetrics)
+		})
+
+		r.Group(func(r chi.Router) {
 			r.Use(middleware.RateLimit(writeRateLimit))
 			r.Post("/org-nodes", handler.CreateOrgNode)
 		})

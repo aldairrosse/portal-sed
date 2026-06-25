@@ -8,10 +8,11 @@ import (
 //
 // Routes:
 //
-//	POST /login    — authenticate with email (dev mode)
-//	POST /logout   — revoke current session
-//	POST /refresh  — extend session expiry
-//	GET  /me       — get current user info
+//	POST /login      — authenticate with email (DB lookup)
+//	POST /dev-login  — authenticate preset dev users (ENV=development only)
+//	POST /logout     — revoke current session
+//	POST /refresh    — extend session expiry
+//	GET  /me         — get current user info
 //
 // Expected mount point: /api/v1/auth
 func AuthRoutes(handler *AuthHandler) chi.Router {
@@ -21,6 +22,8 @@ func AuthRoutes(handler *AuthHandler) chi.Router {
 	r.Post("/logout", handler.Logout)
 	r.Post("/refresh", handler.Refresh)
 	r.Get("/me", handler.Me)
+
+	r.Post("/dev-login", handler.DevLogin)
 
 	return r
 }

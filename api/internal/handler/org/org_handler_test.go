@@ -116,6 +116,14 @@ func (m *mockEvaluatorService) ResolveEvaluator(ctx context.Context, evaluateeID
 	return m.resolveEvaluatorFunc(ctx, evaluateeID)
 }
 
+type mockMetricsService struct {
+	getAreaMetricsFunc func(ctx context.Context, nodeID, cycleID string) (*dto.AreaMetricsResponse, error)
+}
+
+func (m *mockMetricsService) GetAreaMetrics(ctx context.Context, nodeID, cycleID string) (*dto.AreaMetricsResponse, error) {
+	return m.getAreaMetricsFunc(ctx, nodeID, cycleID)
+}
+
 // ---------- helpers ----------
 
 func newTestHandler(
@@ -125,7 +133,7 @@ func newTestHandler(
 	evalSvc svc.EvaluateeService,
 	evaluatorSvc svc.EvaluatorService,
 ) *handler.OrgHandler {
-	return handler.NewOrgHandler(treeSvc, nodeSvc, empSvc, evalSvc, evaluatorSvc)
+	return handler.NewOrgHandler(treeSvc, nodeSvc, empSvc, evalSvc, evaluatorSvc, nil)
 }
 
 func withChiParam(r *http.Request, key, value string) *http.Request {
@@ -834,4 +842,110 @@ func TestGetEvaluatorScope_MissingEvaluatorID(t *testing.T) {
 	assert.Equal(t, http.StatusBadRequest, rec.Code)
 	bodyStr := rec.Body.String()
 	assert.Contains(t, bodyStr, "evaluatorId query parameter is required")
+}
+
+// ---------- area metrics handler tests ----------
+
+func TestGetAreaMetrics_Success(t *testing.T) {
+	t.Parallel()
+
+	nodeID := uuid.New().String()
+	metricsSvc := &mockMetricsService{
+		getAreaMetricsFunc: func(_ context.Context, nid, cid string) (*dto.AreaMetricsResponse, error) {
+			assert.Equal(t, nodeID, nid)
+			assert.Equal(t, "cycle-123", cid)
+			return &dto.AreaMetricsResponse{
+				NodeID:            nodeID,
+				EmployeeCount:     3,
+				EmployeesWithGoals: 2,
+				CompletedGoals:    4,
+				PendingGoals:      2,
+				RatingsCount:      3,
+				Employees: []dto.AreaMetricsEmployee{
+					{ID: uuid.New().String(), FirstName: "Alice", LastName: "Smith", ProfileID: uuid.New().String()},
+				},
+			}, nil
+		},
+	}
+
+	h := handler.NewOrgHandler(nil, nil, nil, nil, nil, metricsSvc)
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/org-nodes/"+nodeID+"/area-metrics?cycleId=cycle-123", nil)
+	req = withChiParam(req, "nodeId", nodeID)
+	rec := httptest.NewRecorder()
+
+	h.GetAreaMetrics(rec, req)
+
+	assert.Equal(t, http.StatusOK, rec.Code)
+	var resp dto.AreaMetricsResponse
+	require.NoError(t, json.NewDecoder(rec.Body).Decode(&resp))
+	assert.Equal(t, nodeID, resp.NodeID)
+	assert.Equal(t, 3, resp.EmployeeCount)
+	assert.Equal(t, 2, resp.EmployeesWithGoals)
+	assert.Len(t, resp.Employees, 1)
+}
+
+func TestGetAreaMetrics_MissingNodeID(t *testing.T) {
+	t.Parallel()
+
+	h := handler.NewOrgHandler(nil, nil, nil, nil, nil, nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/org-nodes//area-metrics", nil)
+	rec := httptest.NewRecorder()
+
+	h.GetAreaMetrics(rec, req)
+
+	assert.Equal(t, http.StatusBadRequest, rec.Code)
+	bodyStr := rec.Body.String()
+	assert.Contains(t, bodyStr, "nodeId path parameter is required")
+}
+
+func TestGetAreaMetrics_ServiceError(t *testing.T) {
+	t.Parallel()
+
+	nodeID := uuid.New().String()
+	metricsSvc := &mockMetricsService{
+		getAreaMetricsFunc: func(_ context.Context, nid, cid string) (*dto.AreaMetricsResponse, error) {
+			return nil, repo.ErrNodeNotFound
+		},
+	}
+
+	h := handler.NewOrgHandler(nil, nil, nil, nil, nil, metricsSvc)
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/org-nodes/"+nodeID+"/area-metrics", nil)
+	req = withChiParam(req, "nodeId", nodeID)
+	rec := httptest.NewRecorder()
+
+	h.GetAreaMetrics(rec, req)
+
+	assert.Equal(t, http.StatusNotFound, rec.Code)
+	var apiErr map[string]interface{}
+	require.NoError(t, json.NewDecoder(rec.Body).Decode(&apiErr))
+	assert.Equal(t, "NODE_NOT_FOUND", apiErr["error"].(map[string]interface{})["code"])
+}
+
+func TestGetAreaMetrics_NoQueryParams(t *testing.T) {
+	t.Parallel()
+
+	nodeID := uuid.New().String()
+	metricsSvc := &mockMetricsService{
+		getAreaMetricsFunc: func(_ context.Context, nid, cid string) (*dto.AreaMetricsResponse, error) {
+			assert.Equal(t, nodeID, nid)
+			assert.Empty(t, cid)
+			return &dto.AreaMetricsResponse{
+				NodeID: nodeID, EmployeeCount: 0,
+				Employees: []dto.AreaMetricsEmployee{},
+			}, nil
+		},
+	}
+
+	h := handler.NewOrgHandler(nil, nil, nil, nil, nil, metricsSvc)
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/org-nodes/"+nodeID+"/area-metrics", nil)
+	req = withChiParam(req, "nodeId", nodeID)
+	rec := httptest.NewRecorder()
+
+	h.GetAreaMetrics(rec, req)
+
+	assert.Equal(t, http.StatusOK, rec.Code)
+	var resp dto.AreaMetricsResponse
+	require.NoError(t, json.NewDecoder(rec.Body).Decode(&resp))
+	assert.Equal(t, nodeID, resp.NodeID)
+	assert.Equal(t, 0, resp.EmployeeCount)
 }
