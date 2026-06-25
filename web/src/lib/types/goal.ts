@@ -18,6 +18,8 @@ export interface KPI {
 	unit: KpiUnit;
 	direction: 'ascendente' | 'descendente';
 	targetValue?: number;
+	currentValue?: number;
+	progressPercent?: number;
 	minValue?: number;
 	maxValue?: number;
 }
@@ -40,7 +42,10 @@ export interface Goal {
 	categoryId: string;
 	weight: number;
 	unit: GoalUnit;
+	direction: 'ascendente' | 'descendente';
 	targetValue: number;
+	baselineValue?: number;
+	progressPercent?: number;
 	progress?: number;
 	progressUpdatedAt?: string;
 	comments?: GoalComment[];

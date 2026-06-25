@@ -13,7 +13,7 @@
 		getKpisForGoal: (goalId: string) => KPI[];
 		onSaveCategory: (data: { id?: string; name: string; description: string; weight: number }) => void;
 		onDeleteCategory: (categoryId: string) => void;
-		onSaveGoal: (data: { id?: string; categoryId: string; name: string; description: string; unit: GoalUnit; weight: number; targetValue: number; linkedKpiIds: string[] }) => void;
+		onSaveGoal: (data: { id?: string; categoryId: string; name: string; description: string; unit: GoalUnit; weight: number; targetValue: number; direction: 'ascendente' | 'descendente'; baselineValue?: number; linkedKpiIds: string[] }) => void;
 		onDeleteGoal: (goalId: string) => void;
 		mode?: 'editor' | 'reader';
 		onRequestChangeCategory?: (category: GoalCategory) => void;
@@ -89,11 +89,13 @@
 	let newGoalUnit = $state<GoalUnit>('porcentaje');
 	let newGoalWeight = $state(0);
 	let newGoalTarget = $state(0);
+	let newGoalDirection = $state<'ascendente' | 'descendente'>('ascendente');
+	let newGoalBaseline = $state<number | undefined>(undefined);
 	let newGoalKpiIds = $state<string[]>([]);
 	let newGoalError = $state('');
 
 	function handleStartCreateGoal() {
-		newGoalName = ''; newGoalDesc = ''; newGoalUnit = 'porcentaje'; newGoalWeight = 0; newGoalTarget = 0; newGoalKpiIds = []; newGoalError = '';
+		newGoalName = ''; newGoalDesc = ''; newGoalUnit = 'porcentaje'; newGoalWeight = 0; newGoalTarget = 0; newGoalDirection = 'ascendente'; newGoalBaseline = undefined; newGoalKpiIds = []; newGoalError = '';
 		isCreatingGoal = true;
 	}
 
@@ -103,9 +105,9 @@
 	}
 
 	function handleSaveNewGoal() {
-		const err = validateGoal({ name: newGoalName, description: newGoalDesc, weight: newGoalWeight, targetValue: newGoalTarget, categoryId: category.id });
+		const err = validateGoal({ name: newGoalName, description: newGoalDesc, weight: newGoalWeight, targetValue: newGoalTarget, direction: newGoalDirection, baselineValue: newGoalDirection === 'descendente' ? newGoalBaseline : undefined, categoryId: category.id });
 		if (err) { newGoalError = err; return; }
-		onSaveGoal({ categoryId: category.id, name: newGoalName.trim(), description: newGoalDesc.trim(), unit: newGoalUnit, weight: newGoalWeight, targetValue: newGoalTarget, linkedKpiIds: newGoalKpiIds });
+		onSaveGoal({ categoryId: category.id, name: newGoalName.trim(), description: newGoalDesc.trim(), unit: newGoalUnit, weight: newGoalWeight, targetValue: newGoalTarget, direction: newGoalDirection, baselineValue: newGoalDirection === 'descendente' ? newGoalBaseline : undefined, linkedKpiIds: newGoalKpiIds });
 		isCreatingGoal = false;
 	}
 
@@ -287,6 +289,19 @@
 						/>
 					</div>
 					<div class="form-control">
+						<label class="label"><span class="label-text text-xs">Dirección</span></label>
+						<div class="flex gap-4 pt-1">
+							<label class="flex items-center gap-1.5 cursor-pointer">
+								<input type="radio" class="radio radio-primary radio-xs" name="new-goal-dir-{category.id}" value="ascendente" checked={newGoalDirection === 'ascendente'} onchange={() => { newGoalDirection = 'ascendente'; if (newGoalBaseline !== undefined) newGoalBaseline = undefined; }} />
+								<span class="text-xs">Ascendente (↑)</span>
+							</label>
+							<label class="flex items-center gap-1.5 cursor-pointer">
+								<input type="radio" class="radio radio-primary radio-xs" name="new-goal-dir-{category.id}" value="descendente" checked={newGoalDirection === 'descendente'} onchange={() => newGoalDirection = 'descendente'} />
+								<span class="text-xs">Descendente (↓)</span>
+							</label>
+						</div>
+					</div>
+					<div class="form-control">
 						<label class="label" for="new-goal-weight-{category.id}"><span class="label-text text-xs">Peso (%)</span></label>
 						<input id="new-goal-weight-{category.id}" type="number" class="input input-bordered input-sm w-full" placeholder="0" min={0} max={100} step={0.1} bind:value={newGoalWeight} required />
 					</div>
@@ -294,6 +309,13 @@
 						<label class="label" for="new-goal-target-{category.id}"><span class="label-text text-xs">Valor objetivo</span></label>
 						<input id="new-goal-target-{category.id}" type="number" class="input input-bordered input-sm w-full" placeholder="0" min={0} step={0.01} bind:value={newGoalTarget} required />
 					</div>
+					{#if newGoalDirection === 'descendente'}
+						<div class="form-control">
+							<label class="label" for="new-goal-baseline-{category.id}"><span class="label-text text-xs">Valor inicial (baseline)</span></label>
+							<input id="new-goal-baseline-{category.id}" type="number" class="input input-bordered input-sm w-full" placeholder="0" min={0} step={0.01} bind:value={newGoalBaseline} required />
+							<label class="label"><span class="label-text-alt text-base-content/40">Valor al inicio de año (punto de partida)</span></label>
+						</div>
+					{/if}
 				</div>
 				{#if allKpis.length > 0}
 					<div class="form-control mb-3">

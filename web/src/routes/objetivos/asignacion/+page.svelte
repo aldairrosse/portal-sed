@@ -31,6 +31,8 @@
 		addGoalComment,
 		deleteGoalComment,
 		getGoalComments,
+		getWeightedScore,
+		getCategoryProgressAverage,
 		storeState,
 		load,
 	} from "$lib/stores/goalsStore.svelte";
@@ -190,16 +192,16 @@
         deleteGoal(goalId);
     }
 
-    function handleSaveGoal(data: { id?: string; categoryId: string; name: string; description: string; unit: GoalUnit; weight: number; targetValue: number; linkedKpiIds: string[] }) {
+    function handleSaveGoal(data: { id?: string; categoryId: string; name: string; description: string; unit: GoalUnit; weight: number; targetValue: number; direction: 'ascendente' | 'descendente'; baselineValue?: number; linkedKpiIds: string[] }) {
         if (data.id) {
-            updateGoal(data.id, { name: data.name, description: data.description, unit: data.unit, weight: data.weight, targetValue: data.targetValue });
+            updateGoal(data.id, { name: data.name, description: data.description, unit: data.unit, weight: data.weight, targetValue: data.targetValue, direction: data.direction, baselineValue: data.baselineValue });
             const currentLinked = getKpisForGoal(data.id).map(k => k.id);
             const toAdd = data.linkedKpiIds.filter(id => !currentLinked.includes(id));
             const toRemove = currentLinked.filter(id => !data.linkedKpiIds.includes(id));
             for (const kpiId of toAdd) linkKpiToGoal(data.id, kpiId);
             for (const kpiId of toRemove) unlinkKpiFromGoal(data.id, kpiId);
         } else {
-            const newGoal: Goal = { id: `goal-${Date.now()}`, name: data.name, description: data.description, categoryId: data.categoryId, weight: data.weight, unit: data.unit, targetValue: data.targetValue };
+            const newGoal: Goal = { id: `goal-${Date.now()}`, name: data.name, description: data.description, categoryId: data.categoryId, weight: data.weight, unit: data.unit, targetValue: data.targetValue, direction: data.direction, baselineValue: data.baselineValue };
             addGoal(newGoal);
             for (const kpiId of data.linkedKpiIds) linkKpiToGoal(newGoal.id, kpiId);
         }
@@ -376,6 +378,35 @@
                     cada categoría.
                 </p>
             {/if}
+        {/if}
+
+        <!-- Weighted score display (only when there's progress data) -->
+        {#if phase === "medio-anio" || phase === "fin-anio"}
+            {@const score = getWeightedScore()}
+            <div class="mt-3 pt-3 border-t border-base-300">
+                <div class="flex items-center justify-between">
+                    <span class="text-sm font-semibold text-base-content">Puntaje ponderado</span>
+                    <span class="text-2xl font-bold font-mono text-base-content">
+                        {Math.round(score)}
+                        <span class="text-base font-normal text-base-content/50">/100</span>
+                    </span>
+                </div>
+                <details class="mt-2">
+                    <summary class="text-xs text-base-content/50 cursor-pointer hover:text-base-content/80 select-none">
+                        Desglose por categoría
+                    </summary>
+                    <div class="mt-2 space-y-1.5">
+                        {#each categories as cat (cat.id)}
+                            {@const catGoals = getGoalsByCategory(cat.id)}
+                            {@const catProgress = getCategoryProgressAverage(cat.id)}
+                            <div class="flex items-center justify-between text-xs">
+                                <span class="text-base-content/70">{cat.name} ({cat.weight}%)</span>
+                                <span class="font-mono text-base-content">{Math.round(catProgress)}%</span>
+                            </div>
+                        {/each}
+                    </div>
+                </details>
+            </div>
         {/if}
     </div>
 

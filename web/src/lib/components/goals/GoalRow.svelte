@@ -2,6 +2,7 @@
 	import { Pencil, Trash2, MessageSquare, MessageCircle, Check } from '@lucide/svelte';
 	import type { Goal, GoalUnit, KPI, CyclePhase } from '$lib/types/goal';
 	import { validateGoal, UNIT_OPTIONS } from './goalValidation';
+	import { deltaIndicator, formatDelta } from '$lib/utils/scoring';
 	import KpiBadge from './KpiBadge.svelte';
 	import ProgressIndicator from './ProgressIndicator.svelte';
 	import CustomSelect from '$lib/components/ui/CustomSelect.svelte';
@@ -9,7 +10,7 @@
 	interface Props {
 		goal: Goal;
 		kpis: KPI[];
-		onSaveGoal: (data: { id?: string; categoryId: string; name: string; description: string; unit: GoalUnit; weight: number; targetValue: number; linkedKpiIds: string[] }) => void;
+		onSaveGoal: (data: { id?: string; categoryId: string; name: string; description: string; unit: GoalUnit; weight: number; targetValue: number; direction: 'ascendente' | 'descendente'; baselineValue?: number; linkedKpiIds: string[] }) => void;
 		onDeleteGoal: (goalId: string) => void;
 		mode?: 'editor' | 'reader';
 		onRequestChange?: (goal: Goal) => void;
@@ -66,6 +67,8 @@
 	let editUnit = $state<GoalUnit>('porcentaje');
 	let editWeight = $state(0);
 	let editTarget = $state(0);
+	let editDirection = $state<'ascendente' | 'descendente'>('ascendente');
+	let editBaseline = $state<number | undefined>(undefined);
 	let editKpiIds = $state<string[]>([]);
 	let editError = $state('');
 
@@ -75,6 +78,8 @@
 		editUnit = goal.unit;
 		editWeight = goal.weight;
 		editTarget = goal.targetValue;
+		editDirection = goal.direction;
+		editBaseline = goal.baselineValue;
 		editKpiIds = kpis.map(k => k.id);
 		editError = '';
 		isEditing = true;
@@ -88,9 +93,9 @@
 	}
 
 	function handleSaveEdit() {
-		const err = validateGoal({ name: editName, description: editDesc, weight: editWeight, targetValue: editTarget, categoryId: goal.categoryId, goalId: goal.id });
+		const err = validateGoal({ name: editName, description: editDesc, weight: editWeight, targetValue: editTarget, direction: editDirection, baselineValue: editDirection === 'descendente' ? editBaseline : undefined, categoryId: goal.categoryId, goalId: goal.id });
 		if (err) { editError = err; return; }
-		onSaveGoal({ id: goal.id, categoryId: goal.categoryId, name: editName.trim(), description: editDesc.trim(), unit: editUnit, weight: editWeight, targetValue: editTarget, linkedKpiIds: editKpiIds });
+		onSaveGoal({ id: goal.id, categoryId: goal.categoryId, name: editName.trim(), description: editDesc.trim(), unit: editUnit, weight: editWeight, targetValue: editTarget, direction: editDirection, baselineValue: editDirection === 'descendente' ? editBaseline : undefined, linkedKpiIds: editKpiIds });
 		isEditing = false;
 		editError = '';
 		onEditingChange(null);
@@ -107,6 +112,26 @@
 			onUpdateProgress?.(goal.id, val);
 		}
 	}
+
+	// ─── Delta indicator ───────────────────────────────────────────────────
+
+	let delta = $derived.by(() => {
+		if (goal.progress === undefined || goal.progress === null) return null;
+		return deltaIndicator(goal.progress, goal.targetValue, goal.baselineValue, goal.direction);
+	});
+
+	let deltaBadgeClass = $derived.by(() => {
+		if (!delta || delta.type === 'neutral') return '';
+		if (delta.type === 'positive') return 'badge-success';
+		return goal.direction === 'descendente' ? 'badge-error' : 'badge-warning';
+	});
+
+	let deltaLabel = $derived.by(() => {
+		if (!delta || delta.type === 'neutral') return '';
+		const formatted = formatDelta(delta.value, delta.type);
+		if (delta.type === 'positive' && goal.direction === 'descendente') return formatted + '%';
+		return formatted;
+	});
 </script>
 
 <tr>
@@ -133,6 +158,19 @@
 						/>
 					</div>
 					<div class="form-control">
+						<label class="label"><span class="label-text text-xs">Dirección</span></label>
+						<div class="flex gap-4 pt-1">
+							<label class="flex items-center gap-1.5 cursor-pointer">
+								<input type="radio" class="radio radio-primary radio-xs" name="edit-goal-dir-{goal.id}" value="ascendente" checked={editDirection === 'ascendente'} onchange={() => { editDirection = 'ascendente'; if (editBaseline !== undefined) editBaseline = undefined; }} />
+								<span class="text-xs">Ascendente (↑)</span>
+							</label>
+							<label class="flex items-center gap-1.5 cursor-pointer">
+								<input type="radio" class="radio radio-primary radio-xs" name="edit-goal-dir-{goal.id}" value="descendente" checked={editDirection === 'descendente'} onchange={() => editDirection = 'descendente'} />
+								<span class="text-xs">Descendente (↓)</span>
+							</label>
+						</div>
+					</div>
+					<div class="form-control">
 						<label class="label" for="edit-goal-weight-{goal.id}"><span class="label-text text-xs">Peso (%)</span></label>
 						<input id="edit-goal-weight-{goal.id}" type="number" class="input input-bordered input-sm w-full" bind:value={editWeight} min={0} max={100} step={0.1} required />
 					</div>
@@ -140,6 +178,13 @@
 						<label class="label" for="edit-goal-target-{goal.id}"><span class="label-text text-xs">Valor objetivo</span></label>
 						<input id="edit-goal-target-{goal.id}" type="number" class="input input-bordered input-sm w-full" bind:value={editTarget} min={0} step={0.01} required />
 					</div>
+					{#if editDirection === 'descendente'}
+						<div class="form-control">
+							<label class="label" for="edit-goal-baseline-{goal.id}"><span class="label-text text-xs">Valor inicial (baseline)</span></label>
+							<input id="edit-goal-baseline-{goal.id}" type="number" class="input input-bordered input-sm w-full" bind:value={editBaseline} min={0} step={0.01} required />
+							<label class="label"><span class="label-text-alt text-base-content/40">Valor al inicio de año (punto de partida)</span></label>
+						</div>
+					{/if}
 				</div>
 				{#if allKpis && allKpis.length > 0}
 					<div class="form-control mb-3">
@@ -181,6 +226,9 @@
 						/>
 					{/if}
 					<ProgressIndicator value={progressValue} max={100} label="Avance final" />
+					{#if delta && delta.type !== 'neutral'}
+						<span class="badge badge-sm {deltaBadgeClass}">{deltaLabel}</span>
+					{/if}
 				</div>
 			{:else if phase === 'medio-anio'}
 				<div class="flex items-center gap-2">
@@ -202,6 +250,9 @@
 						/>
 					{:else}
 						<ProgressIndicator value={progressValue} max={goal.targetValue} />
+					{/if}
+					{#if delta && delta.type !== 'neutral'}
+						<span class="badge badge-sm {deltaBadgeClass}">{deltaLabel}</span>
 					{/if}
 				</div>
 			{:else if kpis.length > 0}

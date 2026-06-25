@@ -19,11 +19,26 @@ export function validateCategory(data: { name: string; description: string; weig
   return null;
 }
 
-export function validateGoal(data: { name: string; description: string; weight: number; targetValue: number; categoryId: string; goalId?: string }): string | null {
+export function validateGoal(data: {
+  name: string;
+  description: string;
+  weight: number;
+  targetValue: number;
+  direction: 'ascendente' | 'descendente';
+  baselineValue?: number;
+  categoryId: string;
+  goalId?: string;
+}): string | null {
   if (!data.name.trim()) return 'El nombre es obligatorio.';
   if (!data.description.trim()) return 'La descripción es obligatoria.';
   if (data.weight < 0 || data.weight > 100) return 'El peso debe estar entre 0 y 100.';
   if (data.targetValue <= 0) return 'El valor objetivo debe ser mayor a 0.';
+  if (data.direction === 'descendente') {
+    if (data.baselineValue === undefined || data.baselineValue === null || isNaN(data.baselineValue))
+      return 'El valor inicial es obligatorio para metas descendentes.';
+    if (data.baselineValue <= data.targetValue)
+      return 'El valor inicial debe ser mayor al valor objetivo en metas descendentes.';
+  }
   const trimmed = data.name.trim();
   const existing = getGoals().filter(g => g.categoryId === data.categoryId);
   const duplicate = existing.find(g => g.name.toLowerCase() === trimmed.toLowerCase() && g.id !== data.goalId);
