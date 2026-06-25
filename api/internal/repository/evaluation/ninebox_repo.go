@@ -31,6 +31,15 @@ func (r *NineBoxRepo) CreateMatrix(ctx context.Context, cycleID, evaluatorID uui
 		Save(ctx)
 }
 
+// CreateMatrixWithPhase creates a new 9×9 matrix for an evaluator in a cycle and phase.
+func (r *NineBoxRepo) CreateMatrixWithPhase(ctx context.Context, cycleID, evaluatorID, phaseID uuid.UUID) (*internal.NineBoxMatrix, error) {
+	return r.client.NineBoxMatrix.Create().
+		SetCycleID(cycleID).
+		SetEvaluatorID(evaluatorID).
+		SetPhaseID(phaseID).
+		Save(ctx)
+}
+
 // GetMatrixByID retrieves a matrix by ID with entries preloaded.
 func (r *NineBoxRepo) GetMatrixByID(ctx context.Context, id uuid.UUID) (*internal.NineBoxMatrix, error) {
 	m, err := r.client.NineBoxMatrix.Query().
@@ -46,8 +55,28 @@ func (r *NineBoxRepo) GetMatrixByID(ctx context.Context, id uuid.UUID) (*interna
 	return m, nil
 }
 
-// ListMatrices returns matrices filtered by cycle and/or evaluator.
-func (r *NineBoxRepo) ListMatrices(ctx context.Context, cycleID, evaluatorID uuid.UUID) ([]*internal.NineBoxMatrix, error) {
+// GetMatrixByPhase retrieves a matrix by cycle + evaluator + phase, with entries preloaded.
+func (r *NineBoxRepo) GetMatrixByPhase(ctx context.Context, cycleID, evaluatorID, phaseID uuid.UUID) (*internal.NineBoxMatrix, error) {
+	m, err := r.client.NineBoxMatrix.Query().
+		Where(
+			nineboxmatrix.CycleID(cycleID),
+			nineboxmatrix.EvaluatorID(evaluatorID),
+			nineboxmatrix.PhaseID(phaseID),
+		).
+		WithEntries().
+		WithPhase().
+		Only(ctx)
+	if err != nil {
+		if internal.IsNotFound(err) {
+			return nil, ErrMatrixNotFound
+		}
+		return nil, err
+	}
+	return m, nil
+}
+
+// ListMatrices returns matrices filtered by cycle, evaluator, and/or phase.
+func (r *NineBoxRepo) ListMatrices(ctx context.Context, cycleID, evaluatorID, phaseID uuid.UUID) ([]*internal.NineBoxMatrix, error) {
 	q := r.client.NineBoxMatrix.Query()
 	if cycleID != uuid.Nil {
 		q = q.Where(nineboxmatrix.CycleID(cycleID))
@@ -55,7 +84,24 @@ func (r *NineBoxRepo) ListMatrices(ctx context.Context, cycleID, evaluatorID uui
 	if evaluatorID != uuid.Nil {
 		q = q.Where(nineboxmatrix.EvaluatorID(evaluatorID))
 	}
+	if phaseID != uuid.Nil {
+		q = q.Where(nineboxmatrix.PhaseID(phaseID))
+	}
 	results, err := q.All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if results == nil {
+		return []*internal.NineBoxMatrix{}, nil
+	}
+	return results, nil
+}
+
+// ListMatricesByCycle returns all matrices for a given cycle.
+func (r *NineBoxRepo) ListMatricesByCycle(ctx context.Context, cycleID uuid.UUID) ([]*internal.NineBoxMatrix, error) {
+	results, err := r.client.NineBoxMatrix.Query().
+		Where(nineboxmatrix.CycleID(cycleID)).
+		All(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -80,6 +126,7 @@ func (r *NineBoxRepo) GetMatrixEntries(ctx context.Context, matrixID uuid.UUID) 
 }
 
 // UpsertEntry creates or updates a single entry within a transaction.
+// Deprecated: Use UpsertEntryByTiers instead.
 func (r *NineBoxRepo) UpsertEntry(ctx context.Context, tx *sql.Tx, matrixID uuid.UUID, evaluateeID uuid.UUID, perf, pot int, quadrant int, comments string) (*internal.NineBoxEntry, error) {
 	now := time.Now()
 	entryID := uuid.New()
@@ -93,13 +140,13 @@ func (r *NineBoxRepo) UpsertEntry(ctx context.Context, tx *sql.Tx, matrixID uuid
 		return nil, err
 	}
 
-	// Upsert with raw SQL
+	// Upsert with raw SQL (tier-based columns)
 	err = tx.QueryRowContext(ctx,
-		`INSERT INTO nine_box_entries (id, created_at, updated_at, matrix_id, evaluatee_id, performance_score, potential_score, quadrant, comments)
+		`INSERT INTO nine_box_entries (id, created_at, updated_at, matrix_id, evaluatee_id, performance_tier, potential_tier, quadrant, comments)
 		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 		 ON CONFLICT (matrix_id, evaluatee_id) DO UPDATE
-		 SET performance_score = EXCLUDED.performance_score,
-		     potential_score = EXCLUDED.potential_score,
+		 SET performance_tier = EXCLUDED.performance_tier,
+		     potential_tier = EXCLUDED.potential_tier,
 		     quadrant = EXCLUDED.quadrant,
 		     comments = EXCLUDED.comments,
 		     updated_at = EXCLUDED.updated_at
@@ -125,7 +172,13 @@ func (r *NineBoxRepo) UpsertEntry(ctx context.Context, tx *sql.Tx, matrixID uuid
 	return r.getEntryByID(ctx, entryID)
 }
 
-// UpdateEntry updates an existing entry with optimistic lock check.
+// UpsertEntryByTiers creates or updates a single entry using tier values (1–3).
+func (r *NineBoxRepo) UpsertEntryByTiers(ctx context.Context, tx *sql.Tx, matrixID uuid.UUID, evaluateeID uuid.UUID, perfTier, potTier, quadrant int, comments string) (*internal.NineBoxEntry, error) {
+	return r.UpsertEntry(ctx, tx, matrixID, evaluateeID, perfTier, potTier, quadrant, comments)
+}
+
+// UpdateEntry updates an existing entry with optimistic lock.
+// Deprecated: Prefer UpsertEntryByTiers via RecomputeMatrix.
 func (r *NineBoxRepo) UpdateEntry(ctx context.Context, tx *sql.Tx, entryID uuid.UUID, perf, pot int, quadrant int, comments string, version int) (*internal.NineBoxEntry, error) {
 	now := time.Now()
 
@@ -146,10 +199,10 @@ func (r *NineBoxRepo) UpdateEntry(ctx context.Context, tx *sql.Tx, entryID uuid.
 		return nil, pkgerrors.ErrConcurrentUpdate
 	}
 
-	// Update entry
+	// Update entry (tier-based columns)
 	_, err = tx.ExecContext(ctx,
 		`UPDATE nine_box_entries
-		 SET performance_score = $1, potential_score = $2, quadrant = $3, comments = $4, updated_at = $5
+		 SET performance_tier = $1, potential_tier = $2, quadrant = $3, comments = $4, updated_at = $5
 		 WHERE id = $6`,
 		perf, pot, quadrant, comments, now, entryID,
 	)
@@ -189,16 +242,16 @@ func (r *NineBoxRepo) BatchUpsertEntries(ctx context.Context, tx *sql.Tx, matrix
 	for _, it := range items {
 		entryID := uuid.New()
 		err := tx.QueryRowContext(ctx,
-			`INSERT INTO nine_box_entries (id, created_at, updated_at, matrix_id, evaluatee_id, performance_score, potential_score, quadrant, comments)
+			`INSERT INTO nine_box_entries (id, created_at, updated_at, matrix_id, evaluatee_id, performance_tier, potential_tier, quadrant, comments)
 			 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 			 ON CONFLICT (matrix_id, evaluatee_id) DO UPDATE
-			 SET performance_score = EXCLUDED.performance_score,
-			     potential_score = EXCLUDED.potential_score,
+			 SET performance_tier = EXCLUDED.performance_tier,
+			     potential_tier = EXCLUDED.potential_tier,
 			     quadrant = EXCLUDED.quadrant,
 			     comments = EXCLUDED.comments,
 			     updated_at = EXCLUDED.updated_at
 			 RETURNING id`,
-			entryID, now, now, matrixID, it.EvaluateeID, it.PerformanceScore, it.PotentialScore, it.Quadrant, it.Comments,
+			entryID, now, now, matrixID, it.EvaluateeID, it.PerformanceTier, it.PotentialTier, it.Quadrant, it.Comments,
 		).Scan(&entryID)
 		if err != nil {
 			return nil, err
@@ -244,6 +297,143 @@ func (r *NineBoxRepo) FetchEntryVersion(ctx context.Context, entryID uuid.UUID) 
 		return 0, err
 	}
 	return version, nil
+}
+
+// ---- queries for RecomputeMatrix ----
+
+// GetGoalAssigneesByCycle returns all employee IDs that have goals assigned in a given cycle.
+// This is used to identify evaluatees for nine-box computation.
+func (r *NineBoxRepo) GetGoalAssigneesByCycle(ctx context.Context, cycleID uuid.UUID) ([]uuid.UUID, error) {
+	rows, err := r.db.QueryContext(ctx,
+		`SELECT DISTINCT employee_id FROM goal_assignments WHERE cycle_id = $1`,
+		cycleID,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var ids []uuid.UUID
+	for rows.Next() {
+		var id uuid.UUID
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+	if ids == nil {
+		return []uuid.UUID{}, nil
+	}
+	return ids, rows.Err()
+}
+
+// GetGoalProgressByEmployee returns the average goal progress (0–100) for an employee.
+// Progress is calculated as: CASE WHEN direction='descendente' THEN (baseline-current)/baseline*100 ELSE (current/target)*100 END
+// Only goals with current_value > 0 are considered (goals with measurable progress).
+func (r *NineBoxRepo) GetGoalProgressByEmployee(ctx context.Context, employeeID, cycleID uuid.UUID) (float64, error) {
+	var avgProgress sql.NullFloat64
+	err := r.db.QueryRowContext(ctx, `
+		SELECT AVG(
+			CASE
+				WHEN g.direction = 'descendente' AND g.baseline_value IS NOT NULL AND g.baseline_value > 0
+					THEN GREATEST(0, (g.baseline_value - g.current_value) / g.baseline_value * 100)
+				ELSE
+					CASE WHEN g.target_value > 0
+						THEN LEAST(100, g.current_value / g.target_value * 100)
+						ELSE 0
+					END
+			END
+		)
+		FROM goals g
+		JOIN goal_categories gc ON g.category_id = gc.id
+		JOIN goal_assignments ga ON ga.employee_id = $1 AND ga.cycle_id = $2
+		WHERE gc.employee_id = ga.employee_id
+		  AND g.current_value > 0
+	`, employeeID, cycleID).Scan(&avgProgress)
+	if err != nil {
+		return 0, err
+	}
+	if !avgProgress.Valid {
+		return 0, nil
+	}
+	return avgProgress.Float64, nil
+}
+
+// GetCompetencyRatingsByEmployee returns the average competency rating for an employee's evaluation in a cycle.
+// Returns self and HR ratings separately (or nil if not available).
+func (r *NineBoxRepo) GetCompetencyRatingsByEmployee(ctx context.Context, employeeID, cycleID uuid.UUID) (selfRating, hrRating *float64, err error) {
+	// Get the evaluation for this employee in this cycle
+	var evalID uuid.UUID
+	var selfCompleted, rhCompleted *time.Time
+	err = r.db.QueryRowContext(ctx,
+		`SELECT id, self_evaluation_completed_at, rh_evaluation_completed_at FROM evaluations WHERE employee_id = $1 AND cycle_id = $2`,
+		employeeID, cycleID,
+	).Scan(&evalID, &selfCompleted, &rhCompleted)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil, nil // no evaluation → no ratings
+		}
+		return nil, nil, err
+	}
+
+	// Get all competency ratings for this evaluation
+	rows, err := r.db.QueryContext(ctx,
+		`SELECT rating, created_at FROM evaluation_competencies WHERE evaluation_id = $1 ORDER BY created_at`,
+		evalID,
+	)
+	if err != nil {
+		return nil, nil, err
+	}
+	defer rows.Close()
+
+	var selfSum, hrSum float64
+	var selfCount, hrCount int
+
+	for rows.Next() {
+		var rating int
+		var createdAt time.Time
+		if err := rows.Scan(&rating, &createdAt); err != nil {
+			return nil, nil, err
+		}
+
+		// Heuristic: ratings created after self_evaluation_completed_at are self evaluations
+		// ratings created after rh_evaluation_completed_at are RH evaluations
+		// If only one is completed, all ratings go to that bucket
+		// If neither is completed, all ratings are treated as a single pool (returned as hrRating)
+		if selfCompleted != nil && createdAt.After(*selfCompleted) && (rhCompleted == nil || createdAt.Before(*rhCompleted)) {
+			selfSum += float64(rating)
+			selfCount++
+		} else if rhCompleted != nil && createdAt.After(*rhCompleted) {
+			hrSum += float64(rating)
+			hrCount++
+		} else if rhCompleted != nil && selfCompleted != nil && createdAt.After(*selfCompleted) {
+			// After self but before RH → treat as self
+			selfSum += float64(rating)
+			selfCount++
+		} else if rhCompleted != nil {
+			hrSum += float64(rating)
+			hrCount++
+		} else {
+			// Default: treat as HR ratings
+			hrSum += float64(rating)
+			hrCount++
+		}
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, nil, err
+	}
+
+	if selfCount > 0 {
+		v := selfSum / float64(selfCount)
+		selfRating = &v
+	}
+	if hrCount > 0 {
+		v := hrSum / float64(hrCount)
+		hrRating = &v
+	}
+
+	return selfRating, hrRating, nil
 }
 
 // getEntryByID fetches a single entry by ID.

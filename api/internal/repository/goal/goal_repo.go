@@ -14,20 +14,22 @@ import (
 
 // GoalRow is the full representation of a Goal including the version field.
 type GoalRow struct {
-	ID           uuid.UUID  `json:"id"`
-	CreatedAt    time.Time  `json:"created_at"`
-	UpdatedAt    time.Time  `json:"updated_at"`
-	CreatedBy    uuid.UUID  `json:"created_by"`
-	UpdatedBy    uuid.UUID  `json:"updated_by"`
-	Name         string     `json:"name"`
-	Description  string     `json:"description"`
-	Unit         string     `json:"unit"`
-	Weight       float64    `json:"weight"`
-	TargetValue  float64    `json:"target_value"`
-	CurrentValue float64    `json:"current_value"`
-	State        string     `json:"state"`
-	CategoryID   uuid.UUID  `json:"category_id"`
-	Version      int        `json:"version"`
+	ID            uuid.UUID  `json:"id"`
+	CreatedAt     time.Time  `json:"created_at"`
+	UpdatedAt     time.Time  `json:"updated_at"`
+	CreatedBy     uuid.UUID  `json:"created_by"`
+	UpdatedBy     uuid.UUID  `json:"updated_by"`
+	Name          string     `json:"name"`
+	Description   string     `json:"description"`
+	Unit          string     `json:"unit"`
+	Weight        float64    `json:"weight"`
+	TargetValue   float64    `json:"target_value"`
+	CurrentValue  float64    `json:"current_value"`
+	Direction     string     `json:"direction"`
+	BaselineValue *float64   `json:"baseline_value,omitempty"`
+	State         string     `json:"state"`
+	CategoryID    uuid.UUID  `json:"category_id"`
+	Version       int        `json:"version"`
 }
 
 // goalToRow converts an ent Goal to a GoalRow, fetching the version from the DB.
@@ -40,20 +42,22 @@ func (r *GoalRepo) goalToRow(ctx context.Context, g *internal.Goal) (*GoalRow, e
 		version = 1
 	}
 	return &GoalRow{
-		ID:           g.ID,
-		CreatedAt:    g.CreatedAt,
-		UpdatedAt:    g.UpdatedAt,
-		CreatedBy:    g.CreatedBy,
-		UpdatedBy:    g.UpdatedBy,
-		Name:         g.Name,
-		Description:  g.Description,
-		Unit:         string(g.Unit),
-		Weight:       g.Weight,
-		TargetValue:  g.TargetValue,
-		CurrentValue: g.CurrentValue,
-		State:        string(g.State),
-		CategoryID:   g.CategoryID,
-		Version:      version,
+		ID:            g.ID,
+		CreatedAt:     g.CreatedAt,
+		UpdatedAt:     g.UpdatedAt,
+		CreatedBy:     g.CreatedBy,
+		UpdatedBy:     g.UpdatedBy,
+		Name:          g.Name,
+		Description:   g.Description,
+		Unit:          string(g.Unit),
+		Weight:        g.Weight,
+		TargetValue:   g.TargetValue,
+		CurrentValue:  g.CurrentValue,
+		Direction:     string(g.Direction),
+		BaselineValue: g.BaselineValue,
+		State:         string(g.State),
+		CategoryID:    g.CategoryID,
+		Version:       version,
 	}, nil
 }
 
@@ -70,36 +74,38 @@ func NewGoalRepo(client *internal.Client, db *sql.DB) *GoalRepo {
 
 // CreateGoal inserts a new goal with version=1 and state='borrador'.
 // Uses raw SQL to set the initial version.
-func (r *GoalRepo) CreateGoal(ctx context.Context, catID uuid.UUID, name, description, unit string, weight, targetValue float64) (*GoalRow, error) {
+func (r *GoalRepo) CreateGoal(ctx context.Context, catID uuid.UUID, name, description, unit, direction string, weight, targetValue float64, baselineValue *float64) (*GoalRow, error) {
 	now := time.Now()
 	id := uuid.New()
 	createdBy := uuid.Nil // TODO(auth:C7): inject from context
 	state := "borrador"
 
 	_, err := r.db.ExecContext(ctx,
-		`INSERT INTO goals (id, created_at, updated_at, created_by, updated_by, name, description, unit, weight, target_value, current_value, state, category_id, version)
-		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
-		id, now, now, createdBy, createdBy, name, description, unit, weight, targetValue, 0.0, state, catID, 1,
+		`INSERT INTO goals (id, created_at, updated_at, created_by, updated_by, name, description, unit, direction, weight, target_value, baseline_value, current_value, state, category_id, version)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)`,
+		id, now, now, createdBy, createdBy, name, description, unit, direction, weight, targetValue, baselineValue, 0.0, state, catID, 1,
 	)
 	if err != nil {
 		return nil, err
 	}
 
 	return &GoalRow{
-		ID:           id,
-		CreatedAt:    now,
-		UpdatedAt:    now,
-		CreatedBy:    createdBy,
-		UpdatedBy:    createdBy,
-		Name:         name,
-		Description:  description,
-		Unit:         unit,
-		Weight:       weight,
-		TargetValue:  targetValue,
-		CurrentValue: 0,
-		State:        state,
-		CategoryID:   catID,
-		Version:      1,
+		ID:            id,
+		CreatedAt:     now,
+		UpdatedAt:     now,
+		CreatedBy:     createdBy,
+		UpdatedBy:     createdBy,
+		Name:          name,
+		Description:   description,
+		Unit:          unit,
+		Weight:        weight,
+		TargetValue:   targetValue,
+		CurrentValue:  0,
+		Direction:     direction,
+		BaselineValue: baselineValue,
+		State:         state,
+		CategoryID:    catID,
+		Version:       1,
 	}, nil
 }
 
@@ -119,14 +125,14 @@ func (r *GoalRepo) GetGoal(ctx context.Context, goalID uuid.UUID) (*GoalRow, err
 
 // UpdateGoal updates goal fields with optimistic locking via version.
 // Uses raw SQL to atomically check and increment version.
-func (r *GoalRepo) UpdateGoal(ctx context.Context, goalID uuid.UUID, name, description, unit string, weight, targetValue float64, expectedVersion int) (*GoalRow, error) {
+func (r *GoalRepo) UpdateGoal(ctx context.Context, goalID uuid.UUID, name, description, unit, direction string, weight, targetValue float64, baselineValue *float64, expectedVersion int) (*GoalRow, error) {
 	now := time.Now()
 	res, err := r.db.ExecContext(ctx,
 		`UPDATE goals
-		 SET name = $1, description = $2, unit = $3, weight = $4, target_value = $5,
-		     updated_at = $6, version = version + 1
-		 WHERE id = $7 AND version = $8`,
-		name, description, unit, weight, targetValue, now, goalID, expectedVersion,
+		 SET name = $1, description = $2, unit = $3, direction = $4, weight = $5, target_value = $6, baseline_value = $7,
+		     updated_at = $8, version = version + 1
+		 WHERE id = $9 AND version = $10`,
+		name, description, unit, direction, weight, targetValue, baselineValue, now, goalID, expectedVersion,
 	)
 	if err != nil {
 		return nil, err

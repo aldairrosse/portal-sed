@@ -13,12 +13,14 @@ import (
 
 // KpiRow is the full representation of a KPI.
 type KpiRow struct {
-	ID          uuid.UUID `json:"id"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
-	Name        string    `json:"name"`
-	Unit        string    `json:"unit"`
-	Description string    `json:"description"`
+	ID           uuid.UUID `json:"id"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
+	Name         string    `json:"name"`
+	Unit         string    `json:"unit"`
+	Description  string    `json:"description"`
+	Direction    string    `json:"direction"`
+	CurrentValue *float64  `json:"current_value,omitempty"`
 }
 
 // kpiToRow converts an ent KPI to a KpiRow.
@@ -27,12 +29,14 @@ func kpiToRow(k *internal.KPI) *KpiRow {
 		return nil
 	}
 	return &KpiRow{
-		ID:          k.ID,
-		CreatedAt:   k.CreatedAt,
-		UpdatedAt:   k.UpdatedAt,
-		Name:        k.Name,
-		Unit:        string(k.Unit),
-		Description: k.Description,
+		ID:           k.ID,
+		CreatedAt:    k.CreatedAt,
+		UpdatedAt:    k.UpdatedAt,
+		Name:         k.Name,
+		Unit:         string(k.Unit),
+		Description:  k.Description,
+		Direction:    string(k.Direction),
+		CurrentValue: k.CurrentValue,
 	}
 }
 
@@ -67,6 +71,20 @@ func (r *KpiRepo) GetKPI(ctx context.Context, kpiID uuid.UUID) (*KpiRow, error) 
 	k, err := r.client.KPI.Query().
 		Where(kpi.ID(kpiID)).
 		Only(ctx)
+	if err != nil {
+		if internal.IsNotFound(err) {
+			return nil, pkgerrors.ErrKpiNotFound
+		}
+		return nil, err
+	}
+	return kpiToRow(k), nil
+}
+
+// UpdateKPIValue updates only the current_value of a KPI.
+func (r *KpiRepo) UpdateKPIValue(ctx context.Context, kpiID uuid.UUID, currentValue float64) (*KpiRow, error) {
+	k, err := r.client.KPI.UpdateOneID(kpiID).
+		SetCurrentValue(currentValue).
+		Save(ctx)
 	if err != nil {
 		if internal.IsNotFound(err) {
 			return nil, pkgerrors.ErrKpiNotFound

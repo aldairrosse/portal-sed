@@ -57,7 +57,7 @@ var (
 	ErrEntryNotFound          = pkgerrors.NewDomainError(ErrCodeEntryNotFound, "The requested matrix entry was not found.", nil)
 	ErrEvaluationFinalized    = pkgerrors.NewDomainError(ErrCodeEvaluationFinalized, "The evaluation has already been finalized; no further changes allowed.", nil)
 	ErrSelfEvalDeadlinePassed = pkgerrors.NewDomainError(ErrCodeSelfEvalDeadlinePassed, "The self-evaluation deadline has passed for this cycle.", nil)
-	ErrQuadrantOutOfRange     = pkgerrors.NewDomainError(ErrCodeQuadrantOutOfRange, "Performance and potential scores must be between 1 and 9.", nil)
+	ErrQuadrantOutOfRange     = pkgerrors.NewDomainError(ErrCodeQuadrantOutOfRange, "Performance and potential tiers must be between 1 and 3.", nil)
 	ErrUnauthorizedEvaluator  = pkgerrors.NewDomainError(ErrCodeUnauthorizedEvaluator, "The authenticated user is not the evaluator for this matrix.", nil)
 )
 
@@ -77,8 +77,8 @@ type GoalCommentUpsert struct {
 // EntryUpsert is a repository-level DTO for upserting a nine-box entry.
 type EntryUpsert struct {
 	EvaluateeID      uuid.UUID
-	PerformanceScore int
-	PotentialScore   int
+	PerformanceTier  int // 1–3 (was PerformanceScore 1–9)
+	PotentialTier    int // 1–3 (was PotentialScore 1–9)
 	Quadrant         int
 	Comments         string
 }
