@@ -1,13 +1,13 @@
 <script lang="ts">
-	import { computeQuadrant, isLoading, getError, reload } from '$lib/stores/nineBoxStore.svelte';
-	import type { NineBoxEntry, NineBoxScale, NineBoxQuadrantDef } from '$lib/types/nine-box';
+	import { isLoading, getError, reload } from '$lib/stores/nineBoxStore.svelte';
+	import type { NineBoxEntry, NineBoxTier, NineBoxQuadrantDef } from '$lib/types/nine-box';
 	import PageSkeleton from '$lib/components/ui/PageSkeleton.svelte';
 	import ErrorState from '$lib/components/ui/ErrorState.svelte';
 
 	interface Props {
 		entries: NineBoxEntry[];
 		quadrantDefs: NineBoxQuadrantDef[];
-		onCellClick: (entries: NineBoxEntry[], perf: NineBoxScale, pot: NineBoxScale) => void;
+		onCellClick: (entries: NineBoxEntry[], perfTier: NineBoxTier, potTier: NineBoxTier) => void;
 	}
 
 	let { entries, quadrantDefs, onCellClick }: Props = $props();
@@ -15,40 +15,73 @@
 	let loading = $derived(isLoading());
 	let error = $derived(getError());
 
-	const perfValues: NineBoxScale[] = [1, 2, 3, 4, 5, 6, 7, 8, 9];
-	const potValues: NineBoxScale[] = [9, 8, 7, 6, 5, 4, 3, 2, 1];
+	const perfTiers: NineBoxTier[] = [1, 2, 3];
+	const potTiers: NineBoxTier[] = [3, 2, 1];
 
-	// ─── Reactive derived data ─────────────────────────────────────────────────
+	const PERF_LABELS: Record<number, string> = { 1: 'Bajo', 2: 'Medio', 3: 'Alto' };
+	const POT_LABELS: Record<number, string> = { 3: 'Alto', 2: 'Medio', 1: 'Bajo' };
 
-	const entriesByCell = $derived.by(() => {
-		// eslint-disable-next-line svelte/prefer-svelte-reactivity
-		const map = new Map<string, NineBoxEntry[]>();
+	function getQuadrantNumber(perfTier: number, potTier: number): number {
+		return (potTier - 1) * 3 + perfTier;
+	}
+
+	const entriesByQuadrant = $derived.by(() => {
+		const map = new Map<number, NineBoxEntry[]>();
 		for (const entry of entries) {
-			const key = `${entry.performance}-${entry.potential}`;
-			const list = map.get(key) ?? [];
+			const q = entry.quadrant;
+			const list = map.get(q) ?? [];
 			list.push(entry);
-			map.set(key, list);
+			map.set(q, list);
 		}
 		return map;
 	});
 
-	function getCellEntries(perf: NineBoxScale, pot: NineBoxScale): NineBoxEntry[] {
-		return entriesByCell.get(`${perf}-${pot}`) ?? [];
+	function getQuadrantEntries(quadrant: number): NineBoxEntry[] {
+		return entriesByQuadrant.get(quadrant) ?? [];
 	}
 
-	function getCellCount(perf: NineBoxScale, pot: NineBoxScale): number {
-		return getCellEntries(perf, pot).length;
+	function getQuadrantDef(quadrant: number): NineBoxQuadrantDef | undefined {
+		return quadrantDefs.find((d) => d.quadrant === quadrant);
 	}
 
-	function getCellQuadrantDef(perf: NineBoxScale, pot: NineBoxScale): NineBoxQuadrantDef | undefined {
-		const q = computeQuadrant(perf, pot);
-		return quadrantDefs.find((d) => d.id === q);
+	// ─── WCAG: Luminance-based text color ─────────────────────────────────────
+
+	/** Relative luminance of an sRGB hex color, per WCAG 2.1 formula. */
+	function relativeLuminance(hex: string): number {
+		const h = hex.replace('#', '');
+		if (h.length < 6) return 0;
+		const r = parseInt(h.substring(0, 2), 16) / 255;
+		const g = parseInt(h.substring(2, 4), 16) / 255;
+		const b = parseInt(h.substring(4, 6), 16) / 255;
+		const lin = (c: number) => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
+		return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
 	}
 
-	// ─── Keyboard navigation ───────────────────────────────────────────────────
+	/** Returns 'text-white' or 'text-black' based on WCAG 2.1 contrast. */
+	function textColorForBg(hex: string | undefined): string {
+		if (!hex) return 'text-white';
+		const lum = relativeLuminance(hex);
+		// Luminance threshold: light bg → black text, dark bg → white text
+		return lum > 0.35 ? 'text-black' : 'text-white';
+	}
 
-	let activePerf = $state<NineBoxScale>(5);
-	let activePot = $state<NineBoxScale>(5);
+	/** Badge class matching the text color for contrast. */
+	function badgeClassForBg(hex: string | undefined): string {
+		if (!hex) return 'badge-ghost text-white border-white/40';
+		const lum = relativeLuminance(hex);
+		if (lum > 0.35) {
+			return 'badge-ghost text-black/70 border-black/30';
+		}
+		return 'badge-ghost text-white border-white/40';
+	}
+
+	// ─── Keyboard navigation (WCAG roving tabindex) ───────────────────────────
+
+	let activePerf = $state<NineBoxTier>(2);
+	let activePot = $state<NineBoxTier>(2);
+
+	/** The aria-activedescendant value for the grid container. */
+	let activeDescendantId = $derived(`nb-cell-${getQuadrantNumber(activePerf, activePot)}`);
 
 	function handleKeydown(e: KeyboardEvent) {
 		let perf = activePerf;
@@ -57,23 +90,26 @@
 
 		switch (e.key) {
 			case 'ArrowUp':
-				if (pot < 9) { pot = (pot + 1) as NineBoxScale; moved = true; }
+				if (pot < 3) { pot = (pot + 1) as NineBoxTier; moved = true; }
 				break;
 			case 'ArrowDown':
-				if (pot > 1) { pot = (pot - 1) as NineBoxScale; moved = true; }
+				if (pot > 1) { pot = (pot - 1) as NineBoxTier; moved = true; }
 				break;
 			case 'ArrowLeft':
-				if (perf > 1) { perf = (perf - 1) as NineBoxScale; moved = true; }
+				if (perf > 1) { perf = (perf - 1) as NineBoxTier; moved = true; }
 				break;
 			case 'ArrowRight':
-				if (perf < 9) { perf = (perf + 1) as NineBoxScale; moved = true; }
+				if (perf < 3) { perf = (perf + 1) as NineBoxTier; moved = true; }
 				break;
-		case 'Enter':
-		case ' ':
-			e.preventDefault();
-			{const cellEntries = getCellEntries(activePerf, activePot);
-			if (cellEntries.length > 0) onCellClick(cellEntries, activePerf, activePot);}
-			return;
+			case 'Enter':
+			case ' ':
+				e.preventDefault();
+				{
+					const q = getQuadrantNumber(activePerf, activePot);
+					const cellEntries = getQuadrantEntries(q);
+					if (cellEntries.length > 0) onCellClick(cellEntries, activePerf, activePot);
+				}
+				return;
 			default:
 				return;
 		}
@@ -82,13 +118,25 @@
 			e.preventDefault();
 			activePerf = perf;
 			activePot = pot;
-			document.getElementById(`nb-cell-${perf}-${pot}`)?.focus();
+			const q = getQuadrantNumber(perf, pot);
+			document.getElementById(`nb-cell-${q}`)?.focus();
 		}
+	}
+
+	// ─── Screen reader live region ────────────────────────────────────────────
+
+	let announcement = $state('');
+	let srTimeout: ReturnType<typeof setTimeout> | undefined;
+
+	function announce(msg: string) {
+		clearTimeout(srTimeout);
+		announcement = msg;
+		srTimeout = setTimeout(() => { announcement = ''; }, 3000);
 	}
 </script>
 
 {#if loading}
-	<PageSkeleton variant="card" rows={9} />
+	<PageSkeleton variant="card" rows={3} />
 {:else if error}
 	<ErrorState
 		title="Error al cargar la matriz"
@@ -97,149 +145,107 @@
 		onretry={reload}
 	/>
 {:else}
+	<!-- Screen reader live region for announcements -->
+	<div
+		aria-live="polite"
+		aria-atomic="true"
+		class="sr-only"
+	>{announcement}</div>
+
 	<div
 		role="grid"
-		aria-label="Matriz 9×9 de desempeño y potencial"
-		aria-rowcount="9"
-		aria-colcount="9"
-		class="grid gap-px w-full max-w-[40rem] mx-auto select-none"
-		style="grid-template-columns: 2rem 1rem 2.25rem repeat(9, 1fr)"
+		aria-label="Matriz 9-Box 3×3"
+		aria-activedescendant={activeDescendantId}
+		class="grid gap-1 w-full max-w-[36rem] mx-auto select-none outline-none"
+		style="grid-template-columns: 2.5rem 1rem repeat(3, 1fr);"
 		tabindex="0"
 		onkeydown={handleKeydown}
+		onfocus={() => announce(`Matriz 3×3 cargada. Use flechas para navegar. Celda activa: ${PERF_LABELS[activePerf]} desempeño, ${POT_LABELS[activePot]} potencial.`)}
 	>
-	<!-- Row 1: Corner + empty top cells -->
-	<div role="presentation" class="min-h-[1.5rem]"></div>
-	<div role="presentation" class="min-h-[1.5rem]"></div>
-	<div role="presentation" class="min-h-[1.5rem]"></div>
-	{#each perfValues as _perf (_perf)}
-		<div role="presentation"></div>
-	{/each}
-
-	<!-- Data rows: Potential 9 → 1 -->
-	{#each potValues as pot, i (pot)}
-		<!-- Potential label (only on first row) -->
-		{#if i === 0}
-			<div
-				role="presentation"
-				class="row-span-9 flex items-center justify-center"
-			>
-				<span
-					class="text-[10px] font-medium text-base-content/40 whitespace-nowrap"
-					style="writing-mode: vertical-rl; transform: rotate(180deg);"
-				>
-					Potencial
-				</span>
-			</div>
-		{/if}
-
-		<!-- Potential level labels: Alto (rows 0-2), Medio (3-5), Bajo (6-8) -->
-		{#if i === 0}
-			<!-- Alto: spans rows 0-2 -->
-			<div
-				role="presentation"
-				class="row-span-3 flex items-center justify-center"
-			>
-				<span
-					class="text-[10px] font-medium text-base-content/50 whitespace-nowrap"
-					style="writing-mode: vertical-rl; transform: rotate(180deg);"
-				>
-					Alto
-				</span>
-			</div>
-		{:else if i === 3}
-			<!-- Medio: spans rows 3-5 -->
-			<div
-				role="presentation"
-				class="row-span-3 flex items-center justify-center"
-			>
-				<span
-					class="text-[10px] font-medium text-base-content/50 whitespace-nowrap"
-					style="writing-mode: vertical-rl; transform: rotate(180deg);"
-				>
-					Medio
-				</span>
-			</div>
-		{:else if i === 6}
-			<!-- Bajo: spans rows 6-8 -->
-			<div
-				role="presentation"
-				class="row-span-3 flex items-center justify-center"
-			>
-				<span
-					class="text-[10px] font-medium text-base-content/50 whitespace-nowrap"
-					style="writing-mode: vertical-rl; transform: rotate(180deg);"
-				>
-					Bajo
-				</span>
-			</div>
-		{/if}
-
-		<!-- Row header -->
-		<div role="rowheader" class="text-right text-[11px] font-medium text-base-content/50 leading-none pr-1 self-center">
-			{pot}
+		<!-- Row 0: Corner + Performance axis labels -->
+		<div role="presentation" class="min-h-[1.5rem]"></div>
+		<div role="presentation" class="min-h-[1.5rem]"></div>
+		<div role="columnheader" class="text-center text-[11px] font-medium text-base-content/50 self-end pb-1">
+			Bajo
+		</div>
+		<div role="columnheader" class="text-center text-[11px] font-medium text-base-content/50 self-end pb-1">
+			Medio
+		</div>
+		<div role="columnheader" class="text-center text-[11px] font-medium text-base-content/50 self-end pb-1">
+			Alto
 		</div>
 
-		<!-- 9 cells per row -->
-		{#each perfValues as perf (perf)}
-			{@const count = getCellCount(perf, pot)}
-			{@const cellEntries = getCellEntries(perf, pot)}
-			{@const qDef = getCellQuadrantDef(perf, pot)}
-			{@const isActive = activePerf === perf && activePot === pot}
-			{@const cellId = `nb-cell-${perf}-${pot}`}
-			<button
-				type="button"
-				id={cellId}
-				role="gridcell"
-				tabindex={isActive ? 0 : -1}
-				aria-rowindex={10 - pot}
-				aria-colindex={perf}
-				aria-label="Desempeño {perf}, Potencial {pot}, {count} empleados"
-				class="relative flex items-center justify-center rounded-sm transition-all duration-100 cursor-pointer hover:brightness-95 active:scale-95 {qDef?.colorClass ?? 'bg-base-200'} {isActive ? 'ring-2 ring-primary ring-offset-1' : ''} min-h-[2.5rem]"
-				onclick={() => {
-					if (cellEntries.length > 0) onCellClick(cellEntries, perf, pot);
-				}}
-				onfocus={() => {
-					activePerf = perf;
-					activePot = pot;
-				}}
+		<!-- Data rows: Potential 3 → 1 (Alto → Bajo) -->
+		{#each potTiers as pot (pot)}
+			{@const potLabel = POT_LABELS[pot]}
+
+			{#if pot === 3}
+				<!-- Vertical axis label — only on first row, spans 3 rows -->
+				<div
+					role="presentation"
+					class="row-span-3 flex items-center justify-center"
+				>
+					<span
+						class="text-[10px] font-medium text-base-content/40 whitespace-nowrap"
+						style="writing-mode: vertical-rl; transform: rotate(180deg);"
+					>
+						Potencial
+					</span>
+				</div>
+			{/if}
+
+			<!-- Row header: Pot label -->
+			<div
+				role="rowheader"
+				class="text-right text-[11px] font-medium text-base-content/50 leading-none pr-1 self-center"
 			>
-				{#if count > 0}
-					<span class="text-sm font-bold text-base-content/70">{count}</span>
-				{/if}
-			</button>
+				{potLabel}
+			</div>
+
+			<!-- 3 cells per row -->
+			{#each perfTiers as perf (perf)}
+				{@const quadrant = getQuadrantNumber(perf, pot)}
+				{@const qDef = getQuadrantDef(quadrant)}
+				{@const cellEntries = getQuadrantEntries(quadrant)}
+				{@const count = cellEntries.length}
+				{@const isActive = activePerf === perf && activePot === pot}
+				{@const cellId = `nb-cell-${quadrant}`}
+				{@const textColor = textColorForBg(qDef?.colorHex)}
+				{@const badgeClass = badgeClassForBg(qDef?.colorHex)}
+				<button
+					type="button"
+					id={cellId}
+					role="gridcell"
+					tabindex={isActive ? 0 : -1}
+					aria-label="Cuadrante {quadrant}: {POT_LABELS[pot]} potencial, {PERF_LABELS[perf]} desempeño, {count} empleados"
+					class="relative flex flex-col items-center justify-center gap-1 rounded-lg transition-all duration-100 cursor-pointer hover:brightness-95 active:scale-[0.98] min-h-[6rem] p-2 {isActive ? 'ring-2 ring-primary ring-offset-2' : ''}"
+					style="background-color: {qDef?.colorHex ?? '#6B7280'};"
+					onclick={() => {
+						if (count > 0) {
+							onCellClick(cellEntries, perf, pot);
+						}
+					}}
+					onfocus={() => {
+						activePerf = perf;
+						activePot = pot;
+						announce(`Celda: ${PERF_LABELS[perf]} desempeño, ${POT_LABELS[pot]} potencial. ${count} empleados.`);
+					}}
+				>
+					<span class="text-xs font-semibold {textColor} drop-shadow-sm text-center leading-tight">
+						{qDef?.title ?? ''}
+					</span>
+					{#if count > 0}
+						<span class="badge badge-sm {badgeClass}">{count}</span>
+					{/if}
+				</button>
+			{/each}
 		{/each}
-	{/each}
 
-	<!-- Bottom: Column numbers + zones + label -->
-	<div role="presentation" class="min-h-[1.5rem]"></div>
-	<div role="presentation" class="min-h-[1.5rem]"></div>
-	<div role="presentation" class="min-h-[1.5rem]"></div>
-	{#each perfValues as perf (perf)}
-		<div role="columnheader" class="text-center text-[11px] font-medium text-base-content/50 leading-none self-start pt-1">
-			{perf}
+		<!-- Bottom: Performance axis title -->
+		<div role="presentation" class="min-h-[1.5rem]"></div>
+		<div role="presentation" class="min-h-[1.5rem]"></div>
+		<div role="presentation" class="col-span-3 text-center text-[10px] text-base-content/40 pt-1">
+			Desempeño
 		</div>
-	{/each}
-
-	<!-- Performance zones: Bajo / Medio / Alto -->
-	<div role="presentation" class="min-h-[1.5rem]"></div>
-	<div role="presentation" class="min-h-[1.5rem]"></div>
-	<div role="presentation" class="min-h-[1.5rem]"></div>
-	<div role="presentation" class="col-span-3 text-center text-[10px] font-medium text-base-content/50 pt-0.5">
-		Bajo
 	</div>
-	<div role="presentation" class="col-span-3 text-center text-[10px] font-medium text-base-content/50 pt-0.5">
-		Medio
-	</div>
-	<div role="presentation" class="col-span-3 text-center text-[10px] font-medium text-base-content/50 pt-0.5">
-		Alto
-	</div>
-
-	<!-- Bottom row: Performance axis label -->
-	<div role="presentation" class="min-h-[1.5rem]"></div>
-	<div role="presentation" class="min-h-[1.5rem]"></div>
-	<div role="presentation" class="min-h-[1.5rem]"></div>
-	<div role="presentation" class="col-span-9 text-center text-[10px] text-base-content/40 pt-1">
-		Desempeño
-	</div>
-</div>
 {/if}

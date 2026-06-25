@@ -1,58 +1,74 @@
 [
 	{
-		"id": "star",
-		"label": "Estrella",
-		"description": "Alto desempeño, alto potencial",
-		"colorClass": "bg-success/20",
-		"perfRange": [7, 9],
-		"potRange": [7, 9]
-	},
-	{
-		"id": "growth",
-		"label": "Crecimiento",
-		"description": "Alto desempeño, potencial medio",
-		"colorClass": "bg-info/20",
-		"perfRange": [7, 9],
-		"potRange": [4, 6]
-	},
-	{
-		"id": "high-potential",
-		"label": "Alto Potencial",
-		"description": "Desempeño medio, alto potencial",
-		"colorClass": "bg-accent/20",
-		"perfRange": [4, 6],
-		"potRange": [7, 9]
-	},
-	{
-		"id": "core-player",
-		"label": "Jugador Clave",
-		"description": "Desempeño medio, potencial medio",
-		"colorClass": "bg-primary/10",
-		"perfRange": [4, 6],
-		"potRange": [4, 6]
-	},
-	{
-		"id": "risk",
-		"label": "Riesgo",
-		"description": "Bajo desempeño, alto potencial",
-		"colorClass": "bg-warning/20",
-		"perfRange": [1, 3],
-		"potRange": [7, 9]
-	},
-	{
-		"id": "effective",
-		"label": "Efectivo",
-		"description": "Bajo desempeño, potencial medio / Desempeño medio, bajo potencial",
-		"colorClass": "bg-secondary/20",
-		"perfRange": [1, 6],
-		"potRange": [1, 6]
-	},
-	{
-		"id": "underperformer",
+		"quadrant": 1,
 		"label": "Bajo Rendimiento",
-		"description": "Bajo desempeño, bajo potencial",
-		"colorClass": "bg-error/20",
-		"perfRange": [1, 3],
-		"potRange": [1, 3]
+		"title": "Plan de acción inmediato",
+		"description": "Bajo desempeño y bajo potencial. Requiere plan de mejora con seguimiento quincenal.",
+		"colorHex": "#EF4444",
+		"actionRecommendation": "Plan de mejora, seguimiento cercano, posible reubicación"
+	},
+	{
+		"quadrant": 2,
+		"label": "En Observación",
+		"title": "Requiere desarrollo dirigido",
+		"description": "Desempeño medio pero bajo potencial. Necesita mentoría y objetivos de corto plazo.",
+		"colorHex": "#F97316",
+		"actionRecommendation": "Mentoría, objetivos trimestrales, evaluación de competencias"
+	},
+	{
+		"quadrant": 3,
+		"label": "Experto Técnico",
+		"title": "Alto desempeño, potencial limitado",
+		"description": "Alto desempeño actual pero bajo potencial de crecimiento. Valioso en su rol actual.",
+		"colorHex": "#EAB308",
+		"actionRecommendation": "Reconocimiento, profundización técnica, mentoría a pares"
+	},
+	{
+		"quadrant": 4,
+		"label": "Talento Emergente",
+		"title": "Potencial sin resultados aún",
+		"description": "Bajo desempeño actual pero alto potencial. Necesita apoyo para traducir potencial en resultados.",
+		"colorHex": "#A855F7",
+		"actionRecommendation": "Coaching, objetivos claros, capacitación en habilidades clave"
+	},
+	{
+		"quadrant": 5,
+		"label": "Jugador Clave",
+		"title": "Sólido y confiable",
+		"description": "Desempeño y potencial medios. Es el núcleo operativo de la organización.",
+		"colorHex": "#3B82F6",
+		"actionRecommendation": "Desarrollo continuo, rotación programada, preparación para siguiente nivel"
+	},
+	{
+		"quadrant": 6,
+		"label": "Crecimiento",
+		"title": "Alto desempeño, potencial medio",
+		"description": "Destaca en resultados actuales y muestra espacio para seguir creciendo.",
+		"colorHex": "#06B6D4",
+		"actionRecommendation": "Desafíos nuevos, proyectos especiales, preparación para rol de mayor responsabilidad"
+	},
+	{
+		"quadrant": 7,
+		"label": "Riesgo",
+		"title": "Alto potencial, bajo desempeño",
+		"description": "Gran potencial pero no está rindiendo. Identificar causa raíz del bajo desempeño.",
+		"colorHex": "#EC4899",
+		"actionRecommendation": "Diagnóstico de desempeño, plan de acción correctivo, evaluación de fit cultural"
+	},
+	{
+		"quadrant": 8,
+		"label": "Alto Potencial",
+		"title": "Listo para el siguiente nivel",
+		"description": "Desempeño sólido y alto potencial de crecimiento. Candidato a sucesión.",
+		"colorHex": "#10B981",
+		"actionRecommendation": "Plan de sucesión, exposición a dirección, asignaciones retadoras"
+	},
+	{
+		"quadrant": 9,
+		"label": "Estrella",
+		"title": "Rendimiento excepcional",
+		"description": "Máximo desempeño y máximo potencial. Referente organizacional.",
+		"colorHex": "#22C55E",
+		"actionRecommendation": "Retención prioritaria, aceleración de carrera, reconocimiento público"
 	}
 ]

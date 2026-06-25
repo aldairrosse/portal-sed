@@ -115,7 +115,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List 9×9 matrices */
+        /** List 9×9 matrices, optionally filtered by cycle, phase, and/or evaluator */
         get: operations["listMatrices"];
         put?: never;
         /** Create a 9×9 matrix */
@@ -150,45 +150,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List entries in a matrix */
+        /** List entries in a matrix (tier-based) */
         get: operations["listMatrixEntries"];
         put?: never;
-        /** Upsert a matrix entry */
-        post: operations["upsertMatrixEntry"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/nine-box/entries/{entryId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /** Update an existing entry */
-        put: operations["updateEntry"];
         post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/nine-box/batch": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Batch submit 9×9 entries */
-        post: operations["batchSubmitEntries"];
         delete?: never;
         options?: never;
         head?: never;
@@ -223,6 +188,40 @@ export interface paths {
         get: operations["getQuadrants"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/nine-box/quadrants/{quadrant}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Update quadrant title, description, colorHex (RH only) */
+        put: operations["updateQuadrant"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/nine-box/recompute/{cycleId}/{phaseId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Recompute all nine-box placements for a cycle and phase */
+        post: operations["recomputeMatrix"];
         delete?: never;
         options?: never;
         head?: never;
@@ -318,6 +317,9 @@ export interface components {
             cycleId?: string;
             /** Format: uuid */
             evaluatorId?: string;
+            /** Format: uuid */
+            phaseId?: string;
+            phaseLabel?: string;
             entries?: components["schemas"]["NineBoxEntryDTO"][];
             /** Format: date-time */
             createdAt?: string;
@@ -329,14 +331,17 @@ export interface components {
             id?: string;
             /** Format: uuid */
             evaluateeId?: string;
-            performanceScore?: number;
-            potentialScore?: number;
+            /** @description 1=low, 2=medium, 3=high */
+            performanceTier?: number;
+            /** @description 1=low, 2=medium, 3=high */
+            potentialTier?: number;
             quadrant?: number;
             quadrantLabel?: string;
             quadrantColor?: string;
             comments?: string;
             version?: number;
         };
+        /** @description ⚠️ Deprecated: entries are computed automatically via RecomputeMatrix. Use POST /nine-box/recompute/{cycleId}/{phaseId} instead. */
         NineBoxEntryInput: {
             /** Format: uuid */
             evaluateeId: string;
@@ -344,6 +349,7 @@ export interface components {
             potentialScore: number;
             comments?: string;
         };
+        /** @description ⚠️ Deprecated: entries are computed automatically via RecomputeMatrix. */
         NineBoxBatchRequest: {
             entries: components["schemas"]["NineBoxEntryInput"][];
         };
@@ -357,9 +363,16 @@ export interface components {
         NineBoxQuadrantDTO: {
             quadrant?: number;
             label?: string;
+            title?: string;
             description?: string;
             color?: string;
+            colorHex?: string;
             actionRecommendation?: string;
+        };
+        NineBoxQuadrantUpdateInput: {
+            title?: string;
+            description?: string;
+            colorHex?: string;
         };
         ErrorResponse: {
             error?: {
@@ -647,6 +660,7 @@ export interface operations {
         parameters: {
             query?: {
                 cycle_id?: string;
+                phase_id?: string;
                 evaluator_id?: string;
             };
             header?: never;
@@ -729,7 +743,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Entry list */
+            /** @description Entry list with tiers 1-3 */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -738,90 +752,6 @@ export interface operations {
                     "application/json": components["schemas"]["NineBoxEntryDTO"][];
                 };
             };
-        };
-    };
-    upsertMatrixEntry: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                matrixId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["NineBoxEntryInput"];
-            };
-        };
-        responses: {
-            /** @description Created or updated entry */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["NineBoxEntryDTO"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-        };
-    };
-    updateEntry: {
-        parameters: {
-            query?: never;
-            header: {
-                "If-Match": number;
-            };
-            path: {
-                entryId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["NineBoxEntryInput"];
-            };
-        };
-        responses: {
-            /** @description Updated entry */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["NineBoxEntryDTO"];
-                };
-            };
-            409: components["responses"]["Conflict"];
-        };
-    };
-    batchSubmitEntries: {
-        parameters: {
-            query: {
-                matrixId: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["NineBoxBatchRequest"];
-            };
-        };
-        responses: {
-            /** @description Processed entries */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["NineBoxEntryDTO"][];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            503: components["responses"]["ServiceUnavailable"];
         };
     };
     getScales: {
@@ -853,7 +783,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Quadrant list */
+            /** @description Quadrant list with title, colorHex */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -862,6 +792,64 @@ export interface operations {
                     "application/json": components["schemas"]["NineBoxQuadrantDTO"][];
                 };
             };
+        };
+    };
+    updateQuadrant: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                quadrant: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NineBoxQuadrantUpdateInput"];
+            };
+        };
+        responses: {
+            /** @description Updated quadrant */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NineBoxQuadrantDTO"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            429: components["responses"]["RateLimit"];
+        };
+    };
+    recomputeMatrix: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                cycleId: string;
+                phaseId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Recompute result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @example ok */
+                        status?: string;
+                        /** @example Matrix recomputed successfully */
+                        message?: string;
+                    };
+                };
+            };
+            429: components["responses"]["RateLimit"];
+            503: components["responses"]["ServiceUnavailable"];
         };
     };
 }

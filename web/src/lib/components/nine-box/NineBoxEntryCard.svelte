@@ -1,29 +1,40 @@
 <script lang="ts">
-	import type { NineBoxEntry, NineBoxScale } from '$lib/types/nine-box';
-	import { getQuadrantDefs } from '$lib/stores/nineBoxStore.svelte';
+	import type { NineBoxEntry, NineBoxTier } from '$lib/types/nine-box';
+	import { getQuadrantDef } from '$lib/stores/nineBoxStore.svelte';
 	import { PROFILE_LABELS } from '$lib/types/evaluation';
 	import { X, ChevronRight } from '@lucide/svelte';
 
 	interface Props {
 		entries: NineBoxEntry[];
-		perf: NineBoxScale;
-		pot: NineBoxScale;
+		perfTier: NineBoxTier;
+		potTier: NineBoxTier;
 		onClose: () => void;
 	}
 
-	let { entries, perf, pot, onClose }: Props = $props();
+	let { entries, perfTier, potTier, onClose }: Props = $props();
 
-	const quadrantDefs = $derived(getQuadrantDefs());
-	const quadrantDef = $derived(quadrantDefs.find((d) => d.id === entries[0]?.quadrant));
+	const TIER_LABELS: Record<number, string> = {
+		1: 'Bajo',
+		2: 'Medio',
+		3: 'Alto'
+	};
+
+	const quadrantDef = $derived(getQuadrantDef(entries[0]?.quadrant ?? 0));
 
 	function getProfileLabel(profileId: string): string {
 		return PROFILE_LABELS[profileId as keyof typeof PROFILE_LABELS] ?? profileId;
 	}
 </script>
 
+<svelte:window onkeydown={(e) => {
+		if (e.key === 'Escape') onClose();
+	}} />
+
 <dialog
 	class="modal"
 	open
+	aria-modal="true"
+	aria-label="Detalle de empleados en cuadrante"
 	onclose={onClose}
 	onclick={(e) => { if (e.target === e.currentTarget) onClose(); }}
 >
@@ -31,7 +42,7 @@
 		<!-- Header -->
 		<div class="flex items-start justify-between gap-2 mb-4">
 			<div>
-				<h3 class="font-bold text-lg">{quadrantDef?.label ?? 'Celda'}</h3>
+				<h3 class="font-bold text-lg">{quadrantDef?.title ?? 'Cuadrante'}</h3>
 				<p class="text-sm text-base-content/50 mt-1">
 					{entries.length} {entries.length === 1 ? 'empleado' : 'empleados'}
 				</p>
@@ -43,16 +54,18 @@
 			</form>
 		</div>
 
-		<!-- Scores legend -->
+		<!-- Tiers legend -->
 		<div class="flex gap-4 mb-4 p-3 bg-base-200 rounded-lg">
 			<div class="flex-1 text-center">
 				<span class="text-xs font-medium text-base-content/70 block">Desempeño</span>
-				<span class="text-xl font-bold text-base-content">{perf}</span>
+				<span class="text-xl font-bold text-base-content">{TIER_LABELS[perfTier]}</span>
+				<span class="text-xs text-base-content/40 block mt-0.5">Tier {perfTier}</span>
 			</div>
 			<div class="divider divider-horizontal"></div>
 			<div class="flex-1 text-center">
 				<span class="text-xs font-medium text-base-content/70 block">Potencial</span>
-				<span class="text-xl font-bold text-base-content">{pot}</span>
+				<span class="text-xl font-bold text-base-content">{TIER_LABELS[potTier]}</span>
+				<span class="text-xs text-base-content/40 block mt-0.5">Tier {potTier}</span>
 			</div>
 		</div>
 
@@ -86,6 +99,11 @@
 				</li>
 			{/each}
 		</ul>
+
+		<!-- Read-only notice -->
+		<p class="text-xs text-base-content/30 text-center mt-4">
+			Los tiers se calculan automáticamente desde avance de metas y evaluación de competencias.
+		</p>
 	</div>
 	<form method="dialog" class="modal-backdrop">
 		<button>Cerrar</button>
