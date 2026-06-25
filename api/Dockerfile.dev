@@ -1,0 +1,17 @@
+FROM golang:1.26-alpine
+
+RUN go install github.com/githubnemo/CompileDaemon@latest
+
+WORKDIR /app
+
+# Cache dependencies first
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Copy source (overridden by volume mount in dev)
+COPY . .
+
+EXPOSE 8080
+
+# CompileDaemon watches for .go file changes, rebuilds and restarts
+CMD ["CompileDaemon", "-build=go build -o /tmp/api ./cmd/server", "-command=/tmp/api", "-color"]
