@@ -65,7 +65,7 @@
 		<!-- Standalone routes (/login) only render once the session is resolved
 		     AND the user is not already authenticated. If they are, the
 		     $effect above redirects to '/' and the children never mount. -->
-		{#if session.loading || session.user}
+		{#if session.user}
 			<div class="flex min-h-screen items-center justify-center">
 				<span class="loading loading-spinner loading-lg"></span>
 			</div>

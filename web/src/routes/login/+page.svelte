@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { devLogin, getSession } from '$lib/api/session.svelte';
+	import { AlertCircle } from '@lucide/svelte';
 	import type { EvaluationProfile } from '$lib/types/evaluation';
 
 	let pageLoading = $state(false);
@@ -45,9 +46,22 @@
 		error = null;
 		try {
 			await devLogin(email);
-			goto('/');
 		} catch (e) {
 			error = e instanceof Error ? e.message : 'Error al iniciar sesión';
+			pageLoading = false;
+			return;
+		}
+
+		// devLogin completó sin throw, pero pudo haber error interno (ensureSession falló en API mode)
+		if (session.error) {
+			error = session.error;
+			pageLoading = false;
+			return;
+		}
+
+		if (session.user) {
+			goto('/');
+		} else {
 			pageLoading = false;
 		}
 	}
@@ -58,24 +72,21 @@
 </svelte:head>
 
 <div class="flex min-h-screen items-center justify-center bg-base-200">
-	<div class="w-full max-w-sm rounded-2xl bg-base-100 p-8 shadow-sm">
 	{#if session.loading || pageLoading}
 		<div class="flex flex-col items-center gap-4 py-12">
 			<span class="loading loading-spinner loading-lg text-primary"></span>
 			<p class="text-sm text-base-content/60">Iniciando sesión con SSO...</p>
 		</div>
-		{:else if error}
-			<div class="flex flex-col items-center gap-4 py-8">
-				<div class="alert alert-error">
-					<span>{error}</span>
-				</div>
-				{#if import.meta.env.DEV}
-					<button class="btn btn-primary btn-sm" onclick={() => handleDevLogin(DEMO_USERS[0].email)}>
-						Reintentar con demo
-					</button>
-				{/if}
-			</div>
-		{:else}
+	{:else if error}
+		<div class="flex flex-col items-center gap-3">
+			<AlertCircle class="w-8 h-8 text-error" />
+			<p class="text-sm text-center max-w-xs">{error}</p>
+			<button class="btn btn-outline btn-sm" onclick={() => { error = null; }}>
+				Volver
+			</button>
+		</div>
+	{:else}
+		<div class="w-full max-w-sm rounded-2xl bg-base-100 p-8 shadow-sm">
 			<div class="text-center">
 				<h1 class="text-2xl font-bold">Portal SED</h1>
 				<p class="mt-2 text-sm text-base-content/60">Inicia sesión para continuar</p>
@@ -101,6 +112,6 @@
 					</div>
 				{/if}
 			</div>
-		{/if}
-	</div>
+		</div>
+	{/if}
 </div>
