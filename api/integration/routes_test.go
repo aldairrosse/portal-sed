@@ -66,6 +66,7 @@ func allRoutes() []routeTestCase {
 		{"POST", "/api/v1/kpis", "CreateKPI", authOK},
 		{"PUT", "/api/v1/kpis/" + kpiID, "UpdateKPI", authOK},
 		{"DELETE", "/api/v1/kpis/" + kpiID, "DeleteKPI", authOK},
+		{"PATCH", "/api/v1/kpis/" + kpiID + "/value", "PatchKPIValue", authOK},
 
 		// --- Goal: KPI Linking ---
 		{"POST", "/api/v1/goals/" + goalID + "/kpis", "LinkKPI", authOK},
@@ -74,6 +75,9 @@ func allRoutes() []routeTestCase {
 		// --- Goal: Assignments ---
 		{"GET", "/api/v1/employees/" + empID + "/assignments", "GetAssignment", authOK},
 		{"POST", "/api/v1/employees/" + empID + "/assignments", "CreateAssignment", authOK},
+
+		// --- Goal: Scoring ---
+		{"GET", "/api/v1/employees/" + empID + "/score", "GetEmployeeScore", authOK},
 
 		// --- Cycle ---
 		{"GET", "/api/v1/cycles", "ListCycles", authOK},
@@ -95,6 +99,7 @@ func allRoutes() []routeTestCase {
 
 		// --- Nine-Box ---
 		{"GET", "/api/v1/nine-box/matrices?cycle_id=" + cycleID + "&evaluator_id=" + empID, "ListMatrices", authOK},
+		{"GET", "/api/v1/nine-box/matrices?cycle_id=" + cycleID + "&phase_id=" + cycleID, "ListMatricesByPhase", authOK},
 		{"POST", "/api/v1/nine-box/matrices", "CreateMatrix", authOK},
 		{"GET", "/api/v1/nine-box/matrices/" + matrixID, "GetNineBoxMatrix", authOK},
 		{"GET", "/api/v1/nine-box/matrices/" + matrixID + "/entries", "ListMatrixEntries", authOK},
@@ -103,6 +108,8 @@ func allRoutes() []routeTestCase {
 		{"POST", "/api/v1/nine-box/batch?matrixId=" + matrixID, "BatchSubmitEntries", authOK},
 		{"GET", "/api/v1/nine-box/scales", "GetNineBoxScales", authOK},
 		{"GET", "/api/v1/nine-box/quadrants", "GetNineBoxQuadrants", authOK},
+		{"PUT", "/api/v1/nine-box/quadrants/5", "UpdateQuadrant", []int{200, 400, 401, 404, 422}},
+		{"POST", "/api/v1/nine-box/recompute/" + cycleID + "/" + cycleID, "RecomputeMatrix", []int{200, 400, 401, 404}},
 
 		// --- Competency: Pillars ---
 		{"GET", "/api/v1/pillars", "ListPillars", authOK},

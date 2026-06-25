@@ -54,6 +54,15 @@ func (nopPhaseChecker) GetCurrentPhase(_ context.Context, _ string) (goalsvc.Cyc
 	return goalsvc.PhaseAsignacion, nil
 }
 
+// fixedPhaseChecker returns the given phase for all queries.
+type fixedPhaseChecker struct {
+	phase goalsvc.CyclePhase
+}
+
+func (f fixedPhaseChecker) GetCurrentPhase(_ context.Context, _ string) (goalsvc.CyclePhase, error) {
+	return f.phase, nil
+}
+
 // evalCyclePhaseCheck implements evalsvc.CyclePhaseChecker backed by the cycle repo.
 type evalCyclePhaseCheck struct {
 	cycleRepo *repocycle.CycleRepo
@@ -108,10 +117,15 @@ type testServer struct {
 	Clean  func()
 }
 
-// setupTestServer builds the full router with real DB and returns a testServer.
+// setupTestServer builds the full router with real DB (phase=asignacion).
+func setupTestServer(t *testing.T) *testServer {
+	return setupTestServerWithPhaseChecker(t, nopPhaseChecker{})
+}
+
+// setupTestServerWithPhaseChecker builds the full router with the given phase checker.
 // It connects to the PostgreSQL instance specified by DATABASE_URL, runs
 // auto-migration, seeds data, and wires all handlers.
-func setupTestServer(t *testing.T) *testServer {
+func setupTestServerWithPhaseChecker(t *testing.T, phaseChecker goalsvc.PhaseChecker) *testServer {
 	t.Helper()
 
 	databaseURL := os.Getenv("DATABASE_URL")
@@ -188,6 +202,7 @@ func setupTestServer(t *testing.T) *testServer {
 	orgNodeRepo := repoorganization.NewOrgNodeRepo(client, db)
 	employeeRepo := repoorganization.NewEmployeeRepo(client, db)
 	scopeRepo := repoorganization.NewEvaluatorScopeRepo(client, db)
+	metricsRepo := repoorganization.NewMetricsRepo(client, db)
 
 	sessionStore := auth.NewSessionStore(db)
 	employeeReader := authsvc.NewEmployeeReader(db)
@@ -195,12 +210,12 @@ func setupTestServer(t *testing.T) *testServer {
 	// Services
 	authSvc := authsvc.NewAuthService(sessionStore, employeeReader, db)
 
-	phaseChecker := nopPhaseChecker{}
 	phaseCheck := goalsvc.NewPhaseCheck(phaseChecker)
 	catSvc := goalsvc.NewCategoryService(catRepo, phaseCheck)
 	goalSvc := goalsvc.NewGoalService(goalRepo, catRepo, kpiRepo, linkRepo, weightQ, phaseCheck)
 	progressSvc := goalsvc.NewProgressService(goalRepo, catRepo, phaseCheck)
 	kpiSvc := goalsvc.NewKPIService(kpiRepo, linkRepo, goalRepo, catRepo, phaseCheck)
+	scoringSvc := goalsvc.NewScoringService(catRepo, goalRepo)
 	weightSvc := goalsvc.NewWeightValidationService(catRepo, goalRepo)
 	batchSvc := goalsvc.NewBatchService(goalRepo, catRepo, kpiRepo, linkRepo, weightQ, phaseCheck)
 
@@ -224,17 +239,18 @@ func setupTestServer(t *testing.T) *testServer {
 	employeeSvc := orgsvc.NewEmployeeService(employeeRepo, client)
 	evaluateeSvc := orgsvc.NewEvaluateeService(employeeRepo, orgNodeRepo, scopeRepo, client)
 	evaluatorSvc := orgsvc.NewEvaluatorService(employeeRepo, orgNodeRepo, scopeRepo, client)
+	metricsSvc := orgsvc.NewMetricsService(metricsRepo, orgNodeRepo, client)
 
 	// Handlers
 	authH := authhandler.NewAuthHandler(authSvc)
 	goalH := goalhandler.NewGoalHandler(
-		catSvc, goalSvc, progressSvc, kpiSvc, weightSvc, batchSvc,
+		catSvc, goalSvc, progressSvc, kpiSvc, scoringSvc, weightSvc, batchSvc,
 		catRepo, goalRepo, kpiRepo, linkRepo, assignRepo,
 	)
 	cycleH := cyclehandler.NewCycleHandler(cycleSvc, phaseSvc)
 	compH := comphandler.NewHandler(pillarSvc, competencySvc, scaleSvc, catalogSvc, acceptanceSvc)
 	evalH := evalhandler.NewEvaluationHandler(evalSvc, nineBoxSvc, dashboardSvc)
-	orgH := orghandler.NewOrgHandler(orgTreeSvc, orgNodeSvc, employeeSvc, evaluateeSvc, evaluatorSvc)
+	orgH := orghandler.NewOrgHandler(orgTreeSvc, orgNodeSvc, employeeSvc, evaluateeSvc, evaluatorSvc, metricsSvc)
 
 	// Router
 	r := chi.NewRouter()
