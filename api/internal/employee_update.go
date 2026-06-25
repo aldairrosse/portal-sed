@@ -189,6 +189,26 @@ func (_u *EmployeeUpdate) SetNillableProfileID(v *uuid.UUID) *EmployeeUpdate {
 	return _u
 }
 
+// SetJobTitle sets the "job_title" field.
+func (_u *EmployeeUpdate) SetJobTitle(v string) *EmployeeUpdate {
+	_u.mutation.SetJobTitle(v)
+	return _u
+}
+
+// SetNillableJobTitle sets the "job_title" field if the given value is not nil.
+func (_u *EmployeeUpdate) SetNillableJobTitle(v *string) *EmployeeUpdate {
+	if v != nil {
+		_u.SetJobTitle(*v)
+	}
+	return _u
+}
+
+// ClearJobTitle clears the value of the "job_title" field.
+func (_u *EmployeeUpdate) ClearJobTitle() *EmployeeUpdate {
+	_u.mutation.ClearJobTitle()
+	return _u
+}
+
 // SetOrgNode sets the "org_node" edge to the OrgNode entity.
 func (_u *EmployeeUpdate) SetOrgNode(v *OrgNode) *EmployeeUpdate {
 	return _u.SetOrgNodeID(v.ID)
@@ -307,6 +327,21 @@ func (_u *EmployeeUpdate) AddNineBoxEntries(v ...*NineBoxEntry) *EmployeeUpdate 
 		ids[i] = v[i].ID
 	}
 	return _u.AddNineBoxEntryIDs(ids...)
+}
+
+// AddHeadedDepartmentIDs adds the "headed_department" edge to the OrgNode entity by IDs.
+func (_u *EmployeeUpdate) AddHeadedDepartmentIDs(ids ...uuid.UUID) *EmployeeUpdate {
+	_u.mutation.AddHeadedDepartmentIDs(ids...)
+	return _u
+}
+
+// AddHeadedDepartment adds the "headed_department" edges to the OrgNode entity.
+func (_u *EmployeeUpdate) AddHeadedDepartment(v ...*OrgNode) *EmployeeUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddHeadedDepartmentIDs(ids...)
 }
 
 // Mutation returns the EmployeeMutation object of the builder.
@@ -479,6 +514,27 @@ func (_u *EmployeeUpdate) RemoveNineBoxEntries(v ...*NineBoxEntry) *EmployeeUpda
 	return _u.RemoveNineBoxEntryIDs(ids...)
 }
 
+// ClearHeadedDepartment clears all "headed_department" edges to the OrgNode entity.
+func (_u *EmployeeUpdate) ClearHeadedDepartment() *EmployeeUpdate {
+	_u.mutation.ClearHeadedDepartment()
+	return _u
+}
+
+// RemoveHeadedDepartmentIDs removes the "headed_department" edge to OrgNode entities by IDs.
+func (_u *EmployeeUpdate) RemoveHeadedDepartmentIDs(ids ...uuid.UUID) *EmployeeUpdate {
+	_u.mutation.RemoveHeadedDepartmentIDs(ids...)
+	return _u
+}
+
+// RemoveHeadedDepartment removes "headed_department" edges to OrgNode entities.
+func (_u *EmployeeUpdate) RemoveHeadedDepartment(v ...*OrgNode) *EmployeeUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveHeadedDepartmentIDs(ids...)
+}
+
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (_u *EmployeeUpdate) Save(ctx context.Context) (int, error) {
 	_u.defaults()
@@ -537,6 +593,11 @@ func (_u *EmployeeUpdate) check() error {
 			return &ValidationError{Name: "email", err: fmt.Errorf(`internal: validator failed for field "Employee.email": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.JobTitle(); ok {
+		if err := employee.JobTitleValidator(v); err != nil {
+			return &ValidationError{Name: "job_title", err: fmt.Errorf(`internal: validator failed for field "Employee.job_title": %w`, err)}
+		}
+	}
 	if _u.mutation.OrgNodeCleared() && len(_u.mutation.OrgNodeIDs()) > 0 {
 		return errors.New(`internal: clearing a required unique edge "Employee.org_node"`)
 	}
@@ -581,6 +642,12 @@ func (_u *EmployeeUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.IsActive(); ok {
 		_spec.SetField(employee.FieldIsActive, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.JobTitle(); ok {
+		_spec.SetField(employee.FieldJobTitle, field.TypeString, value)
+	}
+	if _u.mutation.JobTitleCleared() {
+		_spec.ClearField(employee.FieldJobTitle, field.TypeString)
 	}
 	if _u.mutation.OrgNodeCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -977,6 +1044,51 @@ func (_u *EmployeeUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(nineboxentry.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.HeadedDepartmentCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   employee.HeadedDepartmentTable,
+			Columns: []string{employee.HeadedDepartmentColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(orgnode.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedHeadedDepartmentIDs(); len(nodes) > 0 && !_u.mutation.HeadedDepartmentCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   employee.HeadedDepartmentTable,
+			Columns: []string{employee.HeadedDepartmentColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(orgnode.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.HeadedDepartmentIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   employee.HeadedDepartmentTable,
+			Columns: []string{employee.HeadedDepartmentColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(orgnode.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -1156,6 +1268,26 @@ func (_u *EmployeeUpdateOne) SetNillableProfileID(v *uuid.UUID) *EmployeeUpdateO
 	return _u
 }
 
+// SetJobTitle sets the "job_title" field.
+func (_u *EmployeeUpdateOne) SetJobTitle(v string) *EmployeeUpdateOne {
+	_u.mutation.SetJobTitle(v)
+	return _u
+}
+
+// SetNillableJobTitle sets the "job_title" field if the given value is not nil.
+func (_u *EmployeeUpdateOne) SetNillableJobTitle(v *string) *EmployeeUpdateOne {
+	if v != nil {
+		_u.SetJobTitle(*v)
+	}
+	return _u
+}
+
+// ClearJobTitle clears the value of the "job_title" field.
+func (_u *EmployeeUpdateOne) ClearJobTitle() *EmployeeUpdateOne {
+	_u.mutation.ClearJobTitle()
+	return _u
+}
+
 // SetOrgNode sets the "org_node" edge to the OrgNode entity.
 func (_u *EmployeeUpdateOne) SetOrgNode(v *OrgNode) *EmployeeUpdateOne {
 	return _u.SetOrgNodeID(v.ID)
@@ -1274,6 +1406,21 @@ func (_u *EmployeeUpdateOne) AddNineBoxEntries(v ...*NineBoxEntry) *EmployeeUpda
 		ids[i] = v[i].ID
 	}
 	return _u.AddNineBoxEntryIDs(ids...)
+}
+
+// AddHeadedDepartmentIDs adds the "headed_department" edge to the OrgNode entity by IDs.
+func (_u *EmployeeUpdateOne) AddHeadedDepartmentIDs(ids ...uuid.UUID) *EmployeeUpdateOne {
+	_u.mutation.AddHeadedDepartmentIDs(ids...)
+	return _u
+}
+
+// AddHeadedDepartment adds the "headed_department" edges to the OrgNode entity.
+func (_u *EmployeeUpdateOne) AddHeadedDepartment(v ...*OrgNode) *EmployeeUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddHeadedDepartmentIDs(ids...)
 }
 
 // Mutation returns the EmployeeMutation object of the builder.
@@ -1446,6 +1593,27 @@ func (_u *EmployeeUpdateOne) RemoveNineBoxEntries(v ...*NineBoxEntry) *EmployeeU
 	return _u.RemoveNineBoxEntryIDs(ids...)
 }
 
+// ClearHeadedDepartment clears all "headed_department" edges to the OrgNode entity.
+func (_u *EmployeeUpdateOne) ClearHeadedDepartment() *EmployeeUpdateOne {
+	_u.mutation.ClearHeadedDepartment()
+	return _u
+}
+
+// RemoveHeadedDepartmentIDs removes the "headed_department" edge to OrgNode entities by IDs.
+func (_u *EmployeeUpdateOne) RemoveHeadedDepartmentIDs(ids ...uuid.UUID) *EmployeeUpdateOne {
+	_u.mutation.RemoveHeadedDepartmentIDs(ids...)
+	return _u
+}
+
+// RemoveHeadedDepartment removes "headed_department" edges to OrgNode entities.
+func (_u *EmployeeUpdateOne) RemoveHeadedDepartment(v ...*OrgNode) *EmployeeUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveHeadedDepartmentIDs(ids...)
+}
+
 // Where appends a list predicates to the EmployeeUpdate builder.
 func (_u *EmployeeUpdateOne) Where(ps ...predicate.Employee) *EmployeeUpdateOne {
 	_u.mutation.Where(ps...)
@@ -1517,6 +1685,11 @@ func (_u *EmployeeUpdateOne) check() error {
 			return &ValidationError{Name: "email", err: fmt.Errorf(`internal: validator failed for field "Employee.email": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.JobTitle(); ok {
+		if err := employee.JobTitleValidator(v); err != nil {
+			return &ValidationError{Name: "job_title", err: fmt.Errorf(`internal: validator failed for field "Employee.job_title": %w`, err)}
+		}
+	}
 	if _u.mutation.OrgNodeCleared() && len(_u.mutation.OrgNodeIDs()) > 0 {
 		return errors.New(`internal: clearing a required unique edge "Employee.org_node"`)
 	}
@@ -1578,6 +1751,12 @@ func (_u *EmployeeUpdateOne) sqlSave(ctx context.Context) (_node *Employee, err 
 	}
 	if value, ok := _u.mutation.IsActive(); ok {
 		_spec.SetField(employee.FieldIsActive, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.JobTitle(); ok {
+		_spec.SetField(employee.FieldJobTitle, field.TypeString, value)
+	}
+	if _u.mutation.JobTitleCleared() {
+		_spec.ClearField(employee.FieldJobTitle, field.TypeString)
 	}
 	if _u.mutation.OrgNodeCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -1974,6 +2153,51 @@ func (_u *EmployeeUpdateOne) sqlSave(ctx context.Context) (_node *Employee, err 
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(nineboxentry.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.HeadedDepartmentCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   employee.HeadedDepartmentTable,
+			Columns: []string{employee.HeadedDepartmentColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(orgnode.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedHeadedDepartmentIDs(); len(nodes) > 0 && !_u.mutation.HeadedDepartmentCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   employee.HeadedDepartmentTable,
+			Columns: []string{employee.HeadedDepartmentColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(orgnode.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.HeadedDepartmentIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   employee.HeadedDepartmentTable,
+			Columns: []string{employee.HeadedDepartmentColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(orgnode.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

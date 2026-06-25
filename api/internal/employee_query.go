@@ -28,20 +28,21 @@ import (
 // EmployeeQuery is the builder for querying Employee entities.
 type EmployeeQuery struct {
 	config
-	ctx                 *QueryContext
-	order               []employee.OrderOption
-	inters              []Interceptor
-	predicates          []predicate.Employee
-	withOrgNode         *OrgNodeQuery
-	withManager         *EmployeeQuery
-	withDirectReports   *EmployeeQuery
-	withProfile         *EvaluationProfileQuery
-	withEvaluatorScopes *EvaluatorScopeQuery
-	withGoalCategories  *GoalCategoryQuery
-	withGoalAssignments *GoalAssignmentQuery
-	withEvaluations     *EvaluationQuery
-	withNineBoxMatrices *NineBoxMatrixQuery
-	withNineBoxEntries  *NineBoxEntryQuery
+	ctx                  *QueryContext
+	order                []employee.OrderOption
+	inters               []Interceptor
+	predicates           []predicate.Employee
+	withOrgNode          *OrgNodeQuery
+	withManager          *EmployeeQuery
+	withDirectReports    *EmployeeQuery
+	withProfile          *EvaluationProfileQuery
+	withEvaluatorScopes  *EvaluatorScopeQuery
+	withGoalCategories   *GoalCategoryQuery
+	withGoalAssignments  *GoalAssignmentQuery
+	withEvaluations      *EvaluationQuery
+	withNineBoxMatrices  *NineBoxMatrixQuery
+	withNineBoxEntries   *NineBoxEntryQuery
+	withHeadedDepartment *OrgNodeQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -298,6 +299,28 @@ func (_q *EmployeeQuery) QueryNineBoxEntries() *NineBoxEntryQuery {
 	return query
 }
 
+// QueryHeadedDepartment chains the current query on the "headed_department" edge.
+func (_q *EmployeeQuery) QueryHeadedDepartment() *OrgNodeQuery {
+	query := (&OrgNodeClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(employee.Table, employee.FieldID, selector),
+			sqlgraph.To(orgnode.Table, orgnode.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, employee.HeadedDepartmentTable, employee.HeadedDepartmentColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
 // First returns the first Employee entity from the query.
 // Returns a *NotFoundError when no Employee was found.
 func (_q *EmployeeQuery) First(ctx context.Context) (*Employee, error) {
@@ -485,21 +508,22 @@ func (_q *EmployeeQuery) Clone() *EmployeeQuery {
 		return nil
 	}
 	return &EmployeeQuery{
-		config:              _q.config,
-		ctx:                 _q.ctx.Clone(),
-		order:               append([]employee.OrderOption{}, _q.order...),
-		inters:              append([]Interceptor{}, _q.inters...),
-		predicates:          append([]predicate.Employee{}, _q.predicates...),
-		withOrgNode:         _q.withOrgNode.Clone(),
-		withManager:         _q.withManager.Clone(),
-		withDirectReports:   _q.withDirectReports.Clone(),
-		withProfile:         _q.withProfile.Clone(),
-		withEvaluatorScopes: _q.withEvaluatorScopes.Clone(),
-		withGoalCategories:  _q.withGoalCategories.Clone(),
-		withGoalAssignments: _q.withGoalAssignments.Clone(),
-		withEvaluations:     _q.withEvaluations.Clone(),
-		withNineBoxMatrices: _q.withNineBoxMatrices.Clone(),
-		withNineBoxEntries:  _q.withNineBoxEntries.Clone(),
+		config:               _q.config,
+		ctx:                  _q.ctx.Clone(),
+		order:                append([]employee.OrderOption{}, _q.order...),
+		inters:               append([]Interceptor{}, _q.inters...),
+		predicates:           append([]predicate.Employee{}, _q.predicates...),
+		withOrgNode:          _q.withOrgNode.Clone(),
+		withManager:          _q.withManager.Clone(),
+		withDirectReports:    _q.withDirectReports.Clone(),
+		withProfile:          _q.withProfile.Clone(),
+		withEvaluatorScopes:  _q.withEvaluatorScopes.Clone(),
+		withGoalCategories:   _q.withGoalCategories.Clone(),
+		withGoalAssignments:  _q.withGoalAssignments.Clone(),
+		withEvaluations:      _q.withEvaluations.Clone(),
+		withNineBoxMatrices:  _q.withNineBoxMatrices.Clone(),
+		withNineBoxEntries:   _q.withNineBoxEntries.Clone(),
+		withHeadedDepartment: _q.withHeadedDepartment.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
@@ -616,6 +640,17 @@ func (_q *EmployeeQuery) WithNineBoxEntries(opts ...func(*NineBoxEntryQuery)) *E
 	return _q
 }
 
+// WithHeadedDepartment tells the query-builder to eager-load the nodes that are connected to
+// the "headed_department" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *EmployeeQuery) WithHeadedDepartment(opts ...func(*OrgNodeQuery)) *EmployeeQuery {
+	query := (&OrgNodeClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withHeadedDepartment = query
+	return _q
+}
+
 // GroupBy is used to group vertices by one or more fields/columns.
 // It is often used with aggregate functions, like: count, max, mean, min, sum.
 //
@@ -694,7 +729,7 @@ func (_q *EmployeeQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Emp
 	var (
 		nodes       = []*Employee{}
 		_spec       = _q.querySpec()
-		loadedTypes = [10]bool{
+		loadedTypes = [11]bool{
 			_q.withOrgNode != nil,
 			_q.withManager != nil,
 			_q.withDirectReports != nil,
@@ -705,6 +740,7 @@ func (_q *EmployeeQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Emp
 			_q.withEvaluations != nil,
 			_q.withNineBoxMatrices != nil,
 			_q.withNineBoxEntries != nil,
+			_q.withHeadedDepartment != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -789,6 +825,13 @@ func (_q *EmployeeQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Emp
 		if err := _q.loadNineBoxEntries(ctx, query, nodes,
 			func(n *Employee) { n.Edges.NineBoxEntries = []*NineBoxEntry{} },
 			func(n *Employee, e *NineBoxEntry) { n.Edges.NineBoxEntries = append(n.Edges.NineBoxEntries, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withHeadedDepartment; query != nil {
+		if err := _q.loadHeadedDepartment(ctx, query, nodes,
+			func(n *Employee) { n.Edges.HeadedDepartment = []*OrgNode{} },
+			func(n *Employee, e *OrgNode) { n.Edges.HeadedDepartment = append(n.Edges.HeadedDepartment, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -1093,6 +1136,39 @@ func (_q *EmployeeQuery) loadNineBoxEntries(ctx context.Context, query *NineBoxE
 		node, ok := nodeids[fk]
 		if !ok {
 			return fmt.Errorf(`unexpected referenced foreign-key "evaluatee_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *EmployeeQuery) loadHeadedDepartment(ctx context.Context, query *OrgNodeQuery, nodes []*Employee, init func(*Employee), assign func(*Employee, *OrgNode)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*Employee)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(orgnode.FieldHeadEmployeeID)
+	}
+	query.Where(predicate.OrgNode(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(employee.HeadedDepartmentColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.HeadEmployeeID
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "head_employee_id" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "head_employee_id" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}

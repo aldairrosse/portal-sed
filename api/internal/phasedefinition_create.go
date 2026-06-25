@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
 	"github.com/sed-evaluacion-desempeno/api/internal/cycle"
+	"github.com/sed-evaluacion-desempeno/api/internal/nineboxmatrix"
 	"github.com/sed-evaluacion-desempeno/api/internal/phasedefinition"
 	"github.com/sed-evaluacion-desempeno/api/internal/phasetransition"
 )
@@ -140,6 +141,21 @@ func (_c *PhaseDefinitionCreate) AddIncomingTransitions(v ...*PhaseTransition) *
 		ids[i] = v[i].ID
 	}
 	return _c.AddIncomingTransitionIDs(ids...)
+}
+
+// AddNineBoxMatrixIDs adds the "nine_box_matrices" edge to the NineBoxMatrix entity by IDs.
+func (_c *PhaseDefinitionCreate) AddNineBoxMatrixIDs(ids ...uuid.UUID) *PhaseDefinitionCreate {
+	_c.mutation.AddNineBoxMatrixIDs(ids...)
+	return _c
+}
+
+// AddNineBoxMatrices adds the "nine_box_matrices" edges to the NineBoxMatrix entity.
+func (_c *PhaseDefinitionCreate) AddNineBoxMatrices(v ...*NineBoxMatrix) *PhaseDefinitionCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddNineBoxMatrixIDs(ids...)
 }
 
 // Mutation returns the PhaseDefinitionMutation object of the builder.
@@ -338,6 +354,22 @@ func (_c *PhaseDefinitionCreate) createSpec() (*PhaseDefinition, *sqlgraph.Creat
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(phasetransition.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.NineBoxMatricesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   phasedefinition.NineBoxMatricesTable,
+			Columns: []string{phasedefinition.NineBoxMatricesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(nineboxmatrix.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

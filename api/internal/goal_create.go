@@ -130,6 +130,34 @@ func (_c *GoalCreate) SetNillableCurrentValue(v *float64) *GoalCreate {
 	return _c
 }
 
+// SetDirection sets the "direction" field.
+func (_c *GoalCreate) SetDirection(v goal.Direction) *GoalCreate {
+	_c.mutation.SetDirection(v)
+	return _c
+}
+
+// SetNillableDirection sets the "direction" field if the given value is not nil.
+func (_c *GoalCreate) SetNillableDirection(v *goal.Direction) *GoalCreate {
+	if v != nil {
+		_c.SetDirection(*v)
+	}
+	return _c
+}
+
+// SetBaselineValue sets the "baseline_value" field.
+func (_c *GoalCreate) SetBaselineValue(v float64) *GoalCreate {
+	_c.mutation.SetBaselineValue(v)
+	return _c
+}
+
+// SetNillableBaselineValue sets the "baseline_value" field if the given value is not nil.
+func (_c *GoalCreate) SetNillableBaselineValue(v *float64) *GoalCreate {
+	if v != nil {
+		_c.SetBaselineValue(*v)
+	}
+	return _c
+}
+
 // SetState sets the "state" field.
 func (_c *GoalCreate) SetState(v goal.State) *GoalCreate {
 	_c.mutation.SetState(v)
@@ -242,6 +270,10 @@ func (_c *GoalCreate) defaults() {
 		v := goal.DefaultCurrentValue
 		_c.mutation.SetCurrentValue(v)
 	}
+	if _, ok := _c.mutation.Direction(); !ok {
+		v := goal.DefaultDirection
+		_c.mutation.SetDirection(v)
+	}
 	if _, ok := _c.mutation.ID(); !ok {
 		v := goal.DefaultID()
 		_c.mutation.SetID(v)
@@ -304,6 +336,14 @@ func (_c *GoalCreate) check() error {
 	}
 	if _, ok := _c.mutation.CurrentValue(); !ok {
 		return &ValidationError{Name: "current_value", err: errors.New(`internal: missing required field "Goal.current_value"`)}
+	}
+	if _, ok := _c.mutation.Direction(); !ok {
+		return &ValidationError{Name: "direction", err: errors.New(`internal: missing required field "Goal.direction"`)}
+	}
+	if v, ok := _c.mutation.Direction(); ok {
+		if err := goal.DirectionValidator(v); err != nil {
+			return &ValidationError{Name: "direction", err: fmt.Errorf(`internal: validator failed for field "Goal.direction": %w`, err)}
+		}
 	}
 	if _, ok := _c.mutation.State(); !ok {
 		return &ValidationError{Name: "state", err: errors.New(`internal: missing required field "Goal.state"`)}
@@ -397,6 +437,14 @@ func (_c *GoalCreate) createSpec() (*Goal, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.CurrentValue(); ok {
 		_spec.SetField(goal.FieldCurrentValue, field.TypeFloat64, value)
 		_node.CurrentValue = value
+	}
+	if value, ok := _c.mutation.Direction(); ok {
+		_spec.SetField(goal.FieldDirection, field.TypeEnum, value)
+		_node.Direction = value
+	}
+	if value, ok := _c.mutation.BaselineValue(); ok {
+		_spec.SetField(goal.FieldBaselineValue, field.TypeFloat64, value)
+		_node.BaselineValue = &value
 	}
 	if value, ok := _c.mutation.State(); ok {
 		_spec.SetField(goal.FieldState, field.TypeEnum, value)

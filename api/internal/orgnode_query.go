@@ -30,6 +30,7 @@ type OrgNodeQuery struct {
 	withParent       *OrgNodeQuery
 	withChildren     *OrgNodeQuery
 	withEmployees    *EmployeeQuery
+	withHeadEmployee *EmployeeQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -147,6 +148,28 @@ func (_q *OrgNodeQuery) QueryEmployees() *EmployeeQuery {
 			sqlgraph.From(orgnode.Table, orgnode.FieldID, selector),
 			sqlgraph.To(employee.Table, employee.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, orgnode.EmployeesTable, orgnode.EmployeesColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryHeadEmployee chains the current query on the "head_employee" edge.
+func (_q *OrgNodeQuery) QueryHeadEmployee() *EmployeeQuery {
+	query := (&EmployeeClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(orgnode.Table, orgnode.FieldID, selector),
+			sqlgraph.To(employee.Table, employee.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, orgnode.HeadEmployeeTable, orgnode.HeadEmployeeColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -350,6 +373,7 @@ func (_q *OrgNodeQuery) Clone() *OrgNodeQuery {
 		withParent:       _q.withParent.Clone(),
 		withChildren:     _q.withChildren.Clone(),
 		withEmployees:    _q.withEmployees.Clone(),
+		withHeadEmployee: _q.withHeadEmployee.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
@@ -397,6 +421,17 @@ func (_q *OrgNodeQuery) WithEmployees(opts ...func(*EmployeeQuery)) *OrgNodeQuer
 		opt(query)
 	}
 	_q.withEmployees = query
+	return _q
+}
+
+// WithHeadEmployee tells the query-builder to eager-load the nodes that are connected to
+// the "head_employee" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *OrgNodeQuery) WithHeadEmployee(opts ...func(*EmployeeQuery)) *OrgNodeQuery {
+	query := (&EmployeeClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withHeadEmployee = query
 	return _q
 }
 
@@ -478,11 +513,12 @@ func (_q *OrgNodeQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*OrgN
 	var (
 		nodes       = []*OrgNode{}
 		_spec       = _q.querySpec()
-		loadedTypes = [4]bool{
+		loadedTypes = [5]bool{
 			_q.withOrganization != nil,
 			_q.withParent != nil,
 			_q.withChildren != nil,
 			_q.withEmployees != nil,
+			_q.withHeadEmployee != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -526,6 +562,12 @@ func (_q *OrgNodeQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*OrgN
 		if err := _q.loadEmployees(ctx, query, nodes,
 			func(n *OrgNode) { n.Edges.Employees = []*Employee{} },
 			func(n *OrgNode, e *Employee) { n.Edges.Employees = append(n.Edges.Employees, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withHeadEmployee; query != nil {
+		if err := _q.loadHeadEmployee(ctx, query, nodes, nil,
+			func(n *OrgNode, e *Employee) { n.Edges.HeadEmployee = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -656,6 +698,38 @@ func (_q *OrgNodeQuery) loadEmployees(ctx context.Context, query *EmployeeQuery,
 	}
 	return nil
 }
+func (_q *OrgNodeQuery) loadHeadEmployee(ctx context.Context, query *EmployeeQuery, nodes []*OrgNode, init func(*OrgNode), assign func(*OrgNode, *Employee)) error {
+	ids := make([]uuid.UUID, 0, len(nodes))
+	nodeids := make(map[uuid.UUID][]*OrgNode)
+	for i := range nodes {
+		if nodes[i].HeadEmployeeID == nil {
+			continue
+		}
+		fk := *nodes[i].HeadEmployeeID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(employee.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "head_employee_id" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
 
 func (_q *OrgNodeQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := _q.querySpec()
@@ -687,6 +761,9 @@ func (_q *OrgNodeQuery) querySpec() *sqlgraph.QuerySpec {
 		}
 		if _q.withParent != nil {
 			_spec.Node.AddColumnOnce(orgnode.FieldParentID)
+		}
+		if _q.withHeadEmployee != nil {
+			_spec.Node.AddColumnOnce(orgnode.FieldHeadEmployeeID)
 		}
 	}
 	if ps := _q.predicates; len(ps) > 0 {

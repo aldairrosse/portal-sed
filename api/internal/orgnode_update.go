@@ -166,6 +166,26 @@ func (_u *OrgNodeUpdate) ClearPath() *OrgNodeUpdate {
 	return _u
 }
 
+// SetHeadEmployeeID sets the "head_employee_id" field.
+func (_u *OrgNodeUpdate) SetHeadEmployeeID(v uuid.UUID) *OrgNodeUpdate {
+	_u.mutation.SetHeadEmployeeID(v)
+	return _u
+}
+
+// SetNillableHeadEmployeeID sets the "head_employee_id" field if the given value is not nil.
+func (_u *OrgNodeUpdate) SetNillableHeadEmployeeID(v *uuid.UUID) *OrgNodeUpdate {
+	if v != nil {
+		_u.SetHeadEmployeeID(*v)
+	}
+	return _u
+}
+
+// ClearHeadEmployeeID clears the value of the "head_employee_id" field.
+func (_u *OrgNodeUpdate) ClearHeadEmployeeID() *OrgNodeUpdate {
+	_u.mutation.ClearHeadEmployeeID()
+	return _u
+}
+
 // SetOrganization sets the "organization" edge to the Organization entity.
 func (_u *OrgNodeUpdate) SetOrganization(v *Organization) *OrgNodeUpdate {
 	return _u.SetOrganizationID(v.ID)
@@ -204,6 +224,11 @@ func (_u *OrgNodeUpdate) AddEmployees(v ...*Employee) *OrgNodeUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.AddEmployeeIDs(ids...)
+}
+
+// SetHeadEmployee sets the "head_employee" edge to the Employee entity.
+func (_u *OrgNodeUpdate) SetHeadEmployee(v *Employee) *OrgNodeUpdate {
+	return _u.SetHeadEmployeeID(v.ID)
 }
 
 // Mutation returns the OrgNodeMutation object of the builder.
@@ -263,6 +288,12 @@ func (_u *OrgNodeUpdate) RemoveEmployees(v ...*Employee) *OrgNodeUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveEmployeeIDs(ids...)
+}
+
+// ClearHeadEmployee clears the "head_employee" edge to the Employee entity.
+func (_u *OrgNodeUpdate) ClearHeadEmployee() *OrgNodeUpdate {
+	_u.mutation.ClearHeadEmployee()
+	return _u
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -519,6 +550,35 @@ func (_u *OrgNodeUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if _u.mutation.HeadEmployeeCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   orgnode.HeadEmployeeTable,
+			Columns: []string{orgnode.HeadEmployeeColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(employee.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.HeadEmployeeIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   orgnode.HeadEmployeeTable,
+			Columns: []string{orgnode.HeadEmployeeColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(employee.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{orgnode.Label}
@@ -674,6 +734,26 @@ func (_u *OrgNodeUpdateOne) ClearPath() *OrgNodeUpdateOne {
 	return _u
 }
 
+// SetHeadEmployeeID sets the "head_employee_id" field.
+func (_u *OrgNodeUpdateOne) SetHeadEmployeeID(v uuid.UUID) *OrgNodeUpdateOne {
+	_u.mutation.SetHeadEmployeeID(v)
+	return _u
+}
+
+// SetNillableHeadEmployeeID sets the "head_employee_id" field if the given value is not nil.
+func (_u *OrgNodeUpdateOne) SetNillableHeadEmployeeID(v *uuid.UUID) *OrgNodeUpdateOne {
+	if v != nil {
+		_u.SetHeadEmployeeID(*v)
+	}
+	return _u
+}
+
+// ClearHeadEmployeeID clears the value of the "head_employee_id" field.
+func (_u *OrgNodeUpdateOne) ClearHeadEmployeeID() *OrgNodeUpdateOne {
+	_u.mutation.ClearHeadEmployeeID()
+	return _u
+}
+
 // SetOrganization sets the "organization" edge to the Organization entity.
 func (_u *OrgNodeUpdateOne) SetOrganization(v *Organization) *OrgNodeUpdateOne {
 	return _u.SetOrganizationID(v.ID)
@@ -712,6 +792,11 @@ func (_u *OrgNodeUpdateOne) AddEmployees(v ...*Employee) *OrgNodeUpdateOne {
 		ids[i] = v[i].ID
 	}
 	return _u.AddEmployeeIDs(ids...)
+}
+
+// SetHeadEmployee sets the "head_employee" edge to the Employee entity.
+func (_u *OrgNodeUpdateOne) SetHeadEmployee(v *Employee) *OrgNodeUpdateOne {
+	return _u.SetHeadEmployeeID(v.ID)
 }
 
 // Mutation returns the OrgNodeMutation object of the builder.
@@ -771,6 +856,12 @@ func (_u *OrgNodeUpdateOne) RemoveEmployees(v ...*Employee) *OrgNodeUpdateOne {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveEmployeeIDs(ids...)
+}
+
+// ClearHeadEmployee clears the "head_employee" edge to the Employee entity.
+func (_u *OrgNodeUpdateOne) ClearHeadEmployee() *OrgNodeUpdateOne {
+	_u.mutation.ClearHeadEmployee()
+	return _u
 }
 
 // Where appends a list predicates to the OrgNodeUpdate builder.
@@ -1047,6 +1138,35 @@ func (_u *OrgNodeUpdateOne) sqlSave(ctx context.Context) (_node *OrgNode, err er
 			Inverse: false,
 			Table:   orgnode.EmployeesTable,
 			Columns: []string{orgnode.EmployeesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(employee.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.HeadEmployeeCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   orgnode.HeadEmployeeTable,
+			Columns: []string{orgnode.HeadEmployeeColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(employee.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.HeadEmployeeIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   orgnode.HeadEmployeeTable,
+			Columns: []string{orgnode.HeadEmployeeColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(employee.FieldID, field.TypeUUID),

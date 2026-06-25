@@ -14,6 +14,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
 	"github.com/sed-evaluacion-desempeno/api/internal/cycle"
+	"github.com/sed-evaluacion-desempeno/api/internal/nineboxmatrix"
 	"github.com/sed-evaluacion-desempeno/api/internal/phasedefinition"
 	"github.com/sed-evaluacion-desempeno/api/internal/phasetransition"
 	"github.com/sed-evaluacion-desempeno/api/internal/predicate"
@@ -190,6 +191,21 @@ func (_u *PhaseDefinitionUpdate) AddIncomingTransitions(v ...*PhaseTransition) *
 	return _u.AddIncomingTransitionIDs(ids...)
 }
 
+// AddNineBoxMatrixIDs adds the "nine_box_matrices" edge to the NineBoxMatrix entity by IDs.
+func (_u *PhaseDefinitionUpdate) AddNineBoxMatrixIDs(ids ...uuid.UUID) *PhaseDefinitionUpdate {
+	_u.mutation.AddNineBoxMatrixIDs(ids...)
+	return _u
+}
+
+// AddNineBoxMatrices adds the "nine_box_matrices" edges to the NineBoxMatrix entity.
+func (_u *PhaseDefinitionUpdate) AddNineBoxMatrices(v ...*NineBoxMatrix) *PhaseDefinitionUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddNineBoxMatrixIDs(ids...)
+}
+
 // Mutation returns the PhaseDefinitionMutation object of the builder.
 func (_u *PhaseDefinitionUpdate) Mutation() *PhaseDefinitionMutation {
 	return _u.mutation
@@ -241,6 +257,27 @@ func (_u *PhaseDefinitionUpdate) RemoveIncomingTransitions(v ...*PhaseTransition
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveIncomingTransitionIDs(ids...)
+}
+
+// ClearNineBoxMatrices clears all "nine_box_matrices" edges to the NineBoxMatrix entity.
+func (_u *PhaseDefinitionUpdate) ClearNineBoxMatrices() *PhaseDefinitionUpdate {
+	_u.mutation.ClearNineBoxMatrices()
+	return _u
+}
+
+// RemoveNineBoxMatrixIDs removes the "nine_box_matrices" edge to NineBoxMatrix entities by IDs.
+func (_u *PhaseDefinitionUpdate) RemoveNineBoxMatrixIDs(ids ...uuid.UUID) *PhaseDefinitionUpdate {
+	_u.mutation.RemoveNineBoxMatrixIDs(ids...)
+	return _u
+}
+
+// RemoveNineBoxMatrices removes "nine_box_matrices" edges to NineBoxMatrix entities.
+func (_u *PhaseDefinitionUpdate) RemoveNineBoxMatrices(v ...*NineBoxMatrix) *PhaseDefinitionUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveNineBoxMatrixIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -481,6 +518,51 @@ func (_u *PhaseDefinitionUpdate) sqlSave(ctx context.Context) (_node int, err er
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if _u.mutation.NineBoxMatricesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   phasedefinition.NineBoxMatricesTable,
+			Columns: []string{phasedefinition.NineBoxMatricesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(nineboxmatrix.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedNineBoxMatricesIDs(); len(nodes) > 0 && !_u.mutation.NineBoxMatricesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   phasedefinition.NineBoxMatricesTable,
+			Columns: []string{phasedefinition.NineBoxMatricesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(nineboxmatrix.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.NineBoxMatricesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   phasedefinition.NineBoxMatricesTable,
+			Columns: []string{phasedefinition.NineBoxMatricesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(nineboxmatrix.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{phasedefinition.Label}
@@ -659,6 +741,21 @@ func (_u *PhaseDefinitionUpdateOne) AddIncomingTransitions(v ...*PhaseTransition
 	return _u.AddIncomingTransitionIDs(ids...)
 }
 
+// AddNineBoxMatrixIDs adds the "nine_box_matrices" edge to the NineBoxMatrix entity by IDs.
+func (_u *PhaseDefinitionUpdateOne) AddNineBoxMatrixIDs(ids ...uuid.UUID) *PhaseDefinitionUpdateOne {
+	_u.mutation.AddNineBoxMatrixIDs(ids...)
+	return _u
+}
+
+// AddNineBoxMatrices adds the "nine_box_matrices" edges to the NineBoxMatrix entity.
+func (_u *PhaseDefinitionUpdateOne) AddNineBoxMatrices(v ...*NineBoxMatrix) *PhaseDefinitionUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddNineBoxMatrixIDs(ids...)
+}
+
 // Mutation returns the PhaseDefinitionMutation object of the builder.
 func (_u *PhaseDefinitionUpdateOne) Mutation() *PhaseDefinitionMutation {
 	return _u.mutation
@@ -710,6 +807,27 @@ func (_u *PhaseDefinitionUpdateOne) RemoveIncomingTransitions(v ...*PhaseTransit
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveIncomingTransitionIDs(ids...)
+}
+
+// ClearNineBoxMatrices clears all "nine_box_matrices" edges to the NineBoxMatrix entity.
+func (_u *PhaseDefinitionUpdateOne) ClearNineBoxMatrices() *PhaseDefinitionUpdateOne {
+	_u.mutation.ClearNineBoxMatrices()
+	return _u
+}
+
+// RemoveNineBoxMatrixIDs removes the "nine_box_matrices" edge to NineBoxMatrix entities by IDs.
+func (_u *PhaseDefinitionUpdateOne) RemoveNineBoxMatrixIDs(ids ...uuid.UUID) *PhaseDefinitionUpdateOne {
+	_u.mutation.RemoveNineBoxMatrixIDs(ids...)
+	return _u
+}
+
+// RemoveNineBoxMatrices removes "nine_box_matrices" edges to NineBoxMatrix entities.
+func (_u *PhaseDefinitionUpdateOne) RemoveNineBoxMatrices(v ...*NineBoxMatrix) *PhaseDefinitionUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveNineBoxMatrixIDs(ids...)
 }
 
 // Where appends a list predicates to the PhaseDefinitionUpdate builder.
@@ -973,6 +1091,51 @@ func (_u *PhaseDefinitionUpdateOne) sqlSave(ctx context.Context) (_node *PhaseDe
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(phasetransition.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.NineBoxMatricesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   phasedefinition.NineBoxMatricesTable,
+			Columns: []string{phasedefinition.NineBoxMatricesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(nineboxmatrix.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedNineBoxMatricesIDs(); len(nodes) > 0 && !_u.mutation.NineBoxMatricesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   phasedefinition.NineBoxMatricesTable,
+			Columns: []string{phasedefinition.NineBoxMatricesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(nineboxmatrix.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.NineBoxMatricesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   phasedefinition.NineBoxMatricesTable,
+			Columns: []string{phasedefinition.NineBoxMatricesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(nineboxmatrix.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

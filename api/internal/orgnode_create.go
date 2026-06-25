@@ -123,6 +123,20 @@ func (_c *OrgNodeCreate) SetNillablePath(v *string) *OrgNodeCreate {
 	return _c
 }
 
+// SetHeadEmployeeID sets the "head_employee_id" field.
+func (_c *OrgNodeCreate) SetHeadEmployeeID(v uuid.UUID) *OrgNodeCreate {
+	_c.mutation.SetHeadEmployeeID(v)
+	return _c
+}
+
+// SetNillableHeadEmployeeID sets the "head_employee_id" field if the given value is not nil.
+func (_c *OrgNodeCreate) SetNillableHeadEmployeeID(v *uuid.UUID) *OrgNodeCreate {
+	if v != nil {
+		_c.SetHeadEmployeeID(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *OrgNodeCreate) SetID(v uuid.UUID) *OrgNodeCreate {
 	_c.mutation.SetID(v)
@@ -175,6 +189,11 @@ func (_c *OrgNodeCreate) AddEmployees(v ...*Employee) *OrgNodeCreate {
 		ids[i] = v[i].ID
 	}
 	return _c.AddEmployeeIDs(ids...)
+}
+
+// SetHeadEmployee sets the "head_employee" edge to the Employee entity.
+func (_c *OrgNodeCreate) SetHeadEmployee(v *Employee) *OrgNodeCreate {
+	return _c.SetHeadEmployeeID(v.ID)
 }
 
 // Mutation returns the OrgNodeMutation object of the builder.
@@ -407,6 +426,23 @@ func (_c *OrgNodeCreate) createSpec() (*OrgNode, *sqlgraph.CreateSpec) {
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.HeadEmployeeIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   orgnode.HeadEmployeeTable,
+			Columns: []string{orgnode.HeadEmployeeColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(employee.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.HeadEmployeeID = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

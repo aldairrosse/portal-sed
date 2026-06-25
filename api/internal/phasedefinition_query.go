@@ -14,6 +14,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
 	"github.com/sed-evaluacion-desempeno/api/internal/cycle"
+	"github.com/sed-evaluacion-desempeno/api/internal/nineboxmatrix"
 	"github.com/sed-evaluacion-desempeno/api/internal/phasedefinition"
 	"github.com/sed-evaluacion-desempeno/api/internal/phasetransition"
 	"github.com/sed-evaluacion-desempeno/api/internal/predicate"
@@ -29,6 +30,7 @@ type PhaseDefinitionQuery struct {
 	withCycle               *CycleQuery
 	withOutgoingTransitions *PhaseTransitionQuery
 	withIncomingTransitions *PhaseTransitionQuery
+	withNineBoxMatrices     *NineBoxMatrixQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -124,6 +126,28 @@ func (_q *PhaseDefinitionQuery) QueryIncomingTransitions() *PhaseTransitionQuery
 			sqlgraph.From(phasedefinition.Table, phasedefinition.FieldID, selector),
 			sqlgraph.To(phasetransition.Table, phasetransition.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, phasedefinition.IncomingTransitionsTable, phasedefinition.IncomingTransitionsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryNineBoxMatrices chains the current query on the "nine_box_matrices" edge.
+func (_q *PhaseDefinitionQuery) QueryNineBoxMatrices() *NineBoxMatrixQuery {
+	query := (&NineBoxMatrixClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(phasedefinition.Table, phasedefinition.FieldID, selector),
+			sqlgraph.To(nineboxmatrix.Table, nineboxmatrix.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, phasedefinition.NineBoxMatricesTable, phasedefinition.NineBoxMatricesColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -326,6 +350,7 @@ func (_q *PhaseDefinitionQuery) Clone() *PhaseDefinitionQuery {
 		withCycle:               _q.withCycle.Clone(),
 		withOutgoingTransitions: _q.withOutgoingTransitions.Clone(),
 		withIncomingTransitions: _q.withIncomingTransitions.Clone(),
+		withNineBoxMatrices:     _q.withNineBoxMatrices.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
@@ -362,6 +387,17 @@ func (_q *PhaseDefinitionQuery) WithIncomingTransitions(opts ...func(*PhaseTrans
 		opt(query)
 	}
 	_q.withIncomingTransitions = query
+	return _q
+}
+
+// WithNineBoxMatrices tells the query-builder to eager-load the nodes that are connected to
+// the "nine_box_matrices" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *PhaseDefinitionQuery) WithNineBoxMatrices(opts ...func(*NineBoxMatrixQuery)) *PhaseDefinitionQuery {
+	query := (&NineBoxMatrixClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withNineBoxMatrices = query
 	return _q
 }
 
@@ -443,10 +479,11 @@ func (_q *PhaseDefinitionQuery) sqlAll(ctx context.Context, hooks ...queryHook) 
 	var (
 		nodes       = []*PhaseDefinition{}
 		_spec       = _q.querySpec()
-		loadedTypes = [3]bool{
+		loadedTypes = [4]bool{
 			_q.withCycle != nil,
 			_q.withOutgoingTransitions != nil,
 			_q.withIncomingTransitions != nil,
+			_q.withNineBoxMatrices != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -487,6 +524,15 @@ func (_q *PhaseDefinitionQuery) sqlAll(ctx context.Context, hooks ...queryHook) 
 			func(n *PhaseDefinition) { n.Edges.IncomingTransitions = []*PhaseTransition{} },
 			func(n *PhaseDefinition, e *PhaseTransition) {
 				n.Edges.IncomingTransitions = append(n.Edges.IncomingTransitions, e)
+			}); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withNineBoxMatrices; query != nil {
+		if err := _q.loadNineBoxMatrices(ctx, query, nodes,
+			func(n *PhaseDefinition) { n.Edges.NineBoxMatrices = []*NineBoxMatrix{} },
+			func(n *PhaseDefinition, e *NineBoxMatrix) {
+				n.Edges.NineBoxMatrices = append(n.Edges.NineBoxMatrices, e)
 			}); err != nil {
 			return nil, err
 		}
@@ -578,6 +624,36 @@ func (_q *PhaseDefinitionQuery) loadIncomingTransitions(ctx context.Context, que
 		node, ok := nodeids[fk]
 		if !ok {
 			return fmt.Errorf(`unexpected referenced foreign-key "to_phase_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *PhaseDefinitionQuery) loadNineBoxMatrices(ctx context.Context, query *NineBoxMatrixQuery, nodes []*PhaseDefinition, init func(*PhaseDefinition), assign func(*PhaseDefinition, *NineBoxMatrix)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*PhaseDefinition)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(nineboxmatrix.FieldPhaseID)
+	}
+	query.Where(predicate.NineBoxMatrix(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(phasedefinition.NineBoxMatricesColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.PhaseID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "phase_id" returned %v for node %v`, fk, n.ID)
 		}
 		assign(node, n)
 	}

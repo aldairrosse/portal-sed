@@ -16,6 +16,7 @@ import (
 	"github.com/sed-evaluacion-desempeno/api/internal/employee"
 	"github.com/sed-evaluacion-desempeno/api/internal/nineboxentry"
 	"github.com/sed-evaluacion-desempeno/api/internal/nineboxmatrix"
+	"github.com/sed-evaluacion-desempeno/api/internal/phasedefinition"
 	"github.com/sed-evaluacion-desempeno/api/internal/predicate"
 )
 
@@ -66,6 +67,20 @@ func (_u *NineBoxMatrixUpdate) SetNillableEvaluatorID(v *uuid.UUID) *NineBoxMatr
 	return _u
 }
 
+// SetPhaseID sets the "phase_id" field.
+func (_u *NineBoxMatrixUpdate) SetPhaseID(v uuid.UUID) *NineBoxMatrixUpdate {
+	_u.mutation.SetPhaseID(v)
+	return _u
+}
+
+// SetNillablePhaseID sets the "phase_id" field if the given value is not nil.
+func (_u *NineBoxMatrixUpdate) SetNillablePhaseID(v *uuid.UUID) *NineBoxMatrixUpdate {
+	if v != nil {
+		_u.SetPhaseID(*v)
+	}
+	return _u
+}
+
 // SetCycle sets the "cycle" edge to the Cycle entity.
 func (_u *NineBoxMatrixUpdate) SetCycle(v *Cycle) *NineBoxMatrixUpdate {
 	return _u.SetCycleID(v.ID)
@@ -74,6 +89,11 @@ func (_u *NineBoxMatrixUpdate) SetCycle(v *Cycle) *NineBoxMatrixUpdate {
 // SetEvaluator sets the "evaluator" edge to the Employee entity.
 func (_u *NineBoxMatrixUpdate) SetEvaluator(v *Employee) *NineBoxMatrixUpdate {
 	return _u.SetEvaluatorID(v.ID)
+}
+
+// SetPhase sets the "phase" edge to the PhaseDefinition entity.
+func (_u *NineBoxMatrixUpdate) SetPhase(v *PhaseDefinition) *NineBoxMatrixUpdate {
+	return _u.SetPhaseID(v.ID)
 }
 
 // AddEntryIDs adds the "entries" edge to the NineBoxEntry entity by IDs.
@@ -105,6 +125,12 @@ func (_u *NineBoxMatrixUpdate) ClearCycle() *NineBoxMatrixUpdate {
 // ClearEvaluator clears the "evaluator" edge to the Employee entity.
 func (_u *NineBoxMatrixUpdate) ClearEvaluator() *NineBoxMatrixUpdate {
 	_u.mutation.ClearEvaluator()
+	return _u
+}
+
+// ClearPhase clears the "phase" edge to the PhaseDefinition entity.
+func (_u *NineBoxMatrixUpdate) ClearPhase() *NineBoxMatrixUpdate {
+	_u.mutation.ClearPhase()
 	return _u
 }
 
@@ -172,6 +198,9 @@ func (_u *NineBoxMatrixUpdate) check() error {
 	}
 	if _u.mutation.EvaluatorCleared() && len(_u.mutation.EvaluatorIDs()) > 0 {
 		return errors.New(`internal: clearing a required unique edge "NineBoxMatrix.evaluator"`)
+	}
+	if _u.mutation.PhaseCleared() && len(_u.mutation.PhaseIDs()) > 0 {
+		return errors.New(`internal: clearing a required unique edge "NineBoxMatrix.phase"`)
 	}
 	return nil
 }
@@ -242,6 +271,35 @@ func (_u *NineBoxMatrixUpdate) sqlSave(ctx context.Context) (_node int, err erro
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(employee.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.PhaseCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   nineboxmatrix.PhaseTable,
+			Columns: []string{nineboxmatrix.PhaseColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(phasedefinition.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.PhaseIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   nineboxmatrix.PhaseTable,
+			Columns: []string{nineboxmatrix.PhaseColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(phasedefinition.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -348,6 +406,20 @@ func (_u *NineBoxMatrixUpdateOne) SetNillableEvaluatorID(v *uuid.UUID) *NineBoxM
 	return _u
 }
 
+// SetPhaseID sets the "phase_id" field.
+func (_u *NineBoxMatrixUpdateOne) SetPhaseID(v uuid.UUID) *NineBoxMatrixUpdateOne {
+	_u.mutation.SetPhaseID(v)
+	return _u
+}
+
+// SetNillablePhaseID sets the "phase_id" field if the given value is not nil.
+func (_u *NineBoxMatrixUpdateOne) SetNillablePhaseID(v *uuid.UUID) *NineBoxMatrixUpdateOne {
+	if v != nil {
+		_u.SetPhaseID(*v)
+	}
+	return _u
+}
+
 // SetCycle sets the "cycle" edge to the Cycle entity.
 func (_u *NineBoxMatrixUpdateOne) SetCycle(v *Cycle) *NineBoxMatrixUpdateOne {
 	return _u.SetCycleID(v.ID)
@@ -356,6 +428,11 @@ func (_u *NineBoxMatrixUpdateOne) SetCycle(v *Cycle) *NineBoxMatrixUpdateOne {
 // SetEvaluator sets the "evaluator" edge to the Employee entity.
 func (_u *NineBoxMatrixUpdateOne) SetEvaluator(v *Employee) *NineBoxMatrixUpdateOne {
 	return _u.SetEvaluatorID(v.ID)
+}
+
+// SetPhase sets the "phase" edge to the PhaseDefinition entity.
+func (_u *NineBoxMatrixUpdateOne) SetPhase(v *PhaseDefinition) *NineBoxMatrixUpdateOne {
+	return _u.SetPhaseID(v.ID)
 }
 
 // AddEntryIDs adds the "entries" edge to the NineBoxEntry entity by IDs.
@@ -387,6 +464,12 @@ func (_u *NineBoxMatrixUpdateOne) ClearCycle() *NineBoxMatrixUpdateOne {
 // ClearEvaluator clears the "evaluator" edge to the Employee entity.
 func (_u *NineBoxMatrixUpdateOne) ClearEvaluator() *NineBoxMatrixUpdateOne {
 	_u.mutation.ClearEvaluator()
+	return _u
+}
+
+// ClearPhase clears the "phase" edge to the PhaseDefinition entity.
+func (_u *NineBoxMatrixUpdateOne) ClearPhase() *NineBoxMatrixUpdateOne {
+	_u.mutation.ClearPhase()
 	return _u
 }
 
@@ -467,6 +550,9 @@ func (_u *NineBoxMatrixUpdateOne) check() error {
 	}
 	if _u.mutation.EvaluatorCleared() && len(_u.mutation.EvaluatorIDs()) > 0 {
 		return errors.New(`internal: clearing a required unique edge "NineBoxMatrix.evaluator"`)
+	}
+	if _u.mutation.PhaseCleared() && len(_u.mutation.PhaseIDs()) > 0 {
+		return errors.New(`internal: clearing a required unique edge "NineBoxMatrix.phase"`)
 	}
 	return nil
 }
@@ -554,6 +640,35 @@ func (_u *NineBoxMatrixUpdateOne) sqlSave(ctx context.Context) (_node *NineBoxMa
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(employee.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.PhaseCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   nineboxmatrix.PhaseTable,
+			Columns: []string{nineboxmatrix.PhaseColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(phasedefinition.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.PhaseIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   nineboxmatrix.PhaseTable,
+			Columns: []string{nineboxmatrix.PhaseColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(phasedefinition.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

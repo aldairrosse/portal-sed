@@ -52,6 +52,14 @@ func (_c *NineBoxQuadrantCreate) SetColor(v string) *NineBoxQuadrantCreate {
 	return _c
 }
 
+// SetNillableColor sets the "color" field if the given value is not nil.
+func (_c *NineBoxQuadrantCreate) SetNillableColor(v *string) *NineBoxQuadrantCreate {
+	if v != nil {
+		_c.SetColor(*v)
+	}
+	return _c
+}
+
 // SetActionRecommendation sets the "action_recommendation" field.
 func (_c *NineBoxQuadrantCreate) SetActionRecommendation(v string) *NineBoxQuadrantCreate {
 	_c.mutation.SetActionRecommendation(v)
@@ -62,6 +70,34 @@ func (_c *NineBoxQuadrantCreate) SetActionRecommendation(v string) *NineBoxQuadr
 func (_c *NineBoxQuadrantCreate) SetNillableActionRecommendation(v *string) *NineBoxQuadrantCreate {
 	if v != nil {
 		_c.SetActionRecommendation(*v)
+	}
+	return _c
+}
+
+// SetTitle sets the "title" field.
+func (_c *NineBoxQuadrantCreate) SetTitle(v string) *NineBoxQuadrantCreate {
+	_c.mutation.SetTitle(v)
+	return _c
+}
+
+// SetNillableTitle sets the "title" field if the given value is not nil.
+func (_c *NineBoxQuadrantCreate) SetNillableTitle(v *string) *NineBoxQuadrantCreate {
+	if v != nil {
+		_c.SetTitle(*v)
+	}
+	return _c
+}
+
+// SetColorHex sets the "color_hex" field.
+func (_c *NineBoxQuadrantCreate) SetColorHex(v string) *NineBoxQuadrantCreate {
+	_c.mutation.SetColorHex(v)
+	return _c
+}
+
+// SetNillableColorHex sets the "color_hex" field if the given value is not nil.
+func (_c *NineBoxQuadrantCreate) SetNillableColorHex(v *string) *NineBoxQuadrantCreate {
+	if v != nil {
+		_c.SetColorHex(*v)
 	}
 	return _c
 }
@@ -139,12 +175,14 @@ func (_c *NineBoxQuadrantCreate) check() error {
 			return &ValidationError{Name: "label", err: fmt.Errorf(`internal: validator failed for field "NineBoxQuadrant.label": %w`, err)}
 		}
 	}
-	if _, ok := _c.mutation.Color(); !ok {
-		return &ValidationError{Name: "color", err: errors.New(`internal: missing required field "NineBoxQuadrant.color"`)}
+	if v, ok := _c.mutation.Title(); ok {
+		if err := nineboxquadrant.TitleValidator(v); err != nil {
+			return &ValidationError{Name: "title", err: fmt.Errorf(`internal: validator failed for field "NineBoxQuadrant.title": %w`, err)}
+		}
 	}
-	if v, ok := _c.mutation.Color(); ok {
-		if err := nineboxquadrant.ColorValidator(v); err != nil {
-			return &ValidationError{Name: "color", err: fmt.Errorf(`internal: validator failed for field "NineBoxQuadrant.color": %w`, err)}
+	if v, ok := _c.mutation.ColorHex(); ok {
+		if err := nineboxquadrant.ColorHexValidator(v); err != nil {
+			return &ValidationError{Name: "color_hex", err: fmt.Errorf(`internal: validator failed for field "NineBoxQuadrant.color_hex": %w`, err)}
 		}
 	}
 	return nil
@@ -201,6 +239,14 @@ func (_c *NineBoxQuadrantCreate) createSpec() (*NineBoxQuadrant, *sqlgraph.Creat
 	if value, ok := _c.mutation.ActionRecommendation(); ok {
 		_spec.SetField(nineboxquadrant.FieldActionRecommendation, field.TypeString, value)
 		_node.ActionRecommendation = value
+	}
+	if value, ok := _c.mutation.Title(); ok {
+		_spec.SetField(nineboxquadrant.FieldTitle, field.TypeString, value)
+		_node.Title = value
+	}
+	if value, ok := _c.mutation.ColorHex(); ok {
+		_spec.SetField(nineboxquadrant.FieldColorHex, field.TypeString, value)
+		_node.ColorHex = value
 	}
 	return _node, _spec
 }

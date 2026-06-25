@@ -15,6 +15,7 @@ import (
 	"github.com/sed-evaluacion-desempeno/api/internal/employee"
 	"github.com/sed-evaluacion-desempeno/api/internal/nineboxentry"
 	"github.com/sed-evaluacion-desempeno/api/internal/nineboxmatrix"
+	"github.com/sed-evaluacion-desempeno/api/internal/phasedefinition"
 )
 
 // NineBoxMatrixCreate is the builder for creating a NineBoxMatrix entity.
@@ -64,6 +65,12 @@ func (_c *NineBoxMatrixCreate) SetEvaluatorID(v uuid.UUID) *NineBoxMatrixCreate 
 	return _c
 }
 
+// SetPhaseID sets the "phase_id" field.
+func (_c *NineBoxMatrixCreate) SetPhaseID(v uuid.UUID) *NineBoxMatrixCreate {
+	_c.mutation.SetPhaseID(v)
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *NineBoxMatrixCreate) SetID(v uuid.UUID) *NineBoxMatrixCreate {
 	_c.mutation.SetID(v)
@@ -86,6 +93,11 @@ func (_c *NineBoxMatrixCreate) SetCycle(v *Cycle) *NineBoxMatrixCreate {
 // SetEvaluator sets the "evaluator" edge to the Employee entity.
 func (_c *NineBoxMatrixCreate) SetEvaluator(v *Employee) *NineBoxMatrixCreate {
 	return _c.SetEvaluatorID(v.ID)
+}
+
+// SetPhase sets the "phase" edge to the PhaseDefinition entity.
+func (_c *NineBoxMatrixCreate) SetPhase(v *PhaseDefinition) *NineBoxMatrixCreate {
+	return _c.SetPhaseID(v.ID)
 }
 
 // AddEntryIDs adds the "entries" edge to the NineBoxEntry entity by IDs.
@@ -166,11 +178,17 @@ func (_c *NineBoxMatrixCreate) check() error {
 	if _, ok := _c.mutation.EvaluatorID(); !ok {
 		return &ValidationError{Name: "evaluator_id", err: errors.New(`internal: missing required field "NineBoxMatrix.evaluator_id"`)}
 	}
+	if _, ok := _c.mutation.PhaseID(); !ok {
+		return &ValidationError{Name: "phase_id", err: errors.New(`internal: missing required field "NineBoxMatrix.phase_id"`)}
+	}
 	if len(_c.mutation.CycleIDs()) == 0 {
 		return &ValidationError{Name: "cycle", err: errors.New(`internal: missing required edge "NineBoxMatrix.cycle"`)}
 	}
 	if len(_c.mutation.EvaluatorIDs()) == 0 {
 		return &ValidationError{Name: "evaluator", err: errors.New(`internal: missing required edge "NineBoxMatrix.evaluator"`)}
+	}
+	if len(_c.mutation.PhaseIDs()) == 0 {
+		return &ValidationError{Name: "phase", err: errors.New(`internal: missing required edge "NineBoxMatrix.phase"`)}
 	}
 	return nil
 }
@@ -247,6 +265,23 @@ func (_c *NineBoxMatrixCreate) createSpec() (*NineBoxMatrix, *sqlgraph.CreateSpe
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.EvaluatorID = nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.PhaseIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   nineboxmatrix.PhaseTable,
+			Columns: []string{nineboxmatrix.PhaseColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(phasedefinition.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.PhaseID = nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := _c.mutation.EntriesIDs(); len(nodes) > 0 {

@@ -76,6 +76,34 @@ func (_c *KPICreate) SetNillableDescription(v *string) *KPICreate {
 	return _c
 }
 
+// SetDirection sets the "direction" field.
+func (_c *KPICreate) SetDirection(v kpi.Direction) *KPICreate {
+	_c.mutation.SetDirection(v)
+	return _c
+}
+
+// SetNillableDirection sets the "direction" field if the given value is not nil.
+func (_c *KPICreate) SetNillableDirection(v *kpi.Direction) *KPICreate {
+	if v != nil {
+		_c.SetDirection(*v)
+	}
+	return _c
+}
+
+// SetCurrentValue sets the "current_value" field.
+func (_c *KPICreate) SetCurrentValue(v float64) *KPICreate {
+	_c.mutation.SetCurrentValue(v)
+	return _c
+}
+
+// SetNillableCurrentValue sets the "current_value" field if the given value is not nil.
+func (_c *KPICreate) SetNillableCurrentValue(v *float64) *KPICreate {
+	if v != nil {
+		_c.SetCurrentValue(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *KPICreate) SetID(v uuid.UUID) *KPICreate {
 	_c.mutation.SetID(v)
@@ -148,6 +176,10 @@ func (_c *KPICreate) defaults() {
 		v := kpi.DefaultUpdatedAt()
 		_c.mutation.SetUpdatedAt(v)
 	}
+	if _, ok := _c.mutation.Direction(); !ok {
+		v := kpi.DefaultDirection
+		_c.mutation.SetDirection(v)
+	}
 	if _, ok := _c.mutation.ID(); !ok {
 		v := kpi.DefaultID()
 		_c.mutation.SetID(v)
@@ -176,6 +208,14 @@ func (_c *KPICreate) check() error {
 	if v, ok := _c.mutation.Unit(); ok {
 		if err := kpi.UnitValidator(v); err != nil {
 			return &ValidationError{Name: "unit", err: fmt.Errorf(`internal: validator failed for field "KPI.unit": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.Direction(); !ok {
+		return &ValidationError{Name: "direction", err: errors.New(`internal: missing required field "KPI.direction"`)}
+	}
+	if v, ok := _c.mutation.Direction(); ok {
+		if err := kpi.DirectionValidator(v); err != nil {
+			return &ValidationError{Name: "direction", err: fmt.Errorf(`internal: validator failed for field "KPI.direction": %w`, err)}
 		}
 	}
 	return nil
@@ -232,6 +272,14 @@ func (_c *KPICreate) createSpec() (*KPI, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.Description(); ok {
 		_spec.SetField(kpi.FieldDescription, field.TypeString, value)
 		_node.Description = value
+	}
+	if value, ok := _c.mutation.Direction(); ok {
+		_spec.SetField(kpi.FieldDirection, field.TypeEnum, value)
+		_node.Direction = value
+	}
+	if value, ok := _c.mutation.CurrentValue(); ok {
+		_spec.SetField(kpi.FieldCurrentValue, field.TypeFloat64, value)
+		_node.CurrentValue = &value
 	}
 	if nodes := _c.mutation.GoalLinksIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

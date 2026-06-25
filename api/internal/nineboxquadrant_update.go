@@ -96,6 +96,12 @@ func (_u *NineBoxQuadrantUpdate) SetNillableColor(v *string) *NineBoxQuadrantUpd
 	return _u
 }
 
+// ClearColor clears the value of the "color" field.
+func (_u *NineBoxQuadrantUpdate) ClearColor() *NineBoxQuadrantUpdate {
+	_u.mutation.ClearColor()
+	return _u
+}
+
 // SetActionRecommendation sets the "action_recommendation" field.
 func (_u *NineBoxQuadrantUpdate) SetActionRecommendation(v string) *NineBoxQuadrantUpdate {
 	_u.mutation.SetActionRecommendation(v)
@@ -113,6 +119,46 @@ func (_u *NineBoxQuadrantUpdate) SetNillableActionRecommendation(v *string) *Nin
 // ClearActionRecommendation clears the value of the "action_recommendation" field.
 func (_u *NineBoxQuadrantUpdate) ClearActionRecommendation() *NineBoxQuadrantUpdate {
 	_u.mutation.ClearActionRecommendation()
+	return _u
+}
+
+// SetTitle sets the "title" field.
+func (_u *NineBoxQuadrantUpdate) SetTitle(v string) *NineBoxQuadrantUpdate {
+	_u.mutation.SetTitle(v)
+	return _u
+}
+
+// SetNillableTitle sets the "title" field if the given value is not nil.
+func (_u *NineBoxQuadrantUpdate) SetNillableTitle(v *string) *NineBoxQuadrantUpdate {
+	if v != nil {
+		_u.SetTitle(*v)
+	}
+	return _u
+}
+
+// ClearTitle clears the value of the "title" field.
+func (_u *NineBoxQuadrantUpdate) ClearTitle() *NineBoxQuadrantUpdate {
+	_u.mutation.ClearTitle()
+	return _u
+}
+
+// SetColorHex sets the "color_hex" field.
+func (_u *NineBoxQuadrantUpdate) SetColorHex(v string) *NineBoxQuadrantUpdate {
+	_u.mutation.SetColorHex(v)
+	return _u
+}
+
+// SetNillableColorHex sets the "color_hex" field if the given value is not nil.
+func (_u *NineBoxQuadrantUpdate) SetNillableColorHex(v *string) *NineBoxQuadrantUpdate {
+	if v != nil {
+		_u.SetColorHex(*v)
+	}
+	return _u
+}
+
+// ClearColorHex clears the value of the "color_hex" field.
+func (_u *NineBoxQuadrantUpdate) ClearColorHex() *NineBoxQuadrantUpdate {
+	_u.mutation.ClearColorHex()
 	return _u
 }
 
@@ -160,9 +206,14 @@ func (_u *NineBoxQuadrantUpdate) check() error {
 			return &ValidationError{Name: "label", err: fmt.Errorf(`internal: validator failed for field "NineBoxQuadrant.label": %w`, err)}
 		}
 	}
-	if v, ok := _u.mutation.Color(); ok {
-		if err := nineboxquadrant.ColorValidator(v); err != nil {
-			return &ValidationError{Name: "color", err: fmt.Errorf(`internal: validator failed for field "NineBoxQuadrant.color": %w`, err)}
+	if v, ok := _u.mutation.Title(); ok {
+		if err := nineboxquadrant.TitleValidator(v); err != nil {
+			return &ValidationError{Name: "title", err: fmt.Errorf(`internal: validator failed for field "NineBoxQuadrant.title": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.ColorHex(); ok {
+		if err := nineboxquadrant.ColorHexValidator(v); err != nil {
+			return &ValidationError{Name: "color_hex", err: fmt.Errorf(`internal: validator failed for field "NineBoxQuadrant.color_hex": %w`, err)}
 		}
 	}
 	return nil
@@ -198,11 +249,26 @@ func (_u *NineBoxQuadrantUpdate) sqlSave(ctx context.Context) (_node int, err er
 	if value, ok := _u.mutation.Color(); ok {
 		_spec.SetField(nineboxquadrant.FieldColor, field.TypeString, value)
 	}
+	if _u.mutation.ColorCleared() {
+		_spec.ClearField(nineboxquadrant.FieldColor, field.TypeString)
+	}
 	if value, ok := _u.mutation.ActionRecommendation(); ok {
 		_spec.SetField(nineboxquadrant.FieldActionRecommendation, field.TypeString, value)
 	}
 	if _u.mutation.ActionRecommendationCleared() {
 		_spec.ClearField(nineboxquadrant.FieldActionRecommendation, field.TypeString)
+	}
+	if value, ok := _u.mutation.Title(); ok {
+		_spec.SetField(nineboxquadrant.FieldTitle, field.TypeString, value)
+	}
+	if _u.mutation.TitleCleared() {
+		_spec.ClearField(nineboxquadrant.FieldTitle, field.TypeString)
+	}
+	if value, ok := _u.mutation.ColorHex(); ok {
+		_spec.SetField(nineboxquadrant.FieldColorHex, field.TypeString, value)
+	}
+	if _u.mutation.ColorHexCleared() {
+		_spec.ClearField(nineboxquadrant.FieldColorHex, field.TypeString)
 	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -293,6 +359,12 @@ func (_u *NineBoxQuadrantUpdateOne) SetNillableColor(v *string) *NineBoxQuadrant
 	return _u
 }
 
+// ClearColor clears the value of the "color" field.
+func (_u *NineBoxQuadrantUpdateOne) ClearColor() *NineBoxQuadrantUpdateOne {
+	_u.mutation.ClearColor()
+	return _u
+}
+
 // SetActionRecommendation sets the "action_recommendation" field.
 func (_u *NineBoxQuadrantUpdateOne) SetActionRecommendation(v string) *NineBoxQuadrantUpdateOne {
 	_u.mutation.SetActionRecommendation(v)
@@ -310,6 +382,46 @@ func (_u *NineBoxQuadrantUpdateOne) SetNillableActionRecommendation(v *string) *
 // ClearActionRecommendation clears the value of the "action_recommendation" field.
 func (_u *NineBoxQuadrantUpdateOne) ClearActionRecommendation() *NineBoxQuadrantUpdateOne {
 	_u.mutation.ClearActionRecommendation()
+	return _u
+}
+
+// SetTitle sets the "title" field.
+func (_u *NineBoxQuadrantUpdateOne) SetTitle(v string) *NineBoxQuadrantUpdateOne {
+	_u.mutation.SetTitle(v)
+	return _u
+}
+
+// SetNillableTitle sets the "title" field if the given value is not nil.
+func (_u *NineBoxQuadrantUpdateOne) SetNillableTitle(v *string) *NineBoxQuadrantUpdateOne {
+	if v != nil {
+		_u.SetTitle(*v)
+	}
+	return _u
+}
+
+// ClearTitle clears the value of the "title" field.
+func (_u *NineBoxQuadrantUpdateOne) ClearTitle() *NineBoxQuadrantUpdateOne {
+	_u.mutation.ClearTitle()
+	return _u
+}
+
+// SetColorHex sets the "color_hex" field.
+func (_u *NineBoxQuadrantUpdateOne) SetColorHex(v string) *NineBoxQuadrantUpdateOne {
+	_u.mutation.SetColorHex(v)
+	return _u
+}
+
+// SetNillableColorHex sets the "color_hex" field if the given value is not nil.
+func (_u *NineBoxQuadrantUpdateOne) SetNillableColorHex(v *string) *NineBoxQuadrantUpdateOne {
+	if v != nil {
+		_u.SetColorHex(*v)
+	}
+	return _u
+}
+
+// ClearColorHex clears the value of the "color_hex" field.
+func (_u *NineBoxQuadrantUpdateOne) ClearColorHex() *NineBoxQuadrantUpdateOne {
+	_u.mutation.ClearColorHex()
 	return _u
 }
 
@@ -370,9 +482,14 @@ func (_u *NineBoxQuadrantUpdateOne) check() error {
 			return &ValidationError{Name: "label", err: fmt.Errorf(`internal: validator failed for field "NineBoxQuadrant.label": %w`, err)}
 		}
 	}
-	if v, ok := _u.mutation.Color(); ok {
-		if err := nineboxquadrant.ColorValidator(v); err != nil {
-			return &ValidationError{Name: "color", err: fmt.Errorf(`internal: validator failed for field "NineBoxQuadrant.color": %w`, err)}
+	if v, ok := _u.mutation.Title(); ok {
+		if err := nineboxquadrant.TitleValidator(v); err != nil {
+			return &ValidationError{Name: "title", err: fmt.Errorf(`internal: validator failed for field "NineBoxQuadrant.title": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.ColorHex(); ok {
+		if err := nineboxquadrant.ColorHexValidator(v); err != nil {
+			return &ValidationError{Name: "color_hex", err: fmt.Errorf(`internal: validator failed for field "NineBoxQuadrant.color_hex": %w`, err)}
 		}
 	}
 	return nil
@@ -425,11 +542,26 @@ func (_u *NineBoxQuadrantUpdateOne) sqlSave(ctx context.Context) (_node *NineBox
 	if value, ok := _u.mutation.Color(); ok {
 		_spec.SetField(nineboxquadrant.FieldColor, field.TypeString, value)
 	}
+	if _u.mutation.ColorCleared() {
+		_spec.ClearField(nineboxquadrant.FieldColor, field.TypeString)
+	}
 	if value, ok := _u.mutation.ActionRecommendation(); ok {
 		_spec.SetField(nineboxquadrant.FieldActionRecommendation, field.TypeString, value)
 	}
 	if _u.mutation.ActionRecommendationCleared() {
 		_spec.ClearField(nineboxquadrant.FieldActionRecommendation, field.TypeString)
+	}
+	if value, ok := _u.mutation.Title(); ok {
+		_spec.SetField(nineboxquadrant.FieldTitle, field.TypeString, value)
+	}
+	if _u.mutation.TitleCleared() {
+		_spec.ClearField(nineboxquadrant.FieldTitle, field.TypeString)
+	}
+	if value, ok := _u.mutation.ColorHex(); ok {
+		_spec.SetField(nineboxquadrant.FieldColorHex, field.TypeString, value)
+	}
+	if _u.mutation.ColorHexCleared() {
+		_spec.ClearField(nineboxquadrant.FieldColorHex, field.TypeString)
 	}
 	_node = &NineBoxQuadrant{config: _u.config}
 	_spec.Assign = _node.assignValues

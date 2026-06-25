@@ -77,15 +77,15 @@ func (_c *NineBoxEntryCreate) SetNillableVersion(v *int) *NineBoxEntryCreate {
 	return _c
 }
 
-// SetPerformanceScore sets the "performance_score" field.
-func (_c *NineBoxEntryCreate) SetPerformanceScore(v int) *NineBoxEntryCreate {
-	_c.mutation.SetPerformanceScore(v)
+// SetPerformanceTier sets the "performance_tier" field.
+func (_c *NineBoxEntryCreate) SetPerformanceTier(v int) *NineBoxEntryCreate {
+	_c.mutation.SetPerformanceTier(v)
 	return _c
 }
 
-// SetPotentialScore sets the "potential_score" field.
-func (_c *NineBoxEntryCreate) SetPotentialScore(v int) *NineBoxEntryCreate {
-	_c.mutation.SetPotentialScore(v)
+// SetPotentialTier sets the "potential_tier" field.
+func (_c *NineBoxEntryCreate) SetPotentialTier(v int) *NineBoxEntryCreate {
+	_c.mutation.SetPotentialTier(v)
 	return _c
 }
 
@@ -220,20 +220,20 @@ func (_c *NineBoxEntryCreate) check() error {
 			return &ValidationError{Name: "version", err: fmt.Errorf(`internal: validator failed for field "NineBoxEntry.version": %w`, err)}
 		}
 	}
-	if _, ok := _c.mutation.PerformanceScore(); !ok {
-		return &ValidationError{Name: "performance_score", err: errors.New(`internal: missing required field "NineBoxEntry.performance_score"`)}
+	if _, ok := _c.mutation.PerformanceTier(); !ok {
+		return &ValidationError{Name: "performance_tier", err: errors.New(`internal: missing required field "NineBoxEntry.performance_tier"`)}
 	}
-	if v, ok := _c.mutation.PerformanceScore(); ok {
-		if err := nineboxentry.PerformanceScoreValidator(v); err != nil {
-			return &ValidationError{Name: "performance_score", err: fmt.Errorf(`internal: validator failed for field "NineBoxEntry.performance_score": %w`, err)}
+	if v, ok := _c.mutation.PerformanceTier(); ok {
+		if err := nineboxentry.PerformanceTierValidator(v); err != nil {
+			return &ValidationError{Name: "performance_tier", err: fmt.Errorf(`internal: validator failed for field "NineBoxEntry.performance_tier": %w`, err)}
 		}
 	}
-	if _, ok := _c.mutation.PotentialScore(); !ok {
-		return &ValidationError{Name: "potential_score", err: errors.New(`internal: missing required field "NineBoxEntry.potential_score"`)}
+	if _, ok := _c.mutation.PotentialTier(); !ok {
+		return &ValidationError{Name: "potential_tier", err: errors.New(`internal: missing required field "NineBoxEntry.potential_tier"`)}
 	}
-	if v, ok := _c.mutation.PotentialScore(); ok {
-		if err := nineboxentry.PotentialScoreValidator(v); err != nil {
-			return &ValidationError{Name: "potential_score", err: fmt.Errorf(`internal: validator failed for field "NineBoxEntry.potential_score": %w`, err)}
+	if v, ok := _c.mutation.PotentialTier(); ok {
+		if err := nineboxentry.PotentialTierValidator(v); err != nil {
+			return &ValidationError{Name: "potential_tier", err: fmt.Errorf(`internal: validator failed for field "NineBoxEntry.potential_tier": %w`, err)}
 		}
 	}
 	if _, ok := _c.mutation.Quadrant(); !ok {
@@ -311,13 +311,13 @@ func (_c *NineBoxEntryCreate) createSpec() (*NineBoxEntry, *sqlgraph.CreateSpec)
 		_spec.SetField(nineboxentry.FieldVersion, field.TypeInt, value)
 		_node.Version = value
 	}
-	if value, ok := _c.mutation.PerformanceScore(); ok {
-		_spec.SetField(nineboxentry.FieldPerformanceScore, field.TypeInt, value)
-		_node.PerformanceScore = value
+	if value, ok := _c.mutation.PerformanceTier(); ok {
+		_spec.SetField(nineboxentry.FieldPerformanceTier, field.TypeInt, value)
+		_node.PerformanceTier = value
 	}
-	if value, ok := _c.mutation.PotentialScore(); ok {
-		_spec.SetField(nineboxentry.FieldPotentialScore, field.TypeInt, value)
-		_node.PotentialScore = value
+	if value, ok := _c.mutation.PotentialTier(); ok {
+		_spec.SetField(nineboxentry.FieldPotentialTier, field.TypeInt, value)
+		_node.PotentialTier = value
 	}
 	if value, ok := _c.mutation.Quadrant(); ok {
 		_spec.SetField(nineboxentry.FieldQuadrant, field.TypeInt, value)

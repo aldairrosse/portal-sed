@@ -83,6 +83,47 @@ func (_u *KPIUpdate) ClearDescription() *KPIUpdate {
 	return _u
 }
 
+// SetDirection sets the "direction" field.
+func (_u *KPIUpdate) SetDirection(v kpi.Direction) *KPIUpdate {
+	_u.mutation.SetDirection(v)
+	return _u
+}
+
+// SetNillableDirection sets the "direction" field if the given value is not nil.
+func (_u *KPIUpdate) SetNillableDirection(v *kpi.Direction) *KPIUpdate {
+	if v != nil {
+		_u.SetDirection(*v)
+	}
+	return _u
+}
+
+// SetCurrentValue sets the "current_value" field.
+func (_u *KPIUpdate) SetCurrentValue(v float64) *KPIUpdate {
+	_u.mutation.ResetCurrentValue()
+	_u.mutation.SetCurrentValue(v)
+	return _u
+}
+
+// SetNillableCurrentValue sets the "current_value" field if the given value is not nil.
+func (_u *KPIUpdate) SetNillableCurrentValue(v *float64) *KPIUpdate {
+	if v != nil {
+		_u.SetCurrentValue(*v)
+	}
+	return _u
+}
+
+// AddCurrentValue adds value to the "current_value" field.
+func (_u *KPIUpdate) AddCurrentValue(v float64) *KPIUpdate {
+	_u.mutation.AddCurrentValue(v)
+	return _u
+}
+
+// ClearCurrentValue clears the value of the "current_value" field.
+func (_u *KPIUpdate) ClearCurrentValue() *KPIUpdate {
+	_u.mutation.ClearCurrentValue()
+	return _u
+}
+
 // AddGoalLinkIDs adds the "goal_links" edge to the GoalKpiLink entity by IDs.
 func (_u *KPIUpdate) AddGoalLinkIDs(ids ...int) *KPIUpdate {
 	_u.mutation.AddGoalLinkIDs(ids...)
@@ -172,6 +213,11 @@ func (_u *KPIUpdate) check() error {
 			return &ValidationError{Name: "unit", err: fmt.Errorf(`internal: validator failed for field "KPI.unit": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.Direction(); ok {
+		if err := kpi.DirectionValidator(v); err != nil {
+			return &ValidationError{Name: "direction", err: fmt.Errorf(`internal: validator failed for field "KPI.direction": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -201,6 +247,18 @@ func (_u *KPIUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.DescriptionCleared() {
 		_spec.ClearField(kpi.FieldDescription, field.TypeString)
+	}
+	if value, ok := _u.mutation.Direction(); ok {
+		_spec.SetField(kpi.FieldDirection, field.TypeEnum, value)
+	}
+	if value, ok := _u.mutation.CurrentValue(); ok {
+		_spec.SetField(kpi.FieldCurrentValue, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedCurrentValue(); ok {
+		_spec.AddField(kpi.FieldCurrentValue, field.TypeFloat64, value)
+	}
+	if _u.mutation.CurrentValueCleared() {
+		_spec.ClearField(kpi.FieldCurrentValue, field.TypeFloat64)
 	}
 	if _u.mutation.GoalLinksCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -321,6 +379,47 @@ func (_u *KPIUpdateOne) ClearDescription() *KPIUpdateOne {
 	return _u
 }
 
+// SetDirection sets the "direction" field.
+func (_u *KPIUpdateOne) SetDirection(v kpi.Direction) *KPIUpdateOne {
+	_u.mutation.SetDirection(v)
+	return _u
+}
+
+// SetNillableDirection sets the "direction" field if the given value is not nil.
+func (_u *KPIUpdateOne) SetNillableDirection(v *kpi.Direction) *KPIUpdateOne {
+	if v != nil {
+		_u.SetDirection(*v)
+	}
+	return _u
+}
+
+// SetCurrentValue sets the "current_value" field.
+func (_u *KPIUpdateOne) SetCurrentValue(v float64) *KPIUpdateOne {
+	_u.mutation.ResetCurrentValue()
+	_u.mutation.SetCurrentValue(v)
+	return _u
+}
+
+// SetNillableCurrentValue sets the "current_value" field if the given value is not nil.
+func (_u *KPIUpdateOne) SetNillableCurrentValue(v *float64) *KPIUpdateOne {
+	if v != nil {
+		_u.SetCurrentValue(*v)
+	}
+	return _u
+}
+
+// AddCurrentValue adds value to the "current_value" field.
+func (_u *KPIUpdateOne) AddCurrentValue(v float64) *KPIUpdateOne {
+	_u.mutation.AddCurrentValue(v)
+	return _u
+}
+
+// ClearCurrentValue clears the value of the "current_value" field.
+func (_u *KPIUpdateOne) ClearCurrentValue() *KPIUpdateOne {
+	_u.mutation.ClearCurrentValue()
+	return _u
+}
+
 // AddGoalLinkIDs adds the "goal_links" edge to the GoalKpiLink entity by IDs.
 func (_u *KPIUpdateOne) AddGoalLinkIDs(ids ...int) *KPIUpdateOne {
 	_u.mutation.AddGoalLinkIDs(ids...)
@@ -423,6 +522,11 @@ func (_u *KPIUpdateOne) check() error {
 			return &ValidationError{Name: "unit", err: fmt.Errorf(`internal: validator failed for field "KPI.unit": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.Direction(); ok {
+		if err := kpi.DirectionValidator(v); err != nil {
+			return &ValidationError{Name: "direction", err: fmt.Errorf(`internal: validator failed for field "KPI.direction": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -469,6 +573,18 @@ func (_u *KPIUpdateOne) sqlSave(ctx context.Context) (_node *KPI, err error) {
 	}
 	if _u.mutation.DescriptionCleared() {
 		_spec.ClearField(kpi.FieldDescription, field.TypeString)
+	}
+	if value, ok := _u.mutation.Direction(); ok {
+		_spec.SetField(kpi.FieldDirection, field.TypeEnum, value)
+	}
+	if value, ok := _u.mutation.CurrentValue(); ok {
+		_spec.SetField(kpi.FieldCurrentValue, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedCurrentValue(); ok {
+		_spec.AddField(kpi.FieldCurrentValue, field.TypeFloat64, value)
+	}
+	if _u.mutation.CurrentValueCleared() {
+		_spec.ClearField(kpi.FieldCurrentValue, field.TypeFloat64)
 	}
 	if _u.mutation.GoalLinksCleared() {
 		edge := &sqlgraph.EdgeSpec{

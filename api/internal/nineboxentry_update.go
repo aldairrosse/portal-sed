@@ -86,45 +86,45 @@ func (_u *NineBoxEntryUpdate) AddVersion(v int) *NineBoxEntryUpdate {
 	return _u
 }
 
-// SetPerformanceScore sets the "performance_score" field.
-func (_u *NineBoxEntryUpdate) SetPerformanceScore(v int) *NineBoxEntryUpdate {
-	_u.mutation.ResetPerformanceScore()
-	_u.mutation.SetPerformanceScore(v)
+// SetPerformanceTier sets the "performance_tier" field.
+func (_u *NineBoxEntryUpdate) SetPerformanceTier(v int) *NineBoxEntryUpdate {
+	_u.mutation.ResetPerformanceTier()
+	_u.mutation.SetPerformanceTier(v)
 	return _u
 }
 
-// SetNillablePerformanceScore sets the "performance_score" field if the given value is not nil.
-func (_u *NineBoxEntryUpdate) SetNillablePerformanceScore(v *int) *NineBoxEntryUpdate {
+// SetNillablePerformanceTier sets the "performance_tier" field if the given value is not nil.
+func (_u *NineBoxEntryUpdate) SetNillablePerformanceTier(v *int) *NineBoxEntryUpdate {
 	if v != nil {
-		_u.SetPerformanceScore(*v)
+		_u.SetPerformanceTier(*v)
 	}
 	return _u
 }
 
-// AddPerformanceScore adds value to the "performance_score" field.
-func (_u *NineBoxEntryUpdate) AddPerformanceScore(v int) *NineBoxEntryUpdate {
-	_u.mutation.AddPerformanceScore(v)
+// AddPerformanceTier adds value to the "performance_tier" field.
+func (_u *NineBoxEntryUpdate) AddPerformanceTier(v int) *NineBoxEntryUpdate {
+	_u.mutation.AddPerformanceTier(v)
 	return _u
 }
 
-// SetPotentialScore sets the "potential_score" field.
-func (_u *NineBoxEntryUpdate) SetPotentialScore(v int) *NineBoxEntryUpdate {
-	_u.mutation.ResetPotentialScore()
-	_u.mutation.SetPotentialScore(v)
+// SetPotentialTier sets the "potential_tier" field.
+func (_u *NineBoxEntryUpdate) SetPotentialTier(v int) *NineBoxEntryUpdate {
+	_u.mutation.ResetPotentialTier()
+	_u.mutation.SetPotentialTier(v)
 	return _u
 }
 
-// SetNillablePotentialScore sets the "potential_score" field if the given value is not nil.
-func (_u *NineBoxEntryUpdate) SetNillablePotentialScore(v *int) *NineBoxEntryUpdate {
+// SetNillablePotentialTier sets the "potential_tier" field if the given value is not nil.
+func (_u *NineBoxEntryUpdate) SetNillablePotentialTier(v *int) *NineBoxEntryUpdate {
 	if v != nil {
-		_u.SetPotentialScore(*v)
+		_u.SetPotentialTier(*v)
 	}
 	return _u
 }
 
-// AddPotentialScore adds value to the "potential_score" field.
-func (_u *NineBoxEntryUpdate) AddPotentialScore(v int) *NineBoxEntryUpdate {
-	_u.mutation.AddPotentialScore(v)
+// AddPotentialTier adds value to the "potential_tier" field.
+func (_u *NineBoxEntryUpdate) AddPotentialTier(v int) *NineBoxEntryUpdate {
+	_u.mutation.AddPotentialTier(v)
 	return _u
 }
 
@@ -267,14 +267,14 @@ func (_u *NineBoxEntryUpdate) check() error {
 			return &ValidationError{Name: "version", err: fmt.Errorf(`internal: validator failed for field "NineBoxEntry.version": %w`, err)}
 		}
 	}
-	if v, ok := _u.mutation.PerformanceScore(); ok {
-		if err := nineboxentry.PerformanceScoreValidator(v); err != nil {
-			return &ValidationError{Name: "performance_score", err: fmt.Errorf(`internal: validator failed for field "NineBoxEntry.performance_score": %w`, err)}
+	if v, ok := _u.mutation.PerformanceTier(); ok {
+		if err := nineboxentry.PerformanceTierValidator(v); err != nil {
+			return &ValidationError{Name: "performance_tier", err: fmt.Errorf(`internal: validator failed for field "NineBoxEntry.performance_tier": %w`, err)}
 		}
 	}
-	if v, ok := _u.mutation.PotentialScore(); ok {
-		if err := nineboxentry.PotentialScoreValidator(v); err != nil {
-			return &ValidationError{Name: "potential_score", err: fmt.Errorf(`internal: validator failed for field "NineBoxEntry.potential_score": %w`, err)}
+	if v, ok := _u.mutation.PotentialTier(); ok {
+		if err := nineboxentry.PotentialTierValidator(v); err != nil {
+			return &ValidationError{Name: "potential_tier", err: fmt.Errorf(`internal: validator failed for field "NineBoxEntry.potential_tier": %w`, err)}
 		}
 	}
 	if v, ok := _u.mutation.Quadrant(); ok {
@@ -318,17 +318,17 @@ func (_u *NineBoxEntryUpdate) sqlSave(ctx context.Context) (_node int, err error
 	if value, ok := _u.mutation.AddedVersion(); ok {
 		_spec.AddField(nineboxentry.FieldVersion, field.TypeInt, value)
 	}
-	if value, ok := _u.mutation.PerformanceScore(); ok {
-		_spec.SetField(nineboxentry.FieldPerformanceScore, field.TypeInt, value)
+	if value, ok := _u.mutation.PerformanceTier(); ok {
+		_spec.SetField(nineboxentry.FieldPerformanceTier, field.TypeInt, value)
 	}
-	if value, ok := _u.mutation.AddedPerformanceScore(); ok {
-		_spec.AddField(nineboxentry.FieldPerformanceScore, field.TypeInt, value)
+	if value, ok := _u.mutation.AddedPerformanceTier(); ok {
+		_spec.AddField(nineboxentry.FieldPerformanceTier, field.TypeInt, value)
 	}
-	if value, ok := _u.mutation.PotentialScore(); ok {
-		_spec.SetField(nineboxentry.FieldPotentialScore, field.TypeInt, value)
+	if value, ok := _u.mutation.PotentialTier(); ok {
+		_spec.SetField(nineboxentry.FieldPotentialTier, field.TypeInt, value)
 	}
-	if value, ok := _u.mutation.AddedPotentialScore(); ok {
-		_spec.AddField(nineboxentry.FieldPotentialScore, field.TypeInt, value)
+	if value, ok := _u.mutation.AddedPotentialTier(); ok {
+		_spec.AddField(nineboxentry.FieldPotentialTier, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.Quadrant(); ok {
 		_spec.SetField(nineboxentry.FieldQuadrant, field.TypeInt, value)
@@ -475,45 +475,45 @@ func (_u *NineBoxEntryUpdateOne) AddVersion(v int) *NineBoxEntryUpdateOne {
 	return _u
 }
 
-// SetPerformanceScore sets the "performance_score" field.
-func (_u *NineBoxEntryUpdateOne) SetPerformanceScore(v int) *NineBoxEntryUpdateOne {
-	_u.mutation.ResetPerformanceScore()
-	_u.mutation.SetPerformanceScore(v)
+// SetPerformanceTier sets the "performance_tier" field.
+func (_u *NineBoxEntryUpdateOne) SetPerformanceTier(v int) *NineBoxEntryUpdateOne {
+	_u.mutation.ResetPerformanceTier()
+	_u.mutation.SetPerformanceTier(v)
 	return _u
 }
 
-// SetNillablePerformanceScore sets the "performance_score" field if the given value is not nil.
-func (_u *NineBoxEntryUpdateOne) SetNillablePerformanceScore(v *int) *NineBoxEntryUpdateOne {
+// SetNillablePerformanceTier sets the "performance_tier" field if the given value is not nil.
+func (_u *NineBoxEntryUpdateOne) SetNillablePerformanceTier(v *int) *NineBoxEntryUpdateOne {
 	if v != nil {
-		_u.SetPerformanceScore(*v)
+		_u.SetPerformanceTier(*v)
 	}
 	return _u
 }
 
-// AddPerformanceScore adds value to the "performance_score" field.
-func (_u *NineBoxEntryUpdateOne) AddPerformanceScore(v int) *NineBoxEntryUpdateOne {
-	_u.mutation.AddPerformanceScore(v)
+// AddPerformanceTier adds value to the "performance_tier" field.
+func (_u *NineBoxEntryUpdateOne) AddPerformanceTier(v int) *NineBoxEntryUpdateOne {
+	_u.mutation.AddPerformanceTier(v)
 	return _u
 }
 
-// SetPotentialScore sets the "potential_score" field.
-func (_u *NineBoxEntryUpdateOne) SetPotentialScore(v int) *NineBoxEntryUpdateOne {
-	_u.mutation.ResetPotentialScore()
-	_u.mutation.SetPotentialScore(v)
+// SetPotentialTier sets the "potential_tier" field.
+func (_u *NineBoxEntryUpdateOne) SetPotentialTier(v int) *NineBoxEntryUpdateOne {
+	_u.mutation.ResetPotentialTier()
+	_u.mutation.SetPotentialTier(v)
 	return _u
 }
 
-// SetNillablePotentialScore sets the "potential_score" field if the given value is not nil.
-func (_u *NineBoxEntryUpdateOne) SetNillablePotentialScore(v *int) *NineBoxEntryUpdateOne {
+// SetNillablePotentialTier sets the "potential_tier" field if the given value is not nil.
+func (_u *NineBoxEntryUpdateOne) SetNillablePotentialTier(v *int) *NineBoxEntryUpdateOne {
 	if v != nil {
-		_u.SetPotentialScore(*v)
+		_u.SetPotentialTier(*v)
 	}
 	return _u
 }
 
-// AddPotentialScore adds value to the "potential_score" field.
-func (_u *NineBoxEntryUpdateOne) AddPotentialScore(v int) *NineBoxEntryUpdateOne {
-	_u.mutation.AddPotentialScore(v)
+// AddPotentialTier adds value to the "potential_tier" field.
+func (_u *NineBoxEntryUpdateOne) AddPotentialTier(v int) *NineBoxEntryUpdateOne {
+	_u.mutation.AddPotentialTier(v)
 	return _u
 }
 
@@ -669,14 +669,14 @@ func (_u *NineBoxEntryUpdateOne) check() error {
 			return &ValidationError{Name: "version", err: fmt.Errorf(`internal: validator failed for field "NineBoxEntry.version": %w`, err)}
 		}
 	}
-	if v, ok := _u.mutation.PerformanceScore(); ok {
-		if err := nineboxentry.PerformanceScoreValidator(v); err != nil {
-			return &ValidationError{Name: "performance_score", err: fmt.Errorf(`internal: validator failed for field "NineBoxEntry.performance_score": %w`, err)}
+	if v, ok := _u.mutation.PerformanceTier(); ok {
+		if err := nineboxentry.PerformanceTierValidator(v); err != nil {
+			return &ValidationError{Name: "performance_tier", err: fmt.Errorf(`internal: validator failed for field "NineBoxEntry.performance_tier": %w`, err)}
 		}
 	}
-	if v, ok := _u.mutation.PotentialScore(); ok {
-		if err := nineboxentry.PotentialScoreValidator(v); err != nil {
-			return &ValidationError{Name: "potential_score", err: fmt.Errorf(`internal: validator failed for field "NineBoxEntry.potential_score": %w`, err)}
+	if v, ok := _u.mutation.PotentialTier(); ok {
+		if err := nineboxentry.PotentialTierValidator(v); err != nil {
+			return &ValidationError{Name: "potential_tier", err: fmt.Errorf(`internal: validator failed for field "NineBoxEntry.potential_tier": %w`, err)}
 		}
 	}
 	if v, ok := _u.mutation.Quadrant(); ok {
@@ -737,17 +737,17 @@ func (_u *NineBoxEntryUpdateOne) sqlSave(ctx context.Context) (_node *NineBoxEnt
 	if value, ok := _u.mutation.AddedVersion(); ok {
 		_spec.AddField(nineboxentry.FieldVersion, field.TypeInt, value)
 	}
-	if value, ok := _u.mutation.PerformanceScore(); ok {
-		_spec.SetField(nineboxentry.FieldPerformanceScore, field.TypeInt, value)
+	if value, ok := _u.mutation.PerformanceTier(); ok {
+		_spec.SetField(nineboxentry.FieldPerformanceTier, field.TypeInt, value)
 	}
-	if value, ok := _u.mutation.AddedPerformanceScore(); ok {
-		_spec.AddField(nineboxentry.FieldPerformanceScore, field.TypeInt, value)
+	if value, ok := _u.mutation.AddedPerformanceTier(); ok {
+		_spec.AddField(nineboxentry.FieldPerformanceTier, field.TypeInt, value)
 	}
-	if value, ok := _u.mutation.PotentialScore(); ok {
-		_spec.SetField(nineboxentry.FieldPotentialScore, field.TypeInt, value)
+	if value, ok := _u.mutation.PotentialTier(); ok {
+		_spec.SetField(nineboxentry.FieldPotentialTier, field.TypeInt, value)
 	}
-	if value, ok := _u.mutation.AddedPotentialScore(); ok {
-		_spec.AddField(nineboxentry.FieldPotentialScore, field.TypeInt, value)
+	if value, ok := _u.mutation.AddedPotentialTier(); ok {
+		_spec.AddField(nineboxentry.FieldPotentialTier, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.Quadrant(); ok {
 		_spec.SetField(nineboxentry.FieldQuadrant, field.TypeInt, value)

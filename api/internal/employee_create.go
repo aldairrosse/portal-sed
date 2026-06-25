@@ -133,6 +133,20 @@ func (_c *EmployeeCreate) SetProfileID(v uuid.UUID) *EmployeeCreate {
 	return _c
 }
 
+// SetJobTitle sets the "job_title" field.
+func (_c *EmployeeCreate) SetJobTitle(v string) *EmployeeCreate {
+	_c.mutation.SetJobTitle(v)
+	return _c
+}
+
+// SetNillableJobTitle sets the "job_title" field if the given value is not nil.
+func (_c *EmployeeCreate) SetNillableJobTitle(v *string) *EmployeeCreate {
+	if v != nil {
+		_c.SetJobTitle(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *EmployeeCreate) SetID(v uuid.UUID) *EmployeeCreate {
 	_c.mutation.SetID(v)
@@ -267,6 +281,21 @@ func (_c *EmployeeCreate) AddNineBoxEntries(v ...*NineBoxEntry) *EmployeeCreate 
 	return _c.AddNineBoxEntryIDs(ids...)
 }
 
+// AddHeadedDepartmentIDs adds the "headed_department" edge to the OrgNode entity by IDs.
+func (_c *EmployeeCreate) AddHeadedDepartmentIDs(ids ...uuid.UUID) *EmployeeCreate {
+	_c.mutation.AddHeadedDepartmentIDs(ids...)
+	return _c
+}
+
+// AddHeadedDepartment adds the "headed_department" edges to the OrgNode entity.
+func (_c *EmployeeCreate) AddHeadedDepartment(v ...*OrgNode) *EmployeeCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddHeadedDepartmentIDs(ids...)
+}
+
 // Mutation returns the EmployeeMutation object of the builder.
 func (_c *EmployeeCreate) Mutation() *EmployeeMutation {
 	return _c.mutation
@@ -375,6 +404,11 @@ func (_c *EmployeeCreate) check() error {
 	if _, ok := _c.mutation.ProfileID(); !ok {
 		return &ValidationError{Name: "profile_id", err: errors.New(`internal: missing required field "Employee.profile_id"`)}
 	}
+	if v, ok := _c.mutation.JobTitle(); ok {
+		if err := employee.JobTitleValidator(v); err != nil {
+			return &ValidationError{Name: "job_title", err: fmt.Errorf(`internal: validator failed for field "Employee.job_title": %w`, err)}
+		}
+	}
 	if len(_c.mutation.OrgNodeIDs()) == 0 {
 		return &ValidationError{Name: "org_node", err: errors.New(`internal: missing required edge "Employee.org_node"`)}
 	}
@@ -451,6 +485,10 @@ func (_c *EmployeeCreate) createSpec() (*Employee, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.IsActive(); ok {
 		_spec.SetField(employee.FieldIsActive, field.TypeBool, value)
 		_node.IsActive = value
+	}
+	if value, ok := _c.mutation.JobTitle(); ok {
+		_spec.SetField(employee.FieldJobTitle, field.TypeString, value)
+		_node.JobTitle = value
 	}
 	if nodes := _c.mutation.OrgNodeIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -608,6 +646,22 @@ func (_c *EmployeeCreate) createSpec() (*Employee, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(nineboxentry.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.HeadedDepartmentIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   employee.HeadedDepartmentTable,
+			Columns: []string{employee.HeadedDepartmentColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(orgnode.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

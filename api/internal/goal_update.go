@@ -198,6 +198,47 @@ func (_u *GoalUpdate) AddCurrentValue(v float64) *GoalUpdate {
 	return _u
 }
 
+// SetDirection sets the "direction" field.
+func (_u *GoalUpdate) SetDirection(v goal.Direction) *GoalUpdate {
+	_u.mutation.SetDirection(v)
+	return _u
+}
+
+// SetNillableDirection sets the "direction" field if the given value is not nil.
+func (_u *GoalUpdate) SetNillableDirection(v *goal.Direction) *GoalUpdate {
+	if v != nil {
+		_u.SetDirection(*v)
+	}
+	return _u
+}
+
+// SetBaselineValue sets the "baseline_value" field.
+func (_u *GoalUpdate) SetBaselineValue(v float64) *GoalUpdate {
+	_u.mutation.ResetBaselineValue()
+	_u.mutation.SetBaselineValue(v)
+	return _u
+}
+
+// SetNillableBaselineValue sets the "baseline_value" field if the given value is not nil.
+func (_u *GoalUpdate) SetNillableBaselineValue(v *float64) *GoalUpdate {
+	if v != nil {
+		_u.SetBaselineValue(*v)
+	}
+	return _u
+}
+
+// AddBaselineValue adds value to the "baseline_value" field.
+func (_u *GoalUpdate) AddBaselineValue(v float64) *GoalUpdate {
+	_u.mutation.AddBaselineValue(v)
+	return _u
+}
+
+// ClearBaselineValue clears the value of the "baseline_value" field.
+func (_u *GoalUpdate) ClearBaselineValue() *GoalUpdate {
+	_u.mutation.ClearBaselineValue()
+	return _u
+}
+
 // SetState sets the "state" field.
 func (_u *GoalUpdate) SetState(v goal.State) *GoalUpdate {
 	_u.mutation.SetState(v)
@@ -377,6 +418,11 @@ func (_u *GoalUpdate) check() error {
 			return &ValidationError{Name: "target_value", err: fmt.Errorf(`internal: validator failed for field "Goal.target_value": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.Direction(); ok {
+		if err := goal.DirectionValidator(v); err != nil {
+			return &ValidationError{Name: "direction", err: fmt.Errorf(`internal: validator failed for field "Goal.direction": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.State(); ok {
 		if err := goal.StateValidator(v); err != nil {
 			return &ValidationError{Name: "state", err: fmt.Errorf(`internal: validator failed for field "Goal.state": %w`, err)}
@@ -444,6 +490,18 @@ func (_u *GoalUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.AddedCurrentValue(); ok {
 		_spec.AddField(goal.FieldCurrentValue, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.Direction(); ok {
+		_spec.SetField(goal.FieldDirection, field.TypeEnum, value)
+	}
+	if value, ok := _u.mutation.BaselineValue(); ok {
+		_spec.SetField(goal.FieldBaselineValue, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedBaselineValue(); ok {
+		_spec.AddField(goal.FieldBaselineValue, field.TypeFloat64, value)
+	}
+	if _u.mutation.BaselineValueCleared() {
+		_spec.ClearField(goal.FieldBaselineValue, field.TypeFloat64)
 	}
 	if value, ok := _u.mutation.State(); ok {
 		_spec.SetField(goal.FieldState, field.TypeEnum, value)
@@ -753,6 +811,47 @@ func (_u *GoalUpdateOne) AddCurrentValue(v float64) *GoalUpdateOne {
 	return _u
 }
 
+// SetDirection sets the "direction" field.
+func (_u *GoalUpdateOne) SetDirection(v goal.Direction) *GoalUpdateOne {
+	_u.mutation.SetDirection(v)
+	return _u
+}
+
+// SetNillableDirection sets the "direction" field if the given value is not nil.
+func (_u *GoalUpdateOne) SetNillableDirection(v *goal.Direction) *GoalUpdateOne {
+	if v != nil {
+		_u.SetDirection(*v)
+	}
+	return _u
+}
+
+// SetBaselineValue sets the "baseline_value" field.
+func (_u *GoalUpdateOne) SetBaselineValue(v float64) *GoalUpdateOne {
+	_u.mutation.ResetBaselineValue()
+	_u.mutation.SetBaselineValue(v)
+	return _u
+}
+
+// SetNillableBaselineValue sets the "baseline_value" field if the given value is not nil.
+func (_u *GoalUpdateOne) SetNillableBaselineValue(v *float64) *GoalUpdateOne {
+	if v != nil {
+		_u.SetBaselineValue(*v)
+	}
+	return _u
+}
+
+// AddBaselineValue adds value to the "baseline_value" field.
+func (_u *GoalUpdateOne) AddBaselineValue(v float64) *GoalUpdateOne {
+	_u.mutation.AddBaselineValue(v)
+	return _u
+}
+
+// ClearBaselineValue clears the value of the "baseline_value" field.
+func (_u *GoalUpdateOne) ClearBaselineValue() *GoalUpdateOne {
+	_u.mutation.ClearBaselineValue()
+	return _u
+}
+
 // SetState sets the "state" field.
 func (_u *GoalUpdateOne) SetState(v goal.State) *GoalUpdateOne {
 	_u.mutation.SetState(v)
@@ -945,6 +1044,11 @@ func (_u *GoalUpdateOne) check() error {
 			return &ValidationError{Name: "target_value", err: fmt.Errorf(`internal: validator failed for field "Goal.target_value": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.Direction(); ok {
+		if err := goal.DirectionValidator(v); err != nil {
+			return &ValidationError{Name: "direction", err: fmt.Errorf(`internal: validator failed for field "Goal.direction": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.State(); ok {
 		if err := goal.StateValidator(v); err != nil {
 			return &ValidationError{Name: "state", err: fmt.Errorf(`internal: validator failed for field "Goal.state": %w`, err)}
@@ -1029,6 +1133,18 @@ func (_u *GoalUpdateOne) sqlSave(ctx context.Context) (_node *Goal, err error) {
 	}
 	if value, ok := _u.mutation.AddedCurrentValue(); ok {
 		_spec.AddField(goal.FieldCurrentValue, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.Direction(); ok {
+		_spec.SetField(goal.FieldDirection, field.TypeEnum, value)
+	}
+	if value, ok := _u.mutation.BaselineValue(); ok {
+		_spec.SetField(goal.FieldBaselineValue, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedBaselineValue(); ok {
+		_spec.AddField(goal.FieldBaselineValue, field.TypeFloat64, value)
+	}
+	if _u.mutation.BaselineValueCleared() {
+		_spec.ClearField(goal.FieldBaselineValue, field.TypeFloat64)
 	}
 	if value, ok := _u.mutation.State(); ok {
 		_spec.SetField(goal.FieldState, field.TypeEnum, value)
