@@ -313,6 +313,31 @@ paths:
         '409':
           $ref: '#/components/responses/KpiLinked'
 
+  /kpis/{kpiId}/value:
+    patch:
+      operationId: updateKPIValue
+      summary: Update a KPI's current value
+      description: Updates only the current_value field of a KPI. Used for progress tracking.
+      parameters:
+        - $ref: '#/components/parameters/KpiId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KpiUpdateValueRequest'
+      responses:
+        '200':
+          description: Updated KPI
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KpiResponse'
+        '400':
+          $ref: '#/components/responses/InvalidRequest'
+        '404':
+          $ref: '#/components/responses/KpiNotFound'
+
   # ============================================================================
   # KPI Linking
   # ============================================================================
@@ -395,6 +420,32 @@ paths:
                 $ref: '#/components/schemas/AssignmentResponse'
         '403':
           $ref: '#/components/responses/PhaseRestricted'
+
+  # ============================================================================
+  # Scoring
+  # ============================================================================
+  /employees/{empId}/score:
+    get:
+      operationId: getEmployeeScore
+      summary: Get the employee's weighted score
+      description: Returns the overall weighted score (0-100) based on category weights and goal progress percentages.
+      parameters:
+        - $ref: '#/components/parameters/EmpId'
+      responses:
+        '200':
+          description: Weighted score
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  score:
+                    type: number
+                    minimum: 0
+                    maximum: 100
+                required: [score]
+        '404':
+          $ref: '#/components/responses/GoalNotFound'
 
 components:
   parameters:
@@ -555,6 +606,15 @@ components:
         target_value:
           type: number
           minimum: 0.01
+        direction:
+          type: string
+          enum: [ascendente, descendente]
+          default: ascendente
+        baseline_value:
+          type: number
+          nullable: true
+          minimum: 0
+          description: Required when direction is descendente; must be > target_value
         kpi_ids:
           type: array
           items:
@@ -582,6 +642,15 @@ components:
         target_value:
           type: number
           minimum: 0.01
+        direction:
+          type: string
+          enum: [ascendente, descendente]
+          default: ascendente
+        baseline_value:
+          type: number
+          nullable: true
+          minimum: 0
+          description: Required when direction is descendente; must be > target_value
         version:
           type: integer
           minimum: 1
@@ -613,6 +682,14 @@ components:
           type: number
         current_value:
           type: number
+        direction:
+          type: string
+          enum: [ascendente, descendente]
+        baseline_value:
+          type: number
+          nullable: true
+        progress_percent:
+          type: number
         state:
           type: string
           enum: [borrador, fijada, en_seguimiento, evaluada, cerrada]
@@ -630,6 +707,14 @@ components:
           format: date-time
 
     UpdateProgressRequest:
+      type: object
+      required: [current_value]
+      properties:
+        current_value:
+          type: number
+          minimum: 0
+
+    KpiUpdateValueRequest:
       type: object
       required: [current_value]
       properties:
@@ -725,6 +810,10 @@ components:
           enum: [porcentaje, moneda, numero]
         description:
           type: string
+        direction:
+          type: string
+          enum: [ascendente, descendente]
+          default: ascendente
 
     UpdateKpiRequest:
       type: object
@@ -739,6 +828,10 @@ components:
           enum: [porcentaje, moneda, numero]
         description:
           type: string
+        direction:
+          type: string
+          enum: [ascendente, descendente]
+          default: ascendente
 
     KpiResponse:
       type: object
@@ -752,6 +845,14 @@ components:
           type: string
         description:
           type: string
+        direction:
+          type: string
+          enum: [ascendente, descendente]
+        current_value:
+          type: number
+          nullable: true
+        progress_percent:
+          type: number
         created_at:
           type: string
           format: date-time

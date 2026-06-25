@@ -39,23 +39,27 @@ type CategoryListResponse struct {
 
 // CreateGoalRequest is the request body for creating a goal.
 type CreateGoalRequest struct {
-	Name        string   `json:"name"`
-	Description string   `json:"description,omitempty"`
-	Unit        string   `json:"unit"`
-	Weight      float64  `json:"weight"`
-	TargetValue float64  `json:"target_value"`
-	KpiIDs      []string `json:"kpi_ids,omitempty"`
+	Name          string   `json:"name"`
+	Description   string   `json:"description,omitempty"`
+	Unit          string   `json:"unit"`
+	Weight        float64  `json:"weight"`
+	TargetValue   float64  `json:"target_value"`
+	Direction     string   `json:"direction"`
+	BaselineValue *float64 `json:"baseline_value,omitempty"`
+	KpiIDs        []string `json:"kpi_ids,omitempty"`
 }
 
 // UpdateGoalRequest is the request body for updating a goal.
 type UpdateGoalRequest struct {
-	Name        string   `json:"name"`
-	Description string   `json:"description,omitempty"`
-	Unit        string   `json:"unit"`
-	Weight      float64  `json:"weight"`
-	TargetValue float64  `json:"target_value"`
-	Version     int      `json:"version"`
-	KpiIDs      []string `json:"kpi_ids,omitempty"`
+	Name          string   `json:"name"`
+	Description   string   `json:"description,omitempty"`
+	Unit          string   `json:"unit"`
+	Weight        float64  `json:"weight"`
+	TargetValue   float64  `json:"target_value"`
+	Direction     string   `json:"direction"`
+	BaselineValue *float64 `json:"baseline_value,omitempty"`
+	Version       int      `json:"version"`
+	KpiIDs        []string `json:"kpi_ids,omitempty"`
 }
 
 // UpdateProgressRequest is the request body for updating goal progress.
@@ -65,19 +69,22 @@ type UpdateProgressRequest struct {
 
 // GoalResponse is the response body for a single goal.
 type GoalResponse struct {
-	ID           string         `json:"id"`
-	CategoryID   string         `json:"category_id"`
-	Name         string         `json:"name"`
-	Description  string         `json:"description,omitempty"`
-	Unit         string         `json:"unit"`
-	Weight       float64        `json:"weight"`
-	TargetValue  float64        `json:"target_value"`
-	CurrentValue float64        `json:"current_value"`
-	State        string         `json:"state"`
-	Version      int            `json:"version"`
-	KPIs         []KpiResponse  `json:"kpis,omitempty"`
-	CreatedAt    string         `json:"created_at"`
-	UpdatedAt    string         `json:"updated_at"`
+	ID             string         `json:"id"`
+	CategoryID     string         `json:"category_id"`
+	Name           string         `json:"name"`
+	Description    string         `json:"description,omitempty"`
+	Unit           string         `json:"unit"`
+	Weight         float64        `json:"weight"`
+	TargetValue    float64        `json:"target_value"`
+	CurrentValue   float64        `json:"current_value"`
+	Direction      string         `json:"direction"`
+	BaselineValue  *float64       `json:"baseline_value,omitempty"`
+	ProgressPercent float64       `json:"progress_percent"`
+	State          string         `json:"state"`
+	Version        int            `json:"version"`
+	KPIs           []KpiResponse  `json:"kpis,omitempty"`
+	CreatedAt      string         `json:"created_at"`
+	UpdatedAt      string         `json:"updated_at"`
 }
 
 // KPI DTOs
@@ -98,12 +105,20 @@ type UpdateKpiRequest struct {
 
 // KpiResponse is the response body for a single KPI.
 type KpiResponse struct {
-	ID          string `json:"id"`
-	Name        string `json:"name"`
-	Unit        string `json:"unit"`
-	Description string `json:"description,omitempty"`
-	CreatedAt   string `json:"created_at"`
-	UpdatedAt   string `json:"updated_at"`
+	ID             string   `json:"id"`
+	Name           string   `json:"name"`
+	Unit           string   `json:"unit"`
+	Description    string   `json:"description,omitempty"`
+	Direction      string   `json:"direction"`
+	CurrentValue   *float64 `json:"current_value,omitempty"`
+	ProgressPercent float64 `json:"progress_percent"`
+	CreatedAt      string   `json:"created_at"`
+	UpdatedAt      string   `json:"updated_at"`
+}
+
+// KpiUpdateValueRequest is the request body for updating a KPI's current value.
+type KpiUpdateValueRequest struct {
+	CurrentValue float64 `json:"current_value"`
 }
 
 // KpiListResponse is the paginated response for listing KPIs.

@@ -39,6 +39,8 @@ const (
 	ConcurrentModification  DomainCode = "CONCURRENT_MODIFICATION"
 	BatchSizeExceeded       DomainCode = "BATCH_SIZE_EXCEEDED"
 	KpiLinkLimitExceeded    DomainCode = "KPI_LINK_LIMIT_EXCEEDED"
+	InvalidBaselineValue    DomainCode = "INVALID_BASELINE_VALUE"
+	InvalidDirection        DomainCode = "INVALID_DIRECTION"
 
 	// Org-hierarchy domain error codes
 	TreeNotFound        DomainCode = "TREE_NOT_FOUND"
@@ -111,6 +113,8 @@ var (
 	ErrConcurrentModification  = &DomainError{Code: ConcurrentModification, Message: "The resource was modified by another request; retry with the latest version."}
 	ErrBatchSizeExceeded       = &DomainError{Code: BatchSizeExceeded, Message: "Batch size exceeds the maximum allowed (50)."}
 	ErrKpiLinkLimitExceeded    = &DomainError{Code: KpiLinkLimitExceeded, Message: "A goal cannot have more than 5 linked KPIs."}
+	ErrInvalidBaselineValue = &DomainError{Code: InvalidBaselineValue, Message: "Baseline value must be greater than target value for descendente goals."}
+	ErrInvalidDirection     = &DomainError{Code: InvalidDirection, Message: "Direction must be 'ascendente' or 'descendente'."}
 
 	// Org-hierarchy sentinel errors
 	ErrTreeNotFound     = &DomainError{Code: TreeNotFound, Message: "Organizational tree not found."}
@@ -148,7 +152,7 @@ func HTTPStatus(err error) int {
 		return 429
 	case MissingIfMatch:
 		return 428
-	case InvalidRequest, InvalidIfMatch, InvalidWeightRange, InvalidTargetValue, InvalidUnit, BatchSizeExceeded, KpiLinkLimitExceeded, InvalidParent, InvalidTreeType,
+	case InvalidRequest, InvalidIfMatch, InvalidWeightRange, InvalidTargetValue, InvalidUnit, BatchSizeExceeded, KpiLinkLimitExceeded, InvalidBaselineValue, InvalidDirection, InvalidParent, InvalidTreeType,
 		"QUADRANT_OUT_OF_RANGE":
 		return 400
 	case RequestTimeout:

@@ -99,25 +99,28 @@ type NineBoxMatrixResponse struct {
 	ID          uuid.UUID         `json:"id"`
 	CycleID     uuid.UUID         `json:"cycleId"`
 	EvaluatorID uuid.UUID         `json:"evaluatorId"`
+	PhaseID     uuid.UUID         `json:"phaseId"`
+	PhaseLabel  string            `json:"phaseLabel,omitempty"`
 	Entries     []NineBoxEntryDTO `json:"entries"`
 	CreatedAt   time.Time         `json:"createdAt"`
 	UpdatedAt   time.Time         `json:"updatedAt"`
 }
 
-// NineBoxEntryDTO is the response DTO for a matrix entry.
+// NineBoxEntryDTO is the response DTO for a matrix entry (tier-based).
 type NineBoxEntryDTO struct {
 	ID               uuid.UUID `json:"id"`
 	EvaluateeID      uuid.UUID `json:"evaluateeId"`
-	PerformanceScore int       `json:"performanceScore"`
-	PotentialScore   int       `json:"potentialScore"`
+	PerformanceTier  int       `json:"performanceTier"`    // was performanceScore
+	PotentialTier    int       `json:"potentialTier"`      // was potentialScore
 	Quadrant         int       `json:"quadrant"`
 	QuadrantLabel    string    `json:"quadrantLabel"`
-	QuadrantColor    string    `json:"quadrantColor"`
+	QuadrantColor    string    `json:"quadrantColor"` // now uses colorHex from quadrant
 	Comments         string    `json:"comments,omitempty"`
 	Version          int       `json:"version"`
 }
 
-// NineBoxEntryInput is the request DTO for creating/updating a matrix entry.
+// NineBoxEntryInput is the request DTO for creating/updating a matrix entry (legacy, preserved for migration).
+// Deprecated: Use RecomputeMatrix for automatic tier computation.
 type NineBoxEntryInput struct {
 	EvaluateeID      uuid.UUID `json:"evaluateeId" validate:"required"`
 	PerformanceScore int       `json:"performanceScore" validate:"min=1,max=9"`
@@ -126,6 +129,7 @@ type NineBoxEntryInput struct {
 }
 
 // NineBoxBatchRequest is the request DTO for batch submission.
+// Deprecated: Use RecomputeMatrix for automatic tier computation.
 type NineBoxBatchRequest struct {
 	Entries []NineBoxEntryInput `json:"entries" validate:"required,min=1,max=20,dive"`
 }
@@ -142,7 +146,16 @@ type NineBoxScaleDTO struct {
 type NineBoxQuadrantDTO struct {
 	Quadrant             int    `json:"quadrant"`
 	Label                string `json:"label"`
+	Title                string `json:"title,omitempty"`
 	Description          string `json:"description"`
 	Color                string `json:"color"`
+	ColorHex             string `json:"colorHex,omitempty"`
 	ActionRecommendation string `json:"actionRecommendation"`
+}
+
+// NineBoxQuadrantUpdateInput is the request DTO for updating a quadrant (RH edit).
+type NineBoxQuadrantUpdateInput struct {
+	Title       string `json:"title,omitempty"`
+	Description string `json:"description,omitempty"`
+	ColorHex    string `json:"colorHex" validate:"omitempty,hexcolor"`
 }
