@@ -7,7 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/sed-evaluacion-desempeno/api/internal"
 	dto "github.com/sed-evaluacion-desempeno/api/internal/dto/evaluation"
-	"github.com/sed-evaluacion-desempeno/api/internal/pkg/errors"
+	pkgerrors "github.com/sed-evaluacion-desempeno/api/internal/pkg/errors"
 	"github.com/sed-evaluacion-desempeno/api/internal/pkg/quadrant"
 	repo "github.com/sed-evaluacion-desempeno/api/internal/repository/evaluation"
 )
@@ -48,7 +48,10 @@ func (s *NineBoxService) GetMatrix(ctx context.Context, matrixID uuid.UUID) (*dt
 	}
 	resp := &dto.NineBoxMatrixResponse{
 		ID: m.ID, CycleID: m.CycleID, EvaluatorID: m.EvaluatorID,
-		CreatedAt: m.CreatedAt, UpdatedAt: m.UpdatedAt,
+		PhaseID: m.PhaseID, CreatedAt: m.CreatedAt, UpdatedAt: m.UpdatedAt,
+	}
+	if m.Edges.Phase != nil {
+		resp.PhaseLabel = m.Edges.Phase.Label
 	}
 	entries := m.Edges.Entries
 	if entries == nil {
@@ -61,9 +64,33 @@ func (s *NineBoxService) GetMatrix(ctx context.Context, matrixID uuid.UUID) (*dt
 	return resp, nil
 }
 
-// ListMatrices returns matrices filtered by cycle and/or evaluator.
-func (s *NineBoxService) ListMatrices(ctx context.Context, cycleID, evaluatorID uuid.UUID) ([]dto.NineBoxMatrixResponse, error) {
-	matrices, err := s.nineBoxRepo.ListMatrices(ctx, cycleID, evaluatorID)
+// GetMatrixByPhase retrieves a matrix by cycle + evaluator + phase, with entries populated.
+func (s *NineBoxService) GetMatrixByPhase(ctx context.Context, cycleID, evaluatorID, phaseID uuid.UUID) (*dto.NineBoxMatrixResponse, error) {
+	m, err := s.nineBoxRepo.GetMatrixByPhase(ctx, cycleID, evaluatorID, phaseID)
+	if err != nil {
+		return nil, err
+	}
+	resp := &dto.NineBoxMatrixResponse{
+		ID: m.ID, CycleID: m.CycleID, EvaluatorID: m.EvaluatorID,
+		PhaseID: m.PhaseID, CreatedAt: m.CreatedAt, UpdatedAt: m.UpdatedAt,
+	}
+	if m.Edges.Phase != nil {
+		resp.PhaseLabel = m.Edges.Phase.Label
+	}
+	entries := m.Edges.Entries
+	if entries == nil {
+		entries = []*internal.NineBoxEntry{}
+	}
+	resp.Entries = make([]dto.NineBoxEntryDTO, len(entries))
+	for i, e := range entries {
+		resp.Entries[i] = s.toEntryDTO(ctx, e)
+	}
+	return resp, nil
+}
+
+// ListMatrices returns matrices filtered by cycle, evaluator, and/or phase.
+func (s *NineBoxService) ListMatrices(ctx context.Context, cycleID, evaluatorID, phaseID uuid.UUID) ([]dto.NineBoxMatrixResponse, error) {
+	matrices, err := s.nineBoxRepo.ListMatrices(ctx, cycleID, evaluatorID, phaseID)
 	if err != nil {
 		return nil, err
 	}
@@ -71,13 +98,106 @@ func (s *NineBoxService) ListMatrices(ctx context.Context, cycleID, evaluatorID 
 	for i, m := range matrices {
 		resp[i] = dto.NineBoxMatrixResponse{
 			ID: m.ID, CycleID: m.CycleID, EvaluatorID: m.EvaluatorID,
-			Entries: []dto.NineBoxEntryDTO{}, CreatedAt: m.CreatedAt, UpdatedAt: m.UpdatedAt,
+			PhaseID: m.PhaseID, Entries: []dto.NineBoxEntryDTO{},
+			CreatedAt: m.CreatedAt, UpdatedAt: m.UpdatedAt,
 		}
 	}
 	return resp, nil
 }
 
+// RecomputeMatrix recalculates all nine-box placements for a given cycle and phase.
+//
+// The method:
+//  1. Retrieves all employees with GoalAssignments in the cycle.
+//  2. For each employee, computes performance tier from goal progress and potential tier
+//     from competency ratings (self + HR).
+//  3. Computes quadrant from tiers.
+//  4. Creates/get the NineBoxMatrix for each evaluator (using the cycle's evaluator structure).
+//  5. Upserts NineBoxEntry for each employee.
+//
+// Note: This implementation uses a simplified approach where each employee is their own
+// evaluator for the matrix. A production implementation would resolve the evaluator from
+// the org chart (e.g., manager_id).
+func (s *NineBoxService) RecomputeMatrix(ctx context.Context, cycleID, phaseID uuid.UUID) error {
+	// 1. Get all employees with goal assignments in this cycle
+	employeeIDs, err := s.nineBoxRepo.GetGoalAssigneesByCycle(ctx, cycleID)
+	if err != nil {
+		return err
+	}
+
+	if len(employeeIDs) == 0 {
+		return nil
+	}
+
+	tx, err := s.db.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if tx != nil {
+			_ = tx.Rollback()
+		}
+	}()
+
+	// Group employees by evaluator. For now, each employee is their own evaluator.
+	// In production, this should resolve the manager from the org chart.
+	evaluatorGroups := make(map[uuid.UUID][]uuid.UUID)
+	for _, empID := range employeeIDs {
+		// Default: each employee evaluates themselves (simplified)
+		// TODO: resolve actual evaluator from org_chart_nodes/employees.manager_id
+		evaluatorGroups[empID] = append(evaluatorGroups[empID], empID)
+	}
+
+	for evaluatorID, evaluatees := range evaluatorGroups {
+		// 2. Get or create matrix for (cycleID, evaluatorID, phaseID)
+		matrix, err := s.nineBoxRepo.GetMatrixByPhase(ctx, cycleID, evaluatorID, phaseID)
+		if err != nil {
+			if err == repo.ErrMatrixNotFound {
+				matrix, err = s.nineBoxRepo.CreateMatrixWithPhase(ctx, cycleID, evaluatorID, phaseID)
+				if err != nil {
+					return err
+				}
+			} else {
+				return err
+			}
+		}
+
+		for _, evaluateeID := range evaluatees {
+			// 3a. Compute performance tier from goal progress
+			avgProgress, err := s.nineBoxRepo.GetGoalProgressByEmployee(ctx, evaluateeID, cycleID)
+			if err != nil {
+				return err
+			}
+			perfTier := quadrant.ComputePerformanceTier(avgProgress)
+
+			// 3b. Compute potential tier from competency ratings
+			selfRating, hrRating, err := s.nineBoxRepo.GetCompetencyRatingsByEmployee(ctx, evaluateeID, cycleID)
+			if err != nil {
+				return err
+			}
+			potTier := quadrant.ComputePotentialTier(selfRating, hrRating)
+
+			// 3c. Compute quadrant
+			q := quadrant.ComputeQuadrantFromTiers(perfTier, potTier)
+
+			// 4. Upsert entry
+			_, err = s.nineBoxRepo.UpsertEntryByTiers(ctx, tx, matrix.ID, evaluateeID, perfTier, potTier, q, "")
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+	tx = nil
+
+	return nil
+}
+
 // UpsertEntry creates or updates a single matrix entry with quadrant computation.
+// Deprecated: Use RecomputeMatrix for automatic tier computation.
 func (s *NineBoxService) UpsertEntry(ctx context.Context, matrixID uuid.UUID, req dto.NineBoxEntryInput) (*dto.NineBoxEntryDTO, error) {
 	if req.PerformanceScore < 1 || req.PerformanceScore > 9 || req.PotentialScore < 1 || req.PotentialScore > 9 {
 		return nil, repo.ErrQuadrantOutOfRange
@@ -118,6 +238,7 @@ func (s *NineBoxService) UpsertEntry(ctx context.Context, matrixID uuid.UUID, re
 }
 
 // UpdateEntry updates an existing entry with optimistic lock.
+// Deprecated: Use RecomputeMatrix for automatic tier computation.
 func (s *NineBoxService) UpdateEntry(ctx context.Context, entryID uuid.UUID, req dto.NineBoxEntryInput, ifMatch int) (*dto.NineBoxEntryDTO, error) {
 	if req.PerformanceScore < 1 || req.PerformanceScore > 9 || req.PotentialScore < 1 || req.PotentialScore > 9 {
 		return nil, repo.ErrQuadrantOutOfRange
@@ -153,16 +274,17 @@ func (s *NineBoxService) UpdateEntry(ctx context.Context, entryID uuid.UUID, req
 }
 
 // BatchSubmitEntries atomically submits multiple entries in a single transaction.
+// Deprecated: Use RecomputeMatrix for automatic tier computation.
 func (s *NineBoxService) BatchSubmitEntries(ctx context.Context, matrixID uuid.UUID, req dto.NineBoxBatchRequest) ([]dto.NineBoxEntryDTO, error) {
 	if len(req.Entries) > 20 {
-		return nil, errors.NewDomainError(errors.BatchSizeExceeded,
+		return nil, pkgerrors.NewDomainError(pkgerrors.BatchSizeExceeded,
 			"Batch size exceeds the maximum allowed (20).", nil)
 	}
 
 	seen := make(map[uuid.UUID]bool)
 	for _, e := range req.Entries {
 		if seen[e.EvaluateeID] {
-			return nil, errors.NewDomainError(errors.InvalidRequest,
+			return nil, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
 				"Duplicate evaluateeId in batch request.", nil,
 			).WithDetails("evaluatee_id: " + e.EvaluateeID.String())
 		}
@@ -176,8 +298,8 @@ func (s *NineBoxService) BatchSubmitEntries(ctx context.Context, matrixID uuid.U
 	for i, e := range req.Entries {
 		q := quadrant.ComputeQuadrant(e.PerformanceScore, e.PotentialScore)
 		items[i] = repo.EntryUpsert{
-			EvaluateeID: e.EvaluateeID, PerformanceScore: e.PerformanceScore,
-			PotentialScore: e.PotentialScore, Quadrant: q, Comments: e.Comments,
+			EvaluateeID: e.EvaluateeID, PerformanceTier: e.PerformanceScore,
+			PotentialTier: e.PotentialScore, Quadrant: q, Comments: e.Comments,
 		}
 	}
 
@@ -234,22 +356,65 @@ func (s *NineBoxService) GetQuadrants(ctx context.Context) ([]dto.NineBoxQuadran
 	for i, q := range quadrants {
 		dtos[i] = dto.NineBoxQuadrantDTO{
 			Quadrant: q.Quadrant, Label: q.Label, Description: q.Description,
-			Color: q.Color, ActionRecommendation: q.ActionRecommendation,
+			Color: q.Color, ColorHex: q.ColorHex, Title: q.Title,
+			ActionRecommendation: q.ActionRecommendation,
 		}
 	}
 	return dtos, nil
 }
 
+// UpdateQuadrantByNumber updates quadrant title, description, and colorHex by quadrant number (1-9).
+func (s *NineBoxService) UpdateQuadrantByNumber(ctx context.Context, quadrantNumber int, input dto.NineBoxQuadrantUpdateInput) (*dto.NineBoxQuadrantDTO, error) {
+	tx, err := s.db.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if tx != nil {
+			_ = tx.Rollback()
+		}
+	}()
+
+	_, err = tx.ExecContext(ctx,
+		`UPDATE nine_box_quadrants SET title = $1, description = $2, color_hex = $3 WHERE quadrant = $4`,
+		input.Title, input.Description, input.ColorHex, quadrantNumber,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+	tx = nil
+
+	quad, err := s.catalogRepo.GetQuadrantByNumber(ctx, quadrantNumber)
+	if err != nil {
+		return nil, err
+	}
+
+	dtoResp := dto.NineBoxQuadrantDTO{
+		Quadrant: quad.Quadrant, Label: quad.Label, Description: quad.Description,
+		Color: quad.Color, ColorHex: quad.ColorHex, Title: quad.Title,
+		ActionRecommendation: quad.ActionRecommendation,
+	}
+	return &dtoResp, nil
+}
+
 func (s *NineBoxService) toEntryDTO(ctx context.Context, e *internal.NineBoxEntry) dto.NineBoxEntryDTO {
 	dto := dto.NineBoxEntryDTO{
 		ID: e.ID, EvaluateeID: e.EvaluateeID,
-		PerformanceScore: e.PerformanceScore, PotentialScore: e.PotentialScore,
+		PerformanceTier: e.PerformanceTier, PotentialTier: e.PotentialTier,
 		Quadrant: e.Quadrant, Comments: e.Comments,
 	}
 	quad, err := s.catalogRepo.GetQuadrantByNumber(ctx, e.Quadrant)
 	if err == nil && quad != nil {
 		dto.QuadrantLabel = quad.Label
-		dto.QuadrantColor = quad.Color
+		if quad.ColorHex != "" {
+			dto.QuadrantColor = quad.ColorHex
+		} else {
+			dto.QuadrantColor = quad.Color
+		}
 	}
 	version, err := s.nineBoxRepo.FetchEntryVersion(ctx, e.ID)
 	if err == nil {

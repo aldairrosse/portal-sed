@@ -40,10 +40,21 @@ type GoalRatingRepo interface {
 
 // NineBoxRepo defines the operations required for 9×9 matrices and entries.
 type NineBoxRepo interface {
+	// --- New methods (tier-based, phase-aware) ---
+	CreateMatrixWithPhase(ctx context.Context, cycleID, evaluatorID, phaseID uuid.UUID) (*internal.NineBoxMatrix, error)
+	GetMatrixByPhase(ctx context.Context, cycleID, evaluatorID, phaseID uuid.UUID) (*internal.NineBoxMatrix, error)
+	UpsertEntryByTiers(ctx context.Context, tx *sql.Tx, matrixID uuid.UUID, evaluateeID uuid.UUID, perfTier, potTier, quadrant int, comments string) (*internal.NineBoxEntry, error)
+	GetGoalAssigneesByCycle(ctx context.Context, cycleID uuid.UUID) ([]uuid.UUID, error)
+	GetGoalProgressByEmployee(ctx context.Context, employeeID, cycleID uuid.UUID) (float64, error)
+	GetCompetencyRatingsByEmployee(ctx context.Context, employeeID, cycleID uuid.UUID) (selfRating, hrRating *float64, err error)
+
+	// --- Existing methods (with phase-awareness) ---
 	CreateMatrix(ctx context.Context, cycleID, evaluatorID uuid.UUID) (*internal.NineBoxMatrix, error)
 	GetMatrixByID(ctx context.Context, id uuid.UUID) (*internal.NineBoxMatrix, error)
-	ListMatrices(ctx context.Context, cycleID, evaluatorID uuid.UUID) ([]*internal.NineBoxMatrix, error)
+	ListMatrices(ctx context.Context, cycleID, evaluatorID, phaseID uuid.UUID) ([]*internal.NineBoxMatrix, error)
 	GetMatrixEntries(ctx context.Context, matrixID uuid.UUID) ([]*internal.NineBoxEntry, error)
+
+	// Deprecated: manual entry manipulation is replaced by RecomputeMatrix
 	UpsertEntry(ctx context.Context, tx *sql.Tx, matrixID uuid.UUID, evaluateeID uuid.UUID, perf, pot int, quadrant int, comments string) (*internal.NineBoxEntry, error)
 	UpdateEntry(ctx context.Context, tx *sql.Tx, entryID uuid.UUID, perf, pot int, quadrant int, comments string, version int) (*internal.NineBoxEntry, error)
 	BatchUpsertEntries(ctx context.Context, tx *sql.Tx, matrixID uuid.UUID, items []repo.EntryUpsert) ([]*internal.NineBoxEntry, error)

@@ -78,7 +78,12 @@ func (s *BatchService) BatchCreateUpdateGoals(ctx context.Context, empID uuid.UU
 			if err != nil {
 				return nil, pkgerrors.NewDomainError(pkgerrors.InvalidRequest, "invalid category_id", err)
 			}
-			goal, err := s.goalRepo.CreateGoal(ctx, catID, item.Goal.Name, item.Goal.Description, item.Goal.Unit, item.Goal.Weight, item.Goal.TargetValue)
+			// Use ascendente as default direction for backward compat in batch
+			direction := item.Goal.Direction
+			if direction == "" {
+				direction = "ascendente"
+			}
+			goal, err := s.goalRepo.CreateGoal(ctx, catID, item.Goal.Name, item.Goal.Description, item.Goal.Unit, direction, item.Goal.Weight, item.Goal.TargetValue, item.Goal.BaselineValue)
 			if err != nil {
 				return nil, fmt.Errorf("batch create: %w", err)
 			}
@@ -100,24 +105,22 @@ func (s *BatchService) BatchCreateUpdateGoals(ctx context.Context, empID uuid.UU
 			if err != nil {
 				return nil, pkgerrors.NewDomainError(pkgerrors.InvalidRequest, "invalid goal_id", err)
 			}
-			// Create update request from batch item
-			updReq := dtogoal.UpdateGoalRequest{
-				Name:        item.Goal.Name,
-				Description: item.Goal.Description,
-				Unit:        item.Goal.Unit,
-				Weight:      item.Goal.Weight,
-				TargetValue: item.Goal.TargetValue,
-				Version:     int(item.Goal.TargetValue), // This is wrong - but we need the version from somewhere
-			}
-			_ = updReq
 			// For batch updates, we need the version. In a real implementation,
 			// the version would be in the request. Here we use a simplified approach.
-			// Actually, the batch goal item doesn't include version, so we fetch it first.
 			existing, err := s.goalRepo.GetGoal(ctx, goalID)
 			if err != nil {
 				return nil, fmt.Errorf("batch get goal: %w", err)
 			}
-			updated, err := s.goalRepo.UpdateGoal(ctx, goalID, item.Goal.Name, item.Goal.Description, item.Goal.Unit, item.Goal.Weight, item.Goal.TargetValue, existing.Version)
+			// Use existing direction/baselineValue if not provided
+			direction := item.Goal.Direction
+			if direction == "" {
+				direction = existing.Direction
+			}
+			baselineValue := item.Goal.BaselineValue
+			if baselineValue == nil && existing.BaselineValue != nil {
+				baselineValue = existing.BaselineValue
+			}
+			updated, err := s.goalRepo.UpdateGoal(ctx, goalID, item.Goal.Name, item.Goal.Description, item.Goal.Unit, direction, item.Goal.Weight, item.Goal.TargetValue, baselineValue, existing.Version)
 			if err != nil {
 				return nil, fmt.Errorf("batch update: %w", err)
 			}

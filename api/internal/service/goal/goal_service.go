@@ -58,6 +58,11 @@ func (s *GoalService) CreateGoal(ctx context.Context, empID, catID uuid.UUID, re
 		return nil, err
 	}
 
+	// Validate direction and baseline value
+	if err := validateDirection(req.Direction, req.BaselineValue, req.TargetValue); err != nil {
+		return nil, err
+	}
+
 	// Verify category belongs to employee
 	cat, err := s.catRepo.LockCategory(ctx, catID)
 	if err != nil {
@@ -91,7 +96,7 @@ func (s *GoalService) CreateGoal(ctx context.Context, empID, catID uuid.UUID, re
 	}
 
 	// Create goal via raw SQL (to set version=1)
-	goal, err := s.goalRepo.CreateGoal(ctx, catID, req.Name, req.Description, req.Unit, req.Weight, req.TargetValue)
+	goal, err := s.goalRepo.CreateGoal(ctx, catID, req.Name, req.Description, req.Unit, req.Direction, req.Weight, req.TargetValue, req.BaselineValue)
 	if err != nil {
 		return nil, fmt.Errorf("create goal: %w", err)
 	}
@@ -139,16 +144,25 @@ func (s *GoalService) UpdateGoal(ctx context.Context, empID, goalID uuid.UUID, r
 		return nil, err
 	}
 
-	// In avance phase, reject weight and targetValue changes
+	// Validate direction and baseline value
+	if err := validateDirection(req.Direction, req.BaselineValue, req.TargetValue); err != nil {
+		return nil, err
+	}
+
+	// In avance phase, reject weight, targetValue, direction, and baselineValue changes
 	currentPhase, _ := s.phaseCheck.CurrentPhase(ctx, empID.String())
 	if currentPhase == PhaseAvance {
-		if req.Weight != existing.Weight || req.TargetValue != existing.TargetValue {
+		if req.Weight != existing.Weight || req.TargetValue != existing.TargetValue ||
+			req.Direction != existing.Direction ||
+			(req.BaselineValue != nil && existing.BaselineValue != nil && *req.BaselineValue != *existing.BaselineValue) ||
+			(req.BaselineValue == nil && existing.BaselineValue != nil) ||
+			(req.BaselineValue != nil && existing.BaselineValue == nil) {
 			return nil, ErrPhaseRestricted
 		}
 	}
 
 	// Update goal with optimistic lock
-	updated, err := s.goalRepo.UpdateGoal(ctx, goalID, req.Name, req.Description, req.Unit, req.Weight, req.TargetValue, req.Version)
+	updated, err := s.goalRepo.UpdateGoal(ctx, goalID, req.Name, req.Description, req.Unit, req.Direction, req.Weight, req.TargetValue, req.BaselineValue, req.Version)
 	if err != nil {
 		return nil, err
 	}
@@ -205,6 +219,22 @@ func validateGoalRequest(req dtogoal.CreateGoalRequest) error {
 	}
 	if req.TargetValue <= 0 {
 		return pkgerrors.ErrInvalidTargetValue
+	}
+	return nil
+}
+
+// validateDirection validates the direction and baseline value for a goal.
+func validateDirection(direction string, baselineValue *float64, targetValue float64) error {
+	if direction != "ascendente" && direction != "descendente" {
+		return pkgerrors.ErrInvalidDirection
+	}
+	if direction == "descendente" {
+		if baselineValue == nil {
+			return pkgerrors.NewDomainError(pkgerrors.InvalidBaselineValue, "baseline_value is required for descendente goals", nil)
+		}
+		if *baselineValue <= targetValue {
+			return pkgerrors.ErrInvalidBaselineValue
+		}
 	}
 	return nil
 }

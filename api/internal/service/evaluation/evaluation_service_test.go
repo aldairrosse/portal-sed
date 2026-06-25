@@ -186,7 +186,7 @@ func (m *mockNineBoxRepo) GetMatrixByID(ctx context.Context, id uuid.UUID) (*int
 	return m.matrix, nil
 }
 
-func (m *mockNineBoxRepo) ListMatrices(ctx context.Context, cycleID, evaluatorID uuid.UUID) ([]*internal.NineBoxMatrix, error) {
+func (m *mockNineBoxRepo) ListMatrices(ctx context.Context, cycleID, evaluatorID, phaseID uuid.UUID) ([]*internal.NineBoxMatrix, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	return m.matrices, nil
@@ -233,6 +233,44 @@ func (m *mockNineBoxRepo) FetchEntryVersion(ctx context.Context, entryID uuid.UU
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	return m.version, m.fetchVerErr
+}
+
+// --- New interface methods for phase-based matrix ---
+
+func (m *mockNineBoxRepo) CreateMatrixWithPhase(ctx context.Context, cycleID, evaluatorID, phaseID uuid.UUID) (*internal.NineBoxMatrix, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.matrix, nil
+}
+
+func (m *mockNineBoxRepo) GetMatrixByPhase(ctx context.Context, cycleID, evaluatorID, phaseID uuid.UUID) (*internal.NineBoxMatrix, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.matrix == nil {
+		return nil, repo.ErrMatrixNotFound
+	}
+	return m.matrix, nil
+}
+
+func (m *mockNineBoxRepo) UpsertEntryByTiers(ctx context.Context, tx *sql.Tx, matrixID uuid.UUID, evaluateeID uuid.UUID, perfTier, potTier, quadrant int, comments string) (*internal.NineBoxEntry, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.upsertErr != nil {
+		return nil, m.upsertErr
+	}
+	return m.entry, nil
+}
+
+func (m *mockNineBoxRepo) GetGoalAssigneesByCycle(ctx context.Context, cycleID uuid.UUID) ([]uuid.UUID, error) {
+	return nil, nil
+}
+
+func (m *mockNineBoxRepo) GetGoalProgressByEmployee(ctx context.Context, employeeID, cycleID uuid.UUID) (float64, error) {
+	return 50, nil
+}
+
+func (m *mockNineBoxRepo) GetCompetencyRatingsByEmployee(ctx context.Context, employeeID, cycleID uuid.UUID) (selfRating, hrRating *float64, err error) {
+	return nil, nil, nil
 }
 
 // ---------- Mock Catalog Repo ----------
@@ -569,11 +607,11 @@ func TestNineBoxService_UpsertEntry_QuadrantComputed(t *testing.T) {
 
 	mockNineBox := &mockNineBoxRepo{
 		entry: &internal.NineBoxEntry{
-			ID:               entryID,
-			EvaluateeID:      evaluateeID,
-			PerformanceScore: 5,
-			PotentialScore:   5,
-			Quadrant:         5,
+			ID:              entryID,
+			EvaluateeID:     evaluateeID,
+			PerformanceTier: 2,
+			PotentialTier:   2,
+			Quadrant:        5,
 		},
 		version: 1,
 	}
@@ -598,6 +636,8 @@ func TestNineBoxService_UpsertEntry_QuadrantComputed(t *testing.T) {
 	resp, err := nineBoxSvc.UpsertEntry(context.Background(), matrixID, req)
 	require.NoError(t, err)
 	assert.Equal(t, entryID, resp.ID)
+	assert.Equal(t, 2, resp.PerformanceTier)
+	assert.Equal(t, 2, resp.PotentialTier)
 	assert.Equal(t, 5, resp.Quadrant)
 	assert.Equal(t, "Star", resp.QuadrantLabel)
 	assert.Equal(t, "#00FF00", resp.QuadrantColor)
@@ -614,8 +654,8 @@ func TestNineBoxService_BatchSubmit_Atomic(t *testing.T) {
 
 	mockNineBox := &mockNineBoxRepo{
 		entries: []*internal.NineBoxEntry{
-			{ID: uuid.New(), EvaluateeID: evaluatee1, PerformanceScore: 7, PotentialScore: 8, Quadrant: 9},
-			{ID: uuid.New(), EvaluateeID: evaluatee2, PerformanceScore: 4, PotentialScore: 5, Quadrant: 5},
+			{ID: uuid.New(), EvaluateeID: evaluatee1, PerformanceTier: 3, PotentialTier: 3, Quadrant: 9},
+			{ID: uuid.New(), EvaluateeID: evaluatee2, PerformanceTier: 2, PotentialTier: 2, Quadrant: 5},
 		},
 	}
 	mockCatalog := &mockCatalogRepo{}

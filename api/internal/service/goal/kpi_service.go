@@ -62,6 +62,14 @@ func (s *KPIService) UpdateKPI(ctx context.Context, kpiID uuid.UUID, req dtogoal
 	return s.kpiRepo.UpdateKPI(ctx, kpiID, req.Name, req.Unit, req.Description)
 }
 
+// UpdateKPIValue updates only the current_value of a KPI.
+func (s *KPIService) UpdateKPIValue(ctx context.Context, kpiID uuid.UUID, currentValue float64) (*repogoal.KpiRow, error) {
+	if currentValue < 0 {
+		return nil, pkgerrors.NewDomainError(pkgerrors.InvalidRequest, "current_value must be >= 0", nil)
+	}
+	return s.kpiRepo.UpdateKPIValue(ctx, kpiID, currentValue)
+}
+
 // DeleteKPI deletes a KPI. Rejects if linked to any goals.
 func (s *KPIService) DeleteKPI(ctx context.Context, kpiID uuid.UUID) error {
 	return s.kpiRepo.DeleteKPI(ctx, kpiID)

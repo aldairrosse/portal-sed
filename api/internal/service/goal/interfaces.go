@@ -20,9 +20,9 @@ type CategoryRepository interface {
 
 // GoalRepository defines the storage contract for goals.
 type GoalRepository interface {
-	CreateGoal(ctx context.Context, catID uuid.UUID, name, description, unit string, weight, targetValue float64) (*repogoal.GoalRow, error)
+	CreateGoal(ctx context.Context, catID uuid.UUID, name, description, unit, direction string, weight, targetValue float64, baselineValue *float64) (*repogoal.GoalRow, error)
 	GetGoal(ctx context.Context, goalID uuid.UUID) (*repogoal.GoalRow, error)
-	UpdateGoal(ctx context.Context, goalID uuid.UUID, name, description, unit string, weight, targetValue float64, expectedVersion int) (*repogoal.GoalRow, error)
+	UpdateGoal(ctx context.Context, goalID uuid.UUID, name, description, unit, direction string, weight, targetValue float64, baselineValue *float64, expectedVersion int) (*repogoal.GoalRow, error)
 	DeleteGoal(ctx context.Context, goalID uuid.UUID) error
 	UpdateGoalCurrentValue(ctx context.Context, goalID uuid.UUID, currentValue float64) (*repogoal.GoalRow, error)
 	ListGoalsByCategory(ctx context.Context, catID uuid.UUID) ([]*repogoal.GoalRow, error)
@@ -34,6 +34,7 @@ type KPIRepository interface {
 	GetKPI(ctx context.Context, kpiID uuid.UUID) (*repogoal.KpiRow, error)
 	CreateKPI(ctx context.Context, name, unit, description string) (*repogoal.KpiRow, error)
 	UpdateKPI(ctx context.Context, kpiID uuid.UUID, name, unit, description string) (*repogoal.KpiRow, error)
+	UpdateKPIValue(ctx context.Context, kpiID uuid.UUID, currentValue float64) (*repogoal.KpiRow, error)
 	DeleteKPI(ctx context.Context, kpiID uuid.UUID) error
 	CountGoalLinksByKPI(ctx context.Context, kpiID uuid.UUID) (int, error)
 }
@@ -88,9 +89,15 @@ type KpiServicer interface {
 	ListKPIs(ctx context.Context) ([]*repogoal.KpiRow, error)
 	CreateKPI(ctx context.Context, req dtogoal.CreateKpiRequest) (*repogoal.KpiRow, error)
 	UpdateKPI(ctx context.Context, kpiID uuid.UUID, req dtogoal.UpdateKpiRequest) (*repogoal.KpiRow, error)
+	UpdateKPIValue(ctx context.Context, kpiID uuid.UUID, currentValue float64) (*repogoal.KpiRow, error)
 	DeleteKPI(ctx context.Context, kpiID uuid.UUID) error
 	LinkKPI(ctx context.Context, empID, goalID, kpiID uuid.UUID) error
 	UnlinkKPI(ctx context.Context, empID, goalID, kpiID uuid.UUID) error
+}
+
+// ScoringServicer handles employee score calculation.
+type ScoringServicer interface {
+	GetEmployeeScore(ctx context.Context, empID uuid.UUID) (float64, error)
 }
 
 // WeightValidationServicer handles weight validation business logic.
