@@ -263,6 +263,31 @@ func (r *EmployeeRepo) GetByIDs(ctx context.Context, ids []uuid.UUID) ([]*Employ
 		 FROM employees WHERE id IN (`+strings.Join(placeholders, ",")+`)`, args...)
 }
 
+// GetByIDsWithProfiles performs a batch lookup with profile name resolved via JOIN.
+func (r *EmployeeRepo) GetByIDsWithProfiles(ctx context.Context, ids []uuid.UUID) ([]*EmployeeRow, error) {
+	if len(ids) == 0 {
+		return nil, nil
+	}
+	if len(ids) > 100 {
+		ids = ids[:100]
+	}
+
+	placeholders := make([]string, len(ids))
+	args := make([]interface{}, len(ids))
+	for i, id := range ids {
+		placeholders[i] = "$" + itoa(i+1)
+		args[i] = id
+	}
+
+	return scanEmployeeRowsWithProfile(r.db, ctx,
+		`SELECT e.id, e.created_at, e.updated_at, e.first_name, e.last_name, e.email,
+		        e.employee_number, e.is_active, e.org_node_id, e.manager_id, e.profile_id,
+		        COALESCE(ep.name, '') as profile_name, COALESCE(ep.description, '') as profile_description, e.job_title
+		 FROM employees e
+		 LEFT JOIN evaluation_profiles ep ON e.profile_id = ep.id
+		 WHERE e.id IN (`+strings.Join(placeholders, ",")+`)`, args...)
+}
+
 // ListByManager returns employees managed by the given manager.
 // If activeOnly is true, only returns active employees.
 func (r *EmployeeRepo) ListByManager(ctx context.Context, managerID uuid.UUID, activeOnly bool) ([]*EmployeeRow, error) {
