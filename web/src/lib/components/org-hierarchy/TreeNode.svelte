@@ -2,6 +2,14 @@
 	import type { OrgNode } from '$lib/types/org-hierarchy';
 	import TreeNode from './TreeNode.svelte';
 
+	interface EmployeeLeaf {
+		id: string;
+		firstName: string;
+		lastName: string;
+		jobTitle?: string;
+		profileDescription?: string;
+	}
+
 	interface Props {
 		node: OrgNode;
 		onNodeSelect?: (node: OrgNode) => void;
@@ -11,6 +19,12 @@
 		initialExpanded?: boolean;
 		initialExpandedIds?: string[];
 		viewType?: 'users' | 'departments';
+		/** Employees to show as leaf nodes under each nodeId */
+		employeeLeaves?: Record<string, EmployeeLeaf[]>;
+		/** Called when an employee leaf is clicked */
+		onEmployeeSelect?: (emp: EmployeeLeaf) => void;
+		/** Currently selected employee leaf id for highlighting */
+		selectedEmployeeId?: string;
 	}
 
 	let {
@@ -21,19 +35,36 @@
 		depth,
 		initialExpanded = false,
 		initialExpandedIds = [],
-		viewType = 'users'
+		viewType = 'users',
+		employeeLeaves = {},
+		onEmployeeSelect = () => {},
+		selectedEmployeeId = ''
 	}: Props = $props();
 
 	const children = $derived(node.children ?? []);
-	const isExpandable = $derived(children.length > 0 && depth < maxDepth);
 	const isSelected = $derived(selectedNodeId === node.id);
+	// ponytail: filter head employee from leaves — already visible as node header
+	const employeeChildren = $derived(
+		(employeeLeaves[node.id] ?? []).filter(
+			(e) => !node.headEmployee || e.id !== node.headEmployee.id,
+		),
+	);
+	// Track if this node was ever expandable or clicked — prevents button→details swap
+	let wasExpandable = $state(children.length > 0);
+	let wasClicked = $state(false);
+	const hasEmployees = $derived((node.employeeCount ?? 0) > 0);
+	const isExpandable = $derived(
+		(wasExpandable || wasClicked || hasEmployees || employeeChildren.length > 0) && depth < maxDepth,
+	);
+
+	$effect(() => {
+		if (children.length > 0) wasExpandable = true;
+	});
 
 	// Local state to persist open/close across re-renders
-	let isOpen = $derived(initialExpanded)
+	let isOpen = $derived(initialExpanded || wasClicked)
 
 	function handleSummaryClick(_e: MouseEvent) {
-		// Toggle is handled natively by <details>
-		// Just select the node
 		onNodeSelect(node);
 	}
 
@@ -53,7 +84,7 @@
 </script>
 
 <li>
-	{#if isExpandable}
+	{#if isExpandable || employeeChildren.length > 0}
 		<details bind:open={isOpen}>
 			<summary
 				class="flex items-center gap-2 cursor-pointer flex-grow"
@@ -61,7 +92,7 @@
 				onclick={handleSummaryClick}
 			>
 				<div class="flex items-center gap-2 w-full text-left">
-					<span class="font-medium flex-grow">
+					<span class="truncate font-medium flex-grow">
 						{nodeTitle(node)}
 					</span>
 					<span class="truncate text-xs text-base-content/40 pr-2">
@@ -80,7 +111,33 @@
 						depth={depth + 1}
 						initialExpanded={initialExpandedIds.includes(child.id)}
 						{initialExpandedIds}
+						{employeeLeaves}
+						{onEmployeeSelect}
+						{selectedEmployeeId}
 					/>
+				{/each}
+				<!-- Employee leaf nodes -->
+				{#each employeeChildren as emp (emp.id)}
+					<li>
+						<button
+							type="button"
+							class="flex items-center gap-2 w-full text-left cursor-pointer"
+							class:menu-active={selectedEmployeeId === emp.id}
+							onclick={(e) => {
+								e.stopPropagation();
+								onEmployeeSelect(emp);
+							}}
+						>
+						<span class="text-sm font-medium">
+								{emp.firstName} {emp.lastName}
+							</span>
+							{#if emp.jobTitle}
+								<span class="truncate text-xs text-base-content/40 ml-auto">
+									{emp.jobTitle}
+								</span>
+							{/if}
+						</button>
+					</li>
 				{/each}
 			</ul>
 		</details>
@@ -91,13 +148,14 @@
 			class:menu-active={isSelected}
 			onclick={(e) => {
 				e.stopPropagation();
+				wasClicked = true;
 				onNodeSelect(node);
 			}}
 		>
-			<span class="font-medium">
+			<span class="truncate font-medium flex-grow">
 				{nodeTitle(node)}
 			</span>
-			<span class="truncate text-sm text-base-content/40">
+			<span class="truncate text-xs text-base-content/40">
 				{nodeSubtitle(node)}
 			</span>
 		</button>

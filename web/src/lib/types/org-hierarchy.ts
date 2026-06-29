@@ -9,6 +9,9 @@ export interface OrgNode {
 		firstName: string;
 		lastName: string;
 		jobTitle: string;
+		profileName?: string;
+		profileDescription?: string;
 	};
+	employeeCount?: number;
 	children?: OrgNode[];
 }

@@ -18,7 +18,7 @@
     import EmptyState from "$lib/components/ui/EmptyState.svelte";
     import PageSkeleton from "$lib/components/ui/PageSkeleton.svelte";
     import ErrorState from "$lib/components/ui/ErrorState.svelte";
-    import { ArrowUpRight, Network, Users } from "@lucide/svelte";
+    import { ArrowUpRight, Briefcase, Network, Target, Users } from "@lucide/svelte";
 
     // ─── Profile guard ─────────────────────────────────────────────────────
 
@@ -113,31 +113,60 @@
             : null,
     );
 
+    // ─── Employee leaf type ───────────────────────────────────────────────
+
+    interface EmployeeLeaf {
+        id: string;
+        firstName: string;
+        lastName: string;
+        jobTitle?: string;
+        profileName?: string;
+        profileDescription?: string;
+    }
+
     // ─── Node selection ────────────────────────────────────────────────────
 
     let selectedNodeId = $state<string>("");
     let selectedNode = $state<OrgNode | null>(null);
-    let nodeEmployees = $state<
-        Array<{
-            id: string;
-            firstName: string;
-            lastName: string;
-            jobTitle?: string;
-            profileDescription?: string;
-        }>
-    >([]);
-    let employeesLoading = $state(false);
+
+    // Employees indexed by nodeId for tree leaf rendering
+    let employeeLeaves = $state<Record<string, EmployeeLeaf[]>>({});
+
+    // ─── Employee selection ────────────────────────────────────────────────
+
+    let selectedEmployee = $state<EmployeeLeaf | null>(null);
+    let selectedEmployeeScore = $state<number | null>(null);
+    let employeeScoreLoading = $state(false);
 
     function handleNodeSelect(node: OrgNode) {
         selectedNodeId = node.id;
         selectedNode = node;
+        // Open card for head employee if available
+        if (node.headEmployee) {
+            selectedEmployee = {
+                id: node.headEmployee.id,
+                firstName: node.headEmployee.firstName,
+                lastName: node.headEmployee.lastName,
+                jobTitle: node.headEmployee.jobTitle,
+                profileName: node.headEmployee.profileName,
+                profileDescription: node.headEmployee.profileDescription,
+            };
+            loadEmployeeScore(node.headEmployee.id);
+        } else {
+            selectedEmployee = null;
+            selectedEmployeeScore = null;
+        }
         loadNodeEmployees(node.id);
     }
 
-    async function loadNodeEmployees(nodeId: string): Promise<void> {
-        employeesLoading = true;
-        nodeEmployees = [];
+    function handleEmployeeSelect(emp: EmployeeLeaf) {
+        selectedEmployee = emp;
+        selectedNodeId = "";
+        selectedNode = null;
+        loadEmployeeScore(emp.id);
+    }
 
+    async function loadNodeEmployees(nodeId: string): Promise<void> {
         try {
             const res = await client.GET("/employees", {
                 params: { query: { nodeId, limit: 50 } },
@@ -151,27 +180,53 @@
                     firstName?: string;
                     lastName?: string;
                     jobTitle?: string;
+                    profileName?: string;
                     profileDescription?: string;
                 }>;
             };
-            nodeEmployees = (raw?.data ?? []).map((e) => ({
+            const employees = (raw?.data ?? []).map((e) => ({
                 id: e.id,
                 firstName: e.firstName ?? "",
                 lastName: e.lastName ?? "",
                 jobTitle: e.jobTitle,
+                profileName: e.profileName,
                 profileDescription: e.profileDescription,
             }));
+            employeeLeaves = { ...employeeLeaves, [nodeId]: employees };
         } catch (e) {
             console.error("Error loading node employees:", e);
-            nodeEmployees = [];
+        }
+    }
+
+    async function loadEmployeeScore(empId: string): Promise<void> {
+        employeeScoreLoading = true;
+        selectedEmployeeScore = null;
+        try {
+            const res = await client.GET("/employees/{empId}/score", {
+                params: { path: { empId } },
+            });
+            if (!res.error) {
+                const data = res.data as { score?: number };
+                selectedEmployeeScore = data?.score ?? null;
+            }
+        } catch (e) {
+            console.error("Error loading employee score:", e);
         } finally {
-            employeesLoading = false;
+            employeeScoreLoading = false;
         }
     }
 
     function handleJefeSelect(_id: string) {
         // ponytail: detail panel for selected evaluatee — add when needed
     }
+
+    // Hide progress/competencies/goals for director-general or root node head
+    const isHeadOfRoot = $derived(
+        selectedNode && treeRoot && selectedNode.id === treeRoot.id,
+    );
+    const hideDetailGrid = $derived(
+        selectedEmployee?.profileName === "director-general" || isHeadOfRoot,
+    );
 </script>
 
 <svelte:head>
@@ -223,8 +278,8 @@
             </div>
         </div>
     {:else if isLoading()}
-        <div class="flex flex-col lg:flex-row gap-8">
-            <div class="lg:w-1/2 xl:w-2/5">
+        <div class="flex flex-col md:flex-row gap-6">
+            <div class="md:flex-[2]">
                 <div class="card bg-base-100 border border-base-300">
                     <div class="card-body p-0">
                         <h2
@@ -236,7 +291,7 @@
                     </div>
                 </div>
             </div>
-            <div class="lg:w-1/2 xl:w-3/5">
+            <div class="md:flex-[1]">
                 <div class="card bg-base-100 border border-base-300">
                     <div class="card-body p-8 text-center">
                         <PageSkeleton variant="default" rows={5} />
@@ -252,11 +307,11 @@
             message="No se encontró la jerarquía para tu perfil."
         />
     {:else}
-        <div class="flex flex-col lg:flex-row gap-8">
+        <div class="flex flex-col md:flex-row gap-6">
             <!-- Tree -->
-            <div class="lg:w-1/2 xl:w-2/5">
+            <div class="md:flex-[2]">
                 <div class="card bg-base-100 border border-base-300">
-                    <div class="card-body p-0">
+                    <div class="card-body p-0 overflow-x-auto">
                         <h2
                             class="card-title text-xs font-semibold text-base-content/50 tracking-wide"
                         >
@@ -266,86 +321,98 @@
                             node={treeRoot}
                             onNodeSelect={handleNodeSelect}
                             {selectedNodeId}
+                            {employeeLeaves}
+                            onEmployeeSelect={handleEmployeeSelect}
+                            selectedEmployeeId={selectedEmployee?.id ?? ""}
                         />
                     </div>
                 </div>
             </div>
 
-            <!-- Node summary panel -->
-            <div class="lg:w-1/2 xl:w-3/5">
-                {#if selectedNode}
+            <!-- Node/Employee detail panel -->
+            <div class="md:flex-[1] md:sticky md:top-4 md:self-start">
+                {#if selectedEmployee}
                     <div class="card bg-base-100 border border-base-300">
                         <div class="card-body p-0">
-                            <div
-                                class="flex items-center justify-between px-4 pt-4 pb-2 border-b border-base-200"
-                            >
-                                <h2 class="card-title text-lg">
-                                    {selectedNode.headEmployee
-                                        ? `${selectedNode.headEmployee.firstName} ${selectedNode.headEmployee.lastName}`
-                                        : selectedNode.name}
-                                </h2>
-                                {#if selectedNode.headEmployee?.jobTitle}
-                                    <span
-                                        class="badge badge-ghost badge-sm capitalize"
-                                    >
-                                        {selectedNode.headEmployee.jobTitle}
-                                    </span>
-                                {/if}
-                            </div>
+                            <h2 class="card-title text-lg px-4 pt-4 mb-0">
+                                {selectedEmployee.firstName}
+                                {selectedEmployee.lastName}
+                            </h2>
 
-                            <!-- Employees section -->
-                            <div class="px-4 py-3">
-                                {#if employeesLoading}
-                                    <div
-                                        class="py-4 text-center text-sm text-base-content/40"
-                                    >
-                                        Cargando empleados…
-                                    </div>
-                                {:else if nodeEmployees.length === 0}
-                                    <div
-                                        class="py-4 text-center text-sm text-base-content/40"
-                                    >
-                                        Sin empleados en esta área
-                                    </div>
-                                {:else}
-                                    <div class="overflow-x-auto">
-                                        <table class="table table-sm">
-                                            <thead>
-                                                <tr
-                                                    class="text-xs text-base-content/50"
-                                                >
-                                                    <th>Nombre</th>
-                                                    <th>Puesto</th>
-                                                    <th>Perfil</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {#each nodeEmployees as emp (emp.id)}
-                                                    <tr class="hover">
-                                                        <td class="font-medium"
-                                                            >{emp.firstName}
-                                                            {emp.lastName}</td
-                                                        >
-                                                        <td
-                                                            class="text-xs text-base-content/50"
-                                                            >{emp.jobTitle ??
-                                                                "—"}</td
-                                                        >
-                                                        <td>
-                                                            <span
-                                                                class="text-xs text-base-content/50"
-                                                            >
-                                                                {emp.profileDescription ??
-                                                                    "—"}
-                                                            </span>
-                                                        </td>
-                                                    </tr>
-                                                {/each}
-                                            </tbody>
-                                        </table>
+                            <div class="p-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                {#if selectedEmployee.jobTitle}
+                                    <div class="flex items-center gap-3 bg-base-200 rounded-lg p-3">
+                                        <Briefcase class="w-5 h-5 text-base-content/40 shrink-0" />
+                                        <div>
+                                            <p class="text-xs text-base-content/40">Puesto</p>
+                                            <p class="text-xs font-medium capitalize">{selectedEmployee.jobTitle}</p>
+                                        </div>
                                     </div>
                                 {/if}
+
+                                {#if selectedEmployee.profileDescription}
+                                    <div class="flex items-center gap-3 bg-base-200 rounded-lg p-3">
+                                        <Users class="w-5 h-5 text-base-content/40 shrink-0" />
+                                        <div>
+                                            <p class="text-xs text-base-content/40">Perfil</p>
+                                            <p class="text-xs font-medium">{selectedEmployee.profileDescription}</p>
+                                        </div>
+                                    </div>
+                                {/if}
+
+                                {#if !hideDetailGrid}
+                                <div class="flex items-center gap-3 bg-base-200 rounded-lg p-3">
+                                    <Target class="w-5 h-5 text-base-content/40 shrink-0" />
+                                    <div>
+                                        <p class="text-xs text-base-content/40">Progreso global</p>
+                                        {#if employeeScoreLoading}
+                                            <p class="text-sm text-base-content/40">Cargando…</p>
+                                        {:else if selectedEmployeeScore !== null}
+                                            <p class="text-sm font-medium">{Math.round(selectedEmployeeScore)}%</p>
+                                        {:else}
+                                            <p class="text-sm text-base-content/40">Sin datos</p>
+                                        {/if}
+                                    </div>
+                                </div>
+
+                                <div class="flex items-center gap-3 bg-base-200 rounded-lg p-3">
+                                    <ArrowUpRight class="w-5 h-5 text-base-content/40 shrink-0" />
+                                    <div>
+                                        <p class="text-xs text-base-content/40">Competencias</p>
+                                        <a
+                                            href="/evaluacion/9x9/competencias/{selectedEmployee.id}"
+                                            class="link link-primary text-sm font-medium"
+                                        >
+                                            Ver red
+                                        </a>
+                                    </div>
+                                </div>
+
+                                <div class="flex items-center gap-3 bg-base-200 rounded-lg p-3">
+                                    <ArrowUpRight class="w-5 h-5 text-base-content/40 shrink-0" />
+                                    <div>
+                                        <p class="text-xs text-base-content/40">Metas</p>
+                                        <a
+                                            href="/mis-evaluados"
+                                            class="link link-primary text-sm font-medium"
+                                        >
+                                            Ver metas
+                                        </a>
+                                    </div>
+                                </div>
+                                {/if}
                             </div>
+                        </div>
+                    </div>
+                {:else if selectedNode}
+                    <div class="card bg-base-100 border border-base-300">
+                        <div class="card-body p-8 text-center">
+                            <Users
+                                class="w-10 h-10 text-base-content/20 mx-auto mb-3"
+                            />
+                            <p class="text-sm text-base-content/40">
+                                {selectedNode.name} — sin jefe asignado
+                            </p>
                         </div>
                     </div>
                 {:else}
@@ -355,8 +422,8 @@
                                 class="w-10 h-10 text-base-content/20 mx-auto mb-3"
                             />
                             <p class="text-sm text-base-content/40">
-                                Selecciona un nodo del organigrama para ver sus
-                                empleados.
+                                Selecciona un nodo o colaborador del
+                                organigrama para ver sus detalles.
                             </p>
                         </div>
                     </div>

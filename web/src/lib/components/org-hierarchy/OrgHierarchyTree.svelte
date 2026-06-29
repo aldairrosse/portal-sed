@@ -4,6 +4,14 @@
 	import PageSkeleton from '$lib/components/ui/PageSkeleton.svelte';
 	import ErrorState from '$lib/components/ui/ErrorState.svelte';
 
+	interface EmployeeLeaf {
+		id: string;
+		firstName: string;
+		lastName: string;
+		jobTitle?: string;
+		profileDescription?: string;
+	}
+
 	interface Props {
 		viewType?: 'users' | 'departments';
 		node?: OrgNode | null;
@@ -18,6 +26,12 @@
 		error?: string | null;
 		/** Called when the retry button is clicked */
 		onretry?: () => void;
+		/** Employees to show as leaf nodes under each nodeId */
+		employeeLeaves?: Record<string, EmployeeLeaf[]>;
+		/** Called when an employee leaf is clicked */
+		onEmployeeSelect?: (emp: EmployeeLeaf) => void;
+		/** Currently selected employee leaf id for highlighting */
+		selectedEmployeeId?: string;
 	}
 
 	let {
@@ -29,7 +43,10 @@
 		loading = false,
 		error = null,
 		viewType = 'users',
-		onretry
+		onretry,
+		employeeLeaves = {},
+		onEmployeeSelect = () => {},
+		selectedEmployeeId = ''
 	}: Props = $props();
 </script>
 
@@ -50,6 +67,9 @@
 			{viewType}
 			initialExpanded={initialExpandedIds.includes(node.id)}
 			{initialExpandedIds}
+			{employeeLeaves}
+			{onEmployeeSelect}
+			{selectedEmployeeId}
 		/>
 	</ul>
 {:else if node}

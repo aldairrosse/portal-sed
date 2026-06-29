@@ -59,6 +59,7 @@ function cloneSubtree(node: OrgNode): OrgNode {
 		managerId: node.managerId,
 		headEmployeeId: node.headEmployeeId,
 		headEmployee: node.headEmployee ? { ...node.headEmployee } : undefined,
+		employeeCount: node.employeeCount,
 		children: (node.children ?? []).map((child) => cloneSubtree(child))
 	};
 }

@@ -41,10 +41,12 @@ type OrgNodeResponse struct {
 
 // HeadEmployeeInfo is a light projection of the head employee for nested nodes.
 type HeadEmployeeInfo struct {
-	ID        string `json:"id"`
-	FirstName string `json:"firstName"`
-	LastName  string `json:"lastName"`
-	JobTitle  string `json:"jobTitle"`
+	ID                 string `json:"id"`
+	FirstName          string `json:"firstName"`
+	LastName           string `json:"lastName"`
+	JobTitle           string `json:"jobTitle"`
+	ProfileName        string `json:"profileName"`
+	ProfileDescription string `json:"profileDescription"`
 }
 
 // OrgNodeNestedResponse is a node with children nested.
@@ -58,6 +60,7 @@ type OrgNodeNestedResponse struct {
 	Path           string                   `json:"path"`
 	HeadEmployeeID string                   `json:"headEmployeeId,omitempty"`
 	HeadEmployee   *HeadEmployeeInfo        `json:"headEmployee,omitempty"`
+	EmployeeCount  int                      `json:"employeeCount"`
 	Children       []*OrgNodeNestedResponse `json:"children,omitempty"`
 }
 

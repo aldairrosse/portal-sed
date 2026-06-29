@@ -212,7 +212,7 @@ func (s *orgTreeService) buildNestedResponse(ctx context.Context, dbNodes []*rep
 	// Batch-fetch head employees and enrich the nested tree
 	headIDs := s.collectHeadEmployeeIDs(nested)
 	if len(headIDs) > 0 {
-		emps, err := s.empRepo.GetByIDs(ctx, headIDs)
+		emps, err := s.empRepo.GetByIDsWithProfiles(ctx, headIDs)
 		if err == nil {
 			empMap := make(map[string]*repo.EmployeeRow, len(emps))
 			for _, emp := range emps {
@@ -258,10 +258,12 @@ func (s *orgTreeService) enrichHeadEmployees(nested *org.OrgNodeNestedResponse, 
 	if nested.HeadEmployeeID != "" {
 		if emp, ok := empMap[nested.HeadEmployeeID]; ok {
 			nested.HeadEmployee = &org.HeadEmployeeInfo{
-				ID:        emp.ID.String(),
-				FirstName: emp.FirstName,
-				LastName:  emp.LastName,
-				JobTitle:  emp.JobTitle,
+				ID:                 emp.ID.String(),
+				FirstName:          emp.FirstName,
+				LastName:           emp.LastName,
+				JobTitle:           emp.JobTitle,
+				ProfileName:        emp.ProfileName,
+				ProfileDescription: emp.ProfileDescription,
 			}
 		}
 	}
@@ -315,6 +317,7 @@ func (s *orgTreeService) mapNestedNode(n *tree.NestedNode, nodeMap map[string]*r
 		resp.Type = string(dbNode.Type)
 		resp.Code = dbNode.Code
 		resp.Path = dbNode.Path
+		resp.EmployeeCount = dbNode.EmployeeCount
 		if dbNode.HeadEmployeeID != nil {
 			resp.HeadEmployeeID = dbNode.HeadEmployeeID.String()
 		}
