@@ -6,6 +6,7 @@
         GoalCategory,
         GoalUnit,
         GoalComment,
+        EmployeeAssignment,
     } from "$lib/types/goal";
     import type { ChangeRequest } from "$lib/types/goal";
 	import {
@@ -23,8 +24,8 @@
 		isAssignmentValid,
 		linkKpiToGoal,
 		unlinkKpiFromGoal,
-		getAssignmentsByProfile,
 		getAssignments,
+		getAssignmentByEmployee,
 		getCyclePhase,
 		getGoalPermissions,
 		updateGoalProgress,
@@ -36,8 +37,9 @@
 		storeState,
 		load,
 	} from "$lib/stores/goalsStore.svelte";
-    import { getProfile } from "$lib/stores/devContext.svelte";
-    import { getChildren } from "$lib/stores/orgHierarchyStore.svelte";
+    import { getSession } from "$lib/api/session.svelte";
+    import { client } from "$lib/api/client";
+    import { load as loadOrgHierarchy, getDescendants, getRoot } from "$lib/stores/orgHierarchyStore.svelte";
     import WeightIndicator from "$lib/components/goals/WeightIndicator.svelte";
     import ProgressIndicator from "$lib/components/goals/ProgressIndicator.svelte";
 	import { validateCategory } from "$lib/components/goals/goalValidation";
@@ -48,42 +50,105 @@
     import CommentPopover from "$lib/components/goals/GoalCommentModal.svelte";
     import PageSkeleton from "$lib/components/ui/PageSkeleton.svelte";
     import ErrorState from "$lib/components/ui/ErrorState.svelte";
-    import * as notifications from "$lib/stores/notifications.svelte";
+    import EmptyState from "$lib/components/ui/EmptyState.svelte";
     import { toCsv } from "$lib/utils/export";
 
     // ─── Load data ────────────────────────────────────────────────────────────
 
     $effect(() => { load(); });
+    $effect(() => { loadOrgHierarchy(); });
 
     // ─── Mode detection ──────────────────────────────────────────────────────
+    // ponytail: derive own assignment by employeeId (not profileId) so the
+    // logged-in colaborador always gets their own assignment, not someone
+    // else's with the same role. Boss detection uses org-node headEmployeeId.
 
-    const viewerProfile = $derived(getProfile());
-
-    const ownAssignment = $derived(getAssignmentsByProfile(viewerProfile)[0]);
-    const currentUserId = $derived(ownAssignment?.employeeId ?? "");
-
-    const children = $derived(getChildren(currentUserId));
-    const childIds = $derived(children.map((c) => c.id));
+    const session = $derived(getSession());
+    const viewerProfile = $derived(session.user?.profileId ?? 'colaborador');
+    const viewerEmployeeId = $derived(session.user?.employeeId ?? '');
 
     const allAssignments = $derived(getAssignments());
-    const subordinateAssignments = $derived(
-        allAssignments.filter((a) => childIds.includes(a.employeeId)),
+
+    // Own assignment = assignment where employeeId matches logged-in user
+    const ownAssignment = $derived(
+        allAssignments.find((a) => a.employeeId === viewerEmployeeId),
     );
 
-    const availableAssignments = $derived(
-        ownAssignment
-            ? [ownAssignment, ...subordinateAssignments]
-            : [...subordinateAssignments],
-    );
+    // Boss detection: user is a boss if they are head_employee_id of any org node.
+    // A boss can see subordinates' assignments in reader mode.
+    const isBoss = $derived(isUserHeadOfAnyNode(viewerEmployeeId));
 
-    const showAssigneePicker = $derived(children.length > 0);
+    // ─── Team members (boss only) ──────────────────────────────────────────
+    // ponytail: call /team endpoint to get all employees in the boss's org
+    // nodes, then merge with existing assignments from goalsStore. Employees
+    // without an assignment get a stub entry so the picker always has data.
+
+    type TeamMember = { id: string; firstName: string; lastName: string; orgNodeId: string };
+    let teamMembers = $state<TeamMember[]>([]);
+
+    $effect(() => {
+        if (!viewerEmployeeId || !isBoss) return;
+        client.GET('/employees/{empId}/team', {
+            params: { path: { empId: viewerEmployeeId } }
+        }).then((res) => {
+            const data = (res.data as { data?: Array<TeamMember> })?.data;
+            if (data) teamMembers = data;
+        });
+    });
+
+    // Build available assignments: own + all team members (with or without assignment)
+    const availableAssignments = $derived.by(() => {
+        const result: EmployeeAssignment[] = [];
+        const seen = new Set<string>();
+
+        // ponytail: always place the logged-in user first, regardless of
+        // whether ownAssignment has loaded yet. If it has, use it;
+        // otherwise create a stub so the picker always shows "(yo)" at top.
+        const own = ownAssignment ?? {
+            id: `stub-${viewerEmployeeId}`,
+            employeeId: viewerEmployeeId,
+            employeeName: session.user?.name ?? '',
+            profileId: viewerProfile,
+            managerId: null,
+            goalIds: [],
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+        };
+        result.push(own);
+        seen.add(viewerEmployeeId);
+
+        // Team members from /team endpoint (skip viewer, already first)
+        for (const member of teamMembers) {
+            if (seen.has(member.id)) continue;
+            seen.add(member.id);
+            const existing = getAssignmentByEmployee(member.id);
+            if (existing) {
+                result.push(existing);
+            } else {
+                result.push({
+                    id: `stub-${member.id}`,
+                    employeeId: member.id,
+                    employeeName: `${member.firstName} ${member.lastName}`,
+                    profileId: 'colaborador',
+                    managerId: null,
+                    goalIds: [],
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString(),
+                });
+            }
+        }
+
+        return result;
+    });
+
+    const showAssigneePicker = $derived(isBoss);
 
     let selectedEmployeeId = $state("");
 
-    // Reset selected employee when assignment context changes (profile switch)
+    // Reset selected employee when assignment context changes
     $effect(() => {
-        if (ownAssignment && !selectedEmployeeId) {
-            selectedEmployeeId = ownAssignment.employeeId;
+        if (!selectedEmployeeId) {
+            selectedEmployeeId = viewerEmployeeId;
         }
     });
 
@@ -91,11 +156,53 @@
         availableAssignments.find((a) => a.employeeId === selectedEmployeeId),
     );
 
+    const targetEmployeeName = $derived(targetAssignment?.employeeName ?? "");
+
+    // Mode: editor when viewing own assignment or no assignment yet,
+    // reader only when viewing a subordinate's assignment.
     const mode = $derived<"editor" | "reader">(
-        targetAssignment?.profileId === viewerProfile ? "editor" : "reader",
+        !targetAssignment || targetAssignment.employeeId === viewerEmployeeId ? "editor" : "reader",
     );
 
-    const targetEmployeeName = $derived(targetAssignment?.employeeName ?? "");
+    // ─── Org hierarchy helpers ───────────────────────────────────────────────
+
+    function isUserHeadOfAnyNode(employeeId: string): boolean {
+        const root = getRoot();
+        if (!root || !employeeId) return false;
+        return searchHeadEmployee(root, employeeId);
+    }
+
+    function searchHeadEmployee(node: import("$lib/types/org-hierarchy").OrgNode, employeeId: string): boolean {
+        if (node.headEmployeeId === employeeId) return true;
+        for (const child of node.children ?? []) {
+            if (searchHeadEmployee(child, employeeId)) return true;
+        }
+        return false;
+    }
+
+    function getSubordinateEmployeeIds(bossEmployeeId: string): string[] {
+        const root = getRoot();
+        if (!root) return [];
+        const ids = new Set<string>();
+        collectBossNodeEmployeeIds(root, bossEmployeeId, ids);
+        return [...ids];
+    }
+
+    function collectBossNodeEmployeeIds(
+        node: import("$lib/types/org-hierarchy").OrgNode,
+        bossEmployeeId: string,
+        out: Set<string>,
+    ): void {
+        if (node.headEmployeeId === bossEmployeeId) {
+            // Collect all descendant org nodes' head employees
+            for (const desc of getDescendants(node.id)) {
+                if (desc.headEmployeeId) out.add(desc.headEmployeeId);
+            }
+        }
+        for (const child of node.children ?? []) {
+            collectBossNodeEmployeeIds(child, bossEmployeeId, out);
+        }
+    }
 
     // ─── Cycle phase & permissions ──────────────────────────────────────────
 
@@ -169,6 +276,15 @@
 
     function handleAssigneeSelect(employeeId: string) {
         selectedEmployeeId = employeeId;
+    }
+
+    function startCreateCategory() {
+        creatingCategory = true;
+        isAnyInlineEditing = true;
+        newCatName = '';
+        newCatDesc = '';
+        newCatWeight = 0;
+        newCatError = '';
     }
 
     function handleSaveCategory(data: { id?: string; name: string; description: string; weight: number }) {
@@ -268,30 +384,22 @@
 <div class="space-y-6 max-w-full min-w-0">
     <!-- Page header -->
     <div>
-        <div>
-            <h1 class="text-2xl font-bold text-base-content flex items-center gap-2">
-                <Target class="w-6 h-6" />
-                {phase === "medio-anio"
-                    ? "Avance de metas"
-                    : phase === "fin-anio"
-                        ? "Evaluación anual"
-                        : "Asignación anual"}
-            </h1>
-            <p class="text-sm text-base-content/50 mt-1">
-                {phase === "medio-anio"
-                    ? "Registre el avance de sus metas y agregue comentarios."
-                    : "Defina las categorías y metas para el período de evaluación."}
-            </p>
-        </div>
-        <div class="flex items-center gap-2 mt-3">
-            {#if showAssigneePicker}
-                <AssigneePicker
-                    assignments={availableAssignments}
-                    {selectedEmployeeId}
-                    onSelect={handleAssigneeSelect}
-                    {currentUserId}
-                />
-            {/if}
+        <div class="flex items-start justify-between gap-4">
+            <div>
+                <h1 class="text-2xl font-bold text-base-content flex items-center gap-2">
+                    <Target class="w-6 h-6" />
+                    {phase === "medio-anio"
+                        ? "Avance de metas"
+                        : phase === "fin-anio"
+                            ? "Evaluación anual"
+                            : "Asignación anual"}
+                </h1>
+                <p class="text-sm text-base-content/50 mt-1">
+                    {phase === "medio-anio"
+                        ? "Registre el avance de sus metas y agregue comentarios."
+                        : "Defina las categorías y metas para el período de evaluación."}
+                </p>
+            </div>
             {#if phase !== "medio-anio"}
                 <button
                     class="btn btn-ghost btn-sm"
@@ -302,6 +410,16 @@
                     Biblioteca de KPI
                 </button>
             {/if}
+        </div>
+        <div class="flex items-center gap-2 mt-3 flex-wrap">
+            {#if showAssigneePicker}
+                <AssigneePicker
+                    assignments={availableAssignments}
+                    {selectedEmployeeId}
+                    onSelect={handleAssigneeSelect}
+                    currentUserId={viewerEmployeeId}
+                />
+            {/if}            
             <button
                 class="btn btn-outline btn-sm"
                 disabled={categories.length === 0}
@@ -311,8 +429,9 @@
                 Exportar CSV
             </button>
             {#if mode === "editor" && phase !== "medio-anio" && phase !== "fin-anio"}
+                <div class="flex-1"></div>
                 <button
-                    class="btn btn-primary btn-sm ml-auto"
+                    class="btn btn-primary btn-sm"
                     disabled={!valid}
                     onclick={handleSaveAssignment}
                 >
@@ -397,7 +516,6 @@
                     </summary>
                     <div class="mt-2 space-y-1.5">
                         {#each categories as cat (cat.id)}
-                            {@const catGoals = getGoalsByCategory(cat.id)}
                             {@const catProgress = getCategoryProgressAverage(cat.id)}
                             <div class="flex items-center justify-between text-xs">
                                 <span class="text-base-content/70">{cat.name} ({cat.weight}%)</span>
@@ -446,11 +564,13 @@
                 />
             {/each}
         </div>
-    {:else}
-        <div class="text-center py-12 text-base-content/50 text-sm">
-            No hay categorías registradas. Cree la primera categoría para
-            comenzar.
-        </div>
+    {:else if (!creatingCategory && mode === "editor" && phase !== "medio-anio" && phase !== "fin-anio")}
+        <EmptyState
+            title="Sin categorías"
+            message="No hay categorías registradas. Cree la primera categoría para comenzar."
+            actionLabel="Nueva categoría"
+            onaction={startCreateCategory}
+        />
     {/if}
 
     <!-- Nueva categoría inline form (editor only, not in avance or cierre mode) -->
@@ -484,9 +604,9 @@
                         </div>
                     </form>
                 </div>
-            {:else}
+            {:else if (categories.length > 0)}
                 <div class="flex justify-center">
-                    <button class="btn btn-outline btn-primary" disabled={isAnyInlineEditing} onclick={() => { creatingCategory = true; isAnyInlineEditing = true; newCatName = ''; newCatDesc = ''; newCatWeight = 0; newCatError = ''; }}>
+                    <button class="btn btn-outline btn-primary" disabled={isAnyInlineEditing} onclick={startCreateCategory}>
                         <Plus class="w-4 h-4" /> Nueva categoría
                     </button>
                 </div>

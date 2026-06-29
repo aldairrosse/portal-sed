@@ -366,6 +366,24 @@ func (r *OrgNodeRepo) GetByHeadEmployee(ctx context.Context, empID uuid.UUID) (*
 		 FROM org_nodes WHERE head_employee_id = $1 LIMIT 1`, empID))
 }
 
+// ListByHeadEmployee returns all nodes where head_employee_id matches.
+func (r *OrgNodeRepo) ListByHeadEmployee(ctx context.Context, empID uuid.UUID) ([]*OrgNodeRow, error) {
+	return queryNodeRows(r.db, ctx,
+		`SELECT id, created_at, updated_at, name, type, code, organization_id, parent_id,
+		        COALESCE(path::text, '') as path, COALESCE(version, 0), head_employee_id
+		 FROM org_nodes WHERE head_employee_id = $1
+		 ORDER BY path::text`, empID)
+}
+
+// ListChildren returns direct children of the given node.
+func (r *OrgNodeRepo) ListChildren(ctx context.Context, parentID uuid.UUID) ([]*OrgNodeRow, error) {
+	return queryNodeRows(r.db, ctx,
+		`SELECT id, created_at, updated_at, name, type, code, organization_id, parent_id,
+		        COALESCE(path::text, '') as path, COALESCE(version, 0), head_employee_id
+		 FROM org_nodes WHERE parent_id = $1
+		 ORDER BY path::text`, parentID)
+}
+
 // ListByOrg returns all nodes for an organization, ordered by path.
 func (r *OrgNodeRepo) ListByOrg(ctx context.Context, orgID uuid.UUID) ([]*OrgNodeRow, error) {
 	rows, err := queryNodeRows(r.db, ctx,

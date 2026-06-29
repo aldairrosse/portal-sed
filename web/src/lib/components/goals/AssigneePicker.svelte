@@ -27,5 +27,6 @@
 		onChange={onSelect}
 		placeholder="Seleccionar empleado"
 		ariaLabel="Seleccionar empleado"
+		class="w-64"
 	/>
 </div>

@@ -26,6 +26,7 @@ import (
 //   GET    /api/v1/employees                        → ListEmployees
 //   GET    /api/v1/employees/{empId}                → GetEmployee
 //   GET    /api/v1/employees/{empId}/evaluatees     → GetMyEvaluatees
+//   GET    /api/v1/employees/{empId}/team            → GetTeam
 //   GET    /api/v1/employees/{empId}/manager        → GetManager
 //   GET    /api/v1/employees/{empId}/ancestors      → GetAncestors
 //   POST   /api/v1/employees/batch                 → BatchLookupEmployees
@@ -133,6 +134,12 @@ func RegisterRoutes(r chi.Router, handler *OrgHandler, authSvc *authsvc.AuthServ
 			r.Use(middleware.RateLimit(readRateLimit))
 			r.Use(readReplicaMiddleware)
 			r.Get("/employees/{empId}/evaluatees", handler.GetMyEvaluatees)
+		})
+
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.RateLimit(readRateLimit))
+			r.Use(readReplicaMiddleware)
+			r.Get("/employees/{empId}/team", handler.GetTeam)
 		})
 
 		r.Group(func(r chi.Router) {

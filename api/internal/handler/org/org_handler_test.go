@@ -86,6 +86,7 @@ func (m *mockEmployeeService) SearchEmployees(ctx context.Context, query string,
 
 type mockEvaluateeService struct {
 	getMyEvaluateesFunc   func(ctx context.Context, evaluatorID string) (*dto.EmployeeListResponse, error)
+	getTeamMembersFunc    func(ctx context.Context, headEmployeeID string) (*dto.EmployeeListResponse, error)
 	getManagerFunc        func(ctx context.Context, empID string) (*dto.EmployeeDetailResponse, error)
 	getChainOfCommandFunc func(ctx context.Context, empID string) (*dto.AncestorChainResponse, error)
 	batchLookupFunc       func(ctx context.Context, ids []string) (*dto.EmployeeListResponse, error)
@@ -93,6 +94,12 @@ type mockEvaluateeService struct {
 
 func (m *mockEvaluateeService) GetMyEvaluatees(ctx context.Context, evaluatorID string) (*dto.EmployeeListResponse, error) {
 	return m.getMyEvaluateesFunc(ctx, evaluatorID)
+}
+func (m *mockEvaluateeService) GetTeamMembers(ctx context.Context, headEmployeeID string) (*dto.EmployeeListResponse, error) {
+	if m.getTeamMembersFunc != nil {
+		return m.getTeamMembersFunc(ctx, headEmployeeID)
+	}
+	return &dto.EmployeeListResponse{Data: []dto.EmployeeListItem{}}, nil
 }
 func (m *mockEvaluateeService) GetManager(ctx context.Context, empID string) (*dto.EmployeeDetailResponse, error) {
 	return m.getManagerFunc(ctx, empID)

@@ -379,6 +379,33 @@ paths:
         '404':
           $ref: '#/components/responses/EmployeeNotFound'
 
+  /employees/{empId}/team:
+    get:
+      operationId: getTeam
+      summary: Get team members by org node
+      description: Returns all active employees in org nodes where the given employee is head_employee.
+      parameters:
+        - name: empId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Employee'
+        '404':
+          $ref: '#/components/responses/EmployeeNotFound'
+
   /employees/{empId}/manager:
     get:
       operationId: getManager

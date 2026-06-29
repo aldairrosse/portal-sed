@@ -14,6 +14,7 @@ import (
 // EvaluateeService defines the interface for evaluatee and chain-of-command operations.
 type EvaluateeService interface {
 	GetMyEvaluatees(ctx context.Context, evaluatorID string) (*org.EmployeeListResponse, error)
+	GetTeamMembers(ctx context.Context, headEmployeeID string) (*org.EmployeeListResponse, error)
 	GetManager(ctx context.Context, empID string) (*org.EmployeeDetailResponse, error)
 	GetChainOfCommand(ctx context.Context, empID string) (*org.AncestorChainResponse, error)
 	BatchLookup(ctx context.Context, ids []string) (*org.EmployeeListResponse, error)
@@ -59,6 +60,91 @@ func (s *evaluateeService) GetMyEvaluatees(ctx context.Context, evaluatorID stri
 	resp.Meta.HasMore = false
 
 	for i, r := range rows {
+		resp.Data[i] = employeeRowToItem(r)
+	}
+
+	return resp, nil
+}
+
+// GetTeamMembers returns all employees in org nodes where the given employee
+// is the head, PLUS the head employees of direct child nodes (indirect reports).
+func (s *evaluateeService) GetTeamMembers(ctx context.Context, headEmployeeID string) (*org.EmployeeListResponse, error) {
+	id, err := uuid.Parse(headEmployeeID)
+	if err != nil {
+		return nil, errors.NewDomainError(errors.InvalidRequest, "Invalid employee ID: must be a valid UUID", err)
+	}
+
+	// Find all org nodes where this employee is head
+	nodes, err := s.nodeRepo.ListByHeadEmployee(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(nodes) == 0 {
+		return &org.EmployeeListResponse{Data: []org.EmployeeListItem{}}, nil
+	}
+
+	// 1) Direct team: employees in the boss's own node(s)
+	nodeIDs := make([]uuid.UUID, len(nodes))
+	for i, n := range nodes {
+		nodeIDs[i] = n.ID
+	}
+
+	directRows, err := s.empRepo.ListByOrgNodeIDs(ctx, nodeIDs, true)
+	if err != nil {
+		return nil, err
+	}
+
+	// 2) Indirect reports: heads of direct child nodes only
+	headIDs := make(map[uuid.UUID]struct{})
+	for _, n := range nodes {
+		children, err := s.nodeRepo.ListChildren(ctx, n.ID)
+		if err != nil {
+			continue // skip broken subtrees
+		}
+		for _, child := range children {
+			if child.HeadEmployeeID != nil && *child.HeadEmployeeID != id {
+				headIDs[*child.HeadEmployeeID] = struct{}{}
+			}
+		}
+	}
+
+	// Batch-fetch the indirect heads
+	var indirectRows []*repo.EmployeeRow
+	if len(headIDs) > 0 {
+		ids := make([]uuid.UUID, 0, len(headIDs))
+		for hid := range headIDs {
+			ids = append(ids, hid)
+		}
+		indirectRows, err = s.empRepo.GetByIDs(ctx, ids)
+		if err != nil {
+			indirectRows = nil // graceful degradation
+		}
+	}
+
+	// 3) Merge, dedup by ID
+	seen := make(map[uuid.UUID]struct{}, len(directRows)+len(indirectRows))
+	all := make([]*repo.EmployeeRow, 0, len(directRows)+len(indirectRows))
+	for _, r := range directRows {
+		if _, ok := seen[r.ID]; !ok {
+			seen[r.ID] = struct{}{}
+			all = append(all, r)
+		}
+	}
+	for _, r := range indirectRows {
+		if _, ok := seen[r.ID]; !ok {
+			seen[r.ID] = struct{}{}
+			all = append(all, r)
+		}
+	}
+
+	resp := &org.EmployeeListResponse{
+		Data: make([]org.EmployeeListItem, len(all)),
+	}
+	resp.Meta.Limit = len(all)
+	resp.Meta.HasMore = false
+
+	for i, r := range all {
 		resp.Data[i] = employeeRowToItem(r)
 	}
 

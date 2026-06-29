@@ -3,6 +3,7 @@ package org
 import (
 	"context"
 	"database/sql"
+	"strconv"
 	"strings"
 	"time"
 
@@ -295,6 +296,32 @@ func (r *EmployeeRepo) ListByManager(ctx context.Context, managerID uuid.UUID, a
 	                 employee_number, is_active, org_node_id, manager_id, profile_id, job_title
 	           FROM employees WHERE manager_id = $1`
 	args := []interface{}{managerID}
+
+	if activeOnly {
+		query += ` AND is_active = true`
+	}
+
+	query += ` ORDER BY last_name, first_name`
+	return scanEmployeeRows(r.db, ctx, query, args...)
+}
+
+// ListByOrgNodeIDs returns employees whose org_node_id is in the given list.
+// If activeOnly is true, only returns active employees.
+func (r *EmployeeRepo) ListByOrgNodeIDs(ctx context.Context, nodeIDs []uuid.UUID, activeOnly bool) ([]*EmployeeRow, error) {
+	if len(nodeIDs) == 0 {
+		return nil, nil
+	}
+
+	placeholders := make([]string, len(nodeIDs))
+	args := make([]interface{}, len(nodeIDs))
+	for i, id := range nodeIDs {
+		placeholders[i] = "$" + strconv.Itoa(i+1)
+		args[i] = id
+	}
+
+	query := `SELECT id, created_at, updated_at, first_name, last_name, email,
+	                 employee_number, is_active, org_node_id, manager_id, profile_id, job_title
+	           FROM employees WHERE org_node_id IN (` + strings.Join(placeholders, ",") + `)`
 
 	if activeOnly {
 		query += ` AND is_active = true`

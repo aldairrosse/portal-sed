@@ -212,6 +212,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/employees/{empId}/team": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get team members by org node
+         * @description Returns all active employees in org nodes where the given employee is head_employee.
+         */
+        get: operations["getTeam"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/employees/{empId}/manager": {
         parameters: {
             query?: never;
@@ -894,6 +914,31 @@ export interface operations {
         };
     };
     getMyEvaluatees: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                empId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data?: components["schemas"]["Employee"][];
+                    };
+                };
+            };
+            404: components["responses"]["EmployeeNotFound"];
+        };
+    };
+    getTeam: {
         parameters: {
             query?: never;
             header?: never;

@@ -720,6 +720,13 @@ func (h *GoalHandler) GetAssignment(w http.ResponseWriter, r *http.Request) {
 
 	assignment, err := h.assignRepo.GetAssignment(r.Context(), empID)
 	if err != nil {
+		// ponytail: no assignment is not an error — return null so the
+		// frontend can distinguish "no data" from "server error".
+		var de *pkgerrors.DomainError
+		if pkgerrors.AsDomainError(err, &de) && de.Code == pkgerrors.GoalNotFound {
+			writeJSON(w, http.StatusOK, nil)
+			return
+		}
 		writeError(w, err)
 		return
 	}

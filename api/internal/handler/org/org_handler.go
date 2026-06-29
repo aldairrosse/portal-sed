@@ -379,6 +379,24 @@ func (h *OrgHandler) GetMyEvaluatees(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, result)
 }
 
+// GetTeam handles GET /api/v1/employees/{empId}/team
+// Returns all employees in org nodes where the given employee is head_employee.
+func (h *OrgHandler) GetTeam(w http.ResponseWriter, r *http.Request) {
+	empID := chi.URLParam(r, "empId")
+	if empID == "" {
+		writeError(w, errors.NewDomainError(errors.InvalidRequest, "empId path parameter is required", nil))
+		return
+	}
+
+	result, err := h.evaluateeSvc.GetTeamMembers(r.Context(), empID)
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, result)
+}
+
 // GetManager handles GET /api/v1/employees/{empId}/manager
 func (h *OrgHandler) GetManager(w http.ResponseWriter, r *http.Request) {
 	empID := chi.URLParam(r, "empId")

@@ -125,13 +125,13 @@
 	popover
 	id={popoverId}
 	style="position-anchor:{anchorName}; width: anchor-size(width);"
-	class="dropdown menu menu-xs bg-base-100 rounded-box p-1 shadow-lg border border-base-300 max-h-48 overflow-y-auto"
+	class="dropdown menu menu-sm bg-base-100 rounded-box p-2 shadow-lg border border-base-300 max-h-48 overflow-y-auto"
 	role="listbox"
 	aria-label={ariaLabel}
 	ontoggle={handleToggle}
 >
 	{#each options as option (option.value)}
-		<li role="option" aria-selected={option.value === value} data-value={option.value}>
+		<li role="option" aria-selected={option.value === value} data-value={option.value} class="last:mb-0 mb-1">
 			<button
 				type="button"
 				class:menu-active={option.value === value}
