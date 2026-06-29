@@ -1,0 +1,50 @@
+openapi: 3.1.0
+info:
+  title: SED Activity Logs API
+  version: 1.0.0
+servers:
+  - url: /api/v1
+paths:
+  /employees/{employeeId}/activity-logs:
+    get:
+      operationId: listActivityLogs
+      summary: List activity logs for an employee
+      parameters:
+        - name: employeeId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: limit
+          in: query
+          required: false
+          schema: { type: integer, default: 50, minimum: 1, maximum: 100 }
+      responses:
+        "200":
+          description: Activity logs list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ActivityLog"
+                  total:
+                    type: integer
+        "400":
+          description: Bad Request
+        "403":
+          description: Forbidden
+components:
+  schemas:
+    ActivityLog:
+      type: object
+      required: [id, action, description, module, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        action: { type: string }
+        description: { type: string }
+        module: { type: string }
+        metadata: { type: object, nullable: true, additionalProperties: true }
+        created_at: { type: string, format: date-time }
