@@ -231,6 +231,17 @@ func (s *AuthService) OrgNodeName(ctx context.Context, orgNodeID uuid.UUID) (str
 	return name, nil
 }
 
+// OrgNodeInfo returns the name and organization_id of an org node by ID.
+func (s *AuthService) OrgNodeInfo(ctx context.Context, orgNodeID uuid.UUID) (name string, orgID uuid.UUID, err error) {
+	err = s.db.QueryRowContext(ctx,
+		`SELECT name, organization_id FROM org_nodes WHERE id = $1`, orgNodeID,
+	).Scan(&name, &orgID)
+	if err != nil {
+		return "", uuid.Nil, nil // node not found → empty, not an error
+	}
+	return name, orgID, nil
+}
+
 // getProfileName retrieves the evaluation profile name for a given profile ID.
 func (s *AuthService) getProfileName(ctx context.Context, profileID uuid.UUID) (*ProfileInfo, error) {
 	p := &ProfileInfo{}

@@ -56,11 +56,12 @@ type LoginRequest struct {
 
 // LoginResponse is the JSON body returned after successful login.
 type LoginResponse struct {
-	Session  SessionInfo  `json:"session"`
-	Token    string       `json:"token"`
-	Employee EmployeeInfo `json:"employee"`
-	Role     string       `json:"role"`
-	Profile  ProfileInfo  `json:"profile"`
+	Session        SessionInfo  `json:"session"`
+	Token          string       `json:"token"`
+	Employee       EmployeeInfo `json:"employee"`
+	Role           string       `json:"role"`
+	Profile        ProfileInfo  `json:"profile"`
+	OrganizationID string       `json:"organization_id"`
 }
 
 // SessionInfo contains session metadata returned to the client.
@@ -71,13 +72,14 @@ type SessionInfo struct {
 
 // EmployeeInfo contains basic employee information.
 type EmployeeInfo struct {
-	ID          string `json:"id"`
-	FirstName   string `json:"first_name"`
-	LastName    string `json:"last_name"`
-	Email       string `json:"email"`
-	JobTitle    string `json:"job_title"`
-	OrgNodeID   string `json:"org_node_id"`
-	OrgNodeName string `json:"org_node_name"`
+	ID             string `json:"id"`
+	FirstName      string `json:"first_name"`
+	LastName       string `json:"last_name"`
+	Email          string `json:"email"`
+	JobTitle       string `json:"job_title"`
+	OrgNodeID      string `json:"org_node_id"`
+	OrgNodeName    string `json:"org_node_name"`
+	OrganizationID string `json:"organization_id"`
 }
 
 // Login handles POST /auth/login.
@@ -117,6 +119,14 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		Expires:  result.Session.ExpiresAt,
 	})
 
+	// Resolve organization_id from the employee's org node
+	var orgIDStr string
+	if emp, err := h.svc.Employee(r.Context(), result.Session.EmployeeID); err == nil {
+		if _, orgID, err := h.svc.OrgNodeInfo(r.Context(), emp.OrgNodeID); err == nil {
+			orgIDStr = orgID.String()
+		}
+	}
+
 	resp := LoginResponse{
 		Session: SessionInfo{
 			ID:        result.Session.ID.String(),
@@ -128,7 +138,8 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 			// First and last name not available from session alone;
 			// client can GET /auth/me for full details.
 		},
-		Role: string(result.Role),
+		Role:           string(result.Role),
+		OrganizationID: orgIDStr,
 	}
 
 	writeJSON(w, http.StatusOK, resp)
@@ -179,7 +190,7 @@ func (h *AuthHandler) DevLogin(w http.ResponseWriter, r *http.Request) {
 	// Look up the role and profile from the employee's evaluation profile
 	role, profile, _ := h.svc.EmployeeRoleAndProfile(r.Context(), emp.ID)
 
-	orgNodeName, _ := h.svc.OrgNodeName(r.Context(), emp.OrgNodeID)
+	orgNodeName, orgID, _ := h.svc.OrgNodeInfo(r.Context(), emp.OrgNodeID)
 
 	http.SetCookie(w, &http.Cookie{
 		Name:     "session_token",
@@ -198,19 +209,21 @@ func (h *AuthHandler) DevLogin(w http.ResponseWriter, r *http.Request) {
 		},
 		Token: token,
 		Employee: EmployeeInfo{
-			ID:          emp.ID.String(),
-			FirstName:   emp.FirstName,
-			LastName:    emp.LastName,
-			Email:       emp.Email,
-			JobTitle:    emp.JobTitle,
-			OrgNodeID:   emp.OrgNodeID.String(),
-			OrgNodeName: orgNodeName,
+			ID:             emp.ID.String(),
+			FirstName:      emp.FirstName,
+			LastName:       emp.LastName,
+			Email:          emp.Email,
+			JobTitle:       emp.JobTitle,
+			OrgNodeID:      emp.OrgNodeID.String(),
+			OrgNodeName:    orgNodeName,
+			OrganizationID: orgID.String(),
 		},
 		Role: string(role),
 		Profile: ProfileInfo{
 			ID:   profile.ID.String(),
 			Name: string(role),
 		},
+		OrganizationID: orgID.String(),
 	}
 
 	writeJSON(w, http.StatusOK, resp)
@@ -270,9 +283,10 @@ func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 
 // MeResponse is the JSON body returned by GET /auth/me.
 type MeResponse struct {
-	Employee EmployeeInfo `json:"employee"`
-	Role     string      `json:"role"`
-	Profile  ProfileInfo `json:"profile"`
+	Employee       EmployeeInfo `json:"employee"`
+	Role           string      `json:"role"`
+	Profile        ProfileInfo `json:"profile"`
+	OrganizationID string      `json:"organization_id"`
 }
 
 // ProfileInfo holds evaluation profile information for the /me endpoint.
@@ -308,23 +322,25 @@ func (h *AuthHandler) Me(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	orgNodeName, _ := h.svc.OrgNodeName(r.Context(), emp.OrgNodeID)
+	orgNodeName, orgID, _ := h.svc.OrgNodeInfo(r.Context(), emp.OrgNodeID)
 
 	resp := MeResponse{
 		Employee: EmployeeInfo{
-			ID:          emp.ID.String(),
-			FirstName:   emp.FirstName,
-			LastName:    emp.LastName,
-			Email:       emp.Email,
-			JobTitle:    emp.JobTitle,
-			OrgNodeID:   emp.OrgNodeID.String(),
-			OrgNodeName: orgNodeName,
+			ID:             emp.ID.String(),
+			FirstName:      emp.FirstName,
+			LastName:       emp.LastName,
+			Email:          emp.Email,
+			JobTitle:       emp.JobTitle,
+			OrgNodeID:      emp.OrgNodeID.String(),
+			OrgNodeName:    orgNodeName,
+			OrganizationID: orgID.String(),
 		},
 		Role: string(result.Role),
 		Profile: ProfileInfo{
 			ID:   result.ProfileID.String(),
 			Name: string(result.Role),
 		},
+		OrganizationID: orgID.String(),
 	}
 
 	writeJSON(w, http.StatusOK, resp)

@@ -11,6 +11,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/sed-evaluacion-desempeno/api/internal"
 	"github.com/sed-evaluacion-desempeno/api/internal/cycle"
+	"github.com/sed-evaluacion-desempeno/api/internal/organization"
 	"github.com/sed-evaluacion-desempeno/api/internal/pkg/cursor"
 	pkgerrors "github.com/sed-evaluacion-desempeno/api/internal/pkg/errors"
 	repo "github.com/sed-evaluacion-desempeno/api/internal/repository/cycle"
@@ -159,6 +160,15 @@ func (s *service) CreateCycle(ctx context.Context, req CreateCycleRequest) (*Cyc
 			"organization_id must be a valid UUID v4", err)
 	}
 
+	// Verify organization exists before proceeding
+	exists, err := s.entClient.Organization.Query().Where(organization.ID(orgID)).Exist(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if !exists {
+		return nil, pkgerrors.ErrOrganizationNotFound
+	}
+
 	// Acquire PostgreSQL advisory lock
 	unlock, err := s.cycleRepo.ExecuteRawAdvisoryLock(ctx, orgID, req.Year)
 	if err != nil {
@@ -180,7 +190,7 @@ func (s *service) CreateCycle(ctx context.Context, req CreateCycleRequest) (*Cyc
 	}()
 
 	// Check for existing cycle
-	exists, err := s.cycleRepo.CheckExistingCycle(ctx, tx, orgID, req.Year)
+	exists, err = s.cycleRepo.CheckExistingCycle(ctx, tx, orgID, req.Year)
 	if err != nil {
 		return nil, err
 	}

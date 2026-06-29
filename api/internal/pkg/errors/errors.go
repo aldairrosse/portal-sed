@@ -43,10 +43,11 @@ const (
 	InvalidDirection        DomainCode = "INVALID_DIRECTION"
 
 	// Org-hierarchy domain error codes
-	TreeNotFound        DomainCode = "TREE_NOT_FOUND"
-	NodeNotFound        DomainCode = "NODE_NOT_FOUND"
-	EmployeeNotFound    DomainCode = "EMPLOYEE_NOT_FOUND"
-	NodeHasChildren     DomainCode = "NODE_HAS_CHILDREN"
+	TreeNotFound         DomainCode = "TREE_NOT_FOUND"
+	NodeNotFound         DomainCode = "NODE_NOT_FOUND"
+	EmployeeNotFound     DomainCode = "EMPLOYEE_NOT_FOUND"
+	OrganizationNotFound DomainCode = "ORGANIZATION_NOT_FOUND"
+	NodeHasChildren      DomainCode = "NODE_HAS_CHILDREN"
 	InvalidParent       DomainCode = "INVALID_PARENT"
 	StaleVersion        DomainCode = "STALE_VERSION"
 	InvalidTreeType     DomainCode = "INVALID_TREE_TYPE"
@@ -120,10 +121,11 @@ var (
 	ErrForbidden = &DomainError{Code: "FORBIDDEN", Message: "You do not have permission to access this resource."}
 
 	// Org-hierarchy sentinel errors
-	ErrTreeNotFound     = &DomainError{Code: TreeNotFound, Message: "Organizational tree not found."}
-	ErrNodeNotFound     = &DomainError{Code: NodeNotFound, Message: "Org node not found."}
-	ErrEmployeeNotFound = &DomainError{Code: EmployeeNotFound, Message: "Employee not found."}
-	ErrNodeHasChildren  = &DomainError{Code: NodeHasChildren, Message: "Cannot delete node with children."}
+	ErrTreeNotFound         = &DomainError{Code: TreeNotFound, Message: "Organizational tree not found."}
+	ErrNodeNotFound         = &DomainError{Code: NodeNotFound, Message: "Org node not found."}
+	ErrEmployeeNotFound     = &DomainError{Code: EmployeeNotFound, Message: "Employee not found."}
+	ErrOrganizationNotFound = &DomainError{Code: OrganizationNotFound, Message: "Organization not found."}
+	ErrNodeHasChildren      = &DomainError{Code: NodeHasChildren, Message: "Cannot delete node with children."}
 	ErrInvalidParent    = &DomainError{Code: InvalidParent, Message: "Invalid parent: would create a cycle."}
 	ErrStaleVersion     = &DomainError{Code: StaleVersion, Message: "Optimistic lock failed; version mismatch."}
 	ErrInvalidTreeType  = &DomainError{Code: InvalidTreeType, Message: "Tree type must be 'corporate' or 'retail'."}
@@ -141,7 +143,7 @@ func HTTPStatus(err error) int {
 		return 500
 	}
 	switch de.Code {
-	case CycleNotFound, CategoryNotFound, GoalNotFound, KpiNotFound, TreeNotFound, NodeNotFound, EmployeeNotFound, ScopeNotFound,
+	case CycleNotFound, CategoryNotFound, GoalNotFound, KpiNotFound, TreeNotFound, NodeNotFound, EmployeeNotFound, OrganizationNotFound, ScopeNotFound,
 		"EVALUATION_NOT_FOUND", "MATRIX_NOT_FOUND", "ENTRY_NOT_FOUND":
 		return 404
 	case InvalidTransition, CycleAlreadyActive, PhaseNotAdvanceable, ConcurrentUpdate, IdempotencyKeyConflict, DuplicateCategoryName, KpiLinkedCannotDelete, ConcurrentModification, NodeHasChildren, StaleVersion,
