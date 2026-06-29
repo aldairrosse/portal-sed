@@ -86,8 +86,8 @@ export async function load(): Promise<void> {
 		const treesRes = await client.GET('/org-trees', {
 			params: { query: { type: 'corporate' } }
 		});
-		if (treesRes.error) {
-			throw new Error(apiErrorMessage(treesRes.error, 'Error al cargar árbol organizacional'));
+		if (!treesRes.data) {
+			throw new Error('Error al cargar árbol organizacional');
 		}
 
 		const trees = (treesRes.data as { data?: Array<{ id?: string }> })?.data ?? [];
@@ -139,7 +139,7 @@ export function getRoot(): OrgNode | null {
 export function getChildren(nodeId: string): OrgNode[] {
 	if (!data) return [];
 	const node = findNode(data.root, nodeId);
-	return node ? [...node.children] : [];
+	return node ? [...(node.children ?? [])] : [];
 }
 
 export function getDescendants(nodeId: string): OrgNode[] {

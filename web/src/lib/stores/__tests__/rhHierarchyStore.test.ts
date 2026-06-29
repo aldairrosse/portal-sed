@@ -1,309 +1,217 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { OrgNode } from '$lib/types/org-hierarchy';
-import type { Goal, EmployeeAssignment } from '$lib/types/goal';
-import type { CompetencyRating } from '$lib/types/evaluation-result';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import type { AreaMetrics } from '../rhHierarchyStore.svelte';
 
-// The pure functions are imported from the store. Vitest resolves .svelte.ts
-// via SvelteKit's vite plugin. We mock the fixture imports and store
-// dependencies to keep tests isolated and deterministic.
-vi.mock('$lib/fixtures/goals/goals.json', () => ({ default: [] }));
-vi.mock('$lib/fixtures/goals/assignments.json', () => ({ default: [] }));
-vi.mock('$lib/fixtures/evaluations/rh-evaluations.json', () => ({ default: [] }));
-vi.mock('$lib/stores/orgHierarchyStore.svelte', () => ({
-	getRoot: vi.fn(() => null),
-	getScopeIds: vi.fn(() => [])
+// ─── Mock dependencies (relative paths required for vi.mock resolution) ────────
+
+vi.mock('../../api/client', () => ({
+	client: {
+		GET: vi.fn()
+	}
 }));
 
-// ─── Synthetic fixtures ─────────────────────────────────────────────────────────
+vi.mock('../cycleStore.svelte', () => ({
+	getActiveCycle: vi.fn(() => null)
+}));
 
-function makeGoal(overrides: Partial<Goal> & { id: string }): Goal {
+// ─── Helper types ───────────────────────────────────────────────────────────────
+
+type MockClient = {
+	GET: ReturnType<typeof vi.fn>;
+};
+
+async function getMockClient(): Promise<MockClient> {
+	const mod = await import('../../api/client');
+	return mod.client as unknown as MockClient;
+}
+
+async function mockGetActiveCycle(): Promise<ReturnType<typeof vi.fn>> {
+	const mod = await import('../cycleStore.svelte');
+	return mod.getActiveCycle as unknown as ReturnType<typeof vi.fn>;
+}
+
+// ─── Fixture helpers ────────────────────────────────────────────────────────────
+
+function makeAreaMetrics(overrides?: Partial<AreaMetrics>): AreaMetrics {
 	return {
-		name: '',
-		description: '',
-		categoryId: 'cat-1',
-		weight: 0,
-		unit: 'numero',
-		direction: 'ascendente',
-		targetValue: 100,
-		progress: 50,
+		nodeId: 'node-1',
+		employeeCount: 2,
+		employeesWithGoals: 1,
+		avgProgress: 75,
+		completedGoals: 3,
+		pendingGoals: 1,
+		avgRating: 4.2,
+		ratingsCount: 5,
+		employees: [
+			{
+				id: 'emp-1',
+				firstName: 'Alice',
+				lastName: 'Smith',
+				jobTitle: 'Developer',
+				profileId: 'colaborador',
+				profileDescription: 'Colaborador'
+			},
+			{
+				id: 'emp-2',
+				firstName: 'Bob',
+				lastName: 'Jones',
+				jobTitle: 'Designer',
+				profileId: 'colaborador',
+				profileDescription: 'Colaborador'
+			}
+		],
 		...overrides
 	};
 }
 
-function makeAssignment(overrides: Partial<EmployeeAssignment> & { id: string }): EmployeeAssignment {
-	return {
-		employeeId: '',
-		employeeName: '',
-		profileId: 'colaborador',
-		managerId: null,
-		goalIds: [],
-		createdAt: '',
-		updatedAt: '',
-		...overrides
-	};
-}
+// ─── Tests ──────────────────────────────────────────────────────────────────────
 
-function makeRating(overrides: Partial<CompetencyRating> & { id: string }): CompetencyRating {
-	return {
-		employeeId: '',
-		competencyId: 'comp-1',
-		...overrides
-	};
-}
-
-function makeNode(overrides: Partial<OrgNode> & { id: string }): OrgNode {
-	return {
-		name: '',
-		profileId: 'colaborador',
-		managerId: null,
-		children: [],
-		...overrides
-	};
-}
-
-// ========================================================================
-// computeAreaProgress
-// ========================================================================
-
-describe('computeAreaProgress', () => {
-	it('returns correct average and counts for employees with goals', async () => {
-		const { computeAreaProgress } = await import('../rhHierarchyStore.svelte.ts');
-
-		const goals: Goal[] = [
-			makeGoal({ id: 'g1', targetValue: 100, progress: 80 }),   // 80%
-			makeGoal({ id: 'g2', targetValue: 50, progress: 60 }),    // 120% → capped 100% → completed
-			makeGoal({ id: 'g3', targetValue: 10, progress: 5 })      // 50% → pending
-		];
-
-		const assignments: EmployeeAssignment[] = [
-			makeAssignment({ id: 'a1', employeeId: 'emp-1', goalIds: ['g1', 'g2'] }),
-			makeAssignment({ id: 'a2', employeeId: 'emp-2', goalIds: ['g3'] }),
-			makeAssignment({ id: 'a3', employeeId: 'emp-3', goalIds: [] }) // 0 goals → excluded
-		];
-
-		const result = computeAreaProgress(['emp-1', 'emp-2', 'emp-3'], assignments, goals);
-
-		// emp-1: (80 + 100) / 2 = 90
-		// emp-2: 50 / 1 = 50
-		// emp-3: excluded (0 goals)
-		// avg = (90 + 50) / 2 = 70
-		expect(result.avgProgress).toBeCloseTo(70, 1);
-		// g2: progress >= targetValue → completed
-		expect(result.completed).toBe(1);
-		// g1: progress < targetValue, g3: progress < targetValue → pending
-		expect(result.pending).toBe(2);
+describe('rhHierarchyStore', () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		vi.resetModules();
 	});
 
-	it('excludes employees with zero valid goals from average', async () => {
-		const { computeAreaProgress } = await import('../rhHierarchyStore.svelte.ts');
-
-		const goals: Goal[] = [
-			makeGoal({ id: 'g1', targetValue: 10, progress: 9 })
-		];
-
-		const assignments: EmployeeAssignment[] = [
-			makeAssignment({ id: 'a1', employeeId: 'emp-1', goalIds: ['g1'] }),
-			makeAssignment({ id: 'a2', employeeId: 'emp-2', goalIds: [] }) // no goals
-		];
-
-		const result = computeAreaProgress(['emp-1', 'emp-2'], assignments, goals);
-
-		// Only emp-1 contributes: 9/10 * 100 = 90%
-		expect(result.avgProgress).toBeCloseTo(90, 1);
-		expect(result.completed).toBe(0);
-		expect(result.pending).toBe(1);
+	afterEach(() => {
+		vi.restoreAllMocks();
 	});
 
-	it('skips goals with targetValue === 0', async () => {
-		const { computeAreaProgress } = await import('../rhHierarchyStore.svelte.ts');
+	describe('initial state', () => {
+		it('returns null for getMetrics() before selection', async () => {
+			const store = await import('../rhHierarchyStore.svelte');
+			expect(store.getMetrics()).toBeNull();
+		}, 15000);
 
-		const goals: Goal[] = [
-			makeGoal({ id: 'g1', targetValue: 0, progress: 100 }), // skipped
-			makeGoal({ id: 'g2', targetValue: 10, progress: 8 })    // included
-		];
+		it('returns empty array for getEmployeeList() initially', async () => {
+			const store = await import('../rhHierarchyStore.svelte');
+			expect(store.getEmployeeList()).toEqual([]);
+		});
 
-		const assignments: EmployeeAssignment[] = [
-			makeAssignment({ id: 'a1', employeeId: 'emp-1', goalIds: ['g1', 'g2'] })
-		];
+		it('returns empty string for getSelectedNodeId() initially', async () => {
+			const store = await import('../rhHierarchyStore.svelte');
+			expect(store.getSelectedNodeId()).toBe('');
+		});
 
-		const result = computeAreaProgress(['emp-1'], assignments, goals);
+		it('returns false for isLoadingMetrics() initially', async () => {
+			const store = await import('../rhHierarchyStore.svelte');
+			expect(store.isLoadingMetrics()).toBe(false);
+		});
 
-		// Only g2 counts: 8/10 * 100 = 80%
-		expect(result.avgProgress).toBeCloseTo(80, 1);
-		expect(result.completed).toBe(0);
-		expect(result.pending).toBe(1);
+		it('returns null for getMetricsError() initially', async () => {
+			const store = await import('../rhHierarchyStore.svelte');
+			expect(store.getMetricsError()).toBeNull();
+		});
 	});
 
-	it('returns zeros for empty employeeIds', async () => {
-		const { computeAreaProgress } = await import('../rhHierarchyStore.svelte.ts');
+	describe('selectNode (synchronous paths)', () => {
+		it('clears all state when nodeId is empty', async () => {
+			const cm = await getMockClient();
+			cm.GET.mockResolvedValue({ data: makeAreaMetrics(), error: undefined });
 
-		const result = computeAreaProgress([], [], []);
-		expect(result.avgProgress).toBe(0);
-		expect(result.completed).toBe(0);
-		expect(result.pending).toBe(0);
+			const store = await import('../rhHierarchyStore.svelte');
+
+			// First select a node to set non-null state, then clear it
+			store.selectNode('node-1');
+			await new Promise((r) => setTimeout(r, 0));
+
+			store.selectNode('');
+
+			expect(store.getSelectedNodeId()).toBe('');
+			expect(store.getMetrics()).toBeNull();
+			expect(store.getEmployeeList()).toEqual([]);
+			expect(store.getMetricsError()).toBeNull();
+			expect(store.isLoadingMetrics()).toBe(false);
+		}, 15000);
+
+		it('sets selectedNodeId immediately and marks loading', async () => {
+			const cm = await getMockClient();
+			cm.GET.mockResolvedValue({ data: makeAreaMetrics(), error: undefined });
+
+			const store = await import('../rhHierarchyStore.svelte');
+
+			store.selectNode('node-1');
+
+			expect(store.getSelectedNodeId()).toBe('node-1');
+			expect(store.isLoadingMetrics()).toBe(true);
+		}, 15000);
 	});
 
-	it('returns zeros when no assignments match', async () => {
-		const { computeAreaProgress } = await import('../rhHierarchyStore.svelte.ts');
+	describe('selectNode (async fetch)', () => {
+		it('populates metrics and employee list on success', async () => {
+			const cm = await getMockClient();
+			const mockData = makeAreaMetrics();
+			cm.GET.mockResolvedValue({ data: mockData, error: undefined });
 
-		const result = computeAreaProgress(
-			['emp-unknown'],
-			[makeAssignment({ id: 'a1', employeeId: 'emp-1', goalIds: ['g1'] })],
-			[makeGoal({ id: 'g1', targetValue: 10, progress: 5 })]
-		);
-		expect(result.avgProgress).toBe(0);
-		expect(result.completed).toBe(0);
-		expect(result.pending).toBe(0);
+			const store = await import('../rhHierarchyStore.svelte');
+			store.selectNode('node-1');
+			await new Promise((r) => setTimeout(r, 0));
+
+			expect(store.isLoadingMetrics()).toBe(false);
+			expect(store.getMetricsError()).toBeNull();
+
+			const metrics = store.getMetrics();
+			expect(metrics).not.toBeNull();
+			expect(metrics?.nodeId).toBe('node-1');
+			expect(metrics?.employeeCount).toBe(2);
+			expect(metrics?.avgProgress).toBe(75);
+			expect(metrics?.completedGoals).toBe(3);
+			expect(metrics?.avgRating).toBe(4.2);
+
+			const list = store.getEmployeeList();
+			expect(list).toHaveLength(2);
+			expect(list[0].name).toBe('Alice Smith');
+			expect(list[1].name).toBe('Bob Jones');
+		}, 15000);
+
+		it('handles API error gracefully', async () => {
+			const cm = await getMockClient();
+			cm.GET.mockResolvedValue({
+				data: undefined,
+				error: { error: { message: 'Node not found' } }
+			});
+
+			const store = await import('../rhHierarchyStore.svelte');
+			store.selectNode('node-missing');
+			await new Promise((r) => setTimeout(r, 0));
+
+			expect(store.isLoadingMetrics()).toBe(false);
+			expect(store.getMetrics()).toBeNull();
+			expect(store.getMetricsError()).toBe('Error al cargar métricas del área');
+		}, 15000);
+
+		it('handles null response data', async () => {
+			const cm = await getMockClient();
+			cm.GET.mockResolvedValue({ data: null, error: undefined });
+
+			const store = await import('../rhHierarchyStore.svelte');
+			store.selectNode('node-1');
+			await new Promise((r) => setTimeout(r, 0));
+
+			expect(store.isLoadingMetrics()).toBe(false);
+			expect(store.getMetricsError()).toBe('No se recibieron métricas');
+			expect(store.getMetrics()).toBeNull();
+		}, 15000);
 	});
 
-	it('caps progress at 100% per goal', async () => {
-		const { computeAreaProgress } = await import('../rhHierarchyStore.svelte.ts');
+	describe('cycleId integration', () => {
+		it('includes cycleId in query when active cycle is available', async () => {
+			const cycleMock = await mockGetActiveCycle();
+			cycleMock.mockReturnValue({ id: 'cycle-2026' });
 
-		const goals: Goal[] = [
-			makeGoal({ id: 'g1', targetValue: 10, progress: 20 }) // 200% → capped 100%
-		];
+			const cm = await getMockClient();
+			cm.GET.mockResolvedValue({ data: makeAreaMetrics(), error: undefined });
 
-		const assignments: EmployeeAssignment[] = [
-			makeAssignment({ id: 'a1', employeeId: 'emp-1', goalIds: ['g1'] })
-		];
+			const store = await import('../rhHierarchyStore.svelte');
+			store.selectNode('node-1');
+			await new Promise((r) => setTimeout(r, 0));
 
-		const result = computeAreaProgress(['emp-1'], assignments, goals);
-		expect(result.avgProgress).toBeCloseTo(100, 1);
-		expect(result.completed).toBe(1);
-		expect(result.pending).toBe(0);
-	});
-});
-
-// ========================================================================
-// computeAreaRating
-// ========================================================================
-
-describe('computeAreaRating', () => {
-	it('returns correct average rating', async () => {
-		const { computeAreaRating } = await import('../rhHierarchyStore.svelte.ts');
-
-		const evaluations: CompetencyRating[] = [
-			makeRating({ id: 'r1', employeeId: 'emp-1', competencyId: 'comp-a', rhRating: 4 }),
-			makeRating({ id: 'r2', employeeId: 'emp-1', competencyId: 'comp-b', rhRating: 3 }),
-			makeRating({ id: 'r3', employeeId: 'emp-2', competencyId: 'comp-a', rhRating: 5 })
-		];
-
-		const result = computeAreaRating(['emp-1', 'emp-2'], evaluations);
-		// (4 + 3 + 5) / 3 = 4
-		expect(result.avgRating).toBeCloseTo(4, 1);
-		expect(result.ratingsCount).toBe(3);
-	});
-
-	it('returns null and zero count when no ratings exist', async () => {
-		const { computeAreaRating } = await import('../rhHierarchyStore.svelte.ts');
-
-		const result = computeAreaRating(
-			['emp-1'],
-			[makeRating({ id: 'r1', employeeId: 'emp-1', competencyId: 'comp-a', rhRating: undefined })]
-		);
-		expect(result.avgRating).toBeNull();
-		expect(result.ratingsCount).toBe(0);
-	});
-
-	it('returns null for empty employeeIds', async () => {
-		const { computeAreaRating } = await import('../rhHierarchyStore.svelte.ts');
-
-		const result = computeAreaRating([], []);
-		expect(result.avgRating).toBeNull();
-		expect(result.ratingsCount).toBe(0);
-	});
-
-	it('excludes employees with no rhRating from the mean', async () => {
-		const { computeAreaRating } = await import('../rhHierarchyStore.svelte.ts');
-
-		const evaluations: CompetencyRating[] = [
-			makeRating({ id: 'r1', employeeId: 'emp-1', competencyId: 'comp-a', rhRating: 4 }),
-			makeRating({ id: 'r2', employeeId: 'emp-2', competencyId: 'comp-a', rhRating: undefined }),
-			makeRating({ id: 'r3', employeeId: 'emp-3', competencyId: 'comp-a', rhRating: 5 })
-		];
-
-		const result = computeAreaRating(['emp-1', 'emp-2', 'emp-3'], evaluations);
-		// Only emp-1 (4) and emp-3 (5) count: (4 + 5) / 2 = 4.5
-		expect(result.avgRating).toBeCloseTo(4.5, 1);
-		expect(result.ratingsCount).toBe(2);
-	});
-
-	it('returns null when employees exist but have no ratings', async () => {
-		const { computeAreaRating } = await import('../rhHierarchyStore.svelte.ts');
-
-		const result = computeAreaRating(['emp-1', 'emp-2'], []);
-		expect(result.avgRating).toBeNull();
-		expect(result.ratingsCount).toBe(0);
-	});
-});
-
-// ========================================================================
-// buildEmployeeList
-// ========================================================================
-
-describe('buildEmployeeList', () => {
-	it('includes the area manager and all descendants, sorted A-Z', async () => {
-		const { buildEmployeeList } = await import('../rhHierarchyStore.svelte.ts');
-
-		const nodes: OrgNode[] = [
-			makeNode({ id: 'emp-b', name: 'Bob', profileId: 'jefe' }),
-			makeNode({ id: 'emp-a', name: 'Alice', profileId: 'colaborador' }),
-			makeNode({ id: 'emp-c', name: 'Charlie', profileId: 'vendedor' })
-		];
-
-		const result = buildEmployeeList(['emp-a', 'emp-b', 'emp-c'], nodes);
-
-		expect(result).toHaveLength(3);
-		// A-Z sort
-		expect(result[0].name).toBe('Alice');
-		expect(result[1].name).toBe('Bob');
-		expect(result[2].name).toBe('Charlie');
-	});
-
-	it('maps profileId to correct PROFILE_LABELS position', async () => {
-		const { buildEmployeeList } = await import('../rhHierarchyStore.svelte.ts');
-
-		const nodes: OrgNode[] = [
-			makeNode({ id: 'emp-1', name: 'Carmen', profileId: 'director' }),
-			makeNode({ id: 'emp-2', name: 'Luis', profileId: 'gerente-tienda' }),
-			makeNode({ id: 'emp-3', name: 'Laura', profileId: 'rh' })
-		];
-
-		const result = buildEmployeeList(['emp-1', 'emp-2', 'emp-3'], nodes);
-
-		expect(result.find((r) => r.id === 'emp-1')?.position).toBe('Director');
-		expect(result.find((r) => r.id === 'emp-2')?.position).toBe('Gerente de tienda');
-		expect(result.find((r) => r.id === 'emp-3')?.position).toBe('Recursos Humanos');
-	});
-
-	it('falls back to profileId when label is unknown', async () => {
-		const { buildEmployeeList } = await import('../rhHierarchyStore.svelte.ts');
-
-		const nodes: OrgNode[] = [
-			makeNode({ id: 'emp-x', name: 'X', profileId: 'unknown-role' })
-		];
-
-		const result = buildEmployeeList(['emp-x'], nodes);
-		expect(result[0].position).toBe('unknown-role');
-	});
-
-	it('returns empty array for empty employeeIds', async () => {
-		const { buildEmployeeList } = await import('../rhHierarchyStore.svelte.ts');
-
-		const result = buildEmployeeList([], []);
-		expect(result).toEqual([]);
-	});
-
-	it('skips employeeIds that have no matching node', async () => {
-		const { buildEmployeeList } = await import('../rhHierarchyStore.svelte.ts');
-
-		const nodes: OrgNode[] = [
-			makeNode({ id: 'emp-1', name: 'Alice', profileId: 'colaborador' })
-		];
-
-		// emp-2 has no matching node → excluded
-		const result = buildEmployeeList(['emp-1', 'emp-2'], nodes);
-		expect(result).toHaveLength(1);
-		expect(result[0].id).toBe('emp-1');
+			expect(cm.GET).toHaveBeenCalledWith(
+				'/org-nodes/{nodeId}/area-metrics',
+				expect.objectContaining({
+					params: expect.objectContaining({
+						query: { cycleId: 'cycle-2026' }
+					})
+				})
+			);
+		}, 15000);
 	});
 });

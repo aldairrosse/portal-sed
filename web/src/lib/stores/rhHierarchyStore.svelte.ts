@@ -85,7 +85,6 @@ async function fetchAreaMetrics(nodeId: string): Promise<void> {
 			employees: raw.employees ?? []
 		};
 
-		console.log('Employees from API:', raw.employees);
 		employeeList = buildEmployeeListFromApi(raw.employees ?? []);
 	} catch (e) {
 		metricsError = e instanceof Error ? e.message : 'Error al cargar métricas';
