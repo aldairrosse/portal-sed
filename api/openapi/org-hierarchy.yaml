@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: SED Org Hierarchy API
   description: |
-    Organizational hierarchy, employees, and evaluator scope API for SED.
+    Organizational hierarchy and employees API for SED.
     This is the backbone that determines who evaluates whom across the entire system.
   version: 1.0.0
   contact:
@@ -92,6 +92,13 @@ paths:
             type: integer
             default: -1
           description: Maximum depth (-1 for all)
+        - name: evaluatorId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+          description: Filter tree to subtree of evaluator's org node. Absent = full tree.
       responses:
         '200':
           description: Successful response
@@ -485,15 +492,15 @@ paths:
         '400':
           $ref: '#/components/responses/BadRequest'
 
-  # ============ Evaluator Scopes ============
-  /evaluator-scopes:
+  # ============ Area Metrics ============
+  /org-nodes/{nodeId}/area-metrics:
     get:
-      operationId: getEvaluatorScope
-      summary: Get evaluator scope
-      description: Returns the evaluation scope for a given evaluator and optional cycle.
+      operationId: getAreaMetrics
+      summary: Get area metrics
+      description: Returns aggregated metrics for the direct employees of an org node.
       parameters:
-        - name: evaluatorId
-          in: query
+        - name: nodeId
+          in: path
           required: true
           schema:
             type: string
@@ -504,43 +511,18 @@ paths:
           schema:
             type: string
             format: uuid
+          description: Optional cycle to scope metrics to
       responses:
         '200':
           description: Successful response
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  data:
-                    $ref: '#/components/schemas/EvaluatorScope'
+                $ref: '#/components/schemas/AreaMetrics'
         '404':
-          $ref: '#/components/responses/EmployeeNotFound'
-
-  /evaluator-scopes/{scopeId}:
-    get:
-      operationId: getEvaluatorScopeById
-      summary: Get evaluator scope by ID
-      description: Returns a single evaluator scope by its unique ID.
-      parameters:
-        - name: scopeId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        '200':
-          description: Successful response
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    $ref: '#/components/schemas/EvaluatorScope'
-        '404':
-          $ref: '#/components/responses/ScopeNotFound'
+          $ref: '#/components/responses/NodeNotFound'
+        '400':
+          $ref: '#/components/responses/BadRequest'
 
 components:
   schemas:
@@ -764,35 +746,48 @@ components:
           enum: [self, direct_manager, director, vp, ceo]
           description: Relation label
 
-    EvaluatorScope:
+    AreaMetrics:
       type: object
       properties:
-        evaluatorId:
+        nodeId:
           type: string
           format: uuid
-        cycleId:
-          type: string
-          format: uuid
-          nullable: true
-        scopeType:
-          type: string
-          enum: [department, team, individual]
-        scopeData:
-          type: object
-          properties:
-            orgNodeIds:
-              type: array
-              items:
-                type: string
-                format: uuid
-            employeeIds:
-              type: array
-              items:
-                type: string
-                format: uuid
-        evaluateeCount:
+        employeeCount:
           type: integer
-          description: Number of evaluatees in scope
+        employeesWithGoals:
+          type: integer
+        avgProgress:
+          type: number
+          format: float
+          nullable: true
+        completedGoals:
+          type: integer
+        pendingGoals:
+          type: integer
+        avgRating:
+          type: number
+          format: float
+          nullable: true
+        ratingsCount:
+          type: integer
+        employees:
+          type: array
+          items:
+            $ref: '#/components/schemas/AreaMetricsEmployee'
+
+    AreaMetricsEmployee:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        firstName:
+          type: string
+        lastName:
+          type: string
+        profileId:
+          type: string
+          format: uuid
 
     Error:
       type: object
@@ -886,14 +881,4 @@ components:
               message: Cannot delete node with children
               trace_id: abc12345
 
-    ScopeNotFound:
-      description: Evaluator scope not found
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-          example:
-            error:
-              code: SCOPE_NOT_FOUND
-              message: Evaluator scope not found
-              trace_id: abc12345
+

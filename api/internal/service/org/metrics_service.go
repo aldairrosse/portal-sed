@@ -75,10 +75,13 @@ func (s *metricsService) GetAreaMetrics(ctx context.Context, nodeID, cycleID str
 	resp.Employees = make([]dto.AreaMetricsEmployee, len(employees))
 	for i, emp := range employees {
 		resp.Employees[i] = dto.AreaMetricsEmployee{
-			ID:        emp.ID.String(),
-			FirstName: emp.FirstName,
-			LastName:  emp.LastName,
-			ProfileID: emp.ProfileID.String(),
+			ID:                 emp.ID.String(),
+			FirstName:          emp.FirstName,
+			LastName:           emp.LastName,
+			ProfileID:          emp.ProfileID.String(),
+			ProfileName:        emp.ProfileName,
+			ProfileDescription: emp.ProfileDescription,
+			JobTitle:           emp.JobTitle,
 		}
 	}
 

@@ -116,6 +116,9 @@ var (
 	ErrInvalidBaselineValue = &DomainError{Code: InvalidBaselineValue, Message: "Baseline value must be greater than target value for descendente goals."}
 	ErrInvalidDirection     = &DomainError{Code: InvalidDirection, Message: "Direction must be 'ascendente' or 'descendente'."}
 
+	// Forbidden
+	ErrForbidden = &DomainError{Code: "FORBIDDEN", Message: "You do not have permission to access this resource."}
+
 	// Org-hierarchy sentinel errors
 	ErrTreeNotFound     = &DomainError{Code: TreeNotFound, Message: "Organizational tree not found."}
 	ErrNodeNotFound     = &DomainError{Code: NodeNotFound, Message: "Org node not found."}
@@ -144,7 +147,7 @@ func HTTPStatus(err error) int {
 	case InvalidTransition, CycleAlreadyActive, PhaseNotAdvanceable, ConcurrentUpdate, IdempotencyKeyConflict, DuplicateCategoryName, KpiLinkedCannotDelete, ConcurrentModification, NodeHasChildren, StaleVersion,
 		"EVALUATION_ALREADY_FINALIZED":
 		return 409
-	case PhaseRestricted, GoalNotDeletableInPhase:
+	case PhaseRestricted, GoalNotDeletableInPhase, "FORBIDDEN":
 		return 403
 	case WeightSumInvalid, GoalWeightOverflow:
 		return 422

@@ -162,6 +162,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/kpis/{kpiId}/value": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update a KPI's current value
+         * @description Updates only the current_value field of a KPI. Used for progress tracking.
+         */
+        patch: operations["updateKPIValue"];
+        trace?: never;
+    };
     "/goals/{goalId}/kpis": {
         parameters: {
             query?: never;
@@ -208,6 +228,26 @@ export interface paths {
         put?: never;
         /** Create a goal assignment for the employee */
         post: operations["createAssignment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/employees/{empId}/score": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get the employee's weighted score
+         * @description Returns the overall weighted score (0-100) based on category weights and goal progress percentages.
+         */
+        get: operations["getEmployeeScore"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -261,6 +301,13 @@ export interface components {
             unit: "porcentaje" | "moneda" | "numero";
             weight: number;
             target_value: number;
+            /**
+             * @default ascendente
+             * @enum {string}
+             */
+            direction: "ascendente" | "descendente";
+            /** @description Required when direction is descendente; must be > target_value */
+            baseline_value?: number | null;
             kpi_ids?: string[];
         };
         UpdateGoalRequest: {
@@ -270,6 +317,13 @@ export interface components {
             unit: "porcentaje" | "moneda" | "numero";
             weight: number;
             target_value: number;
+            /**
+             * @default ascendente
+             * @enum {string}
+             */
+            direction: "ascendente" | "descendente";
+            /** @description Required when direction is descendente; must be > target_value */
+            baseline_value?: number | null;
             version: number;
             kpi_ids?: string[];
         };
@@ -285,6 +339,10 @@ export interface components {
             target_value?: number;
             current_value?: number;
             /** @enum {string} */
+            direction?: "ascendente" | "descendente";
+            baseline_value?: number | null;
+            progress_percent?: number;
+            /** @enum {string} */
             state?: "borrador" | "fijada" | "en_seguimiento" | "evaluada" | "cerrada";
             version?: number;
             kpis?: components["schemas"]["KpiResponse"][];
@@ -294,6 +352,9 @@ export interface components {
             updated_at?: string;
         };
         UpdateProgressRequest: {
+            current_value: number;
+        };
+        KpiUpdateValueRequest: {
             current_value: number;
         };
         BatchGoalItem: {
@@ -331,12 +392,22 @@ export interface components {
             /** @enum {string} */
             unit: "porcentaje" | "moneda" | "numero";
             description?: string;
+            /**
+             * @default ascendente
+             * @enum {string}
+             */
+            direction: "ascendente" | "descendente";
         };
         UpdateKpiRequest: {
             name: string;
             /** @enum {string} */
             unit: "porcentaje" | "moneda" | "numero";
             description?: string;
+            /**
+             * @default ascendente
+             * @enum {string}
+             */
+            direction: "ascendente" | "descendente";
         };
         KpiResponse: {
             /** Format: uuid */
@@ -344,6 +415,10 @@ export interface components {
             name?: string;
             unit?: string;
             description?: string;
+            /** @enum {string} */
+            direction?: "ascendente" | "descendente";
+            current_value?: number | null;
+            progress_percent?: number;
             /** Format: date-time */
             created_at?: string;
             /** Format: date-time */
@@ -883,6 +958,34 @@ export interface operations {
             409: components["responses"]["KpiLinked"];
         };
     };
+    updateKPIValue: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                kpiId: components["parameters"]["KpiId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["KpiUpdateValueRequest"];
+            };
+        };
+        responses: {
+            /** @description Updated KPI */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KpiResponse"];
+                };
+            };
+            400: components["responses"]["InvalidRequest"];
+            404: components["responses"]["KpiNotFound"];
+        };
+    };
     linkKPI: {
         parameters: {
             query?: never;
@@ -983,6 +1086,31 @@ export interface operations {
                 };
             };
             403: components["responses"]["PhaseRestricted"];
+        };
+    };
+    getEmployeeScore: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                empId: components["parameters"]["EmpId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Weighted score */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        score: number;
+                    };
+                };
+            };
+            404: components["responses"]["GoalNotFound"];
         };
     };
 }

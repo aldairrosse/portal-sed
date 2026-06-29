@@ -19,36 +19,18 @@ type EvaluateeService interface {
 	BatchLookup(ctx context.Context, ids []string) (*org.EmployeeListResponse, error)
 }
 
-// EvaluatorService defines the interface for evaluator scope operations.
-type EvaluatorService interface {
-	GetEvaluatorScope(ctx context.Context, evaluatorID, cycleID string) (*org.EvaluatorScopeResponse, error)
-	ResolveEvaluator(ctx context.Context, evaluateeID string) (*org.EmployeeDetailResponse, error)
-}
-
 type evaluateeService struct {
-	empRepo   *repo.EmployeeRepo
-	nodeRepo  *repo.OrgNodeRepo
-	scopeRepo *repo.EvaluatorScopeRepo
-	client    *internal.Client
+	empRepo  *repo.EmployeeRepo
+	nodeRepo *repo.OrgNodeRepo
+	client   *internal.Client
 }
 
 // NewEvaluateeService creates a new EvaluateeService.
-func NewEvaluateeService(empRepo *repo.EmployeeRepo, nodeRepo *repo.OrgNodeRepo, scopeRepo *repo.EvaluatorScopeRepo, client *internal.Client) EvaluateeService {
+func NewEvaluateeService(empRepo *repo.EmployeeRepo, nodeRepo *repo.OrgNodeRepo, client *internal.Client) EvaluateeService {
 	return &evaluateeService{
-		empRepo:   empRepo,
-		nodeRepo:  nodeRepo,
-		scopeRepo: scopeRepo,
-		client:    client,
-	}
-}
-
-// NewEvaluatorService creates a new EvaluatorService (uses same underlying service).
-func NewEvaluatorService(empRepo *repo.EmployeeRepo, nodeRepo *repo.OrgNodeRepo, scopeRepo *repo.EvaluatorScopeRepo, client *internal.Client) EvaluatorService {
-	return &evaluateeService{
-		empRepo:   empRepo,
-		nodeRepo:  nodeRepo,
-		scopeRepo: scopeRepo,
-		client:    client,
+		empRepo:  empRepo,
+		nodeRepo: nodeRepo,
+		client:   client,
 	}
 }
 
@@ -195,66 +177,6 @@ func (s *evaluateeService) BatchLookup(ctx context.Context, ids []string) (*org.
 	return resp, nil
 }
 
-func (s *evaluateeService) GetEvaluatorScope(ctx context.Context, evaluatorID, cycleID string) (*org.EvaluatorScopeResponse, error) {
-	evalID, err := uuid.Parse(evaluatorID)
-	if err != nil {
-		return nil, errors.NewDomainError(errors.InvalidRequest, "Invalid evaluator ID: must be a valid UUID", err)
-	}
-
-	// Verify evaluator exists
-	_, err = s.empRepo.GetByID(ctx, evalID)
-	if err != nil {
-		return nil, err
-	}
-
-	if cycleID == "" {
-		// Find scopes without cycle filter
-		rows, err := s.scopeRepo.GetByEvaluator(ctx, evalID)
-		if err != nil {
-			return nil, err
-		}
-		if len(rows) == 0 {
-			return nil, repo.ErrScopeNotFound
-		}
-		return scopeRowToResponse(rows[0]), nil
-	}
-
-	cycID, err := uuid.Parse(cycleID)
-	if err != nil {
-		return nil, errors.NewDomainError(errors.InvalidRequest, "Invalid cycle ID: must be a valid UUID", err)
-	}
-
-	row, err := s.scopeRepo.GetByEvaluatorAndCycle(ctx, evalID, cycID)
-	if err != nil {
-		return nil, err
-	}
-
-	return scopeRowToResponse(row), nil
-}
-
-func (s *evaluateeService) ResolveEvaluator(ctx context.Context, evaluateeID string) (*org.EmployeeDetailResponse, error) {
-	id, err := uuid.Parse(evaluateeID)
-	if err != nil {
-		return nil, errors.NewDomainError(errors.InvalidRequest, "Invalid evaluatee ID: must be a valid UUID", err)
-	}
-
-	// Get the evaluatee's manager (who evaluates them)
-	manager, err := s.empRepo.GetManager(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-	if manager == nil {
-		return nil, repo.ErrEmployeeNotFound.WithDetails("Employee has no manager (root)")
-	}
-
-	detail, err := s.empRepo.GetDetailByID(ctx, manager.ID)
-	if err != nil {
-		return nil, err
-	}
-
-	return buildEmployeeDetailResponse(detail), nil
-}
-
 // ---------- helpers ----------
 
 func resolveRelation(depth, totalDepth int) string {
@@ -271,44 +193,6 @@ func resolveRelation(depth, totalDepth int) string {
 		return "director"
 	}
 	return "direct_manager"
-}
-
-func scopeRowToResponse(row *repo.EvaluatorScopeRow) *org.EvaluatorScopeResponse {
-	resp := &org.EvaluatorScopeResponse{
-		EvaluatorID: row.EvaluatorID.String(),
-		ScopeType:   row.ScopeType,
-	}
-
-	if row.CycleID != nil {
-		resp.CycleID = row.CycleID.String()
-	}
-
-	// Extract scopeData
-	if data, ok := row.ScopeData["orgNodeIds"]; ok {
-		if ids, ok := data.([]interface{}); ok {
-			resp.ScopeData.OrgNodeIDs = make([]string, len(ids))
-			for i, id := range ids {
-				resp.ScopeData.OrgNodeIDs[i] = toString(id)
-			}
-		}
-	}
-	if data, ok := row.ScopeData["employeeIds"]; ok {
-		if ids, ok := data.([]interface{}); ok {
-			resp.ScopeData.EmployeeIDs = make([]string, len(ids))
-			for i, id := range ids {
-				resp.ScopeData.EmployeeIDs[i] = toString(id)
-			}
-		}
-	}
-
-	// Count evaluatees from scopeData
-	if empIDs, ok := row.ScopeData["employeeIds"]; ok {
-		if ids, ok := empIDs.([]interface{}); ok {
-			resp.EvaluateeCount = len(ids)
-		}
-	}
-
-	return resp
 }
 
 func buildEmployeeDetailResponse(detail *repo.EmployeeDetailRow) *org.EmployeeDetailResponse {
@@ -358,10 +242,4 @@ func buildEmployeeDetailResponse(detail *repo.EmployeeDetailRow) *org.EmployeeDe
 	return resp
 }
 
-// toString converts an interface{} to string safely.
-func toString(v interface{}) string {
-	if s, ok := v.(string); ok {
-		return s
-	}
-	return ""
-}
+

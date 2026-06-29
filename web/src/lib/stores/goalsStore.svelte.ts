@@ -12,11 +12,6 @@ import type {
 } from '$lib/types/goal';
 import type { EvaluationProfile } from '$lib/types/evaluation';
 
-import categoriesData from '$lib/fixtures/goals/goal-categories.json';
-import goalsData from '$lib/fixtures/goals/goals.json';
-import kpisData from '$lib/fixtures/goals/kpis.json';
-import goalKpiLinksData from '$lib/fixtures/goals/goal-kpi-links.json';
-import assignmentsData from '$lib/fixtures/goals/assignments.json';
 import { getActivePhase } from '$lib/api/cycle.svelte';
 import { getSession } from '$lib/api/session.svelte';
 import { client } from '$lib/api/client';
@@ -53,17 +48,6 @@ export const storeState = new StoreState();
 
 function getEmployeeId(): string {
 	return getSession().user?.employeeId ?? '';
-}
-
-function loadFixtures(): StoreData {
-	return {
-		categories: structuredClone(categoriesData),
-		goals: structuredClone(goalsData as Goal[]),
-		kpis: structuredClone(kpisData as KPI[]),
-		goalKpiLinks: structuredClone(goalKpiLinksData as GoalKpiLink[]),
-		assignments: structuredClone(assignmentsData as EmployeeAssignment[]),
-		changeRequests: []
-	};
 }
 
 /**
@@ -223,12 +207,6 @@ function normalizeApiData(
 export async function load(): Promise<void> {
 	storeState.loading = true;
 	storeState.error = null;
-
-	if (import.meta.env.DEV && !import.meta.env.VITE_USE_API) {
-		storeState.data = loadFixtures();
-		storeState.loading = false;
-		return;
-	}
 
 	const empId = getEmployeeId();
 
@@ -480,10 +458,6 @@ export function isCategoryGoalsWeightValid(categoryId: string): boolean {
 // ─── Mutations: Categories ────────────────────────────────────────────────────
 
 export async function addCategory(category: GoalCategory): Promise<void> {
-	if (import.meta.env.DEV && !import.meta.env.VITE_USE_API) {
-		storeState.data = { ...storeState.data!, categories: [...(storeState.data?.categories ?? []), category] };
-		return;
-	}
 	const empId = getEmployeeId();
 	const { error: apiError } = await client.POST('/employees/{empId}/categories', {
 		params: { path: { empId } },
@@ -494,13 +468,6 @@ export async function addCategory(category: GoalCategory): Promise<void> {
 }
 
 export async function updateCategory(id: string, updates: Partial<Omit<GoalCategory, 'id'>>): Promise<void> {
-	if (import.meta.env.DEV && !import.meta.env.VITE_USE_API) {
-		storeState.data = {
-			...storeState.data!,
-			categories: (storeState.data?.categories ?? []).map((c) => (c.id === id ? { ...c, ...updates } : c))
-		};
-		return;
-	}
 	const empId = getEmployeeId();
 	const { error: apiError } = await client.PUT('/employees/{empId}/categories/{catId}', {
 		params: { path: { empId, catId: id } },
@@ -519,17 +486,6 @@ export async function deleteCategory(id: string): Promise<void> {
 	const phase = getActivePhase() ?? 'inicio-anio';
 	if (phase === 'medio-anio' || phase === 'fin-anio') return;
 
-	if (import.meta.env.DEV && !import.meta.env.VITE_USE_API) {
-		// Cascade: remove goals of this category
-		const deletedGoalIds = (storeState.data?.goals ?? []).filter((g) => g.categoryId === id).map((g) => g.id);
-		storeState.data = {
-			...storeState.data!,
-			goals: (storeState.data?.goals ?? []).filter((g) => g.categoryId !== id),
-			goalKpiLinks: (storeState.data?.goalKpiLinks ?? []).filter((link) => !deletedGoalIds.includes(link.goalId)),
-			categories: (storeState.data?.categories ?? []).filter((c) => c.id !== id)
-		};
-		return;
-	}
 	const empId = getEmployeeId();
 	const { error: apiError } = await client.DELETE('/employees/{empId}/categories/{catId}', {
 		params: { path: { empId, catId: id } }
@@ -541,10 +497,6 @@ export async function deleteCategory(id: string): Promise<void> {
 // ─── Mutations: Goals ─────────────────────────────────────────────────────────
 
 export async function addGoal(goal: Goal): Promise<void> {
-	if (import.meta.env.DEV && !import.meta.env.VITE_USE_API) {
-		storeState.data = { ...storeState.data!, goals: [...(storeState.data?.goals ?? []), goal] };
-		return;
-	}
 	const empId = getEmployeeId();
 	const { error: apiError } = await client.POST('/employees/{empId}/categories/{catId}/goals', {
 		params: { path: { empId, catId: goal.categoryId } },
@@ -553,7 +505,8 @@ export async function addGoal(goal: Goal): Promise<void> {
 			description: goal.description,
 			unit: goal.unit as 'porcentaje' | 'moneda' | 'numero',
 			weight: goal.weight,
-			target_value: goal.targetValue
+			target_value: goal.targetValue,
+			direction: goal.direction as 'ascendente' | 'descendente'
 		}
 	});
 	if (apiError) throw new Error((apiError as { error?: { message?: string } })?.error?.message ?? 'Error al crear meta');
@@ -561,13 +514,6 @@ export async function addGoal(goal: Goal): Promise<void> {
 }
 
 export async function updateGoal(id: string, updates: Partial<Omit<Goal, 'id'>>): Promise<void> {
-	if (import.meta.env.DEV && !import.meta.env.VITE_USE_API) {
-		storeState.data = {
-			...storeState.data!,
-			goals: (storeState.data?.goals ?? []).map((g) => (g.id === id ? { ...g, ...updates } : g))
-		};
-		return;
-	}
 	const { error: apiError } = await client.PUT('/goals/{goalId}', {
 		params: { path: { goalId: id } },
 		body: {
@@ -576,6 +522,7 @@ export async function updateGoal(id: string, updates: Partial<Omit<Goal, 'id'>>)
 			unit: (updates.unit as 'porcentaje' | 'moneda' | 'numero') ?? 'numero',
 			weight: updates.weight ?? 0,
 			target_value: updates.targetValue ?? 0,
+			direction: (updates.direction as 'ascendente' | 'descendente') ?? 'ascendente',
 			version: 1
 		}
 	});
@@ -588,14 +535,6 @@ export async function deleteGoal(id: string): Promise<void> {
 	const phase = getActivePhase() ?? 'inicio-anio';
 	if (phase === 'medio-anio' || phase === 'fin-anio') return;
 
-	if (import.meta.env.DEV && !import.meta.env.VITE_USE_API) {
-		storeState.data = {
-			...storeState.data!,
-			goals: (storeState.data?.goals ?? []).filter((g) => g.id !== id),
-			goalKpiLinks: (storeState.data?.goalKpiLinks ?? []).filter((link) => link.goalId !== id)
-		};
-		return;
-	}
 	const { error: apiError } = await client.DELETE('/goals/{goalId}', {
 		params: { path: { goalId: id } }
 	});
@@ -606,15 +545,12 @@ export async function deleteGoal(id: string): Promise<void> {
 // ─── Mutations: KPIs ──────────────────────────────────────────────────────────
 
 export async function addKpi(kpi: KPI): Promise<void> {
-	if (import.meta.env.DEV && !import.meta.env.VITE_USE_API) {
-		storeState.data = { ...storeState.data!, kpis: [...(storeState.data?.kpis ?? []), kpi] };
-		return;
-	}
 	const { error: apiError } = await client.POST('/kpis', {
 		body: {
 			name: kpi.name,
 			description: kpi.description,
-			unit: kpi.unit as 'porcentaje' | 'moneda' | 'numero'
+			unit: kpi.unit as 'porcentaje' | 'moneda' | 'numero',
+			direction: kpi.direction as 'ascendente' | 'descendente'
 		}
 	});
 	if (apiError) throw new Error((apiError as { error?: { message?: string } })?.error?.message ?? 'Error al crear KPI');
@@ -622,19 +558,13 @@ export async function addKpi(kpi: KPI): Promise<void> {
 }
 
 export async function updateKpi(id: string, updates: Partial<Omit<KPI, 'id'>>): Promise<void> {
-	if (import.meta.env.DEV && !import.meta.env.VITE_USE_API) {
-		storeState.data = {
-			...storeState.data!,
-			kpis: (storeState.data?.kpis ?? []).map((k) => (k.id === id ? { ...k, ...updates } : k))
-		};
-		return;
-	}
 	const { error: apiError } = await client.PUT('/kpis/{kpiId}', {
 		params: { path: { kpiId: id } },
 		body: {
 			name: updates.name ?? '',
 			description: updates.description ?? '',
-			unit: (updates.unit as 'porcentaje' | 'moneda' | 'numero') ?? 'numero'
+			unit: (updates.unit as 'porcentaje' | 'moneda' | 'numero') ?? 'numero',
+			direction: (updates.direction as 'ascendente' | 'descendente') ?? 'ascendente'
 		}
 	});
 	if (apiError) throw new Error((apiError as { error?: { message?: string } })?.error?.message ?? 'Error al actualizar KPI');
@@ -642,14 +572,6 @@ export async function updateKpi(id: string, updates: Partial<Omit<KPI, 'id'>>): 
 }
 
 export async function deleteKpi(id: string): Promise<void> {
-	if (import.meta.env.DEV && !import.meta.env.VITE_USE_API) {
-		storeState.data = {
-			...storeState.data!,
-			kpis: (storeState.data?.kpis ?? []).filter((k) => k.id !== id),
-			goalKpiLinks: (storeState.data?.goalKpiLinks ?? []).filter((link) => link.kpiId !== id)
-		};
-		return;
-	}
 	const { error: apiError } = await client.DELETE('/kpis/{kpiId}', {
 		params: { path: { kpiId: id } }
 	});
@@ -664,10 +586,6 @@ export async function linkKpiToGoal(goalId: string, kpiId: string, weight?: numb
 	const exists = (storeState.data?.goalKpiLinks ?? []).some((link) => link.goalId === goalId && link.kpiId === kpiId);
 	if (exists) return;
 
-	if (import.meta.env.DEV && !import.meta.env.VITE_USE_API) {
-		storeState.data = { ...storeState.data!, goalKpiLinks: [...(storeState.data?.goalKpiLinks ?? []), { goalId, kpiId, weight }] };
-		return;
-	}
 	const { error: apiError } = await client.POST('/goals/{goalId}/kpis', {
 		params: { path: { goalId } },
 		body: { kpi_id: kpiId }
@@ -677,13 +595,6 @@ export async function linkKpiToGoal(goalId: string, kpiId: string, weight?: numb
 }
 
 export async function unlinkKpiFromGoal(goalId: string, kpiId: string): Promise<void> {
-	if (import.meta.env.DEV && !import.meta.env.VITE_USE_API) {
-		storeState.data = {
-			...storeState.data!,
-			goalKpiLinks: (storeState.data?.goalKpiLinks ?? []).filter((link) => !(link.goalId === goalId && link.kpiId === kpiId))
-		};
-		return;
-	}
 	const { error: apiError } = await client.DELETE('/goals/{goalId}/kpis/{kpiId}', {
 		params: { path: { goalId, kpiId } }
 	});
@@ -693,16 +604,6 @@ export async function unlinkKpiFromGoal(goalId: string, kpiId: string): Promise<
 
 export async function updateLinkWeight(goalId: string, kpiId: string, weight: number | undefined): Promise<void> {
 	// No dedicated API endpoint for link weight. Local-only for now.
-	if (import.meta.env.DEV && !import.meta.env.VITE_USE_API) {
-		storeState.data = {
-			...storeState.data!,
-			goalKpiLinks: (storeState.data?.goalKpiLinks ?? []).map((link) =>
-				link.goalId === goalId && link.kpiId === kpiId ? { ...link, weight } : link
-			)
-		};
-		return;
-	}
-	// In API mode, update locally and rely on next reload() for consistency
 	storeState.data = {
 		...storeState.data!,
 		goalKpiLinks: (storeState.data?.goalKpiLinks ?? []).map((link) =>
@@ -714,10 +615,6 @@ export async function updateLinkWeight(goalId: string, kpiId: string, weight: nu
 // ─── Mutations: Assignments ───────────────────────────────────────────────────
 
 export async function addAssignment(assignment: EmployeeAssignment): Promise<void> {
-	if (import.meta.env.DEV && !import.meta.env.VITE_USE_API) {
-		storeState.data = { ...storeState.data!, assignments: [...(storeState.data?.assignments ?? []), assignment] };
-		return;
-	}
 	const empId = getEmployeeId();
 	const { error: apiError } = await client.POST('/employees/{empId}/assignments', {
 		params: { path: { empId } },
@@ -810,17 +707,6 @@ export async function rejectChangeRequest(id: string): Promise<void> {
 // ─── Mutations: Progress & Comments ───────────────────────────────────────────
 
 export async function updateGoalProgress(goalId: string, progress: number): Promise<void> {
-	if (import.meta.env.DEV && !import.meta.env.VITE_USE_API) {
-		storeState.data = {
-			...storeState.data!,
-			goals: (storeState.data?.goals ?? []).map((g) =>
-				g.id === goalId
-					? { ...g, progress, progressUpdatedAt: new Date().toISOString() }
-					: g
-			)
-		};
-		return;
-	}
 	const { error: apiError } = await client.PATCH('/goals/{goalId}/progress', {
 		params: { path: { goalId } },
 		body: { current_value: progress }

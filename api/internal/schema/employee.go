@@ -75,6 +75,7 @@ func (Employee) Edges() []ent.Edge {
 		edge.To("nine_box_entries", NineBoxEntry.Type),
 		edge.From("headed_department", OrgNode.Type).
 			Ref("head_employee"),
+		edge.To("activity_logs", ActivityLog.Type),
 	}
 }
 

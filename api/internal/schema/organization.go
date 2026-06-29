@@ -29,6 +29,9 @@ func (Organization) Fields() []ent.Field {
 		field.String("slug").
 			Unique().
 			NotEmpty(),
+		field.UUID("root_node_id", uuid.UUID{}).
+			Optional().
+			Nillable(),
 	}
 }
 

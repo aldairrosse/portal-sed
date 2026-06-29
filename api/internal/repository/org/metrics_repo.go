@@ -39,13 +39,15 @@ func NewMetricsRepo(client *internal.Client, db *sql.DB) *MetricsRepo {
 // GetDirectEmployees returns active employees directly assigned to the given org node.
 // Results are ordered by last_name, first_name.
 func (r *MetricsRepo) GetDirectEmployees(ctx context.Context, nodeID uuid.UUID) ([]*EmployeeRow, error) {
-	return scanEmployeeRows(r.db, ctx,
-		`SELECT id, created_at, updated_at, first_name, last_name, email,
-		        employee_number, is_active, org_node_id, manager_id, profile_id
-		 FROM employees
-		 WHERE org_node_id = $1
-		   AND is_active = true
-		 ORDER BY last_name, first_name`, nodeID)
+	return scanEmployeeRowsWithProfile(r.db, ctx,
+		`SELECT e.id, e.created_at, e.updated_at, e.first_name, e.last_name, e.email,
+		        e.employee_number, e.is_active, e.org_node_id, e.manager_id, e.profile_id,
+		        COALESCE(ep.name, '') as profile_name, COALESCE(ep.description, '') as profile_description, e.job_title
+		 FROM employees e
+		 LEFT JOIN evaluation_profiles ep ON e.profile_id = ep.id
+		 WHERE e.org_node_id = $1
+		   AND e.is_active = true
+		 ORDER BY e.last_name, e.first_name`, nodeID)
 }
 
 // GetGoalsByEmployees returns goals for the given employees.

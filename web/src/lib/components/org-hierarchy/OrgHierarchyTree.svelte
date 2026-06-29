@@ -5,6 +5,7 @@
 	import ErrorState from '$lib/components/ui/ErrorState.svelte';
 
 	interface Props {
+		viewType?: 'users' | 'departments';
 		node?: OrgNode | null;
 		onNodeSelect?: (node: OrgNode) => void;
 		selectedNodeId?: string;
@@ -27,6 +28,7 @@
 		initialExpandedIds = [],
 		loading = false,
 		error = null,
+		viewType = 'users',
 		onretry
 	}: Props = $props();
 </script>
@@ -37,7 +39,7 @@
 	</div>
 {:else if error}
 	<ErrorState message={error} {onretry} />
-{:else if node}
+{:else if node?.children}
 	<ul class="menu bg-base-100 w-full text-sm p-0">
 		<TreeNode
 			{node}
@@ -45,8 +47,11 @@
 			{selectedNodeId}
 			{maxDepth}
 			depth={0}
+			{viewType}
 			initialExpanded={initialExpandedIds.includes(node.id)}
 			{initialExpandedIds}
 		/>
 	</ul>
+{:else if node}
+	<div class="p-4 text-center text-sm text-base-content/40">Sin datos</div>
 {/if}

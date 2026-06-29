@@ -20,6 +20,9 @@ import (
 	"github.com/google/uuid"
 	dto "github.com/sed-evaluacion-desempeno/api/internal/dto/competency"
 	pkgerrors "github.com/sed-evaluacion-desempeno/api/internal/pkg/errors"
+
+	"github.com/sed-evaluacion-desempeno/api/internal/auth"
+	activitysvc "github.com/sed-evaluacion-desempeno/api/internal/service/activity"
 	svc "github.com/sed-evaluacion-desempeno/api/internal/service/competency"
 )
 
@@ -35,6 +38,7 @@ type Handler struct {
 	scaleSvc       svc.ScaleService
 	catalogSvc     svc.CatalogService
 	acceptanceSvc  svc.AcceptanceService
+	activitySvc    activitysvc.Service
 }
 
 // NewHandler creates a new Handler.
@@ -44,6 +48,7 @@ func NewHandler(
 	scaleSvc svc.ScaleService,
 	catalogSvc svc.CatalogService,
 	acceptanceSvc svc.AcceptanceService,
+	activitySvc activitysvc.Service,
 ) *Handler {
 	return &Handler{
 		pillarSvc:     pillarSvc,
@@ -51,6 +56,7 @@ func NewHandler(
 		scaleSvc:      scaleSvc,
 		catalogSvc:    catalogSvc,
 		acceptanceSvc: acceptanceSvc,
+		activitySvc:   activitySvc,
 	}
 }
 
@@ -225,6 +231,17 @@ func (h *Handler) CreatePillar(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		writeError(w, err)
 		return
+	}
+
+	// Log activity: pilar creado
+	if h.activitySvc != nil {
+		if empID, ok := auth.GetEmployeeID(r.Context()); ok {
+			metadata := map[string]interface{}{
+				"pillar_name": req.Name,
+			}
+			_ = h.activitySvc.LogActivity(r.Context(), empID, "pillar_edited",
+				"Creaste un nuevo pilar", "Pilares", metadata)
+		}
 	}
 
 	writeJSON(w, http.StatusCreated, result)

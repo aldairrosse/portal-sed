@@ -1,7 +1,13 @@
 <script lang="ts">
-    import { getProfile } from "$lib/stores/devContext.svelte";
     import { getSession, logout } from "$lib/api/session.svelte";
     import { titleCase } from "$lib/utils/text";
+    import { onMount } from "svelte";
+    import {
+        loadActivityLogs,
+        getActivityLogs,
+        isLoading,
+        getError,
+    } from "$lib/stores/activityLogStore.svelte";
     import {
         User,
         LogOut,
@@ -20,22 +26,18 @@
         Building2,
         ShieldCheck,
     } from "@lucide/svelte";
-    import activityLogs from "$lib/fixtures/activity/activity-logs.json";
-
     const session = $derived(getSession());
-    const profile = $derived(getProfile());
     const user = $derived(session.user);
     const userInitial = $derived(user?.name.charAt(0).toUpperCase() ?? "");
 
-    const filteredLogs = $derived(
-        activityLogs
-            .filter((log) => log.profileId === profile)
-            .sort(
-                (a, b) =>
-                    new Date(b.timestamp).getTime() -
-                    new Date(a.timestamp).getTime(),
-            ),
-    );
+    const logs = $derived(getActivityLogs());
+    const logsLoading = $derived(isLoading());
+    const logsError = $derived(getError());
+
+    onMount(() => {
+        const empId = user?.employeeId;
+        if (empId) loadActivityLogs(empId);
+    });
 
     const ACTION_ICONS: Record<string, typeof Clock> = {
         evaluation_started: ClipboardCheck,
@@ -151,7 +153,20 @@
             Actividad reciente
         </h2>
 
-        {#if filteredLogs.length === 0}
+        {#if logsLoading}
+            <div
+                class="flex items-center justify-center py-8 text-base-content/40"
+            >
+                <span class="loading loading-spinner loading-md"></span>
+            </div>
+        {:else if logsError}
+            <div
+                class="flex flex-col items-center text-center py-8 text-base-content/40"
+            >
+                <Clock class="w-10 h-10 text-base-content/20" />
+                <p class="text-sm mt-2">No se pudo cargar la actividad reciente</p>
+            </div>
+        {:else if logs.length === 0}
             <div
                 class="flex flex-col items-center text-center py-8 text-base-content/40"
             >
@@ -161,7 +176,7 @@
         {:else}
             <section class="flex items-start flex-col">
                 <ul class="timeline timeline-vertical timeline-left">
-                    {#each filteredLogs as log (log.id)}
+                    {#each logs as log (log.id)}
                         {@const Icon = getActionIcon(log.action)}
                         <li>
                             <hr class="bg-neutral" />
@@ -173,7 +188,7 @@
                             <div class="timeline-end timeline-box">
                                 <p class="text-sm">{log.description}</p>
                                 <p class="text-xs text-base-content/50 mt-1">
-                                    {formatTimeLabel(log.timestamp)}
+                                    {formatTimeLabel(log.created_at)}
                                 </p>
                             </div>
                             <hr class="bg-neutral" />

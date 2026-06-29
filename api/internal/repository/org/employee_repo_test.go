@@ -36,12 +36,12 @@ func TestEmployeeRepo_Create_Success(t *testing.T) {
 	profileID := uuid.MustParse("cccccccc-cccc-cccc-cccc-cccccccccccc")
 	now := time.Now()
 
-	mock.ExpectQuery("SELECT id, created_at, updated_at, first_name, last_name, email, employee_number, is_active, org_node_id, manager_id, profile_id FROM employees WHERE id = \\$1").
+	mock.ExpectQuery("SELECT id, created_at, updated_at, first_name, last_name, email, employee_number, is_active, org_node_id, manager_id, profile_id, job_title FROM employees WHERE id = \\$1").
 		WithArgs(empID).
 		WillReturnRows(sqlmock.NewRows([]string{
 			"id", "created_at", "updated_at", "first_name", "last_name", "email",
-			"employee_number", "is_active", "org_node_id", "manager_id", "profile_id",
-		}).AddRow(empID, now, now, "Alice", "Anderson", "alice@example.com", "E001", true, orgNodeID, nil, profileID))
+			"employee_number", "is_active", "org_node_id", "manager_id", "profile_id", "job_title",
+		}).AddRow(empID, now, now, "Alice", "Anderson", "alice@example.com", "E001", true, orgNodeID, nil, profileID, ""))
 
 	emp, err := r.GetByID(context.Background(), empID)
 	require.NoError(t, err)
@@ -68,14 +68,14 @@ func TestEmployeeRepo_Search_ILIKE(t *testing.T) {
 	profileID := uuid.MustParse("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee")
 	now := time.Now()
 
-	mock.ExpectQuery("SELECT id, created_at, updated_at, first_name, last_name, email, employee_number, is_active, org_node_id, manager_id, profile_id FROM employees WHERE first_name ILIKE \\$1 OR last_name ILIKE \\$1 OR email ILIKE \\$1 OR employee_number ILIKE \\$1 ORDER BY last_name, first_name LIMIT \\$2").
+	mock.ExpectQuery("SELECT id, created_at, updated_at, first_name, last_name, email, employee_number, is_active, org_node_id, manager_id, profile_id, job_title FROM employees WHERE first_name ILIKE \\$1 OR last_name ILIKE \\$1 OR email ILIKE \\$1 OR employee_number ILIKE \\$1 ORDER BY last_name, first_name LIMIT \\$2").
 		WithArgs("%alice%", 20).
 		WillReturnRows(sqlmock.NewRows([]string{
 			"id", "created_at", "updated_at", "first_name", "last_name", "email",
-			"employee_number", "is_active", "org_node_id", "manager_id", "profile_id",
+			"employee_number", "is_active", "org_node_id", "manager_id", "profile_id", "job_title",
 		}).
-			AddRow(uuid.New(), now, now, "Alice", "Anderson", "alice@example.com", "E001", true, orgNodeID, nil, profileID).
-			AddRow(uuid.New(), now, now, "Alicia", "Keys", "alicia@example.com", "E002", true, orgNodeID, nil, profileID))
+			AddRow(uuid.New(), now, now, "Alice", "Anderson", "alice@example.com", "E001", true, orgNodeID, nil, profileID, "").
+			AddRow(uuid.New(), now, now, "Alicia", "Keys", "alicia@example.com", "E002", true, orgNodeID, nil, profileID, ""))
 
 	results, err := r.Search(context.Background(), "alice", 20)
 	require.NoError(t, err)
@@ -99,15 +99,15 @@ func TestEmployeeRepo_BatchResolve(t *testing.T) {
 	profileID := uuid.MustParse("55555555-5555-5555-5555-555555555555")
 	now := time.Now()
 
-	mock.ExpectQuery("SELECT id, created_at, updated_at, first_name, last_name, email, employee_number, is_active, org_node_id, manager_id, profile_id FROM employees WHERE id IN \\(").
+	mock.ExpectQuery("SELECT id, created_at, updated_at, first_name, last_name, email, employee_number, is_active, org_node_id, manager_id, profile_id, job_title FROM employees WHERE id IN \\(").
 		WithArgs(id1, id2, id3).
 		WillReturnRows(sqlmock.NewRows([]string{
 			"id", "created_at", "updated_at", "first_name", "last_name", "email",
-			"employee_number", "is_active", "org_node_id", "manager_id", "profile_id",
+			"employee_number", "is_active", "org_node_id", "manager_id", "profile_id", "job_title",
 		}).
-			AddRow(id1, now, now, "Bob", "Barker", "bob@example.com", "E010", true, orgNodeID, nil, profileID).
-			AddRow(id2, now, now, "Bill", "Bryson", "bill@example.com", "E011", true, orgNodeID, nil, profileID).
-			AddRow(id3, now, now, "Ben", "Button", "ben@example.com", "E012", true, orgNodeID, nil, profileID))
+			AddRow(id1, now, now, "Bob", "Barker", "bob@example.com", "E010", true, orgNodeID, nil, profileID, "").
+			AddRow(id2, now, now, "Bill", "Bryson", "bill@example.com", "E011", true, orgNodeID, nil, profileID, "").
+			AddRow(id3, now, now, "Ben", "Button", "ben@example.com", "E012", true, orgNodeID, nil, profileID, ""))
 
 	results, err := r.GetByIDs(context.Background(), []uuid.UUID{id1, id2, id3})
 	require.NoError(t, err)
@@ -132,14 +132,14 @@ func TestEmployeeRepo_List_WithFilters(t *testing.T) {
 	now := time.Now()
 	active := true
 
-	mock.ExpectQuery("SELECT e\\.id, e\\.created_at, e\\.updated_at, e\\.first_name, e\\.last_name, e\\.email, e\\.employee_number, e\\.is_active, e\\.org_node_id, e\\.manager_id, e\\.profile_id FROM employees e JOIN org_nodes on2 ON e\\.org_node_id = on2\\.id WHERE on2\\.organization_id = \\$1 AND e\\.org_node_id = \\$2 AND e\\.profile_id = \\$3 AND e\\.is_active = \\$4 AND \\(e\\.first_name ILIKE \\$5 OR e\\.last_name ILIKE \\$5 OR e\\.email ILIKE \\$5 OR e\\.employee_number ILIKE \\$5\\) ORDER BY e\\.last_name, e\\.first_name, e\\.id LIMIT \\$6").
+	mock.ExpectQuery("SELECT e\\.id, e\\.created_at, e\\.updated_at, e\\.first_name, e\\.last_name, e\\.email, e\\.employee_number, e\\.is_active, e\\.org_node_id, e\\.manager_id, e\\.profile_id, e\\.job_title FROM employees e JOIN org_nodes on2 ON e\\.org_node_id = on2\\.id WHERE on2\\.organization_id = \\$1 AND e\\.org_node_id = \\$2 AND e\\.profile_id = \\$3 AND e\\.is_active = \\$4 AND \\(e\\.first_name ILIKE \\$5 OR e\\.last_name ILIKE \\$5 OR e\\.email ILIKE \\$5 OR e\\.employee_number ILIKE \\$5\\) ORDER BY e\\.last_name, e\\.first_name, e\\.id LIMIT \\$6").
 		WithArgs(treeID, nodeID, profileID, active, "%smith%", 51).
 		WillReturnRows(sqlmock.NewRows([]string{
 			"id", "created_at", "updated_at", "first_name", "last_name", "email",
-			"employee_number", "is_active", "org_node_id", "manager_id", "profile_id",
+			"employee_number", "is_active", "org_node_id", "manager_id", "profile_id", "job_title",
 		}).
-			AddRow(uuid.New(), now, now, "John", "Smith", "john@example.com", "E100", true, orgNodeID, nil, profileID).
-			AddRow(uuid.New(), now, now, "Jane", "Smith", "jane@example.com", "E101", true, orgNodeID, nil, profileID))
+			AddRow(uuid.New(), now, now, "John", "Smith", "john@example.com", "E100", true, orgNodeID, nil, profileID, "Developer").
+			AddRow(uuid.New(), now, now, "Jane", "Smith", "jane@example.com", "E101", true, orgNodeID, nil, profileID, "Designer"))
 
 	filter := repo.EmployeeFilter{
 		TreeID:    &treeID,

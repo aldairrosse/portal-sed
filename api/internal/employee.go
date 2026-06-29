@@ -76,9 +76,11 @@ type EmployeeEdges struct {
 	NineBoxEntries []*NineBoxEntry `json:"nine_box_entries,omitempty"`
 	// HeadedDepartment holds the value of the headed_department edge.
 	HeadedDepartment []*OrgNode `json:"headed_department,omitempty"`
+	// ActivityLogs holds the value of the activity_logs edge.
+	ActivityLogs []*ActivityLog `json:"activity_logs,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [11]bool
+	loadedTypes [12]bool
 }
 
 // OrgNodeOrErr returns the OrgNode value or an error if the edge
@@ -184,6 +186,15 @@ func (e EmployeeEdges) HeadedDepartmentOrErr() ([]*OrgNode, error) {
 		return e.HeadedDepartment, nil
 	}
 	return nil, &NotLoadedError{edge: "headed_department"}
+}
+
+// ActivityLogsOrErr returns the ActivityLogs value or an error if the edge
+// was not loaded in eager-loading.
+func (e EmployeeEdges) ActivityLogsOrErr() ([]*ActivityLog, error) {
+	if e.loadedTypes[11] {
+		return e.ActivityLogs, nil
+	}
+	return nil, &NotLoadedError{edge: "activity_logs"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -367,6 +378,11 @@ func (_m *Employee) QueryNineBoxEntries() *NineBoxEntryQuery {
 // QueryHeadedDepartment queries the "headed_department" edge of the Employee entity.
 func (_m *Employee) QueryHeadedDepartment() *OrgNodeQuery {
 	return NewEmployeeClient(_m.config).QueryHeadedDepartment(_m)
+}
+
+// QueryActivityLogs queries the "activity_logs" edge of the Employee entity.
+func (_m *Employee) QueryActivityLogs() *ActivityLogQuery {
+	return NewEmployeeClient(_m.config).QueryActivityLogs(_m)
 }
 
 // Update returns a builder for updating this Employee.

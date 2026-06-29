@@ -179,7 +179,7 @@ func (m *mockDashService) GetSummary(ctx context.Context, cycleID uuid.UUID) (*d
 // ---------- Helpers ----------
 
 func setupHandler(t *testing.T, evalSvc handler.EvalService, boxSvc handler.BoxService, dashSvc handler.DashService) (*handler.EvaluationHandler, chi.Router) {
-	h := handler.NewEvaluationHandler(evalSvc, boxSvc, dashSvc)
+	h := handler.NewEvaluationHandler(evalSvc, boxSvc, dashSvc, nil)
 	r := chi.NewRouter()
 	return h, r
 }

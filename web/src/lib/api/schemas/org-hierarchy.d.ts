@@ -292,7 +292,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/evaluator-scopes": {
+    "/org-nodes/{nodeId}/area-metrics": {
         parameters: {
             query?: never;
             header?: never;
@@ -300,30 +300,10 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Get evaluator scope
-         * @description Returns the evaluation scope for a given evaluator and optional cycle.
+         * Get area metrics
+         * @description Returns aggregated metrics for the direct employees of an org node.
          */
-        get: operations["getEvaluatorScope"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/evaluator-scopes/{scopeId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get evaluator scope by ID
-         * @description Returns a single evaluator scope by its unique ID.
-         */
-        get: operations["getEvaluatorScopeById"];
+        get: operations["getAreaMetrics"];
         put?: never;
         post?: never;
         delete?: never;
@@ -464,19 +444,27 @@ export interface components {
              */
             relation?: "self" | "direct_manager" | "director" | "vp" | "ceo";
         };
-        EvaluatorScope: {
+        AreaMetrics: {
             /** Format: uuid */
-            evaluatorId?: string;
+            nodeId?: string;
+            employeeCount?: number;
+            employeesWithGoals?: number;
+            /** Format: float */
+            avgProgress?: number | null;
+            completedGoals?: number;
+            pendingGoals?: number;
+            /** Format: float */
+            avgRating?: number | null;
+            ratingsCount?: number;
+            employees?: components["schemas"]["AreaMetricsEmployee"][];
+        };
+        AreaMetricsEmployee: {
             /** Format: uuid */
-            cycleId?: string | null;
-            /** @enum {string} */
-            scopeType?: "department" | "team" | "individual";
-            scopeData?: {
-                orgNodeIds?: string[];
-                employeeIds?: string[];
-            };
-            /** @description Number of evaluatees in scope */
-            evaluateeCount?: number;
+            id?: string;
+            firstName?: string;
+            lastName?: string;
+            /** Format: uuid */
+            profileId?: string;
         };
         Error: {
             error?: {
@@ -603,24 +591,6 @@ export interface components {
                 "application/json": components["schemas"]["Error"];
             };
         };
-        /** @description Evaluator scope not found */
-        ScopeNotFound: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                /**
-                 * @example {
-                 *       "error": {
-                 *         "code": "SCOPE_NOT_FOUND",
-                 *         "message": "Evaluator scope not found",
-                 *         "trace_id": "abc12345"
-                 *       }
-                 *     }
-                 */
-                "application/json": components["schemas"]["Error"];
-            };
-        };
     };
     parameters: never;
     requestBodies: never;
@@ -687,6 +657,8 @@ export interface operations {
                 format?: "flat" | "nested";
                 /** @description Maximum depth (-1 for all) */
                 depth?: number;
+                /** @description Filter tree to subtree of evaluator's org node. Absent = full tree. */
+                evaluatorId?: string;
             };
             header?: never;
             path: {
@@ -1049,38 +1021,15 @@ export interface operations {
             400: components["responses"]["BadRequest"];
         };
     };
-    getEvaluatorScope: {
+    getAreaMetrics: {
         parameters: {
-            query: {
-                evaluatorId: string;
+            query?: {
+                /** @description Optional cycle to scope metrics to */
                 cycleId?: string;
             };
             header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        data?: components["schemas"]["EvaluatorScope"];
-                    };
-                };
-            };
-            404: components["responses"]["EmployeeNotFound"];
-        };
-    };
-    getEvaluatorScopeById: {
-        parameters: {
-            query?: never;
-            header?: never;
             path: {
-                scopeId: string;
+                nodeId: string;
             };
             cookie?: never;
         };
@@ -1092,12 +1041,11 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        data?: components["schemas"]["EvaluatorScope"];
-                    };
+                    "application/json": components["schemas"]["AreaMetrics"];
                 };
             };
-            404: components["responses"]["ScopeNotFound"];
+            400: components["responses"]["BadRequest"];
+            404: components["responses"]["NodeNotFound"];
         };
     };
 }

@@ -3,11 +3,44 @@
 package migrate
 
 import (
+	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/dialect/sql/schema"
 	"entgo.io/ent/schema/field"
 )
 
 var (
+	// ActivityLogsColumns holds the columns for the "activity_logs" table.
+	ActivityLogsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "action", Type: field.TypeString},
+		{Name: "description", Type: field.TypeString},
+		{Name: "module", Type: field.TypeString},
+		{Name: "metadata", Type: field.TypeJSON, Nullable: true},
+		{Name: "employee_id", Type: field.TypeUUID},
+	}
+	// ActivityLogsTable holds the schema information for the "activity_logs" table.
+	ActivityLogsTable = &schema.Table{
+		Name:       "activity_logs",
+		Columns:    ActivityLogsColumns,
+		PrimaryKey: []*schema.Column{ActivityLogsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "activity_logs_employees_activity_logs",
+				Columns:    []*schema.Column{ActivityLogsColumns[7]},
+				RefColumns: []*schema.Column{EmployeesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "activitylog_employee_id_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{ActivityLogsColumns[7], ActivityLogsColumns[1]},
+			},
+		},
+	}
 	// CompetenciesColumns holds the columns for the "competencies" table.
 	CompetenciesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
@@ -687,6 +720,7 @@ var (
 	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
+		ActivityLogsTable,
 		CompetenciesTable,
 		CompetencyAcceptanceLevelsTable,
 		CyclesTable,
@@ -716,6 +750,10 @@ var (
 )
 
 func init() {
+	ActivityLogsTable.ForeignKeys[0].RefTable = EmployeesTable
+	ActivityLogsTable.Annotation = &entsql.Annotation{
+		Table: "activity_logs",
+	}
 	CompetenciesTable.ForeignKeys[0].RefTable = PillarsTable
 	CompetencyAcceptanceLevelsTable.ForeignKeys[0].RefTable = CompetenciesTable
 	CompetencyAcceptanceLevelsTable.ForeignKeys[1].RefTable = EvaluationProfilesTable

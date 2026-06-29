@@ -949,6 +949,29 @@ func HasHeadedDepartmentWith(preds ...predicate.OrgNode) predicate.Employee {
 	})
 }
 
+// HasActivityLogs applies the HasEdge predicate on the "activity_logs" edge.
+func HasActivityLogs() predicate.Employee {
+	return predicate.Employee(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, ActivityLogsTable, ActivityLogsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasActivityLogsWith applies the HasEdge predicate on the "activity_logs" edge with a given conditions (other predicates).
+func HasActivityLogsWith(preds ...predicate.ActivityLog) predicate.Employee {
+	return predicate.Employee(func(s *sql.Selector) {
+		step := newActivityLogsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.Employee) predicate.Employee {
 	return predicate.Employee(sql.AndPredicates(predicates...))

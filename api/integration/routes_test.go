@@ -31,7 +31,6 @@ func allRoutes() []routeTestCase {
 	nodeID := "55555555-5555-5555-5555-555555555555"
 	pillarID := "66666666-6666-6666-6666-666666666666"
 	compID := "77777777-7777-7777-7777-777777777777"
-	scopeID := "88888888-8888-8888-8888-888888888888"
 	entryID := "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
 
 	// Routes behind RequireAuth return 401 without a valid session token.
@@ -157,9 +156,6 @@ func allRoutes() []routeTestCase {
 		{"POST", "/api/v1/employees/batch", "BatchLookupEmployees", authOK},
 		{"GET", "/api/v1/employees/search?q=Perez", "SearchEmployees", authOK},
 
-		// --- Org: Evaluator Scopes ---
-		{"GET", "/api/v1/evaluator-scopes", "GetEvaluatorScope", authOK},
-		{"GET", "/api/v1/evaluator-scopes/" + scopeID, "GetEvaluatorScopeByID", authOK},
 	}
 }
 

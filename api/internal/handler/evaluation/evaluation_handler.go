@@ -19,6 +19,9 @@ import (
 	dto "github.com/sed-evaluacion-desempeno/api/internal/dto/evaluation"
 	"github.com/sed-evaluacion-desempeno/api/internal/middleware"
 	pkgerrors "github.com/sed-evaluacion-desempeno/api/internal/pkg/errors"
+
+	"github.com/sed-evaluacion-desempeno/api/internal/auth"
+	activitysvc "github.com/sed-evaluacion-desempeno/api/internal/service/activity"
 )
 
 // contextKey for handler-specific context values.
@@ -61,6 +64,7 @@ type EvaluationHandler struct {
 	evalSvc      EvalService
 	nineBoxSvc   BoxService
 	dashboardSvc DashService
+	activitySvc  activitysvc.Service
 }
 
 // NewEvaluationHandler creates a new EvaluationHandler.
@@ -68,13 +72,16 @@ func NewEvaluationHandler(
 	evalSvc EvalService,
 	nineBoxSvc BoxService,
 	dashboardSvc DashService,
+	activitySvc activitysvc.Service,
 ) *EvaluationHandler {
 	return &EvaluationHandler{
 		evalSvc:      evalSvc,
 		nineBoxSvc:   nineBoxSvc,
 		dashboardSvc: dashboardSvc,
+		activitySvc:  activitySvc,
 	}
 }
+
 
 // --- Evaluation Endpoints ---
 
@@ -180,6 +187,14 @@ func (h *EvaluationHandler) SubmitSelfEvaluation(w http.ResponseWriter, r *http.
 	if err != nil {
 		writeError(w, err)
 		return
+	}
+
+	// Log activity: autoevaluación completada
+	if h.activitySvc != nil {
+		if empID, ok := auth.GetEmployeeID(r.Context()); ok {
+			_ = h.activitySvc.LogActivity(r.Context(), empID, "evaluation_completed",
+				"Enviaste tu autoevaluación", "Mi evaluación", nil)
+		}
 	}
 
 	writeJSON(w, http.StatusOK, result)

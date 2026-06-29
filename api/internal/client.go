@@ -16,6 +16,7 @@ import (
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"github.com/sed-evaluacion-desempeno/api/internal/activitylog"
 	"github.com/sed-evaluacion-desempeno/api/internal/competency"
 	"github.com/sed-evaluacion-desempeno/api/internal/competencyacceptancelevel"
 	"github.com/sed-evaluacion-desempeno/api/internal/cycle"
@@ -48,6 +49,8 @@ type Client struct {
 	config
 	// Schema is the client for creating, migrating and dropping schema.
 	Schema *migrate.Schema
+	// ActivityLog is the client for interacting with the ActivityLog builders.
+	ActivityLog *ActivityLogClient
 	// Competency is the client for interacting with the Competency builders.
 	Competency *CompetencyClient
 	// CompetencyAcceptanceLevel is the client for interacting with the CompetencyAcceptanceLevel builders.
@@ -109,6 +112,7 @@ func NewClient(opts ...Option) *Client {
 
 func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
+	c.ActivityLog = NewActivityLogClient(c.config)
 	c.Competency = NewCompetencyClient(c.config)
 	c.CompetencyAcceptanceLevel = NewCompetencyAcceptanceLevelClient(c.config)
 	c.Cycle = NewCycleClient(c.config)
@@ -226,6 +230,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	return &Tx{
 		ctx:                       ctx,
 		config:                    cfg,
+		ActivityLog:               NewActivityLogClient(cfg),
 		Competency:                NewCompetencyClient(cfg),
 		CompetencyAcceptanceLevel: NewCompetencyAcceptanceLevelClient(cfg),
 		Cycle:                     NewCycleClient(cfg),
@@ -270,6 +275,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	return &Tx{
 		ctx:                       ctx,
 		config:                    cfg,
+		ActivityLog:               NewActivityLogClient(cfg),
 		Competency:                NewCompetencyClient(cfg),
 		CompetencyAcceptanceLevel: NewCompetencyAcceptanceLevelClient(cfg),
 		Cycle:                     NewCycleClient(cfg),
@@ -301,7 +307,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 // Debug returns a new debug-client. It's used to get verbose logging on specific operations.
 //
 //	client.Debug().
-//		Competency.
+//		ActivityLog.
 //		Query().
 //		Count(ctx)
 func (c *Client) Debug() *Client {
@@ -324,8 +330,8 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
-		c.Competency, c.CompetencyAcceptanceLevel, c.Cycle, c.Employee, c.Evaluation,
-		c.EvaluationCompetency, c.EvaluationGoal, c.EvaluationProfile,
+		c.ActivityLog, c.Competency, c.CompetencyAcceptanceLevel, c.Cycle, c.Employee,
+		c.Evaluation, c.EvaluationCompetency, c.EvaluationGoal, c.EvaluationProfile,
 		c.EvaluatorScope, c.Goal, c.GoalAssignment, c.GoalCategory, c.GoalKpiLink,
 		c.KPI, c.LevelDefinition, c.NineBoxEntry, c.NineBoxMatrix, c.NineBoxQuadrant,
 		c.NineBoxScale, c.OrgNode, c.Organization, c.PhaseDefinition,
@@ -339,8 +345,8 @@ func (c *Client) Use(hooks ...Hook) {
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
-		c.Competency, c.CompetencyAcceptanceLevel, c.Cycle, c.Employee, c.Evaluation,
-		c.EvaluationCompetency, c.EvaluationGoal, c.EvaluationProfile,
+		c.ActivityLog, c.Competency, c.CompetencyAcceptanceLevel, c.Cycle, c.Employee,
+		c.Evaluation, c.EvaluationCompetency, c.EvaluationGoal, c.EvaluationProfile,
 		c.EvaluatorScope, c.Goal, c.GoalAssignment, c.GoalCategory, c.GoalKpiLink,
 		c.KPI, c.LevelDefinition, c.NineBoxEntry, c.NineBoxMatrix, c.NineBoxQuadrant,
 		c.NineBoxScale, c.OrgNode, c.Organization, c.PhaseDefinition,
@@ -353,6 +359,8 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 // Mutate implements the ent.Mutator interface.
 func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 	switch m := m.(type) {
+	case *ActivityLogMutation:
+		return c.ActivityLog.mutate(ctx, m)
 	case *CompetencyMutation:
 		return c.Competency.mutate(ctx, m)
 	case *CompetencyAcceptanceLevelMutation:
@@ -405,6 +413,155 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.ScaleCriterion.mutate(ctx, m)
 	default:
 		return nil, fmt.Errorf("internal: unknown mutation type %T", m)
+	}
+}
+
+// ActivityLogClient is a client for the ActivityLog schema.
+type ActivityLogClient struct {
+	config
+}
+
+// NewActivityLogClient returns a client for the ActivityLog from the given config.
+func NewActivityLogClient(c config) *ActivityLogClient {
+	return &ActivityLogClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `activitylog.Hooks(f(g(h())))`.
+func (c *ActivityLogClient) Use(hooks ...Hook) {
+	c.hooks.ActivityLog = append(c.hooks.ActivityLog, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `activitylog.Intercept(f(g(h())))`.
+func (c *ActivityLogClient) Intercept(interceptors ...Interceptor) {
+	c.inters.ActivityLog = append(c.inters.ActivityLog, interceptors...)
+}
+
+// Create returns a builder for creating a ActivityLog entity.
+func (c *ActivityLogClient) Create() *ActivityLogCreate {
+	mutation := newActivityLogMutation(c.config, OpCreate)
+	return &ActivityLogCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of ActivityLog entities.
+func (c *ActivityLogClient) CreateBulk(builders ...*ActivityLogCreate) *ActivityLogCreateBulk {
+	return &ActivityLogCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ActivityLogClient) MapCreateBulk(slice any, setFunc func(*ActivityLogCreate, int)) *ActivityLogCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ActivityLogCreateBulk{err: fmt.Errorf("calling to ActivityLogClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ActivityLogCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ActivityLogCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for ActivityLog.
+func (c *ActivityLogClient) Update() *ActivityLogUpdate {
+	mutation := newActivityLogMutation(c.config, OpUpdate)
+	return &ActivityLogUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ActivityLogClient) UpdateOne(_m *ActivityLog) *ActivityLogUpdateOne {
+	mutation := newActivityLogMutation(c.config, OpUpdateOne, withActivityLog(_m))
+	return &ActivityLogUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ActivityLogClient) UpdateOneID(id uuid.UUID) *ActivityLogUpdateOne {
+	mutation := newActivityLogMutation(c.config, OpUpdateOne, withActivityLogID(id))
+	return &ActivityLogUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for ActivityLog.
+func (c *ActivityLogClient) Delete() *ActivityLogDelete {
+	mutation := newActivityLogMutation(c.config, OpDelete)
+	return &ActivityLogDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ActivityLogClient) DeleteOne(_m *ActivityLog) *ActivityLogDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ActivityLogClient) DeleteOneID(id uuid.UUID) *ActivityLogDeleteOne {
+	builder := c.Delete().Where(activitylog.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ActivityLogDeleteOne{builder}
+}
+
+// Query returns a query builder for ActivityLog.
+func (c *ActivityLogClient) Query() *ActivityLogQuery {
+	return &ActivityLogQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeActivityLog},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a ActivityLog entity by its id.
+func (c *ActivityLogClient) Get(ctx context.Context, id uuid.UUID) (*ActivityLog, error) {
+	return c.Query().Where(activitylog.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ActivityLogClient) GetX(ctx context.Context, id uuid.UUID) *ActivityLog {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryEmployee queries the employee edge of a ActivityLog.
+func (c *ActivityLogClient) QueryEmployee(_m *ActivityLog) *EmployeeQuery {
+	query := (&EmployeeClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(activitylog.Table, activitylog.FieldID, id),
+			sqlgraph.To(employee.Table, employee.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, activitylog.EmployeeTable, activitylog.EmployeeColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *ActivityLogClient) Hooks() []Hook {
+	return c.hooks.ActivityLog
+}
+
+// Interceptors returns the client interceptors.
+func (c *ActivityLogClient) Interceptors() []Interceptor {
+	return c.inters.ActivityLog
+}
+
+func (c *ActivityLogClient) mutate(ctx context.Context, m *ActivityLogMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ActivityLogCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ActivityLogUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ActivityLogUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ActivityLogDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("internal: unknown ActivityLog mutation op: %q", m.Op())
 	}
 }
 
@@ -1292,6 +1449,22 @@ func (c *EmployeeClient) QueryHeadedDepartment(_m *Employee) *OrgNodeQuery {
 			sqlgraph.From(employee.Table, employee.FieldID, id),
 			sqlgraph.To(orgnode.Table, orgnode.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, true, employee.HeadedDepartmentTable, employee.HeadedDepartmentColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryActivityLogs queries the activity_logs edge of a Employee.
+func (c *EmployeeClient) QueryActivityLogs(_m *Employee) *ActivityLogQuery {
+	query := (&ActivityLogClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(employee.Table, employee.FieldID, id),
+			sqlgraph.To(activitylog.Table, activitylog.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, employee.ActivityLogsTable, employee.ActivityLogsColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
@@ -4888,14 +5061,14 @@ func (c *ScaleCriterionClient) mutate(ctx context.Context, m *ScaleCriterionMuta
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		Competency, CompetencyAcceptanceLevel, Cycle, Employee, Evaluation,
+		ActivityLog, Competency, CompetencyAcceptanceLevel, Cycle, Employee, Evaluation,
 		EvaluationCompetency, EvaluationGoal, EvaluationProfile, EvaluatorScope, Goal,
 		GoalAssignment, GoalCategory, GoalKpiLink, KPI, LevelDefinition, NineBoxEntry,
 		NineBoxMatrix, NineBoxQuadrant, NineBoxScale, OrgNode, Organization,
 		PhaseDefinition, PhaseTransition, Pillar, ScaleCriterion []ent.Hook
 	}
 	inters struct {
-		Competency, CompetencyAcceptanceLevel, Cycle, Employee, Evaluation,
+		ActivityLog, Competency, CompetencyAcceptanceLevel, Cycle, Employee, Evaluation,
 		EvaluationCompetency, EvaluationGoal, EvaluationProfile, EvaluatorScope, Goal,
 		GoalAssignment, GoalCategory, GoalKpiLink, KPI, LevelDefinition, NineBoxEntry,
 		NineBoxMatrix, NineBoxQuadrant, NineBoxScale, OrgNode, Organization,

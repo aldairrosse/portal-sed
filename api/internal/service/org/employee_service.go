@@ -67,7 +67,7 @@ func (s *employeeService) ListEmployees(ctx context.Context, treeID, nodeID, pro
 		filter.Limit = 200
 	}
 
-	rows, err := s.empRepo.List(ctx, filter)
+	rows, err := s.empRepo.ListWithProfiles(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -193,6 +193,9 @@ func employeeRowToItem(r *repo.EmployeeRow) org.EmployeeListItem {
 		EmployeeNumber: r.EmployeeNumber,
 		OrgNodeID:      r.OrgNodeID.String(),
 		ProfileID:      r.ProfileID.String(),
+		ProfileName:    r.ProfileName,
+		ProfileDescription: r.ProfileDescription,
+		JobTitle:       r.JobTitle,
 		IsActive:       r.IsActive,
 	}
 	if r.ManagerID != nil {

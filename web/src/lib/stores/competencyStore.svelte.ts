@@ -8,11 +8,6 @@ import type {
 } from '$lib/types/competency';
 import type { EvaluationProfile } from '$lib/types/evaluation';
 
-import pillarsData from '$lib/fixtures/competency/pillars.json';
-import competenciesData from '$lib/fixtures/competency/competencies.json';
-import scaleCriteriaData from '$lib/fixtures/competency/scale-criteria.json';
-import levelDefinitionsData from '$lib/fixtures/competency/acceptance-levels.json';
-import competencyAcceptanceLevelsData from '$lib/fixtures/competency/competency-acceptance-levels.json';
 import { client } from '$lib/api/client';
 
 // ─── Internal data shape ──────────────────────────────────────────────────────
@@ -41,20 +36,6 @@ export function getError(): string | null {
 	return error;
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function loadFixtures(): StoreData {
-	return {
-		pillars: structuredClone(pillarsData as Pillar[]),
-		competencies: structuredClone(competenciesData as Competency[]),
-		scaleCriteria: structuredClone(scaleCriteriaData as ScaleCriterion[]),
-		levelDefinitions: structuredClone(levelDefinitionsData as LevelDefinition[]),
-		competencyAcceptanceLevels: structuredClone(
-			competencyAcceptanceLevelsData as CompetencyAcceptanceLevel[]
-		)
-	};
-}
-
 /**
  * Load competency data.
  *
@@ -64,12 +45,6 @@ function loadFixtures(): StoreData {
 export async function load(): Promise<void> {
 	loading = true;
 	error = null;
-
-	if (import.meta.env.DEV && !import.meta.env.VITE_USE_API) {
-		data = loadFixtures();
-		loading = false;
-		return;
-	}
 
 	try {
 		// Phase 1 — parallel: pillars (with competencies), levels, acceptance levels
@@ -254,10 +229,6 @@ export function getCompetencyAcceptanceLevel(
 // ─── Mutations: Pillars ──────────────────────────────────────────────────────
 
 export async function addPillar(pillar: Pillar): Promise<void> {
-	if (import.meta.env.DEV && !import.meta.env.VITE_USE_API) {
-		data = { ...data!, pillars: [...(data?.pillars ?? []), pillar] };
-		return;
-	}
 	const { error: apiError } = await client.POST('/pillars', {
 		body: { name: pillar.name, description: pillar.description },
 		params: { header: { 'Idempotency-Key': crypto.randomUUID() } }
@@ -274,15 +245,6 @@ export async function updatePillar(
 	id: string,
 	updates: Partial<Omit<Pillar, 'id'>>
 ): Promise<void> {
-	if (import.meta.env.DEV && !import.meta.env.VITE_USE_API) {
-		data = {
-			...data!,
-			pillars: (data?.pillars ?? []).map((p) =>
-				p.id === id ? { ...p, ...updates } : p
-			)
-		};
-		return;
-	}
 	const { error: apiError } = await client.PUT('/pillars/{id}', {
 		params: { path: { id }, header: { 'If-Match': 'placeholder' } },
 		body: { name: updates.name ?? '', description: updates.description ?? '' }
@@ -296,17 +258,6 @@ export async function updatePillar(
 }
 
 export async function deletePillar(id: string): Promise<void> {
-	if (import.meta.env.DEV && !import.meta.env.VITE_USE_API) {
-		data = {
-			...data!,
-			pillars: (data?.pillars ?? []).filter((p) => p.id !== id),
-			competencies: (data?.competencies ?? []).filter((c) => c.pillarId !== id),
-			scaleCriteria: (data?.scaleCriteria ?? []).filter(
-				(sc) => sc.pillarId !== id
-			)
-		};
-		return;
-	}
 	const { error: apiError } = await client.DELETE('/pillars/{id}', {
 		params: { path: { id } }
 	});
@@ -321,13 +272,6 @@ export async function deletePillar(id: string): Promise<void> {
 // ─── Mutations: Competencies ─────────────────────────────────────────────────
 
 export async function addCompetency(competency: Competency): Promise<void> {
-	if (import.meta.env.DEV && !import.meta.env.VITE_USE_API) {
-		data = {
-			...data!,
-			competencies: [...(data?.competencies ?? []), competency]
-		};
-		return;
-	}
 	const { error: apiError } = await client.POST(
 		'/pillars/{pillarId}/competencies',
 		{
@@ -350,15 +294,6 @@ export async function updateCompetency(
 	id: string,
 	updates: Partial<Omit<Competency, 'id'>>
 ): Promise<void> {
-	if (import.meta.env.DEV && !import.meta.env.VITE_USE_API) {
-		data = {
-			...data!,
-			competencies: (data?.competencies ?? []).map((c) =>
-				c.id === id ? { ...c, ...updates } : c
-			)
-		};
-		return;
-	}
 	const { error: apiError } = await client.PUT('/competencies/{id}', {
 		params: { path: { id }, header: { 'If-Match': 'placeholder' } },
 		body: {
@@ -376,16 +311,6 @@ export async function updateCompetency(
 }
 
 export async function deleteCompetency(id: string): Promise<void> {
-	if (import.meta.env.DEV && !import.meta.env.VITE_USE_API) {
-		data = {
-			...data!,
-			competencies: (data?.competencies ?? []).filter((c) => c.id !== id),
-			scaleCriteria: (data?.scaleCriteria ?? []).filter(
-				(sc) => sc.competencyId !== id
-			)
-		};
-		return;
-	}
 	const { error: apiError } = await client.DELETE('/competencies/{id}', {
 		params: { path: { id } }
 	});
@@ -403,15 +328,6 @@ export async function updateScaleCriterion(
 	id: string,
 	description: string
 ): Promise<void> {
-	if (import.meta.env.DEV && !import.meta.env.VITE_USE_API) {
-		data = {
-			...data!,
-			scaleCriteria: (data?.scaleCriteria ?? []).map((sc) =>
-				sc.id === id ? { ...sc, description } : sc
-			)
-		};
-		return;
-	}
 	// Local-only for now (API uses bulk replace per competency).
 	data = {
 		...data!,
@@ -425,13 +341,6 @@ export async function addScaleCriterion(
 	criterion: Omit<ScaleCriterion, 'id'>
 ): Promise<void> {
 	const id = `sc-${criterion.competencyId}-${criterion.pillarId}-${criterion.level}-${crypto.randomUUID().slice(0, 8)}`;
-	if (import.meta.env.DEV && !import.meta.env.VITE_USE_API) {
-		data = {
-			...data!,
-			scaleCriteria: [...(data?.scaleCriteria ?? []), { id, ...criterion }]
-		};
-		return;
-	}
 	// Local-only for now (API uses bulk replace per competency).
 	data = {
 		...data!,
@@ -440,13 +349,6 @@ export async function addScaleCriterion(
 }
 
 export async function removeScaleCriterion(id: string): Promise<void> {
-	if (import.meta.env.DEV && !import.meta.env.VITE_USE_API) {
-		data = {
-			...data!,
-			scaleCriteria: (data?.scaleCriteria ?? []).filter((sc) => sc.id !== id)
-		};
-		return;
-	}
 	// Local-only for now (API uses bulk replace per competency).
 	data = {
 		...data!,
@@ -474,15 +376,6 @@ export async function updateLevelDefinition(
 	label: string,
 	description: string
 ): Promise<void> {
-	if (import.meta.env.DEV && !import.meta.env.VITE_USE_API) {
-		data = {
-			...data!,
-			levelDefinitions: (data?.levelDefinitions ?? []).map((ld) =>
-				ld.level === level ? { ...ld, label, description } : ld
-			)
-		};
-		return;
-	}
 	// Local-only for now (levels are cacheable / read-only in production).
 	data = {
 		...data!,
@@ -499,32 +392,6 @@ export async function setCompetencyAcceptanceLevel(
 	profileId: EvaluationProfile,
 	level: 1 | 2 | 3 | 4 | 5
 ): Promise<void> {
-	if (import.meta.env.DEV && !import.meta.env.VITE_USE_API) {
-		const existing = (data?.competencyAcceptanceLevels ?? []).find(
-			(cal) => cal.competencyId === competencyId && cal.profileId === profileId
-		);
-		if (existing) {
-			data = {
-				...data!,
-				competencyAcceptanceLevels: (
-					data?.competencyAcceptanceLevels ?? []
-				).map((cal) =>
-					cal.competencyId === competencyId && cal.profileId === profileId
-						? { ...cal, level }
-						: cal
-				)
-			};
-		} else {
-			data = {
-				...data!,
-				competencyAcceptanceLevels: [
-					...(data?.competencyAcceptanceLevels ?? []),
-					{ competencyId, profileId, level }
-				]
-			};
-		}
-		return;
-	}
 	const { error: apiError } = await client.POST('/acceptance-levels', {
 		body: { competency_id: competencyId, profile_id: profileId, level }
 	});
@@ -540,21 +407,6 @@ export async function setCompetencyAcceptanceLevelsForProfile(
 	profileId: EvaluationProfile,
 	assignments: { competencyId: string; level: 1 | 2 | 3 | 4 | 5 }[]
 ): Promise<void> {
-	if (import.meta.env.DEV && !import.meta.env.VITE_USE_API) {
-		const filtered = (data?.competencyAcceptanceLevels ?? []).filter(
-			(cal) => cal.profileId !== profileId
-		);
-		const updated = assignments.map((a) => ({
-			competencyId: a.competencyId,
-			profileId,
-			level: a.level
-		}));
-		data = {
-			...data!,
-			competencyAcceptanceLevels: [...filtered, ...updated]
-		};
-		return;
-	}
 	// Upsert each assignment individually, then reload
 	try {
 		await Promise.all(

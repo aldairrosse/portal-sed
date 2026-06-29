@@ -83,8 +83,8 @@ func main() {
 		log.Println("[import] DRY RUN — will not write")
 	}
 
-	// ── Source row counts (no JOINs) ──
-	srcOrgs := sourceCount(ctx, extDB, `SELECT COUNT(*) FROM mobonet.Departamentos`)
+	// ── Source row counts (active only) ──
+	srcOrgs := sourceCount(ctx, extDB, `SELECT COUNT(*) FROM mobonet.Departamentos d WHERE d.Status = 1`)
 	srcEmps := sourceCount(ctx, extDB, `SELECT COUNT(*) FROM mobonet.Empleados e WHERE e.Status = 1`)
 
 	// ── Setup: Organization + EvaluationProfiles ──
@@ -92,10 +92,11 @@ func main() {
 	setupProfiles(ctx, tgtDB, *dryRun)
 
 	// ── Passes ──
-	r1, orgIDMap := passOrgs(ctx, tgtDB, extDB, srcOrgs, orgID, *dryRun)
-	r2 := passOrgParents(ctx, tgtDB, extDB, orgIDMap, *dryRun)
+	r1, orgIDMap, headEmailMap, rootOrgUUID := passOrgs(ctx, tgtDB, extDB, srcOrgs, orgID, *dryRun)
+	r2 := passOrgParents(ctx, tgtDB, extDB, orgIDMap, rootOrgUUID, *dryRun)
 	r3, empIDMap, managerMap := passEmployees(ctx, tgtDB, extDB, srcEmps, orgIDMap, *dryRun)
 	r4 := passManagers(ctx, tgtDB, empIDMap, managerMap, *dryRun)
+	r5 := passHeadEmployees(ctx, tgtDB, headEmailMap, empIDMap, *dryRun)
 
 	// ── Summary ──
 	log.Println("[import] ═════════════════════════════════════════════════════════════")
@@ -109,6 +110,7 @@ func main() {
 	log.Println(r2)
 	log.Println(r3)
 	log.Println(r4)
+	log.Println(r5)
 	log.Println("[import]")
 	if *dryRun {
 		log.Println("[import]   (dry run — nothing was written)")
@@ -172,16 +174,19 @@ func setupProfiles(ctx context.Context, tgtDB *sql.DB, dryRun bool) {
 
 // ── Pass 1: OrgNodes ───────────────────────────────────────────────────
 
-func passOrgs(ctx context.Context, tgtDB, extDB *sql.DB, srcTotal int, orgID uuid.UUID, dryRun bool) (passResult, map[string]uuid.UUID) {
+func passOrgs(ctx context.Context, tgtDB, extDB *sql.DB, srcTotal int, orgID uuid.UUID, dryRun bool) (passResult, map[string]uuid.UUID, map[uuid.UUID]*string, uuid.UUID) {
 	pr := passResult{label: "orgs", sourceTotal: srcTotal, reasons: make(reasons)}
 	idMap := make(map[string]uuid.UUID)
+	headMap := make(map[uuid.UUID]*string) // orgNodeUUID → responsible employee email
+	var rootOrgUUID uuid.UUID
 	logged := 0
 
 	rows, err := extDB.QueryContext(ctx, `
-		SELECT d.Nombre, e.email AS head_employee, d2.Nombre AS parent
+		SELECT d.IdDepartamento, d.Nombre, e.email AS head_employee, d2.Nombre AS parent
 		FROM mobonet.Departamentos d
 		LEFT JOIN mobonet.Empleados e ON e.IdEmpleado = d.FkIdEmpleadoResponsable AND e.Status = 1
 		LEFT JOIN mobonet.Departamentos d2 ON d2.IdDepartamento = d.IdDepartamentoPadre
+		WHERE d.Status = 1
 	`)
 	if err != nil {
 		pr.reasons.add("query_error")
@@ -191,19 +196,27 @@ func passOrgs(ctx context.Context, tgtDB, extDB *sql.DB, srcTotal int, orgID uui
 
 	for rows.Next() {
 		pr.fetched++
+		var deptID int
 		var name string
 		var headEmail, parentName *string
-		if err := rows.Scan(&name, &headEmail, &parentName); err != nil {
+		if err := rows.Scan(&deptID, &name, &headEmail, &parentName); err != nil {
 			pr.reasons.add("scan_error")
 			continue
 		}
 
+		orgUUID := seed.SeedID(name)
+
 		if headEmail == nil {
 			pr.reasons.add("no_head_employee")
+		} else {
+			headMap[orgUUID] = headEmail
 		}
 
-		orgUUID := seed.SeedID(name)
 		idMap[name] = orgUUID
+
+		if deptID == 1 {
+			rootOrgUUID = orgUUID
+		}
 
 		if dryRun {
 			pr.written++
@@ -229,21 +242,33 @@ func passOrgs(ctx context.Context, tgtDB, extDB *sql.DB, srcTotal int, orgID uui
 	if pr.fetched == 0 {
 		pr.reasons.add("no_rows")
 	}
-	return pr, idMap
+
+	// Set root_node_id on the organization
+	if rootOrgUUID != uuid.Nil && !dryRun {
+		if _, err := tgtDB.ExecContext(ctx,
+			`UPDATE organizations SET root_node_id = $1, updated_at = NOW() WHERE id = $2`,
+			rootOrgUUID, orgID,
+		); err != nil {
+			log.Printf("[import] update root_node_id: %v", err)
+		}
+	}
+
+	return pr, idMap, headMap, rootOrgUUID
 }
 
 // ── Pass 2: OrgNode parent edges ───────────────────────────────────────
 
-func passOrgParents(ctx context.Context, tgtDB, extDB *sql.DB, idMap map[string]uuid.UUID, dryRun bool) passResult {
+func passOrgParents(ctx context.Context, tgtDB, extDB *sql.DB, idMap map[string]uuid.UUID, rootOrgUUID uuid.UUID, dryRun bool) passResult {
 	pr := passResult{label: "parents", reasons: make(reasons)}
 
-	// Source count: all departments
-	pr.sourceTotal = sourceCount(ctx, extDB, `SELECT COUNT(*) FROM mobonet.Departamentos`)
+	// Source count: active departments only
+	pr.sourceTotal = sourceCount(ctx, extDB, `SELECT COUNT(*) FROM mobonet.Departamentos d WHERE d.Status = 1`)
 
 	rows, err := extDB.QueryContext(ctx, `
-		SELECT d.Nombre, d2.Nombre AS parent
+		SELECT d.Nombre, d2.Nombre AS parent, d.IdDepartamentoPadre
 		FROM mobonet.Departamentos d
 		LEFT JOIN mobonet.Departamentos d2 ON d2.IdDepartamento = d.IdDepartamentoPadre
+		WHERE d.Status = 1
 	`)
 	if err != nil {
 		pr.reasons.add("query_error")
@@ -255,18 +280,41 @@ func passOrgParents(ctx context.Context, tgtDB, extDB *sql.DB, idMap map[string]
 		pr.fetched++
 		var deptName string
 		var parentName *string
-		if err := rows.Scan(&deptName, &parentName); err != nil {
+		var idDepartamentoPadre sql.NullInt64
+		if err := rows.Scan(&deptName, &parentName, &idDepartamentoPadre); err != nil {
 			pr.reasons.add("scan_error")
 			continue
 		}
-		if parentName == nil {
-			pr.reasons.add("no_parent")
+
+		childID, ok := idMap[deptName]
+		if !ok {
+			pr.reasons.add("dept_not_found")
 			continue
 		}
 
-		childID, ok1 := idMap[deptName]
+		// No parent: link to root (except root itself)
+		if parentName == nil {
+			if rootOrgUUID != uuid.Nil && childID != rootOrgUUID {
+				if dryRun {
+					pr.written++
+					continue
+				}
+				if _, err := tgtDB.ExecContext(ctx,
+					`UPDATE org_nodes SET parent_id = $1 WHERE id = $2`,
+					rootOrgUUID, childID,
+				); err != nil {
+					pr.reasons.add("update_error")
+					continue
+				}
+				pr.written++
+			} else {
+				pr.reasons.add("root_or_no_parent")
+			}
+			continue
+		}
+
 		parentID, ok2 := idMap[*parentName]
-		if !ok1 || !ok2 {
+		if !ok2 {
 			pr.reasons.add("parent_not_found")
 			continue
 		}
@@ -462,6 +510,42 @@ func passManagers(ctx context.Context, tgtDB *sql.DB, empIDMap map[string]uuid.U
 			mgrID, empID,
 		); err != nil {
 			pr.reasons.add("insert_error")
+			continue
+		}
+		pr.written++
+	}
+
+	return pr
+}
+
+// ── Pass 5: OrgNode head_employee_id ───────────────────────────────────
+
+func passHeadEmployees(ctx context.Context, tgtDB *sql.DB, headMap map[uuid.UUID]*string, empIDMap map[string]uuid.UUID, dryRun bool) passResult {
+	pr := passResult{label: "head_emps", sourceTotal: len(headMap), reasons: make(reasons)}
+
+	for orgID, headEmail := range headMap {
+		pr.fetched++
+		if headEmail == nil {
+			pr.reasons.add("no_head_email")
+			continue
+		}
+
+		empID, ok := empIDMap[*headEmail]
+		if !ok {
+			pr.reasons.add("head_emp_not_found")
+			continue
+		}
+
+		if dryRun {
+			pr.written++
+			continue
+		}
+
+		if _, err := tgtDB.ExecContext(ctx,
+			`UPDATE org_nodes SET head_employee_id = $1 WHERE id = $2`,
+			empID, orgID,
+		); err != nil {
+			pr.reasons.add("update_error")
 			continue
 		}
 		pr.written++

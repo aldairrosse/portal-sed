@@ -1,13 +1,5 @@
-import type { OrgNode } from '$lib/types/org-hierarchy';
-import type { Goal, EmployeeAssignment } from '$lib/types/goal';
-import type { CompetencyRating } from '$lib/types/evaluation-result';
-import type { EvaluationProfile } from '$lib/types/evaluation';
-import { PROFILE_LABELS } from '$lib/types/evaluation';
-import { getRoot, getScopeIds } from '$lib/stores/orgHierarchyStore.svelte';
-
-import goalsData from '$lib/fixtures/goals/goals.json';
-import assignmentsData from '$lib/fixtures/goals/assignments.json';
-import rhEvaluationsData from '$lib/fixtures/evaluations/rh-evaluations.json';
+import { client } from '$lib/api/client';
+import { getActiveCycle } from '$lib/stores/cycleStore.svelte';
 
 // ─── Types ──────────────────────────────────────────────────────────────────────
 
@@ -20,6 +12,16 @@ export interface AreaMetrics {
 	pendingGoals: number;
 	avgRating: number | null;
 	ratingsCount: number;
+	employees: AreaMetricsEmployee[];
+}
+
+export interface AreaMetricsEmployee {
+	id: string;
+	firstName: string;
+	lastName: string;
+	jobTitle: string;
+	profileId: string;
+	profileDescription: string;
 }
 
 export interface EmployeeRow {
@@ -34,150 +36,84 @@ export interface EmployeeRow {
 let selectedNodeId = $state<string>('');
 let metrics = $state<AreaMetrics | null>(null);
 let employeeList = $state<EmployeeRow[]>([]);
-
-// ─── Internal helpers ───────────────────────────────────────────────────────────
-
-function collectNodesByIds(nodeIds: string[]): OrgNode[] {
-	const root = getRoot();
-	if (!root) return [];
-	const idSet = new Set(nodeIds);
-	const result: OrgNode[] = [];
-	const stack = [root];
-	while (stack.length > 0) {
-		const node = stack.pop()!;
-		if (idSet.has(node.id)) result.push(node);
-		stack.push(...node.children);
-	}
-	return result;
-}
-
-// ─── Pure aggregation functions (exported, independently testable) ───────────────
-
-/**
- * Compute goal progress metrics for a set of employees.
- *
- * For each employee with at least one goal (targetValue > 0), their
- * individual mean progress is computed. Employees with zero goals are
- * excluded from the average.
- *
- * Completed / pending counts are per-goal across the entire subtree.
- */
-export function computeAreaProgress(
-	employeeIds: string[],
-	assignments: EmployeeAssignment[],
-	goals: Goal[]
-): { avgProgress: number; completed: number; pending: number } {
-	const idSet = new Set(employeeIds);
-	const relevantAssignments = assignments.filter((a) => idSet.has(a.employeeId));
-
-	if (relevantAssignments.length === 0) {
-		return { avgProgress: 0, completed: 0, pending: 0 };
-	}
-
-	const goalMap = new Map<string, Goal>();
-	for (const g of goals) {
-		goalMap.set(g.id, g);
-	}
-
-	const employeeProgresses: number[] = [];
-	let completed = 0;
-	let pending = 0;
-
-	for (const assignment of relevantAssignments) {
-		const employeeGoals: Goal[] = [];
-		for (const gid of assignment.goalIds) {
-			const goal = goalMap.get(gid);
-			// Skip goals with targetValue === 0 (avoid division by zero)
-			if (goal && goal.targetValue > 0) {
-				employeeGoals.push(goal);
-			}
-		}
-
-		// Skip employees with zero valid goals
-		if (employeeGoals.length === 0) continue;
-
-		let sum = 0;
-		for (const goal of employeeGoals) {
-			const pct = ((goal.progress ?? 0) / goal.targetValue) * 100;
-			sum += Math.min(pct, 100);
-
-			if (goal.progress !== undefined && goal.progress >= goal.targetValue) {
-				completed++;
-			} else {
-				pending++;
-			}
-		}
-		employeeProgresses.push(sum / employeeGoals.length);
-	}
-
-	if (employeeProgresses.length === 0) {
-		return { avgProgress: 0, completed: 0, pending: 0 };
-	}
-
-	const total = employeeProgresses.reduce((a, b) => a + b, 0);
-	return { avgProgress: total / employeeProgresses.length, completed, pending };
-}
-
-/**
- * Compute the mean RH evaluation rating for a set of employees.
- *
- * Only employees with at least one `rhRating` contribute to the mean.
- * Returns `avgRating: null` when no ratings exist (not zero).
- */
-export function computeAreaRating(
-	employeeIds: string[],
-	rhEvaluations: CompetencyRating[]
-): { avgRating: number | null; ratingsCount: number } {
-	const idSet = new Set(employeeIds);
-	const ratings: number[] = [];
-	for (const e of rhEvaluations) {
-		if (idSet.has(e.employeeId) && e.rhRating !== undefined) {
-			ratings.push(e.rhRating);
-		}
-	}
-
-	if (ratings.length === 0) {
-		return { avgRating: null, ratingsCount: 0 };
-	}
-
-	const sum = ratings.reduce((a, b) => a + b, 0);
-	return { avgRating: sum / ratings.length, ratingsCount: ratings.length };
-}
-
-/**
- * Build the employee list for a subtree.
- *
- * Includes the area manager (the node itself). Sorted A–Z by name.
- * Profile IDs are mapped to Spanish labels via `PROFILE_LABELS`.
- */
-export function buildEmployeeList(
-	employeeIds: string[],
-	nodes: OrgNode[]
-): EmployeeRow[] {
-	const nodeMap = new Map<string, OrgNode>();
-	for (const node of nodes) {
-		nodeMap.set(node.id, node);
-	}
-
-	return employeeIds
-		.map((id) => nodeMap.get(id))
-		.filter((n): n is OrgNode => n !== undefined)
-		.map((n) => ({
-			id: n.id,
-			name: n.name,
-			position: PROFILE_LABELS[n.profileId as EvaluationProfile] ?? n.profileId,
-			profile: n.profileId
-		}))
-		.sort((a, b) => a.name.localeCompare(b.name));
-}
+let metricsLoading = $state(false);
+let metricsError = $state<string | null>(null);
 
 // ─── Actions ────────────────────────────────────────────────────────────────────
 
 /**
- * Select an org node and compute its metrics + employee list.
+ * Fetch area metrics for an org node from the API.
+ */
+async function fetchAreaMetrics(nodeId: string): Promise<void> {
+	metricsLoading = true;
+	metricsError = null;
+
+	try {
+		const activeCycle = getActiveCycle();
+		const params: Record<string, string> = {};
+
+		if (activeCycle?.id) {
+			params.cycleId = activeCycle.id;
+		}
+
+		const query = Object.keys(params).length > 0 ? params : undefined;
+		const res = await client.GET('/org-nodes/{nodeId}/area-metrics', {
+			params: {
+				path: { nodeId },
+				query
+			}
+		});
+
+		if (res.error) {
+			throw new Error('Error al cargar métricas del área');
+		}
+
+		const raw = res.data as AreaMetrics;
+		if (!raw) {
+			throw new Error('No se recibieron métricas');
+		}
+
+		metrics = {
+			nodeId: raw.nodeId,
+			employeeCount: raw.employeeCount ?? 0,
+			employeesWithGoals: raw.employeesWithGoals ?? 0,
+			avgProgress: raw.avgProgress ?? null,
+			completedGoals: raw.completedGoals ?? 0,
+			pendingGoals: raw.pendingGoals ?? 0,
+			avgRating: raw.avgRating ?? null,
+			ratingsCount: raw.ratingsCount ?? 0,
+			employees: raw.employees ?? []
+		};
+
+		console.log('Employees from API:', raw.employees);
+		employeeList = buildEmployeeListFromApi(raw.employees ?? []);
+	} catch (e) {
+		metricsError = e instanceof Error ? e.message : 'Error al cargar métricas';
+		metrics = null;
+		// Keep last known employee list on failure
+	} finally {
+		metricsLoading = false;
+	}
+}
+
+/**
+ * Map API employee array to EmployeeRow[]. Sorted A–Z.
+ */
+function buildEmployeeListFromApi(employees: AreaMetricsEmployee[]): EmployeeRow[] {
+	return employees
+		.map((emp) => ({
+			id: emp.id,
+			name: `${emp.firstName} ${emp.lastName}`,
+			position: emp.jobTitle ?? '',
+			profile: emp.profileDescription ?? ''
+		}))
+		.sort((a, b) => a.name.localeCompare(b.name));
+}
+
+/**
+ * Select an org node and fetch its metrics from the API.
  *
- * Called when RRHH clicks a node in `OrgHierarchyTree`. Reads from
- * existing fixture data and the `orgHierarchyStore` tree.
+ * Called when RRHH clicks a node in `OrgHierarchyTree`.
  */
 export function selectNode(nodeId: string): void {
 	selectedNodeId = nodeId;
@@ -185,45 +121,11 @@ export function selectNode(nodeId: string): void {
 	if (!nodeId) {
 		metrics = null;
 		employeeList = [];
+		metricsError = null;
 		return;
 	}
 
-	const employeeIds = getScopeIds(nodeId);
-	if (employeeIds.length === 0) {
-		metrics = null;
-		employeeList = [];
-		return;
-	}
-
-	const assignments = assignmentsData as EmployeeAssignment[];
-	const goals = goalsData as Goal[];
-	const evaluations = rhEvaluationsData as CompetencyRating[];
-	const nodes = collectNodesByIds(employeeIds);
-
-	const progress = computeAreaProgress(employeeIds, assignments, goals);
-	const rating = computeAreaRating(employeeIds, evaluations);
-
-	// Count employees with at least one valid goal (targetValue > 0)
-	const employeesWithGoals = assignments.filter((a) => {
-		if (!employeeIds.includes(a.employeeId)) return false;
-		return a.goalIds.some((gid) => {
-			const goal = goals.find((g) => g.id === gid);
-			return goal !== undefined && goal.targetValue > 0;
-		});
-	}).length;
-
-	metrics = {
-		nodeId,
-		employeeCount: employeeIds.length,
-		employeesWithGoals,
-		avgProgress: progress.avgProgress > 0 || progress.completed > 0 || progress.pending > 0 ? progress.avgProgress : null,
-		completedGoals: progress.completed,
-		pendingGoals: progress.pending,
-		avgRating: rating.avgRating,
-		ratingsCount: rating.ratingsCount
-	};
-
-	employeeList = buildEmployeeList(employeeIds, nodes);
+	fetchAreaMetrics(nodeId);
 }
 
 // ─── Getters ────────────────────────────────────────────────────────────────────
@@ -238,4 +140,12 @@ export function getEmployeeList(): EmployeeRow[] {
 
 export function getSelectedNodeId(): string {
 	return selectedNodeId;
+}
+
+export function isLoadingMetrics(): boolean {
+	return metricsLoading;
+}
+
+export function getMetricsError(): string | null {
+	return metricsError;
 }

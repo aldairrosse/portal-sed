@@ -24,21 +24,23 @@ import (
 type OrgTreeService interface {
 	GetTrees(ctx context.Context, treeType string) (*org.OrgTreeListResponse, error)
 	GetTree(ctx context.Context, treeID string) (*org.OrgTreeDetailResponse, error)
-	GetTreeNodes(ctx context.Context, treeID, format string, depth int) (interface{}, error)
+	GetTreeNodes(ctx context.Context, treeID, format string, depth int, evaluatorID *uuid.UUID, headEmployeeID *uuid.UUID) (interface{}, error)
 	ExportTree(ctx context.Context, treeID string, w io.Writer) error
 }
 
 type orgTreeService struct {
 	orgTreeRepo *repo.OrgTreeRepo
 	orgNodeRepo *repo.OrgNodeRepo
+	empRepo     *repo.EmployeeRepo
 	client      *internal.Client
 }
 
 // NewOrgTreeService creates a new OrgTreeService.
-func NewOrgTreeService(orgTreeRepo *repo.OrgTreeRepo, orgNodeRepo *repo.OrgNodeRepo, client *internal.Client) OrgTreeService {
+func NewOrgTreeService(orgTreeRepo *repo.OrgTreeRepo, orgNodeRepo *repo.OrgNodeRepo, empRepo *repo.EmployeeRepo, client *internal.Client) OrgTreeService {
 	return &orgTreeService{
 		orgTreeRepo: orgTreeRepo,
 		orgNodeRepo: orgNodeRepo,
+		empRepo:     empRepo,
 		client:      client,
 	}
 }
@@ -84,24 +86,54 @@ func (s *orgTreeService) GetTree(ctx context.Context, treeID string) (*org.OrgTr
 	}, nil
 }
 
-func (s *orgTreeService) GetTreeNodes(ctx context.Context, treeID, format string, depth int) (interface{}, error) {
+func (s *orgTreeService) GetTreeNodes(ctx context.Context, treeID, format string, depth int, evaluatorID *uuid.UUID, headEmployeeID *uuid.UUID) (interface{}, error) {
 	id, err := uuid.Parse(treeID)
 	if err != nil {
 		return nil, errors.NewDomainError(errors.InvalidRequest, "Invalid tree ID: must be a valid UUID", err)
 	}
 
-	// Verify tree exists
-	_, err = s.orgTreeRepo.GetByID(ctx, id)
+	// Verify tree exists and get root_node_id
+	treeRow, err := s.orgTreeRepo.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	rootNodeID := treeRow.RootNodeID
+
+	var nodes []*repo.OrgNodeRow
+
+	// headEmployeeId: find the node headed by this employee, return its subtree
+	if headEmployeeID != nil {
+		node, err := s.orgNodeRepo.GetByHeadEmployee(ctx, *headEmployeeID)
+		if err == nil {
+			nodes, err = s.orgNodeRepo.GetSubtree(ctx, node.ID, -1)
+			if err == nil {
+				goto respond
+			}
+		}
+		// Fall through to full tree on error
+	}
+
+	if evaluatorID != nil {
+		// Lenient fallback: resolve employee's org node; if lookup fails or
+		// OrgNodeID is nil, return full tree (same as absent param).
+		emp, err := s.empRepo.GetByID(ctx, *evaluatorID)
+		if err == nil && emp.OrgNodeID != uuid.Nil {
+			// Use existing ltree subtree query — no new SQL needed.
+			nodes, err = s.orgNodeRepo.GetSubtree(ctx, emp.OrgNodeID, -1)
+			if err == nil {
+				goto respond
+			}
+		}
+		// Fall through to full tree on any error or nil OrgNodeID.
+	}
+
+	// Get all nodes for this tree (no evaluatorID or lenient fallback)
+	nodes, err = s.orgNodeRepo.ListByOrg(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
-	// Get all nodes for this tree
-	nodes, err := s.orgNodeRepo.ListByOrg(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-
+respond:
 	// Convert to FlatNodes
 	flatNodes := make([]tree.FlatNode, len(nodes))
 	for i, n := range nodes {
@@ -117,13 +149,19 @@ func (s *orgTreeService) GetTreeNodes(ctx context.Context, treeID, format string
 		}
 	}
 
+	// Filter to root + descendants when root_node_id is set
+	if rootNodeID != nil {
+		rootID := rootNodeID.String()
+		flatNodes = tree.FilterByAncestor(flatNodes, rootID)
+	}
+
 	// Apply depth filter
 	if depth > 0 {
 		flatNodes = tree.FilterDepth(flatNodes, depth)
 	}
 
 	if format == "nested" {
-		return s.buildNestedResponse(nodes, flatNodes)
+		return s.buildNestedResponse(ctx, nodes, flatNodes)
 	}
 
 	return s.buildFlatResponse(nodes, flatNodes)
@@ -161,7 +199,7 @@ func (s *orgTreeService) buildFlatResponse(dbNodes []*repo.OrgNodeRow, flatNodes
 	return resp, nil
 }
 
-func (s *orgTreeService) buildNestedResponse(dbNodes []*repo.OrgNodeRow, flatNodes []tree.FlatNode) (*org.OrgNodeNested, error) {
+func (s *orgTreeService) buildNestedResponse(ctx context.Context, dbNodes []*repo.OrgNodeRow, flatNodes []tree.FlatNode) (*org.OrgNodeNested, error) {
 	root := tree.ToNested(flatNodes)
 
 	nodeMap := make(map[string]*repo.OrgNodeRow, len(dbNodes))
@@ -170,12 +208,95 @@ func (s *orgTreeService) buildNestedResponse(dbNodes []*repo.OrgNodeRow, flatNod
 	}
 
 	nested := s.mapNestedNode(root, nodeMap)
+
+	// Batch-fetch head employees and enrich the nested tree
+	headIDs := s.collectHeadEmployeeIDs(nested)
+	if len(headIDs) > 0 {
+		emps, err := s.empRepo.GetByIDs(ctx, headIDs)
+		if err == nil {
+			empMap := make(map[string]*repo.EmployeeRow, len(emps))
+			for _, emp := range emps {
+				empMap[emp.ID.String()] = emp
+			}
+			s.enrichHeadEmployees(nested, empMap)
+		}
+	}
+
+	// Prune nodes with no head employee AND no employees
+	nested = s.pruneEmptyNodes(nested, nodeMap)
+
 	return &org.OrgNodeNested{
 		Data: nested,
 		Meta: struct {
 			Format string `json:"format"`
 		}{Format: "nested"},
 	}, nil
+}
+
+// collectHeadEmployeeIDs walks the nested tree and returns all non-nil head employee UUIDs.
+func (s *orgTreeService) collectHeadEmployeeIDs(nested *org.OrgNodeNestedResponse) []uuid.UUID {
+	if nested == nil {
+		return nil
+	}
+	var ids []uuid.UUID
+	if nested.HeadEmployeeID != "" {
+		if id, err := uuid.Parse(nested.HeadEmployeeID); err == nil {
+			ids = append(ids, id)
+		}
+	}
+	for _, child := range nested.Children {
+		ids = append(ids, s.collectHeadEmployeeIDs(child)...)
+	}
+	return ids
+}
+
+// enrichHeadEmployees populates HeadEmployee details from a pre-fetched employee map.
+func (s *orgTreeService) enrichHeadEmployees(nested *org.OrgNodeNestedResponse, empMap map[string]*repo.EmployeeRow) {
+	if nested == nil {
+		return
+	}
+	if nested.HeadEmployeeID != "" {
+		if emp, ok := empMap[nested.HeadEmployeeID]; ok {
+			nested.HeadEmployee = &org.HeadEmployeeInfo{
+				ID:        emp.ID.String(),
+				FirstName: emp.FirstName,
+				LastName:  emp.LastName,
+				JobTitle:  emp.JobTitle,
+			}
+		}
+	}
+	for _, child := range nested.Children {
+		s.enrichHeadEmployees(child, empMap)
+	}
+}
+
+// pruneEmptyNodes removes nodes that have no head employee AND no employees.
+// Bottom-up: a parent stays if it has head/employees OR at least one visible child.
+func (s *orgTreeService) pruneEmptyNodes(nested *org.OrgNodeNestedResponse, nodeMap map[string]*repo.OrgNodeRow) *org.OrgNodeNestedResponse {
+	if nested == nil {
+		return nil
+	}
+
+	// Recurse children first (bottom-up)
+	pruned := make([]*org.OrgNodeNestedResponse, 0, len(nested.Children))
+	for _, child := range nested.Children {
+		if kept := s.pruneEmptyNodes(child, nodeMap); kept != nil {
+			pruned = append(pruned, kept)
+		}
+	}
+	nested.Children = pruned
+
+	// Determine if this node should be kept
+	hasHead := nested.HeadEmployeeID != ""
+	hasEmployees := false
+	if dbNode, ok := nodeMap[nested.ID]; ok {
+		hasEmployees = dbNode.EmployeeCount > 0
+	}
+
+	if hasHead || hasEmployees || len(nested.Children) > 0 {
+		return nested
+	}
+	return nil
 }
 
 func (s *orgTreeService) mapNestedNode(n *tree.NestedNode, nodeMap map[string]*repo.OrgNodeRow) *org.OrgNodeNestedResponse {
@@ -194,6 +315,9 @@ func (s *orgTreeService) mapNestedNode(n *tree.NestedNode, nodeMap map[string]*r
 		resp.Type = string(dbNode.Type)
 		resp.Code = dbNode.Code
 		resp.Path = dbNode.Path
+		if dbNode.HeadEmployeeID != nil {
+			resp.HeadEmployeeID = dbNode.HeadEmployeeID.String()
+		}
 	}
 
 	for _, child := range n.Children {

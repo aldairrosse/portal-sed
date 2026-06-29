@@ -22,6 +22,7 @@ import (
 	"github.com/sed-evaluacion-desempeno/api/internal/seed"
 
 	// Repositories
+	repoactivity "github.com/sed-evaluacion-desempeno/api/internal/repository/activity"
 	repogoal "github.com/sed-evaluacion-desempeno/api/internal/repository/goal"
 	repocycle "github.com/sed-evaluacion-desempeno/api/internal/repository/cycle"
 	repocompetency "github.com/sed-evaluacion-desempeno/api/internal/repository/competency"
@@ -29,6 +30,7 @@ import (
 	repoorganization "github.com/sed-evaluacion-desempeno/api/internal/repository/org"
 
 	// Services
+	activitysvc "github.com/sed-evaluacion-desempeno/api/internal/service/activity"
 	goalsvc "github.com/sed-evaluacion-desempeno/api/internal/service/goal"
 	cyclesvc "github.com/sed-evaluacion-desempeno/api/internal/service/cycle"
 	compsvc "github.com/sed-evaluacion-desempeno/api/internal/service/competency"
@@ -201,7 +203,6 @@ func setupTestServerWithPhaseChecker(t *testing.T, phaseChecker goalsvc.PhaseChe
 	orgTreeRepo := repoorganization.NewOrgTreeRepo(client, db)
 	orgNodeRepo := repoorganization.NewOrgNodeRepo(client, db)
 	employeeRepo := repoorganization.NewEmployeeRepo(client, db)
-	scopeRepo := repoorganization.NewEvaluatorScopeRepo(client, db)
 	metricsRepo := repoorganization.NewMetricsRepo(client, db)
 
 	sessionStore := auth.NewSessionStore(db)
@@ -234,23 +235,26 @@ func setupTestServerWithPhaseChecker(t *testing.T, phaseChecker goalsvc.PhaseChe
 	nineBoxSvc := evalsvc.NewNineBoxService(nineBoxRepo, catalogEvalRepo, db)
 	dashboardSvc := evalsvc.NewDashboardService(evalRepo)
 
-	orgTreeSvc := orgsvc.NewOrgTreeService(orgTreeRepo, orgNodeRepo, client)
+	orgTreeSvc := orgsvc.NewOrgTreeService(orgTreeRepo, orgNodeRepo, employeeRepo, client)
 	orgNodeSvc := orgsvc.NewOrgNodeService(orgNodeRepo, client)
 	employeeSvc := orgsvc.NewEmployeeService(employeeRepo, client)
-	evaluateeSvc := orgsvc.NewEvaluateeService(employeeRepo, orgNodeRepo, scopeRepo, client)
-	evaluatorSvc := orgsvc.NewEvaluatorService(employeeRepo, orgNodeRepo, scopeRepo, client)
+	evaluateeSvc := orgsvc.NewEvaluateeService(employeeRepo, orgNodeRepo, client)
 	metricsSvc := orgsvc.NewMetricsService(metricsRepo, orgNodeRepo, client)
+
+	// Activity
+	activityRepo := repoactivity.NewRepository(client)
+	activitySvc := activitysvc.NewService(activityRepo)
 
 	// Handlers
 	authH := authhandler.NewAuthHandler(authSvc)
 	goalH := goalhandler.NewGoalHandler(
 		catSvc, goalSvc, progressSvc, kpiSvc, scoringSvc, weightSvc, batchSvc,
-		catRepo, goalRepo, kpiRepo, linkRepo, assignRepo,
+		catRepo, goalRepo, kpiRepo, linkRepo, assignRepo, activitySvc,
 	)
-	cycleH := cyclehandler.NewCycleHandler(cycleSvc, phaseSvc)
-	compH := comphandler.NewHandler(pillarSvc, competencySvc, scaleSvc, catalogSvc, acceptanceSvc)
-	evalH := evalhandler.NewEvaluationHandler(evalSvc, nineBoxSvc, dashboardSvc)
-	orgH := orghandler.NewOrgHandler(orgTreeSvc, orgNodeSvc, employeeSvc, evaluateeSvc, evaluatorSvc, metricsSvc)
+	cycleH := cyclehandler.NewCycleHandler(cycleSvc, phaseSvc, activitySvc)
+	compH := comphandler.NewHandler(pillarSvc, competencySvc, scaleSvc, catalogSvc, acceptanceSvc, activitySvc)
+	evalH := evalhandler.NewEvaluationHandler(evalSvc, nineBoxSvc, dashboardSvc, activitySvc)
+	orgH := orghandler.NewOrgHandler(orgTreeSvc, orgNodeSvc, employeeSvc, evaluateeSvc, metricsSvc)
 
 	// Router
 	r := chi.NewRouter()

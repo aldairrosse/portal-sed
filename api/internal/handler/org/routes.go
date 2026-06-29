@@ -12,7 +12,7 @@ import (
 
 // NewRouter creates a Chi router with all org hierarchy endpoints registered.
 //
-// Endpoint catalog (14 endpoints):
+// Endpoint catalog (12 endpoints):
 //
 //   GET    /api/v1/org-trees                       → ListOrgTrees
 //   GET    /api/v1/org-trees/{treeId}              → GetOrgTree
@@ -30,8 +30,6 @@ import (
 //   GET    /api/v1/employees/{empId}/ancestors      → GetAncestors
 //   POST   /api/v1/employees/batch                 → BatchLookupEmployees
 //   GET    /api/v1/employees/search                → SearchEmployees
-//   GET    /api/v1/evaluator-scopes                 → GetEvaluatorScope
-//   GET    /api/v1/evaluator-scopes/{scopeId}       → GetEvaluatorScopeByID
 func NewRouter(handler *OrgHandler, authSvc *authsvc.AuthService) chi.Router {
 	r := chi.NewRouter()
 	RegisterRoutes(r, handler, authSvc)
@@ -160,19 +158,6 @@ func RegisterRoutes(r chi.Router, handler *OrgHandler, authSvc *authsvc.AuthServ
 			r.Get("/employees/search", handler.SearchEmployees)
 		})
 
-		// --- Evaluator Scope endpoints (read) ---
-
-		r.Group(func(r chi.Router) {
-			r.Use(middleware.RateLimit(readRateLimit))
-			r.Use(readReplicaMiddleware)
-			r.Get("/evaluator-scopes", handler.GetEvaluatorScope)
-		})
-
-		r.Group(func(r chi.Router) {
-			r.Use(middleware.RateLimit(readRateLimit))
-			r.Use(readReplicaMiddleware)
-			r.Get("/evaluator-scopes/{scopeId}", handler.GetEvaluatorScopeByID)
-		})
 	})
 }
 

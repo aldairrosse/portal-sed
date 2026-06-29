@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
+	"github.com/sed-evaluacion-desempeno/api/internal/activitylog"
 	"github.com/sed-evaluacion-desempeno/api/internal/employee"
 	"github.com/sed-evaluacion-desempeno/api/internal/evaluation"
 	"github.com/sed-evaluacion-desempeno/api/internal/evaluationprofile"
@@ -43,6 +44,7 @@ type EmployeeQuery struct {
 	withNineBoxMatrices  *NineBoxMatrixQuery
 	withNineBoxEntries   *NineBoxEntryQuery
 	withHeadedDepartment *OrgNodeQuery
+	withActivityLogs     *ActivityLogQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -321,6 +323,28 @@ func (_q *EmployeeQuery) QueryHeadedDepartment() *OrgNodeQuery {
 	return query
 }
 
+// QueryActivityLogs chains the current query on the "activity_logs" edge.
+func (_q *EmployeeQuery) QueryActivityLogs() *ActivityLogQuery {
+	query := (&ActivityLogClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(employee.Table, employee.FieldID, selector),
+			sqlgraph.To(activitylog.Table, activitylog.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, employee.ActivityLogsTable, employee.ActivityLogsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
 // First returns the first Employee entity from the query.
 // Returns a *NotFoundError when no Employee was found.
 func (_q *EmployeeQuery) First(ctx context.Context) (*Employee, error) {
@@ -524,6 +548,7 @@ func (_q *EmployeeQuery) Clone() *EmployeeQuery {
 		withNineBoxMatrices:  _q.withNineBoxMatrices.Clone(),
 		withNineBoxEntries:   _q.withNineBoxEntries.Clone(),
 		withHeadedDepartment: _q.withHeadedDepartment.Clone(),
+		withActivityLogs:     _q.withActivityLogs.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
@@ -651,6 +676,17 @@ func (_q *EmployeeQuery) WithHeadedDepartment(opts ...func(*OrgNodeQuery)) *Empl
 	return _q
 }
 
+// WithActivityLogs tells the query-builder to eager-load the nodes that are connected to
+// the "activity_logs" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *EmployeeQuery) WithActivityLogs(opts ...func(*ActivityLogQuery)) *EmployeeQuery {
+	query := (&ActivityLogClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withActivityLogs = query
+	return _q
+}
+
 // GroupBy is used to group vertices by one or more fields/columns.
 // It is often used with aggregate functions, like: count, max, mean, min, sum.
 //
@@ -729,7 +765,7 @@ func (_q *EmployeeQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Emp
 	var (
 		nodes       = []*Employee{}
 		_spec       = _q.querySpec()
-		loadedTypes = [11]bool{
+		loadedTypes = [12]bool{
 			_q.withOrgNode != nil,
 			_q.withManager != nil,
 			_q.withDirectReports != nil,
@@ -741,6 +777,7 @@ func (_q *EmployeeQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Emp
 			_q.withNineBoxMatrices != nil,
 			_q.withNineBoxEntries != nil,
 			_q.withHeadedDepartment != nil,
+			_q.withActivityLogs != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -832,6 +869,13 @@ func (_q *EmployeeQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Emp
 		if err := _q.loadHeadedDepartment(ctx, query, nodes,
 			func(n *Employee) { n.Edges.HeadedDepartment = []*OrgNode{} },
 			func(n *Employee, e *OrgNode) { n.Edges.HeadedDepartment = append(n.Edges.HeadedDepartment, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withActivityLogs; query != nil {
+		if err := _q.loadActivityLogs(ctx, query, nodes,
+			func(n *Employee) { n.Edges.ActivityLogs = []*ActivityLog{} },
+			func(n *Employee, e *ActivityLog) { n.Edges.ActivityLogs = append(n.Edges.ActivityLogs, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -1169,6 +1213,36 @@ func (_q *EmployeeQuery) loadHeadedDepartment(ctx context.Context, query *OrgNod
 		node, ok := nodeids[*fk]
 		if !ok {
 			return fmt.Errorf(`unexpected referenced foreign-key "head_employee_id" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *EmployeeQuery) loadActivityLogs(ctx context.Context, query *ActivityLogQuery, nodes []*Employee, init func(*Employee), assign func(*Employee, *ActivityLog)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*Employee)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(activitylog.FieldEmployeeID)
+	}
+	query.Where(predicate.ActivityLog(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(employee.ActivityLogsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.EmployeeID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "employee_id" returned %v for node %v`, fk, n.ID)
 		}
 		assign(node, n)
 	}

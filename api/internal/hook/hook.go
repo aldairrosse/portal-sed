@@ -9,6 +9,18 @@ import (
 	"github.com/sed-evaluacion-desempeno/api/internal"
 )
 
+// The ActivityLogFunc type is an adapter to allow the use of ordinary
+// function as ActivityLog mutator.
+type ActivityLogFunc func(context.Context, *internal.ActivityLogMutation) (internal.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ActivityLogFunc) Mutate(ctx context.Context, m internal.Mutation) (internal.Value, error) {
+	if mv, ok := m.(*internal.ActivityLogMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *internal.ActivityLogMutation", m)
+}
+
 // The CompetencyFunc type is an adapter to allow the use of ordinary
 // function as Competency mutator.
 type CompetencyFunc func(context.Context, *internal.CompetencyMutation) (internal.Value, error)

@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
+	"github.com/sed-evaluacion-desempeno/api/internal/activitylog"
 	"github.com/sed-evaluacion-desempeno/api/internal/employee"
 	"github.com/sed-evaluacion-desempeno/api/internal/evaluation"
 	"github.com/sed-evaluacion-desempeno/api/internal/evaluationprofile"
@@ -294,6 +295,21 @@ func (_c *EmployeeCreate) AddHeadedDepartment(v ...*OrgNode) *EmployeeCreate {
 		ids[i] = v[i].ID
 	}
 	return _c.AddHeadedDepartmentIDs(ids...)
+}
+
+// AddActivityLogIDs adds the "activity_logs" edge to the ActivityLog entity by IDs.
+func (_c *EmployeeCreate) AddActivityLogIDs(ids ...uuid.UUID) *EmployeeCreate {
+	_c.mutation.AddActivityLogIDs(ids...)
+	return _c
+}
+
+// AddActivityLogs adds the "activity_logs" edges to the ActivityLog entity.
+func (_c *EmployeeCreate) AddActivityLogs(v ...*ActivityLog) *EmployeeCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddActivityLogIDs(ids...)
 }
 
 // Mutation returns the EmployeeMutation object of the builder.
@@ -662,6 +678,22 @@ func (_c *EmployeeCreate) createSpec() (*Employee, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(orgnode.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.ActivityLogsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   employee.ActivityLogsTable,
+			Columns: []string{employee.ActivityLogsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(activitylog.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

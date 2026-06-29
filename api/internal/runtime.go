@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/sed-evaluacion-desempeno/api/internal/activitylog"
 	"github.com/sed-evaluacion-desempeno/api/internal/competency"
 	"github.com/sed-evaluacion-desempeno/api/internal/competencyacceptancelevel"
 	"github.com/sed-evaluacion-desempeno/api/internal/cycle"
@@ -38,6 +39,25 @@ import (
 // (default values, validators, hooks and policies) and stitches it
 // to their package variables.
 func init() {
+	activitylogMixin := schema.ActivityLog{}.Mixin()
+	activitylogMixinFields0 := activitylogMixin[0].Fields()
+	_ = activitylogMixinFields0
+	activitylogFields := schema.ActivityLog{}.Fields()
+	_ = activitylogFields
+	// activitylogDescCreatedAt is the schema descriptor for created_at field.
+	activitylogDescCreatedAt := activitylogMixinFields0[0].Descriptor()
+	// activitylog.DefaultCreatedAt holds the default value on creation for the created_at field.
+	activitylog.DefaultCreatedAt = activitylogDescCreatedAt.Default.(func() time.Time)
+	// activitylogDescUpdatedAt is the schema descriptor for updated_at field.
+	activitylogDescUpdatedAt := activitylogMixinFields0[1].Descriptor()
+	// activitylog.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	activitylog.DefaultUpdatedAt = activitylogDescUpdatedAt.Default.(func() time.Time)
+	// activitylog.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	activitylog.UpdateDefaultUpdatedAt = activitylogDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// activitylogDescID is the schema descriptor for id field.
+	activitylogDescID := activitylogFields[0].Descriptor()
+	// activitylog.DefaultID holds the default value on creation for the id field.
+	activitylog.DefaultID = activitylogDescID.Default.(func() uuid.UUID)
 	competencyMixin := schema.Competency{}.Mixin()
 	competencyMixinFields0 := competencyMixin[0].Fields()
 	_ = competencyMixinFields0

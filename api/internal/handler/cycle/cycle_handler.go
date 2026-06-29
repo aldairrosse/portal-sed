@@ -13,6 +13,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/sed-evaluacion-desempeno/api/internal/middleware"
 	pkgerrors "github.com/sed-evaluacion-desempeno/api/internal/pkg/errors"
+
+	"github.com/sed-evaluacion-desempeno/api/internal/auth"
+	activitysvc "github.com/sed-evaluacion-desempeno/api/internal/service/activity"
 	svc "github.com/sed-evaluacion-desempeno/api/internal/service/cycle"
 )
 
@@ -57,13 +60,15 @@ func writeError(w http.ResponseWriter, err error) {
 type CycleHandler struct {
 	svc          svc.Service
 	phaseService svc.PhaseService
+	activitySvc  activitysvc.Service
 }
 
 // NewCycleHandler creates a new CycleHandler.
-func NewCycleHandler(svc svc.Service, phaseService svc.PhaseService) *CycleHandler {
+func NewCycleHandler(svc svc.Service, phaseService svc.PhaseService, activitySvc activitysvc.Service) *CycleHandler {
 	return &CycleHandler{
 		svc:          svc,
 		phaseService: phaseService,
+		activitySvc:  activitySvc,
 	}
 }
 
@@ -212,6 +217,18 @@ func (h *CycleHandler) TransitionPhase(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		writeError(w, err)
 		return
+	}
+
+	// Log activity: transición de fase del ciclo
+	if h.activitySvc != nil {
+		if empID, ok := auth.GetEmployeeID(r.Context()); ok {
+			metadata := map[string]interface{}{
+				"cycle_id": id,
+				"trigger":  body.Trigger,
+			}
+			_ = h.activitySvc.LogActivity(r.Context(), empID, "cycle_configured",
+				"Configuraste el ciclo de evaluación", "Ciclos", metadata)
+		}
 	}
 
 	writeJSON(w, http.StatusOK, result)

@@ -1,22 +1,40 @@
 <script lang="ts">
+	import { browser } from '$app/environment';
+	import { goto } from '$app/navigation';
+	import { onMount } from 'svelte';
 	import OrgHierarchyTree from '$lib/components/org-hierarchy/OrgHierarchyTree.svelte';
-	import { getRoot, getNodeById } from '$lib/stores/orgHierarchyStore.svelte';
-	import { getProfile } from '$lib/stores/devContext.svelte';
-	import { getActivePhase } from '$lib/api/cycle.svelte';
+	import { getRoot, getNodeById, load, isLoading, getError } from '$lib/stores/orgHierarchyStore.svelte';
+import { getProfile } from '$lib/stores/devContext.svelte';
+import { getActivePhase } from '$lib/api/cycle.svelte';
 	import {
 		selectNode,
 		getMetrics,
 		getEmployeeList,
-		getSelectedNodeId
+		getSelectedNodeId,
+		isLoadingMetrics,
+		getMetricsError
 	} from '$lib/stores/rhHierarchyStore.svelte';
-	import { PROFILE_LABELS } from '$lib/types/evaluation';
 	import type { OrgNode } from '$lib/types/org-hierarchy';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
-	import { Network, Users, Target, CheckCircle2, Clock, Star, Briefcase, MapPin } from '@lucide/svelte';
+	import ErrorState from '$lib/components/ui/ErrorState.svelte';
+	import PageSkeleton from '$lib/components/ui/PageSkeleton.svelte';
+	import { Network, Users, Target, CheckCircle2, Clock, Star } from '@lucide/svelte';
 
 	// ─── Profile guard ─────────────────────────────────────────────────────
 
 	const profile = $derived(getProfile());
+
+	// Redirect jefe to the evaluacion hierarchy view
+	onMount(() => {
+		if (profile === 'jefe' && browser) {
+			goto('/evaluacion/9x9/jerarquia');
+			return;
+		}
+		if (isAuthorized) {
+			load();
+		}
+	});
+
 	const isAuthorized = $derived(profile === 'rh');
 
 	// ─── Phase detection ────────────────────────────────────────────────────
@@ -39,6 +57,8 @@
 	const selectedNodeId = $derived(getSelectedNodeId());
 	const metrics = $derived(getMetrics());
 	const employeeList = $derived(getEmployeeList());
+	const metricsLoading = $derived(isLoadingMetrics());
+	const metricsError = $derived(getMetricsError());
 
 	const selectedNode = $derived(
 		selectedNodeId && isAuthorized ? getNodeById(selectedNodeId) : null
@@ -58,7 +78,7 @@
 	<div>
 		<h1 class="text-2xl font-bold text-base-content flex items-center gap-2">
 			<Network class="w-6 h-6" />
-			Jerarquía organizacional
+			Jerarquía de departamentos
 		</h1>
 		<p class="text-sm text-base-content/50 mt-1">Vista transversal de métricas por área</p>
 	</div>
@@ -70,6 +90,28 @@
 			actionLabel="Volver al inicio"
 			actionHref="/"
 		/>
+	{:else if isLoading()}
+		<div class="flex flex-col lg:flex-row gap-8">
+			<div class="lg:w-2/5">
+				<div class="card bg-base-100 border border-base-300">
+					<div class="card-body p-0">
+						<h2 class="card-title text-xs font-semibold text-base-content/50 tracking-wide px-4 pt-4">
+							Departamentos
+						</h2>
+						<OrgHierarchyTree loading={true} />
+					</div>
+				</div>
+			</div>
+			<div class="lg:w-3/5">
+				<div class="card bg-base-100 border border-base-300">
+					<div class="card-body p-8 text-center">
+						<PageSkeleton variant="default" rows={5} />
+					</div>
+				</div>
+			</div>
+		</div>
+	{:else if getError()}
+		<ErrorState message={getError() ?? undefined} onretry={load} />
 	{:else if !treeRoot}
 		<EmptyState
 			title="Sin datos"
@@ -81,10 +123,11 @@
 			<div class="lg:w-2/5">
 				<div class="card bg-base-100 border border-base-300">
 					<div class="card-body p-0">
-						<h2 class="card-title text-xs font-semibold text-base-content/50 tracking-wide px-4 pt-4">
-							Organigrama
+						<h2 class="card-title text-xs font-semibold text-base-content/50 tracking-wide pt-4">
+							Departamentos
 						</h2>
 						<OrgHierarchyTree
+							viewType='departments'
 							node={treeRoot}
 							onNodeSelect={handleNodeSelect}
 							{selectedNodeId}
@@ -96,20 +139,38 @@
 			<!-- Detail panel — ~60vw -->
 			<div class="lg:w-3/5">
 				{#if selectedNode}
-					{@const nodeLabel = PROFILE_LABELS[selectedNode.profileId as keyof typeof PROFILE_LABELS] ?? selectedNode.profileId}
 
 					<div class="card bg-base-100 border border-base-300">
 						<div class="card-body p-0">
 							<!-- Header: node name + badge -->
-							<div class="flex items-center gap-3 px-4 pt-4 pb-3 border-b border-base-200">
+							<div class="flex items-center gap-3 px-4 pt-4 pb-3">
 								<div class="flex items-center gap-2 min-w-0">
-									<h3 class="text-lg font-bold truncate">{selectedNode.name}</h3>
-									<span class="badge badge-ghost badge-sm shrink-0 capitalize">{nodeLabel}</span>
+									<h3 class="text-xs font-semibold truncate text-base-content/50 tracking-wide">
+										{selectedNode.name}
+									</h3>
 								</div>
 							</div>
 
-							<!-- Phase-conditional metrics -->
-							{#if metricType === 'progress' && metrics}
+							<!-- Loading state -->
+							{#if metricsLoading}
+								<div class="p-6 text-center text-sm text-base-content/40">Cargando métricas…</div>
+							{:else if metricsError}
+								<div class="px-4 pb-4">
+									<EmptyState
+										title="Error al cargar métricas"
+										message={metricsError}
+									/>
+									<div class="mt-4 text-center">
+										<button class="btn btn-outline btn-sm" onclick={() => selectNode(selectedNodeId)}>
+											Reintentar
+										</button>
+									</div>
+								</div>
+							{:else if metrics && metrics.employeeCount === 0}
+								<div class="p-6 text-center text-sm text-base-content/40">
+									Sin empleados en esta área
+								</div>
+							{:else if metricType === 'progress' && metrics}
 								<div class="grid grid-cols-2 gap-4 p-4">
 									<!-- Avg progress -->
 									<div class="flex flex-col gap-1 bg-base-200 rounded-lg p-4">
@@ -194,6 +255,10 @@
 									</div>
 								</div>
 
+							{:else if !metrics}
+								<div class="p-6 text-center text-sm text-base-content/40">
+									Selecciona un área para ver sus métricas.
+								</div>
 							{:else if metricType === 'unavailable'}
 								<div class="px-4 pb-4">
 									<EmptyState
@@ -205,26 +270,22 @@
 
 							<!-- Employee table -->
 							{#if employeeList.length > 0}
-								<div class="border-t border-base-200 px-4 py-3">
-									<h4 class="text-sm font-semibold text-base-content/60 mb-3 flex items-center gap-2">
-										<Users class="w-4 h-4" />
-										Colaboradores del área
-									</h4>
+								<div class="px-4 py-3">
 									<div class="overflow-x-auto">
 										<table class="table table-sm">
 											<thead>
 												<tr>
-													<th class="text-xs font-semibold uppercase tracking-wide text-base-content/40">Nombre</th>
-													<th class="text-xs font-semibold uppercase tracking-wide text-base-content/40">Puesto</th>
-													<th class="text-xs font-semibold uppercase tracking-wide text-base-content/40">Perfil</th>
+													<th class="text-xs font-semibold tracking-wide text-base-content/40">Nombre</th>
+													<th class="text-xs font-semibold tracking-wide text-base-content/40">Puesto</th>
+													<th class="text-xs font-semibold tracking-wide text-base-content/40">Perfil</th>
 												</tr>
 											</thead>
 											<tbody>
 												{#each employeeList as emp (emp.id)}
 													<tr class="hover">
 														<td class="font-medium">{emp.name}</td>
-														<td class="text-base-content/60">{emp.position}</td>
-														<td><span class="badge badge-ghost badge-sm capitalize">{emp.profile}</span></td>
+														<td class="text-xs text-base-content/50">{emp.position}</td>
+														<td><span class="text-xs text-base-content/50 capitalize">{emp.profile}</span></td>
 													</tr>
 												{/each}
 											</tbody>

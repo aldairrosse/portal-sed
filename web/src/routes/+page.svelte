@@ -1,14 +1,12 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import { getProfile } from '$lib/stores/devContext.svelte';
 	import { getActivePhase } from '$lib/api/cycle.svelte';
 	import { getSession } from '$lib/api/session.svelte';
 	import { titleCase } from '$lib/utils/text';
 	import type { CyclePhase } from '$lib/types/evaluation';
 	import { getGoals, getCategories, getAssignments, getKpis, getGoalKpiLinks } from '$lib/stores/goalsStore.svelte';
-	import pillarsData from '$lib/fixtures/competency/pillars.json';
-	import competenciesData from '$lib/fixtures/competency/competencies.json';
-	import acceptanceLevelsData from '$lib/fixtures/competency/acceptance-levels.json';
-	import competencyAcceptanceData from '$lib/fixtures/competency/competency-acceptance-levels.json';
+	import { load as loadCompetencies, getPillars, getCompetencies, getLevelDefinitions, getCompetencyAcceptanceLevelsByProfile } from '$lib/stores/competencyStore.svelte';
 	import {
 		ClipboardCheck,
 		Target,
@@ -34,10 +32,12 @@
 	const allKpis = $derived(getKpis());
 	const allLinks = $derived(getGoalKpiLinks());
 
-	const pillars = pillarsData as Pillar[];
-	const competencies = competenciesData as Competency[];
-	const levelDefs = acceptanceLevelsData as LevelDefinition[];
-	const competencyLevels = competencyAcceptanceData as { competencyId: string; profileId: string; level: number }[];
+	const pillars = $derived(getPillars());
+	const competencies = $derived(getCompetencies());
+	const levelDefs = $derived(getLevelDefinitions());
+	const competencyLevels = $derived(getCompetencyAcceptanceLevelsByProfile(profile));
+
+	onMount(() => { loadCompetencies(); });
 
 	const myAssignment = $derived(assignments.find((a) => a.profileId === profile));
 	const myEmployeeId = $derived(myAssignment?.employeeId ?? '');
@@ -273,12 +273,12 @@
 				{#each competenciesByPillar as group (group.pilar.id)}
 					{#if group.items.length > 0}
 						<div>
-							<h3 class="font-binjay text-sm font-normal text-base-content/50 mb-2">
+							<h3 class="font-binjay text-lg font-normal text-base-content mb-2">
 								{group.pilar.name}
 							</h3>
 							<ul class="space-y-1">
 								{#each group.items as comp (comp.id)}
-									<li class="text-sm text-base-content">
+									<li class="text-sm text-base-content/50">
 										{comp.name}
 									</li>
 								{/each}

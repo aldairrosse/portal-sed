@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"github.com/sed-evaluacion-desempeno/api/internal/activitylog"
 	"github.com/sed-evaluacion-desempeno/api/internal/competency"
 	"github.com/sed-evaluacion-desempeno/api/internal/competencyacceptancelevel"
 	"github.com/sed-evaluacion-desempeno/api/internal/cycle"
@@ -97,6 +98,7 @@ var (
 func checkColumn(t, c string) error {
 	initCheck.Do(func() {
 		columnCheck = sql.NewColumnCheck(map[string]func(string) bool{
+			activitylog.Table:               activitylog.ValidColumn,
 			competency.Table:                competency.ValidColumn,
 			competencyacceptancelevel.Table: competencyacceptancelevel.ValidColumn,
 			cycle.Table:                     cycle.ValidColumn,

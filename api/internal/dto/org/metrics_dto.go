@@ -15,8 +15,11 @@ type AreaMetricsResponse struct {
 
 // AreaMetricsEmployee is a light employee projection for area metrics.
 type AreaMetricsEmployee struct {
-	ID        string `json:"id"`
-	FirstName string `json:"firstName"`
-	LastName  string `json:"lastName"`
-	ProfileID string `json:"profileId"`
+	ID                 string `json:"id"`
+	FirstName          string `json:"firstName"`
+	LastName           string `json:"lastName"`
+	ProfileID          string `json:"profileId"`
+	ProfileName        string `json:"profileName"`
+	ProfileDescription string `json:"profileDescription"`
+	JobTitle           string `json:"jobTitle"`
 }

@@ -49,7 +49,6 @@ var (
 	ErrInvalidParent    = errors.ErrInvalidParent
 	ErrStaleVersion     = errors.ErrStaleVersion
 	ErrInvalidTreeType  = errors.ErrInvalidTreeType
-	ErrScopeNotFound    = errors.ErrScopeNotFound
 )
 
 // ----------------
@@ -58,10 +57,11 @@ var (
 
 // OrgTreeRow represents an organization tree with node count.
 type OrgTreeRow struct {
-	ID        uuid.UUID `json:"id"`
-	Name      string    `json:"name"`
-	Type      string    `json:"type"`
-	NodeCount int       `json:"nodeCount"`
+	ID         uuid.UUID  `json:"id"`
+	Name       string     `json:"name"`
+	Type       string     `json:"type"`
+	NodeCount  int        `json:"nodeCount"`
+	RootNodeID *uuid.UUID `json:"root_node_id,omitempty"`
 }
 
 // OrgTreeRepo provides database queries for organizational trees.
@@ -85,7 +85,8 @@ func (r *OrgTreeRepo) readClient() *internal.Client {
 func (r *OrgTreeRepo) List(ctx context.Context, treeType string) ([]*OrgTreeRow, error) {
 	query := `SELECT o.id, o.name,
 	           COALESCE((SELECT on2.type FROM org_nodes on2 WHERE on2.organization_id = o.id LIMIT 1), '') as type,
-	           (SELECT COUNT(1) FROM org_nodes on2 WHERE on2.organization_id = o.id) as node_count
+	           (SELECT COUNT(1) FROM org_nodes on2 WHERE on2.organization_id = o.id) as node_count,
+	           o.root_node_id
 	           FROM organizations o
 	           WHERE EXISTS (SELECT 1 FROM org_nodes on2 WHERE on2.organization_id = o.id)`
 	args := []interface{}{}
@@ -106,8 +107,13 @@ func (r *OrgTreeRepo) List(ctx context.Context, treeType string) ([]*OrgTreeRow,
 	var results []*OrgTreeRow
 	for rows.Next() {
 		row := &OrgTreeRow{}
-		if err := rows.Scan(&row.ID, &row.Name, &row.Type, &row.NodeCount); err != nil {
+		var rootNodeID sql.NullString
+		if err := rows.Scan(&row.ID, &row.Name, &row.Type, &row.NodeCount, &rootNodeID); err != nil {
 			return nil, err
+		}
+		if rootNodeID.Valid {
+			id, _ := uuid.Parse(rootNodeID.String)
+			row.RootNodeID = &id
 		}
 		results = append(results, row)
 	}
@@ -117,17 +123,23 @@ func (r *OrgTreeRepo) List(ctx context.Context, treeType string) ([]*OrgTreeRow,
 // GetByID returns a single tree row by org ID with node count.
 func (r *OrgTreeRepo) GetByID(ctx context.Context, orgID uuid.UUID) (*OrgTreeRow, error) {
 	row := &OrgTreeRow{}
+	var rootNodeID sql.NullString
 	err := r.db.QueryRowContext(ctx,
 		`SELECT o.id, o.name,
 		        COALESCE((SELECT on2.type FROM org_nodes on2 WHERE on2.organization_id = o.id LIMIT 1), '') as type,
-		        (SELECT COUNT(1) FROM org_nodes on2 WHERE on2.organization_id = o.id) as node_count
+		        (SELECT COUNT(1) FROM org_nodes on2 WHERE on2.organization_id = o.id) as node_count,
+		        o.root_node_id
 		 FROM organizations o WHERE o.id = $1`, orgID,
-	).Scan(&row.ID, &row.Name, &row.Type, &row.NodeCount)
+	).Scan(&row.ID, &row.Name, &row.Type, &row.NodeCount, &rootNodeID)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, ErrTreeNotFound
 		}
 		return nil, err
+	}
+	if rootNodeID.Valid {
+		id, _ := uuid.Parse(rootNodeID.String)
+		row.RootNodeID = &id
 	}
 	return row, nil
 }
@@ -136,7 +148,7 @@ func (r *OrgTreeRepo) GetByID(ctx context.Context, orgID uuid.UUID) (*OrgTreeRow
 // OrgNodeRow — read model for org nodes
 // ----------------
 
-// OrgNodeRow represents a single org node with path, version, and employee count.
+// OrgNodeRow represents a single org node with path, version, head employee, and employee count.
 type OrgNodeRow struct {
 	ID             uuid.UUID  `json:"id"`
 	CreatedAt      time.Time  `json:"created_at"`
@@ -148,6 +160,7 @@ type OrgNodeRow struct {
 	ParentID       *uuid.UUID `json:"parent_id,omitempty"`
 	Path           string     `json:"path"`
 	Version        int        `json:"version"`
+	HeadEmployeeID *uuid.UUID `json:"head_employee_id,omitempty"`
 	EmployeeCount  int        `json:"employeeCount"`
 }
 
@@ -212,7 +225,7 @@ func (r *OrgNodeRepo) Create(ctx context.Context, orgID uuid.UUID, parentID *uui
 func (r *OrgNodeRepo) GetByID(ctx context.Context, nodeID uuid.UUID) (*OrgNodeRow, error) {
 	return scanNodeRow(r.db.QueryRowContext(ctx,
 		`SELECT id, created_at, updated_at, name, type, code, organization_id, parent_id,
-		        COALESCE(path::text, '') as path, COALESCE(version, 0) FROM org_nodes WHERE id = $1`,
+		        COALESCE(path::text, '') as path, COALESCE(version, 0), head_employee_id FROM org_nodes WHERE id = $1`,
 		nodeID,
 	))
 }
@@ -249,7 +262,7 @@ func (r *OrgNodeRepo) UpdateWithVersion(ctx context.Context, nodeID uuid.UUID, v
 	query := `UPDATE org_nodes SET ` + allSets +
 		` WHERE id = $1 AND version = $2
 		  RETURNING id, created_at, updated_at, name, type, code, organization_id, parent_id,
-		            COALESCE(path::text, '') as path, COALESCE(version, 0)`
+		            COALESCE(path::text, '') as path, COALESCE(version, 0), head_employee_id`
 
 	return scanNodeRow(r.db.QueryRowContext(ctx, query, args...))
 }
@@ -271,7 +284,7 @@ func (r *OrgNodeRepo) Delete(ctx context.Context, nodeID uuid.UUID) error {
 func (r *OrgNodeRepo) GetDescendants(ctx context.Context, path string) ([]*OrgNodeRow, error) {
 	return queryNodeRows(r.db, ctx,
 		`SELECT id, created_at, updated_at, name, type, code, organization_id, parent_id,
-		        COALESCE(path::text, '') as path, COALESCE(version, 0)
+		        COALESCE(path::text, '') as path, COALESCE(version, 0), head_employee_id
 		 FROM org_nodes WHERE path::text LIKE $1 || '.%' OR path::text = $1
 		 ORDER BY path::text`, path)
 }
@@ -280,7 +293,7 @@ func (r *OrgNodeRepo) GetDescendants(ctx context.Context, path string) ([]*OrgNo
 func (r *OrgNodeRepo) GetAncestors(ctx context.Context, path string) ([]*OrgNodeRow, error) {
 	return queryNodeRows(r.db, ctx,
 		`SELECT id, created_at, updated_at, name, type, code, organization_id, parent_id,
-		        COALESCE(path::text, '') as path, COALESCE(version, 0)
+		        COALESCE(path::text, '') as path, COALESCE(version, 0), head_employee_id
 		 FROM org_nodes WHERE $1 LIKE path::text || '.%' OR path::text = $1
 		 ORDER BY path::text`, path)
 }
@@ -291,16 +304,16 @@ func (r *OrgNodeRepo) GetPathToRoot(ctx context.Context, nodeID uuid.UUID) ([]*O
 	return queryNodeRows(r.db, ctx,
 		`WITH RECURSIVE ancestors AS (
 		    SELECT id, created_at, updated_at, name, type, code, organization_id, parent_id,
-		           COALESCE(path::text, '') as path, COALESCE(version, 0), 1 as depth
+		           COALESCE(path::text, '') as path, COALESCE(version, 0), head_employee_id, 1 as depth
 		    FROM org_nodes WHERE id = $1
 		    UNION ALL
 		    SELECT n.id, n.created_at, n.updated_at, n.name, n.type, n.code, n.organization_id,
-		           n.parent_id, COALESCE(n.path::text, '') as path, COALESCE(n.version, 0), a.depth + 1
+		           n.parent_id, COALESCE(n.path::text, '') as path, COALESCE(n.version, 0), n.head_employee_id, a.depth + 1
 		    FROM org_nodes n
 		    JOIN ancestors a ON n.id = a.parent_id
 		)
 		SELECT id, created_at, updated_at, name, type, code, organization_id, parent_id,
-		       path, version
+		       path, version, head_employee_id
 		FROM ancestors ORDER BY depth`, nodeID)
 }
 
@@ -315,14 +328,14 @@ func (r *OrgNodeRepo) GetSubtree(ctx context.Context, nodeID uuid.UUID, maxDepth
 	if maxDepth < 0 {
 		return queryNodeRows(r.db, ctx,
 			`SELECT id, created_at, updated_at, name, type, code, organization_id, parent_id,
-			        COALESCE(path::text, '') as path, COALESCE(version, 0)
+			        COALESCE(path::text, '') as path, COALESCE(version, 0), head_employee_id
 			 FROM org_nodes WHERE (path::text = $1 OR path::text LIKE $1 || '.%')
 			 ORDER BY path::text`, node.Path)
 	}
 
 	return queryNodeRows(r.db, ctx,
 		`SELECT id, created_at, updated_at, name, type, code, organization_id, parent_id,
-		        COALESCE(path::text, '') as path, COALESCE(version, 0)
+		        COALESCE(path::text, '') as path, COALESCE(version, 0), head_employee_id
 		 FROM org_nodes WHERE (path::text = $1 OR path::text LIKE $1 || '.%')
 		   AND nlevel(path::text::ltree) - nlevel($1::ltree) <= $2
 		 ORDER BY path::text`, node.Path, maxDepth)
@@ -332,7 +345,7 @@ func (r *OrgNodeRepo) GetSubtree(ctx context.Context, nodeID uuid.UUID, maxDepth
 func (r *OrgNodeRepo) GetRootNode(ctx context.Context, treeID uuid.UUID) (*OrgNodeRow, error) {
 	return scanNodeRow(r.db.QueryRowContext(ctx,
 		`SELECT id, created_at, updated_at, name, type, code, organization_id, parent_id,
-		        COALESCE(path::text, '') as path, COALESCE(version, 0)
+		        COALESCE(path::text, '') as path, COALESCE(version, 0), head_employee_id
 		 FROM org_nodes WHERE organization_id = $1 AND parent_id IS NULL LIMIT 1`, treeID))
 }
 
@@ -345,11 +358,19 @@ func (r *OrgNodeRepo) CountChildren(ctx context.Context, nodeID uuid.UUID) (int,
 	return count, err
 }
 
+// GetByHeadEmployee returns the node where head_employee_id matches.
+func (r *OrgNodeRepo) GetByHeadEmployee(ctx context.Context, empID uuid.UUID) (*OrgNodeRow, error) {
+	return scanNodeRow(r.db.QueryRowContext(ctx,
+		`SELECT id, created_at, updated_at, name, type, code, organization_id, parent_id,
+		        COALESCE(path::text, '') as path, COALESCE(version, 0), head_employee_id
+		 FROM org_nodes WHERE head_employee_id = $1 LIMIT 1`, empID))
+}
+
 // ListByOrg returns all nodes for an organization, ordered by path.
 func (r *OrgNodeRepo) ListByOrg(ctx context.Context, orgID uuid.UUID) ([]*OrgNodeRow, error) {
 	rows, err := queryNodeRows(r.db, ctx,
 		`SELECT id, created_at, updated_at, name, type, code, organization_id, parent_id,
-		        COALESCE(path::text, '') as path, COALESCE(version, 0)
+		        COALESCE(path::text, '') as path, COALESCE(version, 0), head_employee_id
 		 FROM org_nodes WHERE organization_id = $1
 		 ORDER BY path::text`, orgID)
 	if err != nil {
@@ -405,12 +426,13 @@ func (r *OrgNodeRepo) BeginTx(ctx context.Context, opts *sql.TxOptions) (*sql.Tx
 func scanNodeRow(row *sql.Row) (*OrgNodeRow, error) {
 	n := &OrgNodeRow{}
 	var parentID sql.NullString
+	var headEmployeeID sql.NullString
 	var path sql.NullString
 	var version sql.NullInt64
 
 	err := row.Scan(
 		&n.ID, &n.CreatedAt, &n.UpdatedAt, &n.Name, &n.Type, &n.Code,
-		&n.OrganizationID, &parentID, &path, &version,
+		&n.OrganizationID, &parentID, &path, &version, &headEmployeeID,
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -428,6 +450,10 @@ func scanNodeRow(row *sql.Row) (*OrgNodeRow, error) {
 	if version.Valid {
 		n.Version = int(version.Int64)
 	}
+	if headEmployeeID.Valid {
+		hid, _ := uuid.Parse(headEmployeeID.String)
+		n.HeadEmployeeID = &hid
+	}
 	return n, nil
 }
 
@@ -443,12 +469,13 @@ func queryNodeRows(db *sql.DB, ctx context.Context, query string, args ...interf
 	for rows.Next() {
 		n := &OrgNodeRow{}
 		var parentID sql.NullString
+		var headEmployeeID sql.NullString
 		var path sql.NullString
 		var version sql.NullInt64
 
 		err := rows.Scan(
 			&n.ID, &n.CreatedAt, &n.UpdatedAt, &n.Name, &n.Type, &n.Code,
-			&n.OrganizationID, &parentID, &path, &version,
+			&n.OrganizationID, &parentID, &path, &version, &headEmployeeID,
 		)
 		if err != nil {
 			return nil, err
@@ -462,6 +489,10 @@ func queryNodeRows(db *sql.DB, ctx context.Context, query string, args ...interf
 		}
 		if version.Valid {
 			n.Version = int(version.Int64)
+		}
+		if headEmployeeID.Valid {
+			hid, _ := uuid.Parse(headEmployeeID.String)
+			n.HeadEmployeeID = &hid
 		}
 		results = append(results, n)
 	}

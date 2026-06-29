@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
+	"github.com/sed-evaluacion-desempeno/api/internal/activitylog"
 	"github.com/sed-evaluacion-desempeno/api/internal/employee"
 	"github.com/sed-evaluacion-desempeno/api/internal/evaluation"
 	"github.com/sed-evaluacion-desempeno/api/internal/evaluationprofile"
@@ -344,6 +345,21 @@ func (_u *EmployeeUpdate) AddHeadedDepartment(v ...*OrgNode) *EmployeeUpdate {
 	return _u.AddHeadedDepartmentIDs(ids...)
 }
 
+// AddActivityLogIDs adds the "activity_logs" edge to the ActivityLog entity by IDs.
+func (_u *EmployeeUpdate) AddActivityLogIDs(ids ...uuid.UUID) *EmployeeUpdate {
+	_u.mutation.AddActivityLogIDs(ids...)
+	return _u
+}
+
+// AddActivityLogs adds the "activity_logs" edges to the ActivityLog entity.
+func (_u *EmployeeUpdate) AddActivityLogs(v ...*ActivityLog) *EmployeeUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddActivityLogIDs(ids...)
+}
+
 // Mutation returns the EmployeeMutation object of the builder.
 func (_u *EmployeeUpdate) Mutation() *EmployeeMutation {
 	return _u.mutation
@@ -533,6 +549,27 @@ func (_u *EmployeeUpdate) RemoveHeadedDepartment(v ...*OrgNode) *EmployeeUpdate 
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveHeadedDepartmentIDs(ids...)
+}
+
+// ClearActivityLogs clears all "activity_logs" edges to the ActivityLog entity.
+func (_u *EmployeeUpdate) ClearActivityLogs() *EmployeeUpdate {
+	_u.mutation.ClearActivityLogs()
+	return _u
+}
+
+// RemoveActivityLogIDs removes the "activity_logs" edge to ActivityLog entities by IDs.
+func (_u *EmployeeUpdate) RemoveActivityLogIDs(ids ...uuid.UUID) *EmployeeUpdate {
+	_u.mutation.RemoveActivityLogIDs(ids...)
+	return _u
+}
+
+// RemoveActivityLogs removes "activity_logs" edges to ActivityLog entities.
+func (_u *EmployeeUpdate) RemoveActivityLogs(v ...*ActivityLog) *EmployeeUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveActivityLogIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -1096,6 +1133,51 @@ func (_u *EmployeeUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if _u.mutation.ActivityLogsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   employee.ActivityLogsTable,
+			Columns: []string{employee.ActivityLogsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(activitylog.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedActivityLogsIDs(); len(nodes) > 0 && !_u.mutation.ActivityLogsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   employee.ActivityLogsTable,
+			Columns: []string{employee.ActivityLogsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(activitylog.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ActivityLogsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   employee.ActivityLogsTable,
+			Columns: []string{employee.ActivityLogsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(activitylog.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{employee.Label}
@@ -1423,6 +1505,21 @@ func (_u *EmployeeUpdateOne) AddHeadedDepartment(v ...*OrgNode) *EmployeeUpdateO
 	return _u.AddHeadedDepartmentIDs(ids...)
 }
 
+// AddActivityLogIDs adds the "activity_logs" edge to the ActivityLog entity by IDs.
+func (_u *EmployeeUpdateOne) AddActivityLogIDs(ids ...uuid.UUID) *EmployeeUpdateOne {
+	_u.mutation.AddActivityLogIDs(ids...)
+	return _u
+}
+
+// AddActivityLogs adds the "activity_logs" edges to the ActivityLog entity.
+func (_u *EmployeeUpdateOne) AddActivityLogs(v ...*ActivityLog) *EmployeeUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddActivityLogIDs(ids...)
+}
+
 // Mutation returns the EmployeeMutation object of the builder.
 func (_u *EmployeeUpdateOne) Mutation() *EmployeeMutation {
 	return _u.mutation
@@ -1612,6 +1709,27 @@ func (_u *EmployeeUpdateOne) RemoveHeadedDepartment(v ...*OrgNode) *EmployeeUpda
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveHeadedDepartmentIDs(ids...)
+}
+
+// ClearActivityLogs clears all "activity_logs" edges to the ActivityLog entity.
+func (_u *EmployeeUpdateOne) ClearActivityLogs() *EmployeeUpdateOne {
+	_u.mutation.ClearActivityLogs()
+	return _u
+}
+
+// RemoveActivityLogIDs removes the "activity_logs" edge to ActivityLog entities by IDs.
+func (_u *EmployeeUpdateOne) RemoveActivityLogIDs(ids ...uuid.UUID) *EmployeeUpdateOne {
+	_u.mutation.RemoveActivityLogIDs(ids...)
+	return _u
+}
+
+// RemoveActivityLogs removes "activity_logs" edges to ActivityLog entities.
+func (_u *EmployeeUpdateOne) RemoveActivityLogs(v ...*ActivityLog) *EmployeeUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveActivityLogIDs(ids...)
 }
 
 // Where appends a list predicates to the EmployeeUpdate builder.
@@ -2198,6 +2316,51 @@ func (_u *EmployeeUpdateOne) sqlSave(ctx context.Context) (_node *Employee, err 
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(orgnode.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ActivityLogsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   employee.ActivityLogsTable,
+			Columns: []string{employee.ActivityLogsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(activitylog.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedActivityLogsIDs(); len(nodes) > 0 && !_u.mutation.ActivityLogsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   employee.ActivityLogsTable,
+			Columns: []string{employee.ActivityLogsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(activitylog.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ActivityLogsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   employee.ActivityLogsTable,
+			Columns: []string{employee.ActivityLogsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(activitylog.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

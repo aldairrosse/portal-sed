@@ -23,6 +23,9 @@ type EmployeeRow struct {
 	OrgNodeID      uuid.UUID  `json:"org_node_id"`
 	ManagerID      *uuid.UUID `json:"manager_id,omitempty"`
 	ProfileID      uuid.UUID  `json:"profile_id"`
+	ProfileName    string     `json:"profile_name"`
+	ProfileDescription string `json:"profile_description"`
+	JobTitle       string     `json:"job_title"`
 }
 
 // EmployeeDetailRow extends EmployeeRow with nested org node and manager info.
@@ -59,7 +62,7 @@ func NewEmployeeRepo(client *internal.Client, db *sql.DB) *EmployeeRepo {
 // Returns limit+1 items so caller can determine hasMore.
 func (r *EmployeeRepo) List(ctx context.Context, filter EmployeeFilter) ([]*EmployeeRow, error) {
 	query := `SELECT e.id, e.created_at, e.updated_at, e.first_name, e.last_name, e.email,
-	                 e.employee_number, e.is_active, e.org_node_id, e.manager_id, e.profile_id
+	                 e.employee_number, e.is_active, e.org_node_id, e.manager_id, e.profile_id, e.job_title
 	           FROM employees e`
 	var conditions []string
 	var joins []string
@@ -121,11 +124,78 @@ func (r *EmployeeRepo) List(ctx context.Context, filter EmployeeFilter) ([]*Empl
 	return scanEmployeeRows(r.db, ctx, fullQuery, args...)
 }
 
+// ListWithProfiles returns employees with profile name resolved via JOIN.
+func (r *EmployeeRepo) ListWithProfiles(ctx context.Context, filter EmployeeFilter) ([]*EmployeeRow, error) {
+	query := `SELECT e.id, e.created_at, e.updated_at, e.first_name, e.last_name, e.email,
+	                 e.employee_number, e.is_active, e.org_node_id, e.manager_id, e.profile_id,
+	                 COALESCE(ep.name, '') as profile_name, COALESCE(ep.description, '') as profile_description, e.job_title
+	           FROM employees e
+	           LEFT JOIN evaluation_profiles ep ON e.profile_id = ep.id`
+	var conditions []string
+	var joins []string
+	args := []interface{}{}
+	idx := 1
+
+	if filter.TreeID != nil {
+		joins = append(joins, `JOIN org_nodes on2 ON e.org_node_id = on2.id`)
+		conditions = append(conditions, `on2.organization_id = $`+itoa(idx))
+		args = append(args, *filter.TreeID)
+		idx++
+	}
+	if filter.NodeID != nil {
+		conditions = append(conditions, `e.org_node_id = $`+itoa(idx))
+		args = append(args, *filter.NodeID)
+		idx++
+	}
+	if filter.ProfileID != nil {
+		conditions = append(conditions, `e.profile_id = $`+itoa(idx))
+		args = append(args, *filter.ProfileID)
+		idx++
+	}
+	if filter.IsActive != nil {
+		conditions = append(conditions, `e.is_active = $`+itoa(idx))
+		args = append(args, *filter.IsActive)
+		idx++
+	}
+	if filter.Query != "" {
+		conditions = append(conditions, `(e.first_name ILIKE $`+itoa(idx)+
+			` OR e.last_name ILIKE $`+itoa(idx)+
+			` OR e.email ILIKE $`+itoa(idx)+
+			` OR e.employee_number ILIKE $`+itoa(idx)+`)`)
+		args = append(args, "%"+filter.Query+"%")
+		idx++
+	}
+	if filter.Cursor != "" {
+		cursorID, err := uuid.Parse(filter.Cursor)
+		if err == nil {
+			conditions = append(conditions, `e.id > $`+itoa(idx))
+			args = append(args, cursorID)
+			idx++
+		}
+	}
+
+	limit := filter.Limit
+	if limit <= 0 {
+		limit = 50
+	} else if limit > 200 {
+		limit = 200
+	}
+
+	fullQuery := query + " " + strings.Join(joins, " ")
+	if len(conditions) > 0 {
+		fullQuery += ` WHERE ` + strings.Join(conditions, " AND ")
+	}
+	fullQuery += ` ORDER BY e.last_name, e.first_name, e.id LIMIT $` + itoa(idx)
+	args = append(args, limit+1)
+
+	return scanEmployeeRowsWithProfile(r.db, ctx, fullQuery, args...)
+}
+
 // GetByID retrieves a single employee by ID.
 func (r *EmployeeRepo) GetByID(ctx context.Context, empID uuid.UUID) (*EmployeeRow, error) {
 	return scanEmployeeRow(r.db.QueryRowContext(ctx,
 		`SELECT id, created_at, updated_at, first_name, last_name, email,
-		        employee_number, is_active, org_node_id, manager_id, profile_id
+		        employee_number, is_active, org_node_id, manager_id, profile_id, job_title
 		 FROM employees WHERE id = $1`, empID))
 }
 
@@ -137,7 +207,7 @@ func (r *EmployeeRepo) GetDetailByID(ctx context.Context, empID uuid.UUID) (*Emp
 
 	err := r.db.QueryRowContext(ctx,
 		`SELECT e.id, e.created_at, e.updated_at, e.first_name, e.last_name, e.email,
-		        e.employee_number, e.is_active, e.org_node_id, e.manager_id, e.profile_id,
+		        e.employee_number, e.is_active, e.org_node_id, e.manager_id, e.profile_id, e.job_title,
 		        COALESCE(on2.name, '') as org_node_name,
 		        COALESCE(on2.path::text, '') as org_node_path,
 		        COALESCE(m.first_name || ' ' || m.last_name, '') as manager_name
@@ -149,7 +219,7 @@ func (r *EmployeeRepo) GetDetailByID(ctx context.Context, empID uuid.UUID) (*Emp
 		&detail.ID, &detail.CreatedAt, &detail.UpdatedAt,
 		&detail.FirstName, &detail.LastName, &detail.Email,
 		&detail.EmployeeNumber, &detail.IsActive,
-		&detail.OrgNodeID, &managerID, &detail.ProfileID,
+		&detail.OrgNodeID, &managerID, &detail.ProfileID, &detail.JobTitle,
 		&detail.OrgNodeName, &detail.OrgNodePath, &managerName,
 	)
 	if err != nil {
@@ -189,7 +259,7 @@ func (r *EmployeeRepo) GetByIDs(ctx context.Context, ids []uuid.UUID) ([]*Employ
 
 	return scanEmployeeRows(r.db, ctx,
 		`SELECT id, created_at, updated_at, first_name, last_name, email,
-		        employee_number, is_active, org_node_id, manager_id, profile_id
+		        employee_number, is_active, org_node_id, manager_id, profile_id, job_title
 		 FROM employees WHERE id IN (`+strings.Join(placeholders, ",")+`)`, args...)
 }
 
@@ -197,7 +267,7 @@ func (r *EmployeeRepo) GetByIDs(ctx context.Context, ids []uuid.UUID) ([]*Employ
 // If activeOnly is true, only returns active employees.
 func (r *EmployeeRepo) ListByManager(ctx context.Context, managerID uuid.UUID, activeOnly bool) ([]*EmployeeRow, error) {
 	query := `SELECT id, created_at, updated_at, first_name, last_name, email,
-	                 employee_number, is_active, org_node_id, manager_id, profile_id
+	                 employee_number, is_active, org_node_id, manager_id, profile_id, job_title
 	           FROM employees WHERE manager_id = $1`
 	args := []interface{}{managerID}
 
@@ -221,7 +291,7 @@ func (r *EmployeeRepo) Search(ctx context.Context, query string, limit int) ([]*
 	searchTerm := "%" + query + "%"
 	return scanEmployeeRows(r.db, ctx,
 		`SELECT id, created_at, updated_at, first_name, last_name, email,
-		        employee_number, is_active, org_node_id, manager_id, profile_id
+		        employee_number, is_active, org_node_id, manager_id, profile_id, job_title
 		 FROM employees
 		 WHERE first_name ILIKE $1 OR last_name ILIKE $1 OR email ILIKE $1 OR employee_number ILIKE $1
 		 ORDER BY last_name, first_name
@@ -256,7 +326,7 @@ func scanEmployeeRow(row *sql.Row) (*EmployeeRow, error) {
 		&e.ID, &e.CreatedAt, &e.UpdatedAt,
 		&e.FirstName, &e.LastName, &e.Email,
 		&e.EmployeeNumber, &e.IsActive,
-		&e.OrgNodeID, &managerID, &e.ProfileID,
+		&e.OrgNodeID, &managerID, &e.ProfileID, &e.JobTitle,
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -286,7 +356,36 @@ func scanEmployeeRows(db *sql.DB, ctx context.Context, query string, args ...int
 			&e.ID, &e.CreatedAt, &e.UpdatedAt,
 			&e.FirstName, &e.LastName, &e.Email,
 			&e.EmployeeNumber, &e.IsActive,
-			&e.OrgNodeID, &managerID, &e.ProfileID,
+			&e.OrgNodeID, &managerID, &e.ProfileID, &e.JobTitle,
+		)
+		if err != nil {
+			return nil, err
+		}
+		if managerID.Valid {
+			mid, _ := uuid.Parse(managerID.String)
+			e.ManagerID = &mid
+		}
+		results = append(results, e)
+	}
+	return results, rows.Err()
+}
+
+func scanEmployeeRowsWithProfile(db *sql.DB, ctx context.Context, query string, args ...interface{}) ([]*EmployeeRow, error) {
+	rows, err := db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var results []*EmployeeRow
+	for rows.Next() {
+		e := &EmployeeRow{}
+		var managerID sql.NullString
+		err := rows.Scan(
+			&e.ID, &e.CreatedAt, &e.UpdatedAt,
+			&e.FirstName, &e.LastName, &e.Email,
+			&e.EmployeeNumber, &e.IsActive,
+			&e.OrgNodeID, &managerID, &e.ProfileID, &e.ProfileName, &e.ProfileDescription, &e.JobTitle,
 		)
 		if err != nil {
 			return nil, err

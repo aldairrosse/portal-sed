@@ -9,7 +9,6 @@ import (
 
 	sqlmock "github.com/DATA-DOG/go-sqlmock"
 	"github.com/google/uuid"
-	"github.com/sed-evaluacion-desempeno/api/internal/pkg/errors"
 	repo "github.com/sed-evaluacion-desempeno/api/internal/repository/org"
 	svc "github.com/sed-evaluacion-desempeno/api/internal/service/org"
 	"github.com/stretchr/testify/assert"
@@ -32,19 +31,14 @@ func newOrgNodeRepo(db *sql.DB) *repo.OrgNodeRepo {
 	return repo.NewOrgNodeRepo(nil, db)
 }
 
-func newScopeRepo(db *sql.DB) *repo.EvaluatorScopeRepo {
-	return repo.NewEvaluatorScopeRepo(nil, db)
-}
-
 func TestEvaluateeService_GetMyEvaluatees(t *testing.T) {
 	t.Parallel()
 
 	db, mock := newMockDB(t)
 	empRepo := newEmployeeRepo(db)
 	nodeRepo := newOrgNodeRepo(db)
-	scopeRepo := newScopeRepo(db)
 
-	service := svc.NewEvaluateeService(empRepo, nodeRepo, scopeRepo, nil)
+	service := svc.NewEvaluateeService(empRepo, nodeRepo, nil)
 
 	evaluatorID := uuid.MustParse("11111111-1111-1111-1111-111111111111")
 	reportID := uuid.MustParse("22222222-2222-2222-2222-222222222222")
@@ -81,9 +75,8 @@ func TestEvaluateeService_GetChainOfCommand_DeepTree(t *testing.T) {
 	db, mock := newMockDB(t)
 	empRepo := newEmployeeRepo(db)
 	nodeRepo := newOrgNodeRepo(db)
-	scopeRepo := newScopeRepo(db)
 
-	service := svc.NewEvaluateeService(empRepo, nodeRepo, scopeRepo, nil)
+	service := svc.NewEvaluateeService(empRepo, nodeRepo, nil)
 
 	empID := uuid.MustParse("55555555-5555-5555-5555-555555555555")
 	nodeID := uuid.MustParse("66666666-6666-6666-6666-666666666666")
@@ -137,9 +130,8 @@ func TestEvaluateeService_GetChainOfCommand_ShallowTree(t *testing.T) {
 	db, mock := newMockDB(t)
 	empRepo := newEmployeeRepo(db)
 	nodeRepo := newOrgNodeRepo(db)
-	scopeRepo := newScopeRepo(db)
 
-	service := svc.NewEvaluateeService(empRepo, nodeRepo, scopeRepo, nil)
+	service := svc.NewEvaluateeService(empRepo, nodeRepo, nil)
 
 	empID := uuid.MustParse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")
 	nodeID := uuid.MustParse("cccccccc-cccc-cccc-cccc-cccccccccccc")
@@ -170,59 +162,14 @@ func TestEvaluateeService_GetChainOfCommand_ShallowTree(t *testing.T) {
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestEvaluateeService_ResolveEvaluator_DirectManager(t *testing.T) {
-	t.Parallel()
-
-	db, mock := newMockDB(t)
-	empRepo := newEmployeeRepo(db)
-	nodeRepo := newOrgNodeRepo(db)
-	scopeRepo := newScopeRepo(db)
-
-	service := svc.NewEvaluatorService(empRepo, nodeRepo, scopeRepo, nil)
-
-	evaluateeID := uuid.MustParse("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee")
-	managerID := uuid.MustParse("ffffffff-ffff-ffff-ffff-ffffffffffff")
-	orgNodeID := uuid.MustParse("11111111-2222-3333-4444-555555555555")
-	profileID := uuid.MustParse("66666666-7777-8888-9999-000000000000")
-	now := time.Now()
-
-	// Expect GetManager (COALESCE query)
-	mock.ExpectQuery("SELECT COALESCE\\(manager_id, '00000000-0000-0000-0000-000000000000'\\) FROM employees WHERE id = \\$1").
-		WithArgs(evaluateeID).
-		WillReturnRows(sqlmock.NewRows([]string{"manager_id"}).AddRow(managerID))
-
-	// Expect GetByID for manager
-	mock.ExpectQuery("SELECT id, created_at, updated_at, first_name, last_name, email, employee_number, is_active, org_node_id, manager_id, profile_id FROM employees WHERE id = \\$1").
-		WithArgs(managerID).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "created_at", "updated_at", "first_name", "last_name", "email", "employee_number", "is_active", "org_node_id", "manager_id", "profile_id"}).
-			AddRow(managerID, now, now, "Eve", "Manager", "eve@example.com", "E010", true, orgNodeID, nil, profileID))
-
-	// Expect GetDetailByID for manager
-	mock.ExpectQuery("SELECT e\\.id, e\\.created_at, e\\.updated_at, e\\.first_name, e\\.last_name, e\\.email, e\\.employee_number, e\\.is_active, e\\.org_node_id, e\\.manager_id, e\\.profile_id, COALESCE\\(on2\\.name, ''\\) as org_node_name, COALESCE\\(on2\\.path::text, ''\\) as org_node_path, COALESCE\\(m\\.first_name \\|\\| ' ' \\|\\| m\\.last_name, ''\\) as manager_name").
-		WithArgs(managerID).
-		WillReturnRows(sqlmock.NewRows([]string{
-			"id", "created_at", "updated_at", "first_name", "last_name", "email", "employee_number", "is_active",
-			"org_node_id", "manager_id", "profile_id", "org_node_name", "org_node_path", "manager_name",
-		}).AddRow(managerID, now, now, "Eve", "Manager", "eve@example.com", "E010", true, orgNodeID, nil, profileID, "Engineering", "1.2.3", ""))
-
-	resp, err := service.ResolveEvaluator(context.Background(), evaluateeID.String())
-	require.NoError(t, err)
-	assert.Equal(t, managerID.String(), resp.Data.ID)
-	assert.Equal(t, "Eve", resp.Data.FirstName)
-	assert.Equal(t, orgNodeID.String(), resp.Data.OrgNodeID)
-
-	assert.NoError(t, mock.ExpectationsWereMet())
-}
-
 func TestEvaluateeService_ConcurrentEvaluateeResolution(t *testing.T) {
 	t.Parallel()
 
 	db, mock := newMockDB(t)
 	empRepo := newEmployeeRepo(db)
 	nodeRepo := newOrgNodeRepo(db)
-	scopeRepo := newScopeRepo(db)
 
-	service := svc.NewEvaluateeService(empRepo, nodeRepo, scopeRepo, nil)
+	service := svc.NewEvaluateeService(empRepo, nodeRepo, nil)
 
 	evaluatorID := uuid.MustParse("77777777-8888-9999-aaaa-bbbbbbbbbbbb")
 	reportID := uuid.MustParse("cccccccc-dddd-eeee-ffff-000000000000")
@@ -282,9 +229,8 @@ func TestEvaluateeService_GetManager(t *testing.T) {
 	db, mock := newMockDB(t)
 	empRepo := newEmployeeRepo(db)
 	nodeRepo := newOrgNodeRepo(db)
-	scopeRepo := newScopeRepo(db)
 
-	service := svc.NewEvaluateeService(empRepo, nodeRepo, scopeRepo, nil)
+	service := svc.NewEvaluateeService(empRepo, nodeRepo, nil)
 
 	empID := uuid.MustParse("12345678-1234-1234-1234-123456789abc")
 	managerID := uuid.MustParse("abcdef12-3456-7890-abcd-ef1234567890")
@@ -322,9 +268,8 @@ func TestEvaluateeService_BatchLookup(t *testing.T) {
 	db, mock := newMockDB(t)
 	empRepo := newEmployeeRepo(db)
 	nodeRepo := newOrgNodeRepo(db)
-	scopeRepo := newScopeRepo(db)
 
-	service := svc.NewEvaluateeService(empRepo, nodeRepo, scopeRepo, nil)
+	service := svc.NewEvaluateeService(empRepo, nodeRepo, nil)
 
 	id1 := uuid.MustParse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
 	id2 := uuid.MustParse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")
@@ -347,101 +292,4 @@ func TestEvaluateeService_BatchLookup(t *testing.T) {
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestEvaluateeService_GetEvaluatorScope_WithCycle(t *testing.T) {
-	t.Parallel()
 
-	db, mock := newMockDB(t)
-	empRepo := newEmployeeRepo(db)
-	nodeRepo := newOrgNodeRepo(db)
-	scopeRepo := newScopeRepo(db)
-
-	service := svc.NewEvaluatorService(empRepo, nodeRepo, scopeRepo, nil)
-
-	evaluatorID := uuid.MustParse("11111111-2222-3333-4444-555555555555")
-	cycleID := uuid.MustParse("66666666-7777-8888-9999-000000000000")
-	now := time.Now()
-	scopeData := `{"orgNodeIds":["node-1","node-2"],"employeeIds":["emp-1","emp-2","emp-3"]}`
-
-	mock.ExpectQuery("SELECT id, created_at, updated_at, first_name, last_name, email, employee_number, is_active, org_node_id, manager_id, profile_id FROM employees WHERE id = \\$1").
-		WithArgs(evaluatorID).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "created_at", "updated_at", "first_name", "last_name", "email", "employee_number", "is_active", "org_node_id", "manager_id", "profile_id"}).
-			AddRow(evaluatorID, now, now, "Ivy", "Ives", "ivy@example.com", "E200", true, uuid.New(), nil, uuid.New()))
-
-	mock.ExpectQuery("SELECT id, created_at, updated_at, evaluator_id, cycle_id, scope_type, scope_data FROM evaluator_scopes WHERE evaluator_id = \\$1 AND cycle_id = \\$2").
-		WithArgs(evaluatorID, cycleID).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "created_at", "updated_at", "evaluator_id", "cycle_id", "scope_type", "scope_data"}).
-			AddRow(uuid.New(), now, now, evaluatorID, cycleID, "department", scopeData))
-
-	resp, err := service.GetEvaluatorScope(context.Background(), evaluatorID.String(), cycleID.String())
-	require.NoError(t, err)
-	assert.Equal(t, evaluatorID.String(), resp.EvaluatorID)
-	assert.Equal(t, cycleID.String(), resp.CycleID)
-	assert.Equal(t, "department", resp.ScopeType)
-	assert.Equal(t, 3, resp.EvaluateeCount)
-	assert.Equal(t, []string{"node-1", "node-2"}, resp.ScopeData.OrgNodeIDs)
-	assert.Equal(t, []string{"emp-1", "emp-2", "emp-3"}, resp.ScopeData.EmployeeIDs)
-
-	assert.NoError(t, mock.ExpectationsWereMet())
-}
-
-func TestEvaluateeService_GetEvaluatorScope_WithoutCycle(t *testing.T) {
-	t.Parallel()
-
-	db, mock := newMockDB(t)
-	empRepo := newEmployeeRepo(db)
-	nodeRepo := newOrgNodeRepo(db)
-	scopeRepo := newScopeRepo(db)
-
-	service := svc.NewEvaluatorService(empRepo, nodeRepo, scopeRepo, nil)
-
-	evaluatorID := uuid.MustParse("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee")
-	now := time.Now()
-	scopeData := `{"employeeIds":["emp-1"],"orgNodeIds":[]}`
-
-	mock.ExpectQuery("SELECT id, created_at, updated_at, first_name, last_name, email, employee_number, is_active, org_node_id, manager_id, profile_id FROM employees WHERE id = \\$1").
-		WithArgs(evaluatorID).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "created_at", "updated_at", "first_name", "last_name", "email", "employee_number", "is_active", "org_node_id", "manager_id", "profile_id"}).
-			AddRow(evaluatorID, now, now, "Jack", "Jill", "jack@example.com", "E300", true, uuid.New(), nil, uuid.New()))
-
-	mock.ExpectQuery("SELECT id, created_at, updated_at, evaluator_id, cycle_id, scope_type, scope_data FROM evaluator_scopes WHERE evaluator_id = \\$1").
-		WithArgs(evaluatorID).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "created_at", "updated_at", "evaluator_id", "cycle_id", "scope_type", "scope_data"}).
-			AddRow(uuid.New(), now, now, evaluatorID, nil, "team", scopeData))
-
-	resp, err := service.GetEvaluatorScope(context.Background(), evaluatorID.String(), "")
-	require.NoError(t, err)
-	assert.Equal(t, evaluatorID.String(), resp.EvaluatorID)
-	assert.Empty(t, resp.CycleID)
-	assert.Equal(t, "team", resp.ScopeType)
-
-	assert.NoError(t, mock.ExpectationsWereMet())
-}
-
-func TestEvaluateeService_GetEvaluatorScope_NotFound(t *testing.T) {
-	t.Parallel()
-
-	db, mock := newMockDB(t)
-	empRepo := newEmployeeRepo(db)
-	nodeRepo := newOrgNodeRepo(db)
-	scopeRepo := newScopeRepo(db)
-
-	service := svc.NewEvaluatorService(empRepo, nodeRepo, scopeRepo, nil)
-
-	evaluatorID := uuid.MustParse("11111111-1111-1111-1111-111111111111")
-	now := time.Now()
-
-	mock.ExpectQuery("SELECT id, created_at, updated_at, first_name, last_name, email, employee_number, is_active, org_node_id, manager_id, profile_id FROM employees WHERE id = \\$1").
-		WithArgs(evaluatorID).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "created_at", "updated_at", "first_name", "last_name", "email", "employee_number", "is_active", "org_node_id", "manager_id", "profile_id"}).
-			AddRow(evaluatorID, now, now, "Ken", "Kyle", "ken@example.com", "E400", true, uuid.New(), nil, uuid.New()))
-
-	mock.ExpectQuery("SELECT id, created_at, updated_at, evaluator_id, cycle_id, scope_type, scope_data FROM evaluator_scopes WHERE evaluator_id = \\$1").
-		WithArgs(evaluatorID).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "created_at", "updated_at", "evaluator_id", "cycle_id", "scope_type", "scope_data"}))
-
-	_, err := service.GetEvaluatorScope(context.Background(), evaluatorID.String(), "")
-	require.Error(t, err)
-	assert.Equal(t, errors.ErrScopeNotFound, err)
-
-	assert.NoError(t, mock.ExpectationsWereMet())
-}

@@ -98,6 +98,43 @@ func FilterDepth(nodes []FlatNode, maxDepth int) []FlatNode {
 	return filtered
 }
 
+// FilterByAncestor returns only nodes that are the ancestorID itself or descendants of it.
+// Uses the ParentID links to walk the tree and collect the subtree.
+func FilterByAncestor(nodes []FlatNode, ancestorID string) []FlatNode {
+	byID := make(map[string]*FlatNode, len(nodes))
+	for i := range nodes {
+		byID[nodes[i].ID] = &nodes[i]
+	}
+
+	// BFS from ancestorID
+	result := make([]FlatNode, 0)
+	visited := make(map[string]bool)
+	queue := []string{ancestorID}
+
+	for len(queue) > 0 {
+		currentID := queue[0]
+		queue = queue[1:]
+
+		if visited[currentID] {
+			continue
+		}
+		visited[currentID] = true
+
+		if n, ok := byID[currentID]; ok {
+			result = append(result, *n)
+		}
+
+		// Find children of currentID
+		for _, n := range nodes {
+			if n.ParentID == currentID && !visited[n.ID] {
+				queue = append(queue, n.ID)
+			}
+		}
+	}
+
+	return result
+}
+
 // PathString concatenates a parent path and a node ID to produce an ltree-style path.
 // Parent path "1.2" + node ID "3" → "1.2.3"
 // Empty parent path + node ID "1" → "1"

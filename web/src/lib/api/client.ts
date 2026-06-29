@@ -3,8 +3,10 @@ import type { paths as AuthPaths } from './schemas/auth.d.ts';
 import type { paths as CyclePaths } from './schemas/cycle.d.ts';
 import type { paths as GoalsPaths } from './schemas/goals.d.ts';
 import type { paths as CompetencyPaths } from './schemas/competency.d.ts';
+import type { paths as OrgHierarchyPaths } from './schemas/org-hierarchy.d.ts';
+import type { paths as ActivityLogsPaths } from './schemas/activity-logs.d.ts';
 
-type AppPaths = AuthPaths & CyclePaths & GoalsPaths & CompetencyPaths;
+type AppPaths = AuthPaths & CyclePaths & GoalsPaths & CompetencyPaths & OrgHierarchyPaths & ActivityLogsPaths;
 
 export const baseURL: string = import.meta.env.VITE_API_URL ?? '/api/v1';
 

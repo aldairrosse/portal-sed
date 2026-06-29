@@ -63,6 +63,8 @@ const (
 	EdgeNineBoxEntries = "nine_box_entries"
 	// EdgeHeadedDepartment holds the string denoting the headed_department edge name in mutations.
 	EdgeHeadedDepartment = "headed_department"
+	// EdgeActivityLogs holds the string denoting the activity_logs edge name in mutations.
+	EdgeActivityLogs = "activity_logs"
 	// Table holds the table name of the employee in the database.
 	Table = "employees"
 	// OrgNodeTable is the table that holds the org_node relation/edge.
@@ -136,6 +138,13 @@ const (
 	HeadedDepartmentInverseTable = "org_nodes"
 	// HeadedDepartmentColumn is the table column denoting the headed_department relation/edge.
 	HeadedDepartmentColumn = "head_employee_id"
+	// ActivityLogsTable is the table that holds the activity_logs relation/edge.
+	ActivityLogsTable = "activity_logs"
+	// ActivityLogsInverseTable is the table name for the ActivityLog entity.
+	// It exists in this package in order to avoid circular dependency with the "activitylog" package.
+	ActivityLogsInverseTable = "activity_logs"
+	// ActivityLogsColumn is the table column denoting the activity_logs relation/edge.
+	ActivityLogsColumn = "employee_id"
 )
 
 // Columns holds all SQL columns for employee fields.
@@ -394,6 +403,20 @@ func ByHeadedDepartment(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption 
 		sqlgraph.OrderByNeighborTerms(s, newHeadedDepartmentStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByActivityLogsCount orders the results by activity_logs count.
+func ByActivityLogsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newActivityLogsStep(), opts...)
+	}
+}
+
+// ByActivityLogs orders the results by activity_logs terms.
+func ByActivityLogs(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newActivityLogsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newOrgNodeStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -469,5 +492,12 @@ func newHeadedDepartmentStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(HeadedDepartmentInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, true, HeadedDepartmentTable, HeadedDepartmentColumn),
+	)
+}
+func newActivityLogsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ActivityLogsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, ActivityLogsTable, ActivityLogsColumn),
 	)
 }

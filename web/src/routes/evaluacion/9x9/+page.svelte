@@ -6,14 +6,12 @@
 		getAllEntries,
 		getQuadrantDefs,
 		getQuadrantDef,
-		getCurrentCycleId,
-		getCurrentPhaseId,
 		isLoading,
 		getError,
 		reload
 	} from '$lib/stores/nineBoxStore.svelte';
 	import { getChildren, getDescendants } from '$lib/stores/orgHierarchyStore.svelte';
-	import { type EvaluationProfile, CYCLE_PHASES } from '$lib/types/evaluation';
+	import { type EvaluationProfile } from '$lib/types/evaluation';
 	import type { NineBoxEntry, NineBoxTier } from '$lib/types/nine-box';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
 	import PageSkeleton from '$lib/components/ui/PageSkeleton.svelte';

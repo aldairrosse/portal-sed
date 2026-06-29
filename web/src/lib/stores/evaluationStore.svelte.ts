@@ -3,9 +3,6 @@ import { getActivePhase } from '$lib/api/cycle.svelte';
 import { getSession } from '$lib/api/session.svelte';
 import { client } from '$lib/api/client';
 
-import selfEvaluationsData from '$lib/fixtures/evaluations/self-evaluations.json';
-import goalClosuresData from '$lib/fixtures/evaluations/goal-closures.json';
-import rhEvaluationsData from '$lib/fixtures/evaluations/rh-evaluations.json';
 
 // ─── Internal data shape ──────────────────────────────────────────────────────
 
@@ -28,36 +25,6 @@ export function isLoading(): boolean {
 /** @returns the current error message, or null if no error. */
 export function getError(): string | null {
 	return error;
-}
-
-// ─── Fixture loaders ──────────────────────────────────────────────────────────
-
-function mergeRHEvaluations(
-	selfRatings: CompetencyRating[],
-	rhRatings: CompetencyRating[]
-): CompetencyRating[] {
-	const merged = [...selfRatings];
-	for (const rh of rhRatings) {
-		const idx = merged.findIndex(
-			(cr) => cr.employeeId === rh.employeeId && cr.competencyId === rh.competencyId
-		);
-		if (idx >= 0) {
-			merged[idx] = { ...merged[idx], rhRating: rh.rhRating, rhComment: rh.rhComment };
-		} else {
-			merged.push(structuredClone(rh));
-		}
-	}
-	return merged;
-}
-
-function loadFixtures(): StoreData {
-	const selfRatings = structuredClone(selfEvaluationsData as CompetencyRating[]);
-	const rhRatings = structuredClone(rhEvaluationsData as CompetencyRating[]);
-
-	return {
-		competencyRatings: mergeRHEvaluations(selfRatings, rhRatings),
-		goalClosures: structuredClone(goalClosuresData as GoalClosure[])
-	};
 }
 
 // ─── Normalize API response → StoreData ───────────────────────────────────────
@@ -114,12 +81,6 @@ function isFinAnio(): boolean {
 export async function load(): Promise<void> {
 	loading = true;
 	error = null;
-
-	if (import.meta.env.DEV && !import.meta.env.VITE_USE_API) {
-		data = loadFixtures();
-		loading = false;
-		return;
-	}
 
 	try {
 		const empId = getSession().user?.employeeId;
@@ -207,14 +168,6 @@ export async function rateCompetency(
 ): Promise<void> {
 	if (!isFinAnio()) return;
 
-	if (import.meta.env.DEV && !import.meta.env.VITE_USE_API) {
-		data = {
-			...data!,
-			competencyRatings: applyRating(data?.competencyRatings ?? [], employeeId, competencyId, level, comment, 'self')
-		};
-		return;
-	}
-
 	const empId = getSession().user?.employeeId;
 	if (!empId) return;
 
@@ -255,45 +208,6 @@ export async function closeGoal(
 ): Promise<void> {
 	if (!isFinAnio()) return;
 
-	if (import.meta.env.DEV && !import.meta.env.VITE_USE_API) {
-		const existing = (data?.goalClosures ?? []).find(
-			(gc) => gc.employeeId === employeeId && gc.goalId === goalId
-		);
-		if (existing) {
-			data = {
-				...data!,
-				goalClosures: (data?.goalClosures ?? []).map((gc) =>
-					gc.employeeId === employeeId && gc.goalId === goalId
-						? {
-								...gc,
-								finalProgress,
-								selfAssessment,
-								// eslint-disable-next-line svelte/prefer-svelte-reactivity
-								closedAt: gc.closedAt ?? new Date().toISOString()
-							}
-						: gc
-				)
-			};
-		} else {
-			data = {
-				...data!,
-				goalClosures: [
-					...(data?.goalClosures ?? []),
-					{
-						id: `gc-${employeeId}-${goalId}-${Date.now()}`,
-						employeeId,
-						goalId,
-						finalProgress,
-						selfAssessment,
-						// eslint-disable-next-line svelte/prefer-svelte-reactivity
-						closedAt: new Date().toISOString()
-					}
-				]
-			};
-		}
-		return;
-	}
-
 	const empId = getSession().user?.employeeId;
 	if (!empId) return;
 
@@ -327,14 +241,6 @@ export async function rhRateCompetency(
 	comment?: string
 ): Promise<void> {
 	if (!isFinAnio()) return;
-
-	if (import.meta.env.DEV && !import.meta.env.VITE_USE_API) {
-		data = {
-			...data!,
-			competencyRatings: applyRating(data?.competencyRatings ?? [], employeeId, competencyId, level, comment, 'rh')
-		};
-		return;
-	}
 
 	const empId = getSession().user?.employeeId;
 	if (!empId) return;
@@ -373,18 +279,6 @@ export async function rhAssessGoal(
 	rhAssessment: string
 ): Promise<void> {
 	if (!isFinAnio()) return;
-
-	if (import.meta.env.DEV && !import.meta.env.VITE_USE_API) {
-		data = {
-			...data!,
-			goalClosures: (data?.goalClosures ?? []).map((gc) =>
-				gc.employeeId === employeeId && gc.goalId === goalId
-					? { ...gc, rhAssessment }
-					: gc
-			)
-		};
-		return;
-	}
 
 	const empId = getSession().user?.employeeId;
 	if (!empId) return;
@@ -430,8 +324,6 @@ export async function addManagerComment(
  * In production it calls POST /evaluations/{id}/self-evaluation.
  */
 export async function submitSelfEvaluation(): Promise<void> {
-	if (import.meta.env.DEV && !import.meta.env.VITE_USE_API) return;
-
 	const empId = getSession().user?.employeeId;
 	if (!empId) return;
 
@@ -466,8 +358,6 @@ export async function submitSelfEvaluation(): Promise<void> {
  * In production it calls POST /evaluations/{id}/rh-evaluation.
  */
 export async function submitRHEvaluation(employeeId: string): Promise<void> {
-	if (import.meta.env.DEV && !import.meta.env.VITE_USE_API) return;
-
 	const empId = getSession().user?.employeeId;
 	if (!empId) return;
 
@@ -495,8 +385,6 @@ export async function submitRHEvaluation(employeeId: string): Promise<void> {
  * In production it calls POST /evaluations/{id}/finalize.
  */
 export async function finalizeEvaluation(reason?: string): Promise<void> {
-	if (import.meta.env.DEV && !import.meta.env.VITE_USE_API) return;
-
 	const empId = getSession().user?.employeeId;
 	if (!empId) return;
 

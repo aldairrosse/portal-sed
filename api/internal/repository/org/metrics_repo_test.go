@@ -24,12 +24,12 @@ func TestMetricsRepo_GetDirectEmployees_Success(t *testing.T) {
 	profileID := uuid.MustParse("cccccccc-cccc-cccc-cccc-cccccccccccc")
 	now := time.Now()
 
-	mock.ExpectQuery("SELECT id, created_at, updated_at, first_name, last_name, email, employee_number, is_active, org_node_id, manager_id, profile_id FROM employees WHERE org_node_id = \\$1 AND is_active = true ORDER BY last_name, first_name").
+	mock.ExpectQuery("SELECT e\\.id, e\\.created_at, e\\.updated_at, e\\.first_name, e\\.last_name, e\\.email, e\\.employee_number, e\\.is_active, e\\.org_node_id, e\\.manager_id, e\\.profile_id, COALESCE\\(ep\\.name, ''\\) as profile_name, COALESCE\\(ep\\.description, ''\\) as profile_description, e\\.job_title FROM employees e LEFT JOIN evaluation_profiles ep ON e\\.profile_id = ep\\.id WHERE e\\.org_node_id = \\$1 AND e\\.is_active = true ORDER BY e\\.last_name, e\\.first_name").
 		WithArgs(nodeID).
 		WillReturnRows(sqlmock.NewRows([]string{
 			"id", "created_at", "updated_at", "first_name", "last_name", "email",
-			"employee_number", "is_active", "org_node_id", "manager_id", "profile_id",
-		}).AddRow(empID, now, now, "Alice", "Smith", "alice@example.com", "E001", true, nodeID, nil, profileID))
+			"employee_number", "is_active", "org_node_id", "manager_id", "profile_id", "profile_name", "profile_description", "job_title",
+		}).AddRow(empID, now, now, "Alice", "Smith", "alice@example.com", "E001", true, nodeID, nil, profileID, "colaborador", "Colaborador general", "Developer"))
 
 	employees, err := r.GetDirectEmployees(context.Background(), nodeID)
 	require.NoError(t, err)
@@ -50,11 +50,11 @@ func TestMetricsRepo_GetDirectEmployees_NoEmployees(t *testing.T) {
 
 	nodeID := uuid.MustParse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
 
-	mock.ExpectQuery("SELECT id, created_at, updated_at, first_name, last_name, email, employee_number, is_active, org_node_id, manager_id, profile_id FROM employees WHERE org_node_id = \\$1 AND is_active = true ORDER BY last_name, first_name").
+	mock.ExpectQuery("SELECT e\\.id, e\\.created_at, e\\.updated_at, e\\.first_name, e\\.last_name, e\\.email, e\\.employee_number, e\\.is_active, e\\.org_node_id, e\\.manager_id, e\\.profile_id, COALESCE\\(ep\\.name, ''\\) as profile_name, COALESCE\\(ep\\.description, ''\\) as profile_description, e\\.job_title FROM employees e LEFT JOIN evaluation_profiles ep ON e\\.profile_id = ep\\.id WHERE e\\.org_node_id = \\$1 AND e\\.is_active = true ORDER BY e\\.last_name, e\\.first_name").
 		WithArgs(nodeID).
 		WillReturnRows(sqlmock.NewRows([]string{
 			"id", "created_at", "updated_at", "first_name", "last_name", "email",
-			"employee_number", "is_active", "org_node_id", "manager_id", "profile_id",
+			"employee_number", "is_active", "org_node_id", "manager_id", "profile_id", "profile_name", "profile_description", "job_title",
 		}))
 
 	employees, err := r.GetDirectEmployees(context.Background(), nodeID)
@@ -209,12 +209,12 @@ func TestMetricsRepo_ConcurrentQueries(t *testing.T) {
 
 	const workers = 10
 	for i := 0; i < workers; i++ {
-		mock.ExpectQuery("SELECT id, created_at, updated_at, first_name, last_name, email, employee_number, is_active, org_node_id, manager_id, profile_id FROM employees WHERE org_node_id = \\$1 AND is_active = true ORDER BY last_name, first_name").
+		mock.ExpectQuery("SELECT e\\.id, e\\.created_at, e\\.updated_at, e\\.first_name, e\\.last_name, e\\.email, e\\.employee_number, e\\.is_active, e\\.org_node_id, e\\.manager_id, e\\.profile_id, COALESCE\\(ep\\.name, ''\\) as profile_name, COALESCE\\(ep\\.description, ''\\) as profile_description, e\\.job_title FROM employees e LEFT JOIN evaluation_profiles ep ON e\\.profile_id = ep\\.id WHERE e\\.org_node_id = \\$1 AND e\\.is_active = true ORDER BY e\\.last_name, e\\.first_name").
 			WithArgs(nodeID).
 			WillReturnRows(sqlmock.NewRows([]string{
 				"id", "created_at", "updated_at", "first_name", "last_name", "email",
-				"employee_number", "is_active", "org_node_id", "manager_id", "profile_id",
-			}).AddRow(empID, now, now, "Concurrent", "User", "cu@example.com", "E999", true, nodeID, nil, profileID))
+				"employee_number", "is_active", "org_node_id", "manager_id", "profile_id", "profile_name", "profile_description", "job_title",
+			}).AddRow(empID, now, now, "Concurrent", "User", "cu@example.com", "E999", true, nodeID, nil, profileID, "worker", "Test worker", "Engineer"))
 	}
 
 	var wg sync.WaitGroup

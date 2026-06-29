@@ -10,6 +10,7 @@
 		depth: number;
 		initialExpanded?: boolean;
 		initialExpandedIds?: string[];
+		viewType?: 'users' | 'departments';
 	}
 
 	let {
@@ -19,19 +20,35 @@
 		maxDepth = 99,
 		depth,
 		initialExpanded = false,
-		initialExpandedIds = []
+		initialExpandedIds = [],
+		viewType = 'users'
 	}: Props = $props();
 
-	const isExpandable = $derived(node.children.length > 0 && depth < maxDepth);
+	const children = $derived(node.children ?? []);
+	const isExpandable = $derived(children.length > 0 && depth < maxDepth);
 	const isSelected = $derived(selectedNodeId === node.id);
 
 	// Local state to persist open/close across re-renders
-	let isOpen = $state(initialExpanded);
+	let isOpen = $derived(initialExpanded)
 
 	function handleSummaryClick(_e: MouseEvent) {
 		// Toggle is handled natively by <details>
 		// Just select the node
 		onNodeSelect(node);
+	}
+
+	function nodeTitle(node: OrgNode) {
+		if (viewType === 'users') {
+			return node.headEmployee ? `${node.headEmployee.firstName} ${node.headEmployee.lastName}` : node.name;
+		}
+		return node.name;
+	}
+
+	function nodeSubtitle(node: OrgNode) {
+		if (viewType === 'users') {
+			return node.headEmployee?.jobTitle ?? '';
+		}
+		return '';
 	}
 </script>
 
@@ -44,15 +61,18 @@
 				onclick={handleSummaryClick}
 			>
 				<div class="flex items-center gap-2 w-full text-left">
-					<span class="font-medium">{node.name}</span>
-					<span class="badge badge-ghost badge-xs capitalize">
-						{node.profileId.replace('-', ' ')}
+					<span class="font-medium flex-grow">
+						{nodeTitle(node)}
+					</span>
+					<span class="truncate text-xs text-base-content/40 pr-2">
+						{nodeSubtitle(node)}
 					</span>
 				</div>
 			</summary>
 			<ul>
-				{#each node.children as child (child.id)}
+				{#each children as child (child.id)}
 					<TreeNode
+						{viewType}
 						node={child}
 						{onNodeSelect}
 						{selectedNodeId}
@@ -74,9 +94,11 @@
 				onNodeSelect(node);
 			}}
 		>
-			<span class="font-medium">{node.name}</span>
-			<span class="badge badge-ghost badge-xs capitalize">
-				{node.profileId.replace('-', ' ')}
+			<span class="font-medium">
+				{nodeTitle(node)}
+			</span>
+			<span class="truncate text-sm text-base-content/40">
+				{nodeSubtitle(node)}
 			</span>
 		</button>
 	{/if}

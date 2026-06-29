@@ -51,12 +51,11 @@ func writeError(w http.ResponseWriter, err error) {
 
 // OrgHandler holds HTTP handlers for all org hierarchy operations.
 type OrgHandler struct {
-	treeSvc       svc.OrgTreeService
-	nodeSvc       svc.OrgNodeService
-	employeeSvc   svc.EmployeeService
-	evaluateeSvc  svc.EvaluateeService
-	evaluatorSvc  svc.EvaluatorService
-	metricsSvc    svc.MetricsService
+	treeSvc      svc.OrgTreeService
+	nodeSvc      svc.OrgNodeService
+	employeeSvc  svc.EmployeeService
+	evaluateeSvc svc.EvaluateeService
+	metricsSvc   svc.MetricsService
 }
 
 // NewOrgHandler creates a new OrgHandler.
@@ -65,7 +64,6 @@ func NewOrgHandler(
 	nodeSvc svc.OrgNodeService,
 	employeeSvc svc.EmployeeService,
 	evaluateeSvc svc.EvaluateeService,
-	evaluatorSvc svc.EvaluatorService,
 	metricsSvc svc.MetricsService,
 ) *OrgHandler {
 	return &OrgHandler{
@@ -73,7 +71,6 @@ func NewOrgHandler(
 		nodeSvc:      nodeSvc,
 		employeeSvc:  employeeSvc,
 		evaluateeSvc: evaluateeSvc,
-		evaluatorSvc: evaluatorSvc,
 		metricsSvc:   metricsSvc,
 	}
 }
@@ -142,7 +139,29 @@ func (h *OrgHandler) GetOrgTreeNodes(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	result, err := h.treeSvc.GetTreeNodes(r.Context(), treeID, format, depth)
+	// Parse optional evaluatorId — malformed UUID → 400, absent → nil
+	var evaluatorID *uuid.UUID
+	if eid := r.URL.Query().Get("evaluatorId"); eid != "" {
+		parsed, err := uuid.Parse(eid)
+		if err != nil {
+			writeError(w, errors.NewDomainError(errors.InvalidRequest, "evaluatorId must be a valid UUID v4", err))
+			return
+		}
+		evaluatorID = &parsed
+	}
+
+	// Parse optional headEmployeeId — find node headed by this employee
+	var headEmployeeID *uuid.UUID
+	if hid := r.URL.Query().Get("headEmployeeId"); hid != "" {
+		parsed, err := uuid.Parse(hid)
+		if err != nil {
+			writeError(w, errors.NewDomainError(errors.InvalidRequest, "headEmployeeId must be a valid UUID v4", err))
+			return
+		}
+		headEmployeeID = &parsed
+	}
+
+	result, err := h.treeSvc.GetTreeNodes(r.Context(), treeID, format, depth, evaluatorID, headEmployeeID)
 	if err != nil {
 		writeError(w, err)
 		return
@@ -443,50 +462,6 @@ func (h *OrgHandler) SearchEmployees(w http.ResponseWriter, r *http.Request) {
 	}
 
 	result, err := h.employeeSvc.SearchEmployees(r.Context(), q, limit)
-	if err != nil {
-		writeError(w, err)
-		return
-	}
-
-	writeJSON(w, http.StatusOK, result)
-}
-
-// ==================== Evaluator Scope Endpoints ====================
-
-// GetEvaluatorScope handles GET /api/v1/evaluator-scopes
-func (h *OrgHandler) GetEvaluatorScope(w http.ResponseWriter, r *http.Request) {
-	evaluatorID := r.URL.Query().Get("evaluatorId")
-	if evaluatorID == "" {
-		writeError(w, errors.NewDomainError(errors.InvalidRequest, "evaluatorId query parameter is required", nil))
-		return
-	}
-
-	if _, err := uuid.Parse(evaluatorID); err != nil {
-		writeError(w, errors.NewDomainError(errors.InvalidRequest, "evaluatorId must be a valid UUID v4", err))
-		return
-	}
-
-	cycleID := r.URL.Query().Get("cycleId")
-
-	result, err := h.evaluatorSvc.GetEvaluatorScope(r.Context(), evaluatorID, cycleID)
-	if err != nil {
-		writeError(w, err)
-		return
-	}
-
-	writeJSON(w, http.StatusOK, result)
-}
-
-// GetEvaluatorScopeByID handles GET /api/v1/evaluator-scopes/{scopeId}
-func (h *OrgHandler) GetEvaluatorScopeByID(w http.ResponseWriter, r *http.Request) {
-	scopeID := chi.URLParam(r, "scopeId")
-	if scopeID == "" {
-		writeError(w, errors.NewDomainError(errors.InvalidRequest, "scopeId path parameter is required", nil))
-		return
-	}
-
-	// This delegates to the evaluator service which looks up the scope
-	result, err := h.evaluatorSvc.GetEvaluatorScope(r.Context(), scopeID, "")
 	if err != nil {
 		writeError(w, err)
 		return

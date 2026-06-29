@@ -27,6 +27,7 @@ import (
 	authsvc "github.com/sed-evaluacion-desempeno/api/internal/service/auth"
 
 	// Repositories
+	repoactivity "github.com/sed-evaluacion-desempeno/api/internal/repository/activity"
 	repogoal "github.com/sed-evaluacion-desempeno/api/internal/repository/goal"
 	repocycle "github.com/sed-evaluacion-desempeno/api/internal/repository/cycle"
 	repocompetency "github.com/sed-evaluacion-desempeno/api/internal/repository/competency"
@@ -34,6 +35,7 @@ import (
 	repoorganization "github.com/sed-evaluacion-desempeno/api/internal/repository/org"
 
 	// Services
+	activitysvc "github.com/sed-evaluacion-desempeno/api/internal/service/activity"
 	goalsvc "github.com/sed-evaluacion-desempeno/api/internal/service/goal"
 	cyclesvc "github.com/sed-evaluacion-desempeno/api/internal/service/cycle"
 	compsvc "github.com/sed-evaluacion-desempeno/api/internal/service/competency"
@@ -41,6 +43,7 @@ import (
 	orgsvc "github.com/sed-evaluacion-desempeno/api/internal/service/org"
 
 	// Handlers
+	activityhandler "github.com/sed-evaluacion-desempeno/api/internal/handler/activity"
 	authhandler "github.com/sed-evaluacion-desempeno/api/internal/handler/auth"
 	goalhandler "github.com/sed-evaluacion-desempeno/api/internal/handler/goal"
 	cyclehandler "github.com/sed-evaluacion-desempeno/api/internal/handler/cycle"
@@ -193,7 +196,11 @@ func main() {
 	orgTreeRepo := repoorganization.NewOrgTreeRepo(client, db)
 	orgNodeRepo := repoorganization.NewOrgNodeRepo(client, db)
 	employeeRepo := repoorganization.NewEmployeeRepo(client, db)
-	scopeRepo := repoorganization.NewEvaluatorScopeRepo(client, db)
+
+	// Activity
+	activityRepo := repoactivity.NewRepository(client)
+	activitySvc := activitysvc.NewService(activityRepo)
+	activityH := activityhandler.NewActivityHandler(activitySvc)
 
 	// Auth infrastructure
 	sessionStore := auth.NewSessionStore(db)
@@ -238,11 +245,10 @@ func main() {
 	dashboardSvc := evalsvc.NewDashboardService(evalRepo)
 
 	// Org services
-	orgTreeSvc := orgsvc.NewOrgTreeService(orgTreeRepo, orgNodeRepo, client)
+	orgTreeSvc := orgsvc.NewOrgTreeService(orgTreeRepo, orgNodeRepo, employeeRepo, client)
 	orgNodeSvc := orgsvc.NewOrgNodeService(orgNodeRepo, client)
 	employeeSvc := orgsvc.NewEmployeeService(employeeRepo, client)
-	evaluateeSvc := orgsvc.NewEvaluateeService(employeeRepo, orgNodeRepo, scopeRepo, client)
-	evaluatorSvc := orgsvc.NewEvaluatorService(employeeRepo, orgNodeRepo, scopeRepo, client)
+	evaluateeSvc := orgsvc.NewEvaluateeService(employeeRepo, orgNodeRepo, client)
 	metricsRepo := repoorganization.NewMetricsRepo(client, db)
 	metricsSvc := orgsvc.NewMetricsService(metricsRepo, orgNodeRepo, client)
 
@@ -253,12 +259,12 @@ func main() {
 	authH := authhandler.NewAuthHandler(authSvc)
 	goalH := goalhandler.NewGoalHandler(
 		catSvc, goalSvc, progressSvc, kpiSvc, scoringSvc, weightSvc, batchSvc,
-		catRepo, goalRepo, kpiRepo, linkRepo, assignRepo,
+		catRepo, goalRepo, kpiRepo, linkRepo, assignRepo, activitySvc,
 	)
-	cycleH := cyclehandler.NewCycleHandler(cycleSvc, phaseSvc)
-	compH := comphandler.NewHandler(pillarSvc, competencySvc, scaleSvc, catalogSvc, acceptanceSvc)
-	evalH := evalhandler.NewEvaluationHandler(evalSvc, nineBoxSvc, dashboardSvc)
-	orgH := orghandler.NewOrgHandler(orgTreeSvc, orgNodeSvc, employeeSvc, evaluateeSvc, evaluatorSvc, metricsSvc)
+	cycleH := cyclehandler.NewCycleHandler(cycleSvc, phaseSvc, activitySvc)
+	compH := comphandler.NewHandler(pillarSvc, competencySvc, scaleSvc, catalogSvc, acceptanceSvc, activitySvc)
+	evalH := evalhandler.NewEvaluationHandler(evalSvc, nineBoxSvc, dashboardSvc, activitySvc)
+	orgH := orghandler.NewOrgHandler(orgTreeSvc, orgNodeSvc, employeeSvc, evaluateeSvc, metricsSvc)
 
 	// -----------------------------------------------------------------------
 	// Router
@@ -292,6 +298,7 @@ func main() {
 	cyclehandler.RegisterRoutes(apiV1, cycleH, authSvc)
 	evalhandler.RegisterRoutes(apiV1, evalH, authSvc)
 	orghandler.RegisterRoutes(apiV1, orgH, authSvc)
+	activityhandler.RegisterActivityRoutes(apiV1, activityH, authSvc)
 	r.Mount("/api/v1", apiV1)
 
 	// Health check

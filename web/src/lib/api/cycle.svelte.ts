@@ -7,8 +7,6 @@ export interface CycleState {
 	error: string | null;
 }
 
-const FIXTURE_PHASE: CyclePhase = 'inicio-anio';
-
 const API_PHASE_MAP: Record<string, CyclePhase> = {
 	asignacion: 'inicio-anio',
 	avance: 'medio-anio',
@@ -26,12 +24,6 @@ let error = $state<string | null>(null);
 export async function loadCycle(): Promise<void> {
 	loading = true;
 	error = null;
-
-	if (import.meta.env.DEV && !import.meta.env.VITE_USE_API) {
-		activePhase = FIXTURE_PHASE;
-		loading = false;
-		return;
-	}
 
 	try {
 		const { data, error: apiError } = await client.GET('/cycle/current' as never);

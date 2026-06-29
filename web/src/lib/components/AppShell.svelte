@@ -14,7 +14,7 @@
 	<div class="drawer-content flex flex-col h-screen overflow-hidden">
 		<!-- Mobile-only header -->
 		<header class="navbar bg-base-100 lg:hidden sticky top-0 z-40 px-4 py-3">
-			<div class="flex-none">
+			<div class="flex-none pr-2">
 				<label for="main-drawer" class="btn btn-ghost btn-square" aria-label="Abrir menú">
 					<svg
 						xmlns="http://www.w3.org/2000/svg"

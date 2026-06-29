@@ -6,6 +6,9 @@ import (
 	"entgo.io/ent/dialect/sql"
 )
 
+// ActivityLog is the predicate function for activitylog builders.
+type ActivityLog func(*sql.Selector)
+
 // Competency is the predicate function for competency builders.
 type Competency func(*sql.Selector)
 

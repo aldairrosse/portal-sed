@@ -39,16 +39,26 @@ type OrgNodeResponse struct {
 	EmployeeCount int    `json:"employeeCount"`
 }
 
+// HeadEmployeeInfo is a light projection of the head employee for nested nodes.
+type HeadEmployeeInfo struct {
+	ID        string `json:"id"`
+	FirstName string `json:"firstName"`
+	LastName  string `json:"lastName"`
+	JobTitle  string `json:"jobTitle"`
+}
+
 // OrgNodeNestedResponse is a node with children nested.
 type OrgNodeNestedResponse struct {
-	ID       string                   `json:"id"`
-	ParentID string                   `json:"parentId,omitempty"`
-	Name     string                   `json:"name"`
-	Type     string                   `json:"type"`
-	Code     string                   `json:"code"`
-	Depth    int                      `json:"depth"`
-	Path     string                   `json:"path"`
-	Children []*OrgNodeNestedResponse `json:"children,omitempty"`
+	ID             string                   `json:"id"`
+	ParentID       string                   `json:"parentId,omitempty"`
+	Name           string                   `json:"name"`
+	Type           string                   `json:"type"`
+	Code           string                   `json:"code"`
+	Depth          int                      `json:"depth"`
+	Path           string                   `json:"path"`
+	HeadEmployeeID string                   `json:"headEmployeeId,omitempty"`
+	HeadEmployee   *HeadEmployeeInfo        `json:"headEmployee,omitempty"`
+	Children       []*OrgNodeNestedResponse `json:"children,omitempty"`
 }
 
 // OrgNodeFlatList is the flat format response.
@@ -110,6 +120,9 @@ type EmployeeListItem struct {
 	OrgNodeID      string `json:"orgNodeId"`
 	ManagerID      string `json:"managerId,omitempty"`
 	ProfileID      string `json:"profileId"`
+	ProfileName    string `json:"profileName"`
+	ProfileDescription string `json:"profileDescription"`
+	JobTitle       string `json:"jobTitle"`
 	IsActive       bool   `json:"isActive"`
 }
 
@@ -179,18 +192,4 @@ type AncestorItem struct {
 	Relation string `json:"relation"` // self | direct_manager | director | vp | ceo
 }
 
-// ----------------
-// Evaluator Scopes
-// ----------------
 
-// EvaluatorScopeResponse is the response for evaluator scope.
-type EvaluatorScopeResponse struct {
-	EvaluatorID    string `json:"evaluatorId"`
-	CycleID        string `json:"cycleId,omitempty"`
-	ScopeType      string `json:"scopeType"` // department | team | individual
-	ScopeData      struct {
-		OrgNodeIDs  []string `json:"orgNodeIds,omitempty"`
-		EmployeeIDs []string `json:"employeeIds,omitempty"`
-	} `json:"scopeData"`
-	EvaluateeCount int `json:"evaluateeCount"`
-}

@@ -5,8 +5,6 @@ import type {
 } from '$lib/types/nine-box';
 import type { components } from '$lib/api/schemas/evaluations';
 
-import matrixEntriesData from '$lib/fixtures/nine-box/matrix-entries.json';
-import quadrantDefsData from '$lib/fixtures/nine-box/quadrant-definitions.json';
 import { client } from '$lib/api/client';
 
 // ─── Internal data shape ──────────────────────────────────────────────────────
@@ -26,13 +24,6 @@ let currentCycleId = $state<string>('');
 let currentPhaseId = $state<string>('');
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function loadFixtures(): StoreData {
-	return {
-		entries: structuredClone(matrixEntriesData as NineBoxEntry[]),
-		quadrantDefs: structuredClone(quadrantDefsData as NineBoxQuadrantDef[])
-	};
-}
 
 /**
  * Normalize API responses into the flat StoreData format that getters consume.
@@ -95,12 +86,6 @@ export async function load(cycleId?: string, phaseId?: string): Promise<void> {
 
 	if (cycleId) currentCycleId = cycleId;
 	if (phaseId) currentPhaseId = phaseId;
-
-	if (import.meta.env.DEV && !import.meta.env.VITE_USE_API) {
-		data = loadFixtures();
-		loading = false;
-		return;
-	}
 
 	try {
 		const [matricesRes, quadrantsRes] = await Promise.all([
@@ -194,23 +179,6 @@ export async function updateQuadrantDef(
 	quadrant: number,
 	payload: { title?: string; description?: string; colorHex?: string }
 ): Promise<void> {
-	if (import.meta.env.DEV && !import.meta.env.VITE_USE_API) {
-		data = {
-			...data!,
-			quadrantDefs: (data?.quadrantDefs ?? []).map((q) =>
-				q.quadrant === quadrant
-					? {
-							...q,
-							...(payload.title !== undefined && { title: payload.title }),
-							...(payload.description !== undefined && { description: payload.description }),
-							...(payload.colorHex !== undefined && { colorHex: payload.colorHex })
-						}
-					: q
-			)
-		};
-		return;
-	}
-
 	const { error: apiError } = await client.PUT('/nine-box/quadrants/{quadrant}', {
 		params: { path: { quadrant } },
 		body: {
@@ -231,12 +199,6 @@ export async function updateQuadrantDef(
 }
 
 export async function recomputeMatrix(cycleId: string, phaseId: string): Promise<void> {
-	if (import.meta.env.DEV && !import.meta.env.VITE_USE_API) {
-		// In dev with fixtures, just reload
-		await load(cycleId, phaseId);
-		return;
-	}
-
 	const { error: apiError } = await client.POST('/nine-box/recompute/{cycleId}/{phaseId}', {
 		params: { path: { cycleId, phaseId } }
 	});

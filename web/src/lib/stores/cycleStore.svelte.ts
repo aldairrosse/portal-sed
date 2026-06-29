@@ -9,33 +9,6 @@ let cycles = $state<Cycle[]>([]);
 let loading = $state(false);
 let error = $state<string | null>(null);
 
-// ─── Fixture data ───────────────────────────────────────────────────────────────
-
-const FIXTURE_CYCLES: Cycle[] = [
-	{
-		id: 'cyc-001',
-		organization_id: '00000000-0000-0000-0000-000000000001',
-		year: 2026,
-		current_phase: 'asignacion',
-		version: 1,
-		started_at: '2026-01-15T09:00:00Z',
-		finished_at: null,
-		created_at: '2026-01-15T09:00:00Z',
-		updated_at: '2026-01-15T09:00:00Z'
-	},
-	{
-		id: 'cyc-000',
-		organization_id: '00000000-0000-0000-0000-000000000001',
-		year: 2025,
-		current_phase: 'cierre',
-		version: 3,
-		started_at: '2025-01-10T09:00:00Z',
-		finished_at: '2025-12-20T18:00:00Z',
-		created_at: '2025-01-10T09:00:00Z',
-		updated_at: '2025-12-20T18:00:00Z'
-	}
-];
-
 // ─── Getters ────────────────────────────────────────────────────────────────────
 
 export function getCycles(): Cycle[] {
@@ -65,12 +38,6 @@ export function hasCycleForYear(year: number): boolean {
 export async function loadCycles(): Promise<void> {
 	loading = true;
 	error = null;
-
-	if (import.meta.env.DEV && !import.meta.env.VITE_USE_API) {
-		cycles = structuredClone(FIXTURE_CYCLES);
-		loading = false;
-		return;
-	}
 
 	const orgId = getSession().user?.organizationId;
 	if (!orgId) {
@@ -122,22 +89,6 @@ export async function createCycle(year: number): Promise<Cycle | null> {
 		return null;
 	}
 
-	if (import.meta.env.DEV && !import.meta.env.VITE_USE_API) {
-		const newCycle: Cycle = {
-			id: `cyc-${Date.now()}`,
-			organization_id: getSession().user?.organizationId ?? '',
-			year,
-			current_phase: 'asignacion',
-			version: 1,
-			started_at: new Date().toISOString(),
-			finished_at: null,
-			created_at: new Date().toISOString(),
-			updated_at: new Date().toISOString()
-		};
-		cycles = [newCycle, ...cycles];
-		return newCycle;
-	}
-
 	const orgId = getSession().user?.organizationId;
 	if (!orgId) {
 		error = 'No hay organización en la sesión';
@@ -185,26 +136,6 @@ export async function advancePhase(cycleId: string): Promise<boolean> {
 		return false;
 	}
 
-	if (import.meta.env.DEV && !import.meta.env.VITE_USE_API) {
-		const nextPhase = getNextPhase(cycle.current_phase);
-		if (!nextPhase) {
-			error = 'El ciclo ya está en la última fase';
-			return false;
-		}
-		cycles = cycles.map((c) =>
-			c.id === cycleId
-				? {
-						...c,
-						current_phase: nextPhase,
-						version: c.version + 1,
-						finished_at: nextPhase === 'cierre' ? new Date().toISOString() : c.finished_at,
-						updated_at: new Date().toISOString()
-					}
-				: c
-		);
-		return true;
-	}
-
 	try {
 		const { data, error: apiError } = await client.PUT('/cycles/{id}/transition', {
 			params: {
@@ -243,13 +174,6 @@ export async function advancePhase(cycleId: string): Promise<boolean> {
 }
 
 export async function getAvailableTransitions(cycleId: string): Promise<PhaseTransition[]> {
-	if (import.meta.env.DEV && !import.meta.env.VITE_USE_API) {
-		const cycle = cycles.find((c) => c.id === cycleId);
-		if (!cycle) return [];
-		const next = getNextPhase(cycle.current_phase);
-		return next ? [{ from_phase: cycle.current_phase, to_phase: next, trigger: 'manual_rh' }] : [];
-	}
-
 	try {
 		const { data, error: apiError } = await client.GET('/cycles/{id}/transitions', {
 			params: { path: { id: cycleId } }

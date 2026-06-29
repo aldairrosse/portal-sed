@@ -11,19 +11,10 @@ export interface AuthUser {
 	profileName: string;
 	organizationId: string;
 	jobTitle: string;
+	orgNodeId: string;
 	orgNodeName: string;
 }
 
-const FIXTURE_USER: AuthUser = {
-	employeeId: '00000000-0000-0000-0000-000000000001',
-	email: 'dev@sed.local',
-	name: 'Usuario Desarrollo',
-	profileId: 'colaborador',
-	profileName: 'Colaborador',
-	organizationId: '00000000-0000-0000-0000-000000000001',
-	jobTitle: 'Desarrollador',
-	orgNodeName: 'Desarrollo'
-};
 
 // ponytail: set by logout() right before the full reload; consumed by the
 // next ensureSession() so we don't fire a redundant /auth/me that we know
@@ -52,12 +43,6 @@ export async function ensureSession(): Promise<void> {
 		return;
 	}
 
-	if (import.meta.env.DEV && !import.meta.env.VITE_USE_API) {
-		user = { ...FIXTURE_USER };
-		loading = false;
-		return;
-	}
-
 	try {
 		const { data, error: apiError } = await (client as any).GET('/auth/me');
 		if (apiError) {
@@ -77,6 +62,7 @@ export async function ensureSession(): Promise<void> {
 			profileName: raw.profile?.name ?? raw.role ?? '',
 			organizationId: raw.organization_id ?? raw.employee.id ?? '',
 			jobTitle: raw.employee.job_title ?? '',
+			orgNodeId: raw.employee.org_node_id ?? '',
 			orgNodeName: raw.employee.org_node_name ?? ''
 		};
 	} catch (e) {
@@ -100,81 +86,6 @@ export async function devLogin(email: string): Promise<void> {
 	loading = true;
 	error = null;
 	const start = Date.now();
-
-	if (import.meta.env.DEV && !import.meta.env.VITE_USE_API) {
-		// ponytail: hardcoded test profiles for local dev. Replace with SSO when ready.
-		const userMap: Record<string, AuthUser> = {
-			'fgarcia@mobo.mx': {
-				employeeId: '00000000-0000-0000-0000-000000000001',
-				email: 'fgarcia@mobo.mx',
-				name: 'Fernando García Domínguez',
-				profileId: 'director',
-				profileName: 'Director',
-				organizationId: '00000000-0000-0000-0000-000000000001',
-				jobTitle: 'Director Comercial',
-				orgNodeName: 'División Comercial'
-			},
-			'alberto@mobo.mx': {
-				employeeId: '00000000-0000-0000-0000-000000000002',
-				email: 'alberto@mobo.mx',
-				name: 'Alberto Cohen',
-				profileId: 'director-general',
-				profileName: 'Director General',
-				organizationId: '00000000-0000-0000-0000-000000000001',
-				jobTitle: 'Director General',
-				orgNodeName: 'Dirección General'
-			},
-			'abraham@mobo.mx': {
-				employeeId: '00000000-0000-0000-0000-000000000003',
-				email: 'abraham@mobo.mx',
-				name: 'Abraham Esses Cohen',
-				profileId: 'jefe',
-				profileName: 'Jefe',
-				organizationId: '00000000-0000-0000-0000-000000000001',
-				jobTitle: 'Gerente de Sucursal',
-				orgNodeName: 'Sucursal Centro'
-			},
-			'agil@mobo.mx': {
-				employeeId: '00000000-0000-0000-0000-000000000004',
-				email: 'agil@mobo.mx',
-				name: 'Cristiann Gil Ruíz',
-				profileId: 'rh',
-				profileName: 'RRHH',
-				organizationId: '00000000-0000-0000-0000-000000000001',
-				jobTitle: 'Analista de RRHH',
-				orgNodeName: 'Recursos Humanos'
-			},
-			'fperez@mobo.com.mx': {
-				employeeId: '00000000-0000-0000-0000-000000000005',
-				email: 'fperez@mobo.com.mx',
-				name: 'Frankil Aldair Pérez Rosales',
-				profileId: 'colaborador',
-				profileName: 'Colaborador',
-				organizationId: '00000000-0000-0000-0000-000000000001',
-				jobTitle: 'Desarrollador Frontend',
-				orgNodeName: 'Sucursal Centro'
-			}
-		};
-
-		const match = userMap[email];
-		if (!match) {
-			error = 'Usuario demo no válido';
-			loading = false;
-			throw new Error('Usuario demo no válido');
-		}
-
-		// ponytail: hold the loader for at least MIN_LOGIN_MS before flipping
-		// user — keeps the login page's loader (with text) visible instead of
-		// letting the layout's bare spinner take over for the rest of the wait.
-		const elapsed = Date.now() - start;
-		if (elapsed < MIN_LOGIN_MS) {
-			await new Promise((r) => setTimeout(r, MIN_LOGIN_MS - elapsed));
-		}
-
-		user = { ...match };
-		loading = false;
-		return;
-	}
 
 	try {
 		const { error: apiError } = await (client as any).POST('/auth/dev-login', {
@@ -216,9 +127,7 @@ export async function logout(): Promise<void> {
 	const start = Date.now();
 	loggingOut = true;
 	try {
-		if (!(import.meta.env.DEV && !import.meta.env.VITE_USE_API)) {
-			await (client as any).POST('/auth/logout');
-		}
+		await (client as any).POST('/auth/logout');
 	} catch {
 		// Even if backend fails, clear local state
 	}

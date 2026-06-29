@@ -27,7 +27,7 @@ import (
 type mockOrgTreeService struct {
 	getTreesFunc     func(ctx context.Context, treeType string) (*dto.OrgTreeListResponse, error)
 	getTreeFunc      func(ctx context.Context, treeID string) (*dto.OrgTreeDetailResponse, error)
-	getTreeNodesFunc func(ctx context.Context, treeID, format string, depth int) (interface{}, error)
+	getTreeNodesFunc func(ctx context.Context, treeID, format string, depth int, evaluatorID *uuid.UUID, headEmployeeID *uuid.UUID) (interface{}, error)
 	exportTreeFunc   func(ctx context.Context, treeID string, w io.Writer) error
 }
 
@@ -37,8 +37,8 @@ func (m *mockOrgTreeService) GetTrees(ctx context.Context, treeType string) (*dt
 func (m *mockOrgTreeService) GetTree(ctx context.Context, treeID string) (*dto.OrgTreeDetailResponse, error) {
 	return m.getTreeFunc(ctx, treeID)
 }
-func (m *mockOrgTreeService) GetTreeNodes(ctx context.Context, treeID, format string, depth int) (interface{}, error) {
-	return m.getTreeNodesFunc(ctx, treeID, format, depth)
+func (m *mockOrgTreeService) GetTreeNodes(ctx context.Context, treeID, format string, depth int, evaluatorID *uuid.UUID, headEmployeeID *uuid.UUID) (interface{}, error) {
+	return m.getTreeNodesFunc(ctx, treeID, format, depth, evaluatorID, headEmployeeID)
 }
 func (m *mockOrgTreeService) ExportTree(ctx context.Context, treeID string, w io.Writer) error {
 	return m.exportTreeFunc(ctx, treeID, w)
@@ -104,18 +104,6 @@ func (m *mockEvaluateeService) BatchLookup(ctx context.Context, ids []string) (*
 	return m.batchLookupFunc(ctx, ids)
 }
 
-type mockEvaluatorService struct {
-	getEvaluatorScopeFunc func(ctx context.Context, evaluatorID, cycleID string) (*dto.EvaluatorScopeResponse, error)
-	resolveEvaluatorFunc  func(ctx context.Context, evaluateeID string) (*dto.EmployeeDetailResponse, error)
-}
-
-func (m *mockEvaluatorService) GetEvaluatorScope(ctx context.Context, evaluatorID, cycleID string) (*dto.EvaluatorScopeResponse, error) {
-	return m.getEvaluatorScopeFunc(ctx, evaluatorID, cycleID)
-}
-func (m *mockEvaluatorService) ResolveEvaluator(ctx context.Context, evaluateeID string) (*dto.EmployeeDetailResponse, error) {
-	return m.resolveEvaluatorFunc(ctx, evaluateeID)
-}
-
 type mockMetricsService struct {
 	getAreaMetricsFunc func(ctx context.Context, nodeID, cycleID string) (*dto.AreaMetricsResponse, error)
 }
@@ -131,9 +119,8 @@ func newTestHandler(
 	nodeSvc svc.OrgNodeService,
 	empSvc svc.EmployeeService,
 	evalSvc svc.EvaluateeService,
-	evaluatorSvc svc.EvaluatorService,
 ) *handler.OrgHandler {
-	return handler.NewOrgHandler(treeSvc, nodeSvc, empSvc, evalSvc, evaluatorSvc, nil)
+	return handler.NewOrgHandler(treeSvc, nodeSvc, empSvc, evalSvc, nil)
 }
 
 func withChiParam(r *http.Request, key, value string) *http.Request {
@@ -158,7 +145,7 @@ func TestListOrgTrees_Success(t *testing.T) {
 		},
 	}
 
-	h := newTestHandler(treeSvc, nil, nil, nil, nil)
+	h := newTestHandler(treeSvc, nil, nil, nil)
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/org-trees?type=corporate", nil)
 	rec := httptest.NewRecorder()
 
@@ -182,7 +169,7 @@ func TestGetOrgTree_Success(t *testing.T) {
 		},
 	}
 
-	h := newTestHandler(treeSvc, nil, nil, nil, nil)
+	h := newTestHandler(treeSvc, nil, nil, nil)
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/org-trees/"+treeID, nil)
 	req = withChiParam(req, "treeId", treeID)
 	rec := httptest.NewRecorder()
@@ -200,10 +187,12 @@ func TestGetTreeNodes_Success(t *testing.T) {
 
 	treeID := uuid.New().String()
 	treeSvc := &mockOrgTreeService{
-		getTreeNodesFunc: func(_ context.Context, id, format string, depth int) (interface{}, error) {
+		getTreeNodesFunc: func(_ context.Context, id, format string, depth int, evaluatorID *uuid.UUID, headEmployeeID *uuid.UUID) (interface{}, error) {
 			assert.Equal(t, treeID, id)
 			assert.Equal(t, "flat", format)
 			assert.Equal(t, 2, depth)
+			assert.Nil(t, evaluatorID, "no evaluatorId passed in regression test")
+			assert.Nil(t, headEmployeeID)
 			return &dto.OrgNodeFlatList{
 				Data: []dto.OrgNodeResponse{
 					{ID: uuid.New().String(), Name: "Root", Depth: 0},
@@ -217,7 +206,7 @@ func TestGetTreeNodes_Success(t *testing.T) {
 		},
 	}
 
-	h := newTestHandler(treeSvc, nil, nil, nil, nil)
+	h := newTestHandler(treeSvc, nil, nil, nil)
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/org-trees/"+treeID+"/nodes?format=flat&depth=2", nil)
 	req = withChiParam(req, "treeId", treeID)
 	rec := httptest.NewRecorder()
@@ -231,6 +220,60 @@ func TestGetTreeNodes_Success(t *testing.T) {
 	assert.Equal(t, "flat", resp.Meta.Format)
 }
 
+func TestGetTreeNodes_WithEvaluatorID(t *testing.T) {
+	t.Parallel()
+
+	treeID := uuid.New().String()
+	evaluatorID := uuid.New()
+	treeSvc := &mockOrgTreeService{
+		getTreeNodesFunc: func(_ context.Context, id, format string, depth int, eid *uuid.UUID, headEmployeeID *uuid.UUID) (interface{}, error) {
+			assert.Equal(t, treeID, id)
+			assert.NotNil(t, eid)
+			assert.Equal(t, evaluatorID.String(), eid.String())
+			assert.Nil(t, headEmployeeID)
+			return &dto.OrgNodeFlatList{
+				Data: []dto.OrgNodeResponse{
+					{ID: uuid.New().String(), Name: "Sub Root", Depth: 0},
+					{ID: uuid.New().String(), Name: "Sub Child", Depth: 1},
+				},
+				Meta: struct {
+					Format string `json:"format"`
+					Total  int    `json:"total"`
+				}{Format: "flat", Total: 2},
+			}, nil
+		},
+	}
+
+	h := newTestHandler(treeSvc, nil, nil, nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/org-trees/"+treeID+"/nodes?format=flat&depth=-1&evaluatorId="+evaluatorID.String(), nil)
+	req = withChiParam(req, "treeId", treeID)
+	rec := httptest.NewRecorder()
+
+	h.GetOrgTreeNodes(rec, req)
+
+	assert.Equal(t, http.StatusOK, rec.Code)
+	var resp dto.OrgNodeFlatList
+	require.NoError(t, json.NewDecoder(rec.Body).Decode(&resp))
+	require.Len(t, resp.Data, 2)
+	assert.Equal(t, "Sub Root", resp.Data[0].Name)
+}
+
+func TestGetTreeNodes_MalformedEvaluatorID(t *testing.T) {
+	t.Parallel()
+
+	treeID := uuid.New().String()
+	h := newTestHandler(nil, nil, nil, nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/org-trees/"+treeID+"/nodes?evaluatorId=not-a-uuid", nil)
+	req = withChiParam(req, "treeId", treeID)
+	rec := httptest.NewRecorder()
+
+	h.GetOrgTreeNodes(rec, req)
+
+	assert.Equal(t, http.StatusBadRequest, rec.Code)
+	bodyStr := rec.Body.String()
+	assert.Contains(t, bodyStr, "evaluatorId must be a valid UUID v4")
+}
+
 func TestCreateNode_Success(t *testing.T) {
 	t.Parallel()
 
@@ -242,7 +285,7 @@ func TestCreateNode_Success(t *testing.T) {
 		},
 	}
 
-	h := newTestHandler(nil, nodeSvc, nil, nil, nil)
+	h := newTestHandler(nil, nodeSvc, nil, nil)
 	body, _ := json.Marshal(dto.CreateOrgNodeRequest{Name: "New Node", Type: "corporate", OrganizationID: uuid.New().String(), Code: "NN01"})
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/org-nodes", bytes.NewReader(body))
 	rec := httptest.NewRecorder()
@@ -267,7 +310,7 @@ func TestUpdateNode_Success(t *testing.T) {
 		},
 	}
 
-	h := newTestHandler(nil, nodeSvc, nil, nil, nil)
+	h := newTestHandler(nil, nodeSvc, nil, nil)
 	body, _ := json.Marshal(dto.UpdateOrgNodeRequest{Name: "Updated", Version: 1})
 	req := httptest.NewRequest(http.MethodPut, "/api/v1/org-nodes/"+nodeID, bytes.NewReader(body))
 	req = withChiParam(req, "nodeId", nodeID)
@@ -292,7 +335,7 @@ func TestDeleteNode_Success(t *testing.T) {
 		},
 	}
 
-	h := newTestHandler(nil, nodeSvc, nil, nil, nil)
+	h := newTestHandler(nil, nodeSvc, nil, nil)
 	req := httptest.NewRequest(http.MethodDelete, "/api/v1/org-nodes/"+nodeID, nil)
 	req = withChiParam(req, "nodeId", nodeID)
 	rec := httptest.NewRecorder()
@@ -322,7 +365,7 @@ func TestListEmployees_Success(t *testing.T) {
 		},
 	}
 
-	h := newTestHandler(nil, nil, empSvc, nil, nil)
+	h := newTestHandler(nil, nil, empSvc, nil)
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/employees?treeId=some-tree&limit=25", nil)
 	rec := httptest.NewRecorder()
 
@@ -346,7 +389,7 @@ func TestGetEmployee_Success(t *testing.T) {
 		},
 	}
 
-	h := newTestHandler(nil, nil, empSvc, nil, nil)
+	h := newTestHandler(nil, nil, empSvc, nil)
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/employees/"+empID, nil)
 	req = withChiParam(req, "empId", empID)
 	rec := httptest.NewRecorder()
@@ -379,7 +422,7 @@ func TestGetMyEvaluatees_Success(t *testing.T) {
 		},
 	}
 
-	h := newTestHandler(nil, nil, nil, evalSvc, nil)
+	h := newTestHandler(nil, nil, nil, evalSvc)
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/employees/"+empID+"/evaluatees", nil)
 	req = withChiParam(req, "empId", empID)
 	rec := httptest.NewRecorder()
@@ -410,7 +453,7 @@ func TestGetChainOfCommand_Success(t *testing.T) {
 		},
 	}
 
-	h := newTestHandler(nil, nil, nil, evalSvc, nil)
+	h := newTestHandler(nil, nil, nil, evalSvc)
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/employees/"+empID+"/ancestors", nil)
 	req = withChiParam(req, "empId", empID)
 	rec := httptest.NewRecorder()
@@ -446,7 +489,7 @@ func TestBatchResolve_Success(t *testing.T) {
 		},
 	}
 
-	h := newTestHandler(nil, nil, nil, evalSvc, nil)
+	h := newTestHandler(nil, nil, nil, evalSvc)
 	body, _ := json.Marshal(dto.BatchEmployeeRequest{IDs: []string{id1, id2}})
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/employees/batch", bytes.NewReader(body))
 	rec := httptest.NewRecorder()
@@ -479,7 +522,7 @@ func TestSearchEmployees_Success(t *testing.T) {
 		},
 	}
 
-	h := newTestHandler(nil, nil, empSvc, nil, nil)
+	h := newTestHandler(nil, nil, empSvc, nil)
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/employees/search?q=alice", nil)
 	rec := httptest.NewRecorder()
 
@@ -489,36 +532,6 @@ func TestSearchEmployees_Success(t *testing.T) {
 	var resp dto.EmployeeListResponse
 	require.NoError(t, json.NewDecoder(rec.Body).Decode(&resp))
 	require.Len(t, resp.Data, 1)
-}
-
-func TestGetEvaluatorScope_Success(t *testing.T) {
-	t.Parallel()
-
-	evaluatorID := uuid.New().String()
-	evaluatorSvc := &mockEvaluatorService{
-		getEvaluatorScopeFunc: func(_ context.Context, id, cycleID string) (*dto.EvaluatorScopeResponse, error) {
-			assert.Equal(t, evaluatorID, id)
-			assert.Equal(t, "cycle-123", cycleID)
-			return &dto.EvaluatorScopeResponse{
-				EvaluatorID: evaluatorID,
-				CycleID:     "cycle-123",
-				ScopeType:   "department",
-				EvaluateeCount: 5,
-			}, nil
-		},
-	}
-
-	h := newTestHandler(nil, nil, nil, nil, evaluatorSvc)
-	req := httptest.NewRequest(http.MethodGet, "/api/v1/evaluator-scopes?evaluatorId="+evaluatorID+"&cycleId=cycle-123", nil)
-	rec := httptest.NewRecorder()
-
-	h.GetEvaluatorScope(rec, req)
-
-	assert.Equal(t, http.StatusOK, rec.Code)
-	var resp dto.EvaluatorScopeResponse
-	require.NoError(t, json.NewDecoder(rec.Body).Decode(&resp))
-	assert.Equal(t, "department", resp.ScopeType)
-	assert.Equal(t, 5, resp.EvaluateeCount)
 }
 
 // ---------- error tests ----------
@@ -533,7 +546,7 @@ func TestGetTree_NotFound(t *testing.T) {
 		},
 	}
 
-	h := newTestHandler(treeSvc, nil, nil, nil, nil)
+	h := newTestHandler(treeSvc, nil, nil, nil)
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/org-trees/"+treeID, nil)
 	req = withChiParam(req, "treeId", treeID)
 	rec := httptest.NewRecorder()
@@ -555,7 +568,7 @@ func TestCreateNode_InvalidParent(t *testing.T) {
 		},
 	}
 
-	h := newTestHandler(nil, nodeSvc, nil, nil, nil)
+	h := newTestHandler(nil, nodeSvc, nil, nil)
 	body, _ := json.Marshal(dto.CreateOrgNodeRequest{Name: "Orphan", Type: "corporate", OrganizationID: uuid.New().String(), Code: "X"})
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/org-nodes", bytes.NewReader(body))
 	rec := httptest.NewRecorder()
@@ -578,7 +591,7 @@ func TestDeleteNode_HasChildren(t *testing.T) {
 		},
 	}
 
-	h := newTestHandler(nil, nodeSvc, nil, nil, nil)
+	h := newTestHandler(nil, nodeSvc, nil, nil)
 	req := httptest.NewRequest(http.MethodDelete, "/api/v1/org-nodes/"+nodeID, nil)
 	req = withChiParam(req, "nodeId", nodeID)
 	rec := httptest.NewRecorder()
@@ -601,7 +614,7 @@ func TestUpdateNode_VersionConflict(t *testing.T) {
 		},
 	}
 
-	h := newTestHandler(nil, nodeSvc, nil, nil, nil)
+	h := newTestHandler(nil, nodeSvc, nil, nil)
 	body, _ := json.Marshal(dto.UpdateOrgNodeRequest{Name: "Conflict", Version: 0})
 	req := httptest.NewRequest(http.MethodPut, "/api/v1/org-nodes/"+nodeID, bytes.NewReader(body))
 	req = withChiParam(req, "nodeId", nodeID)
@@ -641,7 +654,7 @@ func TestBatchResolve_TooManyIDs(t *testing.T) {
 		},
 	}
 
-	h := newTestHandler(nil, nil, nil, evalSvc, nil)
+	h := newTestHandler(nil, nil, nil, evalSvc)
 	body, _ := json.Marshal(dto.BatchEmployeeRequest{IDs: ids})
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/employees/batch", bytes.NewReader(body))
 	rec := httptest.NewRecorder()
@@ -665,7 +678,7 @@ func TestListEmployees_ResponseTime(t *testing.T) {
 		},
 	}
 
-	h := newTestHandler(nil, nil, empSvc, nil, nil)
+	h := newTestHandler(nil, nil, empSvc, nil)
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/employees?limit=50", nil)
 
 	const iterations = 100
@@ -693,7 +706,7 @@ func TestGetMyEvaluatees_ResponseTime(t *testing.T) {
 		},
 	}
 
-	h := newTestHandler(nil, nil, nil, evalSvc, nil)
+	h := newTestHandler(nil, nil, nil, evalSvc)
 
 	const iterations = 100
 	start := time.Now()
@@ -728,7 +741,7 @@ func TestUpdateNode_Concurrent(t *testing.T) {
 		},
 	}
 
-	h := newTestHandler(nil, nodeSvc, nil, nil, nil)
+	h := newTestHandler(nil, nodeSvc, nil, nil)
 	body, _ := json.Marshal(dto.UpdateOrgNodeRequest{Name: "Concurrent", Version: 1})
 
 	const workers = 50
@@ -766,7 +779,7 @@ func TestDeleteNode_Concurrent(t *testing.T) {
 		},
 	}
 
-	h := newTestHandler(nil, nodeSvc, nil, nil, nil)
+	h := newTestHandler(nil, nodeSvc, nil, nil)
 
 	const workers = 20
 	var wg sync.WaitGroup
@@ -792,7 +805,7 @@ func TestDeleteNode_Concurrent(t *testing.T) {
 func TestGetOrgTree_InvalidUUID(t *testing.T) {
 	t.Parallel()
 
-	h := newTestHandler(nil, nil, nil, nil, nil)
+	h := newTestHandler(nil, nil, nil, nil)
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/org-trees/not-a-uuid", nil)
 	req = withChiParam(req, "treeId", "not-a-uuid")
 	rec := httptest.NewRecorder()
@@ -807,7 +820,7 @@ func TestGetOrgTree_InvalidUUID(t *testing.T) {
 func TestCreateNode_InvalidJSON(t *testing.T) {
 	t.Parallel()
 
-	h := newTestHandler(nil, nil, nil, nil, nil)
+	h := newTestHandler(nil, nil, nil, nil)
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/org-nodes", strings.NewReader("not json"))
 	rec := httptest.NewRecorder()
 
@@ -819,7 +832,7 @@ func TestCreateNode_InvalidJSON(t *testing.T) {
 func TestSearchEmployees_QueryTooShort(t *testing.T) {
 	t.Parallel()
 
-	h := newTestHandler(nil, nil, nil, nil, nil)
+	h := newTestHandler(nil, nil, nil, nil)
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/employees/search?q=a", nil)
 	rec := httptest.NewRecorder()
 
@@ -828,20 +841,6 @@ func TestSearchEmployees_QueryTooShort(t *testing.T) {
 	assert.Equal(t, http.StatusBadRequest, rec.Code)
 	bodyStr := rec.Body.String()
 	assert.Contains(t, bodyStr, "at least 2 characters")
-}
-
-func TestGetEvaluatorScope_MissingEvaluatorID(t *testing.T) {
-	t.Parallel()
-
-	h := newTestHandler(nil, nil, nil, nil, nil)
-	req := httptest.NewRequest(http.MethodGet, "/api/v1/evaluator-scopes", nil)
-	rec := httptest.NewRecorder()
-
-	h.GetEvaluatorScope(rec, req)
-
-	assert.Equal(t, http.StatusBadRequest, rec.Code)
-	bodyStr := rec.Body.String()
-	assert.Contains(t, bodyStr, "evaluatorId query parameter is required")
 }
 
 // ---------- area metrics handler tests ----------
@@ -868,7 +867,7 @@ func TestGetAreaMetrics_Success(t *testing.T) {
 		},
 	}
 
-	h := handler.NewOrgHandler(nil, nil, nil, nil, nil, metricsSvc)
+	h := handler.NewOrgHandler(nil, nil, nil, nil, metricsSvc)
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/org-nodes/"+nodeID+"/area-metrics?cycleId=cycle-123", nil)
 	req = withChiParam(req, "nodeId", nodeID)
 	rec := httptest.NewRecorder()
@@ -887,7 +886,7 @@ func TestGetAreaMetrics_Success(t *testing.T) {
 func TestGetAreaMetrics_MissingNodeID(t *testing.T) {
 	t.Parallel()
 
-	h := handler.NewOrgHandler(nil, nil, nil, nil, nil, nil)
+	h := handler.NewOrgHandler(nil, nil, nil, nil, nil)
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/org-nodes//area-metrics", nil)
 	rec := httptest.NewRecorder()
 
@@ -908,7 +907,7 @@ func TestGetAreaMetrics_ServiceError(t *testing.T) {
 		},
 	}
 
-	h := handler.NewOrgHandler(nil, nil, nil, nil, nil, metricsSvc)
+	h := handler.NewOrgHandler(nil, nil, nil, nil, metricsSvc)
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/org-nodes/"+nodeID+"/area-metrics", nil)
 	req = withChiParam(req, "nodeId", nodeID)
 	rec := httptest.NewRecorder()
@@ -936,7 +935,7 @@ func TestGetAreaMetrics_NoQueryParams(t *testing.T) {
 		},
 	}
 
-	h := handler.NewOrgHandler(nil, nil, nil, nil, nil, metricsSvc)
+	h := handler.NewOrgHandler(nil, nil, nil, nil, metricsSvc)
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/org-nodes/"+nodeID+"/area-metrics", nil)
 	req = withChiParam(req, "nodeId", nodeID)
 	rec := httptest.NewRecorder()

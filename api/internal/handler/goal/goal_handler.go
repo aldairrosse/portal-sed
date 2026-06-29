@@ -16,7 +16,9 @@ import (
 	pkgerrors "github.com/sed-evaluacion-desempeno/api/internal/pkg/errors"
 	"github.com/sed-evaluacion-desempeno/api/internal/pkg/scoring"
 	repogoal "github.com/sed-evaluacion-desempeno/api/internal/repository/goal"
+	"github.com/sed-evaluacion-desempeno/api/internal/auth"
 	svcgoal "github.com/sed-evaluacion-desempeno/api/internal/service/goal"
+	activitysvc "github.com/sed-evaluacion-desempeno/api/internal/service/activity"
 )
 
 // generateTraceID generates a short trace ID for error responses.
@@ -65,6 +67,7 @@ type GoalHandler struct {
 	kpiRepo       svcgoal.KPIRepository
 	linkRepo      svcgoal.LinkKPIRepository
 	assignRepo    svcgoal.AssignmentRepository
+	activitySvc   activitysvc.Service
 }
 
 // NewGoalHandler creates a new GoalHandler.
@@ -81,6 +84,7 @@ func NewGoalHandler(
 	kpiRepo svcgoal.KPIRepository,
 	linkRepo svcgoal.LinkKPIRepository,
 	assignRepo svcgoal.AssignmentRepository,
+	activitySvc activitysvc.Service,
 ) *GoalHandler {
 	return &GoalHandler{
 		catService:   catService,
@@ -95,6 +99,7 @@ func NewGoalHandler(
 		kpiRepo:      kpiRepo,
 		linkRepo:     linkRepo,
 		assignRepo:   assignRepo,
+		activitySvc:  activitySvc,
 	}
 }
 
@@ -369,6 +374,12 @@ func (h *GoalHandler) UpdateGoalProgress(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	// Log activity: progreso de meta actualizado
+	if h.activitySvc != nil {
+		_ = h.activitySvc.LogActivity(r.Context(), empID, "goal_progress",
+			"Actualizaste el progreso de tu meta", "Metas", nil)
+	}
+
 	writeJSON(w, http.StatusOK, goalRowToResponse(goal))
 }
 
@@ -575,6 +586,14 @@ func (h *GoalHandler) UpdateKPIValue(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		writeError(w, err)
 		return
+	}
+
+	// Log activity: valor de KPI actualizado
+	if h.activitySvc != nil {
+		if empID, ok := auth.GetEmployeeID(r.Context()); ok {
+			_ = h.activitySvc.LogActivity(r.Context(), empID, "goal_progress",
+				"Actualizaste el valor de un KPI", "Metas", nil)
+		}
 	}
 
 	writeJSON(w, http.StatusOK, kpiRowToResponse(kpi))

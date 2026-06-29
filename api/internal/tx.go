@@ -12,6 +12,8 @@ import (
 // Tx is a transactional client that is created by calling Client.Tx().
 type Tx struct {
 	config
+	// ActivityLog is the client for interacting with the ActivityLog builders.
+	ActivityLog *ActivityLogClient
 	// Competency is the client for interacting with the Competency builders.
 	Competency *CompetencyClient
 	// CompetencyAcceptanceLevel is the client for interacting with the CompetencyAcceptanceLevel builders.
@@ -193,6 +195,7 @@ func (tx *Tx) Client() *Client {
 }
 
 func (tx *Tx) init() {
+	tx.ActivityLog = NewActivityLogClient(tx.config)
 	tx.Competency = NewCompetencyClient(tx.config)
 	tx.CompetencyAcceptanceLevel = NewCompetencyAcceptanceLevelClient(tx.config)
 	tx.Cycle = NewCycleClient(tx.config)
@@ -227,7 +230,7 @@ func (tx *Tx) init() {
 // of them in order to commit or rollback the transaction.
 //
 // If a closed transaction is embedded in one of the generated entities, and the entity
-// applies a query, for example: Competency.QueryXXX(), the query will be executed
+// applies a query, for example: ActivityLog.QueryXXX(), the query will be executed
 // through the driver which created this transaction.
 //
 // Note that txDriver is not goroutine safe.

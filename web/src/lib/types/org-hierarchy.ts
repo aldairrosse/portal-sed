@@ -1,7 +1,14 @@
 export interface OrgNode {
-	id: string; // employeeId
+	id: string;
 	name: string;
-	profileId: string; // EvaluationProfile
-	managerId: string | null;
-	children: OrgNode[];
+	profileId?: string;
+	managerId?: string | null;
+	headEmployeeId?: string;
+	headEmployee?: {
+		id: string;
+		firstName: string;
+		lastName: string;
+		jobTitle: string;
+	};
+	children?: OrgNode[];
 }
