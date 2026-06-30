@@ -382,7 +382,43 @@ func (h *OrgHandler) GetMyEvaluatees(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := h.evaluateeSvc.GetMyEvaluatees(r.Context(), empID)
+	if _, err := uuid.Parse(empID); err != nil {
+		writeError(w, errors.NewDomainError(errors.InvalidRequest, "empId must be a valid UUID v4", err))
+		return
+	}
+
+	q := r.URL.Query()
+
+	limit := 50
+	if l := q.Get("limit"); l != "" {
+		var err error
+		limit, err = strconv.Atoi(l)
+		if err != nil {
+			writeError(w, errors.NewDomainError(errors.InvalidRequest, "limit must be a valid integer", err))
+			return
+		}
+		if limit < 1 || limit > 200 {
+			writeError(w, errors.NewDomainError(errors.InvalidRequest, "limit must be between 1 and 200", nil))
+			return
+		}
+	}
+
+	offset := 0
+	if o := q.Get("offset"); o != "" {
+		var err error
+		offset, err = strconv.Atoi(o)
+		if err != nil {
+			writeError(w, errors.NewDomainError(errors.InvalidRequest, "offset must be a valid integer", err))
+			return
+		}
+		if offset < 0 {
+			offset = 0
+		}
+	}
+
+	searchQuery := q.Get("q")
+
+	result, err := h.evaluateeSvc.GetMyEvaluateesPaginated(r.Context(), empID, searchQuery, offset, limit)
 	if err != nil {
 		writeError(w, err)
 		return

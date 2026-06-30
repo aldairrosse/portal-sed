@@ -195,3 +195,128 @@ func TestEmployeeRepo_ConcurrentSearch(t *testing.T) {
 
 	wg.Wait()
 }
+
+func TestEmployeeRepo_ListByManagerPaginated_Success(t *testing.T) {
+	t.Parallel()
+
+	db, mock := newMockDB(t)
+	r := repo.NewEmployeeRepo(nil, db)
+
+	managerID := uuid.MustParse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
+	evaluateeID := uuid.MustParse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")
+	orgNodeID := uuid.MustParse("cccccccc-cccc-cccc-cccc-cccccccccccc")
+	profileID := uuid.MustParse("dddddddd-dddd-dddd-dddd-dddddddddddd")
+	now := time.Now()
+
+	mock.ExpectQuery("SELECT e\\.id, e\\.created_at, e\\.updated_at, e\\.first_name, e\\.last_name, e\\.email, e\\.employee_number, e\\.is_active, e\\.org_node_id, e\\.manager_id, e\\.profile_id, COALESCE\\(ep\\.name, ''\\) as profile_name, COALESCE\\(ep\\.description, ''\\) as profile_description, e\\.job_title FROM employees e LEFT JOIN evaluation_profiles ep ON e\\.profile_id = ep\\.id WHERE manager_id = \\$1 AND e\\.id != \\$1 AND is_active = true AND \\(e\\.first_name ILIKE \\$2 OR e\\.last_name ILIKE \\$2 OR e\\.email ILIKE \\$2 OR e\\.employee_number ILIKE \\$2\\) ORDER BY e\\.last_name, e\\.first_name, e\\.id LIMIT \\$3 OFFSET \\$4").
+		WithArgs(managerID, "%smith%", 25, 0).
+		WillReturnRows(sqlmock.NewRows([]string{
+			"id", "created_at", "updated_at", "first_name", "last_name", "email",
+			"employee_number", "is_active", "org_node_id", "manager_id", "profile_id",
+			"profile_name", "profile_description", "job_title",
+		}).
+			AddRow(evaluateeID, now, now, "Bob", "Smith", "bob@example.com", "E002", true, orgNodeID, managerID, profileID, "Standard", "", "Developer"))
+
+	results, err := r.ListByManagerPaginated(context.Background(), managerID, "smith", 0, 25)
+	require.NoError(t, err)
+	require.Len(t, results, 1)
+	assert.Equal(t, evaluateeID, results[0].ID)
+	assert.Equal(t, "Bob", results[0].FirstName)
+	assert.Equal(t, "Standard", results[0].ProfileName)
+
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestEmployeeRepo_ListByManagerPaginated_SelfExclusion(t *testing.T) {
+	t.Parallel()
+
+	db, mock := newMockDB(t)
+	r := repo.NewEmployeeRepo(nil, db)
+
+	managerID := uuid.MustParse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
+	orgNodeID := uuid.MustParse("cccccccc-cccc-cccc-cccc-cccccccccccc")
+	profileID := uuid.MustParse("dddddddd-dddd-dddd-dddd-dddddddddddd")
+	now := time.Now()
+
+	mock.ExpectQuery("SELECT e\\.id, e\\.created_at, e\\.updated_at, e\\.first_name, e\\.last_name, e\\.email, e\\.employee_number, e\\.is_active, e\\.org_node_id, e\\.manager_id, e\\.profile_id, COALESCE\\(ep\\.name, ''\\) as profile_name, COALESCE\\(ep\\.description, ''\\) as profile_description, e\\.job_title FROM employees e LEFT JOIN evaluation_profiles ep ON e\\.profile_id = ep\\.id WHERE manager_id = \\$1 AND e\\.id != \\$1 AND is_active = true ORDER BY e\\.last_name, e\\.first_name, e\\.id LIMIT \\$2 OFFSET \\$3").
+		WithArgs(managerID, 50, 0).
+		WillReturnRows(sqlmock.NewRows([]string{
+			"id", "created_at", "updated_at", "first_name", "last_name", "email",
+			"employee_number", "is_active", "org_node_id", "manager_id", "profile_id",
+			"profile_name", "profile_description", "job_title",
+		}).
+			AddRow(managerID, now, now, "Alice", "Smith", "alice@example.com", "E001", true, orgNodeID, nil, profileID, "Standard", "", "Manager"))
+
+	results, err := r.ListByManagerPaginated(context.Background(), managerID, "", 0, 50)
+	require.NoError(t, err)
+	require.Len(t, results, 1)
+	assert.Equal(t, managerID, results[0].ID, "mock returns self-row; real DB self-exclusion WHERE clause would exclude it")
+
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestEmployeeRepo_ListByManagerPaginated_PaginationBounds(t *testing.T) {
+	t.Parallel()
+
+	db, mock := newMockDB(t)
+	r := repo.NewEmployeeRepo(nil, db)
+
+	managerID := uuid.MustParse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
+	orgNodeID := uuid.MustParse("cccccccc-cccc-cccc-cccc-cccccccccccc")
+	profileID := uuid.MustParse("dddddddd-dddd-dddd-dddd-dddddddddddd")
+	now := time.Now()
+
+	// offset=500 (valid, no error), limit=0 should clamp to 50
+	mock.ExpectQuery("SELECT e\\.id, e\\.created_at, e\\.updated_at, e\\.first_name, e\\.last_name, e\\.email, e\\.employee_number, e\\.is_active, e\\.org_node_id, e\\.manager_id, e\\.profile_id, COALESCE\\(ep\\.name, ''\\) as profile_name, COALESCE\\(ep\\.description, ''\\) as profile_description, e\\.job_title FROM employees e LEFT JOIN evaluation_profiles ep ON e\\.profile_id = ep\\.id WHERE manager_id = \\$1 AND e\\.id != \\$1 AND is_active = true ORDER BY e\\.last_name, e\\.first_name, e\\.id LIMIT \\$2 OFFSET \\$3").
+		WithArgs(managerID, 50, 500).
+		WillReturnRows(sqlmock.NewRows([]string{
+			"id", "created_at", "updated_at", "first_name", "last_name", "email",
+			"employee_number", "is_active", "org_node_id", "manager_id", "profile_id",
+			"profile_name", "profile_description", "job_title",
+		}).
+			AddRow(uuid.New(), now, now, "Bob", "Jones", "bob@example.com", "E002", true, orgNodeID, managerID, profileID, "Standard", "", "Developer"))
+
+	results, err := r.ListByManagerPaginated(context.Background(), managerID, "", 500, 0)
+	require.NoError(t, err)
+	require.Len(t, results, 1)
+
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestEmployeeRepo_CountByManager(t *testing.T) {
+	t.Parallel()
+
+	db, mock := newMockDB(t)
+	r := repo.NewEmployeeRepo(nil, db)
+
+	managerID := uuid.MustParse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
+
+	mock.ExpectQuery("SELECT COUNT\\(\\*\\) FROM employees e WHERE manager_id = \\$1 AND e\\.id != \\$1 AND is_active = true").
+		WithArgs(managerID).
+		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(5))
+
+	total, err := r.CountByManager(context.Background(), managerID, "")
+	require.NoError(t, err)
+	assert.Equal(t, 5, total)
+
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestEmployeeRepo_CountByManager_WithQuery(t *testing.T) {
+	t.Parallel()
+
+	db, mock := newMockDB(t)
+	r := repo.NewEmployeeRepo(nil, db)
+
+	managerID := uuid.MustParse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
+
+	mock.ExpectQuery("SELECT COUNT\\(\\*\\) FROM employees e WHERE manager_id = \\$1 AND e\\.id != \\$1 AND is_active = true AND \\(e\\.first_name ILIKE \\$2 OR e\\.last_name ILIKE \\$2 OR e\\.email ILIKE \\$2 OR e\\.employee_number ILIKE \\$2\\)").
+		WithArgs(managerID, "%jones%").
+		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(2))
+
+	total, err := r.CountByManager(context.Background(), managerID, "jones")
+	require.NoError(t, err)
+	assert.Equal(t, 2, total)
+
+	assert.NoError(t, mock.ExpectationsWereMet())
+}

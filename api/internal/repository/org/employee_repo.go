@@ -393,6 +393,60 @@ func (r *EmployeeRepo) Search(ctx context.Context, query string, limit int) ([]*
 		 LIMIT $2`, searchTerm, limit)
 }
 
+// ListByManagerPaginated returns paginated active direct reports with profile info.
+// Self-excludes the manager. Supports ILIKE search on name, email, and employeeNumber.
+func (r *EmployeeRepo) ListByManagerPaginated(ctx context.Context, managerID uuid.UUID, query string, offset, limit int) ([]*EmployeeRow, error) {
+	q := `SELECT e.id, e.created_at, e.updated_at, e.first_name, e.last_name, e.email,
+	                 e.employee_number, e.is_active, e.org_node_id, e.manager_id, e.profile_id,
+	                 COALESCE(ep.name, '') as profile_name, COALESCE(ep.description, '') as profile_description, e.job_title
+	           FROM employees e
+	           LEFT JOIN evaluation_profiles ep ON e.profile_id = ep.id
+	           WHERE manager_id = $1 AND e.id != $1 AND is_active = true`
+	args := []interface{}{managerID}
+	idx := 2
+
+	if query != "" {
+		q += ` AND (e.first_name ILIKE $` + itoa(idx) +
+			` OR e.last_name ILIKE $` + itoa(idx) +
+			` OR e.email ILIKE $` + itoa(idx) +
+			` OR e.employee_number ILIKE $` + itoa(idx) + `)`
+		args = append(args, "%"+query+"%")
+		idx++
+	}
+
+	if limit <= 0 {
+		limit = 50
+	} else if limit > 200 {
+		limit = 200
+	}
+	if offset < 0 {
+		offset = 0
+	}
+
+	q += ` ORDER BY e.last_name, e.first_name, e.id LIMIT $` + itoa(idx) + ` OFFSET $` + itoa(idx+1)
+	args = append(args, limit, offset)
+
+	return scanEmployeeRowsWithProfile(r.db, ctx, q, args...)
+}
+
+// CountByManager returns the total active direct reports for a manager.
+// Self-excludes the manager. Supports ILIKE search matching ListByManagerPaginated.
+func (r *EmployeeRepo) CountByManager(ctx context.Context, managerID uuid.UUID, query string) (int, error) {
+	q := `SELECT COUNT(*) FROM employees e WHERE manager_id = $1 AND e.id != $1 AND is_active = true`
+	args := []interface{}{managerID}
+
+	if query != "" {
+		q += ` AND (e.first_name ILIKE $2 OR e.last_name ILIKE $2 OR e.email ILIKE $2 OR e.employee_number ILIKE $2)`
+		args = append(args, "%"+query+"%")
+	}
+
+	var total int
+	if err := r.db.QueryRowContext(ctx, q, args...).Scan(&total); err != nil {
+		return 0, err
+	}
+	return total, nil
+}
+
 // GetManager returns the manager of an employee.
 func (r *EmployeeRepo) GetManager(ctx context.Context, empID uuid.UUID) (*EmployeeRow, error) {
 	var managerID uuid.UUID

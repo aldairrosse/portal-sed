@@ -85,15 +85,19 @@ func (m *mockEmployeeService) SearchEmployees(ctx context.Context, query string,
 }
 
 type mockEvaluateeService struct {
-	getMyEvaluateesFunc   func(ctx context.Context, evaluatorID string) (*dto.EmployeeListResponse, error)
-	getTeamMembersFunc    func(ctx context.Context, headEmployeeID string) (*dto.EmployeeListResponse, error)
-	getManagerFunc        func(ctx context.Context, empID string) (*dto.EmployeeDetailResponse, error)
-	getChainOfCommandFunc func(ctx context.Context, empID string) (*dto.AncestorChainResponse, error)
-	batchLookupFunc       func(ctx context.Context, ids []string) (*dto.EmployeeListResponse, error)
+	getMyEvaluateesFunc           func(ctx context.Context, evaluatorID string) (*dto.EmployeeListResponse, error)
+	getMyEvaluateesPaginatedFunc  func(ctx context.Context, evaluatorID, query string, offset, limit int) (*dto.EmployeeListResponse, error)
+	getTeamMembersFunc            func(ctx context.Context, headEmployeeID string) (*dto.EmployeeListResponse, error)
+	getManagerFunc                func(ctx context.Context, empID string) (*dto.EmployeeDetailResponse, error)
+	getChainOfCommandFunc         func(ctx context.Context, empID string) (*dto.AncestorChainResponse, error)
+	batchLookupFunc               func(ctx context.Context, ids []string) (*dto.EmployeeListResponse, error)
 }
 
 func (m *mockEvaluateeService) GetMyEvaluatees(ctx context.Context, evaluatorID string) (*dto.EmployeeListResponse, error) {
 	return m.getMyEvaluateesFunc(ctx, evaluatorID)
+}
+func (m *mockEvaluateeService) GetMyEvaluateesPaginated(ctx context.Context, evaluatorID, query string, offset, limit int) (*dto.EmployeeListResponse, error) {
+	return m.getMyEvaluateesPaginatedFunc(ctx, evaluatorID, query, offset, limit)
 }
 func (m *mockEvaluateeService) GetTeamMembers(ctx context.Context, headEmployeeID string) (*dto.EmployeeListResponse, error) {
 	if m.getTeamMembersFunc != nil {
@@ -363,12 +367,13 @@ func TestListEmployees_Success(t *testing.T) {
 				Data: []dto.EmployeeListItem{
 					{ID: uuid.New().String(), FirstName: "Alice"},
 				},
-				Meta: struct {
-					Offset int `json:"offset"`
-					HasMore    bool   `json:"hasMore"`
-					Limit      int    `json:"limit"`
-				}{HasMore: false, Limit: 25},
-			}, nil
+			Meta: struct {
+				HasMore    bool   `json:"hasMore"`
+				Limit      int    `json:"limit"`
+				Offset     int    `json:"offset"`
+				Total      int    `json:"total"`
+			}{HasMore: false, Limit: 25},
+		}, nil
 		},
 	}
 
@@ -413,17 +418,22 @@ func TestGetMyEvaluatees_Success(t *testing.T) {
 	t.Parallel()
 
 	empID := uuid.New().String()
-	evalSvc := &mockEvaluateeService{
-		getMyEvaluateesFunc: func(_ context.Context, id string) (*dto.EmployeeListResponse, error) {
-			assert.Equal(t, empID, id)
+	empUUID := empID
+		evalSvc := &mockEvaluateeService{
+		getMyEvaluateesPaginatedFunc: func(_ context.Context, id, query string, offset, limit int) (*dto.EmployeeListResponse, error) {
+			assert.Equal(t, empUUID, id)
+			assert.Equal(t, "", query)
+			assert.Equal(t, 50, limit)
+			assert.Equal(t, 0, offset)
 			return &dto.EmployeeListResponse{
 				Data: []dto.EmployeeListItem{
 					{ID: uuid.New().String(), FirstName: "Carol"},
 				},
 				Meta: struct {
-					Offset int `json:"offset"`
 					HasMore    bool   `json:"hasMore"`
 					Limit      int    `json:"limit"`
+					Offset     int    `json:"offset"`
+					Total      int    `json:"total"`
 				}{Limit: 1, HasMore: false},
 			}, nil
 		},
@@ -487,11 +497,12 @@ func TestBatchResolve_Success(t *testing.T) {
 					{ID: id1, FirstName: "Dan"},
 					{ID: id2, FirstName: "Dana"},
 				},
-				Meta: struct {
-					Offset int `json:"offset"`
-					HasMore    bool   `json:"hasMore"`
-					Limit      int    `json:"limit"`
-				}{Limit: 2, HasMore: false},
+			Meta: struct {
+				HasMore    bool   `json:"hasMore"`
+				Limit      int    `json:"limit"`
+				Offset     int    `json:"offset"`
+				Total      int    `json:"total"`
+			}{Limit: 2, HasMore: false},
 			}, nil
 		},
 	}
@@ -520,11 +531,12 @@ func TestSearchEmployees_Success(t *testing.T) {
 				Data: []dto.EmployeeListItem{
 					{ID: uuid.New().String(), FirstName: "Alice"},
 				},
-				Meta: struct {
-					Offset int `json:"offset"`
-					HasMore    bool   `json:"hasMore"`
-					Limit      int    `json:"limit"`
-				}{Limit: 20, HasMore: false},
+			Meta: struct {
+				HasMore    bool   `json:"hasMore"`
+				Limit      int    `json:"limit"`
+				Offset     int    `json:"offset"`
+				Total      int    `json:"total"`
+			}{Limit: 20, HasMore: false},
 			}, nil
 		},
 	}
@@ -652,11 +664,12 @@ func TestBatchResolve_TooManyIDs(t *testing.T) {
 			received = idList
 			return &dto.EmployeeListResponse{
 				Data: []dto.EmployeeListItem{},
-				Meta: struct {
-					Offset int `json:"offset"`
-					HasMore    bool   `json:"hasMore"`
-					Limit      int    `json:"limit"`
-				}{Limit: len(idList), HasMore: false},
+			Meta: struct {
+				HasMore    bool   `json:"hasMore"`
+				Limit      int    `json:"limit"`
+				Offset     int    `json:"offset"`
+				Total      int    `json:"total"`
+			}{Limit: len(idList), HasMore: false},
 			}, nil
 		},
 	}
@@ -707,7 +720,7 @@ func TestGetMyEvaluatees_ResponseTime(t *testing.T) {
 	empID := uuid.New().String()
 	calls := 0
 	evalSvc := &mockEvaluateeService{
-		getMyEvaluateesFunc: func(_ context.Context, id string) (*dto.EmployeeListResponse, error) {
+		getMyEvaluateesPaginatedFunc: func(_ context.Context, id, query string, offset, limit int) (*dto.EmployeeListResponse, error) {
 			calls++
 			return &dto.EmployeeListResponse{Data: []dto.EmployeeListItem{}}, nil
 		},
@@ -954,4 +967,110 @@ func TestGetAreaMetrics_NoQueryParams(t *testing.T) {
 	require.NoError(t, json.NewDecoder(rec.Body).Decode(&resp))
 	assert.Equal(t, nodeID, resp.NodeID)
 	assert.Equal(t, 0, resp.EmployeeCount)
+}
+
+// ---------- evaluatees pagination validation ----------
+
+func TestGetMyEvaluatees_InvalidUUID(t *testing.T) {
+	t.Parallel()
+
+	h := newTestHandler(nil, nil, nil, nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/employees/not-a-uuid/evaluatees", nil)
+	req = withChiParam(req, "empId", "not-a-uuid")
+	rec := httptest.NewRecorder()
+
+	h.GetMyEvaluatees(rec, req)
+
+	assert.Equal(t, http.StatusBadRequest, rec.Code)
+	bodyStr := rec.Body.String()
+	assert.Contains(t, bodyStr, "empId must be a valid UUID v4")
+}
+
+func TestGetMyEvaluatees_LimitTooHigh(t *testing.T) {
+	t.Parallel()
+
+	empID := uuid.New().String()
+	h := newTestHandler(nil, nil, nil, nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/employees/"+empID+"/evaluatees?limit=999", nil)
+	req = withChiParam(req, "empId", empID)
+	rec := httptest.NewRecorder()
+
+	h.GetMyEvaluatees(rec, req)
+
+	assert.Equal(t, http.StatusBadRequest, rec.Code)
+	bodyStr := rec.Body.String()
+	assert.Contains(t, bodyStr, "limit must be between 1 and 200")
+}
+
+func TestGetMyEvaluatees_LimitBelowMin(t *testing.T) {
+	t.Parallel()
+
+	empID := uuid.New().String()
+	h := newTestHandler(nil, nil, nil, nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/employees/"+empID+"/evaluatees?limit=0", nil)
+	req = withChiParam(req, "empId", empID)
+	rec := httptest.NewRecorder()
+
+	h.GetMyEvaluatees(rec, req)
+
+	assert.Equal(t, http.StatusBadRequest, rec.Code)
+	bodyStr := rec.Body.String()
+	assert.Contains(t, bodyStr, "limit must be between 1 and 200")
+}
+
+func TestGetMyEvaluatees_InvalidLimitFormat(t *testing.T) {
+	t.Parallel()
+
+	empID := uuid.New().String()
+	h := newTestHandler(nil, nil, nil, nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/employees/"+empID+"/evaluatees?limit=abc", nil)
+	req = withChiParam(req, "empId", empID)
+	rec := httptest.NewRecorder()
+
+	h.GetMyEvaluatees(rec, req)
+
+	assert.Equal(t, http.StatusBadRequest, rec.Code)
+	bodyStr := rec.Body.String()
+	assert.Contains(t, bodyStr, "limit must be a valid integer")
+}
+
+func TestGetMyEvaluatees_WithQueryParams(t *testing.T) {
+	t.Parallel()
+
+	empID := uuid.New().String()
+	empUUID := empID
+	evalSvc := &mockEvaluateeService{
+		getMyEvaluateesPaginatedFunc: func(_ context.Context, id, query string, offset, limit int) (*dto.EmployeeListResponse, error) {
+			assert.Equal(t, empUUID, id)
+			assert.Equal(t, "smith", query)
+			assert.Equal(t, 25, limit)
+			assert.Equal(t, 10, offset)
+			return &dto.EmployeeListResponse{
+				Data: []dto.EmployeeListItem{
+					{ID: uuid.New().String(), FirstName: "John"},
+				},
+			Meta: struct {
+				HasMore    bool   `json:"hasMore"`
+				Limit      int    `json:"limit"`
+				Offset     int    `json:"offset"`
+				Total      int    `json:"total"`
+			}{Limit: 25, Offset: 10, HasMore: false},
+			}, nil
+		},
+	}
+
+	h := newTestHandler(nil, nil, nil, evalSvc)
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/employees/"+empID+"/evaluatees?q=smith&limit=25&offset=10", nil)
+	req = withChiParam(req, "empId", empID)
+	rec := httptest.NewRecorder()
+
+	h.GetMyEvaluatees(rec, req)
+
+	assert.Equal(t, http.StatusOK, rec.Code)
+	var resp dto.EmployeeListResponse
+	require.NoError(t, json.NewDecoder(rec.Body).Decode(&resp))
+	require.Len(t, resp.Data, 1)
+	assert.Equal(t, "John", resp.Data[0].FirstName)
+	assert.Equal(t, 10, resp.Meta.Offset)
+	assert.Equal(t, 25, resp.Meta.Limit)
 }

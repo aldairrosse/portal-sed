@@ -69,6 +69,142 @@ func TestEvaluateeService_GetMyEvaluatees(t *testing.T) {
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
+func TestEvaluateeService_GetMyEvaluateesPaginated(t *testing.T) {
+	t.Parallel()
+
+	db, mock := newMockDB(t)
+	empRepo := newEmployeeRepo(db)
+	nodeRepo := newOrgNodeRepo(db)
+
+	service := svc.NewEvaluateeService(empRepo, nodeRepo, nil)
+
+	evaluatorID := uuid.MustParse("11111111-1111-1111-1111-111111111111")
+	reportID := uuid.MustParse("22222222-2222-2222-2222-222222222222")
+	orgNodeID := uuid.MustParse("44444444-4444-4444-4444-444444444444")
+	profileID := uuid.MustParse("55555555-5555-5555-5555-555555555555")
+	profileName := "Standard"
+	now := time.Now()
+
+	// Expect GetByID for evaluator (includes job_title column)
+	mock.ExpectQuery("SELECT id, created_at, updated_at, first_name, last_name, email, employee_number, is_active, org_node_id, manager_id, profile_id, job_title FROM employees WHERE id = \\$1").
+		WithArgs(evaluatorID).
+		WillReturnRows(sqlmock.NewRows([]string{"id", "created_at", "updated_at", "first_name", "last_name", "email", "employee_number", "is_active", "org_node_id", "manager_id", "profile_id", "job_title"}).
+			AddRow(evaluatorID, now, now, "Alice", "Smith", "alice@example.com", "E001", true, orgNodeID, nil, profileID, ""))
+
+	// Expect ListByManagerPaginated
+	mock.ExpectQuery("SELECT e\\.id, e\\.created_at, e\\.updated_at, e\\.first_name, e\\.last_name, e\\.email, e\\.employee_number, e\\.is_active, e\\.org_node_id, e\\.manager_id, e\\.profile_id, COALESCE\\(ep\\.name, ''\\) as profile_name, COALESCE\\(ep\\.description, ''\\) as profile_description, e\\.job_title FROM employees e LEFT JOIN evaluation_profiles ep ON e\\.profile_id = ep\\.id WHERE manager_id = \\$1 AND e\\.id != \\$1 AND is_active = true AND \\(e\\.first_name ILIKE \\$2 OR e\\.last_name ILIKE \\$2 OR e\\.email ILIKE \\$2 OR e\\.employee_number ILIKE \\$2\\) ORDER BY e\\.last_name, e\\.first_name, e\\.id LIMIT \\$3 OFFSET \\$4").
+		WithArgs(evaluatorID, "%bob%", 50, 0).
+		WillReturnRows(sqlmock.NewRows([]string{
+			"id", "created_at", "updated_at", "first_name", "last_name", "email",
+			"employee_number", "is_active", "org_node_id", "manager_id", "profile_id",
+			"profile_name", "profile_description", "job_title",
+		}).
+			AddRow(reportID, now, now, "Bob", "Jones", "bob@example.com", "E002", true, orgNodeID, evaluatorID, profileID, profileName, "", "Developer"))
+
+	// Expect CountByManager
+	mock.ExpectQuery("SELECT COUNT\\(\\*\\) FROM employees e WHERE manager_id = \\$1 AND e\\.id != \\$1 AND is_active = true AND \\(e\\.first_name ILIKE \\$2 OR e\\.last_name ILIKE \\$2 OR e\\.email ILIKE \\$2 OR e\\.employee_number ILIKE \\$2\\)").
+		WithArgs(evaluatorID, "%bob%").
+		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(1))
+
+	resp, err := service.GetMyEvaluateesPaginated(context.Background(), evaluatorID.String(), "bob", 0, 50)
+	require.NoError(t, err)
+	require.Len(t, resp.Data, 1)
+	assert.Equal(t, reportID.String(), resp.Data[0].ID)
+	assert.Equal(t, "Bob", resp.Data[0].FirstName)
+	assert.Equal(t, profileName, resp.Data[0].ProfileName)
+	assert.Equal(t, 50, resp.Meta.Limit)
+	assert.Equal(t, 0, resp.Meta.Offset)
+	assert.Equal(t, 1, resp.Meta.Total)
+	assert.False(t, resp.Meta.HasMore)
+
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestEvaluateeService_GetMyEvaluateesPaginated_HasMore(t *testing.T) {
+	t.Parallel()
+
+	db, mock := newMockDB(t)
+	empRepo := newEmployeeRepo(db)
+	nodeRepo := newOrgNodeRepo(db)
+
+	service := svc.NewEvaluateeService(empRepo, nodeRepo, nil)
+
+	evaluatorID := uuid.MustParse("11111111-1111-1111-1111-111111111111")
+	reportID := uuid.MustParse("22222222-2222-2222-2222-222222222222")
+	orgNodeID := uuid.MustParse("44444444-4444-4444-4444-444444444444")
+	profileID := uuid.MustParse("55555555-5555-5555-5555-555555555555")
+	now := time.Now()
+
+	// Expect GetByID for evaluator (includes job_title column)
+	mock.ExpectQuery("SELECT id, created_at, updated_at, first_name, last_name, email, employee_number, is_active, org_node_id, manager_id, profile_id, job_title FROM employees WHERE id = \\$1").
+		WithArgs(evaluatorID).
+		WillReturnRows(sqlmock.NewRows([]string{"id", "created_at", "updated_at", "first_name", "last_name", "email", "employee_number", "is_active", "org_node_id", "manager_id", "profile_id", "job_title"}).
+			AddRow(evaluatorID, now, now, "Alice", "Smith", "alice@example.com", "E001", true, orgNodeID, nil, profileID, ""))
+
+	// Expect ListByManagerPaginated — returns 1 row with limit=1, hasMore should be true because total > offset+1
+	mock.ExpectQuery("SELECT e\\.id, e\\.created_at, e\\.updated_at, e\\.first_name, e\\.last_name, e\\.email, e\\.employee_number, e\\.is_active, e\\.org_node_id, e\\.manager_id, e\\.profile_id, COALESCE\\(ep\\.name, ''\\) as profile_name, COALESCE\\(ep\\.description, ''\\) as profile_description, e\\.job_title FROM employees e LEFT JOIN evaluation_profiles ep ON e\\.profile_id = ep\\.id WHERE manager_id = \\$1 AND e\\.id != \\$1 AND is_active = true ORDER BY e\\.last_name, e\\.first_name, e\\.id LIMIT \\$2 OFFSET \\$3").
+		WithArgs(evaluatorID, 1, 0).
+		WillReturnRows(sqlmock.NewRows([]string{
+			"id", "created_at", "updated_at", "first_name", "last_name", "email",
+			"employee_number", "is_active", "org_node_id", "manager_id", "profile_id",
+			"profile_name", "profile_description", "job_title",
+		}).
+			AddRow(reportID, now, now, "Bob", "Jones", "bob@example.com", "E002", true, orgNodeID, evaluatorID, profileID, "Standard", "", "Developer"))
+
+	// Expect CountByManager — total is 3, so hasMore should be true
+	mock.ExpectQuery("SELECT COUNT\\(\\*\\) FROM employees e WHERE manager_id = \\$1 AND e\\.id != \\$1 AND is_active = true").
+		WithArgs(evaluatorID).
+		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(3))
+
+	resp, err := service.GetMyEvaluateesPaginated(context.Background(), evaluatorID.String(), "", 0, 1)
+	require.NoError(t, err)
+	require.Len(t, resp.Data, 1)
+	assert.Equal(t, 1, resp.Meta.Limit)
+	assert.Equal(t, 3, resp.Meta.Total)
+	assert.True(t, resp.Meta.HasMore, "hasMore should be true when offset+len < total")
+
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestEvaluateeService_GetMyEvaluateesPaginated_InvalidUUID(t *testing.T) {
+	t.Parallel()
+
+	db, mock := newMockDB(t)
+	empRepo := newEmployeeRepo(db)
+	nodeRepo := newOrgNodeRepo(db)
+
+	service := svc.NewEvaluateeService(empRepo, nodeRepo, nil)
+
+	_, err := service.GetMyEvaluateesPaginated(context.Background(), "not-a-uuid", "", 0, 50)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "Invalid evaluator ID")
+
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestEvaluateeService_GetMyEvaluateesPaginated_EvaluatorNotFound(t *testing.T) {
+	t.Parallel()
+
+	db, mock := newMockDB(t)
+	empRepo := newEmployeeRepo(db)
+	nodeRepo := newOrgNodeRepo(db)
+
+	service := svc.NewEvaluateeService(empRepo, nodeRepo, nil)
+
+	unknownID := uuid.MustParse("99999999-9999-9999-9999-999999999999")
+
+	// Expect GetByID returns ErrEmployeeNotFound (job_title column in SELECT)
+	mock.ExpectQuery("SELECT id, created_at, updated_at, first_name, last_name, email, employee_number, is_active, org_node_id, manager_id, profile_id, job_title FROM employees WHERE id = \\$1").
+		WithArgs(unknownID).
+		WillReturnError(sql.ErrNoRows)
+
+	_, err := service.GetMyEvaluateesPaginated(context.Background(), unknownID.String(), "", 0, 50)
+	require.Error(t, err)
+	assert.ErrorIs(t, err, repo.ErrEmployeeNotFound)
+
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
 func TestEvaluateeService_GetChainOfCommand_DeepTree(t *testing.T) {
 	t.Parallel()
 

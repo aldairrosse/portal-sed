@@ -14,6 +14,7 @@ import (
 // EvaluateeService defines the interface for evaluatee and chain-of-command operations.
 type EvaluateeService interface {
 	GetMyEvaluatees(ctx context.Context, evaluatorID string) (*org.EmployeeListResponse, error)
+	GetMyEvaluateesPaginated(ctx context.Context, evaluatorID, query string, offset, limit int) (*org.EmployeeListResponse, error)
 	GetTeamMembers(ctx context.Context, headEmployeeID string) (*org.EmployeeListResponse, error)
 	GetManager(ctx context.Context, empID string) (*org.EmployeeDetailResponse, error)
 	GetChainOfCommand(ctx context.Context, empID string) (*org.AncestorChainResponse, error)
@@ -58,6 +59,53 @@ func (s *evaluateeService) GetMyEvaluatees(ctx context.Context, evaluatorID stri
 	}
 	resp.Meta.Limit = len(rows)
 	resp.Meta.HasMore = false
+
+	for i, r := range rows {
+		resp.Data[i] = employeeRowToItem(r)
+	}
+
+	return resp, nil
+}
+
+func (s *evaluateeService) GetMyEvaluateesPaginated(ctx context.Context, evaluatorID, query string, offset, limit int) (*org.EmployeeListResponse, error) {
+	id, err := uuid.Parse(evaluatorID)
+	if err != nil {
+		return nil, errors.NewDomainError(errors.InvalidRequest, "Invalid evaluator ID: must be a valid UUID", err)
+	}
+
+	// Verify evaluator exists
+	_, err = s.empRepo.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	// Clamp pagination params
+	if limit <= 0 {
+		limit = 50
+	} else if limit > 200 {
+		limit = 200
+	}
+	if offset < 0 {
+		offset = 0
+	}
+
+	rows, err := s.empRepo.ListByManagerPaginated(ctx, id, query, offset, limit)
+	if err != nil {
+		return nil, err
+	}
+
+	total, err := s.empRepo.CountByManager(ctx, id, query)
+	if err != nil {
+		return nil, err
+	}
+
+	resp := &org.EmployeeListResponse{
+		Data: make([]org.EmployeeListItem, len(rows)),
+	}
+	resp.Meta.Limit = limit
+	resp.Meta.Offset = offset
+	resp.Meta.Total = total
+	resp.Meta.HasMore = offset+len(rows) < total
 
 	for i, r := range rows {
 		resp.Data[i] = employeeRowToItem(r)
