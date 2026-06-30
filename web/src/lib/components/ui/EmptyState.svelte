@@ -6,9 +6,10 @@
 		message?: string;
 		actionLabel?: string;
 		actionHref?: string;
+		onaction?: () => void;
 	}
 
-	let { title = 'Sin contenido', message = 'No hay datos para mostrar.', actionLabel, actionHref }: Props = $props();
+	let { title = 'Sin contenido', message = 'No hay datos para mostrar.', actionLabel, actionHref, onaction }: Props = $props();
 </script>
 
 <div class="flex flex-col items-center justify-center py-16 text-center" role="status">
@@ -19,5 +20,7 @@
 	<p class="text-base-content/50 mt-1.5 max-w-sm">{message}</p>
 	{#if actionLabel && actionHref}
 		<a href={actionHref} class="btn btn-primary btn-sm mt-5 px-6">{actionLabel}</a>
+	{:else if actionLabel}
+		<button class="btn btn-primary btn-sm mt-5 px-6" onclick={onaction}>{actionLabel}</button>
 	{/if}
 </div>

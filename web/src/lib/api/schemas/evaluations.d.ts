@@ -91,6 +91,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/evaluations/employee/{employeeId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get competency ratings for an employee in a cycle */
+        get: operations["getEmployeeCompetencies"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/evaluations/summary": {
         parameters: {
             query?: never;
@@ -232,6 +249,20 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        EmployeeCompetencyRatingsResponse: {
+            /** Format: uuid */
+            employeeId?: string;
+            /** Format: uuid */
+            cycleId?: string;
+            ratings?: components["schemas"]["EmployeeCompetencyRatingDTO"][];
+        };
+        EmployeeCompetencyRatingDTO: {
+            /** Format: uuid */
+            competencyId?: string;
+            selfRating?: number | null;
+            rhRating?: number | null;
+            comments?: string;
+        };
         EvaluationListResponse: {
             data?: components["schemas"]["EvaluationListItem"][];
             nextCursor?: string;
@@ -331,6 +362,13 @@ export interface components {
             id?: string;
             /** Format: uuid */
             evaluateeId?: string;
+            /** @description Employee full name (first + last) */
+            employeeName?: string;
+            /**
+             * Format: uuid
+             * @description Employee's evaluation profile ID
+             */
+            profileId?: string;
             /** @description 1=low, 2=medium, 3=high */
             performanceTier?: number;
             /** @description 1=low, 2=medium, 3=high */
@@ -634,6 +672,32 @@ export interface operations {
             503: components["responses"]["ServiceUnavailable"];
         };
     };
+    getEmployeeCompetencies: {
+        parameters: {
+            query: {
+                cycle_id: string;
+            };
+            header?: never;
+            path: {
+                employeeId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Employee competency ratings */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmployeeCompetencyRatingsResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            404: components["responses"]["NotFound"];
+        };
+    };
     getEvaluationSummary: {
         parameters: {
             query: {
@@ -734,7 +798,9 @@ export interface operations {
     };
     listMatrixEntries: {
         parameters: {
-            query?: never;
+            query?: {
+                quadrant?: number;
+            };
             header?: never;
             path: {
                 matrixId: string;
@@ -752,6 +818,7 @@ export interface operations {
                     "application/json": components["schemas"]["NineBoxEntryDTO"][];
                 };
             };
+            400: components["responses"]["BadRequest"];
         };
     };
     getScales: {

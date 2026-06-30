@@ -5,6 +5,9 @@
 	import { PROFILE_LABELS } from '$lib/types/evaluation';
 	import { getProfile } from '$lib/stores/devContext.svelte';
 	import { getAssignmentsByProfile } from '$lib/stores/goalsStore.svelte';
+	import { load, isLoading } from '$lib/stores/evaluationStore.svelte';
+	import { loadCycles, getActiveCycle } from '$lib/stores/cycleStore.svelte';
+	import PageSkeleton from '$lib/components/ui/PageSkeleton.svelte';
 	import { Users, Network, Table } from '@lucide/svelte';
 
 	const employeeId = $derived($page.params.employeeId);
@@ -24,6 +27,15 @@
 			activeTab = activeTab === 'radar' ? 'table' : 'radar';
 		}
 	}
+
+	$effect(() => {
+		if (employeeId) {
+			// Ensure cycles are loaded before fetching competency data
+			loadCycles().then(() => {
+				if (employeeId) load(employeeId);
+			});
+		}
+	});
 </script>
 
 <svelte:head>
@@ -101,6 +113,11 @@
 		</div>
 	</div>
 
-	<!-- Competency view -->
-	<CompetencyNetworkView {employeeId} {employeeName} {activeTab} />
+	<!-- Loading skeleton -->
+	{#if isLoading()}
+		<PageSkeleton variant="card" rows={3} avatar />
+	{:else}
+		<!-- Competency view -->
+		<CompetencyNetworkView {employeeId} {employeeName} {activeTab} />
+	{/if}
 </div>

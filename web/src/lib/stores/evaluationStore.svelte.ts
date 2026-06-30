@@ -2,6 +2,7 @@ import type { CompetencyRating, GoalClosure, EvaluationStatus } from '$lib/types
 import { getActivePhase } from '$lib/api/cycle.svelte';
 import { getSession } from '$lib/api/session.svelte';
 import { client } from '$lib/api/client';
+import { getActiveCycle } from '$lib/stores/cycleStore.svelte';
 
 
 // ─── Internal data shape ──────────────────────────────────────────────────────
@@ -35,6 +36,8 @@ function normalizeApiData(
 		competencies?: Array<{
 			competencyId?: string;
 			rating?: number;
+			selfRating?: number | null;
+			rhRating?: number | null;
 			comments?: string;
 		}>;
 		goals?: Array<{
@@ -49,8 +52,9 @@ function normalizeApiData(
 		id: `api-cr-${empId}-${c.competencyId ?? i}-${Date.now()}`,
 		employeeId: empId,
 		competencyId: c.competencyId ?? '',
-		selfRating: c.rating != null ? (c.rating as 1 | 2 | 3 | 4 | 5) : undefined,
-		selfComment: c.comments
+		selfRating: (c.selfRating ?? c.rating) != null ? ((c.selfRating ?? c.rating) as 1 | 2 | 3 | 4 | 5) : undefined,
+		selfComment: c.comments,
+		rhRating: c.rhRating != null ? (c.rhRating as 1 | 2 | 3 | 4 | 5) : undefined
 	}));
 
 	const goalClosures: GoalClosure[] = (detail?.goals ?? []).map((g, i) => ({
@@ -75,28 +79,64 @@ function isFinAnio(): boolean {
 /**
  * Load evaluation data.
  *
+ * When `employeeId` is provided: fetches ratings for that employee via the
+ * employee-specific endpoint (used by competency network view for arbitrary employees).
+ * When `employeeId` is absent: fetches the current session user's evaluation (existing path).
+ *
  * In DEV without VITE_USE_API: loads from fixture files (structured clone + RH merge).
  * In production / VITE_USE_API=true: fetches from the real API endpoints.
  */
-export async function load(): Promise<void> {
+export async function load(employeeId?: string): Promise<void> {
 	loading = true;
 	error = null;
 
 	try {
-		const empId = getSession().user?.employeeId;
-		if (!empId) throw new Error('No hay sesión activa');
+		if (employeeId) {
+			// Employee-specific path (competency network for manager/RH view)
+			const cycle = getActiveCycle();
+			if (!cycle) throw new Error('No hay ciclo activo');
 
-		const { data: apiData, error: apiError } = await client.GET('/evaluations/{id}', {
-			params: { path: { id: empId } }
-		});
-
-		if (apiError) {
-			throw new Error(
-				typeof apiError === 'string' ? apiError : 'Error al cargar evaluación'
+			const { data: apiData, error: apiError } = await client.GET(
+				'/evaluations/employee/{employeeId}',
+				{ params: { query: { cycle_id: cycle.id }, path: { employeeId } } }
 			);
-		}
 
-		data = normalizeApiData(apiData as Parameters<typeof normalizeApiData>[0], empId);
+			if (apiError) {
+				throw new Error(
+					typeof apiError === 'string' ? apiError : 'Error al cargar competencias del empleado'
+				);
+			}
+
+			// Map ratings to competencies for normalizeApiData
+			const resp = apiData as { employeeId?: string; cycleId?: string; ratings?: Array<{ competencyId?: string; selfRating?: number | null; rhRating?: number | null; comments?: string }> } | undefined;
+			const mapped = {
+				employeeId: resp?.employeeId ?? employeeId,
+				competencies: (resp?.ratings ?? []).map((r) => ({
+					competencyId: r.competencyId,
+					selfRating: r.selfRating,
+					rhRating: r.rhRating,
+					comments: r.comments
+				})),
+				goals: []
+			};
+			data = normalizeApiData(mapped, employeeId);
+		} else {
+			// Existing path: self-evaluation by session user
+			const empId = getSession().user?.employeeId;
+			if (!empId) throw new Error('No hay sesión activa');
+
+			const { data: apiData, error: apiError } = await client.GET('/evaluations/{id}', {
+				params: { path: { id: empId } }
+			});
+
+			if (apiError) {
+				throw new Error(
+					typeof apiError === 'string' ? apiError : 'Error al cargar evaluación'
+				);
+			}
+
+			data = normalizeApiData(apiData as Parameters<typeof normalizeApiData>[0], empId);
+		}
 	} catch (e) {
 		data = null;
 		error = e instanceof Error ? e.message : 'Error desconocido al cargar evaluaciones';

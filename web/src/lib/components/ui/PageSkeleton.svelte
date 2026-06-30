@@ -2,7 +2,7 @@
 	interface Props {
 		rows?: number;
 		avatar?: boolean;
-		variant?: 'default' | 'table' | 'card' | 'form';
+		variant?: 'default' | 'table' | 'card' | 'form' | 'category';
 	}
 
 	let { rows = 5, avatar = false, variant = 'default' }: Props = $props();
@@ -67,5 +67,39 @@
 				<div class="skeleton h-9 w-full rounded-input"></div>
 			</div>
 		{/each}
+
+	{:else if variant === 'category'}
+		<div class="space-y-4">
+			{#each Array(rows) as _, i (i)}
+				<div class="border border-base-300 rounded-box p-4 space-y-3">
+					<!-- category header -->
+					<div class="flex items-center justify-between">
+						<div class="flex items-center gap-3">
+							<div class="skeleton h-5 w-40"></div>
+							<div class="skeleton h-4 w-12 rounded-full"></div>
+						</div>
+						<div class="flex gap-1">
+							<div class="skeleton h-6 w-6 rounded"></div>
+							<div class="skeleton h-6 w-6 rounded"></div>
+						</div>
+					</div>
+					<!-- goal rows -->
+					{#each Array(2) as _, j (j)}
+						<div class="flex items-center gap-3 border-t border-base-200 pt-2">
+							<div class="skeleton h-4 w-1/3"></div>
+							<div class="skeleton h-4 w-1/6"></div>
+							<div class="skeleton h-4 w-1/6"></div>
+							<div class="skeleton h-4 w-1/6"></div>
+							<div class="flex-1"></div>
+							<div class="skeleton h-5 w-5 rounded"></div>
+						</div>
+					{/each}
+					<!-- add goal button -->
+					<div class="flex justify-center pt-1">
+						<div class="skeleton h-8 w-28 rounded-input"></div>
+					</div>
+				</div>
+			{/each}
+		</div>
 	{/if}
 </div>

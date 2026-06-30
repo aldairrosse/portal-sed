@@ -191,7 +191,7 @@ func setupTestServerWithPhaseChecker(t *testing.T, phaseChecker goalsvc.PhaseChe
 	pillarRepo := repocompetency.NewPillarRepo(client)
 	compRepo := repocompetency.NewCompetencyRepo(client)
 	scaleRepo := repocompetency.NewScaleRepo(client)
-	catalogCompRepo := repocompetency.NewCatalogRepo(client)
+	catalogCompRepo := repocompetency.NewCatalogRepo(client, db)
 	acceptanceRepo := repocompetency.NewAcceptanceRepo(client)
 
 	evalRepo := repoeval.NewEvaluationRepo(client, db)
@@ -231,7 +231,7 @@ func setupTestServerWithPhaseChecker(t *testing.T, phaseChecker goalsvc.PhaseChe
 
 	cycleCheck := &evalCyclePhaseCheck{cycleRepo: cycleRepo}
 	idemCache := newInMemoryIdempotencyCache()
-	evalSvc := evalsvc.NewEvaluationService(evalRepo, compRatingRepo, goalRatingRepo, cycleCheck, idemCache)
+	evalSvc := evalsvc.NewEvaluationService(evalRepo, compRatingRepo, goalRatingRepo, cycleCheck, idemCache, employeeRepo, orgNodeRepo)
 	nineBoxSvc := evalsvc.NewNineBoxService(nineBoxRepo, catalogEvalRepo, db)
 	dashboardSvc := evalsvc.NewDashboardService(evalRepo)
 

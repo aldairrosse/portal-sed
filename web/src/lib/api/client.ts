@@ -5,8 +5,9 @@ import type { paths as GoalsPaths } from './schemas/goals.d.ts';
 import type { paths as CompetencyPaths } from './schemas/competency.d.ts';
 import type { paths as OrgHierarchyPaths } from './schemas/org-hierarchy.d.ts';
 import type { paths as ActivityLogsPaths } from './schemas/activity-logs.d.ts';
+import type { paths as EvalPaths } from './schemas/evaluations.d.ts';
 
-type AppPaths = AuthPaths & CyclePaths & GoalsPaths & CompetencyPaths & OrgHierarchyPaths & ActivityLogsPaths;
+type AppPaths = AuthPaths & CyclePaths & GoalsPaths & CompetencyPaths & OrgHierarchyPaths & ActivityLogsPaths & EvalPaths;
 
 export const baseURL: string = import.meta.env.VITE_API_URL ?? '/api/v1';
 
