@@ -25,7 +25,7 @@ func (m *mockCategoryRepoForValidation) CreateCategory(ctx context.Context, empI
 	return nil, nil
 }
 
-func (m *mockCategoryRepoForValidation) UpdateCategory(ctx context.Context, catID uuid.UUID, name, description string, weight float64) (*repogoal.CategoryRow, error) {
+func (m *mockCategoryRepoForValidation) UpdateCategory(ctx context.Context, catID uuid.UUID, name, description string, weight float64, updatedBy uuid.UUID) (*repogoal.CategoryRow, error) {
 	return nil, nil
 }
 
@@ -47,7 +47,7 @@ type mockGoalRepoForValidation struct {
 	err   error
 }
 
-func (m *mockGoalRepoForValidation) CreateGoal(ctx context.Context, catID uuid.UUID, name, description, unit, direction string, weight, targetValue float64, baselineValue *float64) (*repogoal.GoalRow, error) {
+func (m *mockGoalRepoForValidation) CreateGoal(ctx context.Context, catID, createdBy uuid.UUID, name, description, unit, direction string, weight, targetValue float64, baselineValue *float64) (*repogoal.GoalRow, error) {
 	return nil, nil
 }
 
@@ -55,7 +55,7 @@ func (m *mockGoalRepoForValidation) GetGoal(ctx context.Context, goalID uuid.UUI
 	return nil, nil
 }
 
-func (m *mockGoalRepoForValidation) UpdateGoal(ctx context.Context, goalID uuid.UUID, name, description, unit, direction string, weight, targetValue float64, baselineValue *float64, expectedVersion int) (*repogoal.GoalRow, error) {
+func (m *mockGoalRepoForValidation) UpdateGoal(ctx context.Context, goalID, updatedBy uuid.UUID, name, description, unit, direction string, weight, targetValue float64, baselineValue *float64, expectedVersion int) (*repogoal.GoalRow, error) {
 	return nil, nil
 }
 

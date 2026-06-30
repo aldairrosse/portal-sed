@@ -12,7 +12,7 @@ import (
 type CategoryRepository interface {
 	ListCategoriesByEmployee(ctx context.Context, empID uuid.UUID) ([]*repogoal.CategoryRow, error)
 	CreateCategory(ctx context.Context, empID uuid.UUID, name, description string, weight float64) (*repogoal.CategoryRow, error)
-	UpdateCategory(ctx context.Context, catID uuid.UUID, name, description string, weight float64) (*repogoal.CategoryRow, error)
+	UpdateCategory(ctx context.Context, catID uuid.UUID, name, description string, weight float64, updatedBy uuid.UUID) (*repogoal.CategoryRow, error)
 	DeleteCategory(ctx context.Context, catID uuid.UUID) error
 	GetCategory(ctx context.Context, catID uuid.UUID) (*repogoal.CategoryRow, error)
 	LockCategory(ctx context.Context, catID uuid.UUID) (*repogoal.CategoryRow, error)
@@ -20,9 +20,9 @@ type CategoryRepository interface {
 
 // GoalRepository defines the storage contract for goals.
 type GoalRepository interface {
-	CreateGoal(ctx context.Context, catID uuid.UUID, name, description, unit, direction string, weight, targetValue float64, baselineValue *float64) (*repogoal.GoalRow, error)
+	CreateGoal(ctx context.Context, catID, createdBy uuid.UUID, name, description, unit, direction string, weight, targetValue float64, baselineValue *float64) (*repogoal.GoalRow, error)
 	GetGoal(ctx context.Context, goalID uuid.UUID) (*repogoal.GoalRow, error)
-	UpdateGoal(ctx context.Context, goalID uuid.UUID, name, description, unit, direction string, weight, targetValue float64, baselineValue *float64, expectedVersion int) (*repogoal.GoalRow, error)
+	UpdateGoal(ctx context.Context, goalID, updatedBy uuid.UUID, name, description, unit, direction string, weight, targetValue float64, baselineValue *float64, expectedVersion int) (*repogoal.GoalRow, error)
 	DeleteGoal(ctx context.Context, goalID uuid.UUID) error
 	UpdateGoalCurrentValue(ctx context.Context, goalID uuid.UUID, currentValue float64) (*repogoal.GoalRow, error)
 	ListGoalsByCategory(ctx context.Context, catID uuid.UUID) ([]*repogoal.GoalRow, error)

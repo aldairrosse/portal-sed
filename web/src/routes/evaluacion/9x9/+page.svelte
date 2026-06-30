@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import { getProfile } from '$lib/stores/devContext.svelte';
 	import {
 		load,
@@ -11,6 +12,8 @@
 		reload
 	} from '$lib/stores/nineBoxStore.svelte';
 	import { getChildren, getDescendants } from '$lib/stores/orgHierarchyStore.svelte';
+	import { loadCycles, getActiveCycle, getError as cycleError } from '$lib/stores/cycleStore.svelte';
+	import { loadPhases, getPhaseId } from '$lib/stores/phaseStore.svelte';
 	import { type EvaluationProfile } from '$lib/types/evaluation';
 	import type { NineBoxEntry, NineBoxTier } from '$lib/types/nine-box';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
@@ -24,8 +27,8 @@
 	// ─── Phase options ─────────────────────────────────────────────────────────
 
 	const NINEBOX_PHASES = [
-		{ id: 'medio-anio', label: 'Avance medio año', shortLabel: 'Avance' },
-		{ id: 'fin-anio', label: 'Cierre fin de año', shortLabel: 'Evaluación' }
+		{ id: 'medio-anio', phaseEnum: 'avance', label: 'Avance medio año', shortLabel: 'Avance' },
+		{ id: 'fin-anio', phaseEnum: 'cierre', label: 'Cierre fin de año', shortLabel: 'Evaluación' }
 	] as const;
 
 	type NineBoxPhaseId = (typeof NINEBOX_PHASES)[number]['id'];
@@ -52,14 +55,31 @@
 	const isAuthorized = $derived(MANAGER_PROFILES.includes(profile));
 	const isRH = $derived(profile === 'rh');
 
-	const DEFAULT_CYCLE_ID = '2026';
-
 	let selectedPhase = $state<NineBoxPhaseId>('medio-anio');
 
-	// Load data on mount and when phase changes
+	// Resolve UUIDs for cycle and phase
+	const activeCycle = $derived(getActiveCycle());
+	const selectedPhaseEnum = $derived(
+		NINEBOX_PHASES.find((p) => p.id === selectedPhase)?.phaseEnum
+	);
+	const phaseUUID = $derived(selectedPhaseEnum ? getPhaseId(selectedPhaseEnum) : undefined);
+
+	// Load prerequisite data once, then nine-box data when UUIDs are ready
 	$effect(() => {
 		if (isAuthorized) {
-			load(DEFAULT_CYCLE_ID, selectedPhase);
+			// ponytail: untrack prevents $effect from tracking reads inside loadCycles/loadPhases
+			// (phaseDefinitions, cycles are $state — without untrack, reassignment triggers
+			// infinite effect re-fire → 489+ requests to /phases).
+			untrack(() => {
+				loadCycles();
+				loadPhases();
+			});
+		}
+	});
+
+	$effect(() => {
+		if (isAuthorized && activeCycle && phaseUUID) {
+			load(activeCycle.id, phaseUUID);
 		}
 	});
 
@@ -87,6 +107,10 @@
 	const error = $derived(getError());
 	const matrixEntries = $derived<NineBoxEntry[]>(getMatrixEntries(scopeIds));
 	const quadrantDefs = $derived(getQuadrantDefs());
+
+	// Prereq state: are cycles and phases loaded?
+	const prereqReady = $derived(!!activeCycle && !!phaseUUID);
+	const prereqError = $derived(cycleError());
 
 	const phaseLabel = $derived(
 		NINEBOX_PHASES.find((p) => p.id === selectedPhase)?.shortLabel ?? ''
@@ -122,7 +146,7 @@
 </script>
 
 <svelte:head>
-	<title>{phaseLabel} — Matriz 9-Box — SED</title>
+	<title>{phaseLabel} — Matriz 9-Box</title>
 </svelte:head>
 
 <div class="flex flex-col gap-6">
@@ -134,7 +158,7 @@
 				Matriz 9-Box
 			</h1>
 			<p class="text-sm text-base-content/50 mt-1">
-				{phaseLabel} — Desempeño vs Potencial
+				Desempeño vs Potencial
 			</p>
 		</div>
 		{#if isAuthorized}
@@ -143,7 +167,7 @@
 	</div>
 
 	<!-- Phase selector -->
-	<div role="tablist" class="tabs tabs-bordered gap-0">
+	<div role="tablist" class="tabs tabs-lift gap-0">
 		{#each NINEBOX_PHASES as phase (phase.id)}
 			<button
 				role="tab"
@@ -156,7 +180,19 @@
 		{/each}
 	</div>
 
-	{#if loading}
+	{#if !isAuthorized}
+		<EmptyState
+			title="Sin acceso"
+			message="No tienes permisos para ver la matriz 9-Box. Esta función está disponible para jefes, directores y RH."
+			actionLabel="Volver al inicio"
+			actionHref="/"
+		/>
+	{:else if prereqError}
+		<EmptyState
+			title="No se pudo iniciar la matriz"
+			message={prereqError}
+		/>
+	{:else if !prereqReady || loading}
 		<PageSkeleton variant="card" rows={3} />
 	{:else if error}
 		<ErrorState
@@ -164,13 +200,6 @@
 			message={error}
 			retryLabel="Reintentar"
 			onretry={reload}
-		/>
-	{:else if !isAuthorized}
-		<EmptyState
-			title="Sin acceso"
-			message="No tienes permisos para ver la matriz 9-Box. Esta función está disponible para jefes, directores y RH."
-			actionLabel="Volver al inicio"
-			actionHref="/"
 		/>
 	{:else if matrixEntries.length === 0}
 		<EmptyState

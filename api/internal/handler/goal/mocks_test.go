@@ -199,7 +199,7 @@ func (m *mockCategoryRepo) CreateCategory(ctx context.Context, empID uuid.UUID, 
 	return nil, nil
 }
 
-func (m *mockCategoryRepo) UpdateCategory(ctx context.Context, catID uuid.UUID, name, description string, weight float64) (*repogoal.CategoryRow, error) {
+func (m *mockCategoryRepo) UpdateCategory(ctx context.Context, catID uuid.UUID, name, description string, weight float64, updatedBy uuid.UUID) (*repogoal.CategoryRow, error) {
 	return nil, nil
 }
 
@@ -223,7 +223,7 @@ type mockGoalRepo struct {
 	listByCategoryFunc func(ctx context.Context, catID uuid.UUID) ([]*repogoal.GoalRow, error)
 }
 
-func (m *mockGoalRepo) CreateGoal(ctx context.Context, catID uuid.UUID, name, description, unit, direction string, weight, targetValue float64, baselineValue *float64) (*repogoal.GoalRow, error) {
+func (m *mockGoalRepo) CreateGoal(ctx context.Context, catID, createdBy uuid.UUID, name, description, unit, direction string, weight, targetValue float64, baselineValue *float64) (*repogoal.GoalRow, error) {
 	return nil, nil
 }
 
@@ -234,7 +234,7 @@ func (m *mockGoalRepo) GetGoal(ctx context.Context, goalID uuid.UUID) (*repogoal
 	return nil, nil
 }
 
-func (m *mockGoalRepo) UpdateGoal(ctx context.Context, goalID uuid.UUID, name, description, unit, direction string, weight, targetValue float64, baselineValue *float64, expectedVersion int) (*repogoal.GoalRow, error) {
+func (m *mockGoalRepo) UpdateGoal(ctx context.Context, goalID, updatedBy uuid.UUID, name, description, unit, direction string, weight, targetValue float64, baselineValue *float64, expectedVersion int) (*repogoal.GoalRow, error) {
 	return nil, nil
 }
 

@@ -92,13 +92,17 @@
 		onEditingChange(null);
 	}
 
-	function handleSaveEdit() {
+	async function handleSaveEdit() {
 		const err = validateGoal({ name: editName, description: editDesc, weight: editWeight, targetValue: editTarget, direction: editDirection, baselineValue: editDirection === 'descendente' ? editBaseline : undefined, categoryId: goal.categoryId, goalId: goal.id });
 		if (err) { editError = err; return; }
-		onSaveGoal({ id: goal.id, categoryId: goal.categoryId, name: editName.trim(), description: editDesc.trim(), unit: editUnit, weight: editWeight, targetValue: editTarget, direction: editDirection, baselineValue: editDirection === 'descendente' ? editBaseline : undefined, linkedKpiIds: editKpiIds });
-		isEditing = false;
-		editError = '';
-		onEditingChange(null);
+		try {
+			await onSaveGoal({ id: goal.id, categoryId: goal.categoryId, name: editName.trim(), description: editDesc.trim(), unit: editUnit, weight: editWeight, targetValue: editTarget, direction: editDirection, baselineValue: editDirection === 'descendente' ? editBaseline : undefined, linkedKpiIds: editKpiIds });
+			isEditing = false;
+			editError = '';
+			onEditingChange(null);
+		} catch (e) {
+			editError = e instanceof Error ? e.message : 'Error al guardar meta';
+		}
 	}
 
 	function handleToggleEditKpi(kpiId: string) {
@@ -180,9 +184,8 @@
 					</div>
 					{#if editDirection === 'descendente'}
 						<div class="form-control">
-							<label class="label" for="edit-goal-baseline-{goal.id}"><span class="label-text text-xs">Valor inicial (baseline)</span></label>
+							<label class="label" for="edit-goal-baseline-{goal.id}"><span class="label-text text-xs">Punto de partida</span></label>
 							<input id="edit-goal-baseline-{goal.id}" type="number" class="input input-bordered input-sm w-full" bind:value={editBaseline} min={0} step={0.01} required />
-							<label class="label"><span class="label-text-alt text-base-content/40">Valor al inicio de año (punto de partida)</span></label>
 						</div>
 					{/if}
 				</div>

@@ -74,15 +74,14 @@ func NewGoalRepo(client *internal.Client, db *sql.DB) *GoalRepo {
 
 // CreateGoal inserts a new goal with version=1 and state='borrador'.
 // Uses raw SQL to set the initial version.
-func (r *GoalRepo) CreateGoal(ctx context.Context, catID uuid.UUID, name, description, unit, direction string, weight, targetValue float64, baselineValue *float64) (*GoalRow, error) {
+func (r *GoalRepo) CreateGoal(ctx context.Context, catID, createdBy uuid.UUID, name, description, unit, direction string, weight, targetValue float64, baselineValue *float64) (*GoalRow, error) {
 	now := time.Now()
 	id := uuid.New()
-	createdBy := uuid.Nil // TODO(auth:C7): inject from context
 	state := "borrador"
 
 	_, err := r.db.ExecContext(ctx,
 		`INSERT INTO goals (id, created_at, updated_at, created_by, updated_by, name, description, unit, direction, weight, target_value, baseline_value, current_value, state, category_id, version)
-		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)`,
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)`,
 		id, now, now, createdBy, createdBy, name, description, unit, direction, weight, targetValue, baselineValue, 0.0, state, catID, 1,
 	)
 	if err != nil {
@@ -125,14 +124,14 @@ func (r *GoalRepo) GetGoal(ctx context.Context, goalID uuid.UUID) (*GoalRow, err
 
 // UpdateGoal updates goal fields with optimistic locking via version.
 // Uses raw SQL to atomically check and increment version.
-func (r *GoalRepo) UpdateGoal(ctx context.Context, goalID uuid.UUID, name, description, unit, direction string, weight, targetValue float64, baselineValue *float64, expectedVersion int) (*GoalRow, error) {
+func (r *GoalRepo) UpdateGoal(ctx context.Context, goalID, updatedBy uuid.UUID, name, description, unit, direction string, weight, targetValue float64, baselineValue *float64, expectedVersion int) (*GoalRow, error) {
 	now := time.Now()
 	res, err := r.db.ExecContext(ctx,
 		`UPDATE goals
 		 SET name = $1, description = $2, unit = $3, direction = $4, weight = $5, target_value = $6, baseline_value = $7,
-		     updated_at = $8, version = version + 1
-		 WHERE id = $9 AND version = $10`,
-		name, description, unit, direction, weight, targetValue, baselineValue, now, goalID, expectedVersion,
+		     updated_at = $8, updated_by = $9, version = version + 1
+		 WHERE id = $10 AND version = $11`,
+		name, description, unit, direction, weight, targetValue, baselineValue, now, updatedBy, goalID, expectedVersion,
 	)
 	if err != nil {
 		return nil, err
@@ -191,24 +190,45 @@ func (r *GoalRepo) DeleteGoal(ctx context.Context, goalID uuid.UUID) error {
 	return nil
 }
 
-// ListGoalsByCategory retrieves all goals for a category.
+// ListGoalsByCategory retrieves all goals for a category via raw SQL
+// (consistent with SumGoalWeightsByCategoryID which also uses raw SQL).
 func (r *GoalRepo) ListGoalsByCategory(ctx context.Context, catID uuid.UUID) ([]*GoalRow, error) {
-	goals, err := r.client.Goal.Query().
-		Where(goal.CategoryID(catID)).
-		Order(internal.Asc(goal.FieldCreatedAt)).
-		All(ctx)
+	rows, err := r.db.QueryContext(ctx,
+		`SELECT id, created_at, updated_at, created_by, updated_by, name, COALESCE(description, ''),
+		        unit, direction, weight, target_value, current_value, baseline_value, state, category_id, version
+		 FROM goals WHERE category_id = $1 ORDER BY created_at ASC`,
+		catID,
+	)
 	if err != nil {
 		return nil, err
 	}
-	rows := make([]*GoalRow, len(goals))
-	for i, g := range goals {
-		row, err := r.goalToRow(ctx, g)
-		if err != nil {
+	defer rows.Close()
+
+	var result []*GoalRow
+	for rows.Next() {
+		var g GoalRow
+		var createdAt, updatedAt sql.NullTime
+		var baselineValue sql.NullFloat64
+		if err := rows.Scan(
+			&g.ID, &createdAt, &updatedAt, &g.CreatedBy, &g.UpdatedBy,
+			&g.Name, &g.Description, &g.Unit, &g.Direction, &g.Weight,
+			&g.TargetValue, &g.CurrentValue, &baselineValue, &g.State,
+			&g.CategoryID, &g.Version,
+		); err != nil {
 			return nil, err
 		}
-		rows[i] = row
+		if createdAt.Valid {
+			g.CreatedAt = createdAt.Time
+		}
+		if updatedAt.Valid {
+			g.UpdatedAt = updatedAt.Time
+		}
+		if baselineValue.Valid {
+			g.BaselineValue = &baselineValue.Float64
+		}
+		result = append(result, &g)
 	}
-	return rows, nil
+	return result, rows.Err()
 }
 
 // GetCategory retrieves a category by ID (needed for ownership checks).

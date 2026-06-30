@@ -74,6 +74,8 @@ func (r *CategoryRepo) ListCategoriesByEmployee(ctx context.Context, empID uuid.
 func (r *CategoryRepo) CreateCategory(ctx context.Context, empID uuid.UUID, name, description string, weight float64) (*CategoryRow, error) {
 	cat, err := r.client.GoalCategory.Create().
 		SetEmployeeID(empID).
+		SetCreatedBy(empID).
+		SetUpdatedBy(empID).
 		SetName(name).
 		SetDescription(description).
 		SetWeight(weight).
@@ -88,11 +90,12 @@ func (r *CategoryRepo) CreateCategory(ctx context.Context, empID uuid.UUID, name
 }
 
 // UpdateCategory updates an existing category's name, description, and weight.
-func (r *CategoryRepo) UpdateCategory(ctx context.Context, catID uuid.UUID, name, description string, weight float64) (*CategoryRow, error) {
+func (r *CategoryRepo) UpdateCategory(ctx context.Context, catID uuid.UUID, name, description string, weight float64, updatedBy uuid.UUID) (*CategoryRow, error) {
 	cat, err := r.client.GoalCategory.UpdateOneID(catID).
 		SetName(name).
 		SetDescription(description).
 		SetWeight(weight).
+		SetUpdatedBy(updatedBy).
 		Save(ctx)
 	if err != nil {
 		if internal.IsNotFound(err) {

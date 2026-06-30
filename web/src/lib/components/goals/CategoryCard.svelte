@@ -74,10 +74,10 @@
 		editCatError = '';
 	}
 
-	function handleSaveCategoryInline() {
+	async function handleSaveCategoryInline() {
 		const err = validateCategory({ name: editCatName, description: editCatDesc, weight: editCatWeight, categoryId: category.id });
 		if (err) { editCatError = err; return; }
-		onSaveCategory({ id: category.id, name: editCatName.trim(), description: editCatDesc.trim(), weight: editCatWeight });
+		await onSaveCategory({ id: category.id, name: editCatName.trim(), description: editCatDesc.trim(), weight: editCatWeight });
 		isEditingCategory = false;
 	}
 
@@ -104,11 +104,15 @@
 		newGoalError = '';
 	}
 
-	function handleSaveNewGoal() {
+	async function handleSaveNewGoal() {
 		const err = validateGoal({ name: newGoalName, description: newGoalDesc, weight: newGoalWeight, targetValue: newGoalTarget, direction: newGoalDirection, baselineValue: newGoalDirection === 'descendente' ? newGoalBaseline : undefined, categoryId: category.id });
 		if (err) { newGoalError = err; return; }
-		onSaveGoal({ categoryId: category.id, name: newGoalName.trim(), description: newGoalDesc.trim(), unit: newGoalUnit, weight: newGoalWeight, targetValue: newGoalTarget, direction: newGoalDirection, baselineValue: newGoalDirection === 'descendente' ? newGoalBaseline : undefined, linkedKpiIds: newGoalKpiIds });
-		isCreatingGoal = false;
+		try {
+			await onSaveGoal({ categoryId: category.id, name: newGoalName.trim(), description: newGoalDesc.trim(), unit: newGoalUnit, weight: newGoalWeight, targetValue: newGoalTarget, direction: newGoalDirection, baselineValue: newGoalDirection === 'descendente' ? newGoalBaseline : undefined, linkedKpiIds: newGoalKpiIds });
+			isCreatingGoal = false;
+		} catch (e) {
+			newGoalError = e instanceof Error ? e.message : 'Error al crear meta';
+		}
 	}
 
 	function handleToggleNewKpi(kpiId: string) {
@@ -311,9 +315,8 @@
 					</div>
 					{#if newGoalDirection === 'descendente'}
 						<div class="form-control">
-							<label class="label" for="new-goal-baseline-{category.id}"><span class="label-text text-xs">Valor inicial (baseline)</span></label>
+							<label class="label" for="new-goal-baseline-{category.id}"><span class="label-text text-xs">Punto de partida</span></label>
 							<input id="new-goal-baseline-{category.id}" type="number" class="input input-bordered input-sm w-full" placeholder="0" min={0} step={0.01} bind:value={newGoalBaseline} required />
-							<label class="label"><span class="label-text-alt text-base-content/40">Valor al inicio de año (punto de partida)</span></label>
 						</div>
 					{/if}
 				</div>

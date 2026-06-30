@@ -29,6 +29,7 @@
 		getCyclePhase,
 		getGoalPermissions,
 		updateGoalProgress,
+		addAssignment,
 		addGoalComment,
 		deleteGoalComment,
 		getGoalComments,
@@ -52,6 +53,7 @@
     import ErrorState from "$lib/components/ui/ErrorState.svelte";
     import EmptyState from "$lib/components/ui/EmptyState.svelte";
     import { toCsv } from "$lib/utils/export";
+    import * as notifications from "$lib/stores/notifications.svelte";
 
     // ─── Load data ────────────────────────────────────────────────────────────
 
@@ -234,7 +236,6 @@
 
     // ─── Existing page state ─────────────────────────────────────────────────
 
-    let successMsg = $state("");
     let creatingCategory = $state(false);
     let isAnyInlineEditing = $state(false);
     let newCatName = $state('');
@@ -287,48 +288,78 @@
         newCatError = '';
     }
 
-    function handleSaveCategory(data: { id?: string; name: string; description: string; weight: number }) {
-        if (data.id) {
-            updateCategory(data.id, { name: data.name, description: data.description, weight: data.weight });
-        } else {
-            const newCat: GoalCategory = { id: `cat-${Date.now()}`, name: data.name, description: data.description, weight: data.weight };
-            addCategory(newCat);
+    async function handleSaveCategory(data: { id?: string; name: string; description: string; weight: number }) {
+        try {
+            if (data.id) {
+                await updateCategory(data.id, { name: data.name, description: data.description, weight: data.weight });
+            } else {
+                const newCat: GoalCategory = { id: `cat-${Date.now()}`, name: data.name, description: data.description, weight: data.weight };
+                await addCategory(newCat);
+            }
+            creatingCategory = false;
+            isAnyInlineEditing = false;
+            notifications.success(data.id ? 'Categoría actualizada correctamente.' : 'Categoría creada correctamente.');
+        } catch (e) {
+            newCatError = e instanceof Error ? e.message : 'Error al guardar categoría';
         }
-        creatingCategory = false;
-        isAnyInlineEditing = false;
-        successMsg = data.id ? 'Categoría actualizada correctamente.' : 'Categoría creada correctamente.';
-        setTimeout(() => (successMsg = ""), 3000);
     }
 
-    function handleDeleteCategory(catId: string) {
-        deleteCategory(catId);
-    }
-
-    function handleDeleteGoal(goalId: string) {
-        deleteGoal(goalId);
-    }
-
-    function handleSaveGoal(data: { id?: string; categoryId: string; name: string; description: string; unit: GoalUnit; weight: number; targetValue: number; direction: 'ascendente' | 'descendente'; baselineValue?: number; linkedKpiIds: string[] }) {
-        if (data.id) {
-            updateGoal(data.id, { name: data.name, description: data.description, unit: data.unit, weight: data.weight, targetValue: data.targetValue, direction: data.direction, baselineValue: data.baselineValue });
-            const currentLinked = getKpisForGoal(data.id).map(k => k.id);
-            const toAdd = data.linkedKpiIds.filter(id => !currentLinked.includes(id));
-            const toRemove = currentLinked.filter(id => !data.linkedKpiIds.includes(id));
-            for (const kpiId of toAdd) linkKpiToGoal(data.id, kpiId);
-            for (const kpiId of toRemove) unlinkKpiFromGoal(data.id, kpiId);
-        } else {
-            const newGoal: Goal = { id: `goal-${Date.now()}`, name: data.name, description: data.description, categoryId: data.categoryId, weight: data.weight, unit: data.unit, targetValue: data.targetValue, direction: data.direction, baselineValue: data.baselineValue };
-            addGoal(newGoal);
-            for (const kpiId of data.linkedKpiIds) linkKpiToGoal(newGoal.id, kpiId);
+    async function handleDeleteCategory(catId: string) {
+        try {
+            await deleteCategory(catId);
+        } catch (e) {
+            // silent
         }
-        isAnyInlineEditing = false;
-        successMsg = data.id ? 'Meta actualizada correctamente.' : 'Meta creada correctamente.';
-        setTimeout(() => (successMsg = ""), 3000);
     }
 
-    function handleSaveAssignment() {
-        successMsg = "Asignación guardada correctamente.";
-        setTimeout(() => (successMsg = ""), 3000);
+    async function handleDeleteGoal(goalId: string) {
+        try {
+            await deleteGoal(goalId);
+        } catch (e) {
+            // silent
+        }
+    }
+
+    async function handleSaveGoal(data: { id?: string; categoryId: string; name: string; description: string; unit: GoalUnit; weight: number; targetValue: number; direction: 'ascendente' | 'descendente'; baselineValue?: number; linkedKpiIds: string[] }) {
+        try {
+            if (data.id) {
+                await updateGoal(data.id, { name: data.name, description: data.description, unit: data.unit, weight: data.weight, targetValue: data.targetValue, direction: data.direction, baselineValue: data.baselineValue });
+                const currentLinked = getKpisForGoal(data.id).map(k => k.id);
+                const toAdd = data.linkedKpiIds.filter(id => !currentLinked.includes(id));
+                const toRemove = currentLinked.filter(id => !data.linkedKpiIds.includes(id));
+                for (const kpiId of toAdd) await linkKpiToGoal(data.id, kpiId);
+                for (const kpiId of toRemove) await unlinkKpiFromGoal(data.id, kpiId);
+            } else {
+                const newGoal: Goal = { id: `goal-${Date.now()}`, name: data.name, description: data.description, categoryId: data.categoryId, weight: data.weight, unit: data.unit, targetValue: data.targetValue, direction: data.direction, baselineValue: data.baselineValue };
+                await addGoal(newGoal);
+                for (const kpiId of data.linkedKpiIds) await linkKpiToGoal(newGoal.id, kpiId);
+            }
+            isAnyInlineEditing = false;
+            notifications.success(data.id ? 'Meta actualizada correctamente.' : 'Meta creada correctamente.');
+        } catch (e) {
+            throw e;
+        }
+    }
+
+    async function handleSaveAssignment() {
+        if (!targetAssignment) return;
+        try {
+            if (targetAssignment.id.startsWith('stub-')) {
+                await addAssignment({
+                    id: '',
+                    employeeId: targetAssignment.employeeId,
+                    employeeName: targetAssignment.employeeName,
+                    profileId: targetAssignment.profileId,
+                    managerId: null,
+                    goalIds: [],
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString(),
+                });
+            }
+            notifications.success("Asignación guardada correctamente.");
+        } catch (e) {
+            notifications.error(e instanceof Error ? e.message : 'Error al guardar asignación');
+        }
     }
 
     function handleRequestChangeGoal(goal: Goal) {
@@ -344,8 +375,12 @@
         openRequestModal("assignment", targetAssignment.id, targetEmployeeName);
     }
 
-    function handleUpdateProgress(goalId: string, progress: number) {
-        updateGoalProgress(goalId, progress);
+    async function handleUpdateProgress(goalId: string, progress: number) {
+        try {
+            await updateGoalProgress(goalId, progress);
+        } catch (e) {
+            // Progress update failed — the UI will revert on next reload
+        }
     }
 
     function handleExportCsv() {
@@ -376,7 +411,7 @@
 </svelte:head>
 
 {#if storeState.loading}
-    <PageSkeleton variant="table" rows={6} />
+    <PageSkeleton variant="category" rows={3} />
 {:else if storeState.error}
     <ErrorState message={storeState.error} onretry={load} />
 {:else}
@@ -527,13 +562,6 @@
             </div>
         {/if}
     </div>
-
-    <!-- Success/error alerts -->
-    {#if successMsg}
-        <div class="alert alert-success text-sm" role="status">
-            <span>{successMsg}</span>
-        </div>
-    {/if}
 
     <!-- Category cards -->
     {#if categories.length > 0}

@@ -150,7 +150,16 @@ func (h *GoalHandler) ListCategories(w http.ResponseWriter, r *http.Request) {
 
 	items := make([]dtogoal.CategoryResponse, len(cats))
 	for i, c := range cats {
-		items[i] = categoryRowToResponse(c)
+		cr := categoryRowToResponse(c)
+		goals, _ := h.goalRepo.ListGoalsByCategory(r.Context(), c.ID)
+		if goals != nil {
+			goalResponses := make([]dtogoal.GoalResponse, len(goals))
+			for j, g := range goals {
+				goalResponses[j] = goalRowToResponse(g)
+			}
+			cr.Goals = goalResponses
+		}
+		items[i] = cr
 	}
 
 	resp := dtogoal.CategoryListResponse{

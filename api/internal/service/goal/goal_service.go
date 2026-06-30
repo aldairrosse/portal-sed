@@ -96,7 +96,7 @@ func (s *GoalService) CreateGoal(ctx context.Context, empID, catID uuid.UUID, re
 	}
 
 	// Create goal via raw SQL (to set version=1)
-	goal, err := s.goalRepo.CreateGoal(ctx, catID, req.Name, req.Description, req.Unit, req.Direction, req.Weight, req.TargetValue, req.BaselineValue)
+	goal, err := s.goalRepo.CreateGoal(ctx, catID, empID, req.Name, req.Description, req.Unit, req.Direction, req.Weight, req.TargetValue, req.BaselineValue)
 	if err != nil {
 		return nil, fmt.Errorf("create goal: %w", err)
 	}
@@ -162,7 +162,7 @@ func (s *GoalService) UpdateGoal(ctx context.Context, empID, goalID uuid.UUID, r
 	}
 
 	// Update goal with optimistic lock
-	updated, err := s.goalRepo.UpdateGoal(ctx, goalID, req.Name, req.Description, req.Unit, req.Direction, req.Weight, req.TargetValue, req.BaselineValue, req.Version)
+	updated, err := s.goalRepo.UpdateGoal(ctx, goalID, empID, req.Name, req.Description, req.Unit, req.Direction, req.Weight, req.TargetValue, req.BaselineValue, req.Version)
 	if err != nil {
 		return nil, err
 	}

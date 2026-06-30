@@ -208,9 +208,9 @@ export async function load(): Promise<void> {
 	storeState.loading = true;
 	storeState.error = null;
 
-	const empId = getEmployeeId();
-
 	try {
+		const empId = getEmployeeId();
+
 		const [catsRes, kpisRes, assignmentRes] = await Promise.all([
 			client.GET('/employees/{empId}/categories', {
 				params: { path: { empId } }
@@ -252,6 +252,7 @@ export async function load(): Promise<void> {
 		storeState.loading = false;
 	}
 }
+
 
 /** Alias for load(). */
 export function reload(): Promise<void> {
@@ -506,7 +507,8 @@ export async function addGoal(goal: Goal): Promise<void> {
 			unit: goal.unit as 'porcentaje' | 'moneda' | 'numero',
 			weight: goal.weight,
 			target_value: goal.targetValue,
-			direction: goal.direction as 'ascendente' | 'descendente'
+			direction: goal.direction as 'ascendente' | 'descendente',
+			baseline_value: goal.baselineValue
 		}
 	});
 	if (apiError) throw new Error((apiError as { error?: { message?: string } })?.error?.message ?? 'Error al crear meta');
@@ -523,6 +525,7 @@ export async function updateGoal(id: string, updates: Partial<Omit<Goal, 'id'>>)
 			weight: updates.weight ?? 0,
 			target_value: updates.targetValue ?? 0,
 			direction: (updates.direction as 'ascendente' | 'descendente') ?? 'ascendente',
+			baseline_value: updates.baselineValue,
 			version: 1
 		}
 	});

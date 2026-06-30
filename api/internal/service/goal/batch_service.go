@@ -83,7 +83,7 @@ func (s *BatchService) BatchCreateUpdateGoals(ctx context.Context, empID uuid.UU
 			if direction == "" {
 				direction = "ascendente"
 			}
-			goal, err := s.goalRepo.CreateGoal(ctx, catID, item.Goal.Name, item.Goal.Description, item.Goal.Unit, direction, item.Goal.Weight, item.Goal.TargetValue, item.Goal.BaselineValue)
+			goal, err := s.goalRepo.CreateGoal(ctx, catID, empID, item.Goal.Name, item.Goal.Description, item.Goal.Unit, direction, item.Goal.Weight, item.Goal.TargetValue, item.Goal.BaselineValue)
 			if err != nil {
 				return nil, fmt.Errorf("batch create: %w", err)
 			}
@@ -120,7 +120,7 @@ func (s *BatchService) BatchCreateUpdateGoals(ctx context.Context, empID uuid.UU
 			if baselineValue == nil && existing.BaselineValue != nil {
 				baselineValue = existing.BaselineValue
 			}
-			updated, err := s.goalRepo.UpdateGoal(ctx, goalID, item.Goal.Name, item.Goal.Description, item.Goal.Unit, direction, item.Goal.Weight, item.Goal.TargetValue, baselineValue, existing.Version)
+			updated, err := s.goalRepo.UpdateGoal(ctx, goalID, empID, item.Goal.Name, item.Goal.Description, item.Goal.Unit, direction, item.Goal.Weight, item.Goal.TargetValue, baselineValue, existing.Version)
 			if err != nil {
 				return nil, fmt.Errorf("batch update: %w", err)
 			}

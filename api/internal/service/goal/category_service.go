@@ -73,7 +73,7 @@ func (s *CategoryService) UpdateCategory(ctx context.Context, empID, catID uuid.
 		}
 	}
 
-	return s.catRepo.UpdateCategory(ctx, catID, req.Name, req.Description, req.Weight)
+	return s.catRepo.UpdateCategory(ctx, catID, req.Name, req.Description, req.Weight, empID)
 }
 
 // DeleteCategory deletes a category.
