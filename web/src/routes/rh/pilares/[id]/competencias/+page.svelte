@@ -89,7 +89,7 @@
 	</a>
 
 	{#if pillar}
-		<div class="flex items-center justify-between mb-6">
+		<div class="flex items-center justify-between mb-6 gap-4">
 			<div>
 				<h1 class="text-2xl font-bold text-base-content">{pillar.name}</h1>
 				<p class="text-base-content/50 text-sm mt-1">{pillar.description}</p>

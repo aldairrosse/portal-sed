@@ -82,9 +82,9 @@
 	<table class="table table-zebra" aria-label="Competencias de {pillarName}">
 		<thead>
 			<tr>
-				<th class="w-1/3">Nombre</th>
-				<th class="w-1/2">Descripción</th>
-				<th class="w-[140px] text-right">Acciones</th>
+				<th class="w-1/3 text-xs tracking-wide font-semibold text-base-content/50">Nombre</th>
+				<th class="w-1/2 text-xs tracking-wide font-semibold text-base-content/50">Descripción</th>
+				<th class="w-[140px] text-right text-xs tracking-wide font-semibold text-base-content/50">Acciones</th>
 			</tr>
 		</thead>
 		<tbody>
@@ -93,7 +93,7 @@
 					<!-- Edit mode -->
 					<tr>
 						<td colspan="3" class="p-4">
-							<div class="border border-base-300 rounded-lg p-4 bg-base-200/50">
+							<div class="border border-base-300 rounded-lg p-4 bg-base-100">
 								{#if localError}
 									<div class="alert alert-error text-sm mb-3" role="alert">
 										<span>{localError}</span>
@@ -164,7 +164,7 @@
 				<!-- New row form -->
 				<tr>
 					<td colspan="3" class="p-4">
-						<div class="border border-base-300 rounded-lg p-4 bg-base-200/50">
+						<div class="border border-base-300 rounded-lg p-4 bg-base-100">
 							{#if localError}
 								<div class="alert alert-error text-sm mb-3" role="alert">
 									<span>{localError}</span>
