@@ -57,9 +57,10 @@ func (s *NineBoxService) GetMatrix(ctx context.Context, matrixID uuid.UUID) (*dt
 	if entries == nil {
 		entries = []*internal.NineBoxEntry{}
 	}
+	infoMap := s.loadEmployeeInfoMap(ctx, entries)
 	resp.Entries = make([]dto.NineBoxEntryDTO, len(entries))
 	for i, e := range entries {
-		resp.Entries[i] = s.toEntryDTO(ctx, e)
+		resp.Entries[i] = s.toEntryDTO(ctx, e, infoMap)
 	}
 	return resp, nil
 }
@@ -81,9 +82,10 @@ func (s *NineBoxService) GetMatrixByPhase(ctx context.Context, cycleID, evaluato
 	if entries == nil {
 		entries = []*internal.NineBoxEntry{}
 	}
+	infoMap := s.loadEmployeeInfoMap(ctx, entries)
 	resp.Entries = make([]dto.NineBoxEntryDTO, len(entries))
 	for i, e := range entries {
-		resp.Entries[i] = s.toEntryDTO(ctx, e)
+		resp.Entries[i] = s.toEntryDTO(ctx, e, infoMap)
 	}
 	return resp, nil
 }
@@ -109,15 +111,12 @@ func (s *NineBoxService) ListMatrices(ctx context.Context, cycleID, evaluatorID,
 //
 // The method:
 //  1. Retrieves all employees with GoalAssignments in the cycle.
-//  2. For each employee, computes performance tier from goal progress and potential tier
+//  2. Resolves the evaluator (manager) for each employee.
+//  3. For each employee, computes performance tier from goal progress and potential tier
 //     from competency ratings (self + HR).
-//  3. Computes quadrant from tiers.
-//  4. Creates/get the NineBoxMatrix for each evaluator (using the cycle's evaluator structure).
-//  5. Upserts NineBoxEntry for each employee.
-//
-// Note: This implementation uses a simplified approach where each employee is their own
-// evaluator for the matrix. A production implementation would resolve the evaluator from
-// the org chart (e.g., manager_id).
+//  4. Computes quadrant from tiers.
+//  5. Creates/get the NineBoxMatrix for each evaluator (using the cycle's evaluator structure).
+//  6. Upserts NineBoxEntry for each employee.
 func (s *NineBoxService) RecomputeMatrix(ctx context.Context, cycleID, phaseID uuid.UUID) error {
 	// 1. Get all employees with goal assignments in this cycle
 	employeeIDs, err := s.nineBoxRepo.GetGoalAssigneesByCycle(ctx, cycleID)
@@ -126,6 +125,25 @@ func (s *NineBoxService) RecomputeMatrix(ctx context.Context, cycleID, phaseID u
 	}
 
 	if len(employeeIDs) == 0 {
+		return nil
+	}
+
+	// 2. Resolve real evaluators from manager mapping. Employees without a manager are skipped.
+	managerMapping, err := s.nineBoxRepo.GetManagerMapping(ctx, employeeIDs)
+	if err != nil {
+		return err
+	}
+
+	evaluatorGroups := make(map[uuid.UUID][]uuid.UUID)
+	for _, empID := range employeeIDs {
+		managerID, ok := managerMapping[empID]
+		if !ok {
+			continue
+		}
+		evaluatorGroups[managerID] = append(evaluatorGroups[managerID], empID)
+	}
+
+	if len(evaluatorGroups) == 0 {
 		return nil
 	}
 
@@ -138,15 +156,6 @@ func (s *NineBoxService) RecomputeMatrix(ctx context.Context, cycleID, phaseID u
 			_ = tx.Rollback()
 		}
 	}()
-
-	// Group employees by evaluator. For now, each employee is their own evaluator.
-	// In production, this should resolve the manager from the org chart.
-	evaluatorGroups := make(map[uuid.UUID][]uuid.UUID)
-	for _, empID := range employeeIDs {
-		// Default: each employee evaluates themselves (simplified)
-		// TODO: resolve actual evaluator from org_chart_nodes/employees.manager_id
-		evaluatorGroups[empID] = append(evaluatorGroups[empID], empID)
-	}
 
 	for evaluatorID, evaluatees := range evaluatorGroups {
 		// 2. Get or create matrix for (cycleID, evaluatorID, phaseID)
@@ -196,6 +205,27 @@ func (s *NineBoxService) RecomputeMatrix(ctx context.Context, cycleID, phaseID u
 	return nil
 }
 
+// GetMatrixEntriesFiltered returns matrix entries, optionally filtered by quadrant.
+func (s *NineBoxService) GetMatrixEntriesFiltered(ctx context.Context, matrixID uuid.UUID, quadrant *int) ([]dto.NineBoxEntryDTO, error) {
+	var entries []*internal.NineBoxEntry
+	var err error
+	if quadrant != nil {
+		entries, err = s.nineBoxRepo.GetMatrixEntriesByQuadrant(ctx, matrixID, *quadrant)
+	} else {
+		entries, err = s.nineBoxRepo.GetMatrixEntries(ctx, matrixID)
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	infoMap := s.loadEmployeeInfoMap(ctx, entries)
+	dtos := make([]dto.NineBoxEntryDTO, len(entries))
+	for i, e := range entries {
+		dtos[i] = s.toEntryDTO(ctx, e, infoMap)
+	}
+	return dtos, nil
+}
+
 // UpsertEntry creates or updates a single matrix entry with quadrant computation.
 // Deprecated: Use RecomputeMatrix for automatic tier computation.
 func (s *NineBoxService) UpsertEntry(ctx context.Context, matrixID uuid.UUID, req dto.NineBoxEntryInput) (*dto.NineBoxEntryDTO, error) {
@@ -233,7 +263,7 @@ func (s *NineBoxService) UpsertEntry(ctx context.Context, matrixID uuid.UUID, re
 	}
 	tx = nil
 
-	dto := s.toEntryDTO(ctx, entry)
+	dto := s.toEntryDTO(ctx, entry, nil)
 	return &dto, nil
 }
 
@@ -269,7 +299,7 @@ func (s *NineBoxService) UpdateEntry(ctx context.Context, entryID uuid.UUID, req
 	}
 	tx = nil
 
-	dto := s.toEntryDTO(ctx, entry)
+	dto := s.toEntryDTO(ctx, entry, nil)
 	return &dto, nil
 }
 
@@ -325,7 +355,7 @@ func (s *NineBoxService) BatchSubmitEntries(ctx context.Context, matrixID uuid.U
 
 	dtos := make([]dto.NineBoxEntryDTO, 0, len(entries))
 	for _, e := range entries {
-		dtos = append(dtos, s.toEntryDTO(ctx, e))
+		dtos = append(dtos, s.toEntryDTO(ctx, e, nil))
 	}
 	return dtos, nil
 }
@@ -401,24 +431,48 @@ func (s *NineBoxService) UpdateQuadrantByNumber(ctx context.Context, quadrantNum
 	return &dtoResp, nil
 }
 
-func (s *NineBoxService) toEntryDTO(ctx context.Context, e *internal.NineBoxEntry) dto.NineBoxEntryDTO {
-	dto := dto.NineBoxEntryDTO{
+func (s *NineBoxService) loadEmployeeInfoMap(ctx context.Context, entries []*internal.NineBoxEntry) map[uuid.UUID]*repo.EmployeeInfo {
+	if len(entries) == 0 {
+		return map[uuid.UUID]*repo.EmployeeInfo{}
+	}
+	ids := make([]uuid.UUID, 0, len(entries))
+	for _, e := range entries {
+		if e == nil {
+			continue
+		}
+		ids = append(ids, e.EvaluateeID)
+	}
+	infoMap, err := s.nineBoxRepo.GetEmployeesByIDs(ctx, ids)
+	if err != nil {
+		return map[uuid.UUID]*repo.EmployeeInfo{}
+	}
+	return infoMap
+}
+
+func (s *NineBoxService) toEntryDTO(ctx context.Context, e *internal.NineBoxEntry, infoMap map[uuid.UUID]*repo.EmployeeInfo) dto.NineBoxEntryDTO {
+	dtoOut := dto.NineBoxEntryDTO{
 		ID: e.ID, EvaluateeID: e.EvaluateeID,
 		PerformanceTier: e.PerformanceTier, PotentialTier: e.PotentialTier,
 		Quadrant: e.Quadrant, Comments: e.Comments,
 	}
+	if infoMap != nil {
+		if info, ok := infoMap[e.EvaluateeID]; ok && info != nil {
+			dtoOut.EmployeeName = info.FirstName + " " + info.LastName
+			dtoOut.ProfileID = info.ProfileID
+		}
+	}
 	quad, err := s.catalogRepo.GetQuadrantByNumber(ctx, e.Quadrant)
 	if err == nil && quad != nil {
-		dto.QuadrantLabel = quad.Label
+		dtoOut.QuadrantLabel = quad.Label
 		if quad.ColorHex != "" {
-			dto.QuadrantColor = quad.ColorHex
+			dtoOut.QuadrantColor = quad.ColorHex
 		} else {
-			dto.QuadrantColor = quad.Color
+			dtoOut.QuadrantColor = quad.Color
 		}
 	}
 	version, err := s.nineBoxRepo.FetchEntryVersion(ctx, e.ID)
 	if err == nil {
-		dto.Version = version
+		dtoOut.Version = version
 	}
-	return dto
+	return dtoOut
 }

@@ -9,9 +9,10 @@
 		getQuadrantDef,
 		isLoading,
 		getError,
-		reload
+		reload,
+		markReady
 	} from '$lib/stores/nineBoxStore.svelte';
-	import { getChildren, getDescendants } from '$lib/stores/orgHierarchyStore.svelte';
+	import { getDescendants } from '$lib/stores/orgHierarchyStore.svelte';
 	import { loadCycles, getActiveCycle, getError as cycleError } from '$lib/stores/cycleStore.svelte';
 	import { loadPhases, getPhaseId } from '$lib/stores/phaseStore.svelte';
 	import { type EvaluationProfile } from '$lib/types/evaluation';
@@ -78,8 +79,13 @@
 	});
 
 	$effect(() => {
-		if (isAuthorized && activeCycle && phaseUUID) {
-			load(activeCycle.id, phaseUUID);
+		if (isAuthorized) {
+			if (activeCycle && phaseUUID) {
+				load(activeCycle.id, phaseUUID);
+			} else {
+				// No cycle/phase available — show empty grid instead of infinite skeleton
+				markReady();
+			}
 		}
 	});
 
@@ -87,10 +93,10 @@
 		if (!isAuthorized) return [];
 
 		switch (profile) {
-			case 'jefe': {
-				const nodeId = PROFILE_NODE_ID[profile]!;
-				return getChildren(nodeId).map((n) => n.id);
-			}
+		case 'jefe': {
+			const nodeId = PROFILE_NODE_ID[profile]!;
+			return getDescendants(nodeId).map((n) => n.id);
+		}
 			case 'director': {
 				const nodeId = PROFILE_NODE_ID[profile]!;
 				return getDescendants(nodeId).map((n) => n.id);
@@ -108,8 +114,8 @@
 	const matrixEntries = $derived<NineBoxEntry[]>(getMatrixEntries(scopeIds));
 	const quadrantDefs = $derived(getQuadrantDefs());
 
-	// Prereq state: are cycles and phases loaded?
-	const prereqReady = $derived(!!activeCycle && !!phaseUUID);
+	// Prereq state: cycles and phases loaded (even if empty — show matrix anyway)
+	const prereqReady = $derived(true); // ponytail: always ready — show empty grid if no data
 	const prereqError = $derived(cycleError());
 
 	const phaseLabel = $derived(
@@ -187,32 +193,35 @@
 			actionLabel="Volver al inicio"
 			actionHref="/"
 		/>
-	{:else if prereqError}
-		<EmptyState
-			title="No se pudo iniciar la matriz"
-			message={prereqError}
-		/>
-	{:else if !prereqReady || loading}
-		<PageSkeleton variant="card" rows={3} />
-	{:else if error}
-		<ErrorState
-			title="Error al cargar la matriz"
-			message={error}
-			retryLabel="Reintentar"
-			onretry={reload}
-		/>
-	{:else if matrixEntries.length === 0}
-		<EmptyState
-			title="Sin evaluatees"
-			message="No hay empleados en tu scope para mostrar en la matriz."
-		/>
 	{:else}
-		<!-- Matrix -->
+		<!-- Warning banners (non-blocking) -->
+		{#if prereqError}
+			<div class="alert alert-warning">
+				<span>{prereqError}</span>
+			</div>
+		{/if}
+		{#if error}
+			<div class="alert alert-error">
+				<span>{error}</span>
+				<button class="btn btn-xs btn-ghost" onclick={reload}>Reintentar</button>
+			</div>
+		{/if}
+		{#if loading}
+			<div class="text-xs text-base-content/40">Cargando datos...</div>
+		{/if}
+
+		<!-- Always show matrix (empty or populated) -->
 		<NineBoxMatrix
 			entries={matrixEntries}
 			{quadrantDefs}
 			onCellClick={handleCellClick}
 		/>
+
+		{#if matrixEntries.length === 0 && !loading}
+			<p class="text-sm text-base-content/50 text-center mt-2">
+				No hay empleados en tu scope para mostrar en la matriz.
+			</p>
+		{/if}
 
 		<!-- RH: Config button per quadrant -->
 		{#if isRH}

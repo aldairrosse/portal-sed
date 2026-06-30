@@ -178,6 +178,28 @@ paths:
         "409": { $ref: "#/components/responses/Conflict" }
         "503": { $ref: "#/components/responses/ServiceUnavailable" }
 
+  /evaluations/employee/{employeeId}:
+    get:
+      operationId: getEmployeeCompetencies
+      summary: Get competency ratings for an employee in a cycle
+      parameters:
+        - name: employeeId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: cycle_id
+          in: query
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Employee competency ratings
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/EmployeeCompetencyRatingsResponse" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
   /evaluations/summary:
     get:
       operationId: getEvaluationSummary
@@ -262,6 +284,10 @@ paths:
           in: path
           required: true
           schema: { type: string, format: uuid }
+        - name: quadrant
+          in: query
+          required: false
+          schema: { type: integer, minimum: 1, maximum: 9 }
       responses:
         "200":
           description: Entry list with tiers 1-3
@@ -270,6 +296,7 @@ paths:
               schema:
                 type: array
                 items: { $ref: "#/components/schemas/NineBoxEntryDTO" }
+        "400": { $ref: "#/components/responses/BadRequest" }
 
   /nine-box/scales:
     get:
@@ -348,6 +375,22 @@ paths:
 
 components:
   schemas:
+    EmployeeCompetencyRatingsResponse:
+      type: object
+      properties:
+        employeeId: { type: string, format: uuid }
+        cycleId: { type: string, format: uuid }
+        ratings:
+          type: array
+          items: { $ref: "#/components/schemas/EmployeeCompetencyRatingDTO" }
+
+    EmployeeCompetencyRatingDTO:
+      type: object
+      properties:
+        competencyId: { type: string, format: uuid }
+        selfRating: { type: integer, minimum: 1, maximum: 5, nullable: true }
+        rhRating: { type: integer, minimum: 1, maximum: 5, nullable: true }
+        comments: { type: string }
     EvaluationListResponse:
       type: object
       properties:
@@ -466,6 +509,8 @@ components:
       properties:
         id: { type: string, format: uuid }
         evaluateeId: { type: string, format: uuid }
+        employeeName: { type: string, description: "Employee full name (first + last)" }
+        profileId: { type: string, format: uuid, description: "Employee's evaluation profile ID" }
         performanceTier: { type: integer, minimum: 1, maximum: 3, description: "1=low, 2=medium, 3=high" }
         potentialTier: { type: integer, minimum: 1, maximum: 3, description: "1=low, 2=medium, 3=high" }
         quadrant: { type: integer, minimum: 1, maximum: 9 }

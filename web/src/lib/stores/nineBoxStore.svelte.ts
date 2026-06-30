@@ -35,8 +35,8 @@ function normalizeApiData(
 	const entries: NineBoxEntry[] = apiEntries.map((dto) => ({
 		id: dto.id ?? crypto.randomUUID(),
 		employeeId: dto.evaluateeId ?? '',
-		employeeName: '',
-		profileId: '',
+		employeeName: dto.employeeName ?? '',
+		profileId: dto.profileId ?? '',
 		performanceTier: (dto.performanceTier ?? 2) as NineBoxTier,
 		potentialTier: (dto.potentialTier ?? 2) as NineBoxTier,
 		quadrant: dto.quadrant ?? 5
@@ -130,6 +130,15 @@ export async function load(cycleId?: string, phaseId?: string): Promise<void> {
 /** Alias for load(). */
 export function reload(): Promise<void> {
 	return load(currentCycleId, currentPhaseId);
+}
+
+/**
+ * Force loading to false without fetching data.
+ * Use when there's no cycle/phase to load — shows empty grid instead of infinite skeleton.
+ */
+export function markReady(): void {
+	loading = false;
+	error = null;
 }
 
 // ─── Getters ──────────────────────────────────────────────────────────────────

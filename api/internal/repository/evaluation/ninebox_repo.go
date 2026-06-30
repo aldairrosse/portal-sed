@@ -3,6 +3,8 @@ package evaluation
 import (
 	"context"
 	"database/sql"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -11,6 +13,14 @@ import (
 	"github.com/sed-evaluacion-desempeno/api/internal/nineboxmatrix"
 	pkgerrors "github.com/sed-evaluacion-desempeno/api/internal/pkg/errors"
 )
+
+// EmployeeInfo holds the minimal employee fields needed for DTO enrichment.
+type EmployeeInfo struct {
+	ID        uuid.UUID
+	FirstName string
+	LastName  string
+	ProfileID uuid.UUID
+}
 
 // NineBoxRepo provides CRUD operations for NineBoxMatrix and NineBoxEntry.
 type NineBoxRepo struct {
@@ -123,6 +133,106 @@ func (r *NineBoxRepo) GetMatrixEntries(ctx context.Context, matrixID uuid.UUID) 
 		return []*internal.NineBoxEntry{}, nil
 	}
 	return results, nil
+}
+
+// GetMatrixEntriesByQuadrant returns entries for a matrix filtered by quadrant.
+func (r *NineBoxRepo) GetMatrixEntriesByQuadrant(ctx context.Context, matrixID uuid.UUID, quadrant int) ([]*internal.NineBoxEntry, error) {
+	rows, err := r.db.QueryContext(ctx,
+		`SELECT id, created_at, updated_at, matrix_id, evaluatee_id, performance_tier, potential_tier, quadrant, comments
+		 FROM nine_box_entries WHERE matrix_id = $1 AND quadrant = $2`,
+		matrixID, quadrant,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var results []*internal.NineBoxEntry
+	for rows.Next() {
+		var e internal.NineBoxEntry
+		if err := rows.Scan(&e.ID, &e.CreatedAt, &e.UpdatedAt, &e.MatrixID, &e.EvaluateeID, &e.PerformanceTier, &e.PotentialTier, &e.Quadrant, &e.Comments); err != nil {
+			return nil, err
+		}
+		results = append(results, &e)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	if results == nil {
+		return []*internal.NineBoxEntry{}, nil
+	}
+	return results, nil
+}
+
+// GetEmployeesByIDs returns a map of employee ID to EmployeeInfo for the given IDs.
+func (r *NineBoxRepo) GetEmployeesByIDs(ctx context.Context, ids []uuid.UUID) (map[uuid.UUID]*EmployeeInfo, error) {
+	if len(ids) == 0 {
+		return map[uuid.UUID]*EmployeeInfo{}, nil
+	}
+
+	placeholders := make([]string, len(ids))
+	args := make([]interface{}, len(ids))
+	for i, id := range ids {
+		placeholders[i] = "$" + strconv.Itoa(i+1)
+		args[i] = id
+	}
+	query := `SELECT id, first_name, last_name, profile_id FROM employees WHERE id IN (` + strings.Join(placeholders, ",") + `)`
+
+	rows, err := r.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	infoMap := make(map[uuid.UUID]*EmployeeInfo)
+	for rows.Next() {
+		var id uuid.UUID
+		var info EmployeeInfo
+		if err := rows.Scan(&id, &info.FirstName, &info.LastName, &info.ProfileID); err != nil {
+			return nil, err
+		}
+		info.ID = id
+		infoMap[id] = &info
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return infoMap, nil
+}
+
+// GetManagerMapping returns a map of employee ID to manager ID.
+// Employees with a NULL manager_id are omitted from the result.
+func (r *NineBoxRepo) GetManagerMapping(ctx context.Context, ids []uuid.UUID) (map[uuid.UUID]uuid.UUID, error) {
+	if len(ids) == 0 {
+		return map[uuid.UUID]uuid.UUID{}, nil
+	}
+
+	placeholders := make([]string, len(ids))
+	args := make([]interface{}, len(ids))
+	for i, id := range ids {
+		placeholders[i] = "$" + strconv.Itoa(i+1)
+		args[i] = id
+	}
+	query := `SELECT id, manager_id FROM employees WHERE id IN (` + strings.Join(placeholders, ",") + `) AND manager_id IS NOT NULL`
+
+	rows, err := r.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	mapping := make(map[uuid.UUID]uuid.UUID)
+	for rows.Next() {
+		var employeeID, managerID uuid.UUID
+		if err := rows.Scan(&employeeID, &managerID); err != nil {
+			return nil, err
+		}
+		mapping[employeeID] = managerID
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return mapping, nil
 }
 
 // UpsertEntry creates or updates a single entry within a transaction.
