@@ -14,21 +14,41 @@
 	import PageSkeleton from '$lib/components/ui/PageSkeleton.svelte';
 	import ErrorState from '$lib/components/ui/ErrorState.svelte';
 	import { PROFILE_LABELS, PHASE_LABELS } from '$lib/types/evaluation';
+	import { titleCase } from '$lib/utils/text';
 	import { getActivePhase } from '$lib/api/cycle.svelte';
 	import type { EmployeeAssignment } from '$lib/types/goal';
 	import type { Snippet } from 'svelte';
 	import { FileDown } from '@lucide/svelte';
 	import { toCsv } from '$lib/utils/export';
 
+	// ponytail: remove when OpenAPI schema includes profileName
+	interface EmployeeListItemRow {
+		id: string;
+		firstName: string;
+		lastName: string;
+		profileName: string;
+		isActive: boolean;
+	}
+
 	interface Props {
-		employees: EmployeeAssignment[];
+		employees?: EmployeeAssignment[];
+		rows?: EmployeeListItemRow[];
+		mode?: 'rh' | 'manager';
 		onSelect: (employeeId: string) => void;
 		selectedEmployeeId?: string;
 		disabled?: boolean;
 		detail?: Snippet;
 	}
 
-	let { employees, onSelect, selectedEmployeeId = '', disabled = false, detail }: Props = $props();
+	let {
+		employees = [],
+		rows = [],
+		mode = 'manager',
+		onSelect,
+		selectedEmployeeId = '',
+		disabled = false,
+		detail,
+	}: Props = $props();
 
 	const loadingEval = $derived(isLoading());
 	const errorEval = $derived(getError());
@@ -122,106 +142,169 @@
 	}
 </script>
 
-{#if loadingEval}
-	<PageSkeleton variant="table" rows={Math.max(employees.length, 3)} />
-{:else if errorEval}
-	<ErrorState message={errorEval} onretry={loadEvaluations} />
-{:else}
-<div class="flex flex-col gap-6">
-	{#if !selectedEmployeeId}
-		{#if completionSummary.total > 0}
+{#if mode === 'manager'}
+	{#if loadingEval}
+		<PageSkeleton variant="table" rows={Math.max(employees.length, 3)} />
+	{:else if errorEval}
+		<ErrorState message={errorEval} onretry={loadEvaluations} />
+	{:else}
+	<div class="flex flex-col gap-6">
+		{#if !selectedEmployeeId}
+			{#if completionSummary.total > 0}
+				<div class="flex items-center gap-2">
+					<span class="text-xs font-semibold text-base-content/60">{PHASE_LABELS[currentPhase]}:</span>
+					<span class="badge badge-sm {completionSummary.completed / completionSummary.total >= 0.8 ? 'badge-success' : 'badge-warning'}">
+						{completionSummary.completed} de {completionSummary.total} completaron
+					</span>
+				</div>
+			{/if}
+			<!-- Search input + export -->
 			<div class="flex items-center gap-2">
-				<span class="text-xs font-semibold text-base-content/60">{PHASE_LABELS[currentPhase]}:</span>
-				<span class="badge badge-sm {completionSummary.completed / completionSummary.total >= 0.8 ? 'badge-success' : 'badge-warning'}">
-					{completionSummary.completed} de {completionSummary.total} completaron
-				</span>
+				<div class="w-full max-w-sm">
+					<input
+						id="employee-search"
+						type="text"
+						class="input input-bordered input-sm w-full"
+						placeholder="Buscar por nombre o perfil..."
+						bind:value={searchQuery}
+						aria-label="Buscar empleado"
+					/>
+				</div>
+				<button
+					class="btn btn-outline btn-sm"
+					disabled={filteredEmployees.length === 0}
+					onclick={handleExportCsv}
+				>
+					<FileDown class="w-4 h-4" />
+					Exportar CSV
+				</button>
 			</div>
 		{/if}
-		<!-- Search input + export -->
-		<div class="flex items-center gap-2">
-			<div class="w-full max-w-sm">
-				<input
-					id="employee-search"
-					type="text"
-					class="input input-bordered input-sm w-full"
-					placeholder="Buscar por nombre o perfil..."
-					bind:value={searchQuery}
-					aria-label="Buscar empleado"
-				/>
-			</div>
-			<button
-				class="btn btn-outline btn-sm"
-				disabled={filteredEmployees.length === 0}
-				onclick={handleExportCsv}
-			>
-				<FileDown class="w-4 h-4" />
-				Exportar CSV
-			</button>
-		</div>
-	{/if}
 
-	{#if selectedEmployeeId}
-		{@render detail?.()}
-	{:else if filteredEmployees.length === 0}
-		<p class="text-sm text-base-content/30 italic text-center py-8">
-			No se encontraron empleados.
-		</p>
-	{:else}
-		<!-- Table -->
-		<div class="overflow-x-auto">
-			<table class="table table-sm">
-				<thead>
-					<tr>
-						<th class="text-xs font-semibold text-base-content/60">Empleado</th>
-						<th class="text-xs font-semibold text-base-content/60">Perfil</th>
-						<th class="text-xs font-semibold text-base-content/60">Progreso global</th>
-						<th class="text-xs font-semibold text-base-content/60">Estado</th>
-						<th class="text-xs font-semibold text-base-content/60">Acción</th>
-					</tr>
-				</thead>
-				<tbody>
-					{#each filteredEmployees as emp (emp.employeeId)}
-						<tr class="hover:bg-base-200">
-							<td>
-								<div class="flex items-center gap-2.5">
-									<div class="avatar avatar-placeholder">
-										<div class="bg-primary text-primary-content w-8 rounded-full flex items-center justify-center">
-											<span class="text-xs font-bold">
-												{emp.employeeName.charAt(0).toUpperCase()}
-											</span>
-										</div>
-									</div>
-									<span class="font-medium text-sm">{emp.employeeName}</span>
-								</div>
-							</td>
-							<td>
-								<span class="text-xs text-base-content/50">{getProfileLabel(emp.employeeId)}</span>
-							</td>
-							<td>
-								{#if progressMap.get(emp.employeeId) !== null}
-									<ProgressIndicator value={progressMap.get(emp.employeeId)!} />
-								{:else}
-									<span class="text-xs text-base-content/30">—</span>
-								{/if}
-							</td>
-							<td>
-								<EvaluationStatusBadge status={getStatus(emp.employeeId)} />
-							</td>
-							<td>
-							<button
-								type="button"
-								class="btn btn-primary btn-xs"
-								onclick={() => onSelect(emp.employeeId)}
-								disabled={disabled}
-							>
-									Evaluar
-								</button>
-							</td>
+		{#if selectedEmployeeId}
+			{@render detail?.()}
+		{:else if filteredEmployees.length === 0}
+			<p class="text-sm text-base-content/30 italic text-center py-8">
+				No se encontraron empleados.
+			</p>
+		{:else}
+			<!-- Table -->
+			<div class="overflow-x-auto">
+				<table class="table table-sm">
+					<thead>
+						<tr>
+							<th class="text-xs font-semibold text-base-content/60">Empleado</th>
+							<th class="text-xs font-semibold text-base-content/60">Perfil</th>
+							<th class="text-xs font-semibold text-base-content/60">Progreso global</th>
+							<th class="text-xs font-semibold text-base-content/60">Estado</th>
+							<th class="text-xs font-semibold text-base-content/60">Acción</th>
 						</tr>
-					{/each}
-				</tbody>
-			</table>
-		</div>
+					</thead>
+					<tbody>
+						{#each filteredEmployees as emp (emp.employeeId)}
+							<tr class="hover:bg-base-200">
+								<td>
+									<div class="flex items-center gap-2.5">
+										<div class="avatar avatar-placeholder">
+											<div class="bg-primary text-primary-content w-8 rounded-full flex items-center justify-center">
+												<span class="text-xs font-bold">
+													{emp.employeeName.charAt(0).toUpperCase()}
+												</span>
+											</div>
+										</div>
+										<span class="font-medium text-sm">{emp.employeeName}</span>
+									</div>
+								</td>
+								<td>
+									<span class="text-xs text-base-content/50">{getProfileLabel(emp.employeeId)}</span>
+								</td>
+								<td>
+									{#if progressMap.get(emp.employeeId) !== null}
+										<ProgressIndicator value={progressMap.get(emp.employeeId)!} />
+									{:else}
+										<span class="text-xs text-base-content/30">—</span>
+									{/if}
+								</td>
+								<td>
+									<EvaluationStatusBadge status={getStatus(emp.employeeId)} />
+								</td>
+								<td>
+								<button
+									type="button"
+									class="btn btn-primary btn-xs"
+									onclick={() => onSelect(emp.employeeId)}
+									disabled={disabled}
+								>
+										Evaluar
+									</button>
+								</td>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
+			</div>
+		{/if}
+	</div>
 	{/if}
-</div>
+{:else if mode === 'rh'}
+	<div class="flex flex-col gap-6">
+		{#if selectedEmployeeId}
+			{@render detail?.()}
+		{:else if rows.length === 0}
+			<p class="text-sm text-base-content/30 italic text-center py-8">
+				Sin empleados para mostrar
+			</p>
+		{:else}
+			<div class="overflow-x-auto">
+				<table class="table table-sm">
+					<thead>
+						<tr>
+							<th class="text-xs font-semibold text-base-content/60">Empleado</th>
+							<th class="text-xs font-semibold text-base-content/60">Perfil</th>
+							<th class="text-xs font-semibold text-base-content/60">Progreso global</th>
+							<th class="text-xs font-semibold text-base-content/60">Estado</th>
+							<th class="text-xs font-semibold text-base-content/60">Acción</th>
+						</tr>
+					</thead>
+					<tbody>
+						{#each rows as row (row.id)}
+							<tr class="hover:bg-base-200">
+								<td>
+									<div class="flex items-center gap-2.5">
+										<div class="avatar avatar-placeholder">
+											<div class="bg-primary text-primary-content w-8 rounded-full flex items-center justify-center">
+												<span class="text-xs font-bold">
+													{row.firstName.charAt(0).toUpperCase()}
+												</span>
+											</div>
+										</div>
+										<span class="font-medium text-sm">{row.firstName} {row.lastName}</span>
+									</div>
+								</td>
+							<td>
+								<span class="text-xs text-base-content/50">{titleCase(row.profileName)}</span>
+							</td>
+								<td>
+									<span class="text-xs text-base-content/30">—</span>
+								</td>
+								<td>
+									<span class="text-xs text-base-content/30">—</span>
+								</td>
+								<td>
+									<button
+										type="button"
+										class="btn btn-primary btn-xs"
+										onclick={() => onSelect(row.id)}
+										disabled={disabled}
+									>
+										Evaluar
+									</button>
+								</td>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
+			</div>
+		{/if}
+	</div>
 {/if}
