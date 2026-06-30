@@ -39,6 +39,30 @@ func decodeNameCursor(encoded string) (*nameCursor, error) {
 	return &nc, nil
 }
 
+// createdAtCursor is a cursor for created_at-based pagination.
+type createdAtCursor struct {
+	CreatedAt time.Time `json:"t"`
+}
+
+func encodeCreatedAtCursor(t time.Time) string {
+	raw, _ := json.Marshal(createdAtCursor{CreatedAt: t})
+	return base64.URLEncoding.EncodeToString(raw)
+}
+
+func decodeCreatedAtCursor(encoded string) (*createdAtCursor, error) {
+	raw, err := base64.URLEncoding.DecodeString(encoded)
+	if err != nil {
+		return nil, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
+			"cursor: invalid base64 encoding", err)
+	}
+	var c createdAtCursor
+	if err := json.Unmarshal(raw, &c); err != nil {
+		return nil, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
+			"cursor: invalid JSON in cursor payload", err)
+	}
+	return &c, nil
+}
+
 // pillarRepo implements PillarRepo.
 type pillarRepo struct {
 	client *internal.Client
@@ -72,7 +96,7 @@ func (r *pillarRepo) WithTx(ctx context.Context, fn TxFunc) error {
 
 func (r *pillarRepo) List(ctx context.Context, cursor string, limit int, includeCompetencies bool) ([]*internal.Pillar, string, error) {
 	q := r.client.Pillar.Query().
-		Order(internal.Asc(pillar.FieldName)).
+		Order(internal.Asc(pillar.FieldCreatedAt)).
 		Limit(limit + 1)
 
 	if includeCompetencies {
@@ -82,11 +106,11 @@ func (r *pillarRepo) List(ctx context.Context, cursor string, limit int, include
 	}
 
 	if cursor != "" {
-		nc, err := decodeNameCursor(cursor)
+		nc, err := decodeCreatedAtCursor(cursor)
 		if err != nil {
 			return nil, "", err
 		}
-		q = q.Where(pillar.NameGT(nc.Name))
+		q = q.Where(pillar.CreatedAtGT(nc.CreatedAt))
 	}
 
 	results, err := q.All(ctx)
@@ -99,7 +123,7 @@ func (r *pillarRepo) List(ctx context.Context, cursor string, limit int, include
 	if hasMore {
 		results = results[:limit]
 		last := results[len(results)-1]
-		nextCursor = encodeNameCursor(last.Name)
+		nextCursor = encodeCreatedAtCursor(last.CreatedAt)
 	}
 
 	return results, nextCursor, nil
