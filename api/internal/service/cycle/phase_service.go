@@ -13,12 +13,13 @@ import (
 
 // PhaseDefinitionResponse is the API response for a phase definition.
 type PhaseDefinitionResponse struct {
-	Phase          string   `json:"phase"`
-	Label          string   `json:"label"`
-	Order          int      `json:"order"`
-	AllowedActors  []string `json:"allowed_actors"`
-	AllowedActions []string `json:"allowed_actions"`
-	BlockedActions []string `json:"blocked_actions"`
+	ID             uuid.UUID `json:"id"`
+	Phase          string    `json:"phase"`
+	Label          string    `json:"label"`
+	Order          int       `json:"order"`
+	AllowedActors  []string  `json:"allowed_actors"`
+	AllowedActions []string  `json:"allowed_actions"`
+	BlockedActions []string  `json:"blocked_actions"`
 }
 
 // PhaseTransitionResponse is the API response for a phase transition.
@@ -60,6 +61,7 @@ func (s *phaseService) GetPhaseDefinitions(ctx context.Context) ([]*PhaseDefinit
 	resp := make([]*PhaseDefinitionResponse, 0, len(rows))
 	for _, r := range rows {
 		resp = append(resp, &PhaseDefinitionResponse{
+			ID:             r.ID,
 			Phase:          r.Phase,
 			Label:          r.Label,
 			Order:          r.Order,

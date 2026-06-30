@@ -10,13 +10,11 @@
 	} from '$lib/stores/cycleStore.svelte';
 	import { API_PHASE_LABELS } from '$lib/types/cycle';
 	import type { ApiCyclePhase } from '$lib/types/cycle';
-	import { Calendar, RefreshCw, Plus, ArrowRight, CheckCircle2, AlertCircle } from '@lucide/svelte';
+	import { Calendar, Plus, ArrowRight, CheckCircle2, AlertCircle } from '@lucide/svelte';
 
 	const currentYear = new Date().getFullYear();
 	const cycles = $derived(getCycles());
 	const loading = $derived(isLoading());
-	const error = $derived(getError());
-	const activeCycle = $derived(cycles.find((c) => !c.finished_at));
 	const showCreate = $derived(!hasCycleForYear(currentYear));
 
 	let newYear = $state(currentYear);
@@ -42,7 +40,7 @@
 	function phaseBadgeClass(phase: ApiCyclePhase): string {
 		if (phase === 'cierre') return 'badge-success';
 		if (phase === 'avance') return 'badge-warning';
-		return 'badge-info';
+		return 'badge-neutral';
 	}
 
 	function cycleStatusLabel(cycle: typeof cycles[0]): string {
@@ -87,7 +85,7 @@
 </script>
 
 <svelte:head>
-	<title>Gestión de Ciclos — SED</title>
+	<title>Gestión de ciclos — SED</title>
 </svelte:head>
 
 <div class="flex flex-col gap-6">
@@ -95,20 +93,12 @@
 		<div>
 			<h1 class="text-2xl font-bold text-base-content flex items-center gap-2">
 				<Calendar class="w-6 h-6" />
-				Gestión de Ciclos
+				Gestión de ciclos
 			</h1>
 			<p class="text-sm text-base-content/50 mt-1">
-				Administra los ciclos de evaluación de desempeño.
+				Administra los ciclos anuales de evaluación de desempeño.
 			</p>
 		</div>
-		<button
-			class="btn btn-ghost btn-sm"
-			onclick={() => loadCycles()}
-			disabled={loading}
-		>
-			<RefreshCw class="w-4 h-4 {loading ? 'animate-spin' : ''}" />
-			Actualizar
-		</button>
 	</div>
 
 	{#if localError}
@@ -137,18 +127,14 @@
 								<h2 class="card-title text-base">
 									Ciclo {cycle.year}
 								</h2>
-								<span class="badge badge-sm {cycleStatusBadgeClass(cycle)}">
-									{cycleStatusLabel(cycle)}
-								</span>
 							</div>
-							<span class="badge badge-sm {phaseBadgeClass(cycle.current_phase)}">
-								{API_PHASE_LABELS[cycle.current_phase]}
+							<span class="badge badge-sm {cycleStatusBadgeClass(cycle)}">
+								{cycleStatusLabel(cycle)}
 							</span>
 						</div>
 
 						<div class="flex items-center gap-2 mt-2 text-xs text-base-content/50">
-							<span>Fase actual:</span>
-							<span class="font-medium text-base-content/70">
+							<span class="badge badge-sm {phaseBadgeClass(cycle.current_phase)}">
 								{API_PHASE_LABELS[cycle.current_phase]}
 							</span>
 							{#if !cycle.finished_at && getNextPhase(cycle.current_phase)}
@@ -170,7 +156,6 @@
 										<span class="loading loading-spinner loading-xs"></span>
 									{:else}
 										Avanzar a {API_PHASE_LABELS[getNextPhase(cycle.current_phase)!]}
-										<ArrowRight class="w-3 h-3" />
 									{/if}
 								</button>
 							</div>

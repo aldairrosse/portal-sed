@@ -6,6 +6,10 @@ import type { components } from '$lib/api/schemas/cycle';
 // ─── Module state ───────────────────────────────────────────────────────────────
 
 let cycles = $state<Cycle[]>([]);
+// ponytail: plain vars, NOT $state — prevents $effect in consumers from tracking
+// loading/loaded changes and re-firing in an infinite loop (same pattern as phaseStore).
+let _loading = false;
+let _loaded = false;
 let loading = $state(false);
 let error = $state<string | null>(null);
 
@@ -36,12 +40,16 @@ export function hasCycleForYear(year: number): boolean {
 // ─── Load ───────────────────────────────────────────────────────────────────────
 
 export async function loadCycles(): Promise<void> {
+	if (_loaded || _loading) return;
+	_loading = true;
 	loading = true;
 	error = null;
 
 	const orgId = getSession().user?.organizationId;
 	if (!orgId) {
 		error = 'No hay organización en la sesión';
+		_loaded = true;
+		_loading = false;
 		loading = false;
 		return;
 	}
@@ -72,12 +80,17 @@ export async function loadCycles(): Promise<void> {
 	} catch (e) {
 		error = e instanceof Error ? e.message : 'Error desconocido al cargar ciclos';
 	} finally {
+		_loaded = true;
+		_loading = false;
 		loading = false;
 	}
 }
 
-/** Alias for loadCycles(). */
+/** Alias for loadCycles() — bypasses the dedup guard. */
 export function reload(): Promise<void> {
+	_loaded = false;
+	_loading = false;
+	cycles = [];
 	return loadCycles();
 }
 

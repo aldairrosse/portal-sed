@@ -186,6 +186,11 @@ export interface components {
             reason?: string;
         };
         PhaseDefinition: {
+            /**
+             * Format: uuid
+             * @description Unique phase definition identifier
+             */
+            id: string;
             /** @enum {string} */
             phase: "asignacion" | "avance" | "cierre";
             label: string;

@@ -332,10 +332,15 @@ components:
     PhaseDefinition:
       type: object
       required:
+        - id
         - phase
         - label
         - order
       properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique phase definition identifier
         phase:
           type: string
           enum: [asignacion, avance, cierre]
