@@ -10,6 +10,7 @@ api/tmp/
 
 # Go
 api/bin/
+api/dev/
 *.exe
 *.test
 
