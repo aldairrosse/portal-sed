@@ -152,13 +152,14 @@ type EmployeeDetail struct {
 	} `json:"manager,omitempty"`
 }
 
-// EmployeeListResponse is the cursor-paginated employee list response.
+// EmployeeListResponse is the offset-paginated employee list response.
 type EmployeeListResponse struct {
 	Data []EmployeeListItem `json:"data"`
 	Meta struct {
-		NextCursor string `json:"nextCursor,omitempty"`
-		HasMore    bool   `json:"hasMore"`
-		Limit      int    `json:"limit"`
+		HasMore bool   `json:"hasMore"`
+		Limit   int    `json:"limit"`
+		Offset  int    `json:"offset"`
+		Total   int    `json:"total"`
 	} `json:"meta"`
 }
 

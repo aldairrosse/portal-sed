@@ -315,7 +315,6 @@ func (h *OrgHandler) ListEmployees(w http.ResponseWriter, r *http.Request) {
 	profileID := q.Get("profileId")
 	isActive := q.Get("isActive")
 	query := q.Get("q")
-	cursor := q.Get("cursor")
 
 	limit := 50
 	if l := q.Get("limit"); l != "" {
@@ -331,7 +330,20 @@ func (h *OrgHandler) ListEmployees(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	result, err := h.employeeSvc.ListEmployees(r.Context(), treeID, nodeID, profileID, isActive, query, cursor, limit)
+	offset := 0
+	if o := q.Get("offset"); o != "" {
+		var err error
+		offset, err = strconv.Atoi(o)
+		if err != nil {
+			writeError(w, errors.NewDomainError(errors.InvalidRequest, "offset must be a valid integer", err))
+			return
+		}
+		if offset < 0 {
+			offset = 0
+		}
+	}
+
+	result, err := h.employeeSvc.ListEmployees(r.Context(), treeID, nodeID, profileID, isActive, query, offset, limit)
 	if err != nil {
 		writeError(w, err)
 		return

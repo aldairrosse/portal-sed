@@ -69,13 +69,13 @@ func (m *mockOrgNodeService) MoveNode(ctx context.Context, nodeID, newParentID s
 }
 
 type mockEmployeeService struct {
-	listEmployeesFunc   func(ctx context.Context, treeID, nodeID, profileID, isActive, query, cursor string, limit int) (*dto.EmployeeListResponse, error)
+	listEmployeesFunc   func(ctx context.Context, treeID, nodeID, profileID, isActive, query string, offset, limit int) (*dto.EmployeeListResponse, error)
 	getEmployeeFunc     func(ctx context.Context, empID string) (*dto.EmployeeDetailResponse, error)
 	searchEmployeesFunc func(ctx context.Context, query string, limit int) (*dto.EmployeeListResponse, error)
 }
 
-func (m *mockEmployeeService) ListEmployees(ctx context.Context, treeID, nodeID, profileID, isActive, query, cursor string, limit int) (*dto.EmployeeListResponse, error) {
-	return m.listEmployeesFunc(ctx, treeID, nodeID, profileID, isActive, query, cursor, limit)
+func (m *mockEmployeeService) ListEmployees(ctx context.Context, treeID, nodeID, profileID, isActive, query string, offset, limit int) (*dto.EmployeeListResponse, error) {
+	return m.listEmployeesFunc(ctx, treeID, nodeID, profileID, isActive, query, offset, limit)
 }
 func (m *mockEmployeeService) GetEmployee(ctx context.Context, empID string) (*dto.EmployeeDetailResponse, error) {
 	return m.getEmployeeFunc(ctx, empID)
@@ -356,7 +356,7 @@ func TestListEmployees_Success(t *testing.T) {
 	t.Parallel()
 
 	empSvc := &mockEmployeeService{
-		listEmployeesFunc: func(_ context.Context, treeID, nodeID, profileID, isActive, query, cursor string, limit int) (*dto.EmployeeListResponse, error) {
+		listEmployeesFunc: func(_ context.Context, treeID, nodeID, profileID, isActive, query string, offset, limit int) (*dto.EmployeeListResponse, error) {
 			assert.Equal(t, "some-tree", treeID)
 			assert.Equal(t, 25, limit)
 			return &dto.EmployeeListResponse{
@@ -364,7 +364,7 @@ func TestListEmployees_Success(t *testing.T) {
 					{ID: uuid.New().String(), FirstName: "Alice"},
 				},
 				Meta: struct {
-					NextCursor string `json:"nextCursor,omitempty"`
+					Offset int `json:"offset"`
 					HasMore    bool   `json:"hasMore"`
 					Limit      int    `json:"limit"`
 				}{HasMore: false, Limit: 25},
@@ -421,7 +421,7 @@ func TestGetMyEvaluatees_Success(t *testing.T) {
 					{ID: uuid.New().String(), FirstName: "Carol"},
 				},
 				Meta: struct {
-					NextCursor string `json:"nextCursor,omitempty"`
+					Offset int `json:"offset"`
 					HasMore    bool   `json:"hasMore"`
 					Limit      int    `json:"limit"`
 				}{Limit: 1, HasMore: false},
@@ -488,7 +488,7 @@ func TestBatchResolve_Success(t *testing.T) {
 					{ID: id2, FirstName: "Dana"},
 				},
 				Meta: struct {
-					NextCursor string `json:"nextCursor,omitempty"`
+					Offset int `json:"offset"`
 					HasMore    bool   `json:"hasMore"`
 					Limit      int    `json:"limit"`
 				}{Limit: 2, HasMore: false},
@@ -521,7 +521,7 @@ func TestSearchEmployees_Success(t *testing.T) {
 					{ID: uuid.New().String(), FirstName: "Alice"},
 				},
 				Meta: struct {
-					NextCursor string `json:"nextCursor,omitempty"`
+					Offset int `json:"offset"`
 					HasMore    bool   `json:"hasMore"`
 					Limit      int    `json:"limit"`
 				}{Limit: 20, HasMore: false},
@@ -653,7 +653,7 @@ func TestBatchResolve_TooManyIDs(t *testing.T) {
 			return &dto.EmployeeListResponse{
 				Data: []dto.EmployeeListItem{},
 				Meta: struct {
-					NextCursor string `json:"nextCursor,omitempty"`
+					Offset int `json:"offset"`
 					HasMore    bool   `json:"hasMore"`
 					Limit      int    `json:"limit"`
 				}{Limit: len(idList), HasMore: false},
@@ -679,7 +679,7 @@ func TestListEmployees_ResponseTime(t *testing.T) {
 
 	calls := 0
 	empSvc := &mockEmployeeService{
-		listEmployeesFunc: func(_ context.Context, _, _, _, _, _, _ string, _ int) (*dto.EmployeeListResponse, error) {
+		listEmployeesFunc: func(_ context.Context, _, _, _, _, _ string, _, _ int) (*dto.EmployeeListResponse, error) {
 			calls++
 			return &dto.EmployeeListResponse{Data: []dto.EmployeeListItem{}}, nil
 		},

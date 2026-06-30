@@ -13,7 +13,7 @@ import (
 
 // EmployeeService defines the interface for employee operations.
 type EmployeeService interface {
-	ListEmployees(ctx context.Context, treeID, nodeID, profileID, isActive, query, cursor string, limit int) (*org.EmployeeListResponse, error)
+	ListEmployees(ctx context.Context, treeID, nodeID, profileID, isActive, query string, offset, limit int) (*org.EmployeeListResponse, error)
 	GetEmployee(ctx context.Context, empID string) (*org.EmployeeDetailResponse, error)
 	SearchEmployees(ctx context.Context, query string, limit int) (*org.EmployeeListResponse, error)
 }
@@ -31,10 +31,10 @@ func NewEmployeeService(empRepo *repo.EmployeeRepo, client *internal.Client) Emp
 	}
 }
 
-func (s *employeeService) ListEmployees(ctx context.Context, treeID, nodeID, profileID, isActive, query, cursor string, limit int) (*org.EmployeeListResponse, error) {
+func (s *employeeService) ListEmployees(ctx context.Context, treeID, nodeID, profileID, isActive, query string, offset, limit int) (*org.EmployeeListResponse, error) {
 	filter := repo.EmployeeFilter{
 		Query:  query,
-		Cursor: cursor,
+		Offset: offset,
 		Limit:  limit,
 	}
 
@@ -72,23 +72,24 @@ func (s *employeeService) ListEmployees(ctx context.Context, treeID, nodeID, pro
 		return nil, err
 	}
 
-	hasMore := len(rows) > filter.Limit
-	if hasMore {
-		rows = rows[:filter.Limit]
-	}
-
 	resp := &org.EmployeeListResponse{
 		Data: make([]org.EmployeeListItem, len(rows)),
 	}
 	resp.Meta.Limit = filter.Limit
-	resp.Meta.HasMore = hasMore
+	resp.Meta.Offset = filter.Offset
+
+	// Total count (same filters, no pagination)
+	countFilter := filter
+	countFilter.Offset = 0
+	countFilter.Limit = 0
+	total, err := s.empRepo.CountWithProfiles(ctx, countFilter)
+	if err == nil {
+		resp.Meta.Total = total
+		resp.Meta.HasMore = filter.Offset+len(rows) < total
+	}
 
 	for i, r := range rows {
 		resp.Data[i] = employeeRowToItem(r)
-	}
-
-	if hasMore && len(rows) > 0 {
-		resp.Meta.NextCursor = rows[len(rows)-1].ID.String()
 	}
 
 	return resp, nil

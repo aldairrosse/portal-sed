@@ -44,7 +44,7 @@ type EmployeeFilter struct {
 	ProfileID *uuid.UUID
 	IsActive  *bool
 	Query     string
-	Cursor    string
+	Offset    int
 	Limit     int
 }
 
@@ -59,8 +59,7 @@ func NewEmployeeRepo(client *internal.Client, db *sql.DB) *EmployeeRepo {
 	return &EmployeeRepo{client: client, db: db}
 }
 
-// List returns employees matching the given filter with cursor-based pagination.
-// Returns limit+1 items so caller can determine hasMore.
+// List returns employees matching the given filter with offset-based pagination.
 func (r *EmployeeRepo) List(ctx context.Context, filter EmployeeFilter) ([]*EmployeeRow, error) {
 	query := `SELECT e.id, e.created_at, e.updated_at, e.first_name, e.last_name, e.email,
 	                 e.employee_number, e.is_active, e.org_node_id, e.manager_id, e.profile_id, e.job_title
@@ -99,14 +98,6 @@ func (r *EmployeeRepo) List(ctx context.Context, filter EmployeeFilter) ([]*Empl
 		args = append(args, "%"+filter.Query+"%")
 		idx++
 	}
-	if filter.Cursor != "" {
-		cursorID, err := uuid.Parse(filter.Cursor)
-		if err == nil {
-			conditions = append(conditions, `e.id > $`+itoa(idx))
-			args = append(args, cursorID)
-			idx++
-		}
-	}
 
 	limit := filter.Limit
 	if limit <= 0 {
@@ -114,13 +105,17 @@ func (r *EmployeeRepo) List(ctx context.Context, filter EmployeeFilter) ([]*Empl
 	} else if limit > 200 {
 		limit = 200
 	}
+	offset := filter.Offset
+	if offset < 0 {
+		offset = 0
+	}
 
 	fullQuery := query + " " + strings.Join(joins, " ")
 	if len(conditions) > 0 {
 		fullQuery += ` WHERE ` + strings.Join(conditions, " AND ")
 	}
-	fullQuery += ` ORDER BY e.last_name, e.first_name, e.id LIMIT $` + itoa(idx)
-	args = append(args, limit+1)
+	fullQuery += ` ORDER BY e.last_name, e.first_name, e.id LIMIT $` + itoa(idx) + ` OFFSET $` + itoa(idx+1)
+	args = append(args, limit, offset)
 
 	return scanEmployeeRows(r.db, ctx, fullQuery, args...)
 }
@@ -166,14 +161,6 @@ func (r *EmployeeRepo) ListWithProfiles(ctx context.Context, filter EmployeeFilt
 		args = append(args, "%"+filter.Query+"%")
 		idx++
 	}
-	if filter.Cursor != "" {
-		cursorID, err := uuid.Parse(filter.Cursor)
-		if err == nil {
-			conditions = append(conditions, `e.id > $`+itoa(idx))
-			args = append(args, cursorID)
-			idx++
-		}
-	}
 
 	limit := filter.Limit
 	if limit <= 0 {
@@ -181,15 +168,71 @@ func (r *EmployeeRepo) ListWithProfiles(ctx context.Context, filter EmployeeFilt
 	} else if limit > 200 {
 		limit = 200
 	}
+	offset := filter.Offset
+	if offset < 0 {
+		offset = 0
+	}
 
 	fullQuery := query + " " + strings.Join(joins, " ")
 	if len(conditions) > 0 {
 		fullQuery += ` WHERE ` + strings.Join(conditions, " AND ")
 	}
-	fullQuery += ` ORDER BY e.last_name, e.first_name, e.id LIMIT $` + itoa(idx)
-	args = append(args, limit+1)
+	fullQuery += ` ORDER BY e.last_name, e.first_name, e.id LIMIT $` + itoa(idx) + ` OFFSET $` + itoa(idx+1)
+	args = append(args, limit, offset)
 
 	return scanEmployeeRowsWithProfile(r.db, ctx, fullQuery, args...)
+}
+
+// CountWithProfiles returns the total number of employees matching the filter (without pagination).
+func (r *EmployeeRepo) CountWithProfiles(ctx context.Context, filter EmployeeFilter) (int, error) {
+	query := `SELECT COUNT(*)
+	           FROM employees e
+	           LEFT JOIN evaluation_profiles ep ON e.profile_id = ep.id`
+	var conditions []string
+	var joins []string
+	args := []interface{}{}
+	idx := 1
+
+	if filter.TreeID != nil {
+		joins = append(joins, `JOIN org_nodes on2 ON e.org_node_id = on2.id`)
+		conditions = append(conditions, `on2.organization_id = $`+itoa(idx))
+		args = append(args, *filter.TreeID)
+		idx++
+	}
+	if filter.NodeID != nil {
+		conditions = append(conditions, `e.org_node_id = $`+itoa(idx))
+		args = append(args, *filter.NodeID)
+		idx++
+	}
+	if filter.ProfileID != nil {
+		conditions = append(conditions, `e.profile_id = $`+itoa(idx))
+		args = append(args, *filter.ProfileID)
+		idx++
+	}
+	if filter.IsActive != nil {
+		conditions = append(conditions, `e.is_active = $`+itoa(idx))
+		args = append(args, *filter.IsActive)
+		idx++
+	}
+	if filter.Query != "" {
+		conditions = append(conditions, `(e.first_name ILIKE $`+itoa(idx)+
+			` OR e.last_name ILIKE $`+itoa(idx)+
+			` OR e.email ILIKE $`+itoa(idx)+
+			` OR e.employee_number ILIKE $`+itoa(idx)+`)`)
+		args = append(args, "%"+filter.Query+"%")
+		idx++
+	}
+
+	fullQuery := query + " " + strings.Join(joins, " ")
+	if len(conditions) > 0 {
+		fullQuery += ` WHERE ` + strings.Join(conditions, " AND ")
+	}
+
+	var total int
+	if err := r.db.QueryRowContext(ctx, fullQuery, args...).Scan(&total); err != nil {
+		return 0, err
+	}
+	return total, nil
 }
 
 // GetByID retrieves a single employee by ID.
