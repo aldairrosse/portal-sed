@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	dto "github.com/sed-evaluacion-desempeno/api/internal/dto/competency"
+	pkgerrors "github.com/sed-evaluacion-desempeno/api/internal/pkg/errors"
 	repo "github.com/sed-evaluacion-desempeno/api/internal/repository/competency"
 )
 
@@ -36,6 +37,16 @@ func (s *catalogService) ListLevels(ctx context.Context) ([]dto.LevelDefinitionI
 		}
 	}
 	return items, nil
+}
+
+func (s *catalogService) UpdateLevel(ctx context.Context, level int, req dto.UpdateLevelDefinitionRequest) error {
+	if level < 1 || level > 5 {
+		return pkgerrors.NewDomainError("INVALID_LEVEL", "level must be between 1 and 5", nil)
+	}
+	if req.Label == "" {
+		return pkgerrors.NewDomainError("INVALID_REQUEST", "label is required", nil)
+	}
+	return s.repo.UpdateLevel(ctx, level, req.Label, req.Description)
 }
 
 func (s *catalogService) ListProfiles(ctx context.Context) ([]dto.EvaluationProfileItem, error) {

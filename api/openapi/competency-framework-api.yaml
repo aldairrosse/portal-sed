@@ -395,6 +395,34 @@ paths:
                   $ref: '#/components/schemas/LevelDefinition'
         '304':
           description: Not Modified
+  /levels/{level}:
+    put:
+      operationId: updateLevel
+      summary: Update level definition
+      description: Updates the label and description for a level definition (1-5).
+      parameters:
+        - name: level
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 5
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateLevelDefinitionRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LevelDefinition'
+        '400':
+          $ref: '#/components/responses/BadRequest'
   /acceptance-levels:
     get:
       operationId: listAcceptanceLevels
@@ -651,6 +679,14 @@ components:
           type: integer
           minimum: 1
           maximum: 5
+        label:
+          type: string
+        description:
+          type: string
+    UpdateLevelDefinitionRequest:
+      type: object
+      required: [label]
+      properties:
         label:
           type: string
         description:

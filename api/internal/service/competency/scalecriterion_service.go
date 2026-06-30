@@ -52,18 +52,12 @@ func (s *scaleService) Upsert(ctx context.Context, competencyID string, req dto.
 			"at least one criterion is required", nil)
 	}
 
-	// Validate levels and detect duplicates
-	seen := make(map[int]struct{})
+	// Validate levels
 	for _, item := range req.Criteria {
 		if item.Level < 1 || item.Level > 5 {
 			return nil, pkgerrors.NewDomainError("INVALID_LEVEL",
 				"level must be between 1 and 5", nil)
 		}
-		if _, ok := seen[item.Level]; ok {
-			return nil, pkgerrors.NewDomainError("DUPLICATE_LEVEL",
-				"duplicate level in request; each level can appear at most once", nil)
-		}
-		seen[item.Level] = struct{}{}
 	}
 
 	// Verify competency exists and get pillar ID

@@ -3,15 +3,14 @@
 	import {
 		getPillars,
 		getCompetencies,
+		getScaleCriteria,
 		getScaleCriteriaForCell,
 		getLevelDefinitions,
-		updateScaleCriterion,
-		addScaleCriterion,
-		removeScaleCriterion
+		replaceScaleCriteria
 	} from '$lib/stores/competencyStore.svelte';
 	import type { ScaleCriterion } from '$lib/types/competency';
 
-	const PILLAR_COLORS = ['primary', 'secondary', 'accent', 'info', 'success', 'warning'] as const;
+	const PILLAR_COLORS = ['#D97706', '#7C3AED', '#B45309', '#0369A1'] as const;
 
 	interface Props {
 		isAnyInlineEditing?: boolean;
@@ -29,7 +28,6 @@
 	let editingCellKey: string | null = $state(null);
 	let editEntries: Array<{ localId: string; serverId: string | null; description: string }> = $state([]);
 	let editCellCompetencyId = $state('');
-	let editCellPillarId = $state('');
 	let editCellLevel = $state<number>(1);
 	let tempIdCounter = $state(0);
 	let errorMsg = $state('');
@@ -47,19 +45,12 @@
 		return levelDefs.find((d) => d.level === level)?.label ?? 'Nivel ' + level;
 	}
 
-	function getDescriptions(competencyId: string, pillarId: string, level: number): string[] {
-		return getScaleCriteriaForCell(competencyId, pillarId)
-			.filter((c) => c.level === level)
-			.map((c) => c.description)
-			.filter(Boolean);
-	}
-
 	function getLevelCriteria(competencyId: string, pillarId: string, level: number): ScaleCriterion[] {
 		return getScaleCriteriaForCell(competencyId, pillarId).filter((c) => c.level === level);
 	}
 
-	function pillarBadgeClass(index: number): string {
-		return `badge-${PILLAR_COLORS[index % PILLAR_COLORS.length]}`;
+	function pillarBadgeStyle(index: number): string {
+		return `background-color: ${PILLAR_COLORS[index % PILLAR_COLORS.length]}; color: #fff`;
 	}
 
 	// ─── Inline editing actions ────────────────────────────────────────────
@@ -68,7 +59,6 @@
 		if (editingCellKey !== null) return; // only one cell at a time
 		editingCellKey = getCellKey(competencyId, pillarId, level);
 		editCellCompetencyId = competencyId;
-		editCellPillarId = pillarId;
 		editCellLevel = level;
 		const existing = getLevelCriteria(competencyId, pillarId, level);
 		editEntries = existing.map((c) => ({
@@ -76,7 +66,12 @@
 			serverId: c.id,
 			description: c.description
 		}));
-		tempIdCounter = 0;
+		if (editEntries.length === 0) {
+			tempIdCounter = 1;
+			editEntries = [{ localId: 'new-1', serverId: null, description: '' }];
+		} else {
+			tempIdCounter = 0;
+		}
 		errorMsg = '';
 	}
 
@@ -102,39 +97,18 @@
 			return;
 		}
 
-		const existingIds = new Set(getLevelCriteria(editCellCompetencyId, editCellPillarId, editCellLevel).map((c) => c.id));
-		// eslint-disable-next-line svelte/prefer-svelte-reactivity
-		const finalIds = new Set<string>();
-		const newEntries: Array<Omit<ScaleCriterion, 'id'>> = [];
-		const updatePairs: Array<{ id: string; description: string }> = [];
+		// Collect all criteria for this competency, replacing the edited level
+		const allCriteria = getScaleCriteria().filter(
+			(sc) => sc.competencyId === editCellCompetencyId
+		);
+		const otherLevelCriteria = allCriteria
+			.filter((sc) => sc.level !== editCellLevel)
+			.map((sc) => ({ level: sc.level, description: sc.description }));
+		const editedCriteria = editEntries
+			.filter((e) => e.description.trim().length > 0)
+			.map((e) => ({ level: editCellLevel, description: e.description.trim() }));
 
-		for (const entry of editEntries) {
-			if (entry.serverId) {
-				finalIds.add(entry.serverId);
-				updatePairs.push({ id: entry.serverId, description: entry.description.trim() });
-			} else {
-				newEntries.push({
-					competencyId: editCellCompetencyId,
-					pillarId: editCellPillarId,
-					level: editCellLevel as 1 | 2 | 3 | 4 | 5,
-					description: entry.description.trim()
-				});
-			}
-		}
-
-		for (const id of existingIds) {
-			if (!finalIds.has(id)) {
-				removeScaleCriterion(id);
-			}
-		}
-
-		for (const pair of updatePairs) {
-			updateScaleCriterion(pair.id, pair.description);
-		}
-
-		for (const nc of newEntries) {
-			addScaleCriterion(nc);
-		}
+		replaceScaleCriteria(editCellCompetencyId, [...otherLevelCriteria, ...editedCriteria]);
 
 		editingCellKey = null;
 		editEntries = [];
@@ -146,16 +120,16 @@
 	{@const pillarCompetencies = competencies.filter((c) => c.pillarId === pillar.id)}
 	<div class="mb-8">
 		<div class="flex items-center gap-2 mb-3">
-			<div class="badge {pillarBadgeClass(i)} text-sm px-3 py-2">{pillar.name}</div>
+						<div class="badge text-sm px-3 py-2" style={pillarBadgeStyle(i)}>{pillar.name}</div>
 		</div>
 
-		<div class="overflow-x-auto rounded-box border border-base-300">
+		<div class="overflow-x-auto rounded-box">
 			<table class="table table-zebra" aria-label="Criterios de escala - {pillar.name}">
 				<thead>
 				<tr>
-						<th class="w-48 min-w-[12rem]">Competencia</th>
+						<th class="w-48 min-w-[12rem] text-xs tracking-wide font-semibold text-base-content/50">Competencia</th>
 								{#each levels as level (level)}
-							<th class="min-w-[10rem] text-center">
+							<th class="min-w-[10rem] text-center text-xs tracking-wide font-semibold text-base-content/50">
 								<span class="inline-flex items-center gap-1">
 									<Star class="w-3 h-3" strokeWidth={2} />
 									N{level} - {getLevelLabel(level)}
@@ -172,7 +146,7 @@
 							</td>
 						{#each levels as level (level)}
 								{@const cellKey = getCellKey(competency.id, pillar.id, level)}
-								{@const texts = getDescriptions(competency.id, pillar.id, level)}
+								{@const cellCriteria = getLevelCriteria(competency.id, pillar.id, level)}
 								{@const isEditing = editingCellKey === cellKey}
 								<td class="p-1.5 align-top">
 									{#if isEditing}
@@ -218,10 +192,10 @@
 											onclick={() => startEditing(competency.id, pillar.id, level)}
 											aria-label="Editar criterios de {competency.name} nivel {level} en {pillar.name}"
 										>
-											{#if texts.length > 0}
+											{#if cellCriteria.length > 0}
 												<div class="space-y-1">
-													{#each texts as text (text)}
-														<span class="text-xs text-base-content/60 leading-tight line-clamp-3 block">{text}</span>
+													{#each cellCriteria as criterion (criterion.id)}
+														<span class="text-xs text-base-content/60 leading-tight line-clamp-3 block">{criterion.description}</span>
 													{/each}
 												</div>
 											{:else}

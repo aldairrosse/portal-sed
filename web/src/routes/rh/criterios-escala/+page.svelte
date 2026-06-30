@@ -4,12 +4,12 @@
 	import LevelDefinitionModal from '$lib/components/competency/LevelDefinitionModal.svelte';
 	import PageSkeleton from '$lib/components/ui/PageSkeleton.svelte';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
-	import { getCompetencies, getPillars } from '$lib/stores/competencyStore.svelte';
+	import { load, reload, isLoading, getCompetencies, getPillars } from '$lib/stores/competencyStore.svelte';
 
 	const pillars = $derived(getPillars());
 	const competencies = $derived(getCompetencies());
+	const loading = $derived(isLoading());
 
-	let loading = $state(true);
 	let showLevelDefModal = $state(false);
 	let successMsg = $state('');
 	let isAnyInlineEditing = $state(false);
@@ -18,8 +18,7 @@
 	let competencyCount = $derived(competencies.length);
 
 	$effect(() => {
-		const t = setTimeout(() => (loading = false), 300);
-		return () => clearTimeout(t);
+		load();
 	});
 
 	$effect(() => {
@@ -47,7 +46,7 @@
 		</div>
 		<button
 			class="btn btn-ghost btn-sm"
-			disabled={isAnyInlineEditing}
+			disabled={loading || isAnyInlineEditing}
 			onclick={() => (showLevelDefModal = true)}
 			aria-label="Editar definiciones de nivel"
 		>
@@ -74,4 +73,8 @@
 	{/if}
 </div>
 
-<LevelDefinitionModal open={showLevelDefModal} onClose={() => (showLevelDefModal = false)} />
+<LevelDefinitionModal
+	open={showLevelDefModal}
+	onClose={() => (showLevelDefModal = false)}
+	onSaved={() => { showLevelDefModal = false; reload(); }}
+/>

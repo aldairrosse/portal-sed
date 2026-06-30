@@ -70,6 +70,8 @@ type ScaleRepo interface {
 type CatalogRepo interface {
 	// ListLevels returns all level definitions ordered by level ASC.
 	ListLevels(ctx context.Context) ([]*internal.LevelDefinition, error)
+	// UpdateLevel updates the label and description for a level definition.
+	UpdateLevel(ctx context.Context, level int, label, description string) error
 	// ListProfiles returns all evaluation profiles ordered by name ASC.
 	ListProfiles(ctx context.Context) ([]*internal.EvaluationProfile, error)
 }

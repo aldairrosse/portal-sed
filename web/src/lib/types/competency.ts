@@ -58,9 +58,21 @@ export interface LevelDefinition {
 
 /**
  * Per-competency, per-profile acceptance level assignment.
+ * profileId is the EvaluationProfile slug (e.g. 'colaborador'), resolved
+ * from the DB UUID at load time via the profiles lookup map.
  */
 export interface CompetencyAcceptanceLevel {
 	competencyId: string;
 	profileId: EvaluationProfile;
 	level: 1 | 2 | 3 | 4 | 5;
+}
+
+/**
+ * Evaluation profile as returned by GET /api/v1/profiles.
+ * Maps DB UUID ↔ frontend slug.
+ */
+export interface Profile {
+	id: string; // UUID from DB
+	name: EvaluationProfile; // slug like 'colaborador'
+	description?: string;
 }

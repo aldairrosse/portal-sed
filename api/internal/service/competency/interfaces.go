@@ -57,6 +57,7 @@ type ScaleService interface {
 // CatalogService defines read-only access to static catalogs.
 type CatalogService interface {
 	ListLevels(ctx context.Context) ([]dto.LevelDefinitionItem, error)
+	UpdateLevel(ctx context.Context, level int, req dto.UpdateLevelDefinitionRequest) error
 	ListProfiles(ctx context.Context) ([]dto.EvaluationProfileItem, error)
 }
 

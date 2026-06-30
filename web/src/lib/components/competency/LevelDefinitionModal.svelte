@@ -1,34 +1,64 @@
 <script lang="ts">
 	import { Save, X } from '@lucide/svelte';
+	import { untrack } from 'svelte';
 	import { getLevelDefinitions, updateLevelDefinition } from '$lib/stores/competencyStore.svelte';
 	import * as notifications from '$lib/stores/notifications.svelte';
 
 	interface Props {
 		open: boolean;
 		onClose: () => void;
+		onSaved?: () => void;
 	}
 
-	let { open, onClose }: Props = $props();
+	let { open, onClose, onSaved }: Props = $props();
 
 	let dialogEl: HTMLDialogElement | undefined = $state();
 
 	const levels = [1, 2, 3, 4, 5] as const;
 
-	// Local editing state per level
-	let editLabels: Record<number, string> = $state({});
-	let editDescriptions: Record<number, string> = $state({});
-	let hasChanges = $state(false);
+	// Initialise all 5 levels up-front so editLabels[l] is never undefined
+	// before resetForm runs (the $effect can fire after the first render).
+	const empty = (): Record<number, string> =>
+		levels.reduce<Record<number, string>>((acc, l) => ((acc[l] = ''), acc), {});
+
+	let editLabels: Record<number, string> = $state(empty());
+	let editDescriptions: Record<number, string> = $state(empty());
+	// Original values at modal-open time, used to detect changes
+	let originalLabels: Record<number, string> = $state(empty());
+	let originalDescriptions: Record<number, string> = $state(empty());
+
+	let saving = $state(false);
 
 	function resetForm() {
-		const defs = getLevelDefinitions();
+		// ponytail: untrack — reading getLevelDefinitions() here must NOT create
+		// a reactive dependency, or the $effect re-runs on every data change
+		// and wipes user input.
+		const defs = untrack(() => getLevelDefinitions());
 		levels.forEach((l) => {
 			const existing = defs.find((d) => d.level === l);
-			editLabels[l] = existing?.label ?? '';
-			editDescriptions[l] = existing?.description ?? '';
+			const label = existing?.label ?? '';
+			const description = existing?.description ?? '';
+			editLabels[l] = label;
+			editDescriptions[l] = description;
+			originalLabels[l] = label;
+			originalDescriptions[l] = description;
 		});
-		hasChanges = false;
 	}
 
+	// Derived: which levels differ from the original snapshot.
+	// Includes levels with a label even if unchanged — matches the user's
+	// intent: "tenga al menos una etiqueta" OR "uno que cambió".
+	const changedLevels = $derived(
+		levels.filter(
+			(l) =>
+				editLabels[l].trim() !== originalLabels[l].trim() ||
+				editDescriptions[l].trim() !== originalDescriptions[l].trim()
+		)
+	);
+
+	const hasChanges = $derived(changedLevels.length > 0);
+
+	// Reset only when the modal opens. Depends only on `open` and `dialogEl`.
 	$effect(() => {
 		if (!dialogEl) return;
 		if (open) {
@@ -39,16 +69,42 @@
 		}
 	});
 
-	function markChanged() {
-		hasChanges = true;
-	}
+	async function handleSaveAll() {
+		// Only save levels that have a label (the API rejects empty labels).
+		const toSave = changedLevels.filter((l) => editLabels[l].trim().length > 0);
+		if (toSave.length === 0) {
+			notifications.warning('Ingresa al menos una etiqueta para guardar.');
+			return;
+		}
 
-	function handleSave() {
-		levels.forEach((level) => {
-			updateLevelDefinition(level, editLabels[level].trim(), editDescriptions[level].trim());
-		});
-		hasChanges = false;
-		notifications.success('Definiciones de nivel guardadas correctamente.');
+		saving = true;
+		try {
+			for (const level of toSave) {
+				await updateLevelDefinition(
+					level,
+					editLabels[level].trim(),
+					editDescriptions[level].trim()
+				);
+			}
+			// Refresh the original snapshot so the button disables after save.
+			toSave.forEach((l) => {
+				originalLabels[l] = editLabels[l].trim();
+				originalDescriptions[l] = editDescriptions[l].trim();
+			});
+			notifications.success(
+				toSave.length === 1
+					? `Nivel ${toSave[0]} guardado correctamente.`
+					: `${toSave.length} niveles guardados correctamente.`
+			);
+			onSaved?.();
+		} catch (err) {
+			console.error('[LevelDef] Save failed:', err);
+			notifications.error(
+				`Error al guardar: ${err instanceof Error ? err.message : String(err)}`
+			);
+		} finally {
+			saving = false;
+		}
 	}
 
 	function handleClose() {
@@ -89,7 +145,7 @@
 			Estas definiciones aplican a todos los perfiles de evaluación.
 		</p>
 
-		<div class="overflow-y-auto flex-1 pr-1 space-y-5">
+		<div class="overflow-y-auto flex-1 pr-1 space-y-5 py-2 px-1">
 		{#each levels as level (level)}
 			<div class="flex items-start gap-3">
 					<div
@@ -102,7 +158,6 @@
 							type="text"
 							class="input input-bordered input-sm w-full"
 							bind:value={editLabels[level]}
-							oninput={markChanged}
 							placeholder="Etiqueta del nivel"
 							aria-label="Etiqueta nivel {level}"
 						/>
@@ -110,7 +165,6 @@
 							class="textarea textarea-bordered textarea-sm w-full"
 							rows={2}
 							bind:value={editDescriptions[level]}
-							oninput={markChanged}
 							placeholder="Descripción del nivel"
 							aria-label="Descripción nivel {level}"
 						></textarea>
@@ -120,10 +174,14 @@
 		</div>
 
 		<div class="modal-action mt-4 flex-shrink-0">
-			<button class="btn btn-ghost btn-sm" onclick={handleClose}>Cancelar</button>
-			<button class="btn btn-primary btn-sm" onclick={handleSave} disabled={!hasChanges}>
+			<button class="btn btn-ghost btn-sm" onclick={handleClose}>Cerrar</button>
+			<button
+				class="btn btn-primary btn-sm"
+				onclick={handleSaveAll}
+				disabled={!hasChanges || saving}
+			>
 				<Save class="w-4 h-4" />
-				Guardar cambios
+				{saving ? 'Guardando...' : 'Guardar cambios'}
 			</button>
 		</div>
 	</div>

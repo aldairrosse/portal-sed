@@ -558,6 +558,41 @@ func (h *Handler) ListLevels(w http.ResponseWriter, r *http.Request) {
 }
 
 // ---------------------------------------------------------------------------
+// 13b. PUT /api/v1/levels/{level} — UpdateLevel
+// ---------------------------------------------------------------------------
+
+// UpdateLevel handles PUT /api/v1/levels/{level}.
+// Updates the label and description for a level definition.
+// TODO(auth:C7): rh or admin role required.
+func (h *Handler) UpdateLevel(w http.ResponseWriter, r *http.Request) {
+	levelStr := chi.URLParam(r, "level")
+	level, err := strconv.Atoi(levelStr)
+	if err != nil || level < 1 || level > 5 {
+		writeError(w, pkgerrors.NewDomainError("INVALID_PARAMETER",
+			"level must be an integer between 1 and 5", nil))
+		return
+	}
+
+	var req dto.UpdateLevelDefinitionRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
+			"invalid JSON body", err))
+		return
+	}
+
+	if err := h.catalogSvc.UpdateLevel(r.Context(), level, req); err != nil {
+		writeError(w, err)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, dto.LevelDefinitionItem{
+		Level:       level,
+		Label:       req.Label,
+		Description: req.Description,
+	})
+}
+
+// ---------------------------------------------------------------------------
 // 14. GET /api/v1/acceptance-levels — ListAcceptanceLevels
 // ---------------------------------------------------------------------------
 

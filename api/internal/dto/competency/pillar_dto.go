@@ -90,6 +90,12 @@ type LevelDefinitionItem struct {
 	Description string `json:"description,omitempty"`
 }
 
+// UpdateLevelDefinitionRequest is the payload for updating a level definition.
+type UpdateLevelDefinitionRequest struct {
+	Label       string `json:"label"`
+	Description string `json:"description,omitempty"`
+}
+
 // EvaluationProfileItem is a single evaluation profile from the static catalog.
 type EvaluationProfileItem struct {
 	ID          string `json:"id"`

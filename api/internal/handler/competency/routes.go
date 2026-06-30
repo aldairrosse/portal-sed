@@ -141,10 +141,18 @@ func RegisterRoutes(r chi.Router, deps *Dependencies) {
 	// Static catalog endpoints
 	// -----------------------------------------------------------------------
 
+	// ponytail: GET /levels reads from primary (not replica) — level definitions
+	// are static catalog data (5 rows, rarely changes), and the read replica has
+	// replication lag that causes stale/empty reads right after a PUT to primary.
 	r.Group(func(r chi.Router) {
 		r.Use(middleware.RateLimit(readRateLimit))
-		r.Use(readReplicaMiddleware)
 		r.Get("/api/v1/levels", deps.Handler.ListLevels)
+	})
+
+	r.Group(func(r chi.Router) {
+		r.Use(middleware.RequirePermission(auth.PermCompetencyWrite))
+		r.Use(middleware.RateLimit(writeRateLimit))
+		r.Put("/api/v1/levels/{level}", deps.Handler.UpdateLevel)
 	})
 
 	r.Group(func(r chi.Router) {
