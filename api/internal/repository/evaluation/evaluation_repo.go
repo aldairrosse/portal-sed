@@ -68,6 +68,15 @@ type CompetencyUpsert struct {
 	Comments     string
 }
 
+// EmployeeCompetencyRatingRow is a repository-level DTO for competency ratings
+// returned from the employee + cycle query. Includes self/rh ratings from migration 000008.
+type EmployeeCompetencyRatingRow struct {
+	CompetencyID uuid.UUID
+	SelfRating   *int
+	RhRating     *int
+	Comments     string
+}
+
 // GoalCommentUpsert is a repository-level DTO for updating goal comments.
 type GoalCommentUpsert struct {
 	GoalID  uuid.UUID
@@ -278,6 +287,8 @@ func (r *EvaluationRepo) LockEvalForUpdate(ctx context.Context, tx *sql.Tx, eval
 
 // SubmitEval performs the atomic evaluation submission inside a *sql.Tx.
 // It upserts competencies, updates goal comments, sets state and timestamps.
+// Dual-write: when setSelfCompleted, rating is also written to self_rating;
+// when setRHCompleted, rating is also written to rh_rating.
 func (r *EvaluationRepo) SubmitEval(ctx context.Context, tx *sql.Tx, evalID uuid.UUID, comps []CompetencyUpsert, goals []GoalCommentUpsert, newState string, setSelfCompleted, setRHCompleted bool) error {
 	// 1. Lock row and validate state
 	row, err := r.LockEvalForUpdate(ctx, tx, evalID)
@@ -290,15 +301,37 @@ func (r *EvaluationRepo) SubmitEval(ctx context.Context, tx *sql.Tx, evalID uuid
 
 	now := time.Now()
 
-	// 2. Bulk upsert competencies
+	// 2. Bulk upsert competencies with dual-write for self_rating/rh_rating
 	for _, c := range comps {
-		_, err = tx.ExecContext(ctx,
-			`INSERT INTO evaluation_competencies (id, created_at, updated_at, evaluation_id, competency_id, rating, comments, profile_id)
-			 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-			 ON CONFLICT (evaluation_id, competency_id) DO UPDATE
-			 SET rating = EXCLUDED.rating, comments = EXCLUDED.comments, updated_at = EXCLUDED.updated_at`,
-			uuid.New(), now, now, evalID, c.CompetencyID, c.Rating, c.Comments, uuid.Nil,
-		)
+		query := `INSERT INTO evaluation_competencies (id, created_at, updated_at, evaluation_id, competency_id, rating, comments, profile_id`
+		args := []interface{}{uuid.New(), now, now, evalID, c.CompetencyID, c.Rating, c.Comments, uuid.Nil}
+		setClauses := `rating = EXCLUDED.rating, comments = EXCLUDED.comments, updated_at = EXCLUDED.updated_at`
+		argIdx := 9
+
+		if setSelfCompleted {
+			query += `, self_rating`
+			setClauses += `, self_rating = EXCLUDED.self_rating`
+		}
+		if setRHCompleted {
+			query += `, rh_rating`
+			setClauses += `, rh_rating = EXCLUDED.rh_rating`
+		}
+
+		query += `) VALUES ($1, $2, $3, $4, $5, $6, $7, $8`
+		// Build dynamic placeholders for self_rating/rh_rating
+		if setSelfCompleted {
+			query += fmt.Sprintf(`, $%d`, argIdx)
+			args = append(args, c.Rating)
+			argIdx++
+		}
+		if setRHCompleted {
+			query += fmt.Sprintf(`, $%d`, argIdx)
+			args = append(args, c.Rating)
+			argIdx++
+		}
+		query += `) ON CONFLICT (evaluation_id, competency_id) DO UPDATE SET ` + setClauses
+
+		_, err = tx.ExecContext(ctx, query, args...)
 		if err != nil {
 			return err
 		}
@@ -422,6 +455,152 @@ func (r *EvaluationRepo) upsertVersion(ctx context.Context, tx *sql.Tx, evalID u
 		evalID,
 	)
 	return err
+}
+
+// GetCompetencyRatingsByEmployee fetches ALL competencies for an employee's profile in a cycle,
+// LEFT JOINed with evaluation_competencies to get self/rh ratings (or null if not yet evaluated).
+func (r *EvaluationRepo) GetCompetencyRatingsByEmployee(ctx context.Context, employeeID, cycleID uuid.UUID) ([]EmployeeCompetencyRatingRow, error) {
+	query := `SELECT cal.competency_id, ec.self_rating, ec.rh_rating, ec.comments
+		FROM employees emp
+		JOIN competency_acceptance_levels cal ON cal.profile_id = emp.profile_id
+		LEFT JOIN evaluations ev ON ev.employee_id = emp.id AND ev.cycle_id = $2
+		LEFT JOIN evaluation_competencies ec ON ec.evaluation_id = ev.id AND ec.competency_id = cal.competency_id
+		WHERE emp.id = $1
+		ORDER BY cal.competency_id`
+
+	rows, err := r.db.QueryContext(ctx, query, employeeID, cycleID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var results []EmployeeCompetencyRatingRow
+	for rows.Next() {
+		var row EmployeeCompetencyRatingRow
+		if err := rows.Scan(&row.CompetencyID, &row.SelfRating, &row.RhRating, &row.Comments); err != nil {
+			return nil, err
+		}
+		results = append(results, row)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	if results == nil {
+		results = []EmployeeCompetencyRatingRow{}
+	}
+	return results, nil
+}
+
+// CompetencyResultRow is a repository-level DTO for paginated competency results.
+type CompetencyResultRow struct {
+	ID            uuid.UUID
+	Name          string
+	ProfileName   string
+	SelfRatingAvg *float64
+	RHRatingAvg   *float64
+	Status        string
+}
+
+// ListCompetencyResults returns paginated competency averages grouped by employee.
+// Starts from employees table with LEFT JOIN to evaluations so employees without
+// evaluation data still appear (status='sin-datos'). Filters: cycleID (required),
+// query (ILIKE on name), managerID (for team scope — filters direct reports),
+// offset/limit for pagination. Ordered by last_name, first_name, e.id.
+func (r *EvaluationRepo) ListCompetencyResults(ctx context.Context, cycleID uuid.UUID, query string, managerID *uuid.UUID, offset, limit int) ([]*CompetencyResultRow, error) {
+	baseQuery := `SELECT e.id,
+		e.first_name || ' ' || e.last_name AS name,
+		COALESCE(ep.name, '') AS profile_name,
+		AVG(ec.self_rating) AS self_rating_avg,
+		AVG(ec.rh_rating) AS rh_rating_avg,
+		CASE
+			WHEN AVG(ec.self_rating) IS NOT NULL AND AVG(ec.rh_rating) IS NOT NULL THEN 'completada'
+			WHEN AVG(ec.self_rating) IS NOT NULL THEN 'autoevaluacion'
+			WHEN AVG(ec.rh_rating) IS NOT NULL THEN 'pendiente'
+			ELSE 'sin-datos'
+		END AS status
+	FROM employees e
+	LEFT JOIN evaluation_profiles ep ON ep.id = e.profile_id
+	LEFT JOIN evaluations ev ON ev.employee_id = e.id AND ev.cycle_id = $1
+	LEFT JOIN evaluation_competencies ec ON ec.evaluation_id = ev.id
+	WHERE e.is_active = true`
+	args := []interface{}{cycleID}
+	idx := 2
+
+	// scope=team: filter by manager_id (direct reports only)
+	if managerID != nil {
+		baseQuery += ` AND e.manager_id = $` + strconv.Itoa(idx) + ` AND e.id != $` + strconv.Itoa(idx)
+		args = append(args, *managerID)
+		idx++
+	}
+
+	if query != "" {
+		baseQuery += ` AND (e.first_name ILIKE $` + strconv.Itoa(idx) + ` OR e.last_name ILIKE $` + strconv.Itoa(idx) + `)`
+		args = append(args, "%"+query+"%")
+		idx++
+	}
+
+	baseQuery += ` GROUP BY e.id, ep.name ORDER BY e.last_name, e.first_name, e.id LIMIT $` + strconv.Itoa(idx) + ` OFFSET $` + strconv.Itoa(idx+1)
+	args = append(args, limit, offset)
+
+	rows, err := r.db.QueryContext(ctx, baseQuery, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var results []*CompetencyResultRow
+	for rows.Next() {
+		row := &CompetencyResultRow{}
+		var selfAvg, rhAvg sql.NullFloat64
+		if err := rows.Scan(&row.ID, &row.Name, &row.ProfileName, &selfAvg, &rhAvg, &row.Status); err != nil {
+			return nil, err
+		}
+		if selfAvg.Valid {
+			row.SelfRatingAvg = &selfAvg.Float64
+		}
+		if rhAvg.Valid {
+			row.RHRatingAvg = &rhAvg.Float64
+		}
+		results = append(results, row)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	if results == nil {
+		results = []*CompetencyResultRow{}
+	}
+	return results, nil
+}
+
+// CountCompetencyResults returns total count of distinct employees matching
+// the same filters as ListCompetencyResults (no GROUP BY, no AVG columns).
+func (r *EvaluationRepo) CountCompetencyResults(ctx context.Context, cycleID uuid.UUID, query string, managerID *uuid.UUID) (int, error) {
+	baseQuery := `SELECT COUNT(DISTINCT e.id)
+	FROM employees e
+	LEFT JOIN evaluations ev ON ev.employee_id = e.id AND ev.cycle_id = $1
+	LEFT JOIN evaluation_competencies ec ON ec.evaluation_id = ev.id
+	WHERE e.is_active = true`
+	args := []interface{}{cycleID}
+	idx := 2
+
+	if managerID != nil {
+		baseQuery += ` AND e.manager_id = $` + strconv.Itoa(idx) + ` AND e.id != $` + strconv.Itoa(idx)
+		args = append(args, *managerID)
+		idx++
+	}
+
+	if query != "" {
+		baseQuery += ` AND (e.first_name ILIKE $` + strconv.Itoa(idx) + ` OR e.last_name ILIKE $` + strconv.Itoa(idx) + `)`
+		args = append(args, "%"+query+"%")
+		idx++
+	}
+
+	var total int
+	err := r.db.QueryRowContext(ctx, baseQuery, args...).Scan(&total)
+	if err != nil {
+		return 0, err
+	}
+	return total, nil
 }
 
 // rowFromEnt converts an Ent Evaluation to an EvaluationRow.

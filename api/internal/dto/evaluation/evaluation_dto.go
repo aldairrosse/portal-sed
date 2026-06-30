@@ -92,7 +92,48 @@ type EvaluationSummaryResponse struct {
 	Counts  map[string]int64 `json:"counts"`
 }
 
+// CompetencyResultItem is a single employee's competency average in the paginated response.
+type CompetencyResultItem struct {
+	ID            string   `json:"id"`
+	Name          string   `json:"name"`
+	ProfileName   string   `json:"profileName"`
+	SelfRatingAvg *float64 `json:"selfRatingAvg"`
+	RHRatingAvg   *float64 `json:"rhRatingAvg"`
+	Status        string   `json:"status"`
+}
+
+// CompetencyResultsResponse is the paginated response for competency results.
+type CompetencyResultsResponse struct {
+	Data []CompetencyResultItem `json:"data"`
+	Meta PaginationMeta         `json:"meta"`
+}
+
+// PaginationMeta carries pagination metadata in list responses.
+type PaginationMeta struct {
+	HasMore bool `json:"hasMore"`
+	Total   int  `json:"total"`
+	Offset  int  `json:"offset"`
+	Limit   int  `json:"limit"`
+}
+
 // --- Nine-Box DTOs ---
+
+// --- Employee Competency Ratings DTOs ---
+
+// EmployeeCompetencyRatingDTO is a single competency rating in the employee response.
+type EmployeeCompetencyRatingDTO struct {
+	CompetencyID uuid.UUID `json:"competencyId"`
+	SelfRating   *int      `json:"selfRating,omitempty"`
+	RhRating     *int      `json:"rhRating,omitempty"`
+	Comments     string    `json:"comments,omitempty"`
+}
+
+// EmployeeCompetencyRatingsResponse is the response for GET /evaluations/employee/{employeeId}.
+type EmployeeCompetencyRatingsResponse struct {
+	EmployeeID uuid.UUID                     `json:"employeeId"`
+	CycleID    uuid.UUID                     `json:"cycleId"`
+	Ratings    []EmployeeCompetencyRatingDTO `json:"ratings"`
+}
 
 // NineBoxMatrixResponse is the response DTO for a matrix.
 type NineBoxMatrixResponse struct {
@@ -108,15 +149,17 @@ type NineBoxMatrixResponse struct {
 
 // NineBoxEntryDTO is the response DTO for a matrix entry (tier-based).
 type NineBoxEntryDTO struct {
-	ID               uuid.UUID `json:"id"`
-	EvaluateeID      uuid.UUID `json:"evaluateeId"`
-	PerformanceTier  int       `json:"performanceTier"`    // was performanceScore
-	PotentialTier    int       `json:"potentialTier"`      // was potentialScore
-	Quadrant         int       `json:"quadrant"`
-	QuadrantLabel    string    `json:"quadrantLabel"`
-	QuadrantColor    string    `json:"quadrantColor"` // now uses colorHex from quadrant
-	Comments         string    `json:"comments,omitempty"`
-	Version          int       `json:"version"`
+	ID              uuid.UUID `json:"id"`
+	EvaluateeID     uuid.UUID `json:"evaluateeId"`
+	EmployeeName    string    `json:"employeeName"`
+	ProfileID       uuid.UUID `json:"profileId"`
+	PerformanceTier int       `json:"performanceTier"` // was performanceScore
+	PotentialTier   int       `json:"potentialTier"`   // was potentialScore
+	Quadrant        int       `json:"quadrant"`
+	QuadrantLabel   string    `json:"quadrantLabel"`
+	QuadrantColor   string    `json:"quadrantColor"` // now uses colorHex from quadrant
+	Comments        string    `json:"comments,omitempty"`
+	Version         int       `json:"version"`
 }
 
 // NineBoxEntryInput is the request DTO for creating/updating a matrix entry (legacy, preserved for migration).

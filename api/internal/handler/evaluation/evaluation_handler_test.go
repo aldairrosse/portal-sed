@@ -64,6 +64,11 @@ func (m *mockEvalService) GetEvaluation(ctx context.Context, id uuid.UUID) (*dto
 	return m.getResp, m.getErr
 }
 
+func (m *mockEvalService) GetEmployeeCompetencyRatings(ctx context.Context, employeeID, cycleID uuid.UUID) (*dto.EmployeeCompetencyRatingsResponse, error) {
+	m.recordCall("GetEmployeeCompetencyRatings")
+	return nil, nil // ponytail: no-op mock, add fields when handler tests need this path
+}
+
 func (m *mockEvalService) SubmitSelfEvaluation(ctx context.Context, evaluationID uuid.UUID, req dto.SelfEvaluationRequest, idempotencyKey string) (*dto.EvaluationDetailResponse, error) {
 	m.recordCall("SubmitSelfEvaluation")
 	return m.submitSelfResp, m.submitSelfErr
@@ -89,22 +94,29 @@ func (m *mockEvalService) FinalizeEvaluation(ctx context.Context, evaluationID u
 	return m.finalizeResp, m.finalizeErr
 }
 
+func (m *mockEvalService) GetCompetencyResults(ctx context.Context, cycleID uuid.UUID, query string, scope string, currentUserID uuid.UUID, offset, limit int) (*dto.CompetencyResultsResponse, error) {
+	m.recordCall("GetCompetencyResults")
+	return nil, nil
+}
+
 type mockBoxService struct {
-	listResp        []dto.NineBoxMatrixResponse
-	listErr         error
-	createResp      *dto.NineBoxMatrixResponse
-	createErr       error
-	getResp         *dto.NineBoxMatrixResponse
-	getErr          error
-	recomputeErr    error
+	listResp           []dto.NineBoxMatrixResponse
+	listErr            error
+	createResp         *dto.NineBoxMatrixResponse
+	createErr          error
+	getResp            *dto.NineBoxMatrixResponse
+	getErr             error
+	entriesResp        []dto.NineBoxEntryDTO
+	entriesErr         error
+	recomputeErr       error
 	updateQuadrantResp *dto.NineBoxQuadrantDTO
 	updateQuadrantErr  error
-	scalesResp      []dto.NineBoxScaleDTO
-	scalesErr       error
-	quadrantsResp   []dto.NineBoxQuadrantDTO
-	quadrantsErr    error
-	mu              sync.Mutex
-	callCount       map[string]int
+	scalesResp         []dto.NineBoxScaleDTO
+	scalesErr          error
+	quadrantsResp      []dto.NineBoxQuadrantDTO
+	quadrantsErr       error
+	mu                 sync.Mutex
+	callCount          map[string]int
 }
 
 func (m *mockBoxService) recordCall(name string) {
@@ -129,6 +141,11 @@ func (m *mockBoxService) CreateMatrix(ctx context.Context, cycleID, evaluatorID 
 func (m *mockBoxService) GetMatrix(ctx context.Context, matrixID uuid.UUID) (*dto.NineBoxMatrixResponse, error) {
 	m.recordCall("GetMatrix")
 	return m.getResp, m.getErr
+}
+
+func (m *mockBoxService) GetMatrixEntriesFiltered(ctx context.Context, matrixID uuid.UUID, quadrant *int) ([]dto.NineBoxEntryDTO, error) {
+	m.recordCall("GetMatrixEntriesFiltered")
+	return m.entriesResp, m.entriesErr
 }
 
 func (m *mockBoxService) RecomputeMatrix(ctx context.Context, cycleID, phaseID uuid.UUID) error {
@@ -343,6 +360,53 @@ func TestGetNineBoxMatrix_Success(t *testing.T) {
 	assert.Equal(t, http.StatusOK, rec.Code)
 }
 
+func TestListMatrixEntries_Success(t *testing.T) {
+	matrixID := uuid.New()
+	entryID := uuid.New()
+	mockBox := &mockBoxService{
+		entriesResp: []dto.NineBoxEntryDTO{
+			{ID: entryID, EvaluateeID: uuid.New(), Quadrant: 5, PerformanceTier: 2, PotentialTier: 2},
+		},
+	}
+	h, r := setupHandler(t, nil, mockBox, nil)
+	r.Get("/nine-box/matrices/{matrixId}/entries", h.ListMatrixEntries)
+
+	rec := doRequest(t, r, http.MethodGet, "/nine-box/matrices/"+matrixID.String()+"/entries", nil, "")
+	assert.Equal(t, http.StatusOK, rec.Code)
+	var resp []dto.NineBoxEntryDTO
+	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &resp))
+	require.Len(t, resp, 1)
+	assert.Equal(t, entryID, resp[0].ID)
+}
+
+func TestListMatrixEntries_ByQuadrant(t *testing.T) {
+	matrixID := uuid.New()
+	mockBox := &mockBoxService{
+		entriesResp: []dto.NineBoxEntryDTO{
+			{ID: uuid.New(), EvaluateeID: uuid.New(), Quadrant: 5, PerformanceTier: 2, PotentialTier: 2},
+		},
+	}
+	h, r := setupHandler(t, nil, mockBox, nil)
+	r.Get("/nine-box/matrices/{matrixId}/entries", h.ListMatrixEntries)
+
+	rec := doRequest(t, r, http.MethodGet, "/nine-box/matrices/"+matrixID.String()+"/entries", nil, "quadrant=5")
+	assert.Equal(t, http.StatusOK, rec.Code)
+	assert.Equal(t, 1, mockBox.callCount["GetMatrixEntriesFiltered"])
+}
+
+func TestListMatrixEntries_InvalidQuadrant(t *testing.T) {
+	matrixID := uuid.New()
+	mockBox := &mockBoxService{}
+	h, r := setupHandler(t, nil, mockBox, nil)
+	r.Get("/nine-box/matrices/{matrixId}/entries", h.ListMatrixEntries)
+
+	rec := doRequest(t, r, http.MethodGet, "/nine-box/matrices/"+matrixID.String()+"/entries", nil, "quadrant=10")
+	assert.Equal(t, http.StatusBadRequest, rec.Code)
+	var resp pkgerrors.APIError
+	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &resp))
+	assert.Equal(t, "INVALID_QUADRANT", resp.Error.Code)
+}
+
 func TestUpdateQuadrant_Success(t *testing.T) {
 	mockBox := &mockBoxService{
 		updateQuadrantResp: &dto.NineBoxQuadrantDTO{
@@ -484,6 +548,67 @@ func TestSubmitSelfEvaluation_AlreadyFinalized(t *testing.T) {
 	})
 	rec := doRequest(t, r, http.MethodPost, "/evaluations/"+evalID.String()+"/self-evaluation", reqBody, "")
 	assert.Equal(t, http.StatusConflict, rec.Code)
+}
+
+// ---------- GetCompetencyResults Tests ----------
+
+func TestGetCompetencyResults_Success(t *testing.T) {
+	cycleID := uuid.New()
+	mockEval := &mockEvalService{
+		mu: sync.Mutex{},
+	}
+	h, r := setupHandler(t, mockEval, nil, nil)
+	r.Get("/evaluations/competency-results", h.GetCompetencyResults)
+
+	rec := doRequest(t, r, http.MethodGet, "/evaluations/competency-results", nil, "cycle_id="+cycleID.String())
+	assert.Equal(t, http.StatusOK, rec.Code)
+	assert.Equal(t, 1, mockEval.callCount["GetCompetencyResults"])
+}
+
+func TestGetCompetencyResults_MissingCycleID(t *testing.T) {
+	h, r := setupHandler(t, &mockEvalService{}, nil, nil)
+	r.Get("/evaluations/competency-results", h.GetCompetencyResults)
+
+	rec := doRequest(t, r, http.MethodGet, "/evaluations/competency-results", nil, "")
+	assert.Equal(t, http.StatusBadRequest, rec.Code)
+
+	var errResp map[string]interface{}
+	json.Unmarshal(rec.Body.Bytes(), &errResp)
+	errObj, ok := errResp["error"].(map[string]interface{})
+	require.True(t, ok)
+	assert.Equal(t, "cycle_id query parameter is required", errObj["message"])
+}
+
+func TestGetCompetencyResults_InvalidCycleID(t *testing.T) {
+	h, r := setupHandler(t, &mockEvalService{}, nil, nil)
+	r.Get("/evaluations/competency-results", h.GetCompetencyResults)
+
+	rec := doRequest(t, r, http.MethodGet, "/evaluations/competency-results", nil, "cycle_id=not-a-uuid")
+	assert.Equal(t, http.StatusBadRequest, rec.Code)
+}
+
+func TestGetCompetencyResults_InvalidScope(t *testing.T) {
+	h, r := setupHandler(t, &mockEvalService{}, nil, nil)
+	r.Get("/evaluations/competency-results", h.GetCompetencyResults)
+
+	rec := doRequest(t, r, http.MethodGet, "/evaluations/competency-results", nil, "cycle_id="+uuid.New().String()+"&scope=invalid")
+	assert.Equal(t, http.StatusBadRequest, rec.Code)
+}
+
+func TestGetCompetencyResults_ClampLimit(t *testing.T) {
+	h, r := setupHandler(t, &mockEvalService{}, nil, nil)
+	r.Get("/evaluations/competency-results", h.GetCompetencyResults)
+
+	rec := doRequest(t, r, http.MethodGet, "/evaluations/competency-results", nil, "cycle_id="+uuid.New().String()+"&limit=999")
+	assert.Equal(t, http.StatusBadRequest, rec.Code)
+}
+
+func TestGetCompetencyResults_InvalidOffset(t *testing.T) {
+	h, r := setupHandler(t, &mockEvalService{}, nil, nil)
+	r.Get("/evaluations/competency-results", h.GetCompetencyResults)
+
+	rec := doRequest(t, r, http.MethodGet, "/evaluations/competency-results", nil, "cycle_id="+uuid.New().String()+"&offset=-1")
+	assert.Equal(t, http.StatusBadRequest, rec.Code)
 }
 
 // ---------- Response Time Tests ----------

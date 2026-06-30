@@ -15,6 +15,7 @@ import (
 	"github.com/sed-evaluacion-desempeno/api/internal/pkg/errors"
 	"github.com/sed-evaluacion-desempeno/api/internal/pkg/state"
 	repo "github.com/sed-evaluacion-desempeno/api/internal/repository/evaluation"
+	orgrepo "github.com/sed-evaluacion-desempeno/api/internal/repository/org"
 )
 
 // CyclePhaseChecker is an interface for checking the current phase of a cycle.
@@ -42,15 +43,20 @@ type EvaluationService struct {
 	goalRepo   GoalRatingRepo
 	cycleCheck CyclePhaseChecker
 	idemCache  IdempotencyCache
+	empRepo    *orgrepo.EmployeeRepo
+	nodeRepo   *orgrepo.OrgNodeRepo
 }
 
 // NewEvaluationService creates a new EvaluationService.
+// empRepo and nodeRepo are required for scope=team resolution and may be nil otherwise.
 func NewEvaluationService(
 	evalRepo EvaluationRepo,
 	compRepo CompetencyRatingRepo,
 	goalRepo GoalRatingRepo,
 	cycleCheck CyclePhaseChecker,
 	idemCache IdempotencyCache,
+	empRepo *orgrepo.EmployeeRepo,
+	nodeRepo *orgrepo.OrgNodeRepo,
 ) *EvaluationService {
 	return &EvaluationService{
 		evalRepo:   evalRepo,
@@ -58,6 +64,8 @@ func NewEvaluationService(
 		goalRepo:   goalRepo,
 		cycleCheck: cycleCheck,
 		idemCache:  idemCache,
+		empRepo:    empRepo,
+		nodeRepo:   nodeRepo,
 	}
 }
 
@@ -419,6 +427,31 @@ func (s *EvaluationService) GetEvaluation(ctx context.Context, id uuid.UUID) (*d
 	return resp, nil
 }
 
+// GetEmployeeCompetencyRatings returns ALL competencies for an employee's profile in a cycle,
+// with self/rh ratings if evaluations exist (or null if not yet evaluated).
+func (s *EvaluationService) GetEmployeeCompetencyRatings(ctx context.Context, employeeID, cycleID uuid.UUID) (*dto.EmployeeCompetencyRatingsResponse, error) {
+	rows, err := s.evalRepo.GetCompetencyRatingsByEmployee(ctx, employeeID, cycleID)
+	if err != nil {
+		return nil, err
+	}
+
+	ratings := make([]dto.EmployeeCompetencyRatingDTO, len(rows))
+	for i, r := range rows {
+		ratings[i] = dto.EmployeeCompetencyRatingDTO{
+			CompetencyID: r.CompetencyID,
+			SelfRating:   r.SelfRating,
+			RhRating:     r.RhRating,
+			Comments:     r.Comments,
+		}
+	}
+
+	return &dto.EmployeeCompetencyRatingsResponse{
+		EmployeeID: employeeID,
+		CycleID:    cycleID,
+		Ratings:    ratings,
+	}, nil
+}
+
 // ListEvaluations returns a cursor-paginated list of evaluations for a cycle.
 func (s *EvaluationService) ListEvaluations(ctx context.Context, cycleID uuid.UUID, stateFilter string, cursor string, limit int) (*dto.EvaluationListResponse, error) {
 	rows, nextCursor, err := s.evalRepo.ListByCycle(ctx, cycleID, stateFilter, cursor, limit)
@@ -433,6 +466,61 @@ func (s *EvaluationService) ListEvaluations(ctx context.Context, cycleID uuid.UU
 		}
 	}
 	return &dto.EvaluationListResponse{Data: items, NextCursor: nextCursor}, nil
+}
+
+// GetCompetencyResults returns paginated competency averages with optional search
+// and scope=team filter. Starts from employees (not evaluations) so employees
+// without evaluation data still appear with status='sin-datos'.
+func (s *EvaluationService) GetCompetencyResults(ctx context.Context, cycleID uuid.UUID, query string, scope string, currentUserID uuid.UUID, offset, limit int) (*dto.CompetencyResultsResponse, error) {
+	// Clamp pagination params
+	if limit <= 0 {
+		limit = 50
+	} else if limit > 200 {
+		limit = 200
+	}
+	if offset < 0 {
+		offset = 0
+	}
+
+	// Resolve managerID for team scope: filter by direct reports of the current user
+	var managerID *uuid.UUID
+	if scope == "team" && currentUserID != uuid.Nil {
+		managerID = &currentUserID
+	}
+
+	total, err := s.evalRepo.CountCompetencyResults(ctx, cycleID, query, managerID)
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := s.evalRepo.ListCompetencyResults(ctx, cycleID, query, managerID, offset, limit)
+	if err != nil {
+		return nil, err
+	}
+
+	items := make([]dto.CompetencyResultItem, len(rows))
+	for i, r := range rows {
+		items[i] = dto.CompetencyResultItem{
+			ID:            r.ID.String(),
+			Name:          r.Name,
+			ProfileName:   r.ProfileName,
+			SelfRatingAvg: r.SelfRatingAvg,
+			RHRatingAvg:   r.RHRatingAvg,
+			Status:        r.Status,
+		}
+	}
+
+	hasMore := offset+len(rows) < total
+
+	return &dto.CompetencyResultsResponse{
+		Data: items,
+		Meta: dto.PaginationMeta{
+			HasMore: hasMore,
+			Total:   total,
+			Offset:  offset,
+			Limit:   limit,
+		},
+	}, nil
 }
 
 func (s *EvaluationService) validatePhase(ctx context.Context, cycleID uuid.UUID) error {

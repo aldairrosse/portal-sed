@@ -19,9 +19,12 @@ type EvaluationRepo interface {
 	SubmitEval(ctx context.Context, tx *sql.Tx, evalID uuid.UUID, comps []repo.CompetencyUpsert, goals []repo.GoalCommentUpsert, newState string, setSelfCompleted, setRHCompleted bool) error
 	GetDetail(ctx context.Context, id uuid.UUID) (*repo.EvaluationRow, []*internal.EvaluationCompetency, []*internal.EvaluationGoal, error)
 	ListByCycle(ctx context.Context, cycleID uuid.UUID, state string, cursor string, limit int) ([]*repo.EvaluationRow, string, error)
+	GetCompetencyRatingsByEmployee(ctx context.Context, employeeID, cycleID uuid.UUID) ([]repo.EmployeeCompetencyRatingRow, error)
 	FinalizeEval(ctx context.Context, tx *sql.Tx, evalID uuid.UUID) error
 	RefreshSummaryView(ctx context.Context) error
 	GetSummaryByCycle(ctx context.Context, cycleID uuid.UUID) (map[string]int64, error)
+	ListCompetencyResults(ctx context.Context, cycleID uuid.UUID, query string, managerID *uuid.UUID, offset, limit int) ([]*repo.CompetencyResultRow, error)
+	CountCompetencyResults(ctx context.Context, cycleID uuid.UUID, query string, managerID *uuid.UUID) (int, error)
 }
 
 // CompetencyRatingRepo defines the operations required for competency ratings.
@@ -48,11 +51,16 @@ type NineBoxRepo interface {
 	GetGoalProgressByEmployee(ctx context.Context, employeeID, cycleID uuid.UUID) (float64, error)
 	GetCompetencyRatingsByEmployee(ctx context.Context, employeeID, cycleID uuid.UUID) (selfRating, hrRating *float64, err error)
 
+	// --- Employee enrichment and evaluator resolution ---
+	GetEmployeesByIDs(ctx context.Context, ids []uuid.UUID) (map[uuid.UUID]*repo.EmployeeInfo, error)
+	GetManagerMapping(ctx context.Context, ids []uuid.UUID) (map[uuid.UUID]uuid.UUID, error)
+
 	// --- Existing methods (with phase-awareness) ---
 	CreateMatrix(ctx context.Context, cycleID, evaluatorID uuid.UUID) (*internal.NineBoxMatrix, error)
 	GetMatrixByID(ctx context.Context, id uuid.UUID) (*internal.NineBoxMatrix, error)
 	ListMatrices(ctx context.Context, cycleID, evaluatorID, phaseID uuid.UUID) ([]*internal.NineBoxMatrix, error)
 	GetMatrixEntries(ctx context.Context, matrixID uuid.UUID) ([]*internal.NineBoxEntry, error)
+	GetMatrixEntriesByQuadrant(ctx context.Context, matrixID uuid.UUID, quadrant int) ([]*internal.NineBoxEntry, error)
 
 	// Deprecated: manual entry manipulation is replaced by RecomputeMatrix
 	UpsertEntry(ctx context.Context, tx *sql.Tx, matrixID uuid.UUID, evaluateeID uuid.UUID, perf, pot int, quadrant int, comments string) (*internal.NineBoxEntry, error)

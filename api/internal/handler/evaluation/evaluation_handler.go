@@ -149,6 +149,41 @@ func (h *EvaluationHandler) GetEvaluation(w http.ResponseWriter, r *http.Request
 	writeJSON(w, http.StatusOK, result)
 }
 
+// GetEmployeeCompetencies handles GET /api/v1/evaluations/employee/{employeeId}
+// Returns competency ratings for a specific employee + cycle.
+// TODO(auth:C7): Restrict to owner, manager, rh roles.
+func (h *EvaluationHandler) GetEmployeeCompetencies(w http.ResponseWriter, r *http.Request) {
+	employeeID, err := uuid.Parse(chi.URLParam(r, "employeeId"))
+	if err != nil {
+		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
+			"employeeId must be a valid UUID v4", err))
+		return
+	}
+
+	cycleIDStr := r.URL.Query().Get("cycle_id")
+	if cycleIDStr == "" {
+		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
+			"cycle_id is required", nil).
+			WithDetails("code: MISSING_PARAM"))
+		return
+	}
+
+	cycleID, err := uuid.Parse(cycleIDStr)
+	if err != nil {
+		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
+			"cycle_id must be a valid UUID v4", err))
+		return
+	}
+
+	result, err := h.evalSvc.GetEmployeeCompetencyRatings(r.Context(), employeeID, cycleID)
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, result)
+}
+
 // SubmitSelfEvaluation handles POST /api/v1/evaluations/{id}/self-evaluation
 // TODO(auth:C7): Restrict to evaluation owner.
 func (h *EvaluationHandler) SubmitSelfEvaluation(w http.ResponseWriter, r *http.Request) {
@@ -324,6 +359,80 @@ func (h *EvaluationHandler) FinalizeEvaluation(w http.ResponseWriter, r *http.Re
 	writeJSON(w, http.StatusOK, result)
 }
 
+// GetCompetencyResults handles GET /api/v1/evaluations/competency-results
+// Returns paginated competency averages with optional search and scope=team filter.
+// Query params: cycle_id (required UUID), offset (default 0), limit (default 50, max 200),
+// q (ILIKE search), scope (all|team, default all).
+// TODO(auth:C7): Restrict to rh, admin roles.
+func (h *EvaluationHandler) GetCompetencyResults(w http.ResponseWriter, r *http.Request) {
+	cycleIDStr := r.URL.Query().Get("cycle_id")
+	if cycleIDStr == "" {
+		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
+			"cycle_id query parameter is required", nil))
+		return
+	}
+
+	cycleID, err := uuid.Parse(cycleIDStr)
+	if err != nil {
+		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
+			"cycle_id must be a valid UUID v4", err))
+		return
+	}
+
+	offset := 0
+	if o := r.URL.Query().Get("offset"); o != "" {
+		ov, err := strconv.Atoi(o)
+		if err != nil {
+			writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
+				"offset must be a valid integer", err))
+			return
+		}
+		if ov < 0 {
+			writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
+				"offset must be >= 0", nil))
+			return
+		}
+		offset = ov
+	}
+
+	limit := 50
+	if l := r.URL.Query().Get("limit"); l != "" {
+		lv, err := strconv.Atoi(l)
+		if err != nil {
+			writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
+				"limit must be a valid integer", err))
+			return
+		}
+		if lv < 1 || lv > 200 {
+			writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
+				"limit must be between 1 and 200", nil))
+			return
+		}
+		limit = lv
+	}
+
+	q := r.URL.Query().Get("q")
+	scope := r.URL.Query().Get("scope")
+	if scope == "" {
+		scope = "all"
+	}
+	if scope != "all" && scope != "team" {
+		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
+			"scope must be 'all' or 'team'", nil))
+		return
+	}
+
+	currentUserID, _ := auth.GetEmployeeID(r.Context())
+
+	result, err := h.evalSvc.GetCompetencyResults(r.Context(), cycleID, q, scope, currentUserID, offset, limit)
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, result)
+}
+
 // GetEvaluationSummary handles GET /api/v1/evaluations/summary
 // TODO(auth:C7): Restrict to rh, admin roles.
 func (h *EvaluationHandler) GetEvaluationSummary(w http.ResponseWriter, r *http.Request) {
@@ -445,6 +554,7 @@ func (h *EvaluationHandler) GetMatrix(w http.ResponseWriter, r *http.Request) {
 }
 
 // ListMatrixEntries handles GET /api/v1/nine-box/matrices/{matrixId}/entries
+// Supports optional filter: quadrant (1-9).
 // TODO(auth:C7): Restrict to evaluator owner, rh roles.
 func (h *EvaluationHandler) ListMatrixEntries(w http.ResponseWriter, r *http.Request) {
 	matrixID, err := uuid.Parse(chi.URLParam(r, "matrixId"))
@@ -454,14 +564,24 @@ func (h *EvaluationHandler) ListMatrixEntries(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	// Get the full matrix which includes entries
-	result, err := h.nineBoxSvc.GetMatrix(r.Context(), matrixID)
+	var quadrant *int
+	if q := r.URL.Query().Get("quadrant"); q != "" {
+		qv, err := strconv.Atoi(q)
+		if err != nil || qv < 1 || qv > 9 {
+			writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidQuadrant,
+				"quadrant must be an integer between 1 and 9", err))
+			return
+		}
+		quadrant = &qv
+	}
+
+	entries, err := h.nineBoxSvc.GetMatrixEntriesFiltered(r.Context(), matrixID, quadrant)
 	if err != nil {
 		writeError(w, err)
 		return
 	}
 
-	writeJSON(w, http.StatusOK, result.Entries)
+	writeJSON(w, http.StatusOK, entries)
 }
 
 // UpdateQuadrant handles PUT /api/v1/nine-box/quadrants/{quadrant}

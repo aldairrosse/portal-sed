@@ -1,210 +1,226 @@
 <script lang="ts">
-    import {
-        getRoot,
-        getChildren,
-        getDescendants,
-    } from "$lib/stores/orgHierarchyStore.svelte";
-    import { getCompetencyRatings } from "$lib/stores/evaluationStore.svelte";
-    import {
-        PROFILE_LABELS,
-        type EvaluationProfile,
-    } from "$lib/types/evaluation";
-    import { getProfile } from "$lib/stores/devContext.svelte";
-    import { ChevronRight, Star } from "@lucide/svelte";
+	import { onMount } from 'svelte';
+	import { BarChart3, ChevronLeft, ChevronRight } from '@lucide/svelte';
+	import PageSkeleton from '$lib/components/ui/PageSkeleton.svelte';
+	import ErrorState from '$lib/components/ui/ErrorState.svelte';
+	import { titleCase } from '$lib/utils/text';
+	import { getActiveCycle, loadCycles } from '$lib/stores/cycleStore.svelte';
+	import {
+		getItems,
+		isLoading,
+		getError,
+		hasMoreItems,
+		hasPrevItems,
+		getCurrentPage,
+		getTotalCount,
+		getScope,
+		init,
+		load,
+		search,
+		next,
+		prev,
+		setScope,
+	} from '$lib/stores/competencyResultsStore.svelte';
 
-    const PROFILE_NODE_ID: Partial<Record<EvaluationProfile, string>> = {
-        'director-general': 'emp-dg-01',
-        director: 'emp-director-01',
-        jefe: 'emp-jefe-01',
-        rh: 'emp-rh-01',
-    };
+	const items = $derived(getItems());
+	const loading = $derived(isLoading());
+	const storeError = $derived(getError());
+	const hasMore = $derived(hasMoreItems());
+	const hasPrev = $derived(hasPrevItems());
+	const currentPage = $derived(getCurrentPage());
+	const totalCount = $derived(getTotalCount());
+	const scopeFilter = $derived(getScope());
 
-    const profile = $derived(getProfile());
+	let inputQuery = $state('');
 
-    const scopeNodes = $derived(() => {
-        switch (profile) {
-            case 'jefe': {
-                const nodeId = PROFILE_NODE_ID[profile];
-                if (!nodeId) return [];
-                return getChildren(nodeId);
-            }
-            case 'director': {
-                const nodeId = PROFILE_NODE_ID[profile];
-                if (!nodeId) return [];
-                return getDescendants(nodeId);
-            }
-            case 'director-general':
-            case 'rh': {
-                const root = getRoot();
-                return [root, ...getDescendants(root.id)];
-            }
-            default:
-                return [];
-        }
-    });
+	onMount(async () => {
+		await loadCycles();
+		const cycle = getActiveCycle();
+		if (cycle?.id) {
+			init(cycle.id);
+		}
+	});
 
-    const employees = $derived(() => {
-        const nodes = scopeNodes();
-        return nodes.map((node) => {
-            const ratings = getCompetencyRatings(node.id);
-            const selfRatings = ratings.filter((r) => r.selfRating != null);
-            const rhRatings = ratings.filter((r) => r.rhRating != null);
+	function handleSearch(e: Event) {
+		const val = (e.target as HTMLInputElement).value;
+		inputQuery = val;
+		search(val);
+	}
 
-            const selfAvg =
-                selfRatings.length > 0
-                    ? selfRatings.reduce(
-                          (sum, r) => sum + (r.selfRating ?? 0),
-                          0,
-                      ) / selfRatings.length
-                    : null;
-            const rhAvg =
-                rhRatings.length > 0
-                    ? rhRatings.reduce((sum, r) => sum + (r.rhRating ?? 0), 0) /
-                      rhRatings.length
-                    : null;
+	function handleScopeToggle(e: Event) {
+		const checked = (e.target as HTMLInputElement).checked;
+		setScope(checked ? 'team' : 'all');
+	}
 
-            const status =
-                ratings.length === 0
-                    ? "sin-datos"
-                    : rhRatings.length > 0 && selfRatings.length > 0
-                      ? "completada"
-                      : selfRatings.length > 0
-                        ? "autoevaluacion"
-                        : "pendiente";
-
-            return {
-                id: node.id,
-                name: node.name,
-                profileId: node.profileId,
-                profileLabel:
-                    PROFILE_LABELS[
-                        node.profileId as keyof typeof PROFILE_LABELS
-                    ] ?? node.profileId,
-                selfAvg,
-                rhAvg,
-                ratingsCount: ratings.length,
-                status,
-            };
-        });
-    });
-
-    function formatAvg(avg: number | null): string {
-        if (avg === null) return "—";
-        return avg.toFixed(1);
-    }
-
-    function statusBadge(status: string): { label: string; class: string } {
-        switch (status) {
-            case "completada":
-                return { label: "Completada", class: "badge-success" };
-            case "autoevaluacion":
-                return { label: "Autoevaluación", class: "badge-warning" };
-            case "pendiente":
-                return { label: "Pendiente", class: "badge-ghost" };
-            default:
-                return { label: "Sin datos", class: "badge-ghost" };
-        }
-    }
+	function statusBadge(status: string): { label: string; class: string } {
+		switch (status) {
+			case 'completada':
+				return { label: 'Completada', class: 'badge-success' };
+			case 'autoevaluacion':
+				return { label: 'Autoevaluación', class: 'badge-warning' };
+			case 'pendiente':
+				return { label: 'Pendiente', class: 'badge-ghost' };
+			default:
+				return { label: 'Sin datos', class: 'badge-ghost' };
+		}
+	}
 </script>
 
 <svelte:head>
-    <title>Resultados de competencias — SED</title>
+	<title>Resultados de competencias — SED</title>
 </svelte:head>
 
 <div class="flex flex-col gap-6">
-    <!-- Header -->
-    <div class="flex items-center gap-3">
-        <div>
-            <h1 class="text-2xl font-bold text-base-content flex items-center gap-2">
-                <Star class="w-6 h-6" />
-                Resultados de competencias
-            </h1>
-            <p class="text-sm text-base-content/50">
-                Vista general de competencias por empleado
-            </p>
-        </div>
-    </div>
+	<!-- Header -->
+	<div>
+		<h1 class="text-2xl font-bold text-base-content flex items-center gap-2">
+			<BarChart3 class="w-6 h-6" />
+			Resultados de competencias
+		</h1>
+		<p class="text-sm text-base-content/50 mt-1">
+			Promedios de autoevaluación y evaluación RH por empleado
+		</p>
+	</div>
 
-    <!-- Employee table -->
-    <div class="card bg-base-100 shadow-sm border border-base-200">
-        <div class="overflow-x-auto">
-            <table class="table table-sm">
-                <thead>
-                    <tr>
-                        <th class="text-xs font-semibold text-base-content/60">Empleado</th>
-                        <th class="text-xs font-semibold text-base-content/60">Perfil</th>
-                        <th class="text-xs font-semibold text-base-content/60 text-center"
-                            >Autoevaluación</th
-                        >
-                        <th class="text-xs font-semibold text-base-content/60 text-center">RH</th>
-                        <th class="text-xs font-semibold text-base-content/60 text-center">Estado</th>
-                        <th class="w-10"></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {#each employees() as emp (emp.id)}
-                        {@const badge = statusBadge(emp.status)}
-                        <tr class="hover:bg-base-200/50 transition-colors">
-                            <td>
-                                <div class="flex items-center gap-2.5">
-                                    <div class="avatar avatar-placeholder">
-                                        <div
-                                            class="bg-primary text-primary-content w-8 rounded-full flex items-center justify-center"
-                                        >
-                                            <span class="text-xs font-bold">
-                                                {emp.name
-                                                    .charAt(0)
-                                                    .toUpperCase()}
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <span class="font-medium text-sm"
-                                        >{emp.name}
-                                    </span>
-                                </div>
-                            </td>
-                            <td>
-                                <span class="text-xs text-base-content/50"
-                                    >{emp.profileLabel}</span
-                                >
-                            </td>
-                            <td class="text-center">
-                                <span
-                                    class="text-sm font-mono {emp.selfAvg !==
-                                    null
-                                        ? 'text-base-content'
-                                        : 'text-base-content/30'}"
-                                >
-                                    {formatAvg(emp.selfAvg)}
-                                </span>
-                            </td>
-                            <td class="text-center">
-                                <span
-                                    class="text-sm font-mono {emp.rhAvg !== null
-                                        ? 'text-base-content'
-                                        : 'text-base-content/30'}"
-                                >
-                                    {formatAvg(emp.rhAvg)}
-                                </span>
-                            </td>
-                            <td class="text-center">
-                                <span class="badge badge-sm {badge.class}"
-                                    >{badge.label}
-                                </span>
-                            </td>
-                            <td>
-                                <a
-                                    href="/evaluacion/9x9/competencias/{emp.id}"
-                                    class="btn btn-ghost btn-square btn-xs"
-                                    aria-label="Ver competencias de {emp.name}"
-                                >
-                                    <ChevronRight class="w-4 h-4" />
-                                </a>
-                            </td>
-                        </tr>
-                    {/each}
-                </tbody>
-            </table>
-        </div>
-    </div>
+	<!-- Controls bar — ALWAYS visible outside loading conditional -->
+	<div class="flex items-center justify-between gap-2">
+		<div class="flex items-center gap-3">
+			<input
+				type="text"
+				class="input input-bordered input-sm max-w-xs"
+				placeholder="Buscar empleado..."
+				value={inputQuery}
+				oninput={handleSearch}
+				aria-label="Buscar empleado"
+			/>
+			<div class="tooltip" data-tip="Mostrar solo mi equipo">
+				<label class="flex items-center gap-1.5 cursor-pointer">
+					<input
+						type="checkbox"
+						class="toggle toggle-sm"
+						checked={scopeFilter === 'team'}
+						onchange={handleScopeToggle}
+						aria-label="Filtrar por mi equipo"
+					/>
+					<span class="text-xs text-base-content/50 whitespace-nowrap">Mi equipo</span>
+				</label>
+			</div>
+		</div>
+
+		{#if totalCount > 0 || (inputQuery.trim() && items.length > 0)}
+			<span class="text-xs text-base-content/50 whitespace-nowrap">
+				{#if inputQuery.trim()}
+					Viendo {items.length} resultado{items.length !== 1 ? 's' : ''}
+				{:else}
+					Viendo {items.length} de {totalCount} empleado{totalCount !== 1 ? 's' : ''}
+				{/if}
+			</span>
+		{/if}
+
+		<div class="flex items-center gap-1">
+			<button
+				type="button"
+				class="btn btn-outline btn-xs"
+				onclick={prev}
+				disabled={!hasPrev || loading}
+			>
+				<ChevronLeft class="w-4 h-4" />
+				Anterior
+			</button>
+			<span class="text-xs text-base-content/50 px-1">
+				Pág. {currentPage + 1}
+			</span>
+			<button
+				type="button"
+				class="btn btn-outline btn-xs"
+				onclick={next}
+				disabled={!hasMore || loading}
+			>
+				Siguiente
+				<ChevronRight class="w-4 h-4" />
+			</button>
+		</div>
+	</div>
+
+	<!-- Content -->
+	{#if loading && items.length === 0}
+		<PageSkeleton variant="table" rows={5} />
+	{:else if storeError}
+		<ErrorState message={storeError} onretry={() => load()} />
+	{:else if items.length === 0 && !loading}
+		<p class="text-sm text-base-content/30 italic text-center py-8">
+			Sin resultados de competencias para mostrar
+		</p>
+	{:else}
+		<div class="card bg-base-100 shadow-sm border border-base-200">
+			<div class="overflow-x-auto">
+				<table class="table table-sm">
+					<thead>
+						<tr>
+							<th class="text-xs font-semibold text-base-content/60">Empleado</th>
+							<th class="text-xs font-semibold text-base-content/60">Perfil</th>
+							<th class="text-xs font-semibold text-base-content/60 text-center">Autoevaluación</th>
+							<th class="text-xs font-semibold text-base-content/60 text-center">RH</th>
+							<th class="text-xs font-semibold text-base-content/60 text-center">Estado</th>
+							<th class="w-10"></th>
+						</tr>
+					</thead>
+					<tbody>
+						{#each items as item (item.id)}
+							{@const badge = statusBadge(item.status)}
+							<tr class="hover:bg-base-200/50 transition-colors">
+								<td>
+									<div class="flex items-center gap-2.5">
+										<div class="avatar avatar-placeholder">
+											<div
+												class="bg-primary text-primary-content w-8 rounded-full flex items-center justify-center"
+											>
+												<span class="text-xs font-bold">
+													{item.name.charAt(0).toUpperCase()}
+												</span>
+											</div>
+										</div>
+										<span class="font-medium text-sm">{item.name}</span>
+									</div>
+								</td>
+								<td>
+									<span class="text-xs text-base-content/50">{titleCase(item.profileName)}</span>
+								</td>
+								<td class="text-center">
+									<span
+										class="text-sm font-mono {item.selfRatingAvg != null
+											? 'text-base-content'
+											: 'text-base-content/30'}"
+									>
+										{item.selfRatingAvg?.toFixed(1) ?? '—'}
+									</span>
+								</td>
+								<td class="text-center">
+									<span
+										class="text-sm font-mono {item.rhRatingAvg != null
+											? 'text-base-content'
+											: 'text-base-content/30'}"
+									>
+										{item.rhRatingAvg?.toFixed(1) ?? '—'}
+									</span>
+								</td>
+								<td class="text-center">
+									<span class="badge badge-sm {badge.class}">{badge.label}</span>
+								</td>
+								<td>
+									<a
+										href="/evaluacion/9x9/competencias/{item.id}"
+										class="btn btn-ghost btn-square btn-xs"
+										aria-label="Ver competencias de {item.name}"
+									>
+										<ChevronRight class="w-4 h-4" />
+									</a>
+								</td>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
+			</div>
+		</div>
+	{/if}
 </div>

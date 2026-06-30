@@ -69,6 +69,21 @@ func RegisterRoutes(r chi.Router, handler *EvaluationHandler, authSvc *authsvc.A
 			r.Get("/evaluations", handler.ListEvaluations)
 		})
 
+		// GET /api/v1/evaluations/employee/{employeeId}
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.RateLimit(readRateLimit))
+			r.Use(readReplicaMiddleware)
+			r.Get("/evaluations/employee/{employeeId}", handler.GetEmployeeCompetencies)
+		})
+
+		// GET /api/v1/evaluations/competency-results
+		// Registered BEFORE /evaluations/{id} so Chi matches the static path first
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.RateLimit(readRateLimit))
+			r.Use(readReplicaMiddleware)
+			r.Get("/evaluations/competency-results", handler.GetCompetencyResults)
+		})
+
 		// GET /api/v1/evaluations/{id}
 		r.Group(func(r chi.Router) {
 			r.Use(middleware.RateLimit(readRateLimit))

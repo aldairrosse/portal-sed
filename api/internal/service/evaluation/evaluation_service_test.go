@@ -110,6 +110,13 @@ func (m *mockEvalRepo) RefreshSummaryView(ctx context.Context) error {
 	return m.refreshErr
 }
 
+func (m *mockEvalRepo) GetCompetencyRatingsByEmployee(ctx context.Context, employeeID, cycleID uuid.UUID) ([]repo.EmployeeCompetencyRatingRow, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	// ponytail: return empty slice by default; tests that need specific data must set up via sqlmock
+	return []repo.EmployeeCompetencyRatingRow{}, nil
+}
+
 func (m *mockEvalRepo) GetSummaryByCycle(ctx context.Context, cycleID uuid.UUID) (map[string]int64, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -117,6 +124,15 @@ func (m *mockEvalRepo) GetSummaryByCycle(ctx context.Context, cycleID uuid.UUID)
 		return map[string]int64{}, nil
 	}
 	return m.summary, nil
+}
+
+func (m *mockEvalRepo) ListCompetencyResults(ctx context.Context, cycleID uuid.UUID, query string, managerID *uuid.UUID, offset, limit int) ([]*repo.CompetencyResultRow, error) {
+	// ponytail: simplified mock — tests use hasMore directly
+	return []*repo.CompetencyResultRow{}, nil
+}
+
+func (m *mockEvalRepo) CountCompetencyResults(ctx context.Context, cycleID uuid.UUID, query string, managerID *uuid.UUID) (int, error) {
+	return 0, nil
 }
 
 // ---------- Mock Cycle Phase Checker ----------
@@ -161,17 +177,30 @@ func (m *mockIdemCache) Set(ctx context.Context, key string, entry *svc.Idempote
 // ---------- Mock NineBox Repos ----------
 
 type mockNineBoxRepo struct {
-	matrix      *internal.NineBoxMatrix
-	matrices    []*internal.NineBoxMatrix
-	entry       *internal.NineBoxEntry
-	entries     []*internal.NineBoxEntry
-	version     int
-	lockErr     error
-	upsertErr   error
-	updateErr   error
-	batchErr    error
-	fetchVerErr error
-	mu          sync.Mutex
+	matrix        *internal.NineBoxMatrix
+	matrices      []*internal.NineBoxMatrix
+	entry         *internal.NineBoxEntry
+	entries       []*internal.NineBoxEntry
+	version       int
+	employeeInfo  map[uuid.UUID]*repo.EmployeeInfo
+	managerMap    map[uuid.UUID]uuid.UUID
+	goalAssignees []uuid.UUID
+	lockErr       error
+	upsertErr     error
+	updateErr     error
+	batchErr      error
+	fetchVerErr   error
+	mu            sync.Mutex
+	callCount     map[string]int
+}
+
+func (m *mockNineBoxRepo) recordCall(name string) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.callCount == nil {
+		m.callCount = make(map[string]int)
+	}
+	m.callCount[name]++
 }
 
 func (m *mockNineBoxRepo) CreateMatrix(ctx context.Context, cycleID, evaluatorID uuid.UUID) (*internal.NineBoxMatrix, error) {
@@ -196,6 +225,49 @@ func (m *mockNineBoxRepo) GetMatrixEntries(ctx context.Context, matrixID uuid.UU
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	return m.entries, nil
+}
+
+func (m *mockNineBoxRepo) GetMatrixEntriesByQuadrant(ctx context.Context, matrixID uuid.UUID, quadrant int) ([]*internal.NineBoxEntry, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	filtered := make([]*internal.NineBoxEntry, 0, len(m.entries))
+	for _, e := range m.entries {
+		if e != nil && e.Quadrant == quadrant {
+			filtered = append(filtered, e)
+		}
+	}
+	return filtered, nil
+}
+
+func (m *mockNineBoxRepo) GetEmployeesByIDs(ctx context.Context, ids []uuid.UUID) (map[uuid.UUID]*repo.EmployeeInfo, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.employeeInfo == nil {
+		return map[uuid.UUID]*repo.EmployeeInfo{}, nil
+	}
+	result := make(map[uuid.UUID]*repo.EmployeeInfo, len(ids))
+	for _, id := range ids {
+		if info, ok := m.employeeInfo[id]; ok {
+			result[id] = info
+		}
+	}
+	return result, nil
+}
+
+func (m *mockNineBoxRepo) GetManagerMapping(ctx context.Context, ids []uuid.UUID) (map[uuid.UUID]uuid.UUID, error) {
+	m.recordCall("GetManagerMapping")
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.managerMap == nil {
+		return map[uuid.UUID]uuid.UUID{}, nil
+	}
+	result := make(map[uuid.UUID]uuid.UUID, len(ids))
+	for _, id := range ids {
+		if managerID, ok := m.managerMap[id]; ok {
+			result[id] = managerID
+		}
+	}
+	return result, nil
 }
 
 func (m *mockNineBoxRepo) UpsertEntry(ctx context.Context, tx *sql.Tx, matrixID uuid.UUID, evaluateeID uuid.UUID, perf, pot int, quadrant int, comments string) (*internal.NineBoxEntry, error) {
@@ -244,6 +316,7 @@ func (m *mockNineBoxRepo) CreateMatrixWithPhase(ctx context.Context, cycleID, ev
 }
 
 func (m *mockNineBoxRepo) GetMatrixByPhase(ctx context.Context, cycleID, evaluatorID, phaseID uuid.UUID) (*internal.NineBoxMatrix, error) {
+	m.recordCall("GetMatrixByPhase")
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if m.matrix == nil {
@@ -253,6 +326,7 @@ func (m *mockNineBoxRepo) GetMatrixByPhase(ctx context.Context, cycleID, evaluat
 }
 
 func (m *mockNineBoxRepo) UpsertEntryByTiers(ctx context.Context, tx *sql.Tx, matrixID uuid.UUID, evaluateeID uuid.UUID, perfTier, potTier, quadrant int, comments string) (*internal.NineBoxEntry, error) {
+	m.recordCall("UpsertEntryByTiers")
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if m.upsertErr != nil {
@@ -262,7 +336,13 @@ func (m *mockNineBoxRepo) UpsertEntryByTiers(ctx context.Context, tx *sql.Tx, ma
 }
 
 func (m *mockNineBoxRepo) GetGoalAssigneesByCycle(ctx context.Context, cycleID uuid.UUID) ([]uuid.UUID, error) {
-	return nil, nil
+	m.recordCall("GetGoalAssigneesByCycle")
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.goalAssignees == nil {
+		return []uuid.UUID{}, nil
+	}
+	return m.goalAssignees, nil
 }
 
 func (m *mockNineBoxRepo) GetGoalProgressByEmployee(ctx context.Context, employeeID, cycleID uuid.UUID) (float64, error) {
@@ -345,7 +425,7 @@ func TestEvaluationService_SubmitSelfEvaluation_Success(t *testing.T) {
 
 	checker := &mockCycleChecker{phase: "cierre"}
 	idem := &mockIdemCache{entries: make(map[string]*svc.IdempotencyCacheEntry)}
-	service := svc.NewEvaluationService(mockRepo, nil, nil, checker, idem)
+	service := svc.NewEvaluationService(mockRepo, nil, nil, checker, idem, nil, nil)
 
 	req := dto.SelfEvaluationRequest{
 		Competencies: []dto.CompetencyRatingInput{
@@ -379,7 +459,7 @@ func TestEvaluationService_SubmitSelfEvaluation_WrongPhase(t *testing.T) {
 
 	mockRepo := &mockEvalRepo{db: db, row: row, state: "pendiente_evaluacion_final"}
 	checker := &mockCycleChecker{phase: "avance"}
-	service := svc.NewEvaluationService(mockRepo, nil, nil, checker, nil)
+	service := svc.NewEvaluationService(mockRepo, nil, nil, checker, nil, nil, nil)
 
 	req := dto.SelfEvaluationRequest{
 		Competencies: []dto.CompetencyRatingInput{
@@ -430,7 +510,7 @@ func TestEvaluationService_SubmitRHEvaluation_Success(t *testing.T) {
 
 	checker := &mockCycleChecker{phase: "cierre"}
 	idem := &mockIdemCache{entries: make(map[string]*svc.IdempotencyCacheEntry)}
-	service := svc.NewEvaluationService(mockRepo, nil, nil, checker, idem)
+	service := svc.NewEvaluationService(mockRepo, nil, nil, checker, idem, nil, nil)
 
 	req := dto.RHEvaluationRequest{
 		Competencies: []dto.CompetencyRatingInput{
@@ -481,7 +561,7 @@ func TestEvaluationService_FinalizeEvaluation_AllComplete(t *testing.T) {
 	mock.ExpectRollback()
 
 	checker := &mockCycleChecker{phase: "cierre"}
-	service := svc.NewEvaluationService(mockRepo, nil, nil, checker, nil)
+	service := svc.NewEvaluationService(mockRepo, nil, nil, checker, nil, nil, nil)
 
 	req := dto.FinalizeEvaluationRequest{Reason: "annual closing"}
 	resp, err := service.FinalizeEvaluation(context.Background(), evalID, req)
@@ -519,7 +599,7 @@ func TestEvaluationService_FinalizeEvaluation_MissingSelfEval(t *testing.T) {
 	mock.ExpectRollback()
 
 	checker := &mockCycleChecker{phase: "cierre"}
-	service := svc.NewEvaluationService(mockRepo, nil, nil, checker, nil)
+	service := svc.NewEvaluationService(mockRepo, nil, nil, checker, nil, nil, nil)
 
 	_, err = service.FinalizeEvaluation(context.Background(), evalID, dto.FinalizeEvaluationRequest{})
 	require.Error(t, err)
@@ -562,7 +642,7 @@ func TestEvaluationService_ConcurrentSubmission(t *testing.T) {
 
 	checker := &mockCycleChecker{phase: "cierre"}
 	idem := &mockIdemCache{entries: make(map[string]*svc.IdempotencyCacheEntry)}
-	service := svc.NewEvaluationService(mockRepo, nil, nil, checker, idem)
+	service := svc.NewEvaluationService(mockRepo, nil, nil, checker, idem, nil, nil)
 
 	const goroutines = 100
 	mock.MatchExpectationsInOrder(false)
@@ -677,6 +757,334 @@ func TestNineBoxService_BatchSubmit_Atomic(t *testing.T) {
 	assert.Len(t, resp, 2)
 	assert.Equal(t, 9, resp[0].Quadrant)
 	assert.Equal(t, 5, resp[1].Quadrant)
+}
+
+// ---------- Tests: NineBoxService DTO enrichment ----------
+
+func TestNineBoxService_GetMatrix_EnrichesEmployeeInfo(t *testing.T) {
+	matrixID := uuid.New()
+	evaluateeID := uuid.New()
+	profileID := uuid.New()
+
+	mockNineBox := &mockNineBoxRepo{
+		matrix: &internal.NineBoxMatrix{
+			ID:          matrixID,
+			CycleID:     uuid.New(),
+			EvaluatorID: uuid.New(),
+			Edges: internal.NineBoxMatrixEdges{
+				Entries: []*internal.NineBoxEntry{
+					{ID: uuid.New(), EvaluateeID: evaluateeID, PerformanceTier: 2, PotentialTier: 2, Quadrant: 5},
+				},
+			},
+		},
+		version: 1,
+		employeeInfo: map[uuid.UUID]*repo.EmployeeInfo{
+			evaluateeID: {ID: evaluateeID, FirstName: "María", LastName: "García", ProfileID: profileID},
+		},
+	}
+	mockCatalog := &mockCatalogRepo{
+		quadrants: []*internal.NineBoxQuadrant{
+			{Quadrant: 5, Label: "Star", Color: "#00FF00", ColorHex: "#22C55E"},
+		},
+	}
+
+	nineBoxSvc := svc.NewNineBoxService(mockNineBox, mockCatalog, nil)
+
+	resp, err := nineBoxSvc.GetMatrix(context.Background(), matrixID)
+	require.NoError(t, err)
+	require.Len(t, resp.Entries, 1)
+	assert.Equal(t, "María García", resp.Entries[0].EmployeeName)
+	assert.Equal(t, profileID, resp.Entries[0].ProfileID)
+	assert.Equal(t, "Star", resp.Entries[0].QuadrantLabel)
+	assert.Equal(t, "#22C55E", resp.Entries[0].QuadrantColor)
+}
+
+func TestNineBoxService_GetMatrix_OrpantEntry(t *testing.T) {
+	matrixID := uuid.New()
+	evaluateeID := uuid.New()
+
+	mockNineBox := &mockNineBoxRepo{
+		matrix: &internal.NineBoxMatrix{
+			ID: matrixID,
+			Edges: internal.NineBoxMatrixEdges{
+				Entries: []*internal.NineBoxEntry{
+					{ID: uuid.New(), EvaluateeID: evaluateeID, PerformanceTier: 2, PotentialTier: 2, Quadrant: 5},
+				},
+			},
+		},
+		version:      1,
+		employeeInfo: map[uuid.UUID]*repo.EmployeeInfo{},
+	}
+	mockCatalog := &mockCatalogRepo{
+		quadrants: []*internal.NineBoxQuadrant{{Quadrant: 5, Label: "Star", Color: "#00FF00"}},
+	}
+
+	nineBoxSvc := svc.NewNineBoxService(mockNineBox, mockCatalog, nil)
+
+	resp, err := nineBoxSvc.GetMatrix(context.Background(), matrixID)
+	require.NoError(t, err)
+	require.Len(t, resp.Entries, 1)
+	assert.Equal(t, "", resp.Entries[0].EmployeeName)
+	assert.Equal(t, uuid.Nil, resp.Entries[0].ProfileID)
+}
+
+func TestNineBoxService_GetMatrixEntriesFiltered_ByQuadrant(t *testing.T) {
+	matrixID := uuid.New()
+	eval1 := uuid.New()
+	eval2 := uuid.New()
+
+	mockNineBox := &mockNineBoxRepo{
+		entries: []*internal.NineBoxEntry{
+			{ID: uuid.New(), EvaluateeID: eval1, PerformanceTier: 2, PotentialTier: 2, Quadrant: 5},
+			{ID: uuid.New(), EvaluateeID: eval2, PerformanceTier: 3, PotentialTier: 3, Quadrant: 9},
+		},
+		version: 1,
+	}
+	mockCatalog := &mockCatalogRepo{}
+
+	nineBoxSvc := svc.NewNineBoxService(mockNineBox, mockCatalog, nil)
+
+	q := 5
+	resp, err := nineBoxSvc.GetMatrixEntriesFiltered(context.Background(), matrixID, &q)
+	require.NoError(t, err)
+	require.Len(t, resp, 1)
+	assert.Equal(t, 5, resp[0].Quadrant)
+}
+
+func TestNineBoxService_GetMatrixEntriesFiltered_NoFilter(t *testing.T) {
+	matrixID := uuid.New()
+	eval1 := uuid.New()
+	eval2 := uuid.New()
+
+	mockNineBox := &mockNineBoxRepo{
+		entries: []*internal.NineBoxEntry{
+			{ID: uuid.New(), EvaluateeID: eval1, PerformanceTier: 2, PotentialTier: 2, Quadrant: 5},
+			{ID: uuid.New(), EvaluateeID: eval2, PerformanceTier: 3, PotentialTier: 3, Quadrant: 9},
+		},
+		version: 1,
+	}
+	mockCatalog := &mockCatalogRepo{}
+
+	nineBoxSvc := svc.NewNineBoxService(mockNineBox, mockCatalog, nil)
+
+	resp, err := nineBoxSvc.GetMatrixEntriesFiltered(context.Background(), matrixID, nil)
+	require.NoError(t, err)
+	require.Len(t, resp, 2)
+}
+
+func TestNineBoxService_RecomputeMatrix_GroupsByManager(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	require.NoError(t, err)
+	defer db.Close()
+
+	cycleID := uuid.New()
+	phaseID := uuid.New()
+	managerID := uuid.New()
+	employeeID := uuid.New()
+
+	mockNineBox := &mockNineBoxRepo{
+		matrix: &internal.NineBoxMatrix{
+			ID:          uuid.New(),
+			CycleID:     cycleID,
+			EvaluatorID: managerID,
+			PhaseID:     phaseID,
+		},
+		managerMap: map[uuid.UUID]uuid.UUID{
+			employeeID: managerID,
+		},
+		goalAssignees: []uuid.UUID{employeeID},
+		entry: &internal.NineBoxEntry{
+			ID:          uuid.New(),
+			EvaluateeID: employeeID,
+			Quadrant:    5,
+		},
+	}
+	mockCatalog := &mockCatalogRepo{}
+
+	mock.ExpectBegin()
+	mock.ExpectCommit()
+
+	nineBoxSvc := svc.NewNineBoxService(mockNineBox, mockCatalog, &mockDB{db: db})
+
+	err = nineBoxSvc.RecomputeMatrix(context.Background(), cycleID, phaseID)
+	require.NoError(t, err)
+	assert.Equal(t, 1, mockNineBox.callCount["GetManagerMapping"])
+	assert.Equal(t, 1, mockNineBox.callCount["GetGoalAssigneesByCycle"])
+	assert.Equal(t, 1, mockNineBox.callCount["GetMatrixByPhase"])
+	assert.Equal(t, 1, mockNineBox.callCount["UpsertEntryByTiers"])
+}
+
+func TestNineBoxService_RecomputeMatrix_SkipsRootEmployee(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	require.NoError(t, err)
+	defer db.Close()
+
+	cycleID := uuid.New()
+	phaseID := uuid.New()
+	rootID := uuid.New()
+
+	mockNineBox := &mockNineBoxRepo{
+		managerMap:    map[uuid.UUID]uuid.UUID{},
+		goalAssignees: []uuid.UUID{rootID},
+		entry:         &internal.NineBoxEntry{ID: uuid.New(), EvaluateeID: rootID, Quadrant: 5},
+	}
+	mockCatalog := &mockCatalogRepo{}
+
+	mock.ExpectBegin()
+
+	nineBoxSvc := svc.NewNineBoxService(mockNineBox, mockCatalog, &mockDB{db: db})
+
+	err = nineBoxSvc.RecomputeMatrix(context.Background(), cycleID, phaseID)
+	require.NoError(t, err)
+	assert.Equal(t, 1, mockNineBox.callCount["GetManagerMapping"])
+	assert.Equal(t, 1, mockNineBox.callCount["GetGoalAssigneesByCycle"])
+	assert.Equal(t, 0, mockNineBox.callCount["GetMatrixByPhase"])
+	assert.Equal(t, 0, mockNineBox.callCount["UpsertEntryByTiers"])
+}
+
+// ---------- Tests: GetCompetencyResults hasMore ----------
+
+func TestGetCompetencyResults_HasMore_ExactPage(t *testing.T) {
+	cycleID := uuid.New()
+	evalID := uuid.New()
+	now := time.Now()
+
+	row := &repo.EvaluationRow{
+		ID: evalID, CycleID: cycleID, State: "en_progreso", Version: 1,
+		CreatedAt: now, UpdatedAt: now,
+	}
+
+	db, _, err := sqlmock.New()
+	require.NoError(t, err)
+	defer db.Close()
+
+	// Total matches = limit → no hasMore
+	mockEval := &mockHasMoreEvalRepo{
+		row:        row,
+		totalCount: 50,
+		rows:       newFakeCompetencyRows(50),
+	}
+	checker := &mockCycleChecker{phase: "cierre"}
+	service := svc.NewEvaluationService(mockEval, nil, nil, checker, nil, nil, nil)
+
+	resp, err := service.GetCompetencyResults(context.Background(), cycleID, "", "all", uuid.Nil, 0, 50)
+	require.NoError(t, err)
+	assert.False(t, resp.Meta.HasMore, "hasMore should be false when offset+len == total")
+	assert.Equal(t, 50, resp.Meta.Total)
+	assert.Equal(t, 50, resp.Meta.Limit)
+	assert.Equal(t, 0, resp.Meta.Offset)
+}
+
+func TestGetCompetencyResults_HasMore_OneExtraPage(t *testing.T) {
+	cycleID := uuid.New()
+	evalID := uuid.New()
+	now := time.Now()
+
+	row := &repo.EvaluationRow{
+		ID: evalID, CycleID: cycleID, State: "en_progreso", Version: 1,
+		CreatedAt: now, UpdatedAt: now,
+	}
+
+	db, _, err := sqlmock.New()
+	require.NoError(t, err)
+	defer db.Close()
+
+	// Total = 51, limit = 50, offset = 0 → hasMore = true
+	mockEval := &mockHasMoreEvalRepo{
+		row:        row,
+		totalCount: 51,
+		rows:       newFakeCompetencyRows(50),
+	}
+	checker := &mockCycleChecker{phase: "cierre"}
+	service := svc.NewEvaluationService(mockEval, nil, nil, checker, nil, nil, nil)
+
+	resp, err := service.GetCompetencyResults(context.Background(), cycleID, "", "all", uuid.Nil, 0, 50)
+	require.NoError(t, err)
+	assert.True(t, resp.Meta.HasMore, "hasMore should be true when offset+len < total")
+	assert.Equal(t, 51, resp.Meta.Total)
+}
+
+func TestGetCompetencyResults_HasMore_LastPage(t *testing.T) {
+	cycleID := uuid.New()
+	evalID := uuid.New()
+	now := time.Now()
+
+	row := &repo.EvaluationRow{
+		ID: evalID, CycleID: cycleID, State: "en_progreso", Version: 1,
+		CreatedAt: now, UpdatedAt: now,
+	}
+
+	db, _, err := sqlmock.New()
+	require.NoError(t, err)
+	defer db.Close()
+
+	// Total = 51, offset = 50, limit = 50 → last page with 1 row → no hasMore
+	mockEval := &mockHasMoreEvalRepo{
+		row:        row,
+		totalCount: 51,
+		rows:       newFakeCompetencyRows(1),
+	}
+	checker := &mockCycleChecker{phase: "cierre"}
+	service := svc.NewEvaluationService(mockEval, nil, nil, checker, nil, nil, nil)
+
+	resp, err := service.GetCompetencyResults(context.Background(), cycleID, "", "all", uuid.Nil, 50, 50)
+	require.NoError(t, err)
+	assert.False(t, resp.Meta.HasMore, "hasMore should be false on last page")
+	assert.Equal(t, 51, resp.Meta.Total)
+	assert.Equal(t, 50, resp.Meta.Offset)
+}
+
+// newFakeCompetencyRows creates n non-nil CompetencyResultRow pointers for testing.
+func newFakeCompetencyRows(n int) []*repo.CompetencyResultRow {
+	rows := make([]*repo.CompetencyResultRow, n)
+	for i := 0; i < n; i++ {
+		rows[i] = &repo.CompetencyResultRow{ID: uuid.New(), Name: "Test Employee", ProfileName: "Test"}
+	}
+	return rows
+}
+
+// mockHasMoreEvalRepo implements EvaluationRepo for hasMore testing.
+type mockHasMoreEvalRepo struct {
+	row        *repo.EvaluationRow
+	totalCount int
+	rows       []*repo.CompetencyResultRow
+}
+
+func (m *mockHasMoreEvalRepo) GetByID(ctx context.Context, id uuid.UUID) (*repo.EvaluationRow, error) {
+	return m.row, nil
+}
+func (m *mockHasMoreEvalRepo) BeginTx(ctx context.Context, opts *sql.TxOptions) (*sql.Tx, error) {
+	return nil, nil
+}
+func (m *mockHasMoreEvalRepo) LockEvalForUpdate(ctx context.Context, tx *sql.Tx, evalID uuid.UUID) (*repo.EvaluationRow, error) {
+	return m.row, nil
+}
+func (m *mockHasMoreEvalRepo) SubmitEval(ctx context.Context, tx *sql.Tx, evalID uuid.UUID, comps []repo.CompetencyUpsert, goals []repo.GoalCommentUpsert, newState string, setSelfCompleted, setRHCompleted bool) error {
+	return nil
+}
+func (m *mockHasMoreEvalRepo) GetDetail(ctx context.Context, id uuid.UUID) (*repo.EvaluationRow, []*internal.EvaluationCompetency, []*internal.EvaluationGoal, error) {
+	return m.row, nil, nil, nil
+}
+func (m *mockHasMoreEvalRepo) ListByCycle(ctx context.Context, cycleID uuid.UUID, state string, cursor string, limit int) ([]*repo.EvaluationRow, string, error) {
+	return nil, "", nil
+}
+func (m *mockHasMoreEvalRepo) GetCompetencyRatingsByEmployee(ctx context.Context, employeeID, cycleID uuid.UUID) ([]repo.EmployeeCompetencyRatingRow, error) {
+	return nil, nil
+}
+func (m *mockHasMoreEvalRepo) FinalizeEval(ctx context.Context, tx *sql.Tx, evalID uuid.UUID) error {
+	return nil
+}
+func (m *mockHasMoreEvalRepo) RefreshSummaryView(ctx context.Context) error {
+	return nil
+}
+func (m *mockHasMoreEvalRepo) GetSummaryByCycle(ctx context.Context, cycleID uuid.UUID) (map[string]int64, error) {
+	return nil, nil
+}
+func (m *mockHasMoreEvalRepo) ListCompetencyResults(ctx context.Context, cycleID uuid.UUID, query string, managerID *uuid.UUID, offset, limit int) ([]*repo.CompetencyResultRow, error) {
+	return m.rows, nil
+}
+func (m *mockHasMoreEvalRepo) CountCompetencyResults(ctx context.Context, cycleID uuid.UUID, query string, managerID *uuid.UUID) (int, error) {
+	return m.totalCount, nil
 }
 
 // ---------- Tests: DashboardService ----------

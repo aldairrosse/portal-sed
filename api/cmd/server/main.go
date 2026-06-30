@@ -182,7 +182,7 @@ func main() {
 	pillarRepo := repocompetency.NewPillarRepo(client)
 	compRepo := repocompetency.NewCompetencyRepo(client)
 	scaleRepo := repocompetency.NewScaleRepo(client)
-	catalogCompRepo := repocompetency.NewCatalogRepo(client)
+	catalogCompRepo := repocompetency.NewCatalogRepo(client, db)
 	acceptanceRepo := repocompetency.NewAcceptanceRepo(client)
 
 	// Evaluation
@@ -240,7 +240,7 @@ func main() {
 	cycleCheck := &evalCyclePhaseCheck{cycleRepo: cycleRepo}
 	idemCache := newInMemoryIdempotencyCache()
 
-	evalSvc := evalsvc.NewEvaluationService(evalRepo, compRatingRepo, goalRatingRepo, cycleCheck, idemCache)
+	evalSvc := evalsvc.NewEvaluationService(evalRepo, compRatingRepo, goalRatingRepo, cycleCheck, idemCache, employeeRepo, orgNodeRepo)
 	nineBoxSvc := evalsvc.NewNineBoxService(nineBoxRepo, catalogEvalRepo, db)
 	dashboardSvc := evalsvc.NewDashboardService(evalRepo)
 
@@ -290,14 +290,14 @@ func main() {
 		comphandler.RegisterRoutes(r, &comphandler.Dependencies{Handler: compH, AuthSvc: authSvc})
 	})
 	r.Mount("/api/v1/auth", authhandler.AuthRoutes(authH))
-	r.Mount("/", goalhandler.NewRouter(goalH, authSvc))
 
-	// Cycle, evaluation, and org: register all on a single apiV1 subrouter.
+	// Cycle, evaluation, org, goals, and activity: register all on a single apiV1 subrouter.
 	// Each handler applies its own RequireAuth middleware.
 	apiV1 := chi.NewRouter()
 	cyclehandler.RegisterRoutes(apiV1, cycleH, authSvc)
 	evalhandler.RegisterRoutes(apiV1, evalH, authSvc)
 	orghandler.RegisterRoutes(apiV1, orgH, authSvc)
+	goalhandler.RegisterRoutes(apiV1, goalH, authSvc)
 	activityhandler.RegisterActivityRoutes(apiV1, activityH, authSvc)
 	r.Mount("/api/v1", apiV1)
 
