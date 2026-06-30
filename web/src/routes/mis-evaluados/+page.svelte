@@ -1,13 +1,37 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import EmployeeEvaluationDetail from '$lib/components/evaluation/EmployeeEvaluationDetail.svelte';
 	import EmployeeEvaluationTable from '$lib/components/evaluation/EmployeeEvaluationTable.svelte';
-	import { getProfile } from '$lib/stores/devContext.svelte';
+	import PageSkeleton from '$lib/components/ui/PageSkeleton.svelte';
+	import ErrorState from '$lib/components/ui/ErrorState.svelte';
 	import { getActivePhase } from '$lib/api/cycle.svelte';
-	import { getAssignments, getAssignmentsByProfile } from '$lib/stores/goalsStore.svelte';
-	import { getChildren } from '$lib/stores/orgHierarchyStore.svelte';
-	import { Users } from '@lucide/svelte';
+	import { getSession } from '$lib/api/session.svelte';
+	import {
+		getItems,
+		isLoading,
+		getError,
+		hasMoreItems,
+		hasPrevItems,
+		getCurrentPage,
+		getTotalCount,
+		getSearchQuery,
+		load,
+		search,
+		next,
+		prev,
+		init,
+	} from '$lib/stores/misEvaluadosStore.svelte';
+	import { Users, ChevronLeft, ChevronRight } from '@lucide/svelte';
 
-	const profile = $derived(getProfile());
+	const items = $derived(getItems());
+	const loading = $derived(isLoading());
+	const storeError = $derived(getError());
+	const hasMore = $derived(hasMoreItems());
+	const hasPrev = $derived(hasPrevItems());
+	const currentPage = $derived(getCurrentPage());
+	const totalCount = $derived(getTotalCount());
+	const searchQuery = $derived(getSearchQuery());
+
 	const phase = $derived(getActivePhase() ?? 'inicio-anio');
 	const isFinAnio = $derived(phase === 'fin-anio');
 	const isMedioAnio = $derived(phase === 'medio-anio');
@@ -19,17 +43,17 @@
 				? 'Revisión de avance de objetivos y competencias de tu equipo'
 				: 'Seguimiento de objetivos de tu equipo para el ciclo actual'
 	);
-	const currentUserId = $derived(getAssignmentsByProfile(profile)[0]?.employeeId ?? '');
-
-	const children = $derived(getChildren(currentUserId));
-	const childIds = $derived(children.map((c) => c.id));
-
-	const allAssignments = $derived(getAssignments());
-	const subordinateAssignments = $derived(
-		allAssignments.filter((a) => childIds.includes(a.employeeId))
-	);
 
 	let selectedEmployeeId = $state('');
+	let inputQuery = $state('');
+
+	onMount(() => {
+		const empId = getSession().user?.employeeId;
+		if (empId) {
+			init(empId);
+			load();
+		}
+	});
 
 	function handleSelect(employeeId: string) {
 		selectedEmployeeId = employeeId;
@@ -37,6 +61,12 @@
 
 	function handleBack() {
 		selectedEmployeeId = '';
+	}
+
+	function handleSearch(e: Event) {
+		const val = (e.target as HTMLInputElement).value;
+		inputQuery = val;
+		search(val);
 	}
 </script>
 
@@ -57,9 +87,65 @@
 		</div>
 	{/if}
 
-	{#if subordinateAssignments.length > 0}
+	{#if !selectedEmployeeId}
+		<div class="flex items-center justify-between gap-2">
+			<div class="w-full max-w-sm">
+				<input
+					type="text"
+					class="input input-bordered input-sm w-full"
+					placeholder="Buscar por nombre..."
+					value={inputQuery}
+					oninput={handleSearch}
+					aria-label="Buscar empleado"
+				/>
+			</div>
+			{#if totalCount > 0 || (inputQuery.trim() && items.length > 0)}
+				<span class="text-xs text-base-content/50 whitespace-nowrap">
+					{#if inputQuery.trim()}
+						Viendo {items.length} resultado{items.length !== 1 ? 's' : ''}
+					{:else}
+						Viendo {items.length} de {totalCount} empleado{totalCount !== 1 ? 's' : ''}
+					{/if}
+				</span>
+			{/if}
+			<div class="flex items-center gap-1">
+				<button
+					type="button"
+					class="btn btn-outline btn-xs"
+					onclick={prev}
+					disabled={!hasPrev || loading}
+				>
+					<ChevronLeft class="w-4 h-4" />
+					Anterior
+				</button>
+				<span class="text-xs text-base-content/50 px-1">
+					Pág. {currentPage + 1}
+				</span>
+				<button
+					type="button"
+					class="btn btn-outline btn-xs"
+					onclick={next}
+					disabled={!hasMore || loading}
+				>
+					Siguiente
+					<ChevronRight class="w-4 h-4" />
+				</button>
+			</div>
+		</div>
+	{/if}
+
+	{#if loading && items.length === 0}
+		<PageSkeleton variant="table" rows={5} />
+	{:else if storeError}
+		<ErrorState message={storeError} onretry={() => load()} />
+	{:else if items.length === 0 && !loading}
+		<p class="text-sm text-base-content/30 italic text-center py-8">
+			Sin evaluados para mostrar
+		</p>
+	{:else}
 		<EmployeeEvaluationTable
-			employees={subordinateAssignments}
+			mode="rh"
+			rows={items}
 			onSelect={handleSelect}
 			selectedEmployeeId={selectedEmployeeId}
 			disabled={!isFinAnio}
@@ -75,9 +161,5 @@
 				{/if}
 			{/snippet}
 		</EmployeeEvaluationTable>
-	{:else}
-		<p class="text-sm text-base-content/30 italic text-center py-8">
-			No tenés evaluados asignados.
-		</p>
 	{/if}
 </div>
