@@ -1,13 +1,14 @@
 <script lang="ts">
 	import AcceptanceLevelEditor from '$lib/components/competency/AcceptanceLevelEditor.svelte';
 	import PageSkeleton from '$lib/components/ui/PageSkeleton.svelte';
+	import { load, isLoading } from '$lib/stores/competencyStore.svelte';
 	import { FileText } from '@lucide/svelte';
 
-	let loading = $state(true);
+	const loading = $derived(isLoading());
+	let loaded = $state(false);
 
 	$effect(() => {
-		const t = setTimeout(() => (loading = false), 300);
-		return () => clearTimeout(t);
+		load().then(() => { loaded = true; });
 	});
 </script>
 
@@ -26,7 +27,7 @@
 		</p>
 	</div>
 
-	{#if loading}
+	{#if !loaded && loading}
 		<PageSkeleton rows={5} />
 	{:else}
 		<AcceptanceLevelEditor />

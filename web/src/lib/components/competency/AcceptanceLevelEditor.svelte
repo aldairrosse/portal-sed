@@ -1,21 +1,23 @@
 ﻿<script lang="ts">
-    import { Save, LayoutGrid, Edit3 } from "@lucide/svelte";
+    import { LayoutGrid, Edit3 } from "@lucide/svelte";
     import type { EvaluationProfile } from "$lib/types/evaluation";
-    import { EVALUATION_PROFILES, PROFILE_LABELS } from "$lib/types/evaluation";
+    import { PROFILE_LABELS } from "$lib/types/evaluation";
     import {
+        getProfiles,
         getPillars,
         getCompetencies,
         getLevelDefinitions,
         getCompetencyAcceptanceLevel,
-        setCompetencyAcceptanceLevel,
+        setCompetencyAcceptanceLevelOptimistic,
+        reload,
     } from "$lib/stores/competencyStore.svelte";
+    import { error as toastError } from "$lib/stores/notifications.svelte";
     import LevelDefinitionModal from "./LevelDefinitionModal.svelte";
     import AcceptanceLevelSummaryModal from "./AcceptanceLevelSummaryModal.svelte";
     import CustomSelect from "$lib/components/ui/CustomSelect.svelte";
-    import * as notifications from "$lib/stores/notifications.svelte";
 
+    const profiles = $derived(getProfiles());
     let selectedProfile = $state<EvaluationProfile>("colaborador");
-    let hasChanges = $state(false);
     let showLevelDefModal = $state(false);
     let showSummary = $state(false);
 
@@ -45,60 +47,63 @@
     }
 
     function handleLevelChange(competencyId: string, newLevel: string) {
-        setCompetencyAcceptanceLevel(
-            competencyId,
-            selectedProfile,
-            Number(newLevel) as 1 | 2 | 3 | 4 | 5,
-        );
-        hasChanges = true;
-    }
-
-    function handleSave() {
-        hasChanges = false;
-        notifications.success("Niveles de aceptación guardados correctamente.");
+        const level = Number(newLevel) as 1 | 2 | 3 | 4 | 5;
+        // Defer to next microtask so the popover closes before the store
+        // mutation triggers a re-render of every CustomSelect.
+        queueMicrotask(() => {
+            const { revert, commit } = setCompetencyAcceptanceLevelOptimistic(
+                competencyId,
+                selectedProfile,
+                level,
+            );
+            commit().catch(() => {
+                revert();
+                toastError("Error al guardar el nivel. Se revirtió el cambio.");
+            });
+        });
     }
 </script>
 
 <div>
-    <!-- Header with tabs and action buttons -->
-    <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
-        <div
-            class="tabs tabs-lift tabs-sm"
-            role="tablist"
-            aria-label="Perfiles de evaluación"
+    <!-- Action buttons -->
+    <div class="flex items-center justify-end gap-2 mb-3">
+        <button
+            class="btn btn-ghost btn-sm"
+            onclick={() => (showLevelDefModal = true)}
+            aria-label="Editar definiciones de nivel"
         >
-            {#each EVALUATION_PROFILES as profile (profile)}
-                <button
-                    role="tab"
-                    class="tab"
-                    class:tab-active={selectedProfile === profile}
-                    onclick={() => {
-                        selectedProfile = profile;
-                    }}
-                    aria-selected={selectedProfile === profile}
-                >
-                    {PROFILE_LABELS[profile]}
-                </button>
-            {/each}
-        </div>
-        <div class="flex items-center gap-2">
+            <Edit3 class="w-4 h-4" />
+            Editar definiciones de nivel
+        </button>
+        <button
+            class="btn btn-ghost btn-sm"
+            onclick={() => (showSummary = true)}
+            aria-label="Vista resumen"
+        >
+            <LayoutGrid class="w-4 h-4" />
+            Vista resumen
+        </button>
+    </div>
+
+    <!-- Tabs -->
+    <div
+        class="tabs tabs-lift tabs-sm mb-4"
+        role="tablist"
+        aria-label="Perfiles de evaluación"
+    >
+        {#each profiles as profile (profile.name)}
             <button
-                class="btn btn-ghost btn-sm"
-                onclick={() => (showLevelDefModal = true)}
-                aria-label="Editar definiciones de nivel"
+                role="tab"
+                class="tab"
+                class:tab-active={selectedProfile === profile.name}
+                onclick={() => {
+                    selectedProfile = profile.name;
+                }}
+                aria-selected={selectedProfile === profile.name}
             >
-                <Edit3 class="w-4 h-4" />
-                Editar definiciones de nivel
+                {PROFILE_LABELS[profile.name] ?? profile.name}
             </button>
-            <button
-                class="btn btn-ghost btn-sm"
-                onclick={() => (showSummary = true)}
-                aria-label="Vista resumen"
-            >
-                <LayoutGrid class="w-4 h-4" />
-                Vista resumen
-            </button>
-        </div>
+        {/each}
     </div>
 
     <!-- Selected profile and description -->
@@ -118,22 +123,21 @@
             {@const pillarComps = getCompetenciesByPillar(pillar.id)}
             <fieldset>
                 <legend
-                    class="text-sm font-semibold text-base-content mb-3 flex items-center gap-2"
+                    class="text-xs tracking-wide font-semibold text-base-content/50 mb-3"
                 >
-                    <span class="w-1.5 h-5 rounded bg-primary"></span>
                     {pillar.name}
                 </legend>
                 <div class="space-y-2">
                     {#each pillarComps as competency (competency.id)}
                         <div
-                            class="flex items-center justify-between gap-4 p-3 rounded-lg bg-base-200/50 hover:bg-base-200 transition-colors"
+                            class="flex items-center justify-between gap-4 p-3 rounded-lg bg-base-200/50 hover:bg-base-200 transition-colors w-full"
                         >
                             <div class="flex-1 min-w-0">
-                                <span class="text-sm font-medium"
+                                <span class="text-sm font-medium block"
                                     >{competency.name}</span
                                 >
                                 <p
-                                    class="text-xs text-base-content/50 truncate"
+                                    class="text-xs text-base-content/50 break-words"
                                 >
                                     {competency.description}
                                 </p>
@@ -159,23 +163,12 @@
             niveles de aceptación.
         </div>
     {/if}
-
-    <!-- Save button -->
-    <div class="mt-6 flex justify-end">
-        <button
-            class="btn btn-primary btn-sm"
-            onclick={handleSave}
-            disabled={!hasChanges}
-        >
-            <Save class="w-4 h-4" />
-            Guardar cambios
-        </button>
-    </div>
 </div>
 
 <LevelDefinitionModal
     open={showLevelDefModal}
     onClose={() => (showLevelDefModal = false)}
+    onSaved={() => { showLevelDefModal = false; reload(); }}
 />
 <AcceptanceLevelSummaryModal
     open={showSummary}

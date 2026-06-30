@@ -1,11 +1,12 @@
 ﻿<script lang="ts">
 	import { X } from '@lucide/svelte';
 	import {
+		getProfiles,
 		getPillars,
 		getCompetencies,
 		getCompetencyAcceptanceLevel
 	} from '$lib/stores/competencyStore.svelte';
-	import { EVALUATION_PROFILES, PROFILE_LABELS } from '$lib/types/evaluation';
+	import { PROFILE_LABELS } from '$lib/types/evaluation';
 	import type { EvaluationProfile } from '$lib/types/evaluation';
 
 	const PROFILE_ABBREVIATIONS: Record<EvaluationProfile, string> = {
@@ -31,6 +32,7 @@
 
 	const pillars = $derived(getPillars());
 	const competencies = $derived(getCompetencies());
+	const profiles = $derived(getProfiles());
 
 	function getCompetenciesByPillar(pillarId: string) {
 		return competencies.filter((c) => c.pillarId === pillarId);
@@ -92,10 +94,10 @@
 			<table class="table table-zebra text-sm" aria-label="Nivel de aceptación por competencia y perfil">
 				<thead>
 					<tr>
-						<th class="min-w-[12rem]">Competencia</th>
-						{#each EVALUATION_PROFILES as profile (profile)}
-							<th class="text-center min-w-[4rem]" title={PROFILE_LABELS[profile]}>
-								{PROFILE_ABBREVIATIONS[profile]}
+						<th class="min-w-[12rem] text-xs tracking-wide font-semibold text-base-content/50">Competencia</th>
+						{#each profiles as profile (profile.name)}
+							<th class="text-center min-w-[4rem] text-xs tracking-wide font-semibold text-base-content/50" title={PROFILE_LABELS[profile.name] ?? profile.name}>
+								{PROFILE_ABBREVIATIONS[profile.name] ?? profile.name}
 							</th>
 						{/each}
 					</tr>
@@ -107,10 +109,10 @@
 							<tr>
 								<td class="font-medium">
 									{competency.name}
-									<span class="text-xs text-base-content/40 ml-1">({pillar.name})</span>
+									<span class="text-xs text-base-content/40 ml-1">{pillar.name}</span>
 								</td>
-					{#each EVALUATION_PROFILES as profile (profile)}
-									{@const level = getLevelForCompetency(competency.id, profile)}
+					{#each profiles as profile (profile.name)}
+									{@const level = getLevelForCompetency(competency.id, profile.name)}
 									<td class="text-center">
 										<span
 											class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-primary/10 text-primary font-bold text-sm"

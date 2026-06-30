@@ -4,7 +4,8 @@ import type {
 	ScaleCriterion,
 	LevelDefinition,
 	CompetencyAcceptanceLevel,
-	AcceptanceLevel
+	AcceptanceLevel,
+	Profile
 } from '$lib/types/competency';
 import type { EvaluationProfile } from '$lib/types/evaluation';
 
@@ -13,11 +14,25 @@ import { client } from '$lib/api/client';
 // ─── Internal data shape ──────────────────────────────────────────────────────
 
 interface StoreData {
+	profiles: Profile[];
 	pillars: Pillar[];
 	competencies: Competency[];
 	scaleCriteria: ScaleCriterion[];
 	levelDefinitions: LevelDefinition[];
 	competencyAcceptanceLevels: CompetencyAcceptanceLevel[];
+}
+
+// ─── Profile lookup maps (DB UUID ↔ frontend slug) ──────────────────────────
+
+let uuidToName = new Map<string, EvaluationProfile>();
+let nameToUuid = new Map<EvaluationProfile, string>();
+
+function resolveProfileName(uuid: string): EvaluationProfile {
+	return uuidToName.get(uuid) ?? ('colaborador' as EvaluationProfile);
+}
+
+function resolveProfileUuid(name: EvaluationProfile): string {
+	return nameToUuid.get(name) ?? '';
 }
 
 // ─── Triplete state ───────────────────────────────────────────────────────────
@@ -47,10 +62,11 @@ export async function load(): Promise<void> {
 	error = null;
 
 	try {
-		// Phase 1 — parallel: pillars (with competencies), levels, acceptance levels
-		const [pillarsRes, levelsRes, acceptanceRes] = await Promise.all([
+		// Phase 1 — parallel: pillars (with competencies), levels, profiles, acceptance levels
+		const [pillarsRes, levelsRes, profilesRes, acceptanceRes] = await Promise.all([
 			client.GET('/pillars', { params: { query: { include: 'competencies' } } }),
 			client.GET('/levels', {}),
+			client.GET('/profiles', {}),
 			client.GET('/acceptance-levels', {})
 		]);
 
@@ -112,18 +128,78 @@ export async function load(): Promise<void> {
 			description: l.description ?? ''
 		}));
 
+		// Normalize profiles and build UUID ↔ name lookup maps
+		const apiProfiles = (profilesRes.data ?? []) as Array<{
+			id?: string;
+			name?: string;
+			description?: string;
+		}>;
+
+		const profiles: Profile[] = apiProfiles.map((p) => ({
+			id: p.id ?? '',
+			name: (p.name ?? 'colaborador') as EvaluationProfile,
+			description: p.description
+		}));
+
+		uuidToName.clear();
+		nameToUuid.clear();
+		for (const p of profiles) {
+			if (p.id && p.name) {
+				uuidToName.set(p.id, p.name);
+				nameToUuid.set(p.name, p.id);
+			}
+		}
+
 		const competencyAcceptanceLevels: CompetencyAcceptanceLevel[] = apiAcceptanceLevels.map(
 			(al) => ({
 				competencyId: al.competency_id ?? '',
-				profileId: al.profile_id as EvaluationProfile,
+				profileId: resolveProfileName(al.profile_id ?? ''),
 				level: (al.level ?? 3) as 1 | 2 | 3 | 4 | 5
 			})
 		);
 
+		// Phase 3 — fetch scale criteria per competency
+		const competencyIds = competencies.map((c) => c.id);
+		const scaleCriteriaResults = await Promise.all(
+			competencyIds.map((id) =>
+				client.GET('/competencies/{id}/scale-criteria', {
+					params: { path: { id } }
+				})
+			)
+		);
+
+		const scaleCriteria: ScaleCriterion[] = [];
+		for (const res of scaleCriteriaResults) {
+			const scRes = res.data as {
+				competency_id?: string;
+				criteria?: { [key: string]: string[] };
+			} | null;
+			const competencyId = scRes?.competency_id ?? '';
+			const competency = competencies.find((c) => c.id === competencyId);
+			const pillarId = competency?.pillarId ?? '';
+
+			if (scRes?.criteria) {
+				for (const [levelStr, descriptions] of Object.entries(scRes.criteria)) {
+					const level = parseInt(levelStr, 10) as 1 | 2 | 3 | 4 | 5;
+					if (level < 1 || level > 5) continue;
+					for (const desc of descriptions) {
+						scaleCriteria.push({
+							id: `sc-${competencyId}-${level}-${crypto.randomUUID().slice(0, 8)}`,
+							competencyId,
+							pillarId,
+							level,
+							description: desc
+						});
+					}
+				}
+			}
+		}
+
 		data = {
+			profiles,
 			pillars,
 			competencies,
-			scaleCriteria: [],
+			scaleCriteria,
 			levelDefinitions,
 			competencyAcceptanceLevels
 		};
@@ -140,6 +216,12 @@ export async function load(): Promise<void> {
 /** Alias for load(). */
 export function reload(): Promise<void> {
 	return load();
+}
+
+// ─── Getters: Profiles ────────────────────────────────────────────────────────
+
+export function getProfiles(): Profile[] {
+	return data?.profiles ?? [];
 }
 
 // ─── Getters: Pillars ─────────────────────────────────────────────────────────
@@ -324,35 +406,57 @@ export async function deleteCompetency(id: string): Promise<void> {
 
 // ─── Mutations: Scale Criteria ───────────────────────────────────────────────
 
-export async function updateScaleCriterion(
-	id: string,
-	description: string
+export async function replaceScaleCriteria(
+	competencyId: string,
+	criteria: { level: number; description: string }[]
 ): Promise<void> {
-	// Local-only for now (API uses bulk replace per competency).
-	data = {
-		...data!,
-		scaleCriteria: (data?.scaleCriteria ?? []).map((sc) =>
-			sc.id === id ? { ...sc, description } : sc
-		)
-	};
-}
+	const { data: resData, error: apiError } = await client.POST(
+		'/competencies/{id}/scale-criteria',
+		{
+			params: {
+				path: { id: competencyId },
+				header: { 'Idempotency-Key': crypto.randomUUID() }
+			},
+			body: { criteria }
+		}
+	);
+	if (apiError)
+		throw new Error(
+			((apiError as { error?: { message?: string } })?.error?.message) ??
+				'Error al guardar criterios de escala'
+		);
 
-export async function addScaleCriterion(
-	criterion: Omit<ScaleCriterion, 'id'>
-): Promise<void> {
-	const id = `sc-${criterion.competencyId}-${criterion.pillarId}-${criterion.level}-${crypto.randomUUID().slice(0, 8)}`;
-	// Local-only for now (API uses bulk replace per competency).
-	data = {
-		...data!,
-		scaleCriteria: [...(data?.scaleCriteria ?? []), { id, ...criterion }]
-	};
-}
+	const res = resData as {
+		competency_id?: string;
+		criteria?: { [key: string]: string[] };
+	} | null;
 
-export async function removeScaleCriterion(id: string): Promise<void> {
-	// Local-only for now (API uses bulk replace per competency).
+	const pillarId =
+		data?.scaleCriteria.find((sc) => sc.competencyId === competencyId)?.pillarId ?? '';
+
+	const newCriteria: ScaleCriterion[] = [];
+	if (res?.criteria) {
+		for (const [levelStr, descriptions] of Object.entries(res.criteria)) {
+			const level = parseInt(levelStr, 10) as 1 | 2 | 3 | 4 | 5;
+			if (level < 1 || level > 5) continue;
+			for (const desc of descriptions) {
+				newCriteria.push({
+					id: `sc-${competencyId}-${level}-${crypto.randomUUID().slice(0, 8)}`,
+					competencyId,
+					pillarId,
+					level,
+					description: desc
+				});
+			}
+		}
+	}
+
 	data = {
 		...data!,
-		scaleCriteria: (data?.scaleCriteria ?? []).filter((sc) => sc.id !== id)
+		scaleCriteria: [
+			...(data?.scaleCriteria ?? []).filter((sc) => sc.competencyId !== competencyId),
+			...newCriteria
+		]
 	};
 }
 
@@ -376,11 +480,29 @@ export async function updateLevelDefinition(
 	label: string,
 	description: string
 ): Promise<void> {
-	// Local-only for now (levels are cacheable / read-only in production).
+	const { data: putData, error: apiError } = await client.PUT('/levels/{level}', {
+		params: { path: { level } },
+		body: { label, description }
+	});
+	if (apiError) {
+		throw new Error(
+			((apiError as { error?: { message?: string } })?.error?.message) ??
+				'Error al actualizar definición de nivel'
+		);
+	}
+
+	// Update local state directly from the PUT response — do NOT re-fetch GET /levels
+	// because that endpoint routes to a read replica with replication lag, which
+	// returns stale data (or empty) right after a PUT to the primary.
+	const newDef: LevelDefinition = {
+		level,
+		label: (putData as { label?: string } | null)?.label ?? label,
+		description: (putData as { description?: string } | null)?.description ?? description
+	};
 	data = {
 		...data!,
 		levelDefinitions: (data?.levelDefinitions ?? []).map((ld) =>
-			ld.level === level ? { ...ld, label, description } : ld
+			ld.level === level ? newDef : ld
 		)
 	};
 }
@@ -392,8 +514,10 @@ export async function setCompetencyAcceptanceLevel(
 	profileId: EvaluationProfile,
 	level: 1 | 2 | 3 | 4 | 5
 ): Promise<void> {
+	const profileUuid = resolveProfileUuid(profileId);
+	if (!profileUuid) throw new Error(`Profile "${profileId}" not found in database`);
 	const { error: apiError } = await client.POST('/acceptance-levels', {
-		body: { competency_id: competencyId, profile_id: profileId, level }
+		body: { competency_id: competencyId, profile_id: profileUuid, level }
 	});
 	if (apiError)
 		throw new Error(
@@ -403,10 +527,63 @@ export async function setCompetencyAcceptanceLevel(
 	await reload();
 }
 
+/**
+ * Optimistic update: mutates the acceptance-levels array in place (no data
+ * reference replacement) so only getters reading competencyAcceptanceLevels
+ * re-evaluate. Returns revert/commit handles.
+ */
+export function setCompetencyAcceptanceLevelOptimistic(
+	competencyId: string,
+	profileId: EvaluationProfile,
+	level: 1 | 2 | 3 | 4 | 5
+): { revert: () => void; commit: () => Promise<void> } {
+	const arr = data?.competencyAcceptanceLevels;
+	if (!arr) return { revert: () => {}, commit: async () => {} };
+
+	const idx = arr.findIndex(
+		(cal) => cal.competencyId === competencyId && cal.profileId === profileId
+	);
+	const prev = idx >= 0 ? arr[idx].level : 3;
+
+	// In-place mutation — no new data reference
+	if (idx >= 0) {
+		arr[idx].level = level;
+	} else {
+		arr.push({ competencyId, profileId, level });
+	}
+
+	return {
+		revert: () => {
+			if (idx >= 0) {
+				arr[idx].level = prev;
+			} else {
+				const i = arr.findIndex(
+					(cal) => cal.competencyId === competencyId && cal.profileId === profileId
+				);
+				if (i >= 0) arr.splice(i, 1);
+			}
+		},
+		commit: async () => {
+			const profileUuid = resolveProfileUuid(profileId);
+			if (!profileUuid) throw new Error(`Profile "${profileId}" not found in database`);
+			const { error: apiError } = await client.POST('/acceptance-levels', {
+				body: { competency_id: competencyId, profile_id: profileUuid, level }
+			});
+			if (apiError)
+				throw new Error(
+					((apiError as { error?: { message?: string } })?.error?.message) ??
+						'Error al establecer nivel de aceptación'
+				);
+		}
+	};
+}
+
 export async function setCompetencyAcceptanceLevelsForProfile(
 	profileId: EvaluationProfile,
 	assignments: { competencyId: string; level: 1 | 2 | 3 | 4 | 5 }[]
 ): Promise<void> {
+	const profileUuid = resolveProfileUuid(profileId);
+	if (!profileUuid) throw new Error(`Profile "${profileId}" not found in database`);
 	// Upsert each assignment individually, then reload
 	try {
 		await Promise.all(
@@ -414,7 +591,7 @@ export async function setCompetencyAcceptanceLevelsForProfile(
 				client.POST('/acceptance-levels', {
 					body: {
 						competency_id: a.competencyId,
-						profile_id: profileId,
+						profile_id: profileUuid,
 						level: a.level
 					}
 				})
