@@ -2,7 +2,6 @@ import type { CompetencyRating, GoalClosure, EvaluationStatus } from '$lib/types
 import { getActivePhase } from '$lib/api/cycle.svelte';
 import { getSession } from '$lib/api/session.svelte';
 import { client } from '$lib/api/client';
-import { getActiveCycle } from '$lib/stores/cycleStore.svelte';
 
 
 // ─── Internal data shape ──────────────────────────────────────────────────────
@@ -39,6 +38,7 @@ function normalizeApiData(
 			selfRating?: number | null;
 			rhRating?: number | null;
 			comments?: string;
+			acceptanceLevel?: number | null;
 		}>;
 		goals?: Array<{
 			goalId?: string;
@@ -54,7 +54,8 @@ function normalizeApiData(
 		competencyId: c.competencyId ?? '',
 		selfRating: (c.selfRating ?? c.rating) != null ? ((c.selfRating ?? c.rating) as 1 | 2 | 3 | 4 | 5) : undefined,
 		selfComment: c.comments,
-		rhRating: c.rhRating != null ? (c.rhRating as 1 | 2 | 3 | 4 | 5) : undefined
+		rhRating: c.rhRating != null ? (c.rhRating as 1 | 2 | 3 | 4 | 5) : undefined,
+		acceptanceLevel: c.acceptanceLevel ?? undefined
 	}));
 
 	const goalClosures: GoalClosure[] = (detail?.goals ?? []).map((g, i) => ({
@@ -93,12 +94,10 @@ export async function load(employeeId?: string): Promise<void> {
 	try {
 		if (employeeId) {
 			// Employee-specific path (competency network for manager/RH view)
-			const cycle = getActiveCycle();
-			if (!cycle) throw new Error('No hay ciclo activo');
-
+			// cycle_id is optional — backend resolves the active cycle automatically
 			const { data: apiData, error: apiError } = await client.GET(
 				'/evaluations/employee/{employeeId}',
-				{ params: { query: { cycle_id: cycle.id }, path: { employeeId } } }
+				{ params: { path: { employeeId } } }
 			);
 
 			if (apiError) {
@@ -108,14 +107,15 @@ export async function load(employeeId?: string): Promise<void> {
 			}
 
 			// Map ratings to competencies for normalizeApiData
-			const resp = apiData as { employeeId?: string; cycleId?: string; ratings?: Array<{ competencyId?: string; selfRating?: number | null; rhRating?: number | null; comments?: string }> } | undefined;
+			const resp = apiData as { employeeId?: string; cycleId?: string; ratings?: Array<{ competencyId?: string; selfRating?: number | null; rhRating?: number | null; comments?: string; acceptanceLevel?: number | null }> } | undefined;
 			const mapped = {
 				employeeId: resp?.employeeId ?? employeeId,
 				competencies: (resp?.ratings ?? []).map((r) => ({
 					competencyId: r.competencyId,
 					selfRating: r.selfRating,
 					rhRating: r.rhRating,
-					comments: r.comments
+					comments: r.comments,
+					acceptanceLevel: r.acceptanceLevel
 				})),
 				goals: []
 			};
@@ -251,22 +251,14 @@ export async function closeGoal(
 	const empId = getSession().user?.employeeId;
 	if (!empId) return;
 
-	const goalComments = (data?.goalClosures ?? [])
-		.filter((gc) => gc.employeeId === employeeId)
-		.map((gc) => ({
-			goalId: gc.goalId,
-			comment:
-				gc.goalId === goalId ? selfAssessment : gc.selfAssessment
-		}));
-	// If not in list yet, add it
-	if (!goalComments.some((g) => g.goalId === goalId)) {
-		goalComments.push({ goalId, comment: selfAssessment });
-	}
-
-	const { error: apiError } = await client.PUT('/evaluations/{id}/self-evaluation', {
+	const { error: apiError } = await client.PUT('/evaluations/{id}/goal-state', {
 		params: { path: { id: empId } },
 		header: { 'If-Match': 1 } as never,
-		body: { goalComments, competencies: [] }
+		body: {
+			goalId,
+			finalProgress,
+			selfAssessment
+		}
 	});
 	if (apiError) throw new Error('Error al cerrar meta');
 	await reload();
@@ -323,16 +315,15 @@ export async function rhAssessGoal(
 	const empId = getSession().user?.employeeId;
 	if (!empId) return;
 
-	// For RH goal assessment there's no dedicated endpoint in the schema;
-	// fall back to local-only update + reload
-	data = {
-		...data!,
-		goalClosures: (data?.goalClosures ?? []).map((gc) =>
-			gc.employeeId === employeeId && gc.goalId === goalId
-				? { ...gc, rhAssessment }
-				: gc
-		)
-	};
+	const { error: apiError } = await client.PUT('/evaluations/{id}/goal-state', {
+		params: { path: { id: empId } },
+		header: { 'If-Match': 1 } as never,
+		body: {
+			goalId,
+			rhAssessment
+		}
+	});
+	if (apiError) throw new Error('Error al guardar evaluación RH de la meta');
 	await reload();
 }
 
@@ -345,15 +336,20 @@ export async function addManagerComment(
 ): Promise<void> {
 	if (!isFinAnio()) return;
 
-	// No dedicated API endpoint for manager comments; local-only for now.
-	data = {
-		...data!,
-		goalClosures: (data?.goalClosures ?? []).map((gc) =>
-			gc.employeeId === employeeId && gc.goalId === goalId
-				? { ...gc, managerComment: comment }
-				: gc
-		)
-	};
+	const empId = getSession().user?.employeeId;
+	if (!empId) return;
+
+	const { error: apiError } = await client.PUT('/evaluations/{id}/goal-comments', {
+		params: { path: { id: empId } },
+		header: { 'If-Match': 1 } as never,
+		body: {
+			goalId,
+			role: 'manager',
+			comment
+		}
+	});
+	if (apiError) throw new Error('Error al guardar comentario del manager');
+	await reload();
 }
 
 // ─── Batch Submit / Finalize ───────────────────────────────────────────────────

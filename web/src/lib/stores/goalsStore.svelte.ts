@@ -44,6 +44,16 @@ class StoreState {
 
 export const storeState = new StoreState();
 
+/** @returns true while load() is in progress. */
+export function isLoading(): boolean {
+	return storeState.loading;
+}
+
+/** @returns the current error message, or null if no error. */
+export function getError(): string | null {
+	return storeState.error;
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function getEmployeeId(): string {

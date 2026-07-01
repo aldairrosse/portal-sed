@@ -85,6 +85,10 @@ func (c *evalCyclePhaseCheck) GetSelfEvalDeadline(_ context.Context, _ uuid.UUID
 	return nil, nil
 }
 
+func (c *evalCyclePhaseCheck) GetActiveCycleID(ctx context.Context, orgID uuid.UUID) (uuid.UUID, error) {
+	return c.cycleRepo.GetActiveCycleID(ctx, orgID)
+}
+
 // inMemoryIdempotencyCache implements evalsvc.IdempotencyCache for the evaluation service.
 type inMemoryIdempotencyCache struct {
 	mu    sync.RWMutex

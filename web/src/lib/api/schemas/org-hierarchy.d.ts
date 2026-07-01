@@ -427,6 +427,8 @@ export interface components {
             /** Format: uuid */
             profileId?: string;
             isActive?: boolean;
+            jobTitle?: string;
+            profileName?: string;
         };
         EmployeeDetail: components["schemas"]["Employee"] & {
             orgNode?: {

@@ -115,6 +115,8 @@ func (s *employeeService) GetEmployee(ctx context.Context, empID string) (*org.E
 			EmployeeNumber: detail.EmployeeNumber,
 			OrgNodeID:      detail.OrgNodeID.String(),
 			ProfileID:      detail.ProfileID.String(),
+			ProfileName:    detail.ProfileName,
+			JobTitle:       detail.JobTitle,
 			IsActive:       detail.IsActive,
 		},
 	}

@@ -1,23 +1,17 @@
 <script lang="ts">
 	import { page } from '$app/stores';
 	import CompetencyNetworkView from '$lib/components/evaluation/CompetencyNetworkView.svelte';
-	import { getNodeById } from '$lib/stores/orgHierarchyStore.svelte';
-	import { PROFILE_LABELS } from '$lib/types/evaluation';
-	import { getProfile } from '$lib/stores/devContext.svelte';
-	import { getAssignmentsByProfile } from '$lib/stores/goalsStore.svelte';
 	import { load, isLoading } from '$lib/stores/evaluationStore.svelte';
-	import { loadCycles, getActiveCycle } from '$lib/stores/cycleStore.svelte';
+	import { load as loadCompetencies } from '$lib/stores/competencyStore.svelte';
+	import { client } from '$lib/api/client';
 	import PageSkeleton from '$lib/components/ui/PageSkeleton.svelte';
-	import { Users, Network, Table } from '@lucide/svelte';
+	import { Network, Table, Briefcase } from '@lucide/svelte';
+    import { titleCase } from '$lib/utils/text';
 
 	const employeeId = $derived($page.params.employeeId);
-	const employeeNode = $derived(getNodeById(employeeId));
-	const employeeName = $derived(employeeNode?.name ?? 'Empleado');
-	const profileLabel = $derived(employeeNode ? PROFILE_LABELS[employeeNode.profileId as keyof typeof PROFILE_LABELS] ?? '' : '');
 
-	const profile = $derived(getProfile());
-	const myEmployeeId = $derived(getAssignmentsByProfile(profile)[0]?.employeeId ?? '');
-	const isOwnProfile = $derived(employeeId === myEmployeeId);
+	let employeeData = $state<{ firstName: string; lastName: string; jobTitle: string; profileName: string } | null>(null);
+	const employeeName = $derived(employeeData ? `${employeeData.firstName} ${employeeData.lastName}` : 'Empleado');
 
 	let activeTab: 'radar' | 'table' = $state('radar');
 
@@ -30,10 +24,22 @@
 
 	$effect(() => {
 		if (employeeId) {
-			// Ensure cycles are loaded before fetching competency data
-			loadCycles().then(() => {
-				if (employeeId) load(employeeId);
-			});
+			// Load competency catalog (pillars, competencies, levels) — needed for radar/table
+			loadCompetencies();
+			// cycle_id is optional — backend resolves the active cycle automatically
+			load(employeeId);
+			// Fetch employee details for header
+			client.GET('/employees/{empId}', { params: { path: { empId: employeeId } } })
+				.then(({ data }) => {
+					if (data?.data) {
+						employeeData = {
+							firstName: data.data.firstName ?? '',
+							lastName: data.data.lastName ?? '',
+							jobTitle: data.data.jobTitle ?? '',
+							profileName: data.data.profileName ?? ''
+						};
+					}
+				});
 		}
 	});
 </script>
@@ -46,25 +52,14 @@
 	<!-- Breadcrumb -->
 	<nav class="breadcrumbs text-sm" aria-label="Navegación">
 		<ul>
-			{#if isOwnProfile}
-				<li>
-					<a href="/mi-evaluacion" class="link link-hover text-base-content/50">
-						Mi evaluación
-					</a>
-				</li>
-				<li class="text-base-content/70">
-					<span class="font-medium">Yo</span>
-				</li>
-			{:else}
-				<li>
-					<a href="/evaluacion/9x9/competencias" class="link link-hover text-base-content/50">
-						Competencias
-					</a>
-				</li>
-				<li class="text-base-content/70">
-					<span class="font-medium">{employeeName}</span>
-				</li>
-			{/if}
+			<li>
+				<a href="/evaluacion/9x9/competencias" class="link link-hover text-base-content/50">
+					Competencias
+				</a>
+			</li>
+			<li class="text-base-content/70">
+				<span class="font-medium">{titleCase(employeeData?.profileName ?? 'Colaborador')}</span>
+			</li>
 		</ul>
 	</nav>
 
@@ -81,8 +76,8 @@
 			<div>
 				<h1 class="text-xl font-bold text-base-content">{employeeName}</h1>
 				<p class="text-sm text-base-content/50 flex items-center gap-1.5 mt-0.5">
-					<Users class="w-3.5 h-3.5" />
-					{profileLabel}
+					<Briefcase class="w-3.5 h-3.5" />
+					{employeeData?.jobTitle ?? 'Empleado'}
 				</p>
 			</div>
 		</div>

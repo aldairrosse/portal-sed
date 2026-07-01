@@ -254,10 +254,12 @@ func (r *EmployeeRepo) GetDetailByID(ctx context.Context, empID uuid.UUID) (*Emp
 		        e.employee_number, e.is_active, e.org_node_id, e.manager_id, e.profile_id, e.job_title,
 		        COALESCE(on2.name, '') as org_node_name,
 		        COALESCE(on2.path::text, '') as org_node_path,
-		        COALESCE(m.first_name || ' ' || m.last_name, '') as manager_name
+		        COALESCE(m.first_name || ' ' || m.last_name, '') as manager_name,
+		        COALESCE(ep.name, '') as profile_name
 		 FROM employees e
 		 LEFT JOIN org_nodes on2 ON e.org_node_id = on2.id
 		 LEFT JOIN employees m ON e.manager_id = m.id
+		 LEFT JOIN evaluation_profiles ep ON e.profile_id = ep.id
 		 WHERE e.id = $1`, empID,
 	).Scan(
 		&detail.ID, &detail.CreatedAt, &detail.UpdatedAt,
@@ -265,6 +267,7 @@ func (r *EmployeeRepo) GetDetailByID(ctx context.Context, empID uuid.UUID) (*Emp
 		&detail.EmployeeNumber, &detail.IsActive,
 		&detail.OrgNodeID, &managerID, &detail.ProfileID, &detail.JobTitle,
 		&detail.OrgNodeName, &detail.OrgNodePath, &managerName,
+		&detail.ProfileName,
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {

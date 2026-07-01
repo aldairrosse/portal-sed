@@ -311,6 +311,22 @@ func (r *CycleRepo) ExecuteRawAdvisoryLock(ctx context.Context, orgID uuid.UUID,
 	}, nil
 }
 
+// GetActiveCycleID finds the active (unfinished) cycle for an organization.
+func (r *CycleRepo) GetActiveCycleID(ctx context.Context, orgID uuid.UUID) (uuid.UUID, error) {
+	var id uuid.UUID
+	err := r.db.QueryRowContext(ctx,
+		`SELECT id FROM cycles WHERE organization_id = $1 AND finished_at IS NULL ORDER BY created_at DESC LIMIT 1`,
+		orgID,
+	).Scan(&id)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return uuid.Nil, errors.ErrCycleNotFound
+		}
+		return uuid.Nil, err
+	}
+	return id, nil
+}
+
 // BeginTx starts a *sql.Tx for use in transactional operations.
 func (r *CycleRepo) BeginTx(ctx context.Context, opts *sql.TxOptions) (*sql.Tx, error) {
 	return r.db.BeginTx(ctx, opts)

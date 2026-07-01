@@ -78,6 +78,10 @@ func (c *evalCyclePhaseCheck) GetSelfEvalDeadline(_ context.Context, _ uuid.UUID
 	return nil, nil
 }
 
+func (c *evalCyclePhaseCheck) GetActiveCycleID(_ context.Context, _ uuid.UUID) (uuid.UUID, error) {
+	return uuid.Nil, nil
+}
+
 // inMemoryIdempotencyCache is a simple in-memory cache for tests.
 type inMemoryIdempotencyCache struct {
 	mu    sync.RWMutex

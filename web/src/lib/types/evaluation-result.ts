@@ -8,6 +8,7 @@ export interface CompetencyRating {
 	selfComment?: string;
 	rhRating?: 1 | 2 | 3 | 4 | 5;
 	rhComment?: string;
+	acceptanceLevel?: number;
 }
 
 export interface GoalClosure {

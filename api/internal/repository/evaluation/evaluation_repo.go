@@ -71,16 +71,26 @@ type CompetencyUpsert struct {
 // EmployeeCompetencyRatingRow is a repository-level DTO for competency ratings
 // returned from the employee + cycle query. Includes self/rh ratings from migration 000008.
 type EmployeeCompetencyRatingRow struct {
-	CompetencyID uuid.UUID
-	SelfRating   *int
-	RhRating     *int
-	Comments     string
+	CompetencyID    uuid.UUID
+	SelfRating      *int
+	RhRating        *int
+	Comments        *string
+	AcceptanceLevel *int
 }
 
 // GoalCommentUpsert is a repository-level DTO for updating goal comments.
 type GoalCommentUpsert struct {
 	GoalID  uuid.UUID
 	Comment string
+}
+
+// GoalStateUpsert is a repository-level DTO for per-goal state updates.
+// Nil pointer fields are left unchanged; non-nil values overwrite.
+type GoalStateUpsert struct {
+	GoalID         uuid.UUID
+	FinalProgress  *float64
+	SelfAssessment *string
+	RhAssessment   *string
 }
 
 // EntryUpsert is a repository-level DTO for upserting a nine-box entry.
@@ -459,16 +469,16 @@ func (r *EvaluationRepo) upsertVersion(ctx context.Context, tx *sql.Tx, evalID u
 
 // GetCompetencyRatingsByEmployee fetches ALL competencies for an employee's profile in a cycle,
 // LEFT JOINed with evaluation_competencies to get self/rh ratings (or null if not yet evaluated).
-func (r *EvaluationRepo) GetCompetencyRatingsByEmployee(ctx context.Context, employeeID, cycleID uuid.UUID) ([]EmployeeCompetencyRatingRow, error) {
-	query := `SELECT cal.competency_id, ec.self_rating, ec.rh_rating, ec.comments
-		FROM employees emp
-		JOIN competency_acceptance_levels cal ON cal.profile_id = emp.profile_id
-		LEFT JOIN evaluations ev ON ev.employee_id = emp.id AND ev.cycle_id = $2
-		LEFT JOIN evaluation_competencies ec ON ec.evaluation_id = ev.id AND ec.competency_id = cal.competency_id
-		WHERE emp.id = $1
-		ORDER BY cal.competency_id`
+func (r *EvaluationRepo) GetCompetencyRatingsByEmployee(ctx context.Context, employeeID, cycleID, profileID uuid.UUID) ([]EmployeeCompetencyRatingRow, error) {
+	query := `SELECT c.id AS competency_id, ec.self_rating, ec.rh_rating, ec.comments,
+	       cal.level AS acceptance_level
+		FROM competencies c
+		LEFT JOIN competency_acceptance_levels cal ON cal.competency_id = c.id AND cal.profile_id = $3
+		LEFT JOIN evaluations ev ON ev.employee_id = $1 AND ev.cycle_id = $2
+		LEFT JOIN evaluation_competencies ec ON ec.evaluation_id = ev.id AND ec.competency_id = c.id
+		ORDER BY c.id`
 
-	rows, err := r.db.QueryContext(ctx, query, employeeID, cycleID)
+	rows, err := r.db.QueryContext(ctx, query, employeeID, cycleID, profileID)
 	if err != nil {
 		return nil, err
 	}
@@ -477,7 +487,7 @@ func (r *EvaluationRepo) GetCompetencyRatingsByEmployee(ctx context.Context, emp
 	var results []EmployeeCompetencyRatingRow
 	for rows.Next() {
 		var row EmployeeCompetencyRatingRow
-		if err := rows.Scan(&row.CompetencyID, &row.SelfRating, &row.RhRating, &row.Comments); err != nil {
+		if err := rows.Scan(&row.CompetencyID, &row.SelfRating, &row.RhRating, &row.Comments, &row.AcceptanceLevel); err != nil {
 			return nil, err
 		}
 		results = append(results, row)

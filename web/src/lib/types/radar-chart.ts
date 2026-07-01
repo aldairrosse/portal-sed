@@ -3,6 +3,7 @@ export interface RadarCompetencyPoint {
 	competencyName: string;
 	selfRating: number | null;
 	rhRating: number | null;
+	acceptanceLevel: number | null;
 }
 
 export interface RadarPillarGroup {

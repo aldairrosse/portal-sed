@@ -29,7 +29,7 @@ let error = $state<string | null>(null);
 let hasMore = $state(false);
 let hasPrev = $state(false);
 let apiTotal = $state(0);
-let scopeFilter = $state<'all' | 'team'>('all');
+let scopeFilter = $state<'all' | 'team'>('team');
 
 // ─── Reactive getters ─────────────────────────────────────────────────────────
 

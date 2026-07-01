@@ -7,12 +7,13 @@
 		RadialLinearScale,
 		PointElement,
 		LineElement,
-		Tooltip
+		Tooltip,
+		Filler
 	} from 'chart.js';
 	import type { ChartDataset } from 'chart.js';
 	import type { RadarPillarGroup } from '$lib/types/radar-chart';
 
-	Chart.register(RadarController, RadialLinearScale, PointElement, LineElement, Tooltip);
+	Chart.register(RadarController, RadialLinearScale, PointElement, LineElement, Tooltip, Filler);
 
 	interface Props {
 		pillarGroups: RadarPillarGroup[];
@@ -27,6 +28,7 @@
 	const allCompetencies = $derived(pillarGroups.flatMap((g) => g.competencies));
 	const hasSelf = $derived(allCompetencies.some((c) => c.selfRating !== null));
 	const hasRh = $derived(allCompetencies.some((c) => c.rhRating !== null));
+	const hasAcceptance = $derived(allCompetencies.some((c) => c.acceptanceLevel !== null));
 
 	// ─── Theme-aware colors ─────────────────────────────────────
 	function cssVar(name: string, fallback: string): string {
@@ -44,9 +46,9 @@
 		const rhHex = cssVar('--color-radar-rh', '#f59e0b');
 		return {
 			self: `rgb(${hexToRgb(selfHex)})`,
-			selfBg: `rgba(${hexToRgb(selfHex)}, 0.2)`,
+			selfBg: `rgba(${hexToRgb(selfHex)}, 0.12)`,
 			rh: `rgb(${hexToRgb(rhHex)})`,
-			rhBg: `rgba(${hexToRgb(rhHex)}, 0.2)`,
+			rhBg: `rgba(${hexToRgb(rhHex)}, 0.12)`,
 			grid: cssVar('--color-chart-grid', 'rgba(0,0,0,0.08)'),
 		};
 	}
@@ -58,6 +60,7 @@
 			target.push({
 				label: 'Autoevaluación',
 				data: allCompetencies.map((c) => c.selfRating),
+				fill: true,
 				backgroundColor: colors.selfBg,
 				borderColor: colors.self,
 				pointBackgroundColor: colors.self,
@@ -69,10 +72,24 @@
 			target.push({
 				label: 'RH',
 				data: allCompetencies.map((c) => c.rhRating),
+				fill: true,
 				backgroundColor: colors.rhBg,
 				borderColor: colors.rh,
 				pointBackgroundColor: colors.rh,
 				borderWidth: 2,
+				pointRadius: 3
+			});
+		}
+		if (hasAcceptance) {
+			target.push({
+				label: 'Nivel esperado',
+				data: allCompetencies.map((c) => c.acceptanceLevel),
+				fill: true,
+				backgroundColor: 'rgba(99, 102, 241, 0.12)',
+				borderColor: 'rgb(99, 102, 241)',
+				pointBackgroundColor: 'rgb(99, 102, 241)',
+				borderWidth: 2,
+				borderDash: [5, 5],
 				pointRadius: 3
 			});
 		}
@@ -94,7 +111,7 @@
 				maintainAspectRatio: true,
 				scales: {
 					r: {
-						min: 1,
+						min: 0,
 						max: 5,
 						ticks: {
 							stepSize: 1,
@@ -179,37 +196,35 @@
 	});
 </script>
 
-{#if !hasSelf && !hasRh}
-	<div class="text-center py-8" role="status" aria-live="polite">
-		<p class="text-sm text-base-content/40">
-			No hay datos de competencias para {employeeName}.
-		</p>
-	</div>
-{:else}
-	<div class="w-full max-w-lg mx-auto" role="img" aria-label="Gráfica radar de competencias de {employeeName}">
-		<canvas bind:this={canvas} class="w-full h-full max-h-[400px]"></canvas>
-	</div>
+<div class="w-full max-w-lg mx-auto" role="img" aria-label="Gráfica radar de competencias de {employeeName}">
+	<canvas bind:this={canvas} class="w-full h-full max-h-[400px]"></canvas>
+</div>
 
-	{#if hasSelf || hasRh}
-		<div class="flex justify-center gap-6 mt-4 text-sm" aria-label="Leyenda del radar">
-			{#if hasSelf}
-				<span class="flex items-center gap-2">
-					<span
-						class="w-3 h-3 rounded-full"
-						style="background-color: {colors.self}"
-					></span>
-					Autoevaluación
-				</span>
-			{/if}
-			{#if hasRh}
-				<span class="flex items-center gap-2">
-					<span
-						class="w-3 h-3 rounded-full"
-						style="background-color: {colors.rh}"
-					></span>
-					RH
-				</span>
-			{/if}
-		</div>
-	{/if}
+{#if hasSelf || hasRh || hasAcceptance}
+	<div class="flex justify-center gap-6 mt-4 text-sm" aria-label="Leyenda del radar">
+		{#if hasSelf}
+			<span class="flex items-center gap-2">
+				<span
+					class="w-3 h-3 rounded-full"
+					style="background-color: {colors.self}"
+				></span>
+				Autoevaluación
+			</span>
+		{/if}
+		{#if hasRh}
+			<span class="flex items-center gap-2">
+				<span
+					class="w-3 h-3 rounded-full"
+					style="background-color: {colors.rh}"
+				></span>
+				RH
+			</span>
+		{/if}
+		{#if hasAcceptance}
+			<span class="flex items-center gap-2">
+				<span class="w-3 h-3 rounded-full" style="background-color: rgb(99, 102, 241)"></span>
+				Nivel esperado
+			</span>
+		{/if}
+	</div>
 {/if}

@@ -19,6 +19,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func ptr[T any](v T) *T { return &v }
+
 // ---------- Mock Repositories ----------
 
 type mockEvalRepo struct {
@@ -110,7 +112,7 @@ func (m *mockEvalRepo) RefreshSummaryView(ctx context.Context) error {
 	return m.refreshErr
 }
 
-func (m *mockEvalRepo) GetCompetencyRatingsByEmployee(ctx context.Context, employeeID, cycleID uuid.UUID) ([]repo.EmployeeCompetencyRatingRow, error) {
+func (m *mockEvalRepo) GetCompetencyRatingsByEmployee(ctx context.Context, employeeID, cycleID, profileID uuid.UUID) ([]repo.EmployeeCompetencyRatingRow, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	// ponytail: return empty slice by default; tests that need specific data must set up via sqlmock
@@ -710,7 +712,7 @@ func TestNineBoxService_UpsertEntry_QuadrantComputed(t *testing.T) {
 		EvaluateeID:      evaluateeID,
 		PerformanceScore: 5,
 		PotentialScore:   5,
-		Comments:         "Solid performer",
+		Comments:         ptr("Solid performer"),
 	}
 
 	resp, err := nineBoxSvc.UpsertEntry(context.Background(), matrixID, req)
@@ -1068,7 +1070,7 @@ func (m *mockHasMoreEvalRepo) GetDetail(ctx context.Context, id uuid.UUID) (*rep
 func (m *mockHasMoreEvalRepo) ListByCycle(ctx context.Context, cycleID uuid.UUID, state string, cursor string, limit int) ([]*repo.EvaluationRow, string, error) {
 	return nil, "", nil
 }
-func (m *mockHasMoreEvalRepo) GetCompetencyRatingsByEmployee(ctx context.Context, employeeID, cycleID uuid.UUID) ([]repo.EmployeeCompetencyRatingRow, error) {
+func (m *mockHasMoreEvalRepo) GetCompetencyRatingsByEmployee(ctx context.Context, employeeID, cycleID, profileID uuid.UUID) ([]repo.EmployeeCompetencyRatingRow, error) {
 	return nil, nil
 }
 func (m *mockHasMoreEvalRepo) FinalizeEval(ctx context.Context, tx *sql.Tx, evalID uuid.UUID) error {

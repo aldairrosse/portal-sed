@@ -708,6 +708,10 @@ components:
           format: uuid
         isActive:
           type: boolean
+        profileName:
+          type: string
+        jobTitle:
+          type: string
 
     EmployeeDetail:
       allOf:

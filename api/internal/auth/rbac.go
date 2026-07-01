@@ -60,7 +60,7 @@ var RolePermissions = map[Role][]Permission{
 		PermCycleRead, PermOrgRead,
 	},
 	RoleJefe: {
-		PermGoalRead,
+		PermGoalCreate, PermGoalRead, PermGoalUpdate, PermGoalDelete, PermGoalProgress,
 		PermCompetencyRead,
 		PermEval9x9, PermEvalRead,
 		PermCycleRead, PermOrgRead,
@@ -72,25 +72,25 @@ var RolePermissions = map[Role][]Permission{
 		PermCycleRead, PermOrgRead,
 	},
 	RoleGerenteTienda: {
-		PermGoalRead,
+		PermGoalCreate, PermGoalRead, PermGoalUpdate, PermGoalDelete, PermGoalProgress,
 		PermCompetencyRead,
 		PermEval9x9, PermEvalRead,
 		PermCycleRead, PermOrgRead,
 	},
 	RoleDivisional: {
-		PermGoalRead,
+		PermGoalCreate, PermGoalRead, PermGoalUpdate, PermGoalDelete, PermGoalProgress,
 		PermCompetencyRead,
 		PermEval9x9, PermEvalRead,
 		PermCycleRead, PermOrgRead,
 	},
 	RoleRegional: {
-		PermGoalRead,
+		PermGoalCreate, PermGoalRead, PermGoalUpdate, PermGoalDelete, PermGoalProgress,
 		PermCompetencyRead,
 		PermEval9x9, PermEvalRead,
 		PermCycleRead, PermOrgRead,
 	},
 	RoleDirector: {
-		PermGoalRead,
+		PermGoalCreate, PermGoalRead, PermGoalUpdate, PermGoalDelete, PermGoalProgress,
 		PermCompetencyRead,
 		PermEval9x9, PermEvalRead,
 		PermCycleRead, PermCycleTransition,

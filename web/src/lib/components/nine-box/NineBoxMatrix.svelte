@@ -3,6 +3,7 @@
 	import type { NineBoxEntry, NineBoxTier, NineBoxQuadrantDef } from '$lib/types/nine-box';
 	import PageSkeleton from '$lib/components/ui/PageSkeleton.svelte';
 	import ErrorState from '$lib/components/ui/ErrorState.svelte';
+    import { SvelteMap } from 'svelte/reactivity';
 
 	interface Props {
 		entries: NineBoxEntry[];
@@ -26,7 +27,7 @@
 	}
 
 	const entriesByQuadrant = $derived.by(() => {
-		const map = new Map<number, NineBoxEntry[]>();
+		const map = new SvelteMap<number, NineBoxEntry[]>();
 		for (const entry of entries) {
 			const q = entry.quadrant;
 			const list = map.get(q) ?? [];
@@ -154,18 +155,14 @@
 
 	<div
 		role="grid"
-		aria-label="Matriz 9-Box 3×3"
+		aria-label="Matriz 9-Box 3x3"
 		aria-activedescendant={activeDescendantId}
 		class="grid gap-1 w-full max-w-[36rem] mx-auto select-none outline-none"
 		style="grid-template-columns: 2.5rem 1.5rem repeat(3, 1fr);"
 		tabindex="0"
 		onkeydown={handleKeydown}
-		onfocus={() => announce(`Matriz 3×3 cargada. Use flechas para navegar. Celda activa: ${PERF_LABELS[activePerf]} desempeño, ${POT_LABELS[activePot]} potencial.`)}
+		onfocus={() => announce(`Matriz 3x3 cargada. Use flechas para navegar. Celda activa: ${PERF_LABELS[activePerf]} desempeño, ${POT_LABELS[activePot]} potencial.`)}
 	>
-		<!-- Row 0: Corner placeholders -->
-		<div role="presentation" class="min-h-[1.5rem]"></div>
-		<div role="presentation" class="min-h-[1.5rem]"></div>
-
 		<!-- Data rows: Potential 3 → 1 (Alto → Bajo) -->
 		{#each potTiers as pot (pot)}
 			{@const potLabel = POT_LABELS[pot]}
@@ -240,23 +237,23 @@
 		<!-- Bottom: Performance axis labels -->
 		<div role="presentation" class="min-h-[1.5rem]"></div>
 		<div role="presentation" class="min-h-[1.5rem]"></div>
-		<div role="columnheader" class="text-center text-[11px] font-medium text-base-content/50 pt-2">
+		<div role="columnheader" class="text-center text-[11px] font-medium text-base-content/50 flex items-center justify-center">
 			Bajo
 		</div>
-		<div role="columnheader" class="text-center text-[11px] font-medium text-base-content/50 pt-2">
+		<div role="columnheader" class="text-center text-[11px] font-medium text-base-content/50 flex items-center justify-center">
 			Medio
 		</div>
-		<div role="columnheader" class="text-center text-[11px] font-medium text-base-content/50 pt-2">
+		<div role="columnheader" class="text-center text-[11px] font-medium text-base-content/50 flex items-center justify-center">
 			Alto
 		</div>
-
+		
 		<!-- Bottom: Performance axis title -->
-		<div role="presentation" class="min-h-[1.5rem]"></div>
-		<div role="presentation" class="min-h-[1.5rem]"></div>
-		<div role="presentation" class="text-center text-[10px] font-semibold text-base-content/40 pt-1">
+		<div role="presentation" class="min-h-[2.5rem]"></div>
+		<div role="presentation" class="min-h-[2.5rem]"></div>
+		<div role="presentation" class="min-h-[2.5rem]"></div>
+		<div role="presentation" class="text-center text-[10px] font-semibold text-base-content/40 pt-1 flex items-center justify-center">
 			Desempeño
 		</div>
-		<div role="presentation" class="min-h-[1.5rem]"></div>
-		<div role="presentation" class="min-h-[1.5rem]"></div>
+		<div role="presentation" class="min-h-[2.5rem]"></div>
 	</div>
 {/if}

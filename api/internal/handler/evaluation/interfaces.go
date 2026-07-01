@@ -12,12 +12,15 @@ type EvalService interface {
 	ListEvaluations(ctx context.Context, cycleID uuid.UUID, stateFilter string, cursor string, limit int) (*dto.EvaluationListResponse, error)
 	GetEvaluation(ctx context.Context, id uuid.UUID) (*dto.EvaluationDetailResponse, error)
 	GetEmployeeCompetencyRatings(ctx context.Context, employeeID, cycleID uuid.UUID) (*dto.EmployeeCompetencyRatingsResponse, error)
+	ResolveActiveCycleID(ctx context.Context, employeeID uuid.UUID) (uuid.UUID, error)
 	SubmitSelfEvaluation(ctx context.Context, evaluationID uuid.UUID, req dto.SelfEvaluationRequest, idempotencyKey string) (*dto.EvaluationDetailResponse, error)
 	UpdateSelfEvaluation(ctx context.Context, evaluationID uuid.UUID, req dto.SelfEvaluationRequest, ifMatch int) (*dto.EvaluationDetailResponse, error)
 	SubmitRHEvaluation(ctx context.Context, evaluationID uuid.UUID, req dto.RHEvaluationRequest, idempotencyKey string) (*dto.EvaluationDetailResponse, error)
 	UpdateRHEvaluation(ctx context.Context, evaluationID uuid.UUID, req dto.RHEvaluationRequest, ifMatch int) (*dto.EvaluationDetailResponse, error)
 	FinalizeEvaluation(ctx context.Context, evaluationID uuid.UUID, req dto.FinalizeEvaluationRequest) (*dto.EvaluationDetailResponse, error)
 	GetCompetencyResults(ctx context.Context, cycleID uuid.UUID, query string, scope string, currentUserID uuid.UUID, offset, limit int) (*dto.CompetencyResultsResponse, error)
+	UpdateGoalState(ctx context.Context, evaluationID uuid.UUID, input dto.GoalStateUpdateInput) (*dto.EvaluationDetailResponse, error)
+	UpdateGoalComments(ctx context.Context, evaluationID uuid.UUID, input dto.GoalCommentUpdateInput) (*dto.EvaluationDetailResponse, error)
 }
 
 // BoxService defines the 9×9 matrix operations used by the handler.

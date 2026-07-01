@@ -18,8 +18,6 @@
 	import { type EvaluationProfile } from '$lib/types/evaluation';
 	import type { NineBoxEntry, NineBoxTier } from '$lib/types/nine-box';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
-	import PageSkeleton from '$lib/components/ui/PageSkeleton.svelte';
-	import ErrorState from '$lib/components/ui/ErrorState.svelte';
 	import NineBoxMatrix from '$lib/components/nine-box/NineBoxMatrix.svelte';
 	import NineBoxEntryCard from '$lib/components/nine-box/NineBoxEntryCard.svelte';
 	import NineBoxCellConfig from '$lib/components/nine-box/NineBoxCellConfig.svelte';
@@ -115,7 +113,6 @@
 	const quadrantDefs = $derived(getQuadrantDefs());
 
 	// Prereq state: cycles and phases loaded (even if empty — show matrix anyway)
-	const prereqReady = $derived(true); // ponytail: always ready — show empty grid if no data
 	const prereqError = $derived(cycleError());
 
 	const phaseLabel = $derived(
@@ -167,13 +164,8 @@
 				Desempeño vs Potencial
 			</p>
 		</div>
-		{#if isAuthorized}
-			<span class="badge badge-ghost badge-sm">{matrixEntries.length} empleados</span>
-		{/if}
-	</div>
-
-	<!-- Phase selector -->
-	<div role="tablist" class="tabs tabs-lift gap-0">
+		<!-- Phase selector -->
+	<div role="tablist" class="tabs tabs-box gap-0">
 		{#each NINEBOX_PHASES as phase (phase.id)}
 			<button
 				role="tab"
@@ -185,6 +177,7 @@
 			</button>
 		{/each}
 	</div>
+	</div>
 
 	{#if !isAuthorized}
 		<EmptyState
@@ -194,6 +187,8 @@
 			actionHref="/"
 		/>
 	{:else}
+		<span class="badge badge-ghost badge-sm mx-auto">{matrixEntries.length} empleados</span>
+
 		<!-- Warning banners (non-blocking) -->
 		{#if prereqError}
 			<div class="alert alert-warning">
@@ -219,7 +214,7 @@
 
 		{#if matrixEntries.length === 0 && !loading}
 			<p class="text-sm text-base-content/50 text-center mt-2">
-				No hay empleados en tu scope para mostrar en la matriz.
+				No hay empleados para mostrar en la matriz.
 			</p>
 		{/if}
 

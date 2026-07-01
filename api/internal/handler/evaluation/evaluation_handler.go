@@ -160,19 +160,22 @@ func (h *EvaluationHandler) GetEmployeeCompetencies(w http.ResponseWriter, r *ht
 		return
 	}
 
+	var cycleID uuid.UUID
 	cycleIDStr := r.URL.Query().Get("cycle_id")
-	if cycleIDStr == "" {
-		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
-			"cycle_id is required", nil).
-			WithDetails("code: MISSING_PARAM"))
-		return
-	}
-
-	cycleID, err := uuid.Parse(cycleIDStr)
-	if err != nil {
-		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
-			"cycle_id must be a valid UUID v4", err))
-		return
+	if cycleIDStr != "" {
+		cycleID, err = uuid.Parse(cycleIDStr)
+		if err != nil {
+			writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
+				"cycle_id must be a valid UUID v4", err))
+			return
+		}
+	} else {
+		cycleID, err = h.evalSvc.ResolveActiveCycleID(r.Context(), employeeID)
+		if err != nil {
+			writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
+				"no active cycle found for this employee", err))
+			return
+		}
 	}
 
 	result, err := h.evalSvc.GetEmployeeCompetencyRatings(r.Context(), employeeID, cycleID)
@@ -329,6 +332,82 @@ func (h *EvaluationHandler) UpdateRHEvaluation(w http.ResponseWriter, r *http.Re
 	}
 
 	result, err := h.evalSvc.UpdateRHEvaluation(r.Context(), id, req, ifMatch)
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, result)
+}
+
+// UpdateGoalState handles PUT /api/v1/evaluations/{id}/goal-state.
+// TODO(auth:C7): Restrict to evaluation owner, rh roles.
+func (h *EvaluationHandler) UpdateGoalState(w http.ResponseWriter, r *http.Request) {
+	id, err := uuid.Parse(chi.URLParam(r, "id"))
+	if err != nil {
+		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
+			"evaluation id must be a valid UUID v4", err))
+		return
+	}
+
+	var req dto.GoalStateUpdateInput
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
+			"invalid JSON body", err))
+		return
+	}
+
+	if req.GoalID == uuid.Nil {
+		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
+			"goalId is required", nil))
+		return
+	}
+
+	if req.FinalProgress == nil && req.SelfAssessment == nil && req.RhAssessment == nil {
+		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
+			"at least one of finalProgress, selfAssessment, rhAssessment is required", nil))
+		return
+	}
+
+	result, err := h.evalSvc.UpdateGoalState(r.Context(), id, req)
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, result)
+}
+
+// UpdateGoalComments handles PUT /api/v1/evaluations/{id}/goal-comments.
+// TODO(auth:C7): Restrict to manager, rh roles.
+func (h *EvaluationHandler) UpdateGoalComments(w http.ResponseWriter, r *http.Request) {
+	id, err := uuid.Parse(chi.URLParam(r, "id"))
+	if err != nil {
+		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
+			"evaluation id must be a valid UUID v4", err))
+		return
+	}
+
+	var req dto.GoalCommentUpdateInput
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
+			"invalid JSON body", err))
+		return
+	}
+
+	if req.GoalID == uuid.Nil {
+		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
+			"goalId is required", nil))
+		return
+	}
+
+	if req.Role != "manager" {
+		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
+			"role must be 'manager'", nil))
+		return
+	}
+
+	result, err := h.evalSvc.UpdateGoalComments(r.Context(), id, req)
 	if err != nil {
 		writeError(w, err)
 		return

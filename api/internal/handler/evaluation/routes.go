@@ -21,6 +21,8 @@ import (
 //	PUT    /api/v1/evaluations/{id}/self-evaluation → RequireAuth → RateLimit(write) → OptimisticLock
 //	POST   /api/v1/evaluations/{id}/rh-evaluation   → RequireAuth → RequirePermission(rh) → RateLimit(write) → Idempotency
 //	PUT    /api/v1/evaluations/{id}/rh-evaluation   → RequireAuth → RequirePermission(rh) → RateLimit(write) → OptimisticLock
+//	PUT    /api/v1/evaluations/{id}/goal-state      → RequireAuth → RateLimit(write) → OptimisticLock
+//	PUT    /api/v1/evaluations/{id}/goal-comments   → RequireAuth → RateLimit(write) → OptimisticLock
 //	POST   /api/v1/evaluations/{id}/finalize        → RequireAuth → RequirePermission(rh) → RateLimit(write)
 //	GET    /api/v1/evaluations/summary              → RequireAuth → RateLimit(read) → ReadReplica
 //	GET    /api/v1/nine-box/matrices                → RequireAuth → RateLimit(read) → ReadReplica
@@ -119,6 +121,20 @@ func RegisterRoutes(r chi.Router, handler *EvaluationHandler, authSvc *authsvc.A
 			r.Use(middleware.RateLimit(writeRateLimit))
 			r.Use(middleware.OptimisticLock)
 			r.Put("/evaluations/{id}/rh-evaluation", handler.UpdateRHEvaluation)
+		})
+
+		// PUT /api/v1/evaluations/{id}/goal-state
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.RateLimit(writeRateLimit))
+			r.Use(middleware.OptimisticLock)
+			r.Put("/evaluations/{id}/goal-state", handler.UpdateGoalState)
+		})
+
+		// PUT /api/v1/evaluations/{id}/goal-comments
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.RateLimit(writeRateLimit))
+			r.Use(middleware.OptimisticLock)
+			r.Put("/evaluations/{id}/goal-comments", handler.UpdateGoalComments)
 		})
 
 		// POST /api/v1/evaluations/{id}/finalize

@@ -252,8 +252,12 @@ func (s *NineBoxService) UpsertEntry(ctx context.Context, matrixID uuid.UUID, re
 		return nil, err
 	}
 
+	comments := ""
+	if req.Comments != nil {
+		comments = *req.Comments
+	}
 	entry, err := s.nineBoxRepo.UpsertEntry(ctx, tx, matrixID, req.EvaluateeID,
-		req.PerformanceScore, req.PotentialScore, q, req.Comments)
+		req.PerformanceScore, req.PotentialScore, q, comments)
 	if err != nil {
 		return nil, err
 	}
@@ -288,8 +292,12 @@ func (s *NineBoxService) UpdateEntry(ctx context.Context, entryID uuid.UUID, req
 		}
 	}()
 
+	comments := ""
+	if req.Comments != nil {
+		comments = *req.Comments
+	}
 	entry, err := s.nineBoxRepo.UpdateEntry(ctx, tx, entryID,
-		req.PerformanceScore, req.PotentialScore, q, req.Comments, ifMatch)
+		req.PerformanceScore, req.PotentialScore, q, comments, ifMatch)
 	if err != nil {
 		return nil, err
 	}
@@ -327,9 +335,13 @@ func (s *NineBoxService) BatchSubmitEntries(ctx context.Context, matrixID uuid.U
 	items := make([]repo.EntryUpsert, len(req.Entries))
 	for i, e := range req.Entries {
 		q := quadrant.ComputeQuadrant(e.PerformanceScore, e.PotentialScore)
+		c := ""
+		if e.Comments != nil {
+			c = *e.Comments
+		}
 		items[i] = repo.EntryUpsert{
 			EvaluateeID: e.EvaluateeID, PerformanceTier: e.PerformanceScore,
-			PotentialTier: e.PotentialScore, Quadrant: q, Comments: e.Comments,
+			PotentialTier: e.PotentialScore, Quadrant: q, Comments: c,
 		}
 	}
 

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { BarChart3, ChevronLeft, ChevronRight } from '@lucide/svelte';
+	import { ChartColumn, ChevronLeft, ChevronRight } from '@lucide/svelte';
 	import PageSkeleton from '$lib/components/ui/PageSkeleton.svelte';
 	import ErrorState from '$lib/components/ui/ErrorState.svelte';
 	import { titleCase } from '$lib/utils/text';
@@ -13,13 +13,11 @@
 		hasPrevItems,
 		getCurrentPage,
 		getTotalCount,
-		getScope,
 		init,
 		load,
 		search,
 		next,
 		prev,
-		setScope,
 	} from '$lib/stores/competencyResultsStore.svelte';
 
 	const items = $derived(getItems());
@@ -29,7 +27,6 @@
 	const hasPrev = $derived(hasPrevItems());
 	const currentPage = $derived(getCurrentPage());
 	const totalCount = $derived(getTotalCount());
-	const scopeFilter = $derived(getScope());
 
 	let inputQuery = $state('');
 
@@ -45,11 +42,6 @@
 		const val = (e.target as HTMLInputElement).value;
 		inputQuery = val;
 		search(val);
-	}
-
-	function handleScopeToggle(e: Event) {
-		const checked = (e.target as HTMLInputElement).checked;
-		setScope(checked ? 'team' : 'all');
 	}
 
 	function statusBadge(status: string): { label: string; class: string } {
@@ -74,7 +66,7 @@
 	<!-- Header -->
 	<div>
 		<h1 class="text-2xl font-bold text-base-content flex items-center gap-2">
-			<BarChart3 class="w-6 h-6" />
+			<ChartColumn class="w-6 h-6" />
 			Resultados de competencias
 		</h1>
 		<p class="text-sm text-base-content/50 mt-1">
@@ -93,18 +85,6 @@
 				oninput={handleSearch}
 				aria-label="Buscar empleado"
 			/>
-			<div class="tooltip" data-tip="Mostrar solo mi equipo">
-				<label class="flex items-center gap-1.5 cursor-pointer">
-					<input
-						type="checkbox"
-						class="toggle toggle-sm"
-						checked={scopeFilter === 'team'}
-						onchange={handleScopeToggle}
-						aria-label="Filtrar por mi equipo"
-					/>
-					<span class="text-xs text-base-content/50 whitespace-nowrap">Mi equipo</span>
-				</label>
-			</div>
 		</div>
 
 		{#if totalCount > 0 || (inputQuery.trim() && items.length > 0)}

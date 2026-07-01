@@ -123,8 +123,8 @@ func RequirePermission(perm auth.Permission) func(http.Handler) http.Handler {
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusForbidden)
 				de := pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
-					"insufficient permissions", nil).
-					WithDetails("required permission: " + string(perm))
+					"permisos insuficientes", nil).
+					WithDetails("Tu rol no tiene el permiso requerido: " + string(perm))
 				ae := pkgerrors.NewAPIErrorResponse(de, "")
 				_, _ = w.Write(ae.MustMarshalJSON())
 				return
@@ -155,7 +155,8 @@ func RequireAnyPermission(perms ...auth.Permission) func(http.Handler) http.Hand
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusForbidden)
 				de := pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
-					"insufficient permissions", nil)
+					"permisos insuficientes", nil).
+					WithDetails("Tu rol no tiene ninguno de los permisos requeridos para esta accion")
 				ae := pkgerrors.NewAPIErrorResponse(de, "")
 				_, _ = w.Write(ae.MustMarshalJSON())
 				return

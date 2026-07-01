@@ -52,7 +52,8 @@
 						competencyId: c.id,
 						competencyName: c.name,
 						selfRating: r?.selfRating ?? null,
-						rhRating: r?.rhRating ?? null
+						rhRating: r?.rhRating ?? null,
+						acceptanceLevel: r?.acceptanceLevel ?? null
 					};
 				});
 				return { pillarId: pillar.id, pillarName: pillar.name, competencies };

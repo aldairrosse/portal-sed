@@ -139,6 +139,8 @@ type EmployeeDetail struct {
 	OrgNodeID      string `json:"orgNodeId"`
 	ManagerID      string `json:"managerId,omitempty"`
 	ProfileID      string `json:"profileId"`
+	ProfileName    string `json:"profileName,omitempty"`
+	JobTitle       string `json:"jobTitle,omitempty"`
 	IsActive       bool   `json:"isActive"`
 	OrgNode        *struct {
 		ID   string `json:"id"`

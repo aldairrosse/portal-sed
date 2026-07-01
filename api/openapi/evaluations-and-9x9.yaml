@@ -189,7 +189,7 @@ paths:
           schema: { type: string, format: uuid }
         - name: cycle_id
           in: query
-          required: true
+          required: false
           schema: { type: string, format: uuid }
       responses:
         "200":

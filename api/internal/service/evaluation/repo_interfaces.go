@@ -19,7 +19,7 @@ type EvaluationRepo interface {
 	SubmitEval(ctx context.Context, tx *sql.Tx, evalID uuid.UUID, comps []repo.CompetencyUpsert, goals []repo.GoalCommentUpsert, newState string, setSelfCompleted, setRHCompleted bool) error
 	GetDetail(ctx context.Context, id uuid.UUID) (*repo.EvaluationRow, []*internal.EvaluationCompetency, []*internal.EvaluationGoal, error)
 	ListByCycle(ctx context.Context, cycleID uuid.UUID, state string, cursor string, limit int) ([]*repo.EvaluationRow, string, error)
-	GetCompetencyRatingsByEmployee(ctx context.Context, employeeID, cycleID uuid.UUID) ([]repo.EmployeeCompetencyRatingRow, error)
+	GetCompetencyRatingsByEmployee(ctx context.Context, employeeID, cycleID, profileID uuid.UUID) ([]repo.EmployeeCompetencyRatingRow, error)
 	FinalizeEval(ctx context.Context, tx *sql.Tx, evalID uuid.UUID) error
 	RefreshSummaryView(ctx context.Context) error
 	GetSummaryByCycle(ctx context.Context, cycleID uuid.UUID) (map[string]int64, error)
@@ -39,6 +39,8 @@ type GoalRatingRepo interface {
 	UpdateComments(ctx context.Context, tx *sql.Tx, evalID uuid.UUID, goals []repo.GoalCommentUpsert) error
 	GetByEvaluation(ctx context.Context, evalID uuid.UUID) ([]*internal.EvaluationGoal, error)
 	VerifyGoalsExist(ctx context.Context, evalID uuid.UUID, goalIDs []uuid.UUID) error
+	UpsertGoalState(ctx context.Context, tx *sql.Tx, evalID uuid.UUID, input repo.GoalStateUpsert) error
+	UpsertGoalComment(ctx context.Context, tx *sql.Tx, evalID uuid.UUID, input repo.GoalCommentUpsert) error
 }
 
 // NineBoxRepo defines the operations required for 9×9 matrices and entries.

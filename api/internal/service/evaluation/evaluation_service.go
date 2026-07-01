@@ -22,6 +22,7 @@ import (
 type CyclePhaseChecker interface {
 	GetPhase(ctx context.Context, cycleID uuid.UUID) (string, error)
 	GetSelfEvalDeadline(ctx context.Context, cycleID uuid.UUID) (*time.Time, error)
+	GetActiveCycleID(ctx context.Context, orgID uuid.UUID) (uuid.UUID, error)
 }
 
 // IdempotencyCache is an interface for idempotency key storage.
@@ -427,10 +428,115 @@ func (s *EvaluationService) GetEvaluation(ctx context.Context, id uuid.UUID) (*d
 	return resp, nil
 }
 
+// UpdateGoalState updates per-goal final_progress, self_assessment and rh_assessment.
+// Only fields provided in the input are modified; the rest are left untouched.
+func (s *EvaluationService) UpdateGoalState(ctx context.Context, evaluationID uuid.UUID, input dto.GoalStateUpdateInput) (*dto.EvaluationDetailResponse, error) {
+	row, err := s.evalRepo.GetByID(ctx, evaluationID)
+	if err != nil {
+		return nil, err
+	}
+	if err := s.validatePhase(ctx, row.CycleID); err != nil {
+		return nil, err
+	}
+	if row.State == state.StateCompleted.String() {
+		return nil, repo.ErrEvaluationFinalized
+	}
+
+	tx, err := s.evalRepo.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if tx != nil {
+			_ = tx.Rollback()
+		}
+	}()
+
+	if _, err := s.evalRepo.LockEvalForUpdate(ctx, tx, evaluationID); err != nil {
+		return nil, err
+	}
+
+	if err := s.goalRepo.UpsertGoalState(ctx, tx, evaluationID, repo.GoalStateUpsert{
+		GoalID:         input.GoalID,
+		FinalProgress:  input.FinalProgress,
+		SelfAssessment: input.SelfAssessment,
+		RhAssessment:   input.RhAssessment,
+	}); err != nil {
+		return nil, err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+	tx = nil
+
+	return s.GetEvaluation(ctx, evaluationID)
+}
+
+// UpdateGoalComments updates per-goal manager_comment.
+func (s *EvaluationService) UpdateGoalComments(ctx context.Context, evaluationID uuid.UUID, input dto.GoalCommentUpdateInput) (*dto.EvaluationDetailResponse, error) {
+	row, err := s.evalRepo.GetByID(ctx, evaluationID)
+	if err != nil {
+		return nil, err
+	}
+	if err := s.validatePhase(ctx, row.CycleID); err != nil {
+		return nil, err
+	}
+	if row.State == state.StateCompleted.String() {
+		return nil, repo.ErrEvaluationFinalized
+	}
+
+	tx, err := s.evalRepo.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if tx != nil {
+			_ = tx.Rollback()
+		}
+	}()
+
+	if _, err := s.evalRepo.LockEvalForUpdate(ctx, tx, evaluationID); err != nil {
+		return nil, err
+	}
+
+	if err := s.goalRepo.UpsertGoalComment(ctx, tx, evaluationID, repo.GoalCommentUpsert{
+		GoalID:  input.GoalID,
+		Comment: input.Comment,
+	}); err != nil {
+		return nil, err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+	tx = nil
+
+	return s.GetEvaluation(ctx, evaluationID)
+}
+
+// ResolveActiveCycleID resolves the active (unfinished) cycle for an employee's organization.
+func (s *EvaluationService) ResolveActiveCycleID(ctx context.Context, employeeID uuid.UUID) (uuid.UUID, error) {
+	emp, err := s.empRepo.GetByID(ctx, employeeID)
+	if err != nil {
+		return uuid.Nil, err
+	}
+	orgNode, err := s.nodeRepo.GetByID(ctx, emp.OrgNodeID)
+	if err != nil {
+		return uuid.Nil, err
+	}
+	return s.cycleCheck.GetActiveCycleID(ctx, orgNode.OrganizationID)
+}
+
 // GetEmployeeCompetencyRatings returns ALL competencies for an employee's profile in a cycle,
 // with self/rh ratings if evaluations exist (or null if not yet evaluated).
 func (s *EvaluationService) GetEmployeeCompetencyRatings(ctx context.Context, employeeID, cycleID uuid.UUID) (*dto.EmployeeCompetencyRatingsResponse, error) {
-	rows, err := s.evalRepo.GetCompetencyRatingsByEmployee(ctx, employeeID, cycleID)
+	emp, err := s.empRepo.GetByID(ctx, employeeID)
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := s.evalRepo.GetCompetencyRatingsByEmployee(ctx, employeeID, cycleID, emp.ProfileID)
 	if err != nil {
 		return nil, err
 	}
@@ -438,10 +544,11 @@ func (s *EvaluationService) GetEmployeeCompetencyRatings(ctx context.Context, em
 	ratings := make([]dto.EmployeeCompetencyRatingDTO, len(rows))
 	for i, r := range rows {
 		ratings[i] = dto.EmployeeCompetencyRatingDTO{
-			CompetencyID: r.CompetencyID,
-			SelfRating:   r.SelfRating,
-			RhRating:     r.RhRating,
-			Comments:     r.Comments,
+			CompetencyID:    r.CompetencyID,
+			SelfRating:      r.SelfRating,
+			RhRating:        r.RhRating,
+			Comments:        r.Comments,
+			AcceptanceLevel: r.AcceptanceLevel,
 		}
 	}
 

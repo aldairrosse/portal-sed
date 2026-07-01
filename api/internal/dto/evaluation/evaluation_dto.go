@@ -24,6 +24,22 @@ type GoalCommentInput struct {
 	Comment string    `json:"comment,omitempty"`
 }
 
+// GoalStateUpdateInput is the request body for PUT /evaluations/{id}/goal-state.
+// All fields except GoalID are optional; only the provided ones are updated.
+type GoalStateUpdateInput struct {
+	GoalID         uuid.UUID `json:"goalId" validate:"required"`
+	FinalProgress  *float64  `json:"finalProgress,omitempty"`
+	SelfAssessment *string   `json:"selfAssessment,omitempty"`
+	RhAssessment   *string   `json:"rhAssessment,omitempty"`
+}
+
+// GoalCommentUpdateInput is the request body for PUT /evaluations/{id}/goal-comments.
+type GoalCommentUpdateInput struct {
+	GoalID  uuid.UUID `json:"goalId" validate:"required"`
+	Role    string    `json:"role" validate:"required,oneof=manager"`
+	Comment string    `json:"comment,omitempty"`
+}
+
 // SelfEvaluationRequest is the request body for submitting a self-evaluation.
 type SelfEvaluationRequest struct {
 	Competencies []CompetencyRatingInput `json:"competencies" validate:"required,min=1,dive"`
@@ -122,10 +138,11 @@ type PaginationMeta struct {
 
 // EmployeeCompetencyRatingDTO is a single competency rating in the employee response.
 type EmployeeCompetencyRatingDTO struct {
-	CompetencyID uuid.UUID `json:"competencyId"`
-	SelfRating   *int      `json:"selfRating,omitempty"`
-	RhRating     *int      `json:"rhRating,omitempty"`
-	Comments     string    `json:"comments,omitempty"`
+	CompetencyID    uuid.UUID `json:"competencyId"`
+	SelfRating      *int      `json:"selfRating,omitempty"`
+	RhRating        *int      `json:"rhRating,omitempty"`
+	Comments        *string   `json:"comments,omitempty"`
+	AcceptanceLevel *int      `json:"acceptanceLevel,omitempty"`
 }
 
 // EmployeeCompetencyRatingsResponse is the response for GET /evaluations/employee/{employeeId}.
@@ -168,7 +185,7 @@ type NineBoxEntryInput struct {
 	EvaluateeID      uuid.UUID `json:"evaluateeId" validate:"required"`
 	PerformanceScore int       `json:"performanceScore" validate:"min=1,max=9"`
 	PotentialScore   int       `json:"potentialScore" validate:"min=1,max=9"`
-	Comments         string    `json:"comments,omitempty"`
+	Comments        *string   `json:"comments,omitempty"`
 }
 
 // NineBoxBatchRequest is the request DTO for batch submission.
