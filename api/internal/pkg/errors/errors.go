@@ -41,6 +41,7 @@ const (
 	KpiLinkLimitExceeded    DomainCode = "KPI_LINK_LIMIT_EXCEEDED"
 	InvalidBaselineValue    DomainCode = "INVALID_BASELINE_VALUE"
 	InvalidDirection        DomainCode = "INVALID_DIRECTION"
+	InvalidQuadrant         DomainCode = "INVALID_QUADRANT"
 
 	// Org-hierarchy domain error codes
 	TreeNotFound         DomainCode = "TREE_NOT_FOUND"
@@ -116,6 +117,7 @@ var (
 	ErrKpiLinkLimitExceeded    = &DomainError{Code: KpiLinkLimitExceeded, Message: "A goal cannot have more than 5 linked KPIs."}
 	ErrInvalidBaselineValue = &DomainError{Code: InvalidBaselineValue, Message: "Baseline value must be greater than target value for descendente goals."}
 	ErrInvalidDirection     = &DomainError{Code: InvalidDirection, Message: "Direction must be 'ascendente' or 'descendente'."}
+	ErrInvalidQuadrant      = &DomainError{Code: InvalidQuadrant, Message: "Quadrant must be an integer between 1 and 9."}
 
 	// Forbidden
 	ErrForbidden = &DomainError{Code: "FORBIDDEN", Message: "You do not have permission to access this resource."}
@@ -157,7 +159,7 @@ func HTTPStatus(err error) int {
 		return 429
 	case MissingIfMatch:
 		return 428
-	case InvalidRequest, InvalidIfMatch, InvalidWeightRange, InvalidTargetValue, InvalidUnit, BatchSizeExceeded, KpiLinkLimitExceeded, InvalidBaselineValue, InvalidDirection, InvalidParent, InvalidTreeType,
+	case InvalidRequest, InvalidIfMatch, InvalidWeightRange, InvalidTargetValue, InvalidUnit, BatchSizeExceeded, KpiLinkLimitExceeded, InvalidBaselineValue, InvalidDirection, InvalidParent, InvalidTreeType, InvalidQuadrant,
 		"QUADRANT_OUT_OF_RANGE":
 		return 400
 	case RequestTimeout:

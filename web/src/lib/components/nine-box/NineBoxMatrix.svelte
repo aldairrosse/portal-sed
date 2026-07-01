@@ -157,23 +157,14 @@
 		aria-label="Matriz 9-Box 3×3"
 		aria-activedescendant={activeDescendantId}
 		class="grid gap-1 w-full max-w-[36rem] mx-auto select-none outline-none"
-		style="grid-template-columns: 2.5rem 1rem repeat(3, 1fr);"
+		style="grid-template-columns: 2.5rem 1.5rem repeat(3, 1fr);"
 		tabindex="0"
 		onkeydown={handleKeydown}
 		onfocus={() => announce(`Matriz 3×3 cargada. Use flechas para navegar. Celda activa: ${PERF_LABELS[activePerf]} desempeño, ${POT_LABELS[activePot]} potencial.`)}
 	>
-		<!-- Row 0: Corner + Performance axis labels -->
+		<!-- Row 0: Corner placeholders -->
 		<div role="presentation" class="min-h-[1.5rem]"></div>
 		<div role="presentation" class="min-h-[1.5rem]"></div>
-		<div role="columnheader" class="text-center text-[11px] font-medium text-base-content/50 self-end pb-1">
-			Bajo
-		</div>
-		<div role="columnheader" class="text-center text-[11px] font-medium text-base-content/50 self-end pb-1">
-			Medio
-		</div>
-		<div role="columnheader" class="text-center text-[11px] font-medium text-base-content/50 self-end pb-1">
-			Alto
-		</div>
 
 		<!-- Data rows: Potential 3 → 1 (Alto → Bajo) -->
 		{#each potTiers as pot (pot)}
@@ -186,7 +177,7 @@
 					class="row-span-3 flex items-center justify-center"
 				>
 					<span
-						class="text-[10px] font-medium text-base-content/40 whitespace-nowrap"
+						class="text-[10px] font-semibold text-base-content/40 whitespace-nowrap"
 						style="writing-mode: vertical-rl; transform: rotate(180deg);"
 					>
 						Potencial
@@ -194,12 +185,17 @@
 				</div>
 			{/if}
 
-			<!-- Row header: Pot label -->
+			<!-- Row header: Pot label (rotated) -->
 			<div
 				role="rowheader"
-				class="text-right text-[11px] font-medium text-base-content/50 leading-none pr-1 self-center"
+				class="flex items-center justify-center self-center h-full"
 			>
-				{potLabel}
+				<span
+					class="text-[10px] font-semibold text-base-content/40 whitespace-nowrap"
+					style="writing-mode: vertical-rl; transform: rotate(180deg);"
+				>
+					{potLabel}
+				</span>
 			</div>
 
 			<!-- 3 cells per row -->
@@ -241,11 +237,26 @@
 			{/each}
 		{/each}
 
+		<!-- Bottom: Performance axis labels -->
+		<div role="presentation" class="min-h-[1.5rem]"></div>
+		<div role="presentation" class="min-h-[1.5rem]"></div>
+		<div role="columnheader" class="text-center text-[11px] font-medium text-base-content/50 pt-2">
+			Bajo
+		</div>
+		<div role="columnheader" class="text-center text-[11px] font-medium text-base-content/50 pt-2">
+			Medio
+		</div>
+		<div role="columnheader" class="text-center text-[11px] font-medium text-base-content/50 pt-2">
+			Alto
+		</div>
+
 		<!-- Bottom: Performance axis title -->
 		<div role="presentation" class="min-h-[1.5rem]"></div>
 		<div role="presentation" class="min-h-[1.5rem]"></div>
-		<div role="presentation" class="col-span-3 text-center text-[10px] text-base-content/40 pt-1">
+		<div role="presentation" class="text-center text-[10px] font-semibold text-base-content/40 pt-1">
 			Desempeño
 		</div>
+		<div role="presentation" class="min-h-[1.5rem]"></div>
+		<div role="presentation" class="min-h-[1.5rem]"></div>
 	</div>
 {/if}
