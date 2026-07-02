@@ -6,7 +6,7 @@ services:
       POSTGRES_USER: sed
       POSTGRES_PASSWORD: sed
       POSTGRES_DB: sed
-    volumes: [./pgdata:/var/lib/postgresql/data]
+    volumes: [pgdata:/var/lib/postgresql/data]
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U sed"]
       interval: 5s
@@ -43,6 +43,9 @@ services:
     depends_on:
       - web
       - api
+
+volumes:
+  pgdata:
 
 configs:
   proxy_conf:
