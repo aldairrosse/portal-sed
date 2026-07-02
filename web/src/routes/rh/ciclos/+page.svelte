@@ -6,11 +6,12 @@
 		getError,
 		createCycle,
 		advancePhase,
-		hasCycleForYear
+		hasCycleForYear,
+		assignAll
 	} from '$lib/stores/cycleStore.svelte';
 	import { API_PHASE_LABELS } from '$lib/types/cycle';
 	import type { ApiCyclePhase } from '$lib/types/cycle';
-	import { Calendar, Plus, ArrowRight, CheckCircle2, AlertCircle } from '@lucide/svelte';
+	import { Calendar, Plus, ArrowRight, CheckCircle2, AlertCircle, Users } from '@lucide/svelte';
 
 	const currentYear = new Date().getFullYear();
 	const cycles = $derived(getCycles());
@@ -22,6 +23,9 @@
 	let advancingId = $state<string | null>(null);
 	let confirmAdvance = $state<{ id: string; toPhase: ApiCyclePhase } | null>(null);
 	let localError = $state<string | null>(null);
+	let assigningId = $state<string | null>(null);
+	let confirmAssign = $state<string | null>(null);
+	let assignResult = $state<{ assigned: number; skipped: number; total: number } | null>(null);
 
 	$effect(() => {
 		loadCycles();
@@ -80,6 +84,31 @@
 		confirmAdvance = null;
 		if (!ok) {
 			localError = getError();
+		}
+	}
+
+	function requestAssignAll(cycleId: string) {
+		confirmAssign = cycleId;
+		assignResult = null;
+	}
+
+	function cancelAssign() {
+		confirmAssign = null;
+		assignResult = null;
+	}
+
+	async function confirmAssignAction() {
+		if (!confirmAssign) return;
+		assigningId = confirmAssign;
+		localError = null;
+		assignResult = null;
+		const result = await assignAll(confirmAssign);
+		assigningId = null;
+		if (result) {
+			assignResult = result;
+		} else {
+			localError = getError();
+			confirmAssign = null;
 		}
 	}
 </script>
@@ -147,6 +176,20 @@
 
 						{#if !cycle.finished_at && getNextPhase(cycle.current_phase)}
 							<div class="card-actions justify-end mt-2">
+								{#if cycle.current_phase === 'asignacion'}
+									<button
+										class="btn btn-accent btn-sm"
+										onclick={() => requestAssignAll(cycle.id)}
+										disabled={assigningId === cycle.id}
+									>
+										{#if assigningId === cycle.id}
+											<span class="loading loading-spinner loading-xs"></span>
+										{:else}
+											<Users class="w-4 h-4" />
+											Asignar todos
+										{/if}
+									</button>
+								{/if}
 								<button
 									class="btn btn-primary btn-sm"
 									onclick={() => requestAdvance(cycle.id, getNextPhase(cycle.current_phase)!)}
@@ -243,6 +286,58 @@
 		</div>
 		<form method="dialog" class="modal-backdrop">
 			<button onclick={cancelAdvance}>close</button>
+		</form>
+	</dialog>
+{/if}
+
+{#if confirmAssign}
+	<dialog class="modal modal-open">
+		<div class="modal-box">
+			{#if assignResult}
+				<h3 class="font-bold text-lg">Asignación completada</h3>
+				<div class="py-4">
+					<div class="stat">
+						<div class="stat-title">Resultado</div>
+						<div class="stat-value text-primary">{assignResult.assigned}</div>
+						<div class="stat-desc">empleados asignados</div>
+					</div>
+					{#if assignResult.skipped > 0}
+						<div class="stat">
+							<div class="stat-title">Omitidos</div>
+							<div class="stat-value text-warning">{assignResult.skipped}</div>
+							<div class="stat-desc">ya tenían asignación</div>
+						</div>
+					{/if}
+				</div>
+				<div class="modal-action">
+					<button class="btn btn-primary" onclick={cancelAssign}>Cerrar</button>
+				</div>
+			{:else}
+				<h3 class="font-bold text-lg">Asignar empleados al ciclo</h3>
+				<p class="py-4">
+					¿Deseas asignar a todos los empleados activos al ciclo {cycles.find((c) => c.id === confirmAssign)?.year}?
+				</p>
+				<div class="alert alert-info text-sm mb-4">
+					<AlertCircle class="w-4 h-4" />
+					<span>Los empleados que ya tengan asignación serán omitidos.</span>
+				</div>
+				<div class="modal-action">
+					<button class="btn btn-ghost" onclick={cancelAssign}>Cancelar</button>
+					<button
+						class="btn btn-accent"
+						onclick={confirmAssignAction}
+						disabled={assigningId !== null}
+					>
+						{#if assigningId}
+							<span class="loading loading-spinner loading-xs"></span>
+						{/if}
+						Asignar todos
+					</button>
+				</div>
+			{/if}
+		</div>
+		<form method="dialog" class="modal-backdrop">
+			<button onclick={cancelAssign}>close</button>
 		</form>
 	</dialog>
 {/if}

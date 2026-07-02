@@ -79,6 +79,13 @@ func RegisterRoutes(r chi.Router, handler *CycleHandler, authSvc *authsvc.AuthSe
 			r.Put("/cycles/{id}/transition", handler.TransitionPhase)
 		})
 
+		// POST /api/v1/cycles/{id}/assign-all
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.RateLimit(writeRateLimit))
+			r.Use(middleware.Idempotency(idempStore, 24*time.Hour))
+			r.Post("/cycles/{id}/assign-all", handler.AssignAllEmployees)
+		})
+
 		// --- Phase endpoints ---
 
 		// GET /api/v1/phases

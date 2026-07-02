@@ -205,6 +205,29 @@ export async function getAvailableTransitions(cycleId: string): Promise<PhaseTra
 	}
 }
 
+export async function assignAll(cycleId: string): Promise<{ assigned: number; skipped: number; total: number } | null> {
+	try {
+		const { data, error: apiError } = await client.POST('/cycles/{id}/assign-all', {
+			params: {
+				path: { id: cycleId },
+				header: { 'Idempotency-Key': crypto.randomUUID() }
+			}
+		});
+
+		if (apiError) {
+			throw new Error(
+				typeof apiError === 'string' ? apiError : 'Error al asignar empleados'
+			);
+		}
+
+		const raw = data as { assigned: number; skipped: number; total: number };
+		return raw;
+	} catch (e) {
+		error = e instanceof Error ? e.message : 'Error al asignar empleados';
+		return null;
+	}
+}
+
 // ─── Helpers ────────────────────────────────────────────────────────────────────
 
 function getNextPhase(current: ApiCyclePhase): ApiCyclePhase | null {

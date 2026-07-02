@@ -13,6 +13,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/sed-evaluacion-desempeno/api/internal/middleware"
 	pkgerrors "github.com/sed-evaluacion-desempeno/api/internal/pkg/errors"
+	repoorg "github.com/sed-evaluacion-desempeno/api/internal/repository/org"
+	svcgoal "github.com/sed-evaluacion-desempeno/api/internal/service/goal"
 
 	"github.com/sed-evaluacion-desempeno/api/internal/auth"
 	activitysvc "github.com/sed-evaluacion-desempeno/api/internal/service/activity"
@@ -61,14 +63,18 @@ type CycleHandler struct {
 	svc          svc.Service
 	phaseService svc.PhaseService
 	activitySvc  activitysvc.Service
+	assignRepo   svcgoal.AssignmentRepository
+	employeeRepo *repoorg.EmployeeRepo
 }
 
 // NewCycleHandler creates a new CycleHandler.
-func NewCycleHandler(svc svc.Service, phaseService svc.PhaseService, activitySvc activitysvc.Service) *CycleHandler {
+func NewCycleHandler(svc svc.Service, phaseService svc.PhaseService, activitySvc activitysvc.Service, assignRepo svcgoal.AssignmentRepository, employeeRepo *repoorg.EmployeeRepo) *CycleHandler {
 	return &CycleHandler{
 		svc:          svc,
 		phaseService: phaseService,
 		activitySvc:  activitySvc,
+		assignRepo:   assignRepo,
+		employeeRepo: employeeRepo,
 	}
 }
 
@@ -282,6 +288,87 @@ func (h *CycleHandler) GetAvailableTransitions(w http.ResponseWriter, r *http.Re
 		"data": transitions,
 	}
 	writeJSON(w, http.StatusOK, resp)
+}
+
+// AssignAllEmployees handles POST /api/v1/cycles/{id}/assign-all.
+// Assigns all active employees to the cycle. Idempotent: skips employees
+// that already have an assignment for this cycle.
+func (h *CycleHandler) AssignAllEmployees(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	if id == "" {
+		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
+			"cycle id is required", nil))
+		return
+	}
+
+	cycleID, err := uuid.Parse(id)
+	if err != nil {
+		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
+			"cycle id must be a valid UUID v4", err))
+		return
+	}
+
+	// Get cycle to validate phase and extract org ID
+	cycle, err := h.svc.GetCycle(r.Context(), id)
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+
+	if cycle.CurrentPhase != "asignacion" {
+		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
+			"cycle must be in asignacion phase to assign employees", nil))
+		return
+	}
+
+	// List all active employees for this cycle's organization
+	orgID, err := uuid.Parse(cycle.OrganizationID)
+	if err != nil {
+		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
+			"invalid organization ID in cycle", err))
+		return
+	}
+
+	isActive := true
+	employees, err := h.employeeRepo.List(r.Context(), repoorg.EmployeeFilter{
+		TreeID:   &orgID,
+		IsActive: &isActive,
+		Limit:    10000,
+	})
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+
+	assigned := 0
+	skipped := 0
+	for _, emp := range employees {
+		_, err := h.assignRepo.CreateAssignment(r.Context(), emp.ID, cycleID)
+		if err != nil {
+			skipped++
+			continue
+		}
+		assigned++
+	}
+
+	// Log activity
+	if h.activitySvc != nil {
+		if empID, ok := auth.GetEmployeeID(r.Context()); ok {
+			metadata := map[string]interface{}{
+				"cycle_id": id,
+				"assigned": assigned,
+				"skipped":  skipped,
+			}
+			_ = h.activitySvc.LogActivity(r.Context(), empID, "cycle_configured",
+				"Asignaste empleados al ciclo de evaluación", "Ciclos", metadata)
+		}
+	}
+
+	writeJSON(w, http.StatusOK, map[string]interface{}{
+		"assigned": assigned,
+		"skipped":  skipped,
+		"total":    len(employees),
+	})
 }
 
 
