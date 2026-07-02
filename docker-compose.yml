@@ -14,23 +14,64 @@ services:
 
   api:
     build: ./api
-    ports: ["8080:8080"]
     depends_on:
       postgres: { condition: service_healthy }
     env_file: .env
     environment:
       DATABASE_URL: postgres://sed:sed@postgres:5432/sed?sslmode=disable
-      ENV: development
+      ENV: production
+      CORS_ORIGINS: https://localhost:8088
+      ENABLE_DEV_LOGIN: "true"
 
   web:
     build:
       context: ./web
       args:
-        VITE_API_URL: http://localhost:8080/api/v1
-        VITE_SHOW_DEV_TOOLBAR: "true"
-    ports: ["5173:80"]
+        VITE_SHOW_DEV_TOOLBAR: "false"
+        VITE_SHOW_DEMO_USERS: "true"
     depends_on:
       - api
+
+  proxy:
+    image: nginx:stable-alpine
+    ports: ["8088:443"]
+    volumes:
+      - ./certs:/etc/nginx/certs:ro
+    configs:
+      - source: proxy_conf
+        target: /etc/nginx/conf.d/default.conf
+    depends_on:
+      - web
+      - api
+
+configs:
+  proxy_conf:
+    content: |
+      server {
+          listen 443 ssl;
+          server_name _;
+
+          ssl_certificate     /etc/nginx/certs/fullchain.pem;
+          ssl_certificate_key /etc/nginx/certs/privkey.pem;
+
+          client_max_body_size 2M;
+
+          location /api/ {
+              proxy_pass http://api:8080;
+              proxy_set_header Host $$host;
+              proxy_set_header X-Real-IP $$remote_addr;
+              proxy_set_header X-Forwarded-For $$proxy_add_x_forwarded_for;
+              proxy_set_header X-Forwarded-Proto $$scheme;
+          }
+
+          location / {
+              proxy_pass http://web:80;
+              proxy_set_header Host $$host;
+              proxy_set_header X-Real-IP $$remote_addr;
+              proxy_set_header X-Forwarded-For $$proxy_add_x_forwarded_for;
+              proxy_set_header X-Forwarded-Proto $$scheme;
+          }
+      }
 
 volumes:
   pgdata:

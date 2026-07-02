@@ -10,6 +10,8 @@
 
 	const session = $derived(getSession());
 
+	const showDemo = import.meta.env.VITE_SHOW_DEMO_USERS === 'true';
+
 	// ponytail: hardcoded test profiles, replace with SSO (OIDC/SAML) when ready
 	const DEMO_USERS: { email: string; name: string; puesto: string; profileId: EvaluationProfile; badge: string; short: string }[] = [
 		{ email: 'alberto@mobo.mx',    name: 'Alberto Cohen',             puesto: 'Director General',                        profileId: 'director-general', badge: 'badge-error',     short: 'SEO' },
@@ -31,7 +33,7 @@
 			return; // $effect will handle redirect
 		}
 
-		if (!import.meta.env.DEV) {
+		if (!showDemo) {
 			// Future: redirect to SSO provider (OIDC/SAML)
 			error = 'SSO no configurado aún';
 			pageLoading = false;
@@ -91,7 +93,7 @@
 				<h1 class="text-2xl font-bold">Portal SED</h1>
 				<p class="mt-2 text-sm text-base-content/60">Inicia sesión para continuar</p>
 
-				{#if import.meta.env.DEV}
+				{#if showDemo}
 					<div class="divider">Acceso demo</div>
 
 					<div class="flex flex-col gap-2 text-left">

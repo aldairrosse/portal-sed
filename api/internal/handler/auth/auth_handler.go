@@ -150,7 +150,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 // and creates a session without password/SSO — just needs the email
 // to exist in the employees table.
 func (h *AuthHandler) DevLogin(w http.ResponseWriter, r *http.Request) {
-	if os.Getenv("ENV") != "development" {
+	if os.Getenv("ENV") != "development" && os.Getenv("ENABLE_DEV_LOGIN") != "true" {
 		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
 			"dev login not available in production", nil))
 		return
