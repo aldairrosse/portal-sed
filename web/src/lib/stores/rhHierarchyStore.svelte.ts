@@ -1,5 +1,6 @@
 import { client } from '$lib/api/client';
 import { getActiveCycle } from '$lib/stores/cycleStore.svelte';
+import { titleCase } from '$lib/utils/text';
 
 // ─── Types ──────────────────────────────────────────────────────────────────────
 
@@ -21,6 +22,7 @@ export interface AreaMetricsEmployee {
 	lastName: string;
 	jobTitle: string;
 	profileId: string;
+	profileName: string;
 	profileDescription: string;
 }
 
@@ -104,7 +106,7 @@ function buildEmployeeListFromApi(employees: AreaMetricsEmployee[]): EmployeeRow
 			id: emp.id,
 			name: `${emp.firstName} ${emp.lastName}`,
 			position: emp.jobTitle ?? '',
-			profile: emp.profileDescription ?? ''
+			profile: titleCase(emp.profileName ?? '')
 		}))
 		.sort((a, b) => a.name.localeCompare(b.name));
 }

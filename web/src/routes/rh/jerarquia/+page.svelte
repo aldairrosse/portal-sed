@@ -70,7 +70,7 @@ import { getActivePhase } from '$lib/api/cycle.svelte';
 </script>
 
 <svelte:head>
-	<title>Jerarquía organizacional — SED</title>
+	<title>Jerarquía de departamentos — SED</title>
 </svelte:head>
 
 <div class="flex flex-col gap-6">
@@ -120,7 +120,7 @@ import { getActivePhase } from '$lib/api/cycle.svelte';
 	{:else}
 		<div class="flex flex-col lg:flex-row gap-8">
 			<!-- Tree panel — ~40vw -->
-			<div class="lg:w-2/5">
+			<div class="lg:w-3/5">
 				<div class="card bg-base-100 border border-base-300">
 					<div class="card-body p-0">
 						<h2 class="card-title text-xs font-semibold text-base-content/50 tracking-wide pt-4">

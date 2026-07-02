@@ -19,6 +19,7 @@
     import PageSkeleton from "$lib/components/ui/PageSkeleton.svelte";
     import ErrorState from "$lib/components/ui/ErrorState.svelte";
     import { ArrowUpRight, Briefcase, Network, Target, Users } from "@lucide/svelte";
+    import { titleCase } from "$lib/utils/text";
 
     // ─── Profile guard ─────────────────────────────────────────────────────
 
@@ -350,12 +351,12 @@
                                     </div>
                                 {/if}
 
-                                {#if selectedEmployee.profileDescription}
+                                {#if selectedEmployee.profileName}
                                     <div class="flex items-center gap-3 bg-base-200 rounded-lg p-3">
                                         <Users class="w-5 h-5 text-base-content/40 shrink-0" />
                                         <div>
                                             <p class="text-xs text-base-content/40">Perfil</p>
-                                            <p class="text-xs font-medium">{selectedEmployee.profileDescription}</p>
+                                            <p class="text-xs font-medium">{titleCase(selectedEmployee.profileName)}</p>
                                         </div>
                                     </div>
                                 {/if}

@@ -25,19 +25,19 @@ export const MENU_ITEMS: MenuItem[] = [
 		label: 'Mi evaluación',
 		href: '/mi-evaluacion',
 		icon: 'ClipboardCheck',
-		profiles: ['colaborador', 'jefe', 'vendedor', 'gerente-tienda', 'divisional', 'regional', 'director']
+		profiles: ['colaborador', 'jefe', 'vendedor', 'gerente-tienda', 'divisional', 'regional', 'director', 'rh']
 	},
 	{
 		label: 'Mis evaluados',
 		href: '/mis-evaluados',
 		icon: 'Users',
-		profiles: ['jefe', 'gerente-tienda', 'divisional', 'regional', 'director']
+		profiles: ['jefe', 'gerente-tienda', 'divisional', 'regional', 'director', 'rh']
 	},
 	{
 		label: 'Matriz 9×9',
 		href: '/evaluacion/9x9',
 		icon: 'Grid3x3',
-		profiles: ['jefe', 'director', 'director-general']
+		profiles: ['jefe', 'director', 'director-general', 'rh']
 	},
 	{
 		label: 'Jerarquía',
