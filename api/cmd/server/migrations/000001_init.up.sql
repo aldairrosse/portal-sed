@@ -162,7 +162,7 @@ CREATE TABLE phase_definitions (
     updated_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
     phase           phase       NOT NULL,
     label           TEXT        NOT NULL,
-    order           INTEGER     NOT NULL CHECK (order >= 1 AND order <= 3),
+    "order"         INTEGER     NOT NULL CHECK ("order" >= 1 AND "order" <= 3),
     allowed_actors  JSONB       NULL,
     allowed_actions JSONB       NULL,
     blocked_actions JSONB       NULL,
