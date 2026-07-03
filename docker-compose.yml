@@ -1,15 +1,19 @@
 services:
   postgres:
-    image: postgres:16-alpine
-    ports: ["5433:5432"]
+    image: postgres:15-alpine
+    ports: ["5435:5432"]
+    container_name: portal-sed-db
     environment:
       POSTGRES_USER: sed
       POSTGRES_PASSWORD: sed
       POSTGRES_DB: sed
-    volumes: postgres_data:/var/lib/postgresql/data
+    restart: always
+    volumes: 
+      - db_sed:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U sed"]
+      test: ["CMD-SHELL", "pg_isready -U sed -d sed"]
       interval: 5s
+      timeout: 5s
       retries: 5
 
   api:
@@ -17,6 +21,7 @@ services:
     depends_on:
       postgres: { condition: service_healthy }
     env_file: .env
+    container_name: portal-sed-api
     environment:
       DATABASE_URL: postgres://sed:sed@postgres:5432/sed?sslmode=disable
       ENV: production
@@ -45,7 +50,8 @@ services:
       - api
 
 volumes:
-  postgres_data:
+  db_sed:
+    name: portal-sed-db-volume
 
 configs:
   proxy_conf:
