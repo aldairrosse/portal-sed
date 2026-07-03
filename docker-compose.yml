@@ -23,7 +23,7 @@ services:
     env_file: .env
     container_name: portal-sed-api
     environment:
-      DATABASE_URL: postgres://sed:sed@postgres:5432/sed?sslmode=disable
+      DATABASE_URL: postgres://sed:sed@postgres:5435/sed?sslmode=disable
       ENV: production
       CORS_ORIGINS: https://localhost:8088
       ENABLE_DEV_LOGIN: "true"
@@ -31,11 +31,12 @@ services:
   import:
     build: ./api
     profiles: ["import"]
+    network_mode: host
     depends_on:
       postgres: { condition: service_healthy }
     env_file: .env
     environment:
-      DATABASE_URL: postgres://sed:sed@postgres:5432/sed?sslmode=disable
+      DATABASE_URL: postgres://sed:sed@localhost:5435/sed?sslmode=disable
     entrypoint: ["/opt/api/import"]
 
   web:
