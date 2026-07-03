@@ -23,7 +23,7 @@ services:
     env_file: .env
     container_name: portal-sed-api
     environment:
-      DATABASE_URL: postgres://sed:sed@postgres:5435/sed?sslmode=disable
+      DATABASE_URL: postgres://sed:sed@postgres:5432/sed?sslmode=disable
       ENV: production
       CORS_ORIGINS: https://localhost:8088
       ENABLE_DEV_LOGIN: "true"
