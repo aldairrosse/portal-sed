@@ -28,6 +28,16 @@ services:
       CORS_ORIGINS: https://localhost:8088
       ENABLE_DEV_LOGIN: "true"
 
+  import:
+    build: ./api
+    profiles: ["import"]
+    depends_on:
+      postgres: { condition: service_healthy }
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://sed:sed@postgres:5432/sed?sslmode=disable
+    entrypoint: ["/opt/api/import"]
+
   web:
     build:
       context: ./web
