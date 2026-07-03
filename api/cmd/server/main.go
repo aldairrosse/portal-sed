@@ -154,8 +154,13 @@ func main() {
 	drv := entsql.OpenDB(dialect.Postgres, db)
 	client := internal.NewClient(internal.Driver(drv))
 
-	// Auto-migrate
+	// SQL migrations (goose .up.sql files)
 	bgCtx := context.Background()
+	if err := runSQLMigrations(bgCtx, db); err != nil {
+		log.Fatalf("[server] failed to run SQL migrations: %v", err)
+	}
+
+	// Auto-migrate (Ent schema sync)
 	if err := client.Schema.Create(bgCtx); err != nil {
 		log.Fatalf("[server] failed to auto-migrate: %v", err)
 	}
