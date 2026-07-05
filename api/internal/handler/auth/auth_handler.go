@@ -89,13 +89,13 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	var req LoginRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
-			"invalid JSON body", err))
+			"Solicitud inválida", err))
 		return
 	}
 
 	if req.Email == "" {
 		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
-			"email is required", nil))
+			"El correo electrónico es requerido", nil))
 		return
 	}
 
@@ -152,20 +152,20 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 func (h *AuthHandler) DevLogin(w http.ResponseWriter, r *http.Request) {
 	if os.Getenv("ENV") != "development" && os.Getenv("ENABLE_DEV_LOGIN") != "true" {
 		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
-			"dev login not available in production", nil))
+			"Este inicio de sesión no está disponible en producción", nil))
 		return
 	}
 
 	var req LoginRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
-			"invalid JSON body", err))
+			"Solicitud inválida", err))
 		return
 	}
 
 	if req.Email == "" {
 		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
-			"email is required", nil))
+			"El correo electrónico es requerido", nil))
 		return
 	}
 
@@ -173,7 +173,7 @@ func (h *AuthHandler) DevLogin(w http.ResponseWriter, r *http.Request) {
 	emp, err := h.svc.EmployeeByEmail(r.Context(), req.Email)
 	if err != nil {
 		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
-			"employee not found: "+req.Email, err))
+			"El empleado "+req.Email+" no existe", err))
 		return
 	}
 
@@ -256,7 +256,7 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 		MaxAge:   -1,
 	})
 
-	writeJSON(w, http.StatusOK, map[string]string{"message": "session revoked"})
+	writeJSON(w, http.StatusOK, map[string]string{"message": "Sesión revocada"})
 }
 
 // Refresh handles POST /auth/refresh.
@@ -265,7 +265,7 @@ func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 	session, ok := auth.GetSession(r.Context())
 	if !ok || session == nil {
 		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
-			"no authenticated session", nil))
+			"Sesión no autenticada", nil))
 		return
 	}
 
@@ -276,7 +276,7 @@ func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 
 	newExpiry := time.Now().UTC().Add(24 * time.Hour)
 	writeJSON(w, http.StatusOK, map[string]interface{}{
-		"message":    "session refreshed",
+		"message":    "Sesión actualizada",
 		"expires_at": newExpiry.Format(time.RFC3339),
 	})
 }
@@ -284,9 +284,9 @@ func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 // MeResponse is the JSON body returned by GET /auth/me.
 type MeResponse struct {
 	Employee       EmployeeInfo `json:"employee"`
-	Role           string      `json:"role"`
-	Profile        ProfileInfo `json:"profile"`
-	OrganizationID string      `json:"organization_id"`
+	Role           string       `json:"role"`
+	Profile        ProfileInfo  `json:"profile"`
+	OrganizationID string       `json:"organization_id"`
 }
 
 // ProfileInfo holds evaluation profile information for the /me endpoint.
@@ -305,14 +305,14 @@ func (h *AuthHandler) Me(w http.ResponseWriter, r *http.Request) {
 	token := extractSessionToken(r)
 	if token == "" {
 		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
-			"no authenticated session", nil))
+			"Sesión no autenticada", nil))
 		return
 	}
 
 	result, err := h.svc.ValidateSession(r.Context(), token)
 	if err != nil || result == nil || result.Session == nil {
 		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
-			"invalid or expired session", err))
+			"Sesión inválida o expirada", err))
 		return
 	}
 
