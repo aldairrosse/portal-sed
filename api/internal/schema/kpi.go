@@ -2,6 +2,7 @@ package schema
 
 import (
 	"entgo.io/ent"
+	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
@@ -29,7 +30,10 @@ func (KPI) Fields() []ent.Field {
 			Unique().
 			NotEmpty(),
 		field.Enum("unit").
-			Values("porcentaje", "moneda", "numero"),
+			Values("porcentaje", "moneda", "numero").
+			SchemaType(map[string]string{
+				dialect.Postgres: "goal_unit",
+			}),
 		field.Text("description").
 			Optional(),
 		field.Enum("direction").

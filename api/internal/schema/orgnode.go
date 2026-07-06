@@ -2,6 +2,7 @@ package schema
 
 import (
 	"entgo.io/ent"
+	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
@@ -29,7 +30,10 @@ func (OrgNode) Fields() []ent.Field {
 		field.String("name").
 			NotEmpty(),
 		field.Enum("type").
-			Values("corporate", "retail"),
+			Values("corporate", "retail").
+			SchemaType(map[string]string{
+				dialect.Postgres: "org_node_type",
+			}),
 		field.String("code").
 			NotEmpty(),
 		field.JSON("metadata", map[string]interface{}{}).
@@ -39,7 +43,10 @@ func (OrgNode) Fields() []ent.Field {
 			Optional().
 			Nillable(),
 		field.String("path").
-			Optional(),
+			Optional().
+			SchemaType(map[string]string{
+				dialect.Postgres: "ltree",
+			}),
 		field.UUID("head_employee_id", uuid.UUID{}).
 			Optional().
 			Nillable(),

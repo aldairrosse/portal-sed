@@ -9,7 +9,7 @@
 -- +goose Up
 -- +goose StatementBegin
 
-CREATE TABLE activity_logs (
+CREATE TABLE IF NOT EXISTS activity_logs (
     id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -24,7 +24,7 @@ CREATE TABLE activity_logs (
         ON DELETE CASCADE
 );
 
-CREATE INDEX idx_activity_logs_emp_created
+CREATE INDEX IF NOT EXISTS idx_activity_logs_emp_created
     ON activity_logs (employee_id, created_at DESC);
 
 -- +goose StatementEnd

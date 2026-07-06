@@ -2,6 +2,7 @@ package schema
 
 import (
 	"entgo.io/ent"
+	"entgo.io/ent/dialect"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
 	"github.com/google/uuid"
@@ -18,7 +19,10 @@ func (NineBoxScale) Fields() []ent.Field {
 			Default(uuid.New).
 			StorageKey("id"),
 		field.Enum("axis").
-			Values("performance", "potential"),
+			Values("performance", "potential").
+			SchemaType(map[string]string{
+				dialect.Postgres: "axis",
+			}),
 		field.Int("level").
 			Range(1, 9),
 		field.String("label").

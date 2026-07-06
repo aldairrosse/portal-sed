@@ -2,6 +2,7 @@ package schema
 
 import (
 	"entgo.io/ent"
+	"entgo.io/ent/dialect"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
@@ -24,7 +25,10 @@ func (PhaseDefinition) Fields() []ent.Field {
 			Default(uuid.New).
 			StorageKey("id"),
 		field.Enum("phase").
-			Values("asignacion", "avance", "cierre"),
+			Values("asignacion", "avance", "cierre").
+			SchemaType(map[string]string{
+				dialect.Postgres: "phase",
+			}),
 		field.String("label").
 			NotEmpty(),
 		field.Int("order").

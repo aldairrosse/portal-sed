@@ -62,14 +62,23 @@ func runSQLMigrations(ctx context.Context, db *sql.DB) error {
 		}
 
 		log.Printf("[migrate] applying %s", name)
-		if _, err := db.ExecContext(ctx, sql); err != nil {
+
+		tx, err := db.BeginTx(ctx, nil)
+		if err != nil {
+			return fmt.Errorf("begin tx for %s: %w", name, err)
+		}
+		if _, err := tx.ExecContext(ctx, sql); err != nil {
+			tx.Rollback()
 			return fmt.Errorf("apply migration %s: %w", name, err)
 		}
-
-		if _, err := db.ExecContext(ctx,
+		if _, err := tx.ExecContext(ctx,
 			`INSERT INTO schema_migrations (version) VALUES ($1)`, version,
 		); err != nil {
+			tx.Rollback()
 			return fmt.Errorf("record migration %s: %w", name, err)
+		}
+		if err := tx.Commit(); err != nil {
+			return fmt.Errorf("commit migration %s: %w", name, err)
 		}
 	}
 

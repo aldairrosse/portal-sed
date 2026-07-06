@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"entgo.io/ent"
+	"entgo.io/ent/dialect"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
@@ -21,11 +22,20 @@ func (PhaseTransition) Fields() []ent.Field {
 			Default(uuid.New).
 			StorageKey("id"),
 		field.Enum("from_phase").
-			Values("asignacion", "avance", "cierre"),
+			Values("asignacion", "avance", "cierre").
+			SchemaType(map[string]string{
+				dialect.Postgres: "phase",
+			}),
 		field.Enum("to_phase").
-			Values("asignacion", "avance", "cierre"),
+			Values("asignacion", "avance", "cierre").
+			SchemaType(map[string]string{
+				dialect.Postgres: "phase",
+			}),
 		field.Enum("trigger").
-			Values("auto", "manual_rh"),
+			Values("auto", "manual_rh").
+			SchemaType(map[string]string{
+				dialect.Postgres: "trigger_type",
+			}),
 		field.JSON("conditions", map[string]interface{}{}).
 			Optional(),
 		field.Time("created_at").

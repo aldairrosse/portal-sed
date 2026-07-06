@@ -2,6 +2,7 @@ package schema
 
 import (
 	"entgo.io/ent"
+	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
@@ -27,9 +28,15 @@ func (Evaluation) Fields() []ent.Field {
 			Default(uuid.New).
 			StorageKey("id"),
 		field.Enum("phase").
-			Values("asignacion", "avance", "cierre"),
+			Values("asignacion", "avance", "cierre").
+			SchemaType(map[string]string{
+				dialect.Postgres: "phase",
+			}),
 		field.Enum("state").
-			Values("pendiente_asignacion", "pendiente_avance", "pendiente_evaluacion_final", "completada"),
+			Values("pendiente_asignacion", "pendiente_avance", "pendiente_evaluacion_final", "completada").
+			SchemaType(map[string]string{
+				dialect.Postgres: "evaluation_state",
+			}),
 		field.Time("self_evaluation_completed_at").
 			Optional().
 			Nillable(),

@@ -11,31 +11,31 @@
 -- --------------------------------------------------------------------------
 -- Custom enum types (must be created before any table referencing them)
 -- --------------------------------------------------------------------------
-CREATE TYPE org_node_type AS ENUM ('corporate', 'retail');
+DO $$ BEGIN CREATE TYPE org_node_type AS ENUM ('corporate', 'retail'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
-CREATE TYPE scope_type AS ENUM ('department', 'team', 'individual');
+DO $$ BEGIN CREATE TYPE scope_type AS ENUM ('department', 'team', 'individual'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
-CREATE TYPE phase AS ENUM ('asignacion', 'avance', 'cierre');
+DO $$ BEGIN CREATE TYPE phase AS ENUM ('asignacion', 'avance', 'cierre'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
-CREATE TYPE trigger_type AS ENUM ('auto', 'manual_rh');
+DO $$ BEGIN CREATE TYPE trigger_type AS ENUM ('auto', 'manual_rh'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
-CREATE TYPE goal_unit AS ENUM ('porcentaje', 'moneda', 'numero');
+DO $$ BEGIN CREATE TYPE goal_unit AS ENUM ('porcentaje', 'moneda', 'numero'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
-CREATE TYPE goal_state AS ENUM ('borrador', 'fijada', 'en_seguimiento', 'evaluada', 'cerrada');
+DO $$ BEGIN CREATE TYPE goal_state AS ENUM ('borrador', 'fijada', 'en_seguimiento', 'evaluada', 'cerrada'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
-CREATE TYPE axis AS ENUM ('performance', 'potential');
+DO $$ BEGIN CREATE TYPE axis AS ENUM ('performance', 'potential'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
-CREATE TYPE evaluation_state AS ENUM (
+DO $$ BEGIN CREATE TYPE evaluation_state AS ENUM (
     'pendiente_asignacion',
     'pendiente_avance',
     'pendiente_evaluacion_final',
     'completada'
-);
+); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- --------------------------------------------------------------------------
 -- 1. Organizations (root tenant entity — no FK dependencies)
 -- --------------------------------------------------------------------------
-CREATE TABLE organizations (
+CREATE TABLE IF NOT EXISTS organizations (
     id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -43,23 +43,23 @@ CREATE TABLE organizations (
     slug       TEXT        NOT NULL
 );
 
-CREATE UNIQUE INDEX idx_organizations_slug ON organizations (slug);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_organizations_slug ON organizations (slug);
 
 -- --------------------------------------------------------------------------
 -- 2. Evaluation Profiles (no FK dependencies)
 -- --------------------------------------------------------------------------
-CREATE TABLE evaluation_profiles (
+CREATE TABLE IF NOT EXISTS evaluation_profiles (
     id          UUID  PRIMARY KEY DEFAULT gen_random_uuid(),
     name        TEXT  NOT NULL,
     description TEXT  NULL
 );
 
-CREATE UNIQUE INDEX idx_evaluation_profiles_name ON evaluation_profiles (name);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_evaluation_profiles_name ON evaluation_profiles (name);
 
 -- --------------------------------------------------------------------------
 -- 3. Org Nodes (FK → organizations; self-ref parent_id)
 -- --------------------------------------------------------------------------
-CREATE TABLE org_nodes (
+CREATE TABLE IF NOT EXISTS org_nodes (
     id              UUID          PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at      TIMESTAMPTZ   NOT NULL DEFAULT now(),
     updated_at      TIMESTAMPTZ   NOT NULL DEFAULT now(),
@@ -79,13 +79,13 @@ CREATE TABLE org_nodes (
         ON DELETE SET NULL
 );
 
-CREATE INDEX idx_org_nodes_org_parent ON org_nodes (organization_id, parent_id);
-CREATE INDEX idx_org_nodes_org_type   ON org_nodes (organization_id, type);
+CREATE INDEX IF NOT EXISTS idx_org_nodes_org_parent ON org_nodes (organization_id, parent_id);
+CREATE INDEX IF NOT EXISTS idx_org_nodes_org_type   ON org_nodes (organization_id, type);
 
 -- --------------------------------------------------------------------------
 -- 4. Cycles (FK → organizations)
 -- --------------------------------------------------------------------------
-CREATE TABLE cycles (
+CREATE TABLE IF NOT EXISTS cycles (
     id              UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -100,13 +100,13 @@ CREATE TABLE cycles (
         ON DELETE NO ACTION
 );
 
-CREATE UNIQUE INDEX idx_cycles_org_year ON cycles (organization_id, year);
-CREATE INDEX idx_cycles_current_phase ON cycles (current_phase);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_cycles_org_year ON cycles (organization_id, year);
+CREATE INDEX IF NOT EXISTS idx_cycles_current_phase ON cycles (current_phase);
 
 -- --------------------------------------------------------------------------
 -- 5. Employees (FK → org_nodes, evaluation_profiles; self-ref manager_id)
 -- --------------------------------------------------------------------------
-CREATE TABLE employees (
+CREATE TABLE IF NOT EXISTS employees (
     id              UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -134,16 +134,16 @@ CREATE TABLE employees (
         ON DELETE NO ACTION
 );
 
-CREATE UNIQUE INDEX idx_employees_email ON employees (email);
-CREATE INDEX idx_employees_org_manager ON employees (org_node_id, manager_id);
-CREATE INDEX idx_employees_org_profile ON employees (org_node_id, profile_id);
-CREATE INDEX idx_employees_profile    ON employees (profile_id);
-CREATE INDEX idx_employees_mgr_active ON employees (manager_id, is_active);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_employees_email ON employees (email);
+CREATE INDEX IF NOT EXISTS idx_employees_org_manager ON employees (org_node_id, manager_id);
+CREATE INDEX IF NOT EXISTS idx_employees_org_profile ON employees (org_node_id, profile_id);
+CREATE INDEX IF NOT EXISTS idx_employees_profile    ON employees (profile_id);
+CREATE INDEX IF NOT EXISTS idx_employees_mgr_active ON employees (manager_id, is_active);
 
 -- --------------------------------------------------------------------------
 -- 6. Pillars (no FK dependencies)
 -- --------------------------------------------------------------------------
-CREATE TABLE pillars (
+CREATE TABLE IF NOT EXISTS pillars (
     id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -151,12 +151,12 @@ CREATE TABLE pillars (
     description TEXT        NULL
 );
 
-CREATE UNIQUE INDEX idx_pillars_name ON pillars (name);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_pillars_name ON pillars (name);
 
 -- --------------------------------------------------------------------------
 -- 7. Phase Definitions (FK → cycles)
 -- --------------------------------------------------------------------------
-CREATE TABLE phase_definitions (
+CREATE TABLE IF NOT EXISTS phase_definitions (
     id              UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -176,7 +176,7 @@ CREATE TABLE phase_definitions (
 -- --------------------------------------------------------------------------
 -- 8. Competencies (FK → pillars)
 -- --------------------------------------------------------------------------
-CREATE TABLE competencies (
+CREATE TABLE IF NOT EXISTS competencies (
     id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -189,24 +189,24 @@ CREATE TABLE competencies (
         ON DELETE CASCADE
 );
 
-CREATE INDEX idx_competencies_pillar ON competencies (pillar_id);
+CREATE INDEX IF NOT EXISTS idx_competencies_pillar ON competencies (pillar_id);
 
 -- --------------------------------------------------------------------------
 -- 9. Level Definitions (no FK dependencies — catalog table)
 -- --------------------------------------------------------------------------
-CREATE TABLE level_definitions (
+CREATE TABLE IF NOT EXISTS level_definitions (
     id          INTEGER PRIMARY KEY GENERATED BY DEFAULT AS IDENTITY,
     level       INTEGER NOT NULL CHECK (level >= 1 AND level <= 5),
     label       TEXT    NOT NULL,
     description TEXT    NULL
 );
 
-CREATE UNIQUE INDEX idx_level_definitions_level ON level_definitions (level);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_level_definitions_level ON level_definitions (level);
 
 -- --------------------------------------------------------------------------
 -- 10. 9×9 Quadrants (no FK dependencies — catalog table)
 -- --------------------------------------------------------------------------
-CREATE TABLE nine_box_quadrants (
+CREATE TABLE IF NOT EXISTS nine_box_quadrants (
     id                    UUID  PRIMARY KEY DEFAULT gen_random_uuid(),
     quadrant              INTEGER NOT NULL CHECK (quadrant >= 1 AND quadrant <= 9),
     label                 TEXT   NOT NULL,
@@ -215,12 +215,12 @@ CREATE TABLE nine_box_quadrants (
     action_recommendation TEXT   NULL
 );
 
-CREATE UNIQUE INDEX idx_nine_box_quadrants_quadrant ON nine_box_quadrants (quadrant);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_nine_box_quadrants_quadrant ON nine_box_quadrants (quadrant);
 
 -- --------------------------------------------------------------------------
 -- 11. 9×9 Scales (no FK dependencies — catalog table)
 -- --------------------------------------------------------------------------
-CREATE TABLE nine_box_scales (
+CREATE TABLE IF NOT EXISTS nine_box_scales (
     id          UUID    PRIMARY KEY DEFAULT gen_random_uuid(),
     axis        axis    NOT NULL,
     level       INTEGER NOT NULL CHECK (level >= 1 AND level <= 9),
@@ -228,12 +228,12 @@ CREATE TABLE nine_box_scales (
     description TEXT    NULL
 );
 
-CREATE UNIQUE INDEX idx_nine_box_scales_axis_level ON nine_box_scales (axis, level);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_nine_box_scales_axis_level ON nine_box_scales (axis, level);
 
 -- --------------------------------------------------------------------------
 -- 12. KPIs (no FK dependencies)
 -- --------------------------------------------------------------------------
-CREATE TABLE kp_is (
+CREATE TABLE IF NOT EXISTS kp_is (
     id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -242,12 +242,12 @@ CREATE TABLE kp_is (
     description TEXT        NULL
 );
 
-CREATE UNIQUE INDEX idx_kp_is_name ON kp_is (name);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_kp_is_name ON kp_is (name);
 
 -- --------------------------------------------------------------------------
 -- 13. Evaluator Scopes (FK → employees, cycles)
 -- --------------------------------------------------------------------------
-CREATE TABLE evaluator_scopes (
+CREATE TABLE IF NOT EXISTS evaluator_scopes (
     id           UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -265,12 +265,12 @@ CREATE TABLE evaluator_scopes (
         ON DELETE SET NULL
 );
 
-CREATE INDEX idx_evaluator_scopes_eval_cycle ON evaluator_scopes (evaluator_id, cycle_id);
+CREATE INDEX IF NOT EXISTS idx_evaluator_scopes_eval_cycle ON evaluator_scopes (evaluator_id, cycle_id);
 
 -- --------------------------------------------------------------------------
 -- 14. Goal Categories (FK → employees)
 -- --------------------------------------------------------------------------
-CREATE TABLE goal_categories (
+CREATE TABLE IF NOT EXISTS goal_categories (
     id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -286,13 +286,13 @@ CREATE TABLE goal_categories (
         ON DELETE CASCADE
 );
 
-CREATE INDEX idx_goal_categories_employee      ON goal_categories (employee_id);
-CREATE UNIQUE INDEX idx_goal_categories_emp_name ON goal_categories (employee_id, name);
+CREATE INDEX IF NOT EXISTS idx_goal_categories_employee      ON goal_categories (employee_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_goal_categories_emp_name ON goal_categories (employee_id, name);
 
 -- --------------------------------------------------------------------------
 -- 15. Goal Assignments (FK → employees, cycles)
 -- --------------------------------------------------------------------------
-CREATE TABLE goal_assignments (
+CREATE TABLE IF NOT EXISTS goal_assignments (
     id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -308,12 +308,12 @@ CREATE TABLE goal_assignments (
         ON DELETE CASCADE
 );
 
-CREATE UNIQUE INDEX idx_goal_assignments_emp_cycle ON goal_assignments (employee_id, cycle_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_goal_assignments_emp_cycle ON goal_assignments (employee_id, cycle_id);
 
 -- --------------------------------------------------------------------------
 -- 16. Phase Transitions (FK → cycles, phase_definitions)
 -- --------------------------------------------------------------------------
-CREATE TABLE phase_transitions (
+CREATE TABLE IF NOT EXISTS phase_transitions (
     id            UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
     from_phase    phase       NOT NULL,
     to_phase      phase       NOT NULL,
@@ -337,12 +337,12 @@ CREATE TABLE phase_transitions (
         ON DELETE NO ACTION
 );
 
-CREATE UNIQUE INDEX idx_phase_transitions_from_to ON phase_transitions (from_phase, to_phase);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_phase_transitions_from_to ON phase_transitions (from_phase, to_phase);
 
 -- --------------------------------------------------------------------------
 -- 17. Scale Criteria (FK → competencies, pillars)
 -- --------------------------------------------------------------------------
-CREATE TABLE scale_criterions (
+CREATE TABLE IF NOT EXISTS scale_criterions (
     id            UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -360,12 +360,12 @@ CREATE TABLE scale_criterions (
         ON DELETE CASCADE
 );
 
-CREATE INDEX idx_scale_criterions_cell ON scale_criterions (competency_id, pillar_id, level);
+CREATE INDEX IF NOT EXISTS idx_scale_criterions_cell ON scale_criterions (competency_id, pillar_id, level);
 
 -- --------------------------------------------------------------------------
 -- 18. Competency Acceptance Levels (FK → competencies, evaluation_profiles)
 -- --------------------------------------------------------------------------
-CREATE TABLE competency_acceptance_levels (
+CREATE TABLE IF NOT EXISTS competency_acceptance_levels (
     id            UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -382,12 +382,12 @@ CREATE TABLE competency_acceptance_levels (
         ON DELETE NO ACTION
 );
 
-CREATE UNIQUE INDEX idx_cal_comp_profile ON competency_acceptance_levels (competency_id, profile_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_cal_comp_profile ON competency_acceptance_levels (competency_id, profile_id);
 
 -- --------------------------------------------------------------------------
 -- 19. Goals (FK → goal_categories)
 -- --------------------------------------------------------------------------
-CREATE TABLE goals (
+CREATE TABLE IF NOT EXISTS goals (
     id            UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at    TIMESTAMPTZ  NOT NULL DEFAULT now(),
     updated_at    TIMESTAMPTZ  NOT NULL DEFAULT now(),
@@ -407,14 +407,14 @@ CREATE TABLE goals (
         ON DELETE CASCADE
 );
 
-CREATE INDEX idx_goals_category   ON goals (category_id);
-CREATE INDEX idx_goals_state      ON goals (state);
-CREATE INDEX idx_goals_created_by ON goals (created_by);
+CREATE INDEX IF NOT EXISTS idx_goals_category   ON goals (category_id);
+CREATE INDEX IF NOT EXISTS idx_goals_state      ON goals (state);
+CREATE INDEX IF NOT EXISTS idx_goals_created_by ON goals (created_by);
 
 -- --------------------------------------------------------------------------
 -- 20. 9×9 Matrices (FK → cycles, employees)
 -- --------------------------------------------------------------------------
-CREATE TABLE nine_box_matrixes (
+CREATE TABLE IF NOT EXISTS nine_box_matrixes (
     id           UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -430,13 +430,13 @@ CREATE TABLE nine_box_matrixes (
         ON DELETE CASCADE
 );
 
-CREATE UNIQUE INDEX idx_nine_box_matrixes_cycle_eval ON nine_box_matrixes (cycle_id, evaluator_id);
-CREATE INDEX idx_nine_box_matrixes_evaluator ON nine_box_matrixes (evaluator_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_nine_box_matrixes_cycle_eval ON nine_box_matrixes (cycle_id, evaluator_id);
+CREATE INDEX IF NOT EXISTS idx_nine_box_matrixes_evaluator ON nine_box_matrixes (evaluator_id);
 
 -- --------------------------------------------------------------------------
 -- 21. Evaluations (FK → employees, cycles)
 -- --------------------------------------------------------------------------
-CREATE TABLE evaluations (
+CREATE TABLE IF NOT EXISTS evaluations (
     id                          UUID              PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at                  TIMESTAMPTZ       NOT NULL DEFAULT now(),
     updated_at                  TIMESTAMPTZ       NOT NULL DEFAULT now(),
@@ -458,14 +458,14 @@ CREATE TABLE evaluations (
         ON DELETE CASCADE
 );
 
-CREATE UNIQUE INDEX idx_evaluations_emp_cycle   ON evaluations (employee_id, cycle_id);
-CREATE INDEX idx_evaluations_cycle_state        ON evaluations (cycle_id, state);
-CREATE INDEX idx_evaluations_cycle_phase        ON evaluations (cycle_id, phase);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_evaluations_emp_cycle   ON evaluations (employee_id, cycle_id);
+CREATE INDEX IF NOT EXISTS idx_evaluations_cycle_state        ON evaluations (cycle_id, state);
+CREATE INDEX IF NOT EXISTS idx_evaluations_cycle_phase        ON evaluations (cycle_id, phase);
 
 -- --------------------------------------------------------------------------
 -- 22. Goal-KPI Links (FK → goals, kp_is)
 -- --------------------------------------------------------------------------
-CREATE TABLE goal_kpi_links (
+CREATE TABLE IF NOT EXISTS goal_kpi_links (
     id         INTEGER     PRIMARY KEY GENERATED BY DEFAULT AS IDENTITY,
     goal_id    UUID        NOT NULL,
     kpi_id     UUID        NOT NULL,
@@ -480,13 +480,13 @@ CREATE TABLE goal_kpi_links (
         ON DELETE CASCADE
 );
 
-CREATE UNIQUE INDEX idx_goal_kpi_links_pair ON goal_kpi_links (goal_id, kpi_id);
-CREATE INDEX idx_goal_kpi_links_kpi         ON goal_kpi_links (kpi_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_goal_kpi_links_pair ON goal_kpi_links (goal_id, kpi_id);
+CREATE INDEX IF NOT EXISTS idx_goal_kpi_links_kpi         ON goal_kpi_links (kpi_id);
 
 -- --------------------------------------------------------------------------
 -- 23. 9×9 Entries (FK → nine_box_matrixes, employees)
 -- --------------------------------------------------------------------------
-CREATE TABLE nine_box_entries (
+CREATE TABLE IF NOT EXISTS nine_box_entries (
     id                UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -508,13 +508,13 @@ CREATE TABLE nine_box_entries (
         ON DELETE CASCADE
 );
 
-CREATE UNIQUE INDEX idx_nine_box_entries_matrix_eval ON nine_box_entries (matrix_id, evaluatee_id);
-CREATE INDEX idx_nine_box_entries_evaluatee          ON nine_box_entries (evaluatee_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_nine_box_entries_matrix_eval ON nine_box_entries (matrix_id, evaluatee_id);
+CREATE INDEX IF NOT EXISTS idx_nine_box_entries_evaluatee          ON nine_box_entries (evaluatee_id);
 
 -- --------------------------------------------------------------------------
 -- 24. Evaluation Competencies (FK → evaluations, competencies, evaluation_profiles)
 -- --------------------------------------------------------------------------
-CREATE TABLE evaluation_competencies (
+CREATE TABLE IF NOT EXISTS evaluation_competencies (
     id            UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -537,12 +537,12 @@ CREATE TABLE evaluation_competencies (
         ON DELETE NO ACTION
 );
 
-CREATE UNIQUE INDEX idx_eval_comp_eval_comp ON evaluation_competencies (evaluation_id, competency_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_eval_comp_eval_comp ON evaluation_competencies (evaluation_id, competency_id);
 
 -- --------------------------------------------------------------------------
 -- 25. Evaluation Goals (FK → evaluations, goals)
 -- --------------------------------------------------------------------------
-CREATE TABLE evaluation_goals (
+CREATE TABLE IF NOT EXISTS evaluation_goals (
     id             UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -560,6 +560,6 @@ CREATE TABLE evaluation_goals (
         ON DELETE NO ACTION
 );
 
-CREATE UNIQUE INDEX idx_eval_goals_eval_goal ON evaluation_goals (evaluation_id, goal_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_eval_goals_eval_goal ON evaluation_goals (evaluation_id, goal_id);
 
 -- +goose StatementEnd

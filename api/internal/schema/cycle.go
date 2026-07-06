@@ -2,6 +2,7 @@ package schema
 
 import (
 	"entgo.io/ent"
+	"entgo.io/ent/dialect"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
@@ -27,7 +28,10 @@ func (Cycle) Fields() []ent.Field {
 			StorageKey("id"),
 		field.Int("year"),
 		field.Enum("current_phase").
-			Values("asignacion", "avance", "cierre"),
+			Values("asignacion", "avance", "cierre").
+			SchemaType(map[string]string{
+				dialect.Postgres: "phase",
+			}),
 		field.Time("started_at").
 			Optional().
 			Nillable(),

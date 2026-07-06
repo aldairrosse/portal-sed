@@ -160,11 +160,34 @@ func main() {
 		log.Fatalf("[server] failed to run SQL migrations: %v", err)
 	}
 
-	// Auto-migrate (Ent schema sync)
+	// ponytail: drop materialized views and indexes that block Ent column type alters
+	db.ExecContext(bgCtx, `DROP MATERIALIZED VIEW IF EXISTS evaluation_summary`)
+	db.ExecContext(bgCtx, `DROP INDEX IF EXISTS idx_org_nodes_path`)
+
 	if err := client.Schema.Create(bgCtx); err != nil {
 		log.Fatalf("[server] failed to auto-migrate: %v", err)
 	}
 	log.Println("[server] schema migrated")
+
+	db.ExecContext(bgCtx, `
+		CREATE MATERIALIZED VIEW IF NOT EXISTS evaluation_summary AS
+		SELECT cycle_id, state, COUNT(1) as count
+		FROM evaluations
+		GROUP BY cycle_id, state
+		WITH DATA
+	`)
+	db.ExecContext(bgCtx, `
+		CREATE UNIQUE INDEX IF NOT EXISTS idx_evaluation_summary_cycle_state
+		ON evaluation_summary (cycle_id, state)
+	`)
+	// ponytail: Ent changes path from ltree→varchar; restore ltree + gist index
+	db.ExecContext(bgCtx, `ALTER TABLE org_nodes ALTER COLUMN path TYPE ltree USING path::ltree`)
+	if _, err := db.ExecContext(bgCtx, `
+		CREATE INDEX IF NOT EXISTS idx_org_nodes_path
+		ON org_nodes USING gist (path)
+	`); err != nil {
+		log.Printf("[server] warn: failed to recreate idx_org_nodes_path: %v", err)
+	}
 
 	// Seeder — seed.Run handles its own guards (flag --seed, SEED_ON_START env, empty-DB check)
 	if err := seed.Run(bgCtx, client); err != nil {

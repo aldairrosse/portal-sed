@@ -12,27 +12,27 @@
 -- Version columns for optimistic locking
 -- --------------------------------------------------------------------------
 
-ALTER TABLE cycles ADD COLUMN version INTEGER NOT NULL DEFAULT 1;
+DO $$ BEGIN ALTER TABLE cycles ADD COLUMN version INTEGER NOT NULL DEFAULT 1; EXCEPTION WHEN duplicate_column THEN NULL; END $$;
 
-ALTER TABLE goals ADD COLUMN version INTEGER NOT NULL DEFAULT 1;
+DO $$ BEGIN ALTER TABLE goals ADD COLUMN version INTEGER NOT NULL DEFAULT 1; EXCEPTION WHEN duplicate_column THEN NULL; END $$;
 
-ALTER TABLE org_nodes ADD COLUMN version INTEGER NOT NULL DEFAULT 1;
+DO $$ BEGIN ALTER TABLE org_nodes ADD COLUMN version INTEGER NOT NULL DEFAULT 1; EXCEPTION WHEN duplicate_column THEN NULL; END $$;
 
-ALTER TABLE evaluations ADD COLUMN version INTEGER NOT NULL DEFAULT 1;
+DO $$ BEGIN ALTER TABLE evaluations ADD COLUMN version INTEGER NOT NULL DEFAULT 1; EXCEPTION WHEN duplicate_column THEN NULL; END $$;
 
-ALTER TABLE nine_box_entries ADD COLUMN version INTEGER NOT NULL DEFAULT 1;
+DO $$ BEGIN ALTER TABLE nine_box_entries ADD COLUMN version INTEGER NOT NULL DEFAULT 1; EXCEPTION WHEN duplicate_column THEN NULL; END $$;
 
-ALTER TABLE pillars ADD COLUMN version INTEGER NOT NULL DEFAULT 1;
+DO $$ BEGIN ALTER TABLE pillars ADD COLUMN version INTEGER NOT NULL DEFAULT 1; EXCEPTION WHEN duplicate_column THEN NULL; END $$;
 
-ALTER TABLE competencies ADD COLUMN version INTEGER NOT NULL DEFAULT 1;
+DO $$ BEGIN ALTER TABLE competencies ADD COLUMN version INTEGER NOT NULL DEFAULT 1; EXCEPTION WHEN duplicate_column THEN NULL; END $$;
 
-ALTER TABLE scale_criterions ADD COLUMN version INTEGER NOT NULL DEFAULT 1;
+DO $$ BEGIN ALTER TABLE scale_criterions ADD COLUMN version INTEGER NOT NULL DEFAULT 1; EXCEPTION WHEN duplicate_column THEN NULL; END $$;
 
 -- --------------------------------------------------------------------------
 -- Cycle phase history (audit trail for phase transitions)
 -- --------------------------------------------------------------------------
 
-CREATE TABLE cycle_phase_history (
+CREATE TABLE IF NOT EXISTS cycle_phase_history (
     id              UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
     cycle_id        UUID        NOT NULL,
     from_phase      phase       NOT NULL,
@@ -47,13 +47,13 @@ CREATE TABLE cycle_phase_history (
         ON DELETE CASCADE
 );
 
-CREATE INDEX idx_cph_cycle ON cycle_phase_history (cycle_id);
+CREATE INDEX IF NOT EXISTS idx_cph_cycle ON cycle_phase_history (cycle_id);
 
 -- --------------------------------------------------------------------------
 -- Evaluation versions (separate table for optimistic locking)
 -- --------------------------------------------------------------------------
 
-CREATE TABLE evaluation_versions (
+CREATE TABLE IF NOT EXISTS evaluation_versions (
     id              UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
     evaluation_id   UUID        NOT NULL,
     version         INTEGER     NOT NULL DEFAULT 1,
@@ -70,7 +70,7 @@ CREATE TABLE evaluation_versions (
 -- NineBox entry versions (separate table for optimistic locking)
 -- --------------------------------------------------------------------------
 
-CREATE TABLE ninebox_entry_versions (
+CREATE TABLE IF NOT EXISTS ninebox_entry_versions (
     id              UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
     entry_id        UUID        NOT NULL,
     version         INTEGER     NOT NULL DEFAULT 1,
@@ -89,27 +89,27 @@ CREATE TABLE ninebox_entry_versions (
 
 CREATE EXTENSION IF NOT EXISTS ltree;
 
-ALTER TABLE org_nodes ADD COLUMN path ltree NULL;
+DO $$ BEGIN ALTER TABLE org_nodes ADD COLUMN path ltree NULL; EXCEPTION WHEN duplicate_column THEN NULL; END $$;
 
-CREATE INDEX idx_org_nodes_path ON org_nodes USING gist (path);
+CREATE INDEX IF NOT EXISTS idx_org_nodes_path ON org_nodes USING gist (path);
 
 -- --------------------------------------------------------------------------
 -- Additional indexes for C2–C6 query patterns
 -- --------------------------------------------------------------------------
 
 -- C2: cycle transitions by phase
-CREATE INDEX idx_phase_transitions_from_phase ON phase_transitions (from_phase);
+CREATE INDEX IF NOT EXISTS idx_phase_transitions_from_phase ON phase_transitions (from_phase);
 
 -- C4: goal weight validation
-CREATE INDEX idx_goals_category_weight ON goals (category_id, weight);
+CREATE INDEX IF NOT EXISTS idx_goals_category_weight ON goals (category_id, weight);
 
 -- C5: employee search
-CREATE INDEX idx_employees_name_search ON employees USING gin (
+CREATE INDEX IF NOT EXISTS idx_employees_name_search ON employees USING gin (
     to_tsvector('spanish', first_name || ' ' || last_name || ' ' || email)
 );
 
 -- C6: evaluation dashboard
-CREATE INDEX idx_evaluations_state ON evaluations (state);
+CREATE INDEX IF NOT EXISTS idx_evaluations_state ON evaluations (state);
 
 -- +goose StatementEnd
 

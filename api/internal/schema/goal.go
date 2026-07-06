@@ -2,6 +2,7 @@ package schema
 
 import (
 	"entgo.io/ent"
+	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
@@ -31,7 +32,10 @@ func (Goal) Fields() []ent.Field {
 		field.Text("description").
 			Optional(),
 		field.Enum("unit").
-			Values("porcentaje", "moneda", "numero"),
+			Values("porcentaje", "moneda", "numero").
+			SchemaType(map[string]string{
+				dialect.Postgres: "goal_unit",
+			}),
 		field.Float("weight").
 			Range(0, 100),
 		field.Float("target_value").
@@ -45,7 +49,10 @@ func (Goal) Fields() []ent.Field {
 			Optional().
 			Nillable(),
 		field.Enum("state").
-			Values("borrador", "fijada", "en_seguimiento", "evaluada", "cerrada"),
+			Values("borrador", "fijada", "en_seguimiento", "evaluada", "cerrada").
+			SchemaType(map[string]string{
+				dialect.Postgres: "goal_state",
+			}),
 		field.UUID("category_id", uuid.UUID{}),
 	}
 }

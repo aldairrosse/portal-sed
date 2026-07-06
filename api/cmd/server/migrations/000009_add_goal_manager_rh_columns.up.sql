@@ -3,8 +3,11 @@
 -- and manager comment endpoint (PUT /evaluations/{id}/goal-comments).
 -- The existing final_rating and final_comments columns are retained.
 
-ALTER TABLE evaluation_goals
-  ADD COLUMN manager_comment TEXT NULL;
+-- +goose Up
+-- +goose StatementBegin
 
-ALTER TABLE evaluation_goals
-  ADD COLUMN rh_assessment TEXT NULL;
+DO $$ BEGIN ALTER TABLE evaluation_goals ADD COLUMN manager_comment TEXT NULL; EXCEPTION WHEN duplicate_column THEN NULL; END $$;
+
+DO $$ BEGIN ALTER TABLE evaluation_goals ADD COLUMN rh_assessment TEXT NULL; EXCEPTION WHEN duplicate_column THEN NULL; END $$;
+
+-- +goose StatementEnd
