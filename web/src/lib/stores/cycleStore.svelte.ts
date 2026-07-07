@@ -142,6 +142,30 @@ export async function createCycle(year: number): Promise<Cycle | null> {
 	}
 }
 
+async function getCycle(cycleId: string): Promise<Cycle | null> {
+	const { data, error: apiError } = await client.GET('/cycles/{id}', {
+		params: { path: { id: cycleId } }
+	});
+	if (apiError || !data) {
+		error = typeof apiError === 'object' && apiError !== null
+			? ((apiError as Record<string, unknown>).error as Record<string, unknown> ?? {})?.message ?? 'Error al obtener ciclo'
+			: 'Error al obtener ciclo';
+		return null;
+	}
+	const raw = data as components['schemas']['Cycle'];
+	return {
+		id: raw.id,
+		organization_id: raw.organization_id,
+		year: raw.year,
+		current_phase: raw.current_phase,
+		version: raw.version,
+		started_at: raw.started_at ?? null,
+		finished_at: raw.finished_at ?? null,
+		created_at: raw.created_at,
+		updated_at: raw.updated_at
+	};
+}
+
 export async function advancePhase(cycleId: string): Promise<boolean> {
 	// ponytail: refresh cycle first to get latest version (avoids stale _loaded guard)
 	const fresh = await getCycle(cycleId);
