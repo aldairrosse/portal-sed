@@ -37,6 +37,7 @@
 		getCategoryProgressAverage,
 		storeState,
 		load,
+		loadForEmployee,
 	} from "$lib/stores/goalsStore.svelte";
     import { getSession } from "$lib/api/session.svelte";
     import { client } from "$lib/api/client";
@@ -116,21 +117,23 @@
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
         };
-        result.push(own);
+        result.push({ ...own, employeeName: own.employeeName || session.user?.name || '' });
         seen.add(viewerEmployeeId);
 
         // Team members from /team endpoint (skip viewer, already first)
         for (const member of teamMembers) {
             if (seen.has(member.id)) continue;
             seen.add(member.id);
+            const memberName = `${member.firstName} ${member.lastName}`;
             const existing = getAssignmentByEmployee(member.id);
             if (existing) {
-                result.push(existing);
+                // Merge team member name into assignment (store doesn't carry names)
+                result.push({ ...existing, employeeName: existing.employeeName || memberName });
             } else {
                 result.push({
                     id: `stub-${member.id}`,
                     employeeId: member.id,
-                    employeeName: `${member.firstName} ${member.lastName}`,
+                    employeeName: memberName,
                     profileId: 'colaborador',
                     managerId: null,
                     goalIds: [],
@@ -220,18 +223,42 @@
 
     function openComments(goal: Goal) {
         commentGoal = goal;
-        commentGoalComments = getGoalComments(goal.id);
+        // Load comments from API instead of store
+        client.GET('/goals/{goalId}/comments', {
+            params: { path: { goalId: goal.id } }
+        }).then(({ data, error }) => {
+            if (data && !error) {
+                commentGoalComments = data as unknown as GoalComment[];
+            } else {
+                commentGoalComments = [];
+            }
+        }).catch(() => { commentGoalComments = []; });
         showCommentModal = true;
     }
 
     function handleAddComment(goalId: string, content: string) {
-        addGoalComment(goalId, viewerProfile, viewerProfile, content);
-        commentGoalComments = getGoalComments(goalId);
+        addGoalComment(goalId, viewerProfile, viewerProfile, content).then(() => {
+            // Reload from API
+            client.GET('/goals/{goalId}/comments', {
+                params: { path: { goalId } }
+            }).then(({ data, error }) => {
+                if (data && !error) {
+                    commentGoalComments = data as unknown as GoalComment[];
+                }
+            });
+        });
     }
 
     function handleDeleteComment(goalId: string, commentId: string) {
-        deleteGoalComment(goalId, commentId);
-        commentGoalComments = getGoalComments(goalId);
+        deleteGoalComment(goalId, commentId).then(() => {
+            client.GET('/goals/{goalId}/comments', {
+                params: { path: { goalId } }
+            }).then(({ data, error }) => {
+                if (data && !error) {
+                    commentGoalComments = data as unknown as GoalComment[];
+                }
+            });
+        });
     }
 
     // ─── Existing page state ─────────────────────────────────────────────────
@@ -277,6 +304,12 @@
 
     function handleAssigneeSelect(employeeId: string) {
         selectedEmployeeId = employeeId;
+        // Reload store data for the selected employee
+        if (employeeId === viewerEmployeeId) {
+            load(); // reload for current user
+        } else {
+            loadForEmployee(employeeId); // reload for subordinate
+        }
     }
 
     function startCreateCategory() {
@@ -373,6 +406,13 @@
     function handleRequestAssignmentChange() {
         if (!targetAssignment) return;
         openRequestModal("assignment", targetAssignment.id, targetEmployeeName);
+    }
+
+    function handleRequestChangeCreated(entityType: ChangeRequest['entityType'], entityId: string) {
+        if (entityType === 'goal') {
+            const goal = goals.find(g => g.id === entityId);
+            if (goal) openComments(goal);
+        }
     }
 
     async function handleUpdateProgress(goalId: string, progress: number) {
@@ -653,6 +693,7 @@
         entityName={requestEntityName}
         requestedBy={viewerProfile}
         onClose={closeRequestModal}
+        onCreated={handleRequestChangeCreated}
     />
 {/if}
 

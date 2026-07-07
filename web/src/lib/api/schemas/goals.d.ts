@@ -254,6 +254,76 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/goals/{goalId}/comments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List comments for a goal */
+        get: operations["listGoalComments"];
+        put?: never;
+        /** Add a comment to a goal */
+        post: operations["createGoalComment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/goals/{goalId}/comments/{commentId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete a goal comment */
+        delete: operations["deleteGoalComment"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/change-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List change requests */
+        get: operations["listChangeRequests"];
+        put?: never;
+        /** Create a change request */
+        post: operations["createChangeRequest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/change-requests/{crId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Approve or reject a change request */
+        patch: operations["updateChangeRequest"];
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -446,6 +516,44 @@ export interface components {
         CreateAssignmentRequest: {
             /** Format: uuid */
             cycle_id: string;
+        };
+        GoalCommentResponse: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            goal_id?: string;
+            author_id?: string;
+            author_name?: string;
+            content?: string;
+            /** Format: date-time */
+            created_at?: string;
+        };
+        CreateGoalCommentRequest: {
+            content: string;
+            author_id: string;
+            author_name: string;
+        };
+        ChangeRequestResponse: {
+            /** Format: uuid */
+            id?: string;
+            entity_type?: string;
+            entity_id?: string;
+            requested_by?: string;
+            status?: string;
+            approved_by?: string | null;
+            /** Format: date-time */
+            approved_at?: string | null;
+            /** Format: date-time */
+            created_at?: string;
+        };
+        CreateChangeRequestRequest: {
+            entity_type: string;
+            entity_id: string;
+            requested_by: string;
+        };
+        UpdateChangeRequestRequest: {
+            status: string;
+            approved_by: string;
         };
     };
     responses: {
@@ -1111,6 +1219,148 @@ export interface operations {
                 };
             };
             404: components["responses"]["GoalNotFound"];
+        };
+    };
+    listGoalComments: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                goalId: components["parameters"]["GoalId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of comments */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoalCommentResponse"][];
+                };
+            };
+        };
+    };
+    createGoalComment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                goalId: components["parameters"]["GoalId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateGoalCommentRequest"];
+            };
+        };
+        responses: {
+            /** @description Created comment */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoalCommentResponse"];
+                };
+            };
+        };
+    };
+    deleteGoalComment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                goalId: components["parameters"]["GoalId"];
+                commentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Comment deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    listChangeRequests: {
+        parameters: {
+            query?: {
+                entity_type?: string;
+                entity_id?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of change requests */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChangeRequestResponse"][];
+                };
+            };
+        };
+    };
+    createChangeRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateChangeRequestRequest"];
+            };
+        };
+        responses: {
+            /** @description Created change request */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChangeRequestResponse"];
+                };
+            };
+        };
+    };
+    updateChangeRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                crId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateChangeRequestRequest"];
+            };
+        };
+        responses: {
+            /** @description Updated change request */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChangeRequestResponse"];
+                };
+            };
         };
     };
 }

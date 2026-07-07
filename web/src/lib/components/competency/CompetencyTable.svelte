@@ -8,7 +8,7 @@
 		pillarId: string;
 		pillarName: string;
 		editingId?: string | null;
-		onSave: (data: { name: string; description: string; id?: string }) => void;
+		onSave: (data: { name: string; description: string; id?: string }) => Promise<void>;
 		onDelete: (competency: Competency) => void;
 	}
 
@@ -55,26 +55,34 @@
 		return null;
 	}
 
-	function saveNew() {
+	async function saveNew() {
 		const err = validate(editName);
 		if (err) {
 			localError = err;
 			return;
 		}
-		onSave({ name: editName.trim(), description: editDescription.trim() });
-		editingId = null;
-		localError = '';
+		try {
+			await onSave({ name: editName.trim(), description: editDescription.trim() });
+			editingId = null;
+			localError = '';
+		} catch (e) {
+			localError = e instanceof Error ? e.message : 'Error al guardar';
+		}
 	}
 
-	function saveEdit(id: string) {
+	async function saveEdit(id: string) {
 		const err = validate(editName, id);
 		if (err) {
 			localError = err;
 			return;
 		}
-		onSave({ name: editName.trim(), description: editDescription.trim(), id });
-		editingId = null;
-		localError = '';
+		try {
+			await onSave({ name: editName.trim(), description: editDescription.trim(), id });
+			editingId = null;
+			localError = '';
+		} catch (e) {
+			localError = e instanceof Error ? e.message : 'Error al guardar';
+		}
 	}
 </script>
 

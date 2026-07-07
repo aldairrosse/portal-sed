@@ -45,6 +45,7 @@ import (
 	// Handlers
 	activityhandler "github.com/sed-evaluacion-desempeno/api/internal/handler/activity"
 	authhandler "github.com/sed-evaluacion-desempeno/api/internal/handler/auth"
+	commentchangehandler "github.com/sed-evaluacion-desempeno/api/internal/handler/commentchange"
 	goalhandler "github.com/sed-evaluacion-desempeno/api/internal/handler/goal"
 	cyclehandler "github.com/sed-evaluacion-desempeno/api/internal/handler/cycle"
 	comphandler "github.com/sed-evaluacion-desempeno/api/internal/handler/competency"
@@ -297,6 +298,7 @@ func main() {
 	compH := comphandler.NewHandler(pillarSvc, competencySvc, scaleSvc, catalogSvc, acceptanceSvc, activitySvc)
 	evalH := evalhandler.NewEvaluationHandler(evalSvc, nineBoxSvc, dashboardSvc, activitySvc)
 	orgH := orghandler.NewOrgHandler(orgTreeSvc, orgNodeSvc, employeeSvc, evaluateeSvc, metricsSvc)
+	commentChangeH := commentchangehandler.NewHandler(db)
 
 	// -----------------------------------------------------------------------
 	// Router
@@ -330,6 +332,7 @@ func main() {
 	evalhandler.RegisterRoutes(apiV1, evalH, authSvc)
 	orghandler.RegisterRoutes(apiV1, orgH, authSvc)
 	goalhandler.RegisterRoutes(apiV1, goalH, authSvc)
+	commentchangehandler.RegisterRoutes(apiV1, commentChangeH, authSvc)
 	activityhandler.RegisterActivityRoutes(apiV1, activityH, authSvc)
 	r.Mount("/api/v1", apiV1)
 

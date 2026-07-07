@@ -11,9 +11,10 @@
 		entityName: string;
 		requestedBy: string;
 		onClose: () => void;
+		onCreated?: (entityType: ChangeRequest['entityType'], entityId: string) => void;
 	}
 
-	let { open, entityType, entityId, entityName, requestedBy, onClose }: Props = $props();
+	let { open, entityType, entityId, entityName, requestedBy, onClose, onCreated }: Props = $props();
 
 	let dialogEl: HTMLDialogElement | undefined = $state();
 	let reason = $state('');
@@ -54,26 +55,37 @@
 		if (e.target === dialogEl) handleCancel();
 	}
 
-	function handleSubmit(e: Event) {
+	async function handleSubmit(e: Event) {
 		e.preventDefault();
 		if (!reason.trim()) {
 			notifications.error('Debe indicar el motivo del cambio.');
 			return;
 		}
-		const changeRequest: ChangeRequest = {
-			id: `cr-${Date.now()}`,
-			entityType,
-			entityId,
-			action: 'update',
-			changes: { reason: reason.trim() },
-			reason: reason.trim(),
-			requestedBy,
-			requestedAt: new Date().toISOString(),
-			status: 'pending'
-		};
-		recordChangeRequest(changeRequest);
-		submitted = true;
-		setTimeout(() => onClose(), 2000);
+		try {
+			await recordChangeRequest({
+				id: '',
+				entityType,
+				entityId,
+				action: 'update',
+				changes: { reason: reason.trim() },
+				reason: reason.trim(),
+				requestedBy,
+				requestedAt: new Date().toISOString(),
+				status: 'pending'
+			});
+			submitted = true;
+			// If it's a goal-level change request, open the comment chat
+			if (entityType === 'goal' && onCreated) {
+				setTimeout(() => {
+					onClose();
+					onCreated(entityType, entityId);
+				}, 800);
+			} else {
+				setTimeout(() => onClose(), 2000);
+			}
+		} catch {
+			notifications.error('Error al enviar la solicitud.');
+		}
 	}
 </script>
 

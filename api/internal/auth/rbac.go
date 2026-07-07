@@ -107,7 +107,7 @@ var RolePermissions = map[Role][]Permission{
 	RoleRH: {
 		PermGoalCreate, PermGoalRead, PermGoalUpdate, PermGoalDelete, PermGoalProgress,
 		PermCompetencyRead, PermCompetencyWrite, PermCompetencyDelete,
-		PermEvalSelf, PermEvalRH, PermEvalRead,
+		PermEvalSelf, PermEvalRH, PermEval9x9, PermEvalRead,
 		PermCycleRead, PermCycleTransition,
 		PermOrgRead,
 	},

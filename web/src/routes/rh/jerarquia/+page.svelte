@@ -283,7 +283,11 @@ import { getActivePhase } from '$lib/api/cycle.svelte';
 											<tbody>
 												{#each employeeList as emp (emp.id)}
 													<tr class="hover">
-														<td class="font-medium">{emp.name}</td>
+														<td class="font-medium">
+															<div class="flex items-center gap-2">
+																<span>{emp.name}</span>
+															</div>
+														</td>
 														<td class="text-xs text-base-content/50">{emp.position}</td>
 														<td><span class="text-xs text-base-content/50 capitalize">{emp.profile}</span></td>
 													</tr>

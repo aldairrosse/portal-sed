@@ -40,6 +40,10 @@ function resolveProfileUuid(name: EvaluationProfile): string {
 let data = $state<StoreData | null>(null);
 let loading = $state(true);
 let error = $state<string | null>(null);
+// ponytail: guard against concurrent load() calls that flood the rate limiter
+let loadPromise: Promise<void> | null = null;
+let lastLoadTime = 0;
+const FRESHNESS_MS = 5000;
 
 /** @returns true while load() is in progress. */
 export function isLoading(): boolean {
@@ -58,22 +62,38 @@ export function getError(): string | null {
  * In production / VITE_USE_API=true: fetches from the real API endpoints.
  */
 export async function load(): Promise<void> {
+	if (loadPromise) return loadPromise;
+	if (data && Date.now() - lastLoadTime < FRESHNESS_MS) return;
+	loadPromise = _doLoad();
+	try {
+		await loadPromise;
+	} finally {
+		loadPromise = null;
+		lastLoadTime = Date.now();
+	}
+}
+
+async function _doLoad(): Promise<void> {
 	loading = true;
 	error = null;
 
 	try {
-		// Phase 1 — parallel: pillars (with competencies), levels, profiles, acceptance levels
-		const [pillarsRes, levelsRes, profilesRes, acceptanceRes] = await Promise.all([
-			client.GET('/pillars', { params: { query: { include: 'competencies' } } }),
-			client.GET('/levels', {}),
+		// Phase 1 — staggered to avoid rate-limit bursts
+		const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+		const pillarsRes = await client.GET('/pillars', { params: { query: { include: 'competencies' } } });
+		await delay(30);
+		const levelsRes = await client.GET('/levels', {});
+		await delay(30);
+		const [profilesRes, acceptanceRes] = await Promise.all([
 			client.GET('/profiles', {}),
 			client.GET('/acceptance-levels', {})
 		]);
 
 		const apiPillars = (
-			(pillarsRes.data as { data?: Array<{ id?: string; name?: string; description?: string }> })
+			(pillarsRes.data as { data?: Array<{ id?: string; name?: string; description?: string; updated_at?: string; competencies?: Array<{ id?: string; name?: string; description?: string; updated_at?: string }> }> })
 				?.data ?? []
-		) as Array<{ id?: string; name?: string; description?: string }>;
+		);
 
 		const apiLevels = (levelsRes.data ?? []) as Array<{
 			level?: number;
@@ -87,37 +107,26 @@ export async function load(): Promise<void> {
 			level?: number;
 		}>;
 
-		// Phase 2 — fan-out per pillar to get competencies with details
-		const pillarIds = apiPillars.map((p) => p.id).filter(Boolean) as string[];
-		const detailResults = await Promise.all(
-			pillarIds.map((id) =>
-				client.GET('/pillars/{id}', {
-					params: { path: { id }, query: { include: 'competencies' } }
-				})
-			)
-		);
-
 		// ── Normalize ──────────────────────────────────────────────────────
 
-		const pillars: Pillar[] = apiPillars.map((p) => ({
-			id: p.id ?? crypto.randomUUID(),
-			name: p.name ?? '',
-			description: p.description ?? ''
-		}));
-
+		const pillars: Pillar[] = [];
 		const competencies: Competency[] = [];
-		for (const res of detailResults) {
-			const detail = res.data as {
-				id?: string;
-				competencies?: Array<{ id?: string; name?: string; description?: string }>;
-			} | null;
-			const pillarId = detail?.id ?? '';
-			for (const c of detail?.competencies ?? []) {
+
+		for (const p of apiPillars) {
+			const pillarId = p.id ?? crypto.randomUUID();
+			pillars.push({
+				id: pillarId,
+				name: p.name ?? '',
+				description: p.description ?? '',
+				updatedAt: p.updated_at ?? new Date().toISOString()
+			});
+			for (const c of p.competencies ?? []) {
 				competencies.push({
 					id: c.id ?? crypto.randomUUID(),
 					name: c.name ?? '',
 					description: c.description ?? '',
-					pillarId
+					pillarId,
+					updatedAt: c.updated_at ?? new Date().toISOString()
 				});
 			}
 		}
@@ -158,7 +167,7 @@ export async function load(): Promise<void> {
 			})
 		);
 
-		// Phase 3 — fetch scale criteria per competency
+		// Phase 2 — fetch scale criteria per competency
 		const competencyIds = competencies.map((c) => c.id);
 		const scaleCriteriaResults = await Promise.all(
 			competencyIds.map((id) =>
@@ -327,8 +336,9 @@ export async function updatePillar(
 	id: string,
 	updates: Partial<Omit<Pillar, 'id'>>
 ): Promise<void> {
+	const pillar = data?.pillars.find((p) => p.id === id);
 	const { error: apiError } = await client.PUT('/pillars/{id}', {
-		params: { path: { id }, header: { 'If-Match': 'placeholder' } },
+		params: { path: { id }, header: { 'If-Match': pillar?.updatedAt ?? 'placeholder' } },
 		body: { name: updates.name ?? '', description: updates.description ?? '' }
 	});
 	if (apiError)
@@ -376,8 +386,9 @@ export async function updateCompetency(
 	id: string,
 	updates: Partial<Omit<Competency, 'id'>>
 ): Promise<void> {
+	const competency = data?.competencies.find((c) => c.id === id);
 	const { error: apiError } = await client.PUT('/competencies/{id}', {
-		params: { path: { id }, header: { 'If-Match': 'placeholder' } },
+		params: { path: { id }, header: { 'If-Match': competency?.updatedAt ?? 'placeholder' } },
 		body: {
 			name: updates.name ?? '',
 			description: updates.description ?? '',

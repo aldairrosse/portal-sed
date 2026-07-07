@@ -54,6 +54,18 @@ function normalizeApiData(
 	return { entries, quadrantDefs };
 }
 
+const DEFAULT_QUADRANT_DEFS: NineBoxQuadrantDef[] = [
+	{ quadrant: 1, label: 'Q1', title: 'Rendimiento insuficiente', description: '', colorHex: '#EF4444', actionRecommendation: '' },
+	{ quadrant: 2, label: 'Q2', title: 'En riesgo', description: '', colorHex: '#F97316', actionRecommendation: '' },
+	{ quadrant: 3, label: 'Q3', title: 'Estrella fugaz', description: '', colorHex: '#EAB308', actionRecommendation: '' },
+	{ quadrant: 4, label: 'Q4', title: 'Colaborador sólido', description: '', colorHex: '#A855F7', actionRecommendation: '' },
+	{ quadrant: 5, label: 'Q5', title: 'Rendimiento consistente', description: '', colorHex: '#3B82F6', actionRecommendation: '' },
+	{ quadrant: 6, label: 'Q6', title: 'Talento emergente', description: '', colorHex: '#06B6D4', actionRecommendation: '' },
+	{ quadrant: 7, label: 'Q7', title: 'Potencial sin explotar', description: '', colorHex: '#22C55E', actionRecommendation: '' },
+	{ quadrant: 8, label: 'Q8', title: 'Futuro líder', description: '', colorHex: '#14B8A6', actionRecommendation: '' },
+	{ quadrant: 9, label: 'Q9', title: 'Estrella', description: '', colorHex: '#6366F1', actionRecommendation: '' }
+];
+
 // ─── Loading / error state accessors ──────────────────────────────────────────
 
 export function isLoading(): boolean {
@@ -157,11 +169,12 @@ export function getEntryByEmployee(employeeId: string): NineBoxEntry | undefined
 }
 
 export function getQuadrantDefs(): NineBoxQuadrantDef[] {
-	return data?.quadrantDefs ?? [];
+	const defs = data?.quadrantDefs;
+	return defs && defs.length > 0 ? defs : DEFAULT_QUADRANT_DEFS;
 }
 
 export function getQuadrantDef(quadrant: number): NineBoxQuadrantDef | undefined {
-	return (data?.quadrantDefs ?? []).find((d) => d.quadrant === quadrant);
+	return getQuadrantDefs().find((d) => d.quadrant === quadrant);
 }
 
 export function getEntriesByQuadrant(

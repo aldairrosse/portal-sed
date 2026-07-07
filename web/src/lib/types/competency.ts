@@ -8,6 +8,7 @@ export interface Pillar {
 	id: string;
 	name: string;
 	description: string;
+	updatedAt: string;
 }
 
 /**
@@ -18,6 +19,7 @@ export interface Competency {
 	name: string;
 	description: string;
 	pillarId: string;
+	updatedAt: string;
 }
 
 /**

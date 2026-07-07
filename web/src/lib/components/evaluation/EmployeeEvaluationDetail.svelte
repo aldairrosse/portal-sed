@@ -13,6 +13,7 @@
 		getCompetenciesByPillar,
 		getLevelDefinitions,
 		getCompetencyAcceptanceLevel,
+		load as loadCompetencies,
 	} from '$lib/stores/competencyStore.svelte';
 	import {
 		getCompetencyRatings,
@@ -32,6 +33,7 @@
 		getCategories,
 		getKpisForGoal,
 		getAssignmentByEmployee,
+		load as loadGoals,
 	} from '$lib/stores/goalsStore.svelte';
 	import { Star } from '@lucide/svelte';
 	interface Props {
@@ -52,7 +54,9 @@
 	const errorEval = $derived(getError());
 
 	onMount(() => {
-		loadEvaluations();
+		loadEvaluations(employeeId);
+		loadGoals();
+		loadCompetencies();
 	});
 
 	const phase = $derived(getActivePhase() ?? 'inicio-anio');

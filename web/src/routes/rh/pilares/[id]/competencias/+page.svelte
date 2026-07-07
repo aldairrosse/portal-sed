@@ -44,19 +44,28 @@
 		editingId = '__new__';
 	}
 
-	function handleSave(data: { name: string; description: string; id?: string }) {
+	async function handleSave(data: { name: string; description: string; id?: string }) {
 		if (data.id) {
-			updateCompetency(data.id, { name: data.name, description: data.description });
-			notifications.success(`Competencia "${data.name}" actualizada correctamente.`);
+			try {
+				await updateCompetency(data.id, { name: data.name, description: data.description });
+				notifications.success(`Competencia "${data.name}" actualizada correctamente.`);
+			} catch (e) {
+				notifications.error(e instanceof Error ? e.message : 'Error al actualizar competencia');
+			}
 		} else {
 			const newComp: Competency = {
 				id: generateId(),
 				pillarId,
 				name: data.name,
-				description: data.description
+				description: data.description,
+				updatedAt: new Date().toISOString()
 			};
-			addCompetency(newComp);
-			notifications.success(`Competencia "${data.name}" creada correctamente.`);
+			try {
+				await addCompetency(newComp);
+				notifications.success(`Competencia "${data.name}" creada correctamente.`);
+			} catch (e) {
+				notifications.error(e instanceof Error ? e.message : 'Error al crear competencia');
+			}
 		}
 	}
 

@@ -12,7 +12,17 @@ type AppPaths = AuthPaths & CyclePaths & GoalsPaths & CompetencyPaths & OrgHiera
 export const baseURL: string = import.meta.env.VITE_API_URL ?? '/api/v1';
 
 async function fetchWithCredentials(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
-	const response = await fetch(input, { ...init, credentials: 'include' });
+	const method = (init?.method ?? 'GET').toUpperCase();
+	// ponytail: when openapi-fetch passes a Request object without init (common for
+	// PUT/POST with typed headers like If-Match), init?.headers is undefined — but
+	// the Request already has the merged headers. Use those as the fallback base so
+	// we don't lose headers when creating a new Headers object below.
+	const headersBase = init?.headers ?? (input instanceof Request ? input.headers : undefined);
+	const headers = new Headers(headersBase);
+	if (method === 'GET' || method === 'HEAD') {
+		headers.delete('Content-Type');
+	}
+	const response = await fetch(input, { ...init, headers, credentials: 'include' });
 	if (response.status === 401) {
 		window.location.href = '/login';
 	}

@@ -282,6 +282,7 @@ components:
         - year
         - current_phase
         - organization_id
+        - version
         - created_at
         - updated_at
       properties:
@@ -296,6 +297,9 @@ components:
         organization_id:
           type: string
           format: uuid
+        version:
+          type: integer
+          description: Optimistic locking version
         created_at:
           type: string
           format: date-time

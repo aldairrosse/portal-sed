@@ -5,10 +5,12 @@ import "time"
 
 // PillarListItem is the light projection used in pillar list responses.
 type PillarListItem struct {
-	ID              string `json:"id"`
-	Name            string `json:"name"`
-	Description     string `json:"description,omitempty"`
-	CompetencyCount int    `json:"competency_count"`
+	ID              string           `json:"id"`
+	Name            string           `json:"name"`
+	Description     string           `json:"description,omitempty"`
+	UpdatedAt       time.Time        `json:"updated_at"`
+	CompetencyCount int              `json:"competency_count"`
+	Competencies    []CompetencyLite `json:"competencies,omitempty"`
 }
 
 // PillarDetail is the full projection of a pillar, optionally including competencies.
@@ -35,9 +37,10 @@ type UpdatePillarRequest struct {
 
 // CompetencyLite is the light projection used in nested competency arrays.
 type CompetencyLite struct {
-	ID          string `json:"id"`
-	Name        string `json:"name"`
-	Description string `json:"description,omitempty"`
+	ID          string    `json:"id"`
+	Name        string    `json:"name"`
+	Description string    `json:"description,omitempty"`
+	UpdatedAt   time.Time `json:"updated_at"`
 }
 
 // CompetencyDetail is the full projection of a competency with scale criteria.

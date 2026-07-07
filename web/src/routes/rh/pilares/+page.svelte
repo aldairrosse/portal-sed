@@ -38,14 +38,22 @@
 		editingId = '__new__';
 	}
 
-	function handlePillarSave(data: { name: string; description: string; id?: string }) {
+	async function handlePillarSave(data: { name: string; description: string; id?: string }) {
 		if (data.id) {
-			updatePillar(data.id, { name: data.name, description: data.description });
-			notifications.success(`Pilar "${data.name}" actualizado correctamente.`);
+			try {
+				await updatePillar(data.id, { name: data.name, description: data.description });
+				notifications.success(`Pilar "${data.name}" actualizado correctamente.`);
+			} catch (e) {
+				notifications.error(e instanceof Error ? e.message : 'Error al actualizar pilar');
+			}
 		} else {
-			const newPillar: Pillar = { id: generateId(), name: data.name, description: data.description };
-			addPillar(newPillar);
-			notifications.success(`Pilar "${data.name}" creado correctamente.`);
+			const newPillar: Pillar = { id: generateId(), name: data.name, description: data.description, updatedAt: new Date().toISOString() };
+			try {
+				await addPillar(newPillar);
+				notifications.success(`Pilar "${data.name}" creado correctamente.`);
+			} catch (e) {
+				notifications.error(e instanceof Error ? e.message : 'Error al crear pilar');
+			}
 		}
 	}
 

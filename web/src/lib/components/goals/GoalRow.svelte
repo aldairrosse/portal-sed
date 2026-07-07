@@ -286,6 +286,18 @@
 							</button>
 						{/if}
 					{:else if mode === 'editor'}
+						<!-- ponytail: show comment button in inicio-anio when there are existing comments from the boss -->
+						{#if (goal.comments?.length ?? 0) > 0}
+							<button
+								class="btn btn-ghost btn-square btn-xs relative"
+								title="Comentarios"
+								onclick={() => onOpenComments?.(goal)}
+								aria-label="Comentarios de {goal.name}"
+							>
+								<MessageCircle class="w-3.5 h-3.5" />
+								<span class="badge badge-xs badge-primary absolute -top-1.5 -right-1.5">{goal.comments?.length}</span>
+							</button>
+						{/if}
 						<button
 							class="btn btn-ghost btn-square btn-xs"
 							title="Editar"
@@ -307,6 +319,18 @@
 							</button>
 						{/if}
 					{:else if onRequestChange}
+						<!-- ponytail: show comment button for boss in reader mode when there are existing comments -->
+						{#if (goal.comments?.length ?? 0) > 0}
+							<button
+								class="btn btn-ghost btn-square btn-xs relative"
+								title="Comentarios"
+								onclick={() => onOpenComments?.(goal)}
+								aria-label="Comentarios de {goal.name}"
+							>
+								<MessageCircle class="w-3.5 h-3.5" />
+								<span class="badge badge-xs badge-primary absolute -top-1.5 -right-1.5">{goal.comments?.length}</span>
+							</button>
+						{/if}
 						<button
 							class="btn btn-ghost btn-xs text-warning"
 							title="Solicitar cambio"

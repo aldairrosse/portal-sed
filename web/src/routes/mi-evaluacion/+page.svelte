@@ -2,21 +2,17 @@
     import { onMount } from 'svelte';
     import EmployeeEvaluationDetail from "$lib/components/evaluation/EmployeeEvaluationDetail.svelte";
     import { getProfile } from "$lib/stores/devContext.svelte";
-    import { getAssignmentsByProfile, load as loadGoals } from "$lib/stores/goalsStore.svelte";
-    import { load as loadCompetencies } from "$lib/stores/competencyStore.svelte";
-    import { isLoading as goalsLoading } from "$lib/stores/goalsStore.svelte";
-    import { isLoading as compLoading } from "$lib/stores/competencyStore.svelte";
+    import { getAssignmentsByProfile, load as loadGoals, isLoading as goalsLoading } from "$lib/stores/goalsStore.svelte";
     import PageSkeleton from '$lib/components/ui/PageSkeleton.svelte';
     import { ClipboardCheck } from "@lucide/svelte";
 
     const profile = $derived(getProfile());
     const assignments = $derived(getAssignmentsByProfile(profile));
     const employeeId = $derived(assignments[0]?.employeeId ?? "");
-    const loading = $derived(goalsLoading() || compLoading());
+    const loading = $derived(goalsLoading());
 
     onMount(() => {
         loadGoals();
-        loadCompetencies();
     });
 </script>
 

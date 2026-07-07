@@ -48,6 +48,7 @@ func (s *pillarService) List(ctx context.Context, opts ListOptions) (*ListResult
 			ID:          p.ID.String(),
 			Name:        p.Name,
 			Description: p.Description,
+			UpdatedAt:   p.UpdatedAt,
 		}
 		count := len(p.Edges.Competencies)
 		if count == 0 {
@@ -57,6 +58,18 @@ func (s *pillarService) List(ctx context.Context, opts ListOptions) (*ListResult
 			}
 		}
 		items[i].CompetencyCount = count
+
+		if includeCompetencies && p.Edges.Competencies != nil {
+			items[i].Competencies = make([]dto.CompetencyLite, len(p.Edges.Competencies))
+			for j, c := range p.Edges.Competencies {
+				items[i].Competencies[j] = dto.CompetencyLite{
+					ID:          c.ID.String(),
+					Name:        c.Name,
+					Description: c.Description,
+					UpdatedAt:   c.UpdatedAt,
+				}
+			}
+		}
 	}
 
 	hasMore := nextCursor != ""

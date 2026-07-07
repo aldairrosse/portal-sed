@@ -71,7 +71,7 @@ export async function loadCycles(): Promise<void> {
 			organization_id: c.organization_id,
 			year: c.year,
 			current_phase: c.current_phase,
-			version: 0,
+			version: c.version,
 			started_at: null,
 			finished_at: null,
 			created_at: c.created_at,
@@ -143,18 +143,16 @@ export async function createCycle(year: number): Promise<Cycle | null> {
 }
 
 export async function advancePhase(cycleId: string): Promise<boolean> {
-	const cycle = cycles.find((c) => c.id === cycleId);
-	if (!cycle) {
-		error = 'Ciclo no encontrado';
-		return false;
-	}
+	// ponytail: refresh cycle first to get latest version (avoids stale _loaded guard)
+	const fresh = await getCycle(cycleId);
+	if (!fresh) return false;
 
 	try {
 		const { data, error: apiError } = await client.PUT('/cycles/{id}/transition', {
 			params: {
 				path: { id: cycleId },
 				header: {
-					'If-Match': String(cycle.version),
+					'If-Match': String(fresh.version),
 					'Idempotency-Key': crypto.randomUUID()
 				}
 			},
@@ -162,9 +160,11 @@ export async function advancePhase(cycleId: string): Promise<boolean> {
 		});
 
 		if (apiError) {
-			throw new Error(
-				typeof apiError === 'string' ? apiError : 'Error al avanzar fase'
-			);
+			const msg = typeof apiError === 'object' && apiError !== null
+				? ((apiError as Record<string, unknown>).error as Record<string, unknown> ?? {})?.message ?? JSON.stringify(apiError)
+				: String(apiError);
+			console.error('[advancePhase] 409 body:', apiError, 'sent version:', fresh.version);
+			throw new Error(msg);
 		}
 
 		const raw = data as components['schemas']['Cycle'];

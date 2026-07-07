@@ -1,5 +1,6 @@
 import { client } from '$lib/api/client';
 import { getActiveCycle } from '$lib/stores/cycleStore.svelte';
+import { getNodeById } from '$lib/stores/orgHierarchyStore.svelte';
 import { titleCase } from '$lib/utils/text';
 
 // ─── Types ──────────────────────────────────────────────────────────────────────
@@ -31,6 +32,8 @@ export interface EmployeeRow {
 	name: string;
 	position: string;
 	profile: string;
+	isChildLeader?: boolean;
+	childDepartmentName?: string;
 }
 
 // ─── Module state ───────────────────────────────────────────────────────────────
@@ -87,7 +90,7 @@ async function fetchAreaMetrics(nodeId: string): Promise<void> {
 			employees: raw.employees ?? []
 		};
 
-		employeeList = buildEmployeeListFromApi(raw.employees ?? []);
+		employeeList = buildEmployeeListFromApi(raw.employees ?? [], nodeId);
 	} catch (e) {
 		metricsError = e instanceof Error ? e.message : 'Error al cargar métricas';
 		metrics = null;
@@ -99,16 +102,49 @@ async function fetchAreaMetrics(nodeId: string): Promise<void> {
 
 /**
  * Map API employee array to EmployeeRow[]. Sorted A–Z.
+ * Appends head employees of the selected node's direct children (deduped by id)
+ * with isChildLeader=true and childDepartmentName set.
  */
-function buildEmployeeListFromApi(employees: AreaMetricsEmployee[]): EmployeeRow[] {
-	return employees
-		.map((emp) => ({
-			id: emp.id,
-			name: `${emp.firstName} ${emp.lastName}`,
-			position: emp.jobTitle ?? '',
-			profile: titleCase(emp.profileName ?? '')
-		}))
-		.sort((a, b) => a.name.localeCompare(b.name));
+function buildEmployeeListFromApi(
+	employees: AreaMetricsEmployee[],
+	nodeId: string
+): EmployeeRow[] {
+	const direct = employees.map((emp) => ({
+		id: emp.id,
+		name: `${emp.firstName} ${emp.lastName}`,
+		position: emp.jobTitle ?? '',
+		profile: titleCase(emp.profileName ?? '')
+	}));
+
+	const seen = new Set(direct.map((e) => e.id));
+	const leaders = collectDirectChildLeaders(nodeId, seen);
+
+	return [...direct, ...leaders].sort((a, b) => a.name.localeCompare(b.name));
+}
+
+/**
+ * Collect head employees of the direct children of the given node from the
+ * org tree. Skips leaders already in `seen` to avoid duplicates.
+ */
+function collectDirectChildLeaders(nodeId: string, seen: Set<string>): EmployeeRow[] {
+	const node = getNodeById(nodeId);
+	if (!node?.children) return [];
+
+	const leaders: EmployeeRow[] = [];
+	for (const child of node.children) {
+		const head = child.headEmployee;
+		if (!head?.id || seen.has(head.id)) continue;
+		seen.add(head.id);
+		leaders.push({
+			id: head.id,
+			name: `${head.firstName} ${head.lastName}`,
+			position: head.jobTitle ?? '',
+			profile: titleCase(head.profileName ?? ''),
+			isChildLeader: true,
+			childDepartmentName: child.name
+		});
+	}
+	return leaders;
 }
 
 /**

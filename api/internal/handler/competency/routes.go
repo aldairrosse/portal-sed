@@ -28,7 +28,7 @@ func RegisterRoutes(r chi.Router, deps *Dependencies) {
 	// Rate-limit configurations
 	readRateLimit := middleware.RateLimitConfig{
 		Window:   time.Minute,
-		MaxCount: 500,
+		MaxCount: 2000,
 		Store:    middleware.NewInMemoryRateLimitStore(),
 	}
 
@@ -70,7 +70,6 @@ func RegisterRoutes(r chi.Router, deps *Dependencies) {
 	r.Group(func(r chi.Router) {
 		r.Use(middleware.RequirePermission(auth.PermCompetencyWrite))
 		r.Use(middleware.RateLimit(writeRateLimit))
-		r.Use(middleware.OptimisticLock)
 		r.Put("/api/v1/pillars/{id}", deps.Handler.UpdatePillar)
 	})
 
@@ -110,7 +109,6 @@ func RegisterRoutes(r chi.Router, deps *Dependencies) {
 	r.Group(func(r chi.Router) {
 		r.Use(middleware.RequirePermission(auth.PermCompetencyWrite))
 		r.Use(middleware.RateLimit(writeRateLimit))
-		r.Use(middleware.OptimisticLock)
 		r.Put("/api/v1/competencies/{id}", deps.Handler.UpdateCompetency)
 	})
 

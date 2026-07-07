@@ -16,6 +16,9 @@ interface StoreData {
 let data = $state<StoreData | null>(null);
 let loading = $state(true);
 let error = $state<string | null>(null);
+let loadPromise: Promise<void> | null = null;
+let lastLoadTime = 0;
+const FRESHNESS_MS = 5000;
 
 /** @returns true while load() is in progress. */
 export function isLoading(): boolean {
@@ -88,6 +91,18 @@ function isFinAnio(): boolean {
  * In production / VITE_USE_API=true: fetches from the real API endpoints.
  */
 export async function load(employeeId?: string): Promise<void> {
+	if (loadPromise) return loadPromise;
+	if (data && Date.now() - lastLoadTime < FRESHNESS_MS) return;
+	loadPromise = _doLoad(employeeId);
+	try {
+		await loadPromise;
+	} finally {
+		loadPromise = null;
+		lastLoadTime = Date.now();
+	}
+}
+
+async function _doLoad(employeeId?: string): Promise<void> {
 	loading = true;
 	error = null;
 

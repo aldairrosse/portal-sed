@@ -161,6 +161,8 @@ export interface components {
             current_phase: "asignacion" | "avance" | "cierre";
             /** Format: uuid */
             organization_id: string;
+            /** @description Optimistic locking version */
+            version: number;
             /** Format: date-time */
             created_at: string;
             /** Format: date-time */

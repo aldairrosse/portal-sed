@@ -44,6 +44,10 @@ class StoreState {
 
 export const storeState = new StoreState();
 
+let loadPromise: Promise<void> | null = null;
+let lastLoadTime = 0;
+const FRESHNESS_MS = 5000;
+
 /** @returns true while load() is in progress. */
 export function isLoading(): boolean {
 	return storeState.loading;
@@ -109,7 +113,8 @@ function normalizeApiData(
 		cycle_id?: string;
 		categories?: Array<unknown>;
 		created_at?: string;
-	} | null
+	} | null,
+	profileId?: string
 ): StoreData {
 	const cats: GoalCategory[] = [];
 	const goals: Goal[] = [];
@@ -190,7 +195,7 @@ function normalizeApiData(
 			id: apiAssignment.id,
 			employeeId: apiAssignment.employee_id ?? '',
 			employeeName: '',
-			profileId: 'colaborador',
+			profileId: profileId ?? 'colaborador',
 			managerId: null,
 			goalIds: assignedGoalIds,
 			createdAt: apiAssignment.created_at ?? new Date().toISOString(),
@@ -215,11 +220,38 @@ function normalizeApiData(
  * In production / VITE_USE_API=true: fetches from the real API endpoints.
  */
 export async function load(): Promise<void> {
+	if (loadPromise) return loadPromise;
+	if (storeState.data && Date.now() - lastLoadTime < FRESHNESS_MS) return;
+	loadPromise = _doLoad();
+	try {
+		await loadPromise;
+	} finally {
+		loadPromise = null;
+		lastLoadTime = Date.now();
+	}
+}
+
+/**
+ * Load goals data for a specific employee (used by boss viewing subordinates).
+ * Bypasses the freshness guard to force a reload with different employee data.
+ */
+export async function loadForEmployee(empId: string): Promise<void> {
+	if (loadPromise) return loadPromise;
+	loadPromise = _doLoad(empId);
+	try {
+		await loadPromise;
+	} finally {
+		loadPromise = null;
+		lastLoadTime = Date.now();
+	}
+}
+
+async function _doLoad(empIdOverride?: string): Promise<void> {
 	storeState.loading = true;
 	storeState.error = null;
 
 	try {
-		const empId = getEmployeeId();
+		const empId = empIdOverride ?? getEmployeeId();
 
 		const [catsRes, kpisRes, assignmentRes] = await Promise.all([
 			client.GET('/employees/{empId}/categories', {
@@ -254,13 +286,55 @@ export async function load(): Promise<void> {
 		storeState.data = normalizeApiData(
 			apiCategories as Parameters<typeof normalizeApiData>[0],
 			apiKpis as Parameters<typeof normalizeApiData>[1],
-			apiAssignment ?? null
+			apiAssignment ?? null,
+			getSession().user?.profileId
 		);
+
+		// ponytail: load comments for all goals so badges show correct counts
+		await loadAllGoalComments(empId);
 	} catch (e) {
 		storeState.error = e instanceof Error ? e.message : 'Error desconocido al cargar datos de objetivos';
 	} finally {
 		storeState.loading = false;
 	}
+}
+
+/**
+ * Load comments for all goals in the store so badges show correct counts.
+ * Silently ignores errors — comments are non-critical UI enhancements.
+ */
+async function loadAllGoalComments(_empId: string): Promise<void> {
+	if (!storeState.data) return;
+	const goals = storeState.data.goals;
+	if (goals.length === 0) return;
+
+	const results = await Promise.allSettled(
+		goals.map((g) =>
+			client.GET('/goals/{goalId}/comments', {
+				params: { path: { goalId: g.id } }
+			}).then(({ data, error }) => {
+				if (data && !error) {
+					return { goalId: g.id, comments: data as unknown as GoalComment[] };
+				}
+				return { goalId: g.id, comments: [] as GoalComment[] };
+			})
+		)
+	);
+
+	const commentMap = new Map<string, GoalComment[]>();
+	for (const r of results) {
+		if (r.status === 'fulfilled') {
+			commentMap.set(r.value.goalId, r.value.comments);
+		}
+	}
+
+	storeState.data = {
+		...storeState.data,
+		goals: storeState.data.goals.map((g) => ({
+			...g,
+			comments: commentMap.get(g.id) ?? g.comments ?? []
+		}))
+	};
 }
 
 
@@ -691,30 +765,35 @@ export async function unassignGoalFromEmployee(employeeId: string, goalId: strin
 // ─── Mutations: ChangeRequests ────────────────────────────────────────────────
 
 export async function recordChangeRequest(request: ChangeRequest): Promise<void> {
-	// UI-only concept, no API endpoint. Local-only.
-	storeState.data = { ...storeState.data!, changeRequests: [...(storeState.data?.changeRequests ?? []), request] };
+	const { data, error: apiError } = await client.POST('/change-requests', {
+		body: {
+			entity_type: request.entityType,
+			entity_id: request.entityId,
+			requested_by: request.requestedBy,
+		}
+	});
+	if (apiError) throw new Error('Error al crear solicitud de cambio');
+	if (data) {
+		storeState.data = { ...storeState.data!, changeRequests: [...(storeState.data?.changeRequests ?? []), data as unknown as ChangeRequest] };
+	}
 }
 
 export async function approveChangeRequest(id: string, approvedBy: string): Promise<void> {
-	// UI-only concept, no API endpoint. Local-only.
-	storeState.data = {
-		...storeState.data!,
-		changeRequests: (storeState.data?.changeRequests ?? []).map((cr) =>
-			cr.id === id
-				? { ...cr, status: 'approved' as const, approvedBy, approvedAt: new Date().toISOString() }
-				: cr
-		)
-	};
+	const { error: apiError } = await client.PATCH('/change-requests/{crId}', {
+		params: { path: { crId: id } },
+		body: { status: 'approved', approved_by: approvedBy }
+	});
+	if (apiError) throw new Error('Error al aprobar solicitud');
+	await reload();
 }
 
 export async function rejectChangeRequest(id: string): Promise<void> {
-	// UI-only concept, no API endpoint. Local-only.
-	storeState.data = {
-		...storeState.data!,
-		changeRequests: (storeState.data?.changeRequests ?? []).map((cr) =>
-			cr.id === id ? { ...cr, status: 'rejected' as const } : cr
-		)
-	};
+	const { error: apiError } = await client.PATCH('/change-requests/{crId}', {
+		params: { path: { crId: id } },
+		body: { status: 'rejected', approved_by: '' }
+	});
+	if (apiError) throw new Error('Error al rechazar solicitud');
+	await reload();
 }
 
 // ─── Mutations: Progress & Comments ───────────────────────────────────────────
@@ -734,24 +813,27 @@ export async function addGoalComment(
 	authorName: string,
 	content: string
 ): Promise<void> {
-	// No dedicated API endpoint for comments. Local-only for now.
-	const comment = {
-		id: `comment-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-		authorId,
-		authorName,
-		content,
-		createdAt: new Date().toISOString()
-	};
-	storeState.data = {
-		...storeState.data!,
-		goals: (storeState.data?.goals ?? []).map((g) =>
-			g.id === goalId ? { ...g, comments: [...(g.comments ?? []), comment] } : g
-		)
-	};
+	const { data, error: apiError } = await client.POST('/goals/{goalId}/comments', {
+		params: { path: { goalId } },
+		body: { content, author_id: authorId, author_name: authorName }
+	});
+	if (apiError) throw new Error('Error al guardar comentario');
+	if (data) {
+		const comment = data as unknown as GoalComment;
+		storeState.data = {
+			...storeState.data!,
+			goals: (storeState.data?.goals ?? []).map((g) =>
+				g.id === goalId ? { ...g, comments: [...(g.comments ?? []), comment] } : g
+			)
+		};
+	}
 }
 
 export async function deleteGoalComment(goalId: string, commentId: string): Promise<void> {
-	// No dedicated API endpoint for comments. Local-only for now.
+	const { error: apiError } = await client.DELETE('/goals/{goalId}/comments/{commentId}', {
+		params: { path: { goalId, commentId } }
+	});
+	if (apiError) throw new Error('Error al eliminar comentario');
 	storeState.data = {
 		...storeState.data!,
 		goals: (storeState.data?.goals ?? []).map((g) =>
