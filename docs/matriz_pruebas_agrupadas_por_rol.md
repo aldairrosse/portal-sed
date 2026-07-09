@@ -58,5 +58,7 @@ Cambios
 
 > Agregar botón de propuesta de meta
 
-> Agregar botón de descargar global
+> Agregar gestión y visualización de pilares de metas
+
+> Agregar botón de descargar global. OK
 
