@@ -83,23 +83,67 @@ func (r *CycleRepo) clientFor(ctx context.Context) *internal.Client {
 	return r.client
 }
 
-// CreateCycle inserts a new cycle with version=1 and current_phase='asignacion'.
-// Uses raw SQL to include the version field.
+// CreateCycle inserts a new cycle with version=1 and current_phase='asignacion',
+// plus the default phase definitions and transitions for it.
 func (r *CycleRepo) CreateCycle(ctx context.Context, tx *sql.Tx, year int, orgID uuid.UUID) (*CycleRow, error) {
 	now := time.Now()
-	id := uuid.New()
+	cycleID := uuid.New()
 
 	_, err := tx.ExecContext(ctx,
 		`INSERT INTO cycles (id, created_at, updated_at, year, current_phase, organization_id, version)
 		 VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-		id, now, now, year, "asignacion", orgID, 1,
+		cycleID, now, now, year, "asignacion", orgID, 1,
 	)
 	if err != nil {
 		return nil, err
 	}
 
+	// Create default phase definitions & transitions for this cycle
+	pdAsignacion := uuid.New()
+	pdAvance := uuid.New()
+	pdCierre := uuid.New()
+
+	for _, def := range []struct {
+		id    uuid.UUID
+		phase string
+		label string
+		order int
+	}{
+		{pdAsignacion, "asignacion", "Asignación", 1},
+		{pdAvance, "avance", "Avance", 2},
+		{pdCierre, "cierre", "Cierre", 3},
+	} {
+		_, err = tx.ExecContext(ctx,
+			`INSERT INTO phase_definitions (id, created_at, updated_at, phase, label, "order", cycle_id)
+			 VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+			def.id, now, now, def.phase, def.label, def.order, cycleID,
+		)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	for _, trans := range []struct {
+		fromPhase string
+		toPhase   string
+		fromID    uuid.UUID
+		toID      uuid.UUID
+	}{
+		{"asignacion", "avance", pdAsignacion, pdAvance},
+		{"avance", "cierre", pdAvance, pdCierre},
+	} {
+		_, err = tx.ExecContext(ctx,
+			`INSERT INTO phase_transitions (id, from_phase, to_phase, trigger, created_at, cycle_id, from_phase_id, to_phase_id)
+			 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+			uuid.New(), trans.fromPhase, trans.toPhase, "manual_rh", now, cycleID, trans.fromID, trans.toID,
+		)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return &CycleRow{
-		ID:             id,
+		ID:             cycleID,
 		CreatedAt:      now,
 		UpdatedAt:      now,
 		Year:           year,
