@@ -140,11 +140,11 @@
 		<ErrorState message={storeError} onretry={() => load()} />
 	{:else if items.length === 0 && !loading}
 		<p class="text-sm text-base-content/30 italic text-center py-8">
-			Sin evaluados para mostrar
+			Sin evaluados para mostrar {inputQuery ? `para "${inputQuery}"` : ""}
 		</p>
 	{:else}
 		<EmployeeEvaluationTable
-			mode="rh"
+			mode="manager"
 			rows={items}
 			onSelect={handleSelect}
 			selectedEmployeeId={selectedEmployeeId}

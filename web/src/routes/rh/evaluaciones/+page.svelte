@@ -13,13 +13,11 @@
 		hasPrevItems,
 		getCurrentPage,
 		getTotalCount,
-		getSearchQuery,
 		load,
 		search,
 		next,
 		prev,
 	} from '$lib/stores/rhEvaluadosStore.svelte';
-	import { titleCase } from '$lib/utils/text';
 
 	import { ClipboardList, ChevronLeft, ChevronRight } from '@lucide/svelte';
 
@@ -30,7 +28,6 @@
 	const hasPrev = $derived(hasPrevItems());
 	const currentPage = $derived(getCurrentPage());
 	const totalCount = $derived(getTotalCount());
-	const searchQuery = $derived(getSearchQuery());
 
 	const phase = $derived(getActivePhase() ?? 'inicio-anio');
 	const isFinAnio = $derived(phase === 'fin-anio');
@@ -75,7 +72,7 @@
 		<div>
 			<h1 class="text-2xl font-bold text-base-content flex items-center gap-2">
 				<ClipboardList class="w-6 h-6" />
-				Evaluaciones RH
+				Evaluaciones
 			</h1>
 			<p class="text-sm text-base-content/50 mt-1">
 				{phaseDescription}
@@ -136,7 +133,7 @@
 		<ErrorState message={storeError} onretry={() => load()} />
 	{:else if items.length === 0 && !loading}
 		<p class="text-sm text-base-content/30 italic text-center py-8">
-			Sin empleados para mostrar
+			Sin empleados para mostrar {inputQuery ? `para "${inputQuery}"` : ""}
 		</p>
 	{:else}
 		<EmployeeEvaluationTable

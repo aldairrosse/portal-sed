@@ -5,7 +5,6 @@
         Plus,
         Library,
         MessageSquare,
-        Check,
         FileDown,
         Target,
     } from "@lucide/svelte";
@@ -13,7 +12,6 @@
         Goal,
         GoalCategory,
         GoalUnit,
-        GoalComment,
         EmployeeAssignment,
     } from "$lib/types/goal";
     import type { ChangeRequest } from "$lib/types/goal";
@@ -52,14 +50,13 @@
         loadForEmployee,
     } from "$lib/stores/goalsStore.svelte";
     import { getSession } from "$lib/api/session.svelte";
-    import { client } from "$lib/api/client";
     import {
         load as loadOrgHierarchy,
         getRoot,
     } from "$lib/stores/orgHierarchyStore.svelte";
+    import { loadTeam, getTeamMembers } from "$lib/stores/teamStore.svelte";
     import WeightIndicator from "$lib/components/goals/WeightIndicator.svelte";
     import ProgressIndicator from "$lib/components/goals/ProgressIndicator.svelte";
-    import { validateCategory } from "$lib/components/goals/goalValidation";
     import CategoryCard from "$lib/components/goals/CategoryCard.svelte";
     import ReadOnlyBanner from "$lib/components/goals/ReadOnlyBanner.svelte";
     import AssigneePicker from "$lib/components/goals/AssigneePicker.svelte";
@@ -68,6 +65,7 @@
     import PageSkeleton from "$lib/components/ui/PageSkeleton.svelte";
     import ErrorState from "$lib/components/ui/ErrorState.svelte";
     import EmptyState from "$lib/components/ui/EmptyState.svelte";
+    import CategoryCreateForm from "$lib/components/goals/CategoryCreateForm.svelte";
     import { toCsv } from "$lib/utils/export";
     import * as notifications from "$lib/stores/notifications.svelte";
     import { SvelteSet } from "svelte/reactivity";
@@ -82,9 +80,6 @@
     });
 
     // ─── Mode detection ──────────────────────────────────────────────────────
-    // ponytail: derive own assignment by employeeId (not profileId) so the
-    // logged-in colaborador always gets their own assignment, not someone
-    // else's with the same role. Boss detection uses org-node headEmployeeId.
 
     const session = $derived(getSession());
     const viewerProfile = $derived(session.user?.profileId ?? "colaborador");
@@ -92,48 +87,25 @@
 
     const allAssignments = $derived(getAssignments());
 
-    // Own assignment = assignment where employeeId matches logged-in user
     const ownAssignment = $derived(
         allAssignments.find((a) => a.employeeId === viewerEmployeeId),
     );
 
-    // Boss detection: user is a boss if they are head_employee_id of any org node.
-    // A boss can see subordinates' assignments in reader mode.
     const isBoss = $derived(isUserHeadOfAnyNode(viewerEmployeeId));
 
     // ─── Team members (boss only) ──────────────────────────────────────────
-    // ponytail: call /team endpoint to get all employees in the boss's org
-    // nodes, then merge with existing assignments from goalsStore. Employees
-    // without an assignment get a stub entry so the picker always has data.
-
-    type TeamMember = {
-        id: string;
-        firstName: string;
-        lastName: string;
-        orgNodeId: string;
-    };
-    let teamMembers = $state<TeamMember[]>([]);
 
     $effect(() => {
         if (!viewerEmployeeId || !isBoss) return;
-        client
-            .GET("/employees/{empId}/team", {
-                params: { path: { empId: viewerEmployeeId } },
-            })
-            .then((res) => {
-                const data = (res.data as { data?: Array<TeamMember> })?.data;
-                if (data) teamMembers = data;
-            });
+        loadTeam(viewerEmployeeId);
     });
 
-    // Build available assignments: own + all team members (with or without assignment)
+    const teamMembers = $derived(getTeamMembers());
+
     const availableAssignments = $derived.by(() => {
         const result: EmployeeAssignment[] = [];
         const seen = new SvelteSet<string>();
 
-        // ponytail: always place the logged-in user first, regardless of
-        // whether ownAssignment has loaded yet. If it has, use it;
-        // otherwise create a stub so the picker always shows "(yo)" at top.
         const own = ownAssignment ?? {
             id: `stub-${viewerEmployeeId}`,
             employeeId: viewerEmployeeId,
@@ -150,23 +122,23 @@
         });
         seen.add(viewerEmployeeId);
 
-        // Team members from /team endpoint (skip viewer, already first)
         for (const member of teamMembers) {
             if (seen.has(member.id)) continue;
             seen.add(member.id);
             const memberName = `${member.firstName} ${member.lastName}`;
             const existing = getAssignmentByEmployee(member.id);
             if (existing) {
-                // Merge team member name into assignment (store doesn't carry names)
                 result.push({
                     ...existing,
                     employeeName: existing.employeeName || memberName,
+                    employeeNumber: member.employeeNumber,
                 });
             } else {
                 result.push({
                     id: `stub-${member.id}`,
                     employeeId: member.id,
                     employeeName: memberName,
+                    employeeNumber: member.employeeNumber,
                     profileId: "colaborador",
                     managerId: null,
                     goalIds: [],
@@ -183,7 +155,6 @@
 
     let selectedEmployeeId = $state("");
 
-    // Reset selected employee when assignment context changes
     $effect(() => {
         if (!selectedEmployeeId) {
             selectedEmployeeId = viewerEmployeeId;
@@ -196,8 +167,6 @@
 
     const targetEmployeeName = $derived(targetAssignment?.employeeName ?? "");
 
-    // Mode: editor when viewing own assignment or no assignment yet,
-    // reader only when viewing a subordinate's assignment.
     const mode = $derived<"editor" | "reader">(
         !targetAssignment || targetAssignment.employeeId === viewerEmployeeId
             ? "editor"
@@ -232,131 +201,43 @@
     // ─── Comment modal state ────────────────────────────────────────────────
 
     let commentGoal: Goal | null = $state(null);
-    let commentGoalComments = $state<GoalComment[]>([]);
     let showCommentModal = $state(false);
 
     function openComments(goal: Goal) {
         commentGoal = goal;
-        // Load comments from API instead of store
-        client
-            .GET("/goals/{goalId}/comments", {
-                params: { path: { goalId: goal.id } },
-            })
-            .then(({ data, error }) => {
-                if (data && !error) {
-                    commentGoalComments = data as unknown as GoalComment[];
-                } else {
-                    commentGoalComments = [];
-                }
-            })
-            .catch(() => {
-                commentGoalComments = [];
-            });
         showCommentModal = true;
     }
 
     function handleAddComment(goalId: string, content: string) {
-        addGoalComment(
-            goalId,
-            viewerEmployeeId,
-            session.user?.name ?? "",
-            content,
-        ).then(() => {
-            // Reload from API
-            client
-                .GET("/goals/{goalId}/comments", {
-                    params: { path: { goalId } },
-                })
-                .then(({ data, error }) => {
-                    if (data && !error) {
-                        commentGoalComments = data as unknown as GoalComment[];
-                    }
-                });
-        });
+        addGoalComment(goalId, viewerEmployeeId, session.user?.name ?? "", content);
     }
 
     function handleDeleteComment(goalId: string, commentId: string) {
-        deleteGoalComment(goalId, commentId).then(() => {
-            client
-                .GET("/goals/{goalId}/comments", {
-                    params: { path: { goalId } },
-                })
-                .then(({ data, error }) => {
-                    if (data && !error) {
-                        commentGoalComments = data as unknown as GoalComment[];
-                    }
-                });
-        });
+        deleteGoalComment(goalId, commentId);
     }
 
     // ─── Category comment modal state ──────────────────────────────────────
 
     let commentCategory: { id: string; name: string } | null = $state(null);
-    let commentCategoryComments = $state<GoalComment[]>([]);
     let showCategoryCommentModal = $state(false);
 
     function openCategoryComments(category: GoalCategory) {
         commentCategory = category;
-        client
-            .GET("/categories/{catId}/comments", {
-                params: { path: { catId: category.id } },
-            })
-            .then(({ data, error }) => {
-                if (data && !error) {
-                    commentCategoryComments = data as unknown as GoalComment[];
-                } else {
-                    commentCategoryComments = [];
-                }
-            })
-            .catch(() => {
-                commentCategoryComments = [];
-            });
         showCategoryCommentModal = true;
     }
 
     function handleAddCategoryComment(catId: string, content: string) {
-        addCategoryComment(
-            catId,
-            viewerEmployeeId,
-            session.user?.name ?? "",
-            content,
-        ).then(() => {
-            client
-                .GET("/categories/{catId}/comments", {
-                    params: { path: { catId } },
-                })
-                .then(({ data, error }) => {
-                    if (data && !error) {
-                        commentCategoryComments =
-                            data as unknown as GoalComment[];
-                    }
-                });
-        });
+        addCategoryComment(catId, viewerEmployeeId, session.user?.name ?? "", content);
     }
 
     function handleDeleteCategoryComment(catId: string, commentId: string) {
-        deleteCategoryComment(catId, commentId).then(() => {
-            client
-                .GET("/categories/{catId}/comments", {
-                    params: { path: { catId } },
-                })
-                .then(({ data, error }) => {
-                    if (data && !error) {
-                        commentCategoryComments =
-                            data as unknown as GoalComment[];
-                    }
-                });
-        });
+        deleteCategoryComment(catId, commentId);
     }
 
     // ─── Existing page state ─────────────────────────────────────────────────
 
     let creatingCategory = $state(false);
     let isAnyInlineEditing = $state(false);
-    let newCatName = $state("");
-    let newCatDesc = $state("");
-    let newCatWeight = $state(0);
-    let newCatError = $state("");
 
     const categories = $derived(getCategories());
     const goals = $derived(getGoals());
@@ -372,7 +253,12 @@
     let requestEntityType: ChangeRequest["entityType"] = $state("goal");
     let requestEntityId = $state("");
     let requestEntityName = $state("");
-    let requestComments = $state<GoalComment[]>([]);
+
+    const requestComments = $derived.by(() => {
+        if (requestEntityType === "goal") return getGoalComments(requestEntityId);
+        if (requestEntityType === "category") return getCategoryComments(requestEntityId);
+        return [];
+    });
 
     function openRequestModal(
         type: ChangeRequest["entityType"],
@@ -382,29 +268,6 @@
         requestEntityType = type;
         requestEntityId = id;
         requestEntityName = name;
-        requestComments = [];
-        // Load comments for the entity
-        if (type === "goal") {
-            client
-                .GET("/goals/{goalId}/comments", {
-                    params: { path: { goalId: id } },
-                })
-                .then(({ data, error }) => {
-                    if (data && !error)
-                        requestComments = data as unknown as GoalComment[];
-                })
-                .catch(() => {});
-        } else if (type === "category") {
-            client
-                .GET("/categories/{catId}/comments", {
-                    params: { path: { catId: id } },
-                })
-                .then(({ data, error }) => {
-                    if (data && !error)
-                        requestComments = data as unknown as GoalComment[];
-                })
-                .catch(() => {});
-        }
         showRequestModal = true;
     }
 
@@ -416,21 +279,16 @@
 
     function handleAssigneeSelect(employeeId: string) {
         selectedEmployeeId = employeeId;
-        // Reload store data for the selected employee
         if (employeeId === viewerEmployeeId) {
-            load(); // reload for current user
+            load();
         } else {
-            loadForEmployee(employeeId); // reload for subordinate
+            loadForEmployee(employeeId);
         }
     }
 
     function startCreateCategory() {
         creatingCategory = true;
         isAnyInlineEditing = true;
-        newCatName = "";
-        newCatDesc = "";
-        newCatWeight = 0;
-        newCatError = "";
     }
 
     async function handleSaveCategory(data: {
@@ -463,8 +321,9 @@
                     : "Categoría creada correctamente.",
             );
         } catch (e) {
-            newCatError =
-                e instanceof Error ? e.message : "Error al guardar categoría";
+            notifications.error(
+                e instanceof Error ? e.message : "Error al guardar categoría",
+            );
         }
     }
 
@@ -585,51 +444,15 @@
         openRequestModal("assignment", targetAssignment.id, targetEmployeeName);
     }
 
-    function handleRequestChangeCreated(
-        entityType: ChangeRequest["entityType"],
-        entityId: string,
-    ) {
-        console.log(
-            `Change request created for ${entityType} with ID ${entityId}`,
-        );
+    function handleRequestChangeCreated() {
         loadAllGoalComments();
     }
 
     function handleRequestAddComment(entityId: string, content: string) {
         if (requestEntityType === "goal") {
-            addGoalComment(
-                entityId,
-                viewerEmployeeId,
-                session.user?.name ?? "",
-                content,
-            ).then(() => {
-                client
-                    .GET("/goals/{goalId}/comments", {
-                        params: { path: { goalId: entityId } },
-                    })
-                    .then(({ data, error }) => {
-                        if (data && !error)
-                            requestComments = data as unknown as GoalComment[];
-                    });
-                loadAllGoalComments();
-            });
+            addGoalComment(entityId, viewerEmployeeId, session.user?.name ?? "", content);
         } else if (requestEntityType === "category") {
-            addCategoryComment(
-                entityId,
-                viewerEmployeeId,
-                session.user?.name ?? "",
-                content,
-            ).then(() => {
-                client
-                    .GET("/categories/{catId}/comments", {
-                        params: { path: { catId: entityId } },
-                    })
-                    .then(({ data, error }) => {
-                        if (data && !error)
-                            requestComments = data as unknown as GoalComment[];
-                    });
-                loadAllGoalComments();
-            });
+            addCategoryComment(entityId, viewerEmployeeId, session.user?.name ?? "", content);
         }
     }
 
@@ -641,26 +464,61 @@
         }
     }
 
+    // ─── Export CSV modal ────────────────────────────────────────────────────────
+
+    let showExportModal = $state(false);
+
     function handleExportCsv() {
+        showExportModal = true;
+    }
+
+    function buildRows(
+        assignment: EmployeeAssignment,
+    ): Record<string, string | number | null>[] {
         const rows: Record<string, string | number | null>[] = [];
-        for (const cat of categories) {
+        const cats = getCategories();
+        for (const cat of cats) {
             const catGoals = getGoalsByCategory(cat.id);
             for (const goal of catGoals) {
                 const kpis = getKpisForGoal(goal.id);
-                const kpiNames = kpis.map((k) => k.name).join(", ");
                 rows.push({
+                    "No. Empleado": assignment.employeeNumber ?? assignment.employeeId,
+                    Empleado: assignment.employeeName,
                     Categoría: cat.name,
                     "Peso categoría %": cat.weight,
                     Meta: goal.name,
                     Descripción: goal.description,
                     Unidad: goal.unit,
                     "Peso meta %": goal.weight,
-                    "Valor objetivo": goal.targetValue,
-                    KPIs: kpiNames || "",
+                    "Valor objetivo": formatTarget(goal),
+                    KPIs: kpis.map((k) => k.name).join(", ") || "",
                 });
             }
         }
-        toCsv(rows, "asignacion-anual.csv");
+        return rows;
+    }
+
+    function formatTarget(g: Goal) {
+        return g.unit === "porcentaje" ? `${g.targetValue}%` : g.targetValue;
+    }
+
+    async function exportCurrent() {
+        showExportModal = false;
+        toCsv(buildRows(targetAssignment!), "asignacion-anual.csv");
+    }
+
+    async function exportAll() {
+        showExportModal = false;
+        const allRows: Record<string, string | number | null>[] = [];
+        const originalId = selectedEmployeeId;
+
+        for (const a of availableAssignments) {
+            await loadForEmployee(a.employeeId);
+            allRows.push(...buildRows(a));
+        }
+
+        await loadForEmployee(originalId);
+        toCsv(allRows, "asignacion-anual-todos.csv");
     }
 </script>
 
@@ -878,108 +736,17 @@
             />
         {/if}
 
-        <!-- Nueva categoría inline form (editor only, not in avance or cierre mode) -->
+        <!-- Nueva categoría inline form -->
         {#if mode === "editor" && phase !== "medio-anio" && phase !== "fin-anio"}
             <div class="pt-2">
                 {#if creatingCategory}
-                    <div
-                        class="w-full border border-base-300 rounded-lg p-4 bg-base-200/50"
-                    >
-                        <form
-                            onsubmit={(e) => {
-                                e.preventDefault();
-                                const err = validateCategory({
-                                    name: newCatName,
-                                    description: newCatDesc,
-                                    weight: newCatWeight,
-                                });
-                                if (err) {
-                                    newCatError = err;
-                                    return;
-                                }
-                                handleSaveCategory({
-                                    name: newCatName,
-                                    description: newCatDesc,
-                                    weight: newCatWeight,
-                                });
-                            }}
-                        >
-                            {#if newCatError}<div
-                                    class="alert alert-error text-sm mb-3"
-                                    role="alert"
-                                >
-                                    <span>{newCatError}</span>
-                                </div>{/if}
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                                <div class="form-control">
-                                    <label class="label" for="new-cat-name"
-                                        ><span class="label-text text-xs"
-                                            >Nombre</span
-                                        ></label
-                                    >
-                                    <input
-                                        id="new-cat-name"
-                                        type="text"
-                                        class="input input-bordered input-sm w-full"
-                                        bind:value={newCatName}
-                                        placeholder="Nombre de la categoría"
-                                        required
-                                    />
-                                </div>
-                                <div class="form-control">
-                                    <label class="label" for="new-cat-desc"
-                                        ><span class="label-text text-xs"
-                                            >Descripción</span
-                                        ></label
-                                    >
-                                    <textarea
-                                        id="new-cat-desc"
-                                        class="textarea textarea-bordered textarea-sm w-full"
-                                        rows={1}
-                                        bind:value={newCatDesc}
-                                        placeholder="Descripción"
-                                        required
-                                    ></textarea>
-                                </div>
-                                <div class="form-control">
-                                    <label class="label" for="new-cat-weight"
-                                        ><span class="label-text text-xs"
-                                            >Peso (%)</span
-                                        ></label
-                                    >
-                                    <input
-                                        id="new-cat-weight"
-                                        type="number"
-                                        class="input input-bordered input-sm w-full"
-                                        bind:value={newCatWeight}
-                                        min={0}
-                                        max={100}
-                                        step={0.1}
-                                        placeholder="0"
-                                        required
-                                    />
-                                </div>
-                            </div>
-                            <div class="flex justify-end gap-2 mt-3">
-                                <button
-                                    type="button"
-                                    class="btn btn-ghost btn-sm"
-                                    onclick={() => {
-                                        creatingCategory = false;
-                                        isAnyInlineEditing = false;
-                                    }}
-                                >
-                                    Cancelar
-                                </button>
-                                <button
-                                    type="submit"
-                                    class="btn btn-primary btn-sm"
-                                >
-                                    <Check class="w-4 h-4" /> Guardar categoría
-                                </button>
-                            </div>
-                        </form>
-                    </div>
+                    <CategoryCreateForm
+                        onSave={(data) => handleSaveCategory(data)}
+                        onCancel={() => {
+                            creatingCategory = false;
+                            isAnyInlineEditing = false;
+                        }}
+                    />
                 {:else if categories.length > 0}
                     <div class="flex justify-center">
                         <button
@@ -1015,7 +782,7 @@
     <CommentPopover
         open={showCommentModal}
         goal={commentGoal}
-        comments={commentGoalComments}
+        comments={getGoalComments(commentGoal.id)}
         onAdd={handleAddComment}
         onDelete={handleDeleteComment}
         onClose={() => (showCommentModal = false)}
@@ -1027,7 +794,7 @@
     <CommentPopover
         open={showCategoryCommentModal}
         goal={null}
-        comments={commentCategoryComments}
+        comments={getCategoryComments(commentCategory.id)}
         onAdd={handleAddCategoryComment}
         onDelete={handleDeleteCategoryComment}
         onClose={() => (showCategoryCommentModal = false)}
@@ -1035,3 +802,38 @@
         category={commentCategory}
     />
 {/if}
+
+<dialog class="modal" class:modal-open={showExportModal}>
+    <div class="modal-box max-w-md">
+        <h3 class="font-semibold text-base-content">Exportar CSV</h3>
+        <p class="text-sm text-base-content/60 mt-2">
+            ¿Qué datos desea exportar?
+        </p>
+        <div class="mt-4 space-y-2">
+            <button
+                class="btn btn-outline w-full justify-start"
+                onclick={exportCurrent}
+            >
+                <FileDown class="w-4 h-4" />
+                {targetAssignment?.employeeName ?? "Empleado actual"}
+            </button>
+            {#if isBoss}
+                <button
+                    class="btn btn-outline w-full justify-start"
+                    onclick={exportAll}
+                >
+                    <FileDown class="w-4 h-4" />
+                    Todos ({availableAssignments.length} empleados)
+                </button>
+            {/if}
+        </div>
+        <div class="modal-action">
+            <button class="btn btn-ghost btn-sm" onclick={() => (showExportModal = false)}>
+                Cancelar
+            </button>
+        </div>
+    </div>
+    <form method="dialog" class="modal-backdrop">
+        <button onclick={() => (showExportModal = false)}>close</button>
+    </form>
+</dialog>

@@ -53,9 +53,9 @@
 	<nav class="breadcrumbs text-sm" aria-label="Navegación">
 		<ul>
 			<li>
-				<a href="/evaluacion/9x9/competencias" class="link link-hover text-base-content/50">
-					Competencias
-				</a>
+				<button onclick={() => window.history.back()} class="link link-hover text-base-content/50">
+					Evaluaciones
+				</button>
 			</li>
 			<li class="text-base-content/70">
 				<span class="font-medium">{titleCase(employeeData?.profileName ?? 'Colaborador')}</span>
