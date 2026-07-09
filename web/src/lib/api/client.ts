@@ -11,6 +11,11 @@ type AppPaths = AuthPaths & CyclePaths & GoalsPaths & CompetencyPaths & OrgHiera
 
 export const baseURL: string = import.meta.env.VITE_API_URL ?? '/api/v1';
 
+// ponytail: propagate HTTP 404 as a catchable error so stores can treat "no record" as empty data
+export class HttpNotFoundError extends Error {
+	readonly statusCode = 404;
+}
+
 async function fetchWithCredentials(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
 	const method = (init?.method ?? 'GET').toUpperCase();
 	// ponytail: when openapi-fetch passes a Request object without init (common for
@@ -25,6 +30,9 @@ async function fetchWithCredentials(input: RequestInfo | URL, init?: RequestInit
 	const response = await fetch(input, { ...init, headers, credentials: 'include' });
 	if (response.status === 401) {
 		window.location.href = '/login';
+	}
+	if (response.status === 404) {
+		throw new HttpNotFoundError();
 	}
 	return response;
 }

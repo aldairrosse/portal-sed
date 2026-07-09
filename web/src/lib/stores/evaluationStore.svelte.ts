@@ -1,7 +1,7 @@
 import type { CompetencyRating, GoalClosure, EvaluationStatus } from '$lib/types/evaluation-result';
 import { getActivePhase } from '$lib/api/cycle.svelte';
 import { getSession } from '$lib/api/session.svelte';
-import { client } from '$lib/api/client';
+import { client, HttpNotFoundError } from '$lib/api/client';
 
 
 // ─── Internal data shape ──────────────────────────────────────────────────────
@@ -110,47 +110,65 @@ async function _doLoad(employeeId?: string): Promise<void> {
 		if (employeeId) {
 			// Employee-specific path (competency network for manager/RH view)
 			// cycle_id is optional — backend resolves the active cycle automatically
-			const { data: apiData, error: apiError } = await client.GET(
-				'/evaluations/employee/{employeeId}',
-				{ params: { path: { employeeId } } }
-			);
-
-			if (apiError) {
-				throw new Error(
-					typeof apiError === 'string' ? apiError : 'Error al cargar competencias del empleado'
+			try {
+				const { data: apiData, error: apiError } = await client.GET(
+					'/evaluations/employee/{employeeId}',
+					{ params: { path: { employeeId } } }
 				);
-			}
 
-			// Map ratings to competencies for normalizeApiData
-			const resp = apiData as { employeeId?: string; cycleId?: string; ratings?: Array<{ competencyId?: string; selfRating?: number | null; rhRating?: number | null; comments?: string; acceptanceLevel?: number | null }> } | undefined;
-			const mapped = {
-				employeeId: resp?.employeeId ?? employeeId,
-				competencies: (resp?.ratings ?? []).map((r) => ({
-					competencyId: r.competencyId,
-					selfRating: r.selfRating,
-					rhRating: r.rhRating,
-					comments: r.comments,
-					acceptanceLevel: r.acceptanceLevel
-				})),
-				goals: []
-			};
-			data = normalizeApiData(mapped, employeeId);
+				if (apiError) {
+					throw new Error(
+						typeof apiError === 'string' ? apiError : 'Error al cargar competencias del empleado'
+					);
+				}
+
+				// Map ratings to competencies for normalizeApiData
+				const resp = apiData as { employeeId?: string; cycleId?: string; ratings?: Array<{ competencyId?: string; selfRating?: number | null; rhRating?: number | null; comments?: string; acceptanceLevel?: number | null }> } | undefined;
+				const mapped = {
+					employeeId: resp?.employeeId ?? employeeId,
+					competencies: (resp?.ratings ?? []).map((r) => ({
+						competencyId: r.competencyId,
+						selfRating: r.selfRating,
+						rhRating: r.rhRating,
+						comments: r.comments,
+						acceptanceLevel: r.acceptanceLevel
+					})),
+					goals: []
+				};
+				data = normalizeApiData(mapped, employeeId);
+			} catch (e) {
+				if (e instanceof HttpNotFoundError) {
+					// ponytail: no evaluation yet, show empty state
+					data = normalizeApiData(null, employeeId);
+				} else {
+					throw e;
+				}
+			}
 		} else {
 			// Existing path: self-evaluation by session user
 			const empId = getSession().user?.employeeId;
 			if (!empId) throw new Error('No hay sesión activa');
 
-			const { data: apiData, error: apiError } = await client.GET('/evaluations/{id}', {
-				params: { path: { id: empId } }
-			});
+			try {
+				const { data: apiData, error: apiError } = await client.GET('/evaluations/{id}', {
+					params: { path: { id: empId } }
+				});
 
-			if (apiError) {
-				throw new Error(
-					typeof apiError === 'string' ? apiError : 'Error al cargar evaluación'
-				);
+				if (apiError) {
+					throw new Error(
+						typeof apiError === 'string' ? apiError : 'Error al cargar evaluación'
+					);
+				}
+
+				data = normalizeApiData(apiData as Parameters<typeof normalizeApiData>[0], empId);
+			} catch (e) {
+				if (e instanceof HttpNotFoundError) {
+					// ponytail: no evaluation yet, show empty state
+					data = normalizeApiData(null, empId);
+				} else {
+					throw e;
+				}
 			}
-
-			data = normalizeApiData(apiData as Parameters<typeof normalizeApiData>[0], empId);
 		}
 	} catch (e) {
 		data = null;
