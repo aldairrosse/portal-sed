@@ -46,12 +46,6 @@ export const MENU_ITEMS: MenuItem[] = [
 		profiles: ['director', 'director-general']
 	},
 	{
-		label: 'Competencias',
-		href: '/evaluacion/9x9/competencias',
-		icon: 'Star',
-		profiles: ['jefe', 'director', 'director-general']
-	},
-	{
 		label: 'Pilares',
 		href: '/rh/pilares',
 		icon: 'Award',
@@ -76,7 +70,7 @@ export const MENU_ITEMS: MenuItem[] = [
 		profiles: ['rh']
 	},
 	{
-		label: 'Evaluaciones RH',
+		label: 'Evaluaciones',
 		href: '/rh/evaluaciones',
 		icon: 'ClipboardList',
 		profiles: ['rh']

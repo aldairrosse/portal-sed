@@ -50,19 +50,22 @@
 		),
 	);
 	// Track if this node was ever expandable or clicked — prevents button→details swap
-	let wasExpandable = $state(children.length > 0);
-	let wasClicked = $state(false);
+	let wasExpandable = $derived(children.length > 0);
+
 	const hasEmployees = $derived((node.employeeCount ?? 0) > 0);
-	const isExpandable = $derived(
-		(wasExpandable || wasClicked || hasEmployees || employeeChildren.length > 0) && depth < maxDepth,
-	);
+	const isExpandable = $derived.by(() => {
+		if (depth >= maxDepth) return false;
+		// ponytail: departments view — only child departments matter, not employee leaves
+		if (viewType === 'departments') return wasExpandable;
+		return wasExpandable || hasEmployees || employeeChildren.length > 0;
+	});
 
 	$effect(() => {
 		if (children.length > 0) wasExpandable = true;
 	});
 
 	// Local state to persist open/close across re-renders
-	let isOpen = $derived(initialExpanded || wasClicked)
+	let isOpen = $derived(initialExpanded)
 
 	function handleSummaryClick(_e: MouseEvent) {
 		onNodeSelect(node);
@@ -84,7 +87,7 @@
 </script>
 
 <li>
-	{#if isExpandable || employeeChildren.length > 0}
+	{#if isExpandable}
 		<details bind:open={isOpen}>
 			<summary
 				class="flex items-center gap-2 cursor-pointer flex-grow"
@@ -148,7 +151,6 @@
 			class:menu-active={isSelected}
 			onclick={(e) => {
 				e.stopPropagation();
-				wasClicked = true;
 				onNodeSelect(node);
 			}}
 		>

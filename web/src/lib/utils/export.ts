@@ -14,8 +14,8 @@ export function toCsv(rows: Record<string, string | number | null>[], filename: 
 	};
 
 	const bom = '\uFEFF';
-	const headerLine = headers.join(';');
-	const dataLines = rows.map((row) => headers.map((h) => escapeField(row[h])).join(';'));
+	const headerLine = headers.join(',');
+	const dataLines = rows.map((row) => headers.map((h) => escapeField(row[h])).join(','));
 	const csv = bom + headerLine + '\r\n' + dataLines.join('\r\n');
 
 	const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });

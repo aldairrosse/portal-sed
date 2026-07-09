@@ -79,6 +79,7 @@ export interface EmployeeAssignment {
 	id: string;
 	employeeId: string;
 	employeeName: string;
+	employeeNumber?: string;
 	profileId: EvaluationProfile;
 	managerId: string | null;
 	goalIds: string[];
