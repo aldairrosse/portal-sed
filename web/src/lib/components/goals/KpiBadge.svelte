@@ -44,7 +44,5 @@
 				{delta.type === 'positive' ? '+' : ''}{delta.value}
 			</span>
 		{/if}
-	{:else}
-		<span class="italic text-base-content/30 font-normal">Sin datos</span>
 	{/if}
 </span>

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Pencil, Trash2, Plus, MessageSquare, Check } from '@lucide/svelte';
+	import { Pencil, Trash2, Plus, MessageSquare, MessageCircle, Check } from '@lucide/svelte';
 	import type { Goal, GoalCategory, GoalUnit, KPI, CyclePhase } from '$lib/types/goal';
 	import { validateCategory, validateGoal, UNIT_OPTIONS } from './goalValidation';
 	import WeightIndicator from './WeightIndicator.svelte';
@@ -28,6 +28,7 @@
 		isAnyInlineEditing?: boolean;
 		onUpdateProgress?: (goalId: string, progress: number) => void;
 		onOpenComments?: (goal: Goal) => void;
+		onOpenCategoryComments?: (category: GoalCategory) => void;
 	}
 
 	let {
@@ -50,7 +51,8 @@
 		allKpis,
 		isAnyInlineEditing = $bindable(false),
 		onUpdateProgress,
-		onOpenComments
+		onOpenComments,
+		onOpenCategoryComments
 	}: Props = $props();
 
 	// ─── Category inline edit state ────────────────────────────────────────
@@ -176,16 +178,27 @@
 				<div class="flex items-center gap-1">
 					{#if phase === 'medio-anio' || phase === 'fin-anio'}
 						<!-- No category edit/delete in avance or cierre mode -->
-					{:else if mode === 'editor' && canEditCategory}
+				{:else if mode === 'editor' && canEditCategory}
+					{#if (category.comments?.length ?? 0) > 0}
 						<button
-							class="btn btn-ghost btn-square btn-sm"
-							title="Editar"
-							onclick={handleStartEditCategory}
-							disabled={isAnyInlineEditing}
-							aria-label="Editar categoría {category.name}"
+							class="btn btn-ghost btn-square btn-sm relative"
+							title="Comentarios"
+							onclick={() => onOpenCategoryComments?.(category)}
+							aria-label="Comentarios de categoría {category.name}"
 						>
-							<Pencil class="w-4 h-4" />
+							<MessageCircle class="w-4 h-4" />
+							<span class="badge badge-xs badge-primary absolute -top-1.5 -right-1.5">{category.comments?.length}</span>
 						</button>
+					{/if}
+					<button
+						class="btn btn-ghost btn-square btn-sm"
+						title="Editar"
+						onclick={handleStartEditCategory}
+						disabled={isAnyInlineEditing}
+						aria-label="Editar categoría {category.name}"
+					>
+						<Pencil class="w-4 h-4" />
+					</button>
 						{#if canDelete}
 							<button
 								class="btn btn-ghost btn-square btn-sm text-error"
@@ -197,17 +210,20 @@
 								<Trash2 class="w-4 h-4" />
 							</button>
 						{/if}
-					{:else if onRequestChangeCategory}
-						<button
-							class="btn btn-ghost btn-sm text-warning"
-							title="Solicitar cambio"
-							onclick={() => onRequestChangeCategory(category)}
-							aria-label="Solicitar cambio en categoría {category.name}"
-						>
-							<MessageSquare class="w-4 h-4" />
-							Solicitar cambio
-						</button>
-					{/if}
+				{:else if onRequestChangeCategory}
+					<button
+						class="btn btn-ghost btn-sm text-warning relative"
+						title="Solicitar cambio"
+						onclick={() => onRequestChangeCategory(category)}
+						aria-label="Solicitar cambio en categoría {category.name}"
+					>
+						<MessageSquare class="w-4 h-4" />
+						Solicitar cambio
+						{#if (category.comments?.length ?? 0) > 0}
+							<span class="badge badge-xs badge-primary absolute -top-2 -right-2">{category.comments?.length}</span>
+						{/if}
+					</button>
+				{/if}
 				</div>
 			{/if}
 		</div>

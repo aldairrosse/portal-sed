@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { X } from '@lucide/svelte';
+	import { X, MessageCircle } from '@lucide/svelte';
 	import { recordChangeRequest } from '$lib/stores/goalsStore.svelte';
 	import * as notifications from '$lib/stores/notifications.svelte';
-	import type { ChangeRequest } from '$lib/types/goal';
+	import type { ChangeRequest, GoalComment } from '$lib/types/goal';
 
 	interface Props {
 		open: boolean;
@@ -12,12 +12,25 @@
 		requestedBy: string;
 		onClose: () => void;
 		onCreated?: (entityType: ChangeRequest['entityType'], entityId: string) => void;
+		comments?: GoalComment[];
+		onAddComment?: (entityId: string, content: string) => void;
+		currentUserId?: string;
 	}
 
-	let { open, entityType, entityId, entityName, requestedBy, onClose, onCreated }: Props = $props();
+	let {
+		open,
+		entityType,
+		entityId,
+		entityName,
+		requestedBy,
+		onClose,
+		onCreated,
+		comments = [],
+		onAddComment,
+	}: Props = $props();
 
 	let dialogEl: HTMLDialogElement | undefined = $state();
-	let reason = $state('');
+	let message = $state('');
 	let submitted = $state(false);
 
 	const title = $derived(
@@ -28,18 +41,10 @@
 				: 'Solicitar cambio en meta'
 	);
 
-	const confirmText = $derived(
-		entityType === 'category'
-			? 'Se solicitará un cambio en la categoría:'
-			: entityType === 'assignment'
-				? 'Se solicitará un cambio en la asignación de:'
-				: 'Se solicitará un cambio en la meta:'
-	);
-
 	$effect(() => {
 		if (!dialogEl) return;
 		if (open) {
-			reason = '';
+			message = '';
 			submitted = false;
 			dialogEl.showModal();
 		} else {
@@ -47,39 +52,46 @@
 		}
 	});
 
-	function handleCancel() {
-		onClose();
-	}
+	function handleCancel() { onClose(); }
+	function handleBackdropClick(e: MouseEvent) { if (e.target === dialogEl) handleCancel(); }
 
-	function handleBackdropClick(e: MouseEvent) {
-		if (e.target === dialogEl) handleCancel();
+	function timeAgo(dateStr: string): string {
+		const diff = Date.now() - new Date(dateStr).getTime();
+		const minutes = Math.floor(diff / 60000);
+		if (minutes < 1) return 'ahora';
+		if (minutes < 60) return `${minutes}m`;
+		const hours = Math.floor(minutes / 60);
+		if (hours < 24) return `${hours}h`;
+		const days = Math.floor(hours / 24);
+		return `${days}d`;
 	}
 
 	async function handleSubmit(e: Event) {
 		e.preventDefault();
-		if (!reason.trim()) {
-			notifications.error('Debe indicar el motivo del cambio.');
+		if (!message.trim()) {
+			notifications.error('Debe escribir un mensaje.');
 			return;
 		}
 		try {
+			// Always register as a comment
+			if (onAddComment) {
+				onAddComment(entityId, message.trim());
+			}
+			// Also record as change request
 			await recordChangeRequest({
 				id: '',
 				entityType,
 				entityId,
 				action: 'update',
-				changes: { reason: reason.trim() },
-				reason: reason.trim(),
+				changes: { reason: message.trim() },
+				reason: message.trim(),
 				requestedBy,
 				requestedAt: new Date().toISOString(),
 				status: 'pending'
 			});
 			submitted = true;
-			// If it's a goal-level change request, open the comment chat
-			if (entityType === 'goal' && onCreated) {
-				setTimeout(() => {
-					onClose();
-					onCreated(entityType, entityId);
-				}, 800);
+			if (onCreated) {
+				setTimeout(() => { onClose(); onCreated(entityType, entityId); }, 800);
 			} else {
 				setTimeout(() => onClose(), 2000);
 			}
@@ -98,50 +110,57 @@
 	onclick={handleBackdropClick}
 	onclose={handleCancel}
 >
-	<div class="modal-box">
+	<div class="modal-box max-w-lg">
 		{#if submitted}
 			<div class="alert alert-success text-sm" role="status">
 				<span>Solicitud de cambio enviada correctamente.</span>
 			</div>
 		{:else}
-			<div class="flex items-center justify-between mb-5">
+			<div class="flex items-center justify-between mb-4">
 				<h3 id="request-change-title" class="text-lg font-semibold text-base-content">{title}</h3>
-				<button
-					class="btn btn-ghost btn-square btn-sm"
-					onclick={handleCancel}
-					aria-label="Cerrar"
-				>
+				<button class="btn btn-ghost btn-square btn-sm" onclick={handleCancel} aria-label="Cerrar">
 					<X class="w-4 h-4" />
 				</button>
 			</div>
 
-			<p class="text-sm text-base-content/70 mb-4">
-				{confirmText} <strong>{entityName}</strong>
+			<p class="text-sm text-base-content/70 mb-3">
+				<strong>{entityName}</strong>
 			</p>
 
+			<!-- Comment history -->
+			<div class="max-h-52 overflow-y-auto space-y-2 mb-4">
+				{#if comments.length === 0}
+					<p class="text-sm text-base-content/40 italic text-center py-3">Sin mensajes aún</p>
+				{:else}
+					{#each comments as comment (comment.id)}
+						<div class="bg-base-200 rounded-lg p-2.5 space-y-0.5">
+							<div class="flex items-center gap-2">
+								<MessageCircle class="w-3 h-3 text-base-content/40" />
+								<span class="text-xs font-medium">{comment.authorName}</span>
+								<span class="text-xs text-base-content/30">{timeAgo(comment.createdAt)}</span>
+							</div>
+							<p class="text-sm text-base-content/70">{comment.content}</p>
+						</div>
+					{/each}
+				{/if}
+			</div>
+
+			<!-- New message -->
 			<form onsubmit={handleSubmit}>
-				<div class="form-control mb-4">
-					<label class="label" for="request-reason">
-						<span class="label-text">Motivo del cambio</span>
-					</label>
+				<div class="form-control mb-3">
 					<textarea
-						id="request-reason"
-						class="textarea textarea-bordered w-full"
-						rows={4}
-						bind:value={reason}
-						placeholder="Describa el cambio que desea solicitar..."
+						class="textarea textarea-bordered w-full text-sm"
+						rows={3}
+						placeholder="Escriba su mensaje..."
+						bind:value={message}
 						required
 						aria-required="true"
 					></textarea>
 				</div>
 
 				<div class="modal-action">
-					<button type="button" class="btn btn-ghost btn-sm" onclick={handleCancel}>
-						Cancelar
-					</button>
-					<button type="submit" class="btn btn-warning btn-sm">
-						Enviar solicitud
-					</button>
+					<button type="button" class="btn btn-ghost btn-sm" onclick={handleCancel}>Cancelar</button>
+					<button type="submit" class="btn btn-warning btn-sm">Enviar solicitud</button>
 				</div>
 			</form>
 		{/if}

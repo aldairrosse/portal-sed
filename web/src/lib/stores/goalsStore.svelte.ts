@@ -16,6 +16,7 @@ import { getActivePhase } from '$lib/api/cycle.svelte';
 import { getSession } from '$lib/api/session.svelte';
 import { client } from '$lib/api/client';
 import { progressPercent } from '$lib/utils/scoring';
+import { SvelteDate, SvelteMap } from 'svelte/reactivity';
 
 // ─── Internal data shape ──────────────────────────────────────────────────────
 
@@ -46,7 +47,7 @@ export const storeState = new StoreState();
 
 let loadPromise: Promise<void> | null = null;
 let lastLoadTime = 0;
-const FRESHNESS_MS = 5000;
+const FRESHNESS_MS = 500;
 
 /** @returns true while load() is in progress. */
 export function isLoading(): boolean {
@@ -122,7 +123,7 @@ function normalizeApiData(
 	const assignedGoalIds: string[] = [];
 
 	// 1. Build full KPI catalog from the /kpis endpoint
-	const kpisMap = new Map<string, KPI>();
+	const kpisMap = new SvelteMap<string, KPI>();
 	for (const ak of apiKpis) {
 		const kpi: KPI = {
 			id: ak.id ?? crypto.randomUUID(),
@@ -162,7 +163,8 @@ function normalizeApiData(
 				baselineValue: ag.baseline_value,
 				progress: ag.current_value,
 				progressUpdatedAt: ag.updated_at,
-				comments: []
+				comments: [],
+				version: ag.version ?? 1
 			});
 			assignedGoalIds.push(goalId);
 
@@ -195,7 +197,7 @@ function normalizeApiData(
 			id: apiAssignment.id,
 			employeeId: apiAssignment.employee_id ?? '',
 			employeeName: '',
-			profileId: profileId ?? 'colaborador',
+			profileId: profileId as EvaluationProfile ?? 'colaborador',
 			managerId: null,
 			goalIds: assignedGoalIds,
 			createdAt: apiAssignment.created_at ?? new Date().toISOString(),
@@ -300,41 +302,75 @@ async function _doLoad(empIdOverride?: string): Promise<void> {
 }
 
 /**
- * Load comments for all goals in the store so badges show correct counts.
+ * Load comments for all goals and categories in the store so badges show correct counts.
  * Silently ignores errors — comments are non-critical UI enhancements.
  */
-async function loadAllGoalComments(_empId: string): Promise<void> {
+export async function loadAllGoalComments(_empId?: string): Promise<void> {
 	if (!storeState.data) return;
 	const goals = storeState.data.goals;
-	if (goals.length === 0) return;
+	const categories = storeState.data.categories;
 
-	const results = await Promise.allSettled(
-		goals.map((g) =>
-			client.GET('/goals/{goalId}/comments', {
-				params: { path: { goalId: g.id } }
-			}).then(({ data, error }) => {
-				if (data && !error) {
-					return { goalId: g.id, comments: data as unknown as GoalComment[] };
-				}
-				return { goalId: g.id, comments: [] as GoalComment[] };
-			})
-		)
-	);
+	// Load goal comments
+	if (goals.length > 0) {
+		const results = await Promise.allSettled(
+			goals.map((g) =>
+				client.GET('/goals/{goalId}/comments', {
+					params: { path: { goalId: g.id } }
+				}).then(({ data, error }) => {
+					if (data && !error) {
+						return { id: g.id, comments: data as unknown as GoalComment[] };
+					}
+					return { id: g.id, comments: [] as GoalComment[] };
+				})
+			)
+		);
 
-	const commentMap = new Map<string, GoalComment[]>();
-	for (const r of results) {
-		if (r.status === 'fulfilled') {
-			commentMap.set(r.value.goalId, r.value.comments);
+		const commentMap = new SvelteMap<string, GoalComment[]>();
+		for (const r of results) {
+			if (r.status === 'fulfilled') {
+				commentMap.set(r.value.id, r.value.comments);
+			}
 		}
+
+		storeState.data = {
+			...storeState.data,
+			goals: storeState.data.goals.map((g) => ({
+				...g,
+				comments: commentMap.get(g.id) ?? g.comments ?? []
+			}))
+		};
 	}
 
-	storeState.data = {
-		...storeState.data,
-		goals: storeState.data.goals.map((g) => ({
-			...g,
-			comments: commentMap.get(g.id) ?? g.comments ?? []
-		}))
-	};
+	// Load category comments
+	if (categories.length > 0) {
+		const catResults = await Promise.allSettled(
+			categories.map((c) =>
+				client.GET('/categories/{catId}/comments', {
+					params: { path: { catId: c.id } }
+				}).then(({ data, error }) => {
+					if (data && !error) {
+						return { id: c.id, comments: data as unknown as GoalComment[] };
+					}
+					return { id: c.id, comments: [] as GoalComment[] };
+				})
+			)
+		);
+
+		const catCommentMap = new SvelteMap<string, GoalComment[]>();
+		for (const r of catResults) {
+			if (r.status === 'fulfilled') {
+				catCommentMap.set(r.value.id, r.value.comments);
+			}
+		}
+
+		storeState.data = {
+			...storeState.data,
+			categories: storeState.data.categories.map((c) => ({
+				...c,
+				comments: catCommentMap.get(c.id) ?? c.comments ?? []
+			}))
+		};
+	}
 }
 
 
@@ -610,7 +646,7 @@ export async function updateGoal(id: string, updates: Partial<Omit<Goal, 'id'>>)
 			target_value: updates.targetValue ?? 0,
 			direction: (updates.direction as 'ascendente' | 'descendente') ?? 'ascendente',
 			baseline_value: updates.baselineValue,
-			version: 1
+			version: updates.version ?? 1
 		}
 	});
 	if (apiError) throw new Error((apiError as { error?: { message?: string } })?.error?.message ?? 'Error al actualizar meta');
@@ -668,7 +704,7 @@ export async function deleteKpi(id: string): Promise<void> {
 
 // ─── Mutations: GoalKpiLink (N:M) ─────────────────────────────────────────────
 
-export async function linkKpiToGoal(goalId: string, kpiId: string, weight?: number): Promise<void> {
+export async function linkKpiToGoal(goalId: string, kpiId: string): Promise<void> {
 	// Idempotent: skip if link already exists
 	const exists = (storeState.data?.goalKpiLinks ?? []).some((link) => link.goalId === goalId && link.kpiId === kpiId);
 	if (exists) return;
@@ -720,7 +756,7 @@ export async function updateAssignment(
 		...storeState.data!,
 		assignments: (storeState.data?.assignments ?? []).map((a) =>
 			a.id === id
-				? { ...a, ...updates, updatedAt: new Date().toISOString() }
+				? { ...a, ...updates, updatedAt: new SvelteDate().toISOString() }
 				: a
 		)
 	};
@@ -740,7 +776,7 @@ export async function assignGoalToEmployee(employeeId: string, goalId: string): 
 		...storeState.data!,
 		assignments: (storeState.data?.assignments ?? []).map((a) =>
 			a.employeeId === employeeId && !a.goalIds.includes(goalId)
-				? { ...a, goalIds: [...a.goalIds, goalId], updatedAt: new Date().toISOString() }
+				? { ...a, goalIds: [...a.goalIds, goalId], updatedAt: new SvelteDate().toISOString() }
 				: a
 		)
 	};
@@ -755,7 +791,7 @@ export async function unassignGoalFromEmployee(employeeId: string, goalId: strin
 				? {
 						...a,
 						goalIds: a.goalIds.filter((gid) => gid !== goalId),
-						updatedAt: new Date().toISOString()
+						updatedAt: new SvelteDate().toISOString()
 					}
 				: a
 		)
@@ -840,6 +876,49 @@ export async function deleteGoalComment(goalId: string, commentId: string): Prom
 			g.id === goalId
 				? { ...g, comments: (g.comments ?? []).filter((c) => c.id !== commentId) }
 				: g
+		)
+	};
+}
+
+// ─── Mutations: Category Comments ─────────────────────────────────────────────
+
+export function getCategoryComments(categoryId: string): GoalComment[] {
+	return storeState.data?.categories.find((c) => c.id === categoryId)?.comments ?? [];
+}
+
+export async function addCategoryComment(
+	categoryId: string,
+	authorId: string,
+	authorName: string,
+	content: string
+): Promise<void> {
+	const { data, error: apiError } = await client.POST('/categories/{catId}/comments', {
+		params: { path: { catId: categoryId } },
+		body: { content, author_id: authorId, author_name: authorName }
+	});
+	if (apiError) throw new Error('Error al guardar comentario');
+	if (data) {
+		const comment = data as unknown as GoalComment;
+		storeState.data = {
+			...storeState.data!,
+			categories: (storeState.data?.categories ?? []).map((c) =>
+				c.id === categoryId ? { ...c, comments: [...(c.comments ?? []), comment] } : c
+			)
+		};
+	}
+}
+
+export async function deleteCategoryComment(categoryId: string, commentId: string): Promise<void> {
+	const { error: apiError } = await client.DELETE('/categories/{catId}/comments/{commentId}', {
+		params: { path: { catId: categoryId, commentId } }
+	});
+	if (apiError) throw new Error('Error al eliminar comentario');
+	storeState.data = {
+		...storeState.data!,
+		categories: (storeState.data?.categories ?? []).map((c) =>
+			c.id === categoryId
+				? { ...c, comments: (c.comments ?? []).filter((cm) => cm.id !== commentId) }
+				: c
 		)
 	};
 }

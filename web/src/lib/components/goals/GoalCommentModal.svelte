@@ -11,6 +11,8 @@
 		onDelete?: (goalId: string, commentId: string) => void;
 		onClose: () => void;
 		currentUserId?: string;
+		/** When set, operates in category mode instead of goal mode */
+		category?: { id: string; name: string } | null;
 	}
 
 	let {
@@ -20,7 +22,8 @@
 		onAdd,
 		onDelete,
 		onClose,
-		currentUserId = 'dev-user'
+		currentUserId = 'dev-user',
+		category = null
 	}: Props = $props();
 
 	let dialogEl: HTMLDialogElement | undefined = $state();
@@ -28,13 +31,21 @@
 	let comments = $state<GoalComment[]>(initialComments);
 	let loading = $state(false);
 
+	const entityId = $derived(category?.id ?? goal?.id ?? '');
+	const entityName = $derived(category?.name ?? goal?.name ?? 'Comentarios');
+
 	// Reload comments from API when modal opens
 	$effect(() => {
-		if (open && goal) {
+		if (open && entityId) {
 			loading = true;
-			client.GET('/goals/{goalId}/comments', {
-				params: { path: { goalId: goal.id } }
-			}).then(({ data, error }) => {
+			const promise = category
+				? client.GET('/categories/{catId}/comments', {
+					params: { path: { catId: category.id } }
+				})
+				: client.GET('/goals/{goalId}/comments', {
+					params: { path: { goalId: goal!.id } }
+				});
+			promise.then(({ data, error }) => {
 				if (data && !error) {
 					comments = data as unknown as GoalComment[];
 				}
@@ -70,8 +81,8 @@
 
 	function handleSubmit(e: Event) {
 		e.preventDefault();
-		if (goal && newComment.trim()) {
-			onAdd(goal.id, newComment.trim());
+		if (entityId && newComment.trim()) {
+			onAdd(entityId, newComment.trim());
 			newComment = '';
 		}
 	}
@@ -102,7 +113,7 @@
 			<div class="flex items-center gap-2">
 				<MessageCircle class="w-5 h-5 text-primary" />
 				<h3 id="comment-modal-title" class="font-semibold text-base-content">
-					{goal?.name ?? 'Comentarios'}
+					{entityName}
 				</h3>
 			</div>
 			<button class="btn btn-ghost btn-square btn-sm" onclick={handleCancel} aria-label="Cerrar">
@@ -124,10 +135,10 @@
 								<span class="text-sm font-medium">{comment.authorName}</span>
 								<span class="text-xs text-base-content/40">{timeAgo(comment.createdAt)}</span>
 							</div>
-							{#if comment.authorId === currentUserId && onDelete && goal}
+							{#if comment.authorId === currentUserId && onDelete && entityId}
 								<button
 									class="btn btn-ghost btn-square btn-xs"
-									onclick={() => onDelete(goal.id, comment.id)}
+									onclick={() => onDelete(entityId, comment.id)}
 									aria-label="Eliminar comentario"
 								>
 									<X class="w-3 h-3" />

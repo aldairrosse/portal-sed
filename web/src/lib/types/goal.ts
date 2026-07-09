@@ -31,6 +31,7 @@ export interface GoalCategory {
 	name: string;
 	description: string;
 	weight: number;
+	comments?: GoalComment[];
 }
 
 // ─── Goal ──────────────────────────────────────────────────────────────────────
@@ -49,6 +50,7 @@ export interface Goal {
 	progress?: number;
 	progressUpdatedAt?: string;
 	comments?: GoalComment[];
+	version: number;
 }
 
 // ─── GoalComment ──────────────────────────────────────────────────────────────
@@ -59,6 +61,8 @@ export interface GoalComment {
 	authorName: string;
 	content: string;
 	createdAt: string;
+	goalId?: string;
+	categoryId?: string;
 }
 
 // ─── GoalKpiLink (N:M) ─────────────────────────────────────────────────────────

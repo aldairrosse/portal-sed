@@ -1,6 +1,14 @@
 <script lang="ts">
     import { goto } from "$app/navigation";
-    import { Save, Plus, Library, MessageSquare, Check, FileDown, Target } from "@lucide/svelte";
+    import {
+        Save,
+        Plus,
+        Library,
+        MessageSquare,
+        Check,
+        FileDown,
+        Target,
+    } from "@lucide/svelte";
     import type {
         Goal,
         GoalCategory,
@@ -9,42 +17,49 @@
         EmployeeAssignment,
     } from "$lib/types/goal";
     import type { ChangeRequest } from "$lib/types/goal";
-	import {
-		getCategories,
-		getGoals,
-		getKpis,
-		getGoalsByCategory,
-		getKpisForGoal,
-		addCategory,
-		updateCategory,
-		deleteCategory,
-		addGoal,
-		updateGoal,
-		deleteGoal,
-		isAssignmentValid,
-		linkKpiToGoal,
-		unlinkKpiFromGoal,
-		getAssignments,
-		getAssignmentByEmployee,
-		getCyclePhase,
-		getGoalPermissions,
-		updateGoalProgress,
-		addAssignment,
-		addGoalComment,
-		deleteGoalComment,
-		getGoalComments,
-		getWeightedScore,
-		getCategoryProgressAverage,
-		storeState,
-		load,
-		loadForEmployee,
-	} from "$lib/stores/goalsStore.svelte";
+    import {
+        getCategories,
+        getGoals,
+        getKpis,
+        getGoalsByCategory,
+        getKpisForGoal,
+        addCategory,
+        updateCategory,
+        deleteCategory,
+        addGoal,
+        updateGoal,
+        deleteGoal,
+        isAssignmentValid,
+        linkKpiToGoal,
+        unlinkKpiFromGoal,
+        getAssignments,
+        getAssignmentByEmployee,
+        getCyclePhase,
+        getGoalPermissions,
+        updateGoalProgress,
+        addAssignment,
+        addGoalComment,
+        deleteGoalComment,
+        getGoalComments,
+        addCategoryComment,
+        deleteCategoryComment,
+        getCategoryComments,
+        loadAllGoalComments,
+        getWeightedScore,
+        getCategoryProgressAverage,
+        storeState,
+        load,
+        loadForEmployee,
+    } from "$lib/stores/goalsStore.svelte";
     import { getSession } from "$lib/api/session.svelte";
     import { client } from "$lib/api/client";
-    import { load as loadOrgHierarchy, getDescendants, getRoot } from "$lib/stores/orgHierarchyStore.svelte";
+    import {
+        load as loadOrgHierarchy,
+        getRoot,
+    } from "$lib/stores/orgHierarchyStore.svelte";
     import WeightIndicator from "$lib/components/goals/WeightIndicator.svelte";
     import ProgressIndicator from "$lib/components/goals/ProgressIndicator.svelte";
-	import { validateCategory } from "$lib/components/goals/goalValidation";
+    import { validateCategory } from "$lib/components/goals/goalValidation";
     import CategoryCard from "$lib/components/goals/CategoryCard.svelte";
     import ReadOnlyBanner from "$lib/components/goals/ReadOnlyBanner.svelte";
     import AssigneePicker from "$lib/components/goals/AssigneePicker.svelte";
@@ -55,11 +70,16 @@
     import EmptyState from "$lib/components/ui/EmptyState.svelte";
     import { toCsv } from "$lib/utils/export";
     import * as notifications from "$lib/stores/notifications.svelte";
+    import { SvelteSet } from "svelte/reactivity";
 
     // ─── Load data ────────────────────────────────────────────────────────────
 
-    $effect(() => { load(); });
-    $effect(() => { loadOrgHierarchy(); });
+    $effect(() => {
+        load();
+    });
+    $effect(() => {
+        loadOrgHierarchy();
+    });
 
     // ─── Mode detection ──────────────────────────────────────────────────────
     // ponytail: derive own assignment by employeeId (not profileId) so the
@@ -67,8 +87,8 @@
     // else's with the same role. Boss detection uses org-node headEmployeeId.
 
     const session = $derived(getSession());
-    const viewerProfile = $derived(session.user?.profileId ?? 'colaborador');
-    const viewerEmployeeId = $derived(session.user?.employeeId ?? '');
+    const viewerProfile = $derived(session.user?.profileId ?? "colaborador");
+    const viewerEmployeeId = $derived(session.user?.employeeId ?? "");
 
     const allAssignments = $derived(getAssignments());
 
@@ -86,23 +106,30 @@
     // nodes, then merge with existing assignments from goalsStore. Employees
     // without an assignment get a stub entry so the picker always has data.
 
-    type TeamMember = { id: string; firstName: string; lastName: string; orgNodeId: string };
+    type TeamMember = {
+        id: string;
+        firstName: string;
+        lastName: string;
+        orgNodeId: string;
+    };
     let teamMembers = $state<TeamMember[]>([]);
 
     $effect(() => {
         if (!viewerEmployeeId || !isBoss) return;
-        client.GET('/employees/{empId}/team', {
-            params: { path: { empId: viewerEmployeeId } }
-        }).then((res) => {
-            const data = (res.data as { data?: Array<TeamMember> })?.data;
-            if (data) teamMembers = data;
-        });
+        client
+            .GET("/employees/{empId}/team", {
+                params: { path: { empId: viewerEmployeeId } },
+            })
+            .then((res) => {
+                const data = (res.data as { data?: Array<TeamMember> })?.data;
+                if (data) teamMembers = data;
+            });
     });
 
     // Build available assignments: own + all team members (with or without assignment)
     const availableAssignments = $derived.by(() => {
         const result: EmployeeAssignment[] = [];
-        const seen = new Set<string>();
+        const seen = new SvelteSet<string>();
 
         // ponytail: always place the logged-in user first, regardless of
         // whether ownAssignment has loaded yet. If it has, use it;
@@ -110,14 +137,17 @@
         const own = ownAssignment ?? {
             id: `stub-${viewerEmployeeId}`,
             employeeId: viewerEmployeeId,
-            employeeName: session.user?.name ?? '',
+            employeeName: session.user?.name ?? "",
             profileId: viewerProfile,
             managerId: null,
             goalIds: [],
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
         };
-        result.push({ ...own, employeeName: own.employeeName || session.user?.name || '' });
+        result.push({
+            ...own,
+            employeeName: own.employeeName || session.user?.name || "",
+        });
         seen.add(viewerEmployeeId);
 
         // Team members from /team endpoint (skip viewer, already first)
@@ -128,13 +158,16 @@
             const existing = getAssignmentByEmployee(member.id);
             if (existing) {
                 // Merge team member name into assignment (store doesn't carry names)
-                result.push({ ...existing, employeeName: existing.employeeName || memberName });
+                result.push({
+                    ...existing,
+                    employeeName: existing.employeeName || memberName,
+                });
             } else {
                 result.push({
                     id: `stub-${member.id}`,
                     employeeId: member.id,
                     employeeName: memberName,
-                    profileId: 'colaborador',
+                    profileId: "colaborador",
                     managerId: null,
                     goalIds: [],
                     createdAt: new Date().toISOString(),
@@ -166,7 +199,9 @@
     // Mode: editor when viewing own assignment or no assignment yet,
     // reader only when viewing a subordinate's assignment.
     const mode = $derived<"editor" | "reader">(
-        !targetAssignment || targetAssignment.employeeId === viewerEmployeeId ? "editor" : "reader",
+        !targetAssignment || targetAssignment.employeeId === viewerEmployeeId
+            ? "editor"
+            : "reader",
     );
 
     // ─── Org hierarchy helpers ───────────────────────────────────────────────
@@ -177,36 +212,15 @@
         return searchHeadEmployee(root, employeeId);
     }
 
-    function searchHeadEmployee(node: import("$lib/types/org-hierarchy").OrgNode, employeeId: string): boolean {
+    function searchHeadEmployee(
+        node: import("$lib/types/org-hierarchy").OrgNode,
+        employeeId: string,
+    ): boolean {
         if (node.headEmployeeId === employeeId) return true;
         for (const child of node.children ?? []) {
             if (searchHeadEmployee(child, employeeId)) return true;
         }
         return false;
-    }
-
-    function getSubordinateEmployeeIds(bossEmployeeId: string): string[] {
-        const root = getRoot();
-        if (!root) return [];
-        const ids = new Set<string>();
-        collectBossNodeEmployeeIds(root, bossEmployeeId, ids);
-        return [...ids];
-    }
-
-    function collectBossNodeEmployeeIds(
-        node: import("$lib/types/org-hierarchy").OrgNode,
-        bossEmployeeId: string,
-        out: Set<string>,
-    ): void {
-        if (node.headEmployeeId === bossEmployeeId) {
-            // Collect all descendant org nodes' head employees
-            for (const desc of getDescendants(node.id)) {
-                if (desc.headEmployeeId) out.add(desc.headEmployeeId);
-            }
-        }
-        for (const child of node.children ?? []) {
-            collectBossNodeEmployeeIds(child, bossEmployeeId, out);
-        }
     }
 
     // ─── Cycle phase & permissions ──────────────────────────────────────────
@@ -224,40 +238,114 @@
     function openComments(goal: Goal) {
         commentGoal = goal;
         // Load comments from API instead of store
-        client.GET('/goals/{goalId}/comments', {
-            params: { path: { goalId: goal.id } }
-        }).then(({ data, error }) => {
-            if (data && !error) {
-                commentGoalComments = data as unknown as GoalComment[];
-            } else {
+        client
+            .GET("/goals/{goalId}/comments", {
+                params: { path: { goalId: goal.id } },
+            })
+            .then(({ data, error }) => {
+                if (data && !error) {
+                    commentGoalComments = data as unknown as GoalComment[];
+                } else {
+                    commentGoalComments = [];
+                }
+            })
+            .catch(() => {
                 commentGoalComments = [];
-            }
-        }).catch(() => { commentGoalComments = []; });
+            });
         showCommentModal = true;
     }
 
     function handleAddComment(goalId: string, content: string) {
-        addGoalComment(goalId, viewerProfile, viewerProfile, content).then(() => {
+        addGoalComment(
+            goalId,
+            viewerEmployeeId,
+            session.user?.name ?? "",
+            content,
+        ).then(() => {
             // Reload from API
-            client.GET('/goals/{goalId}/comments', {
-                params: { path: { goalId } }
-            }).then(({ data, error }) => {
-                if (data && !error) {
-                    commentGoalComments = data as unknown as GoalComment[];
-                }
-            });
+            client
+                .GET("/goals/{goalId}/comments", {
+                    params: { path: { goalId } },
+                })
+                .then(({ data, error }) => {
+                    if (data && !error) {
+                        commentGoalComments = data as unknown as GoalComment[];
+                    }
+                });
         });
     }
 
     function handleDeleteComment(goalId: string, commentId: string) {
         deleteGoalComment(goalId, commentId).then(() => {
-            client.GET('/goals/{goalId}/comments', {
-                params: { path: { goalId } }
-            }).then(({ data, error }) => {
+            client
+                .GET("/goals/{goalId}/comments", {
+                    params: { path: { goalId } },
+                })
+                .then(({ data, error }) => {
+                    if (data && !error) {
+                        commentGoalComments = data as unknown as GoalComment[];
+                    }
+                });
+        });
+    }
+
+    // ─── Category comment modal state ──────────────────────────────────────
+
+    let commentCategory: { id: string; name: string } | null = $state(null);
+    let commentCategoryComments = $state<GoalComment[]>([]);
+    let showCategoryCommentModal = $state(false);
+
+    function openCategoryComments(category: GoalCategory) {
+        commentCategory = category;
+        client
+            .GET("/categories/{catId}/comments", {
+                params: { path: { catId: category.id } },
+            })
+            .then(({ data, error }) => {
                 if (data && !error) {
-                    commentGoalComments = data as unknown as GoalComment[];
+                    commentCategoryComments = data as unknown as GoalComment[];
+                } else {
+                    commentCategoryComments = [];
                 }
+            })
+            .catch(() => {
+                commentCategoryComments = [];
             });
+        showCategoryCommentModal = true;
+    }
+
+    function handleAddCategoryComment(catId: string, content: string) {
+        addCategoryComment(
+            catId,
+            viewerEmployeeId,
+            session.user?.name ?? "",
+            content,
+        ).then(() => {
+            client
+                .GET("/categories/{catId}/comments", {
+                    params: { path: { catId } },
+                })
+                .then(({ data, error }) => {
+                    if (data && !error) {
+                        commentCategoryComments =
+                            data as unknown as GoalComment[];
+                    }
+                });
+        });
+    }
+
+    function handleDeleteCategoryComment(catId: string, commentId: string) {
+        deleteCategoryComment(catId, commentId).then(() => {
+            client
+                .GET("/categories/{catId}/comments", {
+                    params: { path: { catId } },
+                })
+                .then(({ data, error }) => {
+                    if (data && !error) {
+                        commentCategoryComments =
+                            data as unknown as GoalComment[];
+                    }
+                });
         });
     }
 
@@ -265,10 +353,10 @@
 
     let creatingCategory = $state(false);
     let isAnyInlineEditing = $state(false);
-    let newCatName = $state('');
-    let newCatDesc = $state('');
+    let newCatName = $state("");
+    let newCatDesc = $state("");
     let newCatWeight = $state(0);
-    let newCatError = $state('');
+    let newCatError = $state("");
 
     const categories = $derived(getCategories());
     const goals = $derived(getGoals());
@@ -284,6 +372,7 @@
     let requestEntityType: ChangeRequest["entityType"] = $state("goal");
     let requestEntityId = $state("");
     let requestEntityName = $state("");
+    let requestComments = $state<GoalComment[]>([]);
 
     function openRequestModal(
         type: ChangeRequest["entityType"],
@@ -293,6 +382,29 @@
         requestEntityType = type;
         requestEntityId = id;
         requestEntityName = name;
+        requestComments = [];
+        // Load comments for the entity
+        if (type === "goal") {
+            client
+                .GET("/goals/{goalId}/comments", {
+                    params: { path: { goalId: id } },
+                })
+                .then(({ data, error }) => {
+                    if (data && !error)
+                        requestComments = data as unknown as GoalComment[];
+                })
+                .catch(() => {});
+        } else if (type === "category") {
+            client
+                .GET("/categories/{catId}/comments", {
+                    params: { path: { catId: id } },
+                })
+                .then(({ data, error }) => {
+                    if (data && !error)
+                        requestComments = data as unknown as GoalComment[];
+                })
+                .catch(() => {});
+        }
         showRequestModal = true;
     }
 
@@ -315,25 +427,44 @@
     function startCreateCategory() {
         creatingCategory = true;
         isAnyInlineEditing = true;
-        newCatName = '';
-        newCatDesc = '';
+        newCatName = "";
+        newCatDesc = "";
         newCatWeight = 0;
-        newCatError = '';
+        newCatError = "";
     }
 
-    async function handleSaveCategory(data: { id?: string; name: string; description: string; weight: number }) {
+    async function handleSaveCategory(data: {
+        id?: string;
+        name: string;
+        description: string;
+        weight: number;
+    }) {
         try {
             if (data.id) {
-                await updateCategory(data.id, { name: data.name, description: data.description, weight: data.weight });
+                await updateCategory(data.id, {
+                    name: data.name,
+                    description: data.description,
+                    weight: data.weight,
+                });
             } else {
-                const newCat: GoalCategory = { id: `cat-${Date.now()}`, name: data.name, description: data.description, weight: data.weight };
+                const newCat: GoalCategory = {
+                    id: `cat-${Date.now()}`,
+                    name: data.name,
+                    description: data.description,
+                    weight: data.weight,
+                };
                 await addCategory(newCat);
             }
             creatingCategory = false;
             isAnyInlineEditing = false;
-            notifications.success(data.id ? 'Categoría actualizada correctamente.' : 'Categoría creada correctamente.');
+            notifications.success(
+                data.id
+                    ? "Categoría actualizada correctamente."
+                    : "Categoría creada correctamente.",
+            );
         } catch (e) {
-            newCatError = e instanceof Error ? e.message : 'Error al guardar categoría';
+            newCatError =
+                e instanceof Error ? e.message : "Error al guardar categoría";
         }
     }
 
@@ -341,7 +472,7 @@
         try {
             await deleteCategory(catId);
         } catch (e) {
-            // silent
+            console.error("Error deleting category:", e);
         }
     }
 
@@ -349,37 +480,81 @@
         try {
             await deleteGoal(goalId);
         } catch (e) {
-            // silent
+            console.error("Error deleting goal:", e);
         }
     }
 
-    async function handleSaveGoal(data: { id?: string; categoryId: string; name: string; description: string; unit: GoalUnit; weight: number; targetValue: number; direction: 'ascendente' | 'descendente'; baselineValue?: number; linkedKpiIds: string[] }) {
+    async function handleSaveGoal(data: {
+        id?: string;
+        categoryId: string;
+        name: string;
+        description: string;
+        unit: GoalUnit;
+        weight: number;
+        targetValue: number;
+        direction: "ascendente" | "descendente";
+        baselineValue?: number;
+        linkedKpiIds: string[];
+    }) {
         try {
             if (data.id) {
-                await updateGoal(data.id, { name: data.name, description: data.description, unit: data.unit, weight: data.weight, targetValue: data.targetValue, direction: data.direction, baselineValue: data.baselineValue });
-                const currentLinked = getKpisForGoal(data.id).map(k => k.id);
-                const toAdd = data.linkedKpiIds.filter(id => !currentLinked.includes(id));
-                const toRemove = currentLinked.filter(id => !data.linkedKpiIds.includes(id));
+                await updateGoal(data.id, {
+                    name: data.name,
+                    description: data.description,
+                    unit: data.unit,
+                    weight: data.weight,
+                    targetValue: data.targetValue,
+                    direction: data.direction,
+                    baselineValue: data.baselineValue,
+                    version: goals.find((g) => g.id === data.id)?.version ?? 0,
+                });
+                const currentLinked = getKpisForGoal(data.id).map((k) => k.id);
+                const toAdd = data.linkedKpiIds.filter(
+                    (id) => !currentLinked.includes(id),
+                );
+                const toRemove = currentLinked.filter(
+                    (id) => !data.linkedKpiIds.includes(id),
+                );
                 for (const kpiId of toAdd) await linkKpiToGoal(data.id, kpiId);
-                for (const kpiId of toRemove) await unlinkKpiFromGoal(data.id, kpiId);
+                for (const kpiId of toRemove)
+                    await unlinkKpiFromGoal(data.id, kpiId);
             } else {
-                const newGoal: Goal = { id: `goal-${Date.now()}`, name: data.name, description: data.description, categoryId: data.categoryId, weight: data.weight, unit: data.unit, targetValue: data.targetValue, direction: data.direction, baselineValue: data.baselineValue };
+                const newGoal: Goal = {
+                    id: `goal-${Date.now()}`,
+                    name: data.name,
+                    description: data.description,
+                    categoryId: data.categoryId,
+                    weight: data.weight,
+                    unit: data.unit,
+                    targetValue: data.targetValue,
+                    direction: data.direction,
+                    baselineValue: data.baselineValue,
+                    version: 1,
+                };
                 await addGoal(newGoal);
-                for (const kpiId of data.linkedKpiIds) await linkKpiToGoal(newGoal.id, kpiId);
+                for (const kpiId of data.linkedKpiIds)
+                    await linkKpiToGoal(newGoal.id, kpiId);
             }
             isAnyInlineEditing = false;
-            notifications.success(data.id ? 'Meta actualizada correctamente.' : 'Meta creada correctamente.');
+            notifications.success(
+                data.id
+                    ? "Meta actualizada correctamente."
+                    : "Meta creada correctamente.",
+            );
         } catch (e) {
-            throw e;
+            console.error("Error saving goal:", e);
+            notifications.error(
+                e instanceof Error ? e.message : "Error al guardar meta",
+            );
         }
     }
 
     async function handleSaveAssignment() {
         if (!targetAssignment) return;
         try {
-            if (targetAssignment.id.startsWith('stub-')) {
+            if (targetAssignment.id.startsWith("stub-")) {
                 await addAssignment({
-                    id: '',
+                    id: "",
                     employeeId: targetAssignment.employeeId,
                     employeeName: targetAssignment.employeeName,
                     profileId: targetAssignment.profileId,
@@ -391,7 +566,9 @@
             }
             notifications.success("Asignación guardada correctamente.");
         } catch (e) {
-            notifications.error(e instanceof Error ? e.message : 'Error al guardar asignación');
+            notifications.error(
+                e instanceof Error ? e.message : "Error al guardar asignación",
+            );
         }
     }
 
@@ -408,10 +585,51 @@
         openRequestModal("assignment", targetAssignment.id, targetEmployeeName);
     }
 
-    function handleRequestChangeCreated(entityType: ChangeRequest['entityType'], entityId: string) {
-        if (entityType === 'goal') {
-            const goal = goals.find(g => g.id === entityId);
-            if (goal) openComments(goal);
+    function handleRequestChangeCreated(
+        entityType: ChangeRequest["entityType"],
+        entityId: string,
+    ) {
+        console.log(
+            `Change request created for ${entityType} with ID ${entityId}`,
+        );
+        loadAllGoalComments();
+    }
+
+    function handleRequestAddComment(entityId: string, content: string) {
+        if (requestEntityType === "goal") {
+            addGoalComment(
+                entityId,
+                viewerEmployeeId,
+                session.user?.name ?? "",
+                content,
+            ).then(() => {
+                client
+                    .GET("/goals/{goalId}/comments", {
+                        params: { path: { goalId: entityId } },
+                    })
+                    .then(({ data, error }) => {
+                        if (data && !error)
+                            requestComments = data as unknown as GoalComment[];
+                    });
+                loadAllGoalComments();
+            });
+        } else if (requestEntityType === "category") {
+            addCategoryComment(
+                entityId,
+                viewerEmployeeId,
+                session.user?.name ?? "",
+                content,
+            ).then(() => {
+                client
+                    .GET("/categories/{catId}/comments", {
+                        params: { path: { catId: entityId } },
+                    })
+                    .then(({ data, error }) => {
+                        if (data && !error)
+                            requestComments = data as unknown as GoalComment[];
+                    });
+                loadAllGoalComments();
+            });
         }
     }
 
@@ -419,7 +637,7 @@
         try {
             await updateGoalProgress(goalId, progress);
         } catch (e) {
-            // Progress update failed — the UI will revert on next reload
+            console.error("Error updating progress:", e);
         }
     }
 
@@ -455,234 +673,327 @@
 {:else if storeState.error}
     <ErrorState message={storeState.error} onretry={load} />
 {:else}
-
-<div class="space-y-6 max-w-full min-w-0">
-    <!-- Page header -->
-    <div>
-        <div class="flex items-start justify-between gap-4">
-            <div>
-                <h1 class="text-2xl font-bold text-base-content flex items-center gap-2">
-                    <Target class="w-6 h-6" />
-                    {phase === "medio-anio"
-                        ? "Avance de metas"
-                        : phase === "fin-anio"
-                            ? "Evaluación anual"
-                            : "Asignación anual"}
-                </h1>
-                <p class="text-sm text-base-content/50 mt-1">
-                    {phase === "medio-anio"
-                        ? "Registre el avance de sus metas y agregue comentarios."
-                        : "Defina las categorías y metas para el período de evaluación."}
-                </p>
-            </div>
-            {#if phase !== "medio-anio"}
-                <button
-                    class="btn btn-ghost btn-sm"
-                    onclick={() => goto("/objetivos/asignacion/biblioteca")}
-                    aria-label="Biblioteca de KPI"
-                >
-                    <Library class="w-4 h-4" />
-                    Biblioteca de KPI
-                </button>
-            {/if}
-        </div>
-        <div class="flex items-center gap-2 mt-3 flex-wrap">
-            {#if showAssigneePicker}
-                <AssigneePicker
-                    assignments={availableAssignments}
-                    {selectedEmployeeId}
-                    onSelect={handleAssigneeSelect}
-                    currentUserId={viewerEmployeeId}
-                />
-            {/if}            
-            <button
-                class="btn btn-outline btn-sm"
-                disabled={categories.length === 0}
-                onclick={handleExportCsv}
-            >
-                <FileDown class="w-4 h-4" />
-                Exportar CSV
-            </button>
-            {#if mode === "editor" && phase !== "medio-anio" && phase !== "fin-anio"}
-                <div class="flex-1"></div>
-                <button
-                    class="btn btn-primary btn-sm"
-                    disabled={!valid}
-                    onclick={handleSaveAssignment}
-                >
-                    <Save class="w-4 h-4" />
-                    Guardar asignación
-                </button>
-            {:else if mode === "reader"}
-                <button
-                    class="btn btn-warning btn-sm ml-auto"
-                    onclick={handleRequestAssignmentChange}
-                    aria-label="Solicitar cambio en asignación"
-                >
-                    <MessageSquare class="w-4 h-4" />
-                    Solicitar cambio
-                </button>
-            {/if}
-        </div>
-    </div>
-
-    <!-- Read-only banner -->
-    {#if mode === "reader"}
-        <ReadOnlyBanner employeeName={targetEmployeeName} {phase} />
-    {/if}
-
-    <!-- Global weight indicator (sticky) -->
-    <div
-        class="sticky top-2 z-30 bg-base-200/95 backdrop-blur-sm rounded-lg p-4 mt-2 mb-4 border border-base-300 shadow-sm min-w-0"
-    >
-        <p class="text-sm font-semibold text-base-content mb-2">
-            {phase === "medio-anio"
-                ? "Avance global de metas"
-                : "Distribución global de metas"}
-        </p>
-        {#if phase === "medio-anio"}
-            {@const allGoals = goals}
-            {@const withProgress = allGoals.filter(
-                (g) => g.progress !== undefined,
-            )}
-            {@const avgProgress =
-                withProgress.length > 0
-                    ? withProgress.reduce((acc, g) => {
-                          const pct =
-                              g.unit === "porcentaje"
-                                  ? (g.progress ?? 0)
-                                  : ((g.progress ?? 0) / (g.targetValue || 1)) *
-                                    100;
-                          return acc + Math.min(pct, 100);
-                      }, 0) / withProgress.length
-                    : 0}
-            <ProgressIndicator
-                value={avgProgress}
-                label="Avance promedio total"
-                color="primary"
-            />
-        {:else}
-            <WeightIndicator
-                current={globalSum}
-                label="Suma total de categorías"
-            />
-            {#if !valid}
-                <p class="text-xs text-warning mt-1">
-                    La suma de pesos debe ser 100% tanto a nivel global como en
-                    cada categoría.
-                </p>
-            {/if}
-        {/if}
-
-        <!-- Weighted score display (only when there's progress data) -->
-        {#if phase === "medio-anio" || phase === "fin-anio"}
-            {@const score = getWeightedScore()}
-            <div class="mt-3 pt-3 border-t border-base-300">
-                <div class="flex items-center justify-between">
-                    <span class="text-sm font-semibold text-base-content">Puntaje ponderado</span>
-                    <span class="text-2xl font-bold font-mono text-base-content">
-                        {Math.round(score)}
-                        <span class="text-base font-normal text-base-content/50">/100</span>
-                    </span>
+    <div class="space-y-6 max-w-full min-w-0">
+        <!-- Page header -->
+        <div>
+            <div class="flex items-start justify-between gap-4">
+                <div>
+                    <h1
+                        class="text-2xl font-bold text-base-content flex items-center gap-2"
+                    >
+                        <Target class="w-6 h-6" />
+                        {phase === "medio-anio"
+                            ? "Avance de metas"
+                            : phase === "fin-anio"
+                              ? "Evaluación anual"
+                              : "Asignación anual"}
+                    </h1>
+                    <p class="text-sm text-base-content/50 mt-1">
+                        {phase === "medio-anio"
+                            ? "Registre el avance de sus metas y agregue comentarios."
+                            : "Defina las categorías y metas para el período de evaluación."}
+                    </p>
                 </div>
-                <details class="mt-2">
-                    <summary class="text-xs text-base-content/50 cursor-pointer hover:text-base-content/80 select-none">
-                        Desglose por categoría
-                    </summary>
-                    <div class="mt-2 space-y-1.5">
-                        {#each categories as cat (cat.id)}
-                            {@const catProgress = getCategoryProgressAverage(cat.id)}
-                            <div class="flex items-center justify-between text-xs">
-                                <span class="text-base-content/70">{cat.name} ({cat.weight}%)</span>
-                                <span class="font-mono text-base-content">{Math.round(catProgress)}%</span>
-                            </div>
-                        {/each}
-                    </div>
-                </details>
-            </div>
-        {/if}
-    </div>
-
-    <!-- Category cards -->
-    {#if categories.length > 0}
-        <div class="space-y-4 min-w-0">
-            {#each categories as cat (cat.id)}
-                {@const catGoals = getGoalsByCategory(cat.id)}
-                <CategoryCard
-                    category={cat}
-                    goals={catGoals}
-                    {getKpisForGoal}
-                    onSaveCategory={handleSaveCategory}
-                    onDeleteCategory={handleDeleteCategory}
-                    onSaveGoal={handleSaveGoal}
-                    onDeleteGoal={handleDeleteGoal}
-                    {mode}
-                    onRequestChangeCategory={handleRequestChangeCategory}
-                    onRequestChangeGoal={handleRequestChangeGoal}
-                    {phase}
-                    canDelete={permissions.canDelete}
-                    canAddGoal={permissions.canDelete}
-                    canEditCategory={permissions.canEditWeight}
-                    canEditProgress={permissions.canEditProgress}
-                    canComment={permissions.canComment}
-                    {allKpis}
-                    bind:isAnyInlineEditing
-                    onUpdateProgress={handleUpdateProgress}
-                    onOpenComments={openComments}
-                />
-            {/each}
-        </div>
-    {:else if (!creatingCategory && mode === "editor" && phase !== "medio-anio" && phase !== "fin-anio")}
-        <EmptyState
-            title="Sin categorías"
-            message="No hay categorías registradas. Cree la primera categoría para comenzar."
-            actionLabel="Nueva categoría"
-            onaction={startCreateCategory}
-        />
-    {/if}
-
-    <!-- Nueva categoría inline form (editor only, not in avance or cierre mode) -->
-    {#if mode === "editor" && phase !== "medio-anio" && phase !== "fin-anio"}
-        <div class="pt-2">
-            {#if creatingCategory}
-                <div class="w-full border border-base-300 rounded-lg p-4 bg-base-200/50">
-                    <form onsubmit={(e) => { e.preventDefault(); const err = validateCategory({ name: newCatName, description: newCatDesc, weight: newCatWeight }); if (err) { newCatError = err; return; } handleSaveCategory({ name: newCatName, description: newCatDesc, weight: newCatWeight }); }}>
-                        {#if newCatError}<div class="alert alert-error text-sm mb-3" role="alert"><span>{newCatError}</span></div>{/if}
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                            <div class="form-control">
-                                <label class="label" for="new-cat-name"><span class="label-text text-xs">Nombre</span></label>
-                                <input id="new-cat-name" type="text" class="input input-bordered input-sm w-full" bind:value={newCatName} placeholder="Nombre de la categoría" required />
-                            </div>
-                            <div class="form-control">
-                                <label class="label" for="new-cat-desc"><span class="label-text text-xs">Descripción</span></label>
-                                <textarea id="new-cat-desc" class="textarea textarea-bordered textarea-sm w-full" rows={1} bind:value={newCatDesc} placeholder="Descripción" required></textarea>
-                            </div>
-                            <div class="form-control">
-                                <label class="label" for="new-cat-weight"><span class="label-text text-xs">Peso (%)</span></label>
-                                <input id="new-cat-weight" type="number" class="input input-bordered input-sm w-full" bind:value={newCatWeight} min={0} max={100} step={0.1} placeholder="0" required />
-                            </div>
-                        </div>
-                        <div class="flex justify-end gap-2 mt-3">
-                            <button type="button" class="btn btn-ghost btn-sm" onclick={() => { creatingCategory = false; isAnyInlineEditing = false; }}>
-                                Cancelar
-                            </button>
-                            <button type="submit" class="btn btn-primary btn-sm">
-                                <Check class="w-4 h-4" /> Guardar categoría
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            {:else if (categories.length > 0)}
-                <div class="flex justify-center">
-                    <button class="btn btn-outline btn-primary" disabled={isAnyInlineEditing} onclick={startCreateCategory}>
-                        <Plus class="w-4 h-4" /> Nueva categoría
+                {#if phase !== "medio-anio"}
+                    <button
+                        class="btn btn-ghost btn-sm"
+                        onclick={() => goto("/objetivos/asignacion/biblioteca")}
+                        aria-label="Biblioteca de KPI"
+                    >
+                        <Library class="w-4 h-4" />
+                        Biblioteca de KPI
                     </button>
+                {/if}
+            </div>
+            <div class="flex items-center gap-2 mt-3 flex-wrap">
+                {#if showAssigneePicker}
+                    <AssigneePicker
+                        assignments={availableAssignments}
+                        {selectedEmployeeId}
+                        onSelect={handleAssigneeSelect}
+                        currentUserId={viewerEmployeeId}
+                    />
+                {/if}
+                <button
+                    class="btn btn-outline btn-sm"
+                    disabled={categories.length === 0}
+                    onclick={handleExportCsv}
+                >
+                    <FileDown class="w-4 h-4" />
+                    Exportar CSV
+                </button>
+                {#if mode === "editor" && phase !== "medio-anio" && phase !== "fin-anio"}
+                    <div class="flex-1"></div>
+                    <button
+                        class="btn btn-primary btn-sm"
+                        disabled={!valid}
+                        onclick={handleSaveAssignment}
+                    >
+                        <Save class="w-4 h-4" />
+                        Guardar asignación
+                    </button>
+                {:else if mode === "reader"}
+                    <button
+                        class="btn btn-warning btn-sm ml-auto"
+                        onclick={handleRequestAssignmentChange}
+                        aria-label="Solicitar cambio en asignación"
+                    >
+                        <MessageSquare class="w-4 h-4" />
+                        Solicitar cambio
+                    </button>
+                {/if}
+            </div>
+        </div>
+
+        <!-- Read-only banner -->
+        {#if mode === "reader"}
+            <ReadOnlyBanner employeeName={targetEmployeeName} {phase} />
+        {/if}
+
+        <!-- Global weight indicator (sticky) -->
+        <div
+            class="sticky top-2 z-30 bg-base-200/95 backdrop-blur-sm rounded-lg p-4 mt-2 mb-4 border border-base-300 shadow-sm min-w-0"
+        >
+            <p class="text-sm font-semibold text-base-content mb-2">
+                {phase === "medio-anio"
+                    ? "Avance global de metas"
+                    : "Distribución global de metas"}
+            </p>
+            {#if phase === "medio-anio"}
+                {@const allGoals = goals}
+                {@const withProgress = allGoals.filter(
+                    (g) => g.progress !== undefined,
+                )}
+                {@const avgProgress =
+                    withProgress.length > 0
+                        ? withProgress.reduce((acc, g) => {
+                              const pct =
+                                  g.unit === "porcentaje"
+                                      ? (g.progress ?? 0)
+                                      : ((g.progress ?? 0) /
+                                            (g.targetValue || 1)) *
+                                        100;
+                              return acc + Math.min(pct, 100);
+                          }, 0) / withProgress.length
+                        : 0}
+                <ProgressIndicator
+                    value={avgProgress}
+                    label="Avance promedio total"
+                    color="primary"
+                />
+            {:else}
+                <WeightIndicator
+                    current={globalSum}
+                    label="Suma total de categorías"
+                />
+                {#if !valid}
+                    <p class="text-xs text-warning mt-1">
+                        La suma de pesos debe ser 100% tanto a nivel global como
+                        en cada categoría.
+                    </p>
+                {/if}
+            {/if}
+
+            <!-- Weighted score display (only when there's progress data) -->
+            {#if phase === "medio-anio" || phase === "fin-anio"}
+                {@const score = getWeightedScore()}
+                <div class="mt-3 pt-3 border-t border-base-300">
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm font-semibold text-base-content"
+                            >Puntaje ponderado</span
+                        >
+                        <span
+                            class="text-2xl font-bold font-mono text-base-content"
+                        >
+                            {Math.round(score)}
+                            <span
+                                class="text-base font-normal text-base-content/50"
+                                >/100</span
+                            >
+                        </span>
+                    </div>
+                    <details class="mt-2">
+                        <summary
+                            class="text-xs text-base-content/50 cursor-pointer hover:text-base-content/80 select-none"
+                        >
+                            Desglose por categoría
+                        </summary>
+                        <div class="mt-2 space-y-1.5">
+                            {#each categories as cat (cat.id)}
+                                {@const catProgress =
+                                    getCategoryProgressAverage(cat.id)}
+                                <div
+                                    class="flex items-center justify-between text-xs"
+                                >
+                                    <span class="text-base-content/70"
+                                        >{cat.name} ({cat.weight}%)</span
+                                    >
+                                    <span class="font-mono text-base-content"
+                                        >{Math.round(catProgress)}%</span
+                                    >
+                                </div>
+                            {/each}
+                        </div>
+                    </details>
                 </div>
             {/if}
         </div>
-    {/if}
-</div>
 
+        <!-- Category cards -->
+        {#if categories.length > 0}
+            <div class="space-y-4 min-w-0">
+                {#each categories as cat (cat.id)}
+                    {@const catGoals = getGoalsByCategory(cat.id)}
+                    <CategoryCard
+                        category={cat}
+                        goals={catGoals}
+                        {getKpisForGoal}
+                        onSaveCategory={handleSaveCategory}
+                        onDeleteCategory={handleDeleteCategory}
+                        onSaveGoal={handleSaveGoal}
+                        onDeleteGoal={handleDeleteGoal}
+                        {mode}
+                        onRequestChangeCategory={handleRequestChangeCategory}
+                        onRequestChangeGoal={handleRequestChangeGoal}
+                        {phase}
+                        canDelete={permissions.canDelete}
+                        canAddGoal={permissions.canDelete}
+                        canEditCategory={permissions.canEditWeight}
+                        canEditProgress={permissions.canEditProgress}
+                        canComment={permissions.canComment}
+                        {allKpis}
+                        bind:isAnyInlineEditing
+                        onUpdateProgress={handleUpdateProgress}
+                        onOpenComments={openComments}
+                        onOpenCategoryComments={openCategoryComments}
+                    />
+                {/each}
+            </div>
+        {:else if !creatingCategory && mode === "editor" && phase !== "medio-anio" && phase !== "fin-anio"}
+            <EmptyState
+                title="Sin categorías"
+                message="No hay categorías registradas. Cree la primera categoría para comenzar."
+                actionLabel="Nueva categoría"
+                onaction={startCreateCategory}
+            />
+        {/if}
+
+        <!-- Nueva categoría inline form (editor only, not in avance or cierre mode) -->
+        {#if mode === "editor" && phase !== "medio-anio" && phase !== "fin-anio"}
+            <div class="pt-2">
+                {#if creatingCategory}
+                    <div
+                        class="w-full border border-base-300 rounded-lg p-4 bg-base-200/50"
+                    >
+                        <form
+                            onsubmit={(e) => {
+                                e.preventDefault();
+                                const err = validateCategory({
+                                    name: newCatName,
+                                    description: newCatDesc,
+                                    weight: newCatWeight,
+                                });
+                                if (err) {
+                                    newCatError = err;
+                                    return;
+                                }
+                                handleSaveCategory({
+                                    name: newCatName,
+                                    description: newCatDesc,
+                                    weight: newCatWeight,
+                                });
+                            }}
+                        >
+                            {#if newCatError}<div
+                                    class="alert alert-error text-sm mb-3"
+                                    role="alert"
+                                >
+                                    <span>{newCatError}</span>
+                                </div>{/if}
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                <div class="form-control">
+                                    <label class="label" for="new-cat-name"
+                                        ><span class="label-text text-xs"
+                                            >Nombre</span
+                                        ></label
+                                    >
+                                    <input
+                                        id="new-cat-name"
+                                        type="text"
+                                        class="input input-bordered input-sm w-full"
+                                        bind:value={newCatName}
+                                        placeholder="Nombre de la categoría"
+                                        required
+                                    />
+                                </div>
+                                <div class="form-control">
+                                    <label class="label" for="new-cat-desc"
+                                        ><span class="label-text text-xs"
+                                            >Descripción</span
+                                        ></label
+                                    >
+                                    <textarea
+                                        id="new-cat-desc"
+                                        class="textarea textarea-bordered textarea-sm w-full"
+                                        rows={1}
+                                        bind:value={newCatDesc}
+                                        placeholder="Descripción"
+                                        required
+                                    ></textarea>
+                                </div>
+                                <div class="form-control">
+                                    <label class="label" for="new-cat-weight"
+                                        ><span class="label-text text-xs"
+                                            >Peso (%)</span
+                                        ></label
+                                    >
+                                    <input
+                                        id="new-cat-weight"
+                                        type="number"
+                                        class="input input-bordered input-sm w-full"
+                                        bind:value={newCatWeight}
+                                        min={0}
+                                        max={100}
+                                        step={0.1}
+                                        placeholder="0"
+                                        required
+                                    />
+                                </div>
+                            </div>
+                            <div class="flex justify-end gap-2 mt-3">
+                                <button
+                                    type="button"
+                                    class="btn btn-ghost btn-sm"
+                                    onclick={() => {
+                                        creatingCategory = false;
+                                        isAnyInlineEditing = false;
+                                    }}
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    type="submit"
+                                    class="btn btn-primary btn-sm"
+                                >
+                                    <Check class="w-4 h-4" /> Guardar categoría
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                {:else if categories.length > 0}
+                    <div class="flex justify-center">
+                        <button
+                            class="btn btn-outline btn-primary"
+                            disabled={isAnyInlineEditing}
+                            onclick={startCreateCategory}
+                        >
+                            <Plus class="w-4 h-4" /> Nueva categoría
+                        </button>
+                    </div>
+                {/if}
+            </div>
+        {/if}
+    </div>
 {/if}
 
 {#if targetAssignment}
@@ -691,9 +1002,12 @@
         entityType={requestEntityType}
         entityId={requestEntityId}
         entityName={requestEntityName}
-        requestedBy={viewerProfile}
+        requestedBy={viewerEmployeeId}
         onClose={closeRequestModal}
         onCreated={handleRequestChangeCreated}
+        comments={requestComments}
+        onAddComment={handleRequestAddComment}
+        currentUserId={viewerEmployeeId}
     />
 {/if}
 
@@ -706,5 +1020,18 @@
         onDelete={handleDeleteComment}
         onClose={() => (showCommentModal = false)}
         currentUserId={viewerProfile}
+    />
+{/if}
+
+{#if showCategoryCommentModal && commentCategory}
+    <CommentPopover
+        open={showCategoryCommentModal}
+        goal={null}
+        comments={commentCategoryComments}
+        onAdd={handleAddCategoryComment}
+        onDelete={handleDeleteCategoryComment}
+        onClose={() => (showCategoryCommentModal = false)}
+        currentUserId={viewerProfile}
+        category={commentCategory}
     />
 {/if}
