@@ -21,7 +21,7 @@
 	import NineBoxMatrix from '$lib/components/nine-box/NineBoxMatrix.svelte';
 	import NineBoxEntryCard from '$lib/components/nine-box/NineBoxEntryCard.svelte';
 	import NineBoxCellConfig from '$lib/components/nine-box/NineBoxCellConfig.svelte';
-	import { Grid3x3, Settings } from '@lucide/svelte';
+	import { Grid3x3 } from '@lucide/svelte';
 
 	// ─── Phase options ─────────────────────────────────────────────────────────
 
@@ -91,10 +91,10 @@
 		if (!isAuthorized) return [];
 
 		switch (profile) {
-		case 'jefe': {
-			const nodeId = PROFILE_NODE_ID[profile]!;
-			return getDescendants(nodeId).map((n) => n.id);
-		}
+			case 'jefe': {
+				const nodeId = PROFILE_NODE_ID[profile]!;
+				return getDescendants(nodeId).map((n) => n.id);
+			}
 			case 'director': {
 				const nodeId = PROFILE_NODE_ID[profile]!;
 				return getDescendants(nodeId).map((n) => n.id);
@@ -209,30 +209,15 @@
 		<NineBoxMatrix
 			entries={matrixEntries}
 			{quadrantDefs}
+			{isRH}
 			onCellClick={handleCellClick}
+			onOpenConfig={handleOpenConfig}
 		/>
 
 		{#if matrixEntries.length === 0 && !loading}
 			<p class="text-sm text-base-content/50 text-center mt-2">
 				No hay empleados para mostrar en la matriz.
 			</p>
-		{/if}
-
-		<!-- RH: Config button per quadrant -->
-		{#if isRH}
-			<div class="flex flex-wrap gap-2 mt-2">
-				{#each quadrantDefs as qd (qd.quadrant)}
-					<button
-						type="button"
-						class="btn btn-xs btn-ghost gap-1"
-						style="border-left: 3px solid {qd.colorHex};"
-						onclick={() => handleOpenConfig(qd.quadrant)}
-					>
-						<Settings class="w-3 h-3" />
-						Q{qd.quadrant}: {qd.label}
-					</button>
-				{/each}
-			</div>
 		{/if}
 	{/if}
 </div>

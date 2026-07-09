@@ -379,6 +379,8 @@ func (m *mockCatalogRepo) GetScales(ctx context.Context) ([]*internal.NineBoxSca
 	return m.scales, nil
 }
 
+func (m *mockCatalogRepo) InvalidateQuadrantCache() {}
+
 // ---------- Mock DB ----------
 
 type mockDB struct {

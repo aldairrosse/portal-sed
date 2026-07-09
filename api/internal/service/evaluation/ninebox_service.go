@@ -438,6 +438,8 @@ func (s *NineBoxService) UpdateQuadrantByNumber(ctx context.Context, quadrantNum
 	}
 	tx = nil
 
+	s.catalogRepo.InvalidateQuadrantCache()
+
 	quad, err := s.catalogRepo.GetQuadrantByNumber(ctx, quadrantNumber)
 	if err != nil {
 		return nil, err

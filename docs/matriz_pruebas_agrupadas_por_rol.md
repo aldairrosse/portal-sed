@@ -8,7 +8,7 @@
 | E2E-003 | Editar definicion de niveles | El sistema puede editar la definición de niveles del 1-5. | OK |
 | E2E-004 | Crear, editar o eliminar criterios | El sistema puede crear un criterio por competencia y nivel, editar o eliminar. | Recargar en uno. OK |
 | E2E-005 | Editar niveles de aceptación | El sistema permite guardar las definiciones de nivel | OK |
-| E2E-006 | Gestión de fases y ciclos | El sistema puede crear un ciclo si no hay activos, y avanzar en fase. | Error al avanzar fase |
+| E2E-006 | Gestión de fases y ciclos | El sistema puede crear un ciclo si no hay activos, y avanzar en fase. | Error al avanzar fase. OK |
 | E2E-007 | Lista de evaluaciones RRHH | El sistema puede buscar personal. Ver evaluaciones, y evaluar. | OK |
 | E2E-008 | Jerarquía de departamentos | El sistema puede mostrar todos los departamentos, ver empleados a evaluar y métricas | OK |
 

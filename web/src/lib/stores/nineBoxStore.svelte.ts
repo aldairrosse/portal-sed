@@ -113,9 +113,9 @@ export async function load(cycleId?: string, phaseId?: string): Promise<void> {
 		]);
 
 		if (matricesRes.error) {
+			const error = (matricesRes as { error: { error?: { message?: string } }}).error;
 			throw new Error(
-				(matricesRes.error as { error?: { message?: string } })?.error?.message ??
-					'Error al cargar matrices'
+				error?.error?.message ?? 'Error al cargar matrices'
 			);
 		}
 
@@ -169,8 +169,8 @@ export function getEntryByEmployee(employeeId: string): NineBoxEntry | undefined
 }
 
 export function getQuadrantDefs(): NineBoxQuadrantDef[] {
-	const defs = data?.quadrantDefs;
-	return defs && defs.length > 0 ? defs : DEFAULT_QUADRANT_DEFS;
+	const defs = data?.quadrantDefs ?? [];
+	return [...DEFAULT_QUADRANT_DEFS.filter((_, i) => !defs.some((d) => d.quadrant === i + 1)), ...defs].sort((a, b) => a.quadrant - b.quadrant);
 }
 
 export function getQuadrantDef(quadrant: number): NineBoxQuadrantDef | undefined {

@@ -75,6 +75,13 @@ func (r *CatalogRepo) GetQuadrantByNumber(ctx context.Context, quadrant int) (*i
 	return nil, nil
 }
 
+// InvalidateQuadrantCache clears the in-memory quadrant cache.
+func (r *CatalogRepo) InvalidateQuadrantCache() {
+	r.mu.Lock()
+	r.quadrants = nil
+	r.mu.Unlock()
+}
+
 // GetQuadrantByScores maps performance and potential scores to a quadrant
 // and returns its metadata.
 func (r *CatalogRepo) GetQuadrantByScores(ctx context.Context, perf, pot int) (*internal.NineBoxQuadrant, error) {

@@ -77,6 +77,7 @@ type CatalogRepo interface {
 	GetQuadrants(ctx context.Context) ([]*internal.NineBoxQuadrant, error)
 	GetQuadrantByNumber(ctx context.Context, quadrant int) (*internal.NineBoxQuadrant, error)
 	GetScales(ctx context.Context) ([]*internal.NineBoxScale, error)
+	InvalidateQuadrantCache()
 }
 
 // DB is the minimal database interface needed to begin transactions.

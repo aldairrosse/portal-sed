@@ -10,9 +10,9 @@
 
 	let { quadrantDef, onClose }: Props = $props();
 
-	let title = $state(quadrantDef.title);
-	let description = $state(quadrantDef.description);
-	let colorHex = $state(quadrantDef.colorHex);
+	let title = $derived(quadrantDef.title);
+	let description = $derived(quadrantDef.description);
+	let colorHex = $derived(quadrantDef.colorHex);
 	let saving = $state(false);
 	let error = $state<string | null>(null);
 
@@ -71,18 +71,12 @@
 			</form>
 		</div>
 
-		<!-- Color preview -->
-		<div
-			class="w-full h-10 rounded-lg mb-4 border border-base-300"
-			style="background-color: {colorHex};"
-		></div>
-
 		<!-- Form fields -->
 		<div class="flex flex-col gap-4">
 			<!-- Title -->
 			<div class="form-control">
 				<label for="qc-title" class="label">
-					<span class="label-text">Título</span>
+					<span class="label-text text-xs">Título</span>
 				</label>
 				<input
 					id="qc-title"
@@ -109,7 +103,7 @@
 			<!-- Color hex -->
 			<div class="form-control">
 				<label for="qc-color" class="label">
-					<span class="label-text">Color (hex)</span>
+					<span class="label-text text-xs">Color</span>
 				</label>
 				<div class="flex gap-2 items-center">
 					<input
@@ -122,7 +116,7 @@
 						type="text"
 						class="input input-bordered flex-1 font-mono"
 						bind:value={colorHex}
-						placeholder="#FF5733"
+						placeholder="Ingresa un color en formato #RRGGBB"
 					/>
 				</div>
 				{#if colorHex && !HEX_REGEX.test(colorHex)}
