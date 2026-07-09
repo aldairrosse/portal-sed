@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { X, MessageCircle } from '@lucide/svelte';
 	import type { Goal, GoalComment } from '$lib/types/goal';
-	import { client } from '$lib/api/client';
 
 	interface Props {
 		open: boolean;
@@ -18,7 +17,7 @@
 	let {
 		open,
 		goal,
-		comments: initialComments,
+		comments,
 		onAdd,
 		onDelete,
 		onClose,
@@ -28,36 +27,9 @@
 
 	let dialogEl: HTMLDialogElement | undefined = $state();
 	let newComment = $state('');
-	let comments = $state<GoalComment[]>(initialComments);
-	let loading = $state(false);
 
 	const entityId = $derived(category?.id ?? goal?.id ?? '');
 	const entityName = $derived(category?.name ?? goal?.name ?? 'Comentarios');
-
-	// Reload comments from API when modal opens
-	$effect(() => {
-		if (open && entityId) {
-			loading = true;
-			const promise = category
-				? client.GET('/categories/{catId}/comments', {
-					params: { path: { catId: category.id } }
-				})
-				: client.GET('/goals/{goalId}/comments', {
-					params: { path: { goalId: goal!.id } }
-				});
-			promise.then(({ data, error }) => {
-				if (data && !error) {
-					comments = data as unknown as GoalComment[];
-				}
-				loading = false;
-			}).catch(() => { loading = false; });
-		}
-	});
-
-	// Sync when prop changes
-	$effect(() => {
-		comments = initialComments;
-	});
 
 	$effect(() => {
 		if (!dialogEl) return;
@@ -123,9 +95,7 @@
 
 		<!-- Comments list -->
 		<div class="max-h-60 overflow-y-auto space-y-3 mb-4">
-			{#if loading}
-				<p class="text-sm text-base-content/50 italic text-center py-4">Cargando...</p>
-			{:else if comments.length === 0}
+			{#if comments.length === 0}
 				<p class="text-sm text-base-content/50 italic text-center py-4">Sin comentarios aún</p>
 			{:else}
 				{#each comments as comment (comment.id)}
