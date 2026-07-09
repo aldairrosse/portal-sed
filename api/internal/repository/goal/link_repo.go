@@ -10,6 +10,13 @@ import (
 	pkgerrors "github.com/sed-evaluacion-desempeno/api/internal/pkg/errors"
 )
 
+// KpiLinkRow is the result of a link query with KPI data loaded.
+type KpiLinkRow struct {
+	GoalID uuid.UUID
+	KpiID  uuid.UUID
+	Kpi    *KpiRow
+}
+
 // LinkKpiRepo provides Ent-backed operations for GoalKpiLink.
 type LinkKpiRepo struct {
 	client *internal.Client
@@ -91,4 +98,24 @@ func (r *LinkKpiRepo) ListKpiIDsByGoal(ctx context.Context, goalID uuid.UUID) ([
 		ids[i] = l.KpiID
 	}
 	return ids, nil
+}
+
+// ListLinksByGoal returns KPI link data with KPI details loaded for a goal.
+func (r *LinkKpiRepo) ListLinksByGoal(ctx context.Context, goalID uuid.UUID) ([]*KpiLinkRow, error) {
+	links, err := r.client.GoalKpiLink.Query().
+		Where(goalkpilink.GoalID(goalID)).
+		WithKpi().
+		All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	result := make([]*KpiLinkRow, len(links))
+	for i, l := range links {
+		result[i] = &KpiLinkRow{
+			GoalID: l.GoalID,
+			KpiID:  l.KpiID,
+			Kpi:    kpiToRow(l.Edges.Kpi),
+		}
+	}
+	return result, nil
 }

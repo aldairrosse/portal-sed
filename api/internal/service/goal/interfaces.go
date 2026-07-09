@@ -46,6 +46,7 @@ type LinkKPIRepository interface {
 	CountGoalKPILinks(ctx context.Context, goalID uuid.UUID) (int, error)
 	ReplaceGoalKpiLinks(ctx context.Context, goalID uuid.UUID, kpiIDs []uuid.UUID) error
 	ListKpiIDsByGoal(ctx context.Context, goalID uuid.UUID) ([]uuid.UUID, error)
+	ListLinksByGoal(ctx context.Context, goalID uuid.UUID) ([]*repogoal.KpiLinkRow, error)
 }
 
 // AssignmentRepository defines the storage contract for assignments.

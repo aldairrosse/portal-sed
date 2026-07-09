@@ -155,7 +155,14 @@ func (h *GoalHandler) ListCategories(w http.ResponseWriter, r *http.Request) {
 		if goals != nil {
 			goalResponses := make([]dtogoal.GoalResponse, len(goals))
 			for j, g := range goals {
-				goalResponses[j] = goalRowToResponse(g)
+				kpiLinks, _ := h.linkRepo.ListLinksByGoal(r.Context(), g.ID)
+				var kpis []dtogoal.KpiResponse
+				for _, kl := range kpiLinks {
+					if kl.Kpi != nil {
+						kpis = append(kpis, kpiRowToResponse(kl.Kpi))
+					}
+				}
+				goalResponses[j] = goalRowToResponse(g, kpis)
 			}
 			cr.Goals = goalResponses
 		}
@@ -249,10 +256,14 @@ func (h *GoalHandler) DeleteCategory(w http.ResponseWriter, r *http.Request) {
 // ============================================================================
 
 // goalRowToResponse converts a repo GoalRow to an API response.
-func goalRowToResponse(g *repogoal.GoalRow) dtogoal.GoalResponse {
+func goalRowToResponse(g *repogoal.GoalRow, kpis ...[]dtogoal.KpiResponse) dtogoal.GoalResponse {
 	baselineVal := 0.0
 	if g.BaselineValue != nil {
 		baselineVal = *g.BaselineValue
+	}
+	var kpiResponses []dtogoal.KpiResponse
+	if len(kpis) > 0 {
+		kpiResponses = kpis[0]
 	}
 	return dtogoal.GoalResponse{
 		ID:              g.ID.String(),
@@ -268,6 +279,7 @@ func goalRowToResponse(g *repogoal.GoalRow) dtogoal.GoalResponse {
 		ProgressPercent: scoring.ProgressPercent(g.CurrentValue, g.TargetValue, baselineVal, g.Direction),
 		State:           g.State,
 		Version:         g.Version,
+		KPIs:            kpiResponses,
 		CreatedAt:       g.CreatedAt.Format(time.RFC3339),
 		UpdatedAt:       g.UpdatedAt.Format(time.RFC3339),
 	}
@@ -644,14 +656,21 @@ func (h *GoalHandler) LinkKPI(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Return the updated goal
+	// Return the updated goal with linked KPIs
 	goal, err := h.goalRepo.GetGoal(r.Context(), goalID)
 	if err != nil {
 		writeError(w, err)
 		return
 	}
+	kpiLinks, _ := h.linkRepo.ListLinksByGoal(r.Context(), goalID)
+	var kpis []dtogoal.KpiResponse
+	for _, kl := range kpiLinks {
+		if kl.Kpi != nil {
+			kpis = append(kpis, kpiRowToResponse(kl.Kpi))
+		}
+	}
 
-	writeJSON(w, http.StatusOK, goalRowToResponse(goal))
+	writeJSON(w, http.StatusOK, goalRowToResponse(goal, kpis))
 }
 
 // UnlinkKPI handles DELETE /api/v1/goals/{goalId}/kpis/{kpiId}.
@@ -753,7 +772,14 @@ func (h *GoalHandler) GetAssignment(w http.ResponseWriter, r *http.Request) {
 			if goals != nil {
 				goalResponses := make([]dtogoal.GoalResponse, len(goals))
 				for j, g := range goals {
-					goalResponses[j] = goalRowToResponse(g)
+					kpiLinks, _ := h.linkRepo.ListLinksByGoal(r.Context(), g.ID)
+					var kpis []dtogoal.KpiResponse
+					for _, kl := range kpiLinks {
+						if kl.Kpi != nil {
+							kpis = append(kpis, kpiRowToResponse(kl.Kpi))
+						}
+					}
+					goalResponses[j] = goalRowToResponse(g, kpis)
 				}
 				cr.Goals = goalResponses
 			}

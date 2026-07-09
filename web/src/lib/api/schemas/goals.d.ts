@@ -324,6 +324,41 @@ export interface paths {
         patch: operations["updateChangeRequest"];
         trace?: never;
     };
+    "/categories/{catId}/comments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List comments for a category */
+        get: operations["listCategoryComments"];
+        put?: never;
+        /** Add a comment to a category */
+        post: operations["createCategoryComment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/categories/{catId}/comments/{commentId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete a category comment */
+        delete: operations["deleteCategoryComment"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -521,7 +556,9 @@ export interface components {
             /** Format: uuid */
             id?: string;
             /** Format: uuid */
-            goal_id?: string;
+            goal_id?: string | null;
+            /** Format: uuid */
+            category_id?: string | null;
             author_id?: string;
             author_name?: string;
             content?: string;
@@ -1360,6 +1397,75 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ChangeRequestResponse"];
                 };
+            };
+        };
+    };
+    listCategoryComments: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                catId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of category comments */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoalCommentResponse"][];
+                };
+            };
+        };
+    };
+    createCategoryComment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                catId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateGoalCommentRequest"];
+            };
+        };
+        responses: {
+            /** @description Created category comment */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoalCommentResponse"];
+                };
+            };
+        };
+    };
+    deleteCategoryComment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                catId: string;
+                commentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Comment deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

@@ -34,7 +34,7 @@ export const MENU_ITEMS: MenuItem[] = [
 		profiles: ['jefe', 'gerente-tienda', 'divisional', 'regional', 'director', 'rh']
 	},
 	{
-		label: 'Matriz 9×9',
+		label: 'Matriz 9-Box',
 		href: '/evaluacion/9x9',
 		icon: 'Grid3x3',
 		profiles: ['jefe', 'director', 'director-general', 'rh']

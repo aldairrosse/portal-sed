@@ -278,6 +278,9 @@ func (m *mockLinkRepo) ReplaceGoalKpiLinks(ctx context.Context, goalID uuid.UUID
 	return nil
 }
 func (m *mockLinkRepo) ListKpiIDsByGoal(ctx context.Context, goalID uuid.UUID) ([]uuid.UUID, error) { return nil, nil }
+func (m *mockLinkRepo) ListLinksByGoal(ctx context.Context, goalID uuid.UUID) ([]*repogoal.KpiLinkRow, error) {
+	return nil, nil
+}
 
 type mockAssignmentRepo struct {
 	getFunc    func(ctx context.Context, empID uuid.UUID) (*repogoal.AssignmentRow, error)
