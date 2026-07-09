@@ -172,7 +172,7 @@ func (s *pillarService) Delete(ctx context.Context, id string, force bool) error
 
 	if count > 0 && !force {
 		return pkgerrors.NewDomainError("PILLAR_HAS_COMPETENCIES",
-			"cannot delete pillar with existing competencies; use force=true to cascade",
+			"El pilar tiene competencias asociadas, no se puede eliminar sin force=true",
 			nil).WithDetails(
 			fmt.Sprintf("pillar_id: %s", id),
 			fmt.Sprintf("competencies_count: %d", count),

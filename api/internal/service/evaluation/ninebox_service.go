@@ -3,6 +3,7 @@ package evaluation
 import (
 	"context"
 	"database/sql"
+	"fmt"
 
 	"github.com/google/uuid"
 	"github.com/sed-evaluacion-desempeno/api/internal"
@@ -406,6 +407,7 @@ func (s *NineBoxService) GetQuadrants(ctx context.Context) ([]dto.NineBoxQuadran
 }
 
 // UpdateQuadrantByNumber updates quadrant title, description, and colorHex by quadrant number (1-9).
+// Uses UPSERT: inserts the quadrant if it doesn't exist yet.
 func (s *NineBoxService) UpdateQuadrantByNumber(ctx context.Context, quadrantNumber int, input dto.NineBoxQuadrantUpdateInput) (*dto.NineBoxQuadrantDTO, error) {
 	tx, err := s.db.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if err != nil {
@@ -417,9 +419,15 @@ func (s *NineBoxService) UpdateQuadrantByNumber(ctx context.Context, quadrantNum
 		}
 	}()
 
+	defaultLabel := fmt.Sprintf("Cuadrante %d", quadrantNumber)
 	_, err = tx.ExecContext(ctx,
-		`UPDATE nine_box_quadrants SET title = $1, description = $2, color_hex = $3 WHERE quadrant = $4`,
-		input.Title, input.Description, input.ColorHex, quadrantNumber,
+		`INSERT INTO nine_box_quadrants (id, quadrant, label, color, title, description, color_hex)
+		 VALUES (gen_random_uuid(), $1, $2, '#CCCCCC', $3, $4, $5)
+		 ON CONFLICT (quadrant) DO UPDATE SET
+		   title = EXCLUDED.title,
+		   description = EXCLUDED.description,
+		   color_hex = EXCLUDED.color_hex`,
+		quadrantNumber, defaultLabel, input.Title, input.Description, input.ColorHex,
 	)
 	if err != nil {
 		return nil, err
@@ -433,6 +441,9 @@ func (s *NineBoxService) UpdateQuadrantByNumber(ctx context.Context, quadrantNum
 	quad, err := s.catalogRepo.GetQuadrantByNumber(ctx, quadrantNumber)
 	if err != nil {
 		return nil, err
+	}
+	if quad == nil {
+		return nil, fmt.Errorf("quadrant %d not found after upsert", quadrantNumber)
 	}
 
 	dtoResp := dto.NineBoxQuadrantDTO{

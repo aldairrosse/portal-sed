@@ -178,7 +178,7 @@ func (s *competencyService) Delete(ctx context.Context, id string, force bool) e
 
 	if count > 0 && !force {
 		return pkgerrors.NewDomainError("COMPETENCY_HAS_CRITERIA",
-			"cannot delete competency with existing scale criteria; use force=true to cascade",
+			"La competencia tiene criterios de escala asociados, no se puede eliminar sin force=true",
 			nil).WithDetails(
 			fmt.Sprintf("competency_id: %s", id),
 			fmt.Sprintf("criteria_count: %d", count),

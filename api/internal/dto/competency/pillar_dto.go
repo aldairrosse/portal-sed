@@ -45,13 +45,13 @@ type CompetencyLite struct {
 
 // CompetencyDetail is the full projection of a competency with scale criteria.
 type CompetencyDetail struct {
-	ID            string              `json:"id"`
-	PillarID      string              `json:"pillar_id"`
-	Name          string              `json:"name"`
-	Description   string              `json:"description,omitempty"`
-	ScaleCriteria map[int][]string    `json:"scale_criteria,omitempty"`
-	CreatedAt     time.Time           `json:"created_at"`
-	UpdatedAt     time.Time           `json:"updated_at"`
+	ID            string           `json:"id"`
+	PillarID      string           `json:"pillar_id"`
+	Name          string           `json:"name"`
+	Description   string           `json:"description,omitempty"`
+	ScaleCriteria map[int][]string `json:"scale_criteria,omitempty"`
+	CreatedAt     time.Time        `json:"created_at"`
+	UpdatedAt     time.Time        `json:"updated_at"`
 }
 
 // CreateCompetencyRequest is the request body for POST /api/v1/pillars/:pillarId/competencies.
@@ -81,6 +81,7 @@ type ScaleCriteriaBulkRequest struct {
 // ScaleCriteriaResponse is the response for scale criteria endpoints.
 type ScaleCriteriaResponse struct {
 	CompetencyID string           `json:"competency_id"`
+	PillarID     string           `json:"pillar_id"`
 	Criteria     map[int][]string `json:"criteria"`
 	Version      int              `json:"version"`
 	UpdatedAt    time.Time        `json:"updated_at"`

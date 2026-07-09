@@ -40,6 +40,7 @@ func (s *scaleService) GetByCompetency(ctx context.Context, competencyID string)
 	}
 
 	return &dto.ScaleCriteriaResponse{
+		PillarID:     comp.PillarID.String(),
 		CompetencyID: competencyID,
 		Criteria:     grouped,
 		UpdatedAt:    comp.UpdatedAt,
@@ -49,14 +50,14 @@ func (s *scaleService) GetByCompetency(ctx context.Context, competencyID string)
 func (s *scaleService) Upsert(ctx context.Context, competencyID string, req dto.ScaleCriteriaBulkRequest) (*dto.ScaleCriteriaResponse, error) {
 	if len(req.Criteria) == 0 {
 		return nil, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
-			"at least one criterion is required", nil)
+			"Se requiere al menos un criterio", nil)
 	}
 
 	// Validate levels
 	for _, item := range req.Criteria {
 		if item.Level < 1 || item.Level > 5 {
 			return nil, pkgerrors.NewDomainError("INVALID_LEVEL",
-				"level must be between 1 and 5", nil)
+				"El nivel debe estar entre 1 y 5", nil)
 		}
 	}
 
@@ -92,6 +93,7 @@ func (s *scaleService) Upsert(ctx context.Context, competencyID string, req dto.
 
 	return &dto.ScaleCriteriaResponse{
 		CompetencyID: competencyID,
+		PillarID:     comp.PillarID.String(),
 		Criteria:     grouped,
 		UpdatedAt:    time.Now(),
 	}, nil
