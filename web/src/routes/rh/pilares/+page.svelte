@@ -61,11 +61,15 @@
 		deletingPillar = pillar;
 	}
 
-	function handleDeleteConfirm() {
+	async function handleDeleteConfirm() {
 		if (!deletingPillar) return;
 		const { name } = deletingPillar;
-		deletePillar(deletingPillar.id);
-		notifications.success(`Pilar "${name}" eliminado correctamente.`);
+		try {
+			await deletePillar(deletingPillar.id);
+			notifications.success(`Pilar "${name}" eliminado correctamente.`);
+		} catch (e) {
+			notifications.error(e instanceof Error ? e.message : 'Error al eliminar pilar');
+		}
 		deletingPillar = null;
 	}
 

@@ -73,11 +73,15 @@
 		deletingCompetency = competency;
 	}
 
-	function handleDeleteConfirm() {
+	async function handleDeleteConfirm() {
 		if (!deletingCompetency) return;
 		const { name } = deletingCompetency;
-		deleteCompetency(deletingCompetency.id);
-		notifications.success(`Competencia "${name}" eliminada correctamente.`);
+		try {
+			await deleteCompetency(deletingCompetency.id);
+			notifications.success(`Competencia "${name}" eliminada correctamente.`);
+		} catch (e) {
+			notifications.error(e instanceof Error ? e.message : 'Error al eliminar competencia');
+		}
 		deletingCompetency = null;
 	}
 

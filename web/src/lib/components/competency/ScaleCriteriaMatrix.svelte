@@ -93,7 +93,7 @@
 	function saveEditing() {
 		const hasContent = editEntries.some((e) => e.description.trim().length > 0);
 		if (!hasContent) {
-			errorMsg = 'Debes tener al menos un criterio con descripción.';
+			errorMsg = 'Debes tener al menos un criterio.';
 			return;
 		}
 
@@ -195,7 +195,7 @@
 											{#if cellCriteria.length > 0}
 												<div class="space-y-1">
 													{#each cellCriteria as criterion (criterion.id)}
-														<span class="text-xs text-base-content/60 leading-tight line-clamp-3 block">{criterion.description}</span>
+														<span class="text-xs text-base-content/60 leading-tight line-clamp-3 block">• {criterion.description}</span>
 													{/each}
 												</div>
 											{:else}
