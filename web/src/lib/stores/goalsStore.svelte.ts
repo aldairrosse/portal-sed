@@ -6,6 +6,7 @@ import type {
 	EmployeeAssignment,
 	ChangeRequest,
 	GoalComment,
+	GoalProposal,
 	GoalUnit,
 	KpiUnit,
 	CyclePhase
@@ -65,6 +66,40 @@ function getEmployeeId(): string {
 	return getSession().user?.employeeId ?? '';
 }
 
+function mapToGoalProposal(pp: any): GoalProposal {
+    return {
+        id: pp.id ?? '',
+        goalId: pp.goal_id ?? '',
+        requestedBy: pp.requested_by ?? '',
+        name: pp.name ?? '',
+        description: pp.description ?? '',
+        unit: (pp.unit as GoalUnit) ?? 'numero',
+        direction: (pp.direction as 'ascendente' | 'descendente') ?? 'ascendente',
+        weight: pp.weight ?? 0,
+        targetValue: pp.target_value ?? 0,
+        baselineValue: pp.baseline_value,
+        kpiIds: pp.kpi_ids ?? [],
+        status: pp.status ?? 'pending',
+        reviewedBy: pp.reviewed_by,
+        reviewedAt: pp.reviewed_at,
+        createdAt: pp.created_at ?? '',
+        updatedAt: pp.updated_at ?? '',
+    };
+}
+
+function mapToGoalComment(raw: unknown): GoalComment {
+    const c = (raw ?? {}) as Record<string, unknown>;
+    return {
+        id: (c.id as string) ?? '',
+        authorId: (c.author_id as string) ?? '',
+        authorName: (c.author_name as string) ?? '',
+        content: (c.content as string) ?? '',
+        createdAt: (c.created_at as string) ?? '',
+        goalId: c.goal_id as string | undefined,
+        categoryId: c.category_id as string | undefined,
+    };
+}
+
 /**
  * Normalize API responses into the flat StoreData format that getters consume.
  */
@@ -88,6 +123,7 @@ function normalizeApiData(
 			version?: number;
 			direction?: string;
 			baseline_value?: number;
+			pending_proposal?: Record<string, unknown>;
 			kpis?: Array<{
 				id?: string;
 				name?: string;
@@ -132,7 +168,7 @@ function normalizeApiData(
 			unit: (ak.unit as KpiUnit) ?? 'numero',
 			direction: (ak.direction as 'ascendente' | 'descendente') ?? 'ascendente',
 			currentValue: ak.current_value,
-			targetValue: undefined,
+			targetValue: ak.target_value,
 			minValue: undefined,
 			maxValue: undefined
 		};
@@ -164,8 +200,9 @@ function normalizeApiData(
 				progress: ag.current_value,
 				progressUpdatedAt: ag.updated_at,
 				comments: [],
-				version: ag.version ?? 1
-			});
+			version: ag.version ?? 1,
+			pendingProposal: ag.pending_proposal ? mapToGoalProposal(ag.pending_proposal) : undefined
+		});
 			assignedGoalIds.push(goalId);
 
 			// Each nested KPI becomes a link + potentially a new KPI entry
@@ -180,7 +217,7 @@ function normalizeApiData(
 							unit: (kpiRef.unit as KpiUnit) ?? 'numero',
 							direction: (kpiRef.direction as 'ascendente' | 'descendente') ?? 'ascendente',
 							currentValue: kpiRef.current_value,
-							targetValue: undefined,
+							targetValue: kpiRef.target_value,
 							minValue: undefined,
 							maxValue: undefined
 						});
@@ -318,7 +355,7 @@ export async function loadAllGoalComments(_empId?: string): Promise<void> {
 					params: { path: { goalId: g.id } }
 				}).then(({ data, error }) => {
 					if (data && !error) {
-						return { id: g.id, comments: data as unknown as GoalComment[] };
+						return { id: g.id, comments: (data as unknown as GoalComment[]).map(mapToGoalComment) };
 					}
 					return { id: g.id, comments: [] as GoalComment[] };
 				})
@@ -349,7 +386,7 @@ export async function loadAllGoalComments(_empId?: string): Promise<void> {
 					params: { path: { catId: c.id } }
 				}).then(({ data, error }) => {
 					if (data && !error) {
-						return { id: c.id, comments: data as unknown as GoalComment[] };
+						return { id: c.id, comments: (data as unknown as GoalComment[]).map(mapToGoalComment) };
 					}
 					return { id: c.id, comments: [] as GoalComment[] };
 				})
@@ -617,9 +654,9 @@ export async function deleteCategory(id: string): Promise<void> {
 
 // ─── Mutations: Goals ─────────────────────────────────────────────────────────
 
-export async function addGoal(goal: Goal): Promise<void> {
+export async function addGoal(goal: Goal): Promise<string> {
 	const empId = getEmployeeId();
-	const { error: apiError } = await client.POST('/employees/{empId}/categories/{catId}/goals', {
+	const { data, error: apiError } = await client.POST('/employees/{empId}/categories/{catId}/goals', {
 		params: { path: { empId, catId: goal.categoryId } },
 		body: {
 			name: goal.name,
@@ -633,6 +670,7 @@ export async function addGoal(goal: Goal): Promise<void> {
 	});
 	if (apiError) throw new Error((apiError as { error?: { message?: string } })?.error?.message ?? 'Error al crear meta');
 	await reload();
+	return data?.id ?? goal.id;
 }
 
 export async function updateGoal(id: string, updates: Partial<Omit<Goal, 'id'>>): Promise<void> {
@@ -665,6 +703,65 @@ export async function deleteGoal(id: string): Promise<void> {
 	await reload();
 }
 
+// ─── Mutations: Goal Proposals ─────────────────────────────────────────────────
+
+export async function createGoalProposal(goalId: string, data: {
+	name: string;
+	description: string;
+	unit: GoalUnit;
+	weight: number;
+	targetValue: number;
+	direction: 'ascendente' | 'descendente';
+	baselineValue?: number;
+	kpiIds: string[];
+}): Promise<void> {
+	const { error } = await client.POST('/goals/{goalId}/proposals', {
+		params: { path: { goalId } },
+		body: {
+			name: data.name,
+			description: data.description,
+			unit: data.unit,
+			weight: data.weight,
+			target_value: data.targetValue,
+			direction: data.direction,
+			baseline_value: data.baselineValue,
+			kpi_ids: data.kpiIds,
+		}
+	});
+	if (error) throw new Error(
+		(error as { error?: { message?: string } })?.error?.message ?? 'Error al crear propuesta'
+	);
+	await reload();
+}
+
+export async function acceptGoalProposal(goalId: string, proposalId: string, reviewedBy: string): Promise<void> {
+	const { error } = await client.PATCH('/goals/{goalId}/proposals/{propId}', {
+		params: { path: { goalId, propId: proposalId } },
+		body: { status: 'accepted', reviewed_by: reviewedBy }
+	});
+	if (error) throw new Error(
+		(error as { error?: { message?: string } })?.error?.message ?? 'Error al aceptar propuesta'
+	);
+	await reload();
+}
+
+export async function rejectGoalProposal(goalId: string, proposalId: string): Promise<void> {
+	const { error } = await client.PATCH('/goals/{goalId}/proposals/{propId}', {
+		params: { path: { goalId, propId: proposalId } },
+		body: { status: 'rejected', reviewed_by: '' }
+	});
+	if (error) throw new Error(
+		(error as { error?: { message?: string } })?.error?.message ?? 'Error al rechazar propuesta'
+	);
+	await reload();
+}
+
+// ─── Getters: Proposals ───────────────────────────────────────────────────────
+
+export function getPendingProposal(goalId: string): GoalProposal | undefined {
+	return storeState.data?.goals.find(g => g.id === goalId)?.pendingProposal;
+}
+
 // ─── Mutations: KPIs ──────────────────────────────────────────────────────────
 
 export async function addKpi(kpi: KPI): Promise<void> {
@@ -672,8 +769,9 @@ export async function addKpi(kpi: KPI): Promise<void> {
 		body: {
 			name: kpi.name,
 			description: kpi.description,
-			unit: kpi.unit as 'porcentaje' | 'moneda' | 'numero',
-			direction: kpi.direction as 'ascendente' | 'descendente'
+			unit: kpi.unit as 'porcentaje' | 'moneda' | 'numero' | 'binario',
+			direction: kpi.direction as 'ascendente' | 'descendente',
+			target_value: kpi.targetValue
 		}
 	});
 	if (apiError) throw new Error((apiError as { error?: { message?: string } })?.error?.message ?? 'Error al crear KPI');
@@ -686,8 +784,9 @@ export async function updateKpi(id: string, updates: Partial<Omit<KPI, 'id'>>): 
 		body: {
 			name: updates.name ?? '',
 			description: updates.description ?? '',
-			unit: (updates.unit as 'porcentaje' | 'moneda' | 'numero') ?? 'numero',
-			direction: (updates.direction as 'ascendente' | 'descendente') ?? 'ascendente'
+			unit: (updates.unit as 'porcentaje' | 'moneda' | 'numero' | 'binario') ?? 'numero',
+			direction: (updates.direction as 'ascendente' | 'descendente') ?? 'ascendente',
+			target_value: updates.targetValue
 		}
 	});
 	if (apiError) throw new Error((apiError as { error?: { message?: string } })?.error?.message ?? 'Error al actualizar KPI');
@@ -855,7 +954,7 @@ export async function addGoalComment(
 	});
 	if (apiError) throw new Error('Error al guardar comentario');
 	if (data) {
-		const comment = data as unknown as GoalComment;
+		const comment = mapToGoalComment(data);
 		storeState.data = {
 			...storeState.data!,
 			goals: (storeState.data?.goals ?? []).map((g) =>
@@ -898,7 +997,7 @@ export async function addCategoryComment(
 	});
 	if (apiError) throw new Error('Error al guardar comentario');
 	if (data) {
-		const comment = data as unknown as GoalComment;
+		const comment = mapToGoalComment(data);
 		storeState.data = {
 			...storeState.data!,
 			categories: (storeState.data?.categories ?? []).map((c) =>
