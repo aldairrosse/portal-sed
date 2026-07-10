@@ -25,6 +25,12 @@
 		onEmployeeSelect?: (emp: EmployeeLeaf) => void;
 		/** Currently selected employee leaf id for highlighting */
 		selectedEmployeeId?: string;
+		/** When true, show radio button for department selection */
+		selectable?: boolean;
+		/** Currently selected radio id */
+		selectableSelectedId?: string;
+		/** Called when a radio is clicked (nodeId) */
+		onSelectableClick?: (nodeId: string) => void;
 	}
 
 	let {
@@ -38,7 +44,10 @@
 		viewType = 'users',
 		employeeLeaves = {},
 		onEmployeeSelect = () => {},
-		selectedEmployeeId = ''
+		selectedEmployeeId = '',
+		selectable = false,
+		selectableSelectedId = '',
+		onSelectableClick = () => {},
 	}: Props = $props();
 
 	const children = $derived(node.children ?? []);
@@ -94,6 +103,17 @@
 				class:menu-active={isSelected}
 				onclick={handleSummaryClick}
 			>
+				{#if selectable}
+					<input
+						type="radio"
+						checked={selectableSelectedId === node.id}
+						onclick={(e) => {
+							e.stopPropagation();
+							onSelectableClick(node.id);
+						}}
+						class="radio radio-sm radio-primary flex-shrink-0"
+					/>
+				{/if}
 				<div class="flex items-center gap-2 w-full text-left">
 					<span class="truncate font-medium flex-grow">
 						{nodeTitle(node)}
@@ -117,6 +137,9 @@
 						{employeeLeaves}
 						{onEmployeeSelect}
 						{selectedEmployeeId}
+						{selectable}
+						{selectableSelectedId}
+						{onSelectableClick}
 					/>
 				{/each}
 				<!-- Employee leaf nodes -->
@@ -154,6 +177,17 @@
 				onNodeSelect(node);
 			}}
 		>
+			{#if selectable}
+				<input
+					type="radio"
+					checked={selectableSelectedId === node.id}
+					onclick={(e) => {
+						e.stopPropagation();
+						onSelectableClick(node.id);
+					}}
+					class="radio radio-sm radio-primary flex-shrink-0"
+				/>
+			{/if}
 			<span class="truncate font-medium flex-grow">
 				{nodeTitle(node)}
 			</span>

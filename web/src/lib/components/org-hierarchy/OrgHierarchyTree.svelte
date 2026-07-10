@@ -32,6 +32,12 @@
 		onEmployeeSelect?: (emp: EmployeeLeaf) => void;
 		/** Currently selected employee leaf id for highlighting */
 		selectedEmployeeId?: string;
+		/** When true, show radio buttons for department selection */
+		selectable?: boolean;
+		/** Currently selected radio id */
+		selectableSelectedId?: string;
+		/** Called when a radio is clicked */
+		onSelectableClick?: (nodeId: string) => void;
 	}
 
 	let {
@@ -46,7 +52,10 @@
 		onretry,
 		employeeLeaves = {},
 		onEmployeeSelect = () => {},
-		selectedEmployeeId = ''
+		selectedEmployeeId = '',
+		selectable = false,
+		selectableSelectedId = '',
+		onSelectableClick = () => {},
 	}: Props = $props();
 </script>
 
@@ -70,6 +79,9 @@
 			{employeeLeaves}
 			{onEmployeeSelect}
 			{selectedEmployeeId}
+			{selectable}
+			{selectableSelectedId}
+			{onSelectableClick}
 		/>
 	</ul>
 {:else if node}
