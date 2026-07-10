@@ -382,15 +382,15 @@
         </td>
     {:else}
         <td class="font-medium text-sm">{goal.name}</td>
-        <td class="text-sm text-base-content/70">
-            {goal.targetValue}{unitLabels[goal.unit] ?? goal.unit}
-        </td>
-        <td class="text-sm text-base-content/70 flex items-center gap-1"
-            >{#if goal.direction === "ascendente"}
+        <td class="text-sm text-base-content/70 flex items-center gap-1">
+            {#if goal.direction === "ascendente"}
                 <TrendingUp class="w-3 h-3" />
             {:else}
                 <TrendingDown class="w-3 h-3" />
             {/if}
+            {goal.targetValue}{unitLabels[goal.unit] ?? goal.unit}
+        </td>
+        <td class="text-sm text-base-content/70">
             {goal.weight}%</td
         >
         <td>
