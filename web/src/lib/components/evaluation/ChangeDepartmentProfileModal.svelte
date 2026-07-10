@@ -1,8 +1,9 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { client } from '$lib/api/client';
-	import { getProfiles } from '$lib/stores/competencyStore.svelte';
-	import { getRoot, updateEmployeeAssignment } from '$lib/stores/orgHierarchyStore.svelte';
+	import { getProfiles, load as loadCompetencyData } from '$lib/stores/competencyStore.svelte';
+	import { getRoot, updateEmployeeAssignment, load as loadOrgHierarchy } from '$lib/stores/orgHierarchyStore.svelte';
+	import { titleCase } from '$lib/utils/text';
 	import CustomSelect from '$lib/components/ui/CustomSelect.svelte';
 	import OrgHierarchyTree from '$lib/components/org-hierarchy/OrgHierarchyTree.svelte';
 
@@ -36,12 +37,19 @@
 	let initialOrgNodeId = $state('');
 
 	const profileOptions = $derived(
-		getProfiles().map((p) => ({ value: p.id, label: p.name })),
+		getProfiles().map((p) => ({ value: p.id, label: titleCase(p.name) })),
 	);
 	const rootNode = $derived(getRoot());
 
 	onMount(async () => {
 		try {
+			if (!getRoot()) {
+				await loadOrgHierarchy();
+			}
+			if (getProfiles().length === 0) {
+				await loadCompetencyData();
+			}
+
 			const res = await client.GET('/employees/{empId}', {
 				params: { path: { empId: employeeId } },
 			});
@@ -89,14 +97,16 @@
 		</div>
 	</dialog>
 {:else}
-	<dialog class="modal modal-open" onclick={onclose}>
+	<dialog class="modal modal-open" onclick={(e) => { if (e.target === e.currentTarget) onclose(); }}>
 		<div
 			class="modal-box max-w-lg"
-			onclick={(e) => e.stopPropagation()}
 		>
 			<h3 class="font-bold text-lg mb-4">
-				Cambiar departamento y perfil — {employeeName}
+				Cambiar departamento y perfil
 			</h3>
+			<p class="text-sm text-base-content/30">
+				{employeeName}
+			</p>
 
 			{#if error}
 				<div class="alert alert-error text-sm mb-4">{error}</div>
@@ -104,8 +114,8 @@
 
 			<div class="flex flex-col gap-4">
 				<div>
-					<label class="label text-xs font-semibold text-base-content/60"
-						>Perfil</label
+					<span class="label text-xs font-semibold text-base-content/60"
+						>Perfil</span
 					>
 					<CustomSelect
 						options={profileOptions}
@@ -117,8 +127,8 @@
 				</div>
 
 				<div>
-					<label class="label text-xs font-semibold text-base-content/60"
-						>Departamento</label
+					<span class="label text-xs font-semibold text-base-content/60"
+						>Departamento</span
 					>
 					{#if rootNode}
 						<div class="border border-base-300 rounded-box max-h-64 overflow-y-auto">

@@ -184,7 +184,7 @@ func (h *Handler) CreateComment(w http.ResponseWriter, r *http.Request) {
     // scoping the request.
     titleCtx, titleCancel := context.WithTimeout(context.Background(), 2*time.Second)
     defer titleCancel()
-    h.notifyOwner(notifypkg.Notification{
+    h.notifyOwner(titleCtx, notifypkg.Notification{
         Subject:  "Nuevo comentario en tu meta",
         Template: notifypkg.TemplateCommentCreated,
         Data: map[string]string{

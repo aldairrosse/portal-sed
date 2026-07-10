@@ -54,6 +54,7 @@
         onSelect,
         selectedEmployeeId = "",
         disabled = false,
+        mode = "manager",
         detail,
         competencyRatings,
     }: Props = $props();
@@ -269,7 +270,7 @@
                         <th class="text-xs font-semibold text-base-content/60"
                             >Estado</th
                         >
-                        <th class="w-10">Acciones</th>
+                        <th class="text-center text-xs font-semibold text-base-content/60">Acciones</th>
                     </tr>
                 </thead>
                 <tbody>

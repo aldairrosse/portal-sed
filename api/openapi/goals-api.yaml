@@ -383,6 +383,86 @@ paths:
           $ref: '#/components/responses/GoalNotFound'
 
   # ============================================================================
+  # Goal Proposals
+  # ============================================================================
+  /goals/{goalId}/proposals:
+    post:
+      operationId: createGoalProposal
+      summary: Create a proposal for a goal
+      description: Proposes changes to a goal's values (name, weight, target, KPIs) for manager review.
+      parameters:
+        - $ref: '#/components/parameters/GoalId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateGoalProposalRequest'
+      responses:
+        '201':
+          description: Created proposal
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GoalProposalResponse'
+        '400':
+          $ref: '#/components/responses/InvalidGoalRequest'
+        '403':
+          $ref: '#/components/responses/PhaseRestricted'
+        '404':
+          $ref: '#/components/responses/GoalNotFound'
+        '429':
+          $ref: '#/components/responses/RateLimit'
+    get:
+      operationId: listGoalProposals
+      summary: List proposals for a goal
+      description: Returns all proposals (pending, accepted, rejected) for audit trail.
+      parameters:
+        - $ref: '#/components/parameters/GoalId'
+      responses:
+        '200':
+          description: List of proposals
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/GoalProposalResponse'
+        '404':
+          $ref: '#/components/responses/GoalNotFound'
+
+  /goals/{goalId}/proposals/{propId}:
+    patch:
+      operationId: updateGoalProposal
+      summary: Accept or reject a goal proposal
+      description: Manager accepts or rejects a pending proposal. Accepting applies the proposed changes to the goal.
+      parameters:
+        - $ref: '#/components/parameters/GoalId'
+        - $ref: '#/components/parameters/PropId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateGoalProposalRequest'
+      responses:
+        '200':
+          description: Updated proposal or goal (on accept)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GoalProposalResponse'
+        '400':
+          $ref: '#/components/responses/InvalidRequest'
+        '403':
+          $ref: '#/components/responses/PhaseRestricted'
+        '404':
+          $ref: '#/components/responses/GoalNotFound'
+
+  # ============================================================================
   # Assignments
   # ============================================================================
   /employees/{empId}/assignments:
@@ -472,6 +552,13 @@ components:
         format: uuid
     KpiId:
       name: kpiId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    PropId:
+      name: propId
       in: path
       required: true
       schema:
@@ -699,6 +786,8 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/KpiResponse'
+        pending_proposal:
+          $ref: '#/components/schemas/GoalProposalResponse'
         created_at:
           type: string
           format: date-time
@@ -721,6 +810,103 @@ components:
         current_value:
           type: number
           minimum: 0
+
+    # ============================================================================
+    # Goal Proposal Schemas
+    # ============================================================================
+    CreateGoalProposalRequest:
+      type: object
+      required: [name, unit, weight, target_value]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        description:
+          type: string
+        unit:
+          type: string
+          enum: [porcentaje, moneda, numero]
+        weight:
+          type: number
+          minimum: 0.01
+          maximum: 100
+        target_value:
+          type: number
+          minimum: 0.01
+        direction:
+          type: string
+          enum: [ascendente, descendente]
+          default: ascendente
+        baseline_value:
+          type: number
+          nullable: true
+          minimum: 0
+          description: Required when direction is descendente; must be > target_value
+        kpi_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+          maxItems: 5
+
+    GoalProposalResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        goal_id:
+          type: string
+          format: uuid
+        requested_by:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        unit:
+          type: string
+        weight:
+          type: number
+        target_value:
+          type: number
+        direction:
+          type: string
+          enum: [ascendente, descendente]
+        baseline_value:
+          type: number
+          nullable: true
+        kpi_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+        status:
+          type: string
+        reviewed_by:
+          type: string
+          nullable: true
+        reviewed_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    UpdateGoalProposalRequest:
+      type: object
+      required: [status, reviewed_by]
+      properties:
+        status:
+          type: string
+          enum: [accepted, rejected]
+        reviewed_by:
+          type: string
 
     # ============================================================================
     # Batch Schemas

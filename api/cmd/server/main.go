@@ -40,6 +40,7 @@ import (
 	cyclesvc "github.com/sed-evaluacion-desempeno/api/internal/service/cycle"
 	compsvc "github.com/sed-evaluacion-desempeno/api/internal/service/competency"
 	evalsvc "github.com/sed-evaluacion-desempeno/api/internal/service/evaluation"
+	notifypkg "github.com/sed-evaluacion-desempeno/api/internal/service/notify"
 	orgsvc "github.com/sed-evaluacion-desempeno/api/internal/service/org"
 
 	// Handlers
@@ -205,6 +206,7 @@ func main() {
 	kpiRepo := repogoal.NewKpiRepo(client, db)
 	linkRepo := repogoal.NewLinkKpiRepo(client, db)
 	assignRepo := repogoal.NewAssignmentRepo(client, db)
+	proposalRepo := repogoal.NewGoalProposalRepo(db)
 	weightQ := repogoal.NewWeightQueries(db)
 
 	// Cycle
@@ -257,6 +259,7 @@ func main() {
 	scoringSvc := goalsvc.NewScoringService(catRepo, goalRepo)
 	weightSvc := goalsvc.NewWeightValidationService(catRepo, goalRepo)
 	batchSvc := goalsvc.NewBatchService(goalRepo, catRepo, kpiRepo, linkRepo, weightQ, phaseCheck)
+	proposalSvc := goalsvc.NewGoalProposalService(proposalRepo, goalRepo, catRepo, linkRepo, weightQ, phaseCheck, db)
 
 	// Cycle services
 	cycleSvc := cyclesvc.NewService(cycleRepo, phaseRepo, client)
@@ -291,14 +294,14 @@ func main() {
 
 	authH := authhandler.NewAuthHandler(authSvc)
 	goalH := goalhandler.NewGoalHandler(
-		catSvc, goalSvc, progressSvc, kpiSvc, scoringSvc, weightSvc, batchSvc,
-		catRepo, goalRepo, kpiRepo, linkRepo, assignRepo, activitySvc,
+		catSvc, goalSvc, progressSvc, kpiSvc, scoringSvc, weightSvc, batchSvc, proposalSvc,
+		catRepo, goalRepo, kpiRepo, linkRepo, assignRepo, proposalRepo, activitySvc,
 	)
 	cycleH := cyclehandler.NewCycleHandler(cycleSvc, phaseSvc, activitySvc, assignRepo, employeeRepo)
 	compH := comphandler.NewHandler(pillarSvc, competencySvc, scaleSvc, catalogSvc, acceptanceSvc, activitySvc)
 	evalH := evalhandler.NewEvaluationHandler(evalSvc, nineBoxSvc, dashboardSvc, activitySvc)
 	orgH := orghandler.NewOrgHandler(orgTreeSvc, orgNodeSvc, employeeSvc, evaluateeSvc, metricsSvc)
-	commentChangeH := commentchangehandler.NewHandler(db)
+	commentChangeH := commentchangehandler.NewHandler(db, notifypkg.NoopSender{})
 
 	// -----------------------------------------------------------------------
 	// Router
