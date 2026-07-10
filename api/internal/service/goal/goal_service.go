@@ -16,6 +16,15 @@ var validUnits = map[string]bool{
 	"porcentaje": true,
 	"moneda":     true,
 	"numero":     true,
+	"binario":    true,
+}
+
+// normalizeBinaryValue normalizes targetValue for binario unit: any non-zero becomes 1.
+func normalizeBinaryValue(unit string, targetValue float64) float64 {
+	if unit == "binario" && targetValue != 0 {
+		return 1
+	}
+	return targetValue
 }
 
 // GoalService handles business logic for goals.
@@ -96,7 +105,8 @@ func (s *GoalService) CreateGoal(ctx context.Context, empID, catID uuid.UUID, re
 	}
 
 	// Create goal via raw SQL (to set version=1)
-	goal, err := s.goalRepo.CreateGoal(ctx, catID, empID, req.Name, req.Description, req.Unit, req.Direction, req.Weight, req.TargetValue, req.BaselineValue)
+	normalizedTarget := normalizeBinaryValue(req.Unit, req.TargetValue)
+	goal, err := s.goalRepo.CreateGoal(ctx, catID, empID, req.Name, req.Description, req.Unit, req.Direction, req.Weight, normalizedTarget, req.BaselineValue)
 	if err != nil {
 		return nil, fmt.Errorf("create goal: %w", err)
 	}
@@ -162,7 +172,8 @@ func (s *GoalService) UpdateGoal(ctx context.Context, empID, goalID uuid.UUID, r
 	}
 
 	// Update goal with optimistic lock
-	updated, err := s.goalRepo.UpdateGoal(ctx, goalID, empID, req.Name, req.Description, req.Unit, req.Direction, req.Weight, req.TargetValue, req.BaselineValue, req.Version)
+	normalizedTarget := normalizeBinaryValue(req.Unit, req.TargetValue)
+	updated, err := s.goalRepo.UpdateGoal(ctx, goalID, empID, req.Name, req.Description, req.Unit, req.Direction, req.Weight, normalizedTarget, req.BaselineValue, req.Version)
 	if err != nil {
 		return nil, err
 	}
@@ -217,7 +228,8 @@ func validateGoalRequest(req dtogoal.CreateGoalRequest) error {
 	if req.Weight <= 0 || req.Weight > 100 {
 		return pkgerrors.ErrInvalidWeightRange
 	}
-	if req.TargetValue <= 0 {
+	// Allow targetValue=0 for descendente direction or binario unit
+	if req.TargetValue <= 0 && req.Direction != "descendente" && req.Unit != "binario" {
 		return pkgerrors.ErrInvalidTargetValue
 	}
 	return nil

@@ -108,7 +108,7 @@ var (
 	ErrDuplicateCategoryName   = &DomainError{Code: DuplicateCategoryName, Message: "A category with this name already exists for this employee."}
 	ErrInvalidWeightRange      = &DomainError{Code: InvalidWeightRange, Message: "Weight must be between 0 and 100."}
 	ErrInvalidTargetValue      = &DomainError{Code: InvalidTargetValue, Message: "Target value must be greater than 0."}
-	ErrInvalidUnit             = &DomainError{Code: InvalidUnit, Message: "Unit must be one of: porcentaje, moneda, numero."}
+	ErrInvalidUnit             = &DomainError{Code: InvalidUnit, Message: "Unit must be one of: porcentaje, moneda, numero, binario."}
 	ErrGoalWeightOverflow      = &DomainError{Code: GoalWeightOverflow, Message: "Adding this goal would exceed the 100% weight limit for this category."}
 	ErrGoalNotDeletableInPhase = &DomainError{Code: GoalNotDeletableInPhase, Message: "Goals cannot be deleted in the current cycle phase."}
 	ErrKpiLinkedCannotDelete   = &DomainError{Code: KpiLinkedCannotDelete, Message: "Cannot delete a KPI that is linked to one or more goals."}

@@ -48,7 +48,17 @@ func (s *KPIService) CreateKPI(ctx context.Context, req dtogoal.CreateKpiRequest
 	if !validUnits[req.Unit] {
 		return nil, pkgerrors.ErrInvalidUnit
 	}
-	return s.kpiRepo.CreateKPI(ctx, req.Name, req.Unit, req.Description)
+	// Validate target_value: allow 0 for descendente or binario, otherwise > 0
+	if req.TargetValue != nil && *req.TargetValue <= 0 && req.Unit != "binario" {
+		return nil, pkgerrors.ErrInvalidTargetValue
+	}
+	// Normalize binary target
+	var normalizedTarget *float64
+	if req.TargetValue != nil {
+		v := normalizeBinaryValue(req.Unit, *req.TargetValue)
+		normalizedTarget = &v
+	}
+	return s.kpiRepo.CreateKPI(ctx, req.Name, req.Unit, req.Description, normalizedTarget)
 }
 
 // UpdateKPI updates an existing KPI.
@@ -59,7 +69,17 @@ func (s *KPIService) UpdateKPI(ctx context.Context, kpiID uuid.UUID, req dtogoal
 	if !validUnits[req.Unit] {
 		return nil, pkgerrors.ErrInvalidUnit
 	}
-	return s.kpiRepo.UpdateKPI(ctx, kpiID, req.Name, req.Unit, req.Description)
+	// Validate target_value: allow 0 for descendente or binario, otherwise > 0
+	if req.TargetValue != nil && *req.TargetValue <= 0 && req.Unit != "binario" {
+		return nil, pkgerrors.ErrInvalidTargetValue
+	}
+	// Normalize binary target
+	var normalizedTarget *float64
+	if req.TargetValue != nil {
+		v := normalizeBinaryValue(req.Unit, *req.TargetValue)
+		normalizedTarget = &v
+	}
+	return s.kpiRepo.UpdateKPI(ctx, kpiID, req.Name, req.Unit, req.Description, normalizedTarget)
 }
 
 // UpdateKPIValue updates only the current_value of a KPI.
@@ -67,7 +87,14 @@ func (s *KPIService) UpdateKPIValue(ctx context.Context, kpiID uuid.UUID, curren
 	if currentValue < 0 {
 		return nil, pkgerrors.NewDomainError(pkgerrors.InvalidRequest, "current_value must be >= 0", nil)
 	}
-	return s.kpiRepo.UpdateKPIValue(ctx, kpiID, currentValue)
+	// Get the KPI to check unit for binary normalization
+	kpi, err := s.kpiRepo.GetKPI(ctx, kpiID)
+	if err != nil {
+		return nil, err
+	}
+	// Normalize binary value: any non-zero becomes 1
+	normalizedValue := normalizeBinaryValue(kpi.Unit, currentValue)
+	return s.kpiRepo.UpdateKPIValue(ctx, kpiID, normalizedValue)
 }
 
 // DeleteKPI deletes a KPI. Rejects if linked to any goals.

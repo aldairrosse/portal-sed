@@ -20,6 +20,7 @@ type KpiRow struct {
 	Unit         string    `json:"unit"`
 	Description  string    `json:"description"`
 	Direction    string    `json:"direction"`
+	TargetValue  *float64  `json:"target_value,omitempty"`
 	CurrentValue *float64  `json:"current_value,omitempty"`
 }
 
@@ -36,6 +37,7 @@ func kpiToRow(k *internal.KPI) *KpiRow {
 		Unit:         string(k.Unit),
 		Description:  k.Description,
 		Direction:    string(k.Direction),
+		TargetValue:  k.TargetValue,
 		CurrentValue: k.CurrentValue,
 	}
 }
@@ -95,12 +97,15 @@ func (r *KpiRepo) UpdateKPIValue(ctx context.Context, kpiID uuid.UUID, currentVa
 }
 
 // CreateKPI inserts a new KPI.
-func (r *KpiRepo) CreateKPI(ctx context.Context, name, unit, description string) (*KpiRow, error) {
-	k, err := r.client.KPI.Create().
+func (r *KpiRepo) CreateKPI(ctx context.Context, name, unit, description string, targetValue *float64) (*KpiRow, error) {
+	create := r.client.KPI.Create().
 		SetName(name).
 		SetUnit(kpi.Unit(unit)).
-		SetDescription(description).
-		Save(ctx)
+		SetDescription(description)
+	if targetValue != nil {
+		create = create.SetTargetValue(*targetValue)
+	}
+	k, err := create.Save(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -108,12 +113,17 @@ func (r *KpiRepo) CreateKPI(ctx context.Context, name, unit, description string)
 }
 
 // UpdateKPI updates an existing KPI.
-func (r *KpiRepo) UpdateKPI(ctx context.Context, kpiID uuid.UUID, name, unit, description string) (*KpiRow, error) {
-	k, err := r.client.KPI.UpdateOneID(kpiID).
+func (r *KpiRepo) UpdateKPI(ctx context.Context, kpiID uuid.UUID, name, unit, description string, targetValue *float64) (*KpiRow, error) {
+	update := r.client.KPI.UpdateOneID(kpiID).
 		SetName(name).
 		SetUnit(kpi.Unit(unit)).
-		SetDescription(description).
-		Save(ctx)
+		SetDescription(description)
+	if targetValue != nil {
+		update = update.SetTargetValue(*targetValue)
+	} else {
+		update = update.ClearTargetValue()
+	}
+	k, err := update.Save(ctx)
 	if err != nil {
 		if internal.IsNotFound(err) {
 			return nil, pkgerrors.ErrKpiNotFound
