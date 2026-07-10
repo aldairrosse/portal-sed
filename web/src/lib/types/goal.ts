@@ -50,6 +50,7 @@ export interface Goal {
 	progress?: number;
 	progressUpdatedAt?: string;
 	comments?: GoalComment[];
+	pendingProposal?: GoalProposal;
 	version: number;
 }
 
@@ -83,6 +84,27 @@ export interface EmployeeAssignment {
 	profileId: EvaluationProfile;
 	managerId: string | null;
 	goalIds: string[];
+	createdAt: string;
+	updatedAt: string;
+}
+
+// ─── GoalProposal ──────────────────────────────────────────────────────────────
+
+export interface GoalProposal {
+	id: string;
+	goalId: string;
+	requestedBy: string;
+	name: string;
+	description: string;
+	unit: GoalUnit;
+	direction: 'ascendente' | 'descendente';
+	weight: number;
+	targetValue: number;
+	baselineValue?: number;
+	kpiIds: string[];
+	status: 'pending' | 'accepted' | 'rejected';
+	reviewedBy?: string;
+	reviewedAt?: string;
 	createdAt: string;
 	updatedAt: string;
 }

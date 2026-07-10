@@ -92,6 +92,40 @@ export interface paths {
         patch: operations["updateGoalProgress"];
         trace?: never;
     };
+    "/goals/{goalId}/proposals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create a proposal for a goal */
+        post: operations["createGoalProposal"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/goals/{goalId}/proposals/{propId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Accept or reject a goal proposal */
+        patch: operations["updateGoalProposal"];
+        trace?: never;
+    };
     "/goals/batch": {
         parameters: {
             query?: never;
@@ -432,6 +466,49 @@ export interface components {
             version: number;
             kpi_ids?: string[];
         };
+        GoalProposalResponse: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            goal_id?: string;
+            requested_by?: string;
+            name?: string;
+            description?: string;
+            unit?: string;
+            weight?: number;
+            target_value?: number;
+            /** @enum {string} */
+            direction?: "ascendente" | "descendente";
+            baseline_value?: number | null;
+            kpi_ids?: string[];
+            status?: string;
+            reviewed_by?: string | null;
+            /** Format: date-time */
+            reviewed_at?: string | null;
+            /** Format: date-time */
+            created_at?: string;
+            /** Format: date-time */
+            updated_at?: string;
+        };
+        CreateGoalProposalRequest: {
+            name: string;
+            description?: string;
+            /** @enum {string} */
+            unit: "porcentaje" | "moneda" | "numero";
+            weight: number;
+            target_value: number;
+            /**
+             * @default ascendente
+             * @enum {string}
+             */
+            direction: "ascendente" | "descendente";
+            baseline_value?: number | null;
+            kpi_ids?: string[];
+        };
+        UpdateGoalProposalRequest: {
+            status: string;
+            reviewed_by: string;
+        };
         GoalResponse: {
             /** Format: uuid */
             id?: string;
@@ -450,6 +527,7 @@ export interface components {
             /** @enum {string} */
             state?: "borrador" | "fijada" | "en_seguimiento" | "evaluada" | "cerrada";
             version?: number;
+            pending_proposal?: components["schemas"]["GoalProposalResponse"];
             kpis?: components["schemas"]["KpiResponse"][];
             /** Format: date-time */
             created_at?: string;
@@ -954,6 +1032,59 @@ export interface operations {
             400: components["responses"]["InvalidRequest"];
             403: components["responses"]["PhaseRestricted"];
             404: components["responses"]["GoalNotFound"];
+        };
+    };
+    createGoalProposal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                goalId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateGoalProposalRequest"];
+            };
+        };
+        responses: {
+            /** @description Created proposal */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoalProposalResponse"];
+                };
+            };
+        };
+    };
+    updateGoalProposal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                goalId: string;
+                propId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateGoalProposalRequest"];
+            };
+        };
+        responses: {
+            /** @description Updated proposal */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoalProposalResponse"];
+                };
+            };
         };
     };
     batchGoals: {
