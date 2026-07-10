@@ -69,51 +69,55 @@ type UpdateProgressRequest struct {
 
 // GoalResponse is the response body for a single goal.
 type GoalResponse struct {
-	ID             string         `json:"id"`
-	CategoryID     string         `json:"category_id"`
-	Name           string         `json:"name"`
-	Description    string         `json:"description,omitempty"`
-	Unit           string         `json:"unit"`
-	Weight         float64        `json:"weight"`
-	TargetValue    float64        `json:"target_value"`
-	CurrentValue   float64        `json:"current_value"`
-	Direction      string         `json:"direction"`
-	BaselineValue  *float64       `json:"baseline_value,omitempty"`
-	ProgressPercent float64       `json:"progress_percent"`
-	State          string         `json:"state"`
-	Version        int            `json:"version"`
-	KPIs           []KpiResponse  `json:"kpis,omitempty"`
-	CreatedAt      string         `json:"created_at"`
-	UpdatedAt      string         `json:"updated_at"`
+	ID              string               `json:"id"`
+	CategoryID      string               `json:"category_id"`
+	Name            string               `json:"name"`
+	Description     string               `json:"description,omitempty"`
+	Unit            string               `json:"unit"`
+	Weight          float64              `json:"weight"`
+	TargetValue     float64              `json:"target_value"`
+	CurrentValue    float64              `json:"current_value"`
+	Direction       string               `json:"direction"`
+	BaselineValue   *float64             `json:"baseline_value,omitempty"`
+	ProgressPercent float64              `json:"progress_percent"`
+	State           string               `json:"state"`
+	Version         int                  `json:"version"`
+	KPIs            []KpiResponse        `json:"kpis,omitempty"`
+	PendingProposal *GoalProposalResponse `json:"pending_proposal,omitempty"`
+	CreatedAt       string               `json:"created_at"`
+	UpdatedAt       string               `json:"updated_at"`
 }
 
 // KPI DTOs
 
 // CreateKpiRequest is the request body for creating a KPI.
 type CreateKpiRequest struct {
-	Name        string `json:"name"`
-	Unit        string `json:"unit"`
-	Description string `json:"description,omitempty"`
+	Name        string   `json:"name"`
+	Unit        string   `json:"unit"`
+	Description string   `json:"description,omitempty"`
+	TargetValue *float64 `json:"target_value,omitempty"`
 }
 
 // UpdateKpiRequest is the request body for updating a KPI.
 type UpdateKpiRequest struct {
-	Name        string `json:"name"`
-	Unit        string `json:"unit"`
-	Description string `json:"description,omitempty"`
+	Name        string   `json:"name"`
+	Unit        string   `json:"unit"`
+	Description string   `json:"description,omitempty"`
+	TargetValue *float64 `json:"target_value,omitempty"`
 }
 
 // KpiResponse is the response body for a single KPI.
 type KpiResponse struct {
-	ID             string   `json:"id"`
-	Name           string   `json:"name"`
-	Unit           string   `json:"unit"`
-	Description    string   `json:"description,omitempty"`
-	Direction      string   `json:"direction"`
-	CurrentValue   *float64 `json:"current_value,omitempty"`
-	ProgressPercent float64 `json:"progress_percent"`
-	CreatedAt      string   `json:"created_at"`
-	UpdatedAt      string   `json:"updated_at"`
+	ID              string   `json:"id"`
+	Name            string   `json:"name"`
+	Unit            string   `json:"unit"`
+	Description     string   `json:"description,omitempty"`
+	Direction       string   `json:"direction"`
+	TargetValue     *float64 `json:"target_value,omitempty"`
+	CurrentValue    *float64 `json:"current_value,omitempty"`
+	ProgressPercent float64  `json:"progress_percent"`
+	CreatedAt       string   `json:"created_at"`
+	UpdatedAt       string   `json:"updated_at"`
 }
 
 // KpiUpdateValueRequest is the request body for updating a KPI's current value.
@@ -186,4 +190,44 @@ type AssignmentResponse struct {
 	CycleID    string             `json:"cycle_id"`
 	Categories []CategoryResponse `json:"categories,omitempty"`
 	CreatedAt  string             `json:"created_at"`
+}
+
+// ─── Goal Proposal DTOs ──────────────────────────────────────────────────────
+
+// CreateGoalProposalRequest is the request body for creating a goal proposal.
+type CreateGoalProposalRequest struct {
+	Name          string   `json:"name"`
+	Description   string   `json:"description,omitempty"`
+	Unit          string   `json:"unit"`
+	Weight        float64  `json:"weight"`
+	TargetValue   float64  `json:"target_value"`
+	Direction     string   `json:"direction"`
+	BaselineValue *float64 `json:"baseline_value,omitempty"`
+	KpiIDs        []string `json:"kpi_ids,omitempty"`
+}
+
+// GoalProposalResponse is the response body for a single goal proposal.
+type GoalProposalResponse struct {
+	ID            string   `json:"id"`
+	GoalID        string   `json:"goal_id"`
+	RequestedBy   string   `json:"requested_by"`
+	Name          string   `json:"name"`
+	Description   string   `json:"description,omitempty"`
+	Unit          string   `json:"unit"`
+	Weight        float64  `json:"weight"`
+	TargetValue   float64  `json:"target_value"`
+	Direction     string   `json:"direction"`
+	BaselineValue *float64 `json:"baseline_value,omitempty"`
+	KpiIDs        []string `json:"kpi_ids,omitempty"`
+	Status        string   `json:"status"`
+	ReviewedBy    *string  `json:"reviewed_by,omitempty"`
+	ReviewedAt    *string  `json:"reviewed_at,omitempty"`
+	CreatedAt     string   `json:"created_at"`
+	UpdatedAt     string   `json:"updated_at"`
+}
+
+// UpdateGoalProposalRequest is the request body for updating a goal proposal status.
+type UpdateGoalProposalRequest struct {
+	Status     string `json:"status"`
+	ReviewedBy string `json:"reviewed_by"`
 }
