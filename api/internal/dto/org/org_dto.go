@@ -170,6 +170,12 @@ type EmployeeDetailResponse struct {
 	Data EmployeeDetail `json:"data"`
 }
 
+// UpdateEmployeeRequest is the request to update an employee's profile and department.
+type UpdateEmployeeRequest struct {
+	ProfileID string `json:"profileId"`
+	OrgNodeID string `json:"orgNodeId"`
+}
+
 // BatchEmployeeRequest is the request body for batch lookup.
 type BatchEmployeeRequest struct {
 	IDs []string `json:"ids"` // max 100 UUIDs

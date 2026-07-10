@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/sed-evaluacion-desempeno/api/internal/auth"
 	"github.com/sed-evaluacion-desempeno/api/internal/middleware"
 	repo "github.com/sed-evaluacion-desempeno/api/internal/repository/org"
 	authsvc "github.com/sed-evaluacion-desempeno/api/internal/service/auth"
@@ -128,6 +129,12 @@ func RegisterRoutes(r chi.Router, handler *OrgHandler, authSvc *authsvc.AuthServ
 			r.Use(middleware.RateLimit(readRateLimit))
 			r.Use(readReplicaMiddleware)
 			r.Get("/employees/{empId}", handler.GetEmployee)
+		})
+
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.RateLimit(writeRateLimit))
+			r.Use(middleware.RequireAnyPermission(auth.PermOrgWrite, auth.PermEvalRH))
+			r.Put("/employees/{empId}", handler.UpdateEmployee)
 		})
 
 		r.Group(func(r chi.Router) {

@@ -16,6 +16,7 @@ type EmployeeService interface {
 	ListEmployees(ctx context.Context, treeID, nodeID, profileID, isActive, query string, offset, limit int) (*org.EmployeeListResponse, error)
 	GetEmployee(ctx context.Context, empID string) (*org.EmployeeDetailResponse, error)
 	SearchEmployees(ctx context.Context, query string, limit int) (*org.EmployeeListResponse, error)
+	UpdateEmployee(ctx context.Context, empID string, req org.UpdateEmployeeRequest, updatedBy uuid.UUID) (*org.EmployeeDetailResponse, error)
 }
 
 type employeeService struct {
@@ -184,6 +185,45 @@ func (s *employeeService) SearchEmployees(ctx context.Context, query string, lim
 	}
 
 	return resp, nil
+}
+
+func (s *employeeService) UpdateEmployee(ctx context.Context, empID string, req org.UpdateEmployeeRequest, updatedBy uuid.UUID) (*org.EmployeeDetailResponse, error) {
+	id, err := uuid.Parse(empID)
+	if err != nil {
+		return nil, errors.NewDomainError(errors.InvalidRequest, "Invalid employee ID: must be a valid UUID", err)
+	}
+
+	profileID, err := uuid.Parse(req.ProfileID)
+	if err != nil {
+		return nil, errors.NewDomainError(errors.InvalidRequest, "Invalid profileId: must be a valid UUID", err)
+	}
+
+	orgNodeID, err := uuid.Parse(req.OrgNodeID)
+	if err != nil {
+		return nil, errors.NewDomainError(errors.InvalidRequest, "Invalid orgNodeId: must be a valid UUID", err)
+	}
+
+	exists, err := s.empRepo.ProfileExists(ctx, profileID)
+	if err != nil {
+		return nil, errors.NewDomainError(errors.InvalidRequest, "Failed to validate profile", err)
+	}
+	if !exists {
+		return nil, errors.NewDomainError(errors.InvalidRequest, "Profile not found", nil)
+	}
+
+	exists, err = s.empRepo.OrgNodeExists(ctx, orgNodeID)
+	if err != nil {
+		return nil, errors.NewDomainError(errors.InvalidRequest, "Failed to validate org node", err)
+	}
+	if !exists {
+		return nil, errors.NewDomainError(errors.InvalidRequest, "Org node not found", nil)
+	}
+
+	if err := s.empRepo.UpdateProfileAndDepartment(ctx, id, profileID, orgNodeID, updatedBy); err != nil {
+		return nil, err
+	}
+
+	return s.GetEmployee(ctx, empID)
 }
 
 // employeeRowToItem converts an EmployeeRow to an EmployeeListItem.

@@ -469,6 +469,37 @@ func (r *EmployeeRepo) GetManager(ctx context.Context, empID uuid.UUID) (*Employ
 	return r.GetByID(ctx, managerID)
 }
 
+// ProfileExists checks whether a profile with the given ID exists.
+func (r *EmployeeRepo) ProfileExists(ctx context.Context, profileID uuid.UUID) (bool, error) {
+	var exists bool
+	err := r.db.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM evaluation_profiles WHERE id = $1)`, profileID).Scan(&exists)
+	return exists, err
+}
+
+// OrgNodeExists checks whether an org node with the given ID exists.
+func (r *EmployeeRepo) OrgNodeExists(ctx context.Context, nodeID uuid.UUID) (bool, error) {
+	var exists bool
+	err := r.db.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM org_nodes WHERE id = $1)`, nodeID).Scan(&exists)
+	return exists, err
+}
+
+// UpdateProfileAndDepartment updates an employee's profile_id and org_node_id.
+// Sets updated_by and updated_at. Returns ErrEmployeeNotFound if the employee does not exist.
+func (r *EmployeeRepo) UpdateProfileAndDepartment(ctx context.Context, empID, profileID, orgNodeID, updatedBy uuid.UUID) error {
+	result, err := r.db.ExecContext(ctx,
+		`UPDATE employees SET profile_id = $1, org_node_id = $2, updated_by = $3, updated_at = NOW() WHERE id = $4`,
+		profileID, orgNodeID, updatedBy, empID,
+	)
+	if err != nil {
+		return err
+	}
+	rows, _ := result.RowsAffected()
+	if rows == 0 {
+		return ErrEmployeeNotFound
+	}
+	return nil
+}
+
 // ---------- helpers ----------
 
 func scanEmployeeRow(row *sql.Row) (*EmployeeRow, error) {

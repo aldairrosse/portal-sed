@@ -12,6 +12,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
+	"github.com/sed-evaluacion-desempeno/api/internal/auth"
 	"github.com/sed-evaluacion-desempeno/api/internal/dto/org"
 	"github.com/sed-evaluacion-desempeno/api/internal/pkg/errors"
 	svc "github.com/sed-evaluacion-desempeno/api/internal/service/org"
@@ -528,6 +529,45 @@ func (h *OrgHandler) SearchEmployees(w http.ResponseWriter, r *http.Request) {
 	}
 
 	result, err := h.employeeSvc.SearchEmployees(r.Context(), q, limit)
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, result)
+}
+
+// UpdateEmployee handles PUT /api/v1/employees/{empId}
+func (h *OrgHandler) UpdateEmployee(w http.ResponseWriter, r *http.Request) {
+	empID := chi.URLParam(r, "empId")
+	if empID == "" {
+		writeError(w, errors.NewDomainError(errors.InvalidRequest, "empId path parameter is required", nil))
+		return
+	}
+
+	if _, err := uuid.Parse(empID); err != nil {
+		writeError(w, errors.NewDomainError(errors.InvalidRequest, "empId must be a valid UUID v4", err))
+		return
+	}
+
+	var req org.UpdateEmployeeRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, errors.NewDomainError(errors.InvalidRequest, "invalid JSON body", err))
+		return
+	}
+
+	if req.ProfileID == "" || req.OrgNodeID == "" {
+		writeError(w, errors.NewDomainError(errors.InvalidRequest, "profileId and orgNodeId are required", nil))
+		return
+	}
+
+	updatedBy, ok := auth.GetEmployeeID(r.Context())
+	if !ok {
+		writeError(w, errors.NewDomainError(errors.InvalidRequest, "unable to identify current user", nil))
+		return
+	}
+
+	result, err := h.employeeSvc.UpdateEmployee(r.Context(), empID, req, updatedBy)
 	if err != nil {
 		writeError(w, err)
 		return
