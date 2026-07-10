@@ -187,6 +187,7 @@ func setupTestServerWithPhaseChecker(t *testing.T, phaseChecker goalsvc.PhaseChe
 	kpiRepo := repogoal.NewKpiRepo(client, db)
 	linkRepo := repogoal.NewLinkKpiRepo(client, db)
 	assignRepo := repogoal.NewAssignmentRepo(client, db)
+	proposalRepo := repogoal.NewGoalProposalRepo(db)
 	weightQ := repogoal.NewWeightQueries(db)
 
 	cycleRepo := repocycle.NewCycleRepo(client, db)
@@ -223,6 +224,7 @@ func setupTestServerWithPhaseChecker(t *testing.T, phaseChecker goalsvc.PhaseChe
 	scoringSvc := goalsvc.NewScoringService(catRepo, goalRepo)
 	weightSvc := goalsvc.NewWeightValidationService(catRepo, goalRepo)
 	batchSvc := goalsvc.NewBatchService(goalRepo, catRepo, kpiRepo, linkRepo, weightQ, phaseCheck)
+	proposalSvc := goalsvc.NewGoalProposalService(proposalRepo, goalRepo, catRepo, linkRepo, weightQ, phaseCheck, db)
 
 	cycleSvc := cyclesvc.NewService(cycleRepo, phaseRepo, client)
 	phaseSvc := cyclesvc.NewPhaseService(cycleRepo, phaseRepo)
@@ -252,8 +254,8 @@ func setupTestServerWithPhaseChecker(t *testing.T, phaseChecker goalsvc.PhaseChe
 	// Handlers
 	authH := authhandler.NewAuthHandler(authSvc)
 	goalH := goalhandler.NewGoalHandler(
-		catSvc, goalSvc, progressSvc, kpiSvc, scoringSvc, weightSvc, batchSvc,
-		catRepo, goalRepo, kpiRepo, linkRepo, assignRepo, activitySvc,
+		catSvc, goalSvc, progressSvc, kpiSvc, scoringSvc, weightSvc, batchSvc, proposalSvc,
+		catRepo, goalRepo, kpiRepo, linkRepo, assignRepo, proposalRepo, activitySvc,
 	)
 	cycleH := cyclehandler.NewCycleHandler(cycleSvc, phaseSvc, activitySvc)
 	compH := comphandler.NewHandler(pillarSvc, competencySvc, scaleSvc, catalogSvc, acceptanceSvc, activitySvc)

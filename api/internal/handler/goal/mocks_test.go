@@ -355,7 +355,7 @@ func newTestHandler(
 	if assignRepo == nil {
 		assignRepo = &mockAssignmentRepo{}
 	}
-	return NewGoalHandler(catSvc, goalSvc, progSvc, kpiSvc, scoringSvc, weightSvc, batchSvc, catRepo, goalRepo, kpiRepo, linkRepo, assignRepo, nil)
+	return NewGoalHandler(catSvc, goalSvc, progSvc, kpiSvc, scoringSvc, weightSvc, batchSvc, nil, catRepo, goalRepo, kpiRepo, linkRepo, assignRepo, nil, nil)
 }
 
 func mustParseUUID(s string) uuid.UUID {
