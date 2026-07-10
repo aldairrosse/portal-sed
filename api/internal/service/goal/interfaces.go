@@ -32,8 +32,8 @@ type GoalRepository interface {
 type KPIRepository interface {
 	ListKPIs(ctx context.Context) ([]*repogoal.KpiRow, error)
 	GetKPI(ctx context.Context, kpiID uuid.UUID) (*repogoal.KpiRow, error)
-	CreateKPI(ctx context.Context, name, unit, description string) (*repogoal.KpiRow, error)
-	UpdateKPI(ctx context.Context, kpiID uuid.UUID, name, unit, description string) (*repogoal.KpiRow, error)
+	CreateKPI(ctx context.Context, name, unit, description string, targetValue *float64) (*repogoal.KpiRow, error)
+	UpdateKPI(ctx context.Context, kpiID uuid.UUID, name, unit, description string, targetValue *float64) (*repogoal.KpiRow, error)
 	UpdateKPIValue(ctx context.Context, kpiID uuid.UUID, currentValue float64) (*repogoal.KpiRow, error)
 	DeleteKPI(ctx context.Context, kpiID uuid.UUID) error
 	CountGoalLinksByKPI(ctx context.Context, kpiID uuid.UUID) (int, error)
@@ -109,4 +109,22 @@ type WeightValidationServicer interface {
 // BatchServicer handles batch operations.
 type BatchServicer interface {
 	BatchCreateUpdateGoals(ctx context.Context, empID uuid.UUID, req dtogoal.BatchGoalRequest) ([]*repogoal.GoalRow, error)
+}
+
+// GoalProposalRepository defines the storage contract for goal proposals.
+type GoalProposalRepository interface {
+	Create(ctx context.Context, goalID, requestedBy uuid.UUID, name, description, unit, direction string, weight, targetValue float64, baselineValue *float64) (*repogoal.GoalProposalRow, error)
+	GetByID(ctx context.Context, proposalID uuid.UUID) (*repogoal.GoalProposalRow, error)
+	ListByGoal(ctx context.Context, goalID uuid.UUID) ([]*repogoal.GoalProposalRow, error)
+	ListPendingByGoalIDs(ctx context.Context, goalIDs []uuid.UUID) ([]*repogoal.GoalProposalRow, error)
+	UpdateStatus(ctx context.Context, proposalID uuid.UUID, status string, reviewedBy uuid.UUID) (*repogoal.GoalProposalRow, error)
+	GetKpiIDs(ctx context.Context, proposalID uuid.UUID) ([]uuid.UUID, error)
+	SetKpis(ctx context.Context, proposalID uuid.UUID, kpiIDs []uuid.UUID) error
+}
+
+// GoalProposalServicer handles goal proposal business logic.
+type GoalProposalServicer interface {
+	CreateProposal(ctx context.Context, requestedBy, goalID uuid.UUID, req dtogoal.CreateGoalProposalRequest) (*repogoal.GoalProposalRow, error)
+	AcceptProposal(ctx context.Context, ownerID, proposalID uuid.UUID) (*repogoal.GoalRow, error)
+	RejectProposal(ctx context.Context, ownerID, proposalID uuid.UUID) (*repogoal.GoalProposalRow, error)
 }
