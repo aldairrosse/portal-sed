@@ -52,11 +52,11 @@
 
 
 Cambios 
-> Agregar notificación por correo en comentarios
+> Agregar notificación por correo en comentarios. --
 
-> Cambiar de departamentos a un usuario
+> Cambiar de departamentos a un usuario. OK
 
-> Agregar botón de propuesta de meta
+> Agregar botón de propuesta de meta. OK
 
 > Agregar gestión y visualización de pilares de metas
 
