@@ -104,6 +104,20 @@ func (_c *KPICreate) SetNillableCurrentValue(v *float64) *KPICreate {
 	return _c
 }
 
+// SetTargetValue sets the "target_value" field.
+func (_c *KPICreate) SetTargetValue(v float64) *KPICreate {
+	_c.mutation.SetTargetValue(v)
+	return _c
+}
+
+// SetNillableTargetValue sets the "target_value" field if the given value is not nil.
+func (_c *KPICreate) SetNillableTargetValue(v *float64) *KPICreate {
+	if v != nil {
+		_c.SetTargetValue(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *KPICreate) SetID(v uuid.UUID) *KPICreate {
 	_c.mutation.SetID(v)
@@ -280,6 +294,10 @@ func (_c *KPICreate) createSpec() (*KPI, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.CurrentValue(); ok {
 		_spec.SetField(kpi.FieldCurrentValue, field.TypeFloat64, value)
 		_node.CurrentValue = &value
+	}
+	if value, ok := _c.mutation.TargetValue(); ok {
+		_spec.SetField(kpi.FieldTargetValue, field.TypeFloat64, value)
+		_node.TargetValue = &value
 	}
 	if nodes := _c.mutation.GoalLinksIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

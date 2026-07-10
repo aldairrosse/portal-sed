@@ -32,6 +32,8 @@ type KPI struct {
 	Direction kpi.Direction `json:"direction,omitempty"`
 	// CurrentValue holds the value of the "current_value" field.
 	CurrentValue *float64 `json:"current_value,omitempty"`
+	// TargetValue holds the value of the "target_value" field.
+	TargetValue *float64 `json:"target_value,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the KPIQuery when eager-loading is set.
 	Edges        KPIEdges `json:"edges"`
@@ -61,6 +63,8 @@ func (*KPI) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case kpi.FieldTargetValue:
+			values[i] = new(sql.NullFloat64)
 		case kpi.FieldCurrentValue:
 			values[i] = new(sql.NullFloat64)
 		case kpi.FieldName, kpi.FieldUnit, kpi.FieldDescription, kpi.FieldDirection:
@@ -125,6 +129,13 @@ func (_m *KPI) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field direction", values[i])
 			} else if value.Valid {
 				_m.Direction = kpi.Direction(value.String)
+			}
+		case kpi.FieldTargetValue:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field target_value", values[i])
+			} else if value.Valid {
+				_m.TargetValue = new(float64)
+				*_m.TargetValue = value.Float64
 			}
 		case kpi.FieldCurrentValue:
 			if value, ok := values[i].(*sql.NullFloat64); !ok {
@@ -191,6 +202,11 @@ func (_m *KPI) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("direction=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Direction))
+	builder.WriteString(", ")
+	if v := _m.TargetValue; v != nil {
+		builder.WriteString("target_value=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
 	builder.WriteString(", ")
 	if v := _m.CurrentValue; v != nil {
 		builder.WriteString("current_value=")

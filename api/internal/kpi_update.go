@@ -124,6 +124,27 @@ func (_u *KPIUpdate) ClearCurrentValue() *KPIUpdate {
 	return _u
 }
 
+// SetTargetValue sets the "target_value" field.
+func (_u *KPIUpdate) SetTargetValue(v float64) *KPIUpdate {
+	_u.mutation.ResetTargetValue()
+	_u.mutation.SetTargetValue(v)
+	return _u
+}
+
+// SetNillableTargetValue sets the "target_value" field if the given value is not nil.
+func (_u *KPIUpdate) SetNillableTargetValue(v *float64) *KPIUpdate {
+	if v != nil {
+		_u.SetTargetValue(*v)
+	}
+	return _u
+}
+
+// ClearTargetValue clears the value of the "target_value" field.
+func (_u *KPIUpdate) ClearTargetValue() *KPIUpdate {
+	_u.mutation.ClearTargetValue()
+	return _u
+}
+
 // AddGoalLinkIDs adds the "goal_links" edge to the GoalKpiLink entity by IDs.
 func (_u *KPIUpdate) AddGoalLinkIDs(ids ...int) *KPIUpdate {
 	_u.mutation.AddGoalLinkIDs(ids...)
@@ -259,6 +280,12 @@ func (_u *KPIUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.CurrentValueCleared() {
 		_spec.ClearField(kpi.FieldCurrentValue, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.TargetValue(); ok {
+		_spec.SetField(kpi.FieldTargetValue, field.TypeFloat64, value)
+	}
+	if _u.mutation.TargetValueCleared() {
+		_spec.ClearField(kpi.FieldTargetValue, field.TypeFloat64)
 	}
 	if _u.mutation.GoalLinksCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -417,6 +444,27 @@ func (_u *KPIUpdateOne) AddCurrentValue(v float64) *KPIUpdateOne {
 // ClearCurrentValue clears the value of the "current_value" field.
 func (_u *KPIUpdateOne) ClearCurrentValue() *KPIUpdateOne {
 	_u.mutation.ClearCurrentValue()
+	return _u
+}
+
+// SetTargetValue sets the "target_value" field.
+func (_u *KPIUpdateOne) SetTargetValue(v float64) *KPIUpdateOne {
+	_u.mutation.ResetTargetValue()
+	_u.mutation.SetTargetValue(v)
+	return _u
+}
+
+// SetNillableTargetValue sets the "target_value" field if the given value is not nil.
+func (_u *KPIUpdateOne) SetNillableTargetValue(v *float64) *KPIUpdateOne {
+	if v != nil {
+		_u.SetTargetValue(*v)
+	}
+	return _u
+}
+
+// ClearTargetValue clears the value of the "target_value" field.
+func (_u *KPIUpdateOne) ClearTargetValue() *KPIUpdateOne {
+	_u.mutation.ClearTargetValue()
 	return _u
 }
 
@@ -585,6 +633,12 @@ func (_u *KPIUpdateOne) sqlSave(ctx context.Context) (_node *KPI, err error) {
 	}
 	if _u.mutation.CurrentValueCleared() {
 		_spec.ClearField(kpi.FieldCurrentValue, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.TargetValue(); ok {
+		_spec.SetField(kpi.FieldTargetValue, field.TypeFloat64, value)
+	}
+	if _u.mutation.TargetValueCleared() {
+		_spec.ClearField(kpi.FieldTargetValue, field.TypeFloat64)
 	}
 	if _u.mutation.GoalLinksCleared() {
 		edge := &sqlgraph.EdgeSpec{

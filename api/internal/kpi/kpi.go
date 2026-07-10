@@ -30,6 +30,8 @@ const (
 	FieldDirection = "direction"
 	// FieldCurrentValue holds the string denoting the current_value field in the database.
 	FieldCurrentValue = "current_value"
+	// FieldTargetValue holds the string denoting the target_value field in the database.
+	FieldTargetValue = "target_value"
 	// EdgeGoalLinks holds the string denoting the goal_links edge name in mutations.
 	EdgeGoalLinks = "goal_links"
 	// Table holds the table name of the kpi in the database.
@@ -53,6 +55,7 @@ var Columns = []string{
 	FieldDescription,
 	FieldDirection,
 	FieldCurrentValue,
+	FieldTargetValue,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -86,6 +89,7 @@ const (
 	UnitPorcentaje Unit = "porcentaje"
 	UnitMoneda     Unit = "moneda"
 	UnitNumero     Unit = "numero"
+	UnitBinario    Unit = "binario"
 )
 
 func (u Unit) String() string {
@@ -95,7 +99,7 @@ func (u Unit) String() string {
 // UnitValidator is a validator for the "unit" field enum values. It is called by the builders before save.
 func UnitValidator(u Unit) error {
 	switch u {
-	case UnitPorcentaje, UnitMoneda, UnitNumero:
+	case UnitPorcentaje, UnitMoneda, UnitNumero, UnitBinario:
 		return nil
 	default:
 		return fmt.Errorf("kpi: invalid enum value for unit field: %q", u)
@@ -169,6 +173,11 @@ func ByDirection(opts ...sql.OrderTermOption) OrderOption {
 // ByCurrentValue orders the results by the current_value field.
 func ByCurrentValue(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldCurrentValue, opts...).ToFunc()
+}
+
+// ByTargetValue orders the results by the target_value field.
+func ByTargetValue(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldTargetValue, opts...).ToFunc()
 }
 
 // ByGoalLinksCount orders the results by goal_links count.

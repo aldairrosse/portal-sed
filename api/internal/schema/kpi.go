@@ -30,7 +30,7 @@ func (KPI) Fields() []ent.Field {
 			Unique().
 			NotEmpty(),
 		field.Enum("unit").
-			Values("porcentaje", "moneda", "numero").
+			Values("porcentaje", "moneda", "numero", "binario").
 			SchemaType(map[string]string{
 				dialect.Postgres: "goal_unit",
 			}),
@@ -40,6 +40,9 @@ func (KPI) Fields() []ent.Field {
 			Values("ascendente", "descendente").
 			Default("ascendente"),
 		field.Float("current_value").
+			Optional().
+			Nillable(),
+		field.Float("target_value").
 			Optional().
 			Nillable(),
 	}

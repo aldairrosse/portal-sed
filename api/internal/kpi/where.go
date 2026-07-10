@@ -391,6 +391,46 @@ func CurrentValueNotNil() predicate.KPI {
 	return predicate.KPI(sql.FieldNotNull(FieldCurrentValue))
 }
 
+// TargetValue applies equality check on the "target_value" field.
+func TargetValue(v float64) predicate.KPI {
+	return predicate.KPI(sql.FieldEQ(FieldTargetValue, v))
+}
+
+// TargetValueNot applies not-equal check on the "target_value" field.
+func TargetValueNot(v float64) predicate.KPI {
+	return predicate.KPI(sql.FieldNEQ(FieldTargetValue, v))
+}
+
+// TargetValueGT applies greater-than check on the "target_value" field.
+func TargetValueGT(v float64) predicate.KPI {
+	return predicate.KPI(sql.FieldGT(FieldTargetValue, v))
+}
+
+// TargetValueGTE applies greater-or-equal check on the "target_value" field.
+func TargetValueGTE(v float64) predicate.KPI {
+	return predicate.KPI(sql.FieldGTE(FieldTargetValue, v))
+}
+
+// TargetValueLT applies less-than check on the "target_value" field.
+func TargetValueLT(v float64) predicate.KPI {
+	return predicate.KPI(sql.FieldLT(FieldTargetValue, v))
+}
+
+// TargetValueLTE applies less-or-equal check on the "target_value" field.
+func TargetValueLTE(v float64) predicate.KPI {
+	return predicate.KPI(sql.FieldLTE(FieldTargetValue, v))
+}
+
+// TargetValueIsNil applies null check on the "target_value" field.
+func TargetValueIsNil() predicate.KPI {
+	return predicate.KPI(sql.FieldIsNull(FieldTargetValue))
+}
+
+// TargetValueNotNil applies not-null check on the "target_value" field.
+func TargetValueNotNil() predicate.KPI {
+	return predicate.KPI(sql.FieldNotNull(FieldTargetValue))
+}
+
 // HasGoalLinks applies the HasEdge predicate on the "goal_links" edge.
 func HasGoalLinks() predicate.KPI {
 	return predicate.KPI(func(s *sql.Selector) {

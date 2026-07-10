@@ -13585,6 +13585,7 @@ type KPIMutation struct {
 	direction         *kpi.Direction
 	current_value     *float64
 	addcurrent_value  *float64
+	target_value      *float64
 	clearedFields     map[string]struct{}
 	goal_links        map[int]struct{}
 	removedgoal_links map[int]struct{}
@@ -13997,6 +13998,54 @@ func (m *KPIMutation) ResetCurrentValue() {
 	delete(m.clearedFields, kpi.FieldCurrentValue)
 }
 
+// SetTargetValue sets the "target_value" field.
+func (m *KPIMutation) SetTargetValue(f float64) {
+	m.target_value = &f
+}
+
+// TargetValue returns the value of the "target_value" field in the mutation.
+func (m *KPIMutation) TargetValue() (r float64, exists bool) {
+	v := m.target_value
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTargetValue returns the old "target_value" field's value from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the query failed.
+func (m *KPIMutation) OldTargetValue(ctx context.Context) (v *float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTargetValue is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTargetValue requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTargetValue: %w", err)
+	}
+	return oldValue.TargetValue, nil
+}
+
+// ClearTargetValue clears the value of the "target_value" field.
+func (m *KPIMutation) ClearTargetValue() {
+	m.target_value = nil
+	m.clearedFields[kpi.FieldTargetValue] = struct{}{}
+}
+
+// TargetValueCleared returns if the "target_value" field was cleared in this mutation.
+func (m *KPIMutation) TargetValueCleared() bool {
+	_, ok := m.clearedFields[kpi.FieldTargetValue]
+	return ok
+}
+
+// ResetTargetValue resets all changes to the "target_value" field.
+func (m *KPIMutation) ResetTargetValue() {
+	m.target_value = nil
+	delete(m.clearedFields, kpi.FieldTargetValue)
+}
+
 // AddGoalLinkIDs adds the "goal_links" edge to the GoalKpiLink entity by ids.
 func (m *KPIMutation) AddGoalLinkIDs(ids ...int) {
 	if m.goal_links == nil {
@@ -14085,7 +14134,7 @@ func (m *KPIMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *KPIMutation) Fields() []string {
-	fields := make([]string, 0, 7)
+	fields := make([]string, 0, 8)
 	if m.created_at != nil {
 		fields = append(fields, kpi.FieldCreatedAt)
 	}
@@ -14106,6 +14155,9 @@ func (m *KPIMutation) Fields() []string {
 	}
 	if m.current_value != nil {
 		fields = append(fields, kpi.FieldCurrentValue)
+	}
+	if m.target_value != nil {
+		fields = append(fields, kpi.FieldTargetValue)
 	}
 	return fields
 }
@@ -14129,6 +14181,8 @@ func (m *KPIMutation) Field(name string) (ent.Value, bool) {
 		return m.Direction()
 	case kpi.FieldCurrentValue:
 		return m.CurrentValue()
+	case kpi.FieldTargetValue:
+		return m.TargetValue()
 	}
 	return nil, false
 }
@@ -14152,6 +14206,8 @@ func (m *KPIMutation) OldField(ctx context.Context, name string) (ent.Value, err
 		return m.OldDirection(ctx)
 	case kpi.FieldCurrentValue:
 		return m.OldCurrentValue(ctx)
+	case kpi.FieldTargetValue:
+		return m.OldTargetValue(ctx)
 	}
 	return nil, fmt.Errorf("unknown KPI field %s", name)
 }
@@ -14210,6 +14266,13 @@ func (m *KPIMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetCurrentValue(v)
 		return nil
+	case kpi.FieldTargetValue:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTargetValue(v)
+		return nil
 	}
 	return fmt.Errorf("unknown KPI field %s", name)
 }
@@ -14261,6 +14324,9 @@ func (m *KPIMutation) ClearedFields() []string {
 	if m.FieldCleared(kpi.FieldCurrentValue) {
 		fields = append(fields, kpi.FieldCurrentValue)
 	}
+	if m.FieldCleared(kpi.FieldTargetValue) {
+		fields = append(fields, kpi.FieldTargetValue)
+	}
 	return fields
 }
 
@@ -14280,6 +14346,9 @@ func (m *KPIMutation) ClearField(name string) error {
 		return nil
 	case kpi.FieldCurrentValue:
 		m.ClearCurrentValue()
+		return nil
+	case kpi.FieldTargetValue:
+		m.ClearTargetValue()
 		return nil
 	}
 	return fmt.Errorf("unknown KPI nullable field %s", name)
@@ -14309,6 +14378,9 @@ func (m *KPIMutation) ResetField(name string) error {
 		return nil
 	case kpi.FieldCurrentValue:
 		m.ResetCurrentValue()
+		return nil
+	case kpi.FieldTargetValue:
+		m.ResetTargetValue()
 		return nil
 	}
 	return fmt.Errorf("unknown KPI field %s", name)
