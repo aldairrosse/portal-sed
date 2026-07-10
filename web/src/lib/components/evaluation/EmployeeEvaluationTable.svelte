@@ -19,8 +19,10 @@
     import { getActivePhase } from "$lib/api/cycle.svelte";
     import type { EmployeeAssignment } from "$lib/types/goal";
     import type { Snippet } from "svelte";
-    import { FileDown, ChevronRight } from "@lucide/svelte";
+    import { load as reloadRhEvaluados } from "$lib/stores/rhEvaluadosStore.svelte";
+    import { FileDown, ChevronRight, Pencil } from "@lucide/svelte";
     import { toCsv } from "$lib/utils/export";
+    import ChangeDepartmentProfileModal from "./ChangeDepartmentProfileModal.svelte";
 
     // ponytail: remove when OpenAPI schema includes profileName
     interface EmployeeListItemRow {
@@ -64,6 +66,7 @@
     });
 
     let searchQuery = $state("");
+    let changeTargetId = $state<string | null>(null);
 
     const pillars = $derived(getPillars());
     const allCompetencies = $derived(
@@ -266,7 +269,7 @@
                         <th class="text-xs font-semibold text-base-content/60"
                             >Estado</th
                         >
-                        <th class="w-10"></th>
+                        <th class="w-10">Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -336,6 +339,16 @@
                                 {/if}
                             </td>
                             <td class="flex items-center jusify-end gap-2 h-full">
+                                {#if mode === 'rh' && currentPhase === 'inicio-anio'}
+                                    <button
+                                        type="button"
+                                        class="btn btn-outline btn-xs"
+                                        onclick={() => (changeTargetId = row.id)}
+                                    >
+                                        <Pencil class="w-3 h-3" />
+                                        Cambiar
+                                    </button>
+                                {/if}
                                 <button
                                     type="button"
                                     class="btn btn-primary btn-xs"
@@ -359,3 +372,17 @@
         </div>
     {/if}
 </div>
+
+{#if changeTargetId}
+    <ChangeDepartmentProfileModal
+        employeeId={changeTargetId}
+        onsave={() => {
+            changeTargetId = null;
+            loadEvaluations();
+            reloadRhEvaluados();
+        }}
+        onclose={() => {
+            changeTargetId = null;
+        }}
+    />
+{/if}
