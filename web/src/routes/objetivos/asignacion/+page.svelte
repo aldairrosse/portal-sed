@@ -48,6 +48,9 @@
         storeState,
         load,
         loadForEmployee,
+        createGoalProposal,
+        acceptGoalProposal,
+        rejectGoalProposal,
     } from "$lib/stores/goalsStore.svelte";
     import { getSession } from "$lib/api/session.svelte";
     import {
@@ -390,9 +393,9 @@
                     baselineValue: data.baselineValue,
                     version: 1,
                 };
-                await addGoal(newGoal);
+                const createdId = await addGoal(newGoal);
                 for (const kpiId of data.linkedKpiIds)
-                    await linkKpiToGoal(newGoal.id, kpiId);
+                    await linkKpiToGoal(createdId, kpiId);
             }
             isAnyInlineEditing = false;
             notifications.success(
@@ -462,6 +465,18 @@
         } catch (e) {
             console.error("Error updating progress:", e);
         }
+    }
+
+    async function handleSaveProposal(goalId: string, data: Parameters<typeof createGoalProposal>[1]) {
+        await createGoalProposal(goalId, data);
+    }
+
+    async function handleAcceptProposal(goalId: string, proposalId: string) {
+        await acceptGoalProposal(goalId, proposalId, viewerEmployeeId);
+    }
+
+    async function handleRejectProposal(goalId: string, proposalId: string) {
+        await rejectGoalProposal(goalId, proposalId);
     }
 
     // ─── Export CSV modal ────────────────────────────────────────────────────────
@@ -712,7 +727,9 @@
                         onDeleteGoal={handleDeleteGoal}
                         {mode}
                         onRequestChangeCategory={handleRequestChangeCategory}
-                        onRequestChangeGoal={handleRequestChangeGoal}
+                        onSaveProposal={handleSaveProposal}
+                        onAcceptProposal={handleAcceptProposal}
+                        onRejectProposal={handleRejectProposal}
                         {phase}
                         canDelete={permissions.canDelete}
                         canAddGoal={permissions.canDelete}
