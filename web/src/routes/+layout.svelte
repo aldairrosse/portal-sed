@@ -3,6 +3,7 @@
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
 	import { ensureSession, getSession } from '$lib/api/session.svelte';
+	import { loadCycle } from '$lib/api/cycle.svelte';
 	import '../app.css';
 	import AppShell from '$lib/components/AppShell.svelte';
 	import ToastContainer from '$lib/components/ui/ToastContainer.svelte';
@@ -49,7 +50,7 @@
 	});
 
 	onMount(() => {
-		ensureSession();
+		ensureSession().then(() => loadCycle());
 
 		// Release loader after minimum display time
 		const timer = setTimeout(() => {
