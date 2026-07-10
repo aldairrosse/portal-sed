@@ -3,10 +3,12 @@
 package commentchange
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -14,7 +16,17 @@ import (
 	"github.com/sed-evaluacion-desempeno/api/internal/auth"
 	"github.com/sed-evaluacion-desempeno/api/internal/middleware"
 	authsvc "github.com/sed-evaluacion-desempeno/api/internal/service/auth"
+	notifypkg "github.com/sed-evaluacion-desempeno/api/internal/service/notify"
 )
+
+// appBaseURL is the public base URL used to build goal links in notification emails.
+// Override in tests; main.go can also set it from env on startup.
+var appBaseURL = func() string {
+	if v := os.Getenv("APP_BASE_URL"); v != "" {
+		return v
+	}
+	return "http://localhost:5173"
+}()
 
 // --- DTOs ---
 
@@ -59,11 +71,15 @@ type UpdateChangeRequestRequest struct {
 // --- Handler ---
 
 type Handler struct {
-	db *sql.DB
+	db       *sql.DB
+	notifier notifypkg.Sender
 }
 
-func NewHandler(db *sql.DB) *Handler {
-	return &Handler{db: db}
+func NewHandler(db *sql.DB, notifier notifypkg.Sender) *Handler {
+	if notifier == nil {
+		notifier = notifypkg.NoopSender{}
+	}
+	return &Handler{db: db, notifier: notifier}
 }
 
 func writeJSON(w http.ResponseWriter, status int, v interface{}) {
@@ -121,6 +137,12 @@ func (h *Handler) CreateComment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	authorID, ok := auth.GetEmployeeID(r.Context())
+	if !ok {
+		writeError(w, 401, "unauthenticated")
+		return
+	}
+
 	var req CreateCommentRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeError(w, 400, "invalid request body")
@@ -131,18 +153,47 @@ func (h *Handler) CreateComment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Derive author name from the DB; never trust the body's author_name.
+	var authorName string
+	if err := h.db.QueryRow(
+		`SELECT first_name || ' ' || last_name FROM employees WHERE id = $1`,
+		authorID,
+	).Scan(&authorName); err != nil {
+		log.Printf("commentchange: author lookup failed for %s: %v", authorID, err)
+		writeError(w, 500, "failed to resolve author")
+		return
+	}
+
 	id := uuid.New().String()
 	var comment GoalComment
 	err := h.db.QueryRow(`
 		INSERT INTO goal_comments (id, goal_id, author_id, author_name, content)
 		VALUES ($1, $2, $3, $4, $5)
 		RETURNING id, goal_id, category_id, author_id, author_name, content, created_at
-	`, id, goalID, req.AuthorID, req.AuthorName, req.Content,
+	`, id, goalID, authorID, authorName, req.Content,
 	).Scan(&comment.ID, &comment.GoalID, &comment.CategoryID, &comment.AuthorID, &comment.AuthorName, &comment.Content, &comment.CreatedAt)
 	if err != nil {
 		writeError(w, 500, "failed to create comment")
 		return
 	}
+
+    // Best-effort notification. Use a detached ctx for the lookups so a
+    // client disconnect after the INSERT cannot blank out the email body.
+    // ponytail: org scope is implicit via the auth middleware; explicit
+    // employees.org_node_id filter would be needed if the middleware stops
+    // scoping the request.
+    titleCtx, titleCancel := context.WithTimeout(context.Background(), 2*time.Second)
+    defer titleCancel()
+    h.notifyOwner(notifypkg.Notification{
+        Subject:  "Nuevo comentario en tu meta",
+        Template: notifypkg.TemplateCommentCreated,
+        Data: map[string]string{
+            "AuthorName": authorName,
+            "GoalTitle":  commentGoalTitle(titleCtx, h.db, goalID),
+            "GoalURL":    appBaseURL + "/objetivos/asignacion",
+        },
+    }, goalID, "", authorID.String())
+
 	writeJSON(w, 201, comment)
 }
 
@@ -212,6 +263,12 @@ func (h *Handler) CreateCategoryComment(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	authorID, ok := auth.GetEmployeeID(r.Context())
+	if !ok {
+		writeError(w, 401, "unauthenticated")
+		return
+	}
+
 	var req CreateCommentRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeError(w, 400, "invalid request body")
@@ -222,18 +279,44 @@ func (h *Handler) CreateCategoryComment(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	var authorName string
+	if err := h.db.QueryRow(
+		`SELECT first_name || ' ' || last_name FROM employees WHERE id = $1`,
+		authorID,
+	).Scan(&authorName); err != nil {
+		log.Printf("commentchange: author lookup failed for %s: %v", authorID, err)
+		writeError(w, 500, "failed to resolve author")
+		return
+	}
+
 	id := uuid.New().String()
 	var comment GoalComment
 	err := h.db.QueryRow(`
 		INSERT INTO goal_comments (id, category_id, author_id, author_name, content)
 		VALUES ($1, $2, $3, $4, $5)
 		RETURNING id, goal_id, category_id, author_id, author_name, content, created_at
-	`, id, catID, req.AuthorID, req.AuthorName, req.Content,
+	`, id, catID, authorID, authorName, req.Content,
 	).Scan(&comment.ID, &comment.GoalID, &comment.CategoryID, &comment.AuthorID, &comment.AuthorName, &comment.Content, &comment.CreatedAt)
 	if err != nil {
 		writeError(w, 500, "failed to create category comment")
 		return
 	}
+
+    var catName string
+    catCtx, catCancel := context.WithTimeout(context.Background(), 2*time.Second)
+    defer catCancel()
+    _ = h.db.QueryRowContext(catCtx, `SELECT name FROM goal_categories WHERE id = $1`, catID).Scan(&catName)
+
+	h.notifyOwner(r.Context(), notifypkg.Notification{
+		Subject:  "Nuevo comentario en tu categoría",
+		Template: notifypkg.TemplateCommentCreated,
+		Data: map[string]string{
+			"AuthorName": authorName,
+			"GoalTitle":  catName, // reuse the same template var; "categoría" reads fine
+			"GoalURL":    appBaseURL + "/objetivos/asignacion",
+		},
+	}, "", catID, authorID.String())
+
 	writeJSON(w, 201, comment)
 }
 
@@ -362,6 +445,63 @@ func (h *Handler) UpdateChangeRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, 200, cr)
+}
+
+// commentGoalTitle returns the goal's name for use in notification templates.
+// Returns "" on error; the template should still render gracefully.
+func commentGoalTitle(ctx context.Context, db *sql.DB, goalID string) string {
+	var title string
+	if err := db.QueryRowContext(ctx, `SELECT name FROM goals WHERE id = $1`, goalID).Scan(&title); err != nil {
+		log.Printf("commentchange: goal title lookup failed for %s: %v", goalID, err)
+		return ""
+	}
+	return title
+}
+
+// notifyOwner looks up the goal/category owner and fires a notification.
+// Pass categoryID != "" for category comments (which use a different lookup path).
+// authorID is the comment's author; we skip the send if author == owner (no self-email).
+// ponytail: in-process goroutine, lost on restart; upgrade to a worker + notifications
+// table when SLA demands delivery guarantees.
+func (h *Handler) notifyOwner(parent context.Context, n notifypkg.Notification, goalID, categoryID, authorID string) {
+	type lookup struct {
+		ownerID string
+		email   string
+	}
+	var l lookup
+	var err error
+	if categoryID != "" {
+		err = h.db.QueryRow(`
+			SELECT gc.employee_id, e.email
+			FROM goal_categories gc
+			JOIN employees e ON e.id = gc.employee_id
+			WHERE gc.id = $1
+		`, categoryID).Scan(&l.ownerID, &l.email)
+	} else {
+		err = h.db.QueryRow(`
+			SELECT gc.employee_id, e.email
+			FROM goals g
+			JOIN goal_categories gc ON gc.id = g.category_id
+			JOIN employees e ON e.id = gc.employee_id
+			WHERE g.id = $1
+		`, goalID).Scan(&l.ownerID, &l.email)
+	}
+	if err != nil {
+		// Goal/category not found, no owner, or owner has no email — log and move on.
+		log.Printf("commentchange: owner lookup skipped (goalID=%s categoryID=%s): %v", goalID, categoryID, err)
+		return
+	}
+	if l.ownerID == authorID || l.email == "" {
+		return
+	}
+	n.To = l.email
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := h.notifier.Send(ctx, n); err != nil {
+			log.Printf("commentchange: notify failed (goalID=%s to=%s): %v", goalID, l.email, err)
+		}
+	}()
 }
 
 // itoa converts a small int to string without importing strconv.
