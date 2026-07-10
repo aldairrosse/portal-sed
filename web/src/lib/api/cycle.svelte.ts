@@ -28,9 +28,11 @@ export async function loadCycle(): Promise<void> {
 	try {
 		const { data, error: apiError } = await client.GET('/cycle/current' as never);
 		if (apiError) {
+			console.error('Error loading cycle:', apiError);
 			throw new Error(typeof apiError === 'string' ? apiError : 'Error al cargar ciclo');
 		}
 		const raw = data as { current_phase?: string };
+		console.log('Cycle data:', raw);
 		if (raw?.current_phase) {
 			activePhase = mapApiPhase(raw.current_phase);
 		}

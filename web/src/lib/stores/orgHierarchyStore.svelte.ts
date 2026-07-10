@@ -204,3 +204,18 @@ export function getError(): string | null {
 export function replaceTree(newTree: OrgNode): void {
 	data = { root: structuredClone(newTree) };
 }
+
+export async function updateEmployeeAssignment(
+	empId: string,
+	profileId: string,
+	orgNodeId: string,
+): Promise<void> {
+	const res = await client.PUT('/employees/{empId}', {
+		params: { path: { empId } },
+		body: { profileId, orgNodeId },
+	});
+	if (res.error) {
+		throw new Error(apiErrorMessage(res.error, 'Error al actualizar empleado'));
+	}
+	await reload();
+}
