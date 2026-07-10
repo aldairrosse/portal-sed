@@ -1,4 +1,5 @@
 import { client } from './client';
+import { getSession } from './session.svelte';
 import type { CyclePhase } from '$lib/types/evaluation';
 
 export interface CycleState {
@@ -25,16 +26,24 @@ export async function loadCycle(): Promise<void> {
 	loading = true;
 	error = null;
 
+	const orgId = getSession().user?.organizationId;
+	if (!orgId) {
+		error = 'No hay organización en la sesión';
+		loading = false;
+		return;
+	}
+
 	try {
-		const { data, error: apiError } = await client.GET('/cycle/current' as never);
+		const { data, error: apiError } = await client.GET('/cycles', {
+			params: { query: { organization_id: orgId } }
+		});
 		if (apiError) {
-			console.error('Error loading cycle:', apiError);
 			throw new Error(typeof apiError === 'string' ? apiError : 'Error al cargar ciclo');
 		}
-		const raw = data as { current_phase?: string };
-		console.log('Cycle data:', raw);
-		if (raw?.current_phase) {
-			activePhase = mapApiPhase(raw.current_phase);
+		const raw = data as { data?: Array<{ current_phase?: string }> };
+		const cycles = raw?.data ?? [];
+		if (cycles.length > 0) {
+			activePhase = mapApiPhase(cycles[0].current_phase ?? '');
 		}
 	} catch (e) {
 		error = e instanceof Error ? e.message : 'Error al cargar ciclo';
