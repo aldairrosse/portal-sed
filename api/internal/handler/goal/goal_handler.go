@@ -1,4 +1,3 @@
-// Package goal provides HTTP handlers for goals, categories, KPIs, and assignments.
 package goal
 
 import (
@@ -21,13 +20,11 @@ import (
 	activitysvc "github.com/sed-evaluacion-desempeno/api/internal/service/activity"
 )
 
-// generateTraceID generates a short trace ID for error responses.
 func generateTraceID() string {
 	id := uuid.New().String()
 	return id[:8] + "-" + id[9:13]
 }
 
-// writeJSON writes a JSON response with the given status code.
 func writeJSON(w http.ResponseWriter, status int, v interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
@@ -36,7 +33,6 @@ func writeJSON(w http.ResponseWriter, status int, v interface{}) {
 	}
 }
 
-// writeError writes a structured error response.
 func writeError(w http.ResponseWriter, err error) {
 	traceID := generateTraceID()
 	status := pkgerrors.HTTPStatus(err)
@@ -53,24 +49,24 @@ func writeError(w http.ResponseWriter, err error) {
 	))
 }
 
-// GoalHandler holds all HTTP handlers for the goals bounded context.
 type GoalHandler struct {
-	catService    svcgoal.CategoryServicer
-	goalService   svcgoal.GoalServicer
-	progressSvc   svcgoal.ProgressServicer
-	kpiService    svcgoal.KpiServicer
-	scoringSvc    svcgoal.ScoringServicer
-	weightSvc     svcgoal.WeightValidationServicer
-	batchService  svcgoal.BatchServicer
-	catRepo       svcgoal.CategoryRepository
-	goalRepo      svcgoal.GoalRepository
-	kpiRepo       svcgoal.KPIRepository
-	linkRepo      svcgoal.LinkKPIRepository
-	assignRepo    svcgoal.AssignmentRepository
-	activitySvc   activitysvc.Service
+	catService     svcgoal.CategoryServicer
+	goalService    svcgoal.GoalServicer
+	progressSvc    svcgoal.ProgressServicer
+	kpiService     svcgoal.KpiServicer
+	scoringSvc     svcgoal.ScoringServicer
+	weightSvc      svcgoal.WeightValidationServicer
+	batchService   svcgoal.BatchServicer
+	proposalSvc    svcgoal.GoalProposalServicer
+	catRepo        svcgoal.CategoryRepository
+	goalRepo       svcgoal.GoalRepository
+	kpiRepo        svcgoal.KPIRepository
+	linkRepo       svcgoal.LinkKPIRepository
+	assignRepo     svcgoal.AssignmentRepository
+	proposalRepo   svcgoal.GoalProposalRepository
+	activitySvc    activitysvc.Service
 }
 
-// NewGoalHandler creates a new GoalHandler.
 func NewGoalHandler(
 	catService svcgoal.CategoryServicer,
 	goalService svcgoal.GoalServicer,
@@ -79,11 +75,13 @@ func NewGoalHandler(
 	scoringSvc svcgoal.ScoringServicer,
 	weightSvc svcgoal.WeightValidationServicer,
 	batchService svcgoal.BatchServicer,
+	proposalSvc svcgoal.GoalProposalServicer,
 	catRepo svcgoal.CategoryRepository,
 	goalRepo svcgoal.GoalRepository,
 	kpiRepo svcgoal.KPIRepository,
 	linkRepo svcgoal.LinkKPIRepository,
 	assignRepo svcgoal.AssignmentRepository,
+	proposalRepo svcgoal.GoalProposalRepository,
 	activitySvc activitysvc.Service,
 ) *GoalHandler {
 	return &GoalHandler{
@@ -94,11 +92,13 @@ func NewGoalHandler(
 		scoringSvc:   scoringSvc,
 		weightSvc:    weightSvc,
 		batchService: batchService,
+		proposalSvc:  proposalSvc,
 		catRepo:      catRepo,
 		goalRepo:     goalRepo,
 		kpiRepo:      kpiRepo,
 		linkRepo:     linkRepo,
 		assignRepo:   assignRepo,
+		proposalRepo: proposalRepo,
 		activitySvc:  activitySvc,
 	}
 }
@@ -107,11 +107,9 @@ func NewGoalHandler(
 // Category Handlers
 // ============================================================================
 
-// parseEmpID extracts and parses the employee ID from URL params.
 func parseEmpID(r *http.Request) (uuid.UUID, error) {
 	empIDStr := chi.URLParam(r, "empId")
 	if empIDStr == "" {
-		// Fall back to context
 		empIDStr = middleware.EmployeeIDFromContext(r.Context())
 	}
 	if empIDStr == "" {
@@ -120,7 +118,14 @@ func parseEmpID(r *http.Request) (uuid.UUID, error) {
 	return uuid.Parse(empIDStr)
 }
 
-// categoryRowToResponse converts a repo CategoryRow to an API response.
+func callerID(r *http.Request) (uuid.UUID, error) {
+	empIDStr := middleware.EmployeeIDFromContext(r.Context())
+	if empIDStr == "" {
+		return uuid.Nil, pkgerrors.NewDomainError(pkgerrors.InvalidRequest, "authenticated employee ID is required", nil)
+	}
+	return uuid.Parse(empIDStr)
+}
+
 func categoryRowToResponse(c *repogoal.CategoryRow) dtogoal.CategoryResponse {
 	return dtogoal.CategoryResponse{
 		ID:          c.ID.String(),
@@ -134,7 +139,6 @@ func categoryRowToResponse(c *repogoal.CategoryRow) dtogoal.CategoryResponse {
 	}
 }
 
-// ListCategories handles GET /api/v1/employees/{empId}/categories.
 func (h *GoalHandler) ListCategories(w http.ResponseWriter, r *http.Request) {
 	empID, err := parseEmpID(r)
 	if err != nil {
@@ -149,6 +153,7 @@ func (h *GoalHandler) ListCategories(w http.ResponseWriter, r *http.Request) {
 	}
 
 	items := make([]dtogoal.CategoryResponse, len(cats))
+	var allGoalIDs []uuid.UUID
 	for i, c := range cats {
 		cr := categoryRowToResponse(c)
 		goals, _ := h.goalRepo.ListGoalsByCategory(r.Context(), c.ID)
@@ -163,10 +168,32 @@ func (h *GoalHandler) ListCategories(w http.ResponseWriter, r *http.Request) {
 					}
 				}
 				goalResponses[j] = goalRowToResponse(g, kpis)
+				allGoalIDs = append(allGoalIDs, g.ID)
 			}
 			cr.Goals = goalResponses
 		}
 		items[i] = cr
+	}
+
+	if len(allGoalIDs) > 0 {
+		pendingProps, err := h.proposalRepo.ListPendingByGoalIDs(r.Context(), allGoalIDs)
+		if err == nil && len(pendingProps) > 0 {
+			pendingByGoal := make(map[string]*repogoal.GoalProposalRow, len(pendingProps))
+			for _, p := range pendingProps {
+				pendingByGoal[p.GoalID.String()] = p
+			}
+			for i := range items {
+				if items[i].Goals == nil {
+					continue
+				}
+				for j := range items[i].Goals {
+					if p, ok := pendingByGoal[items[i].Goals[j].ID]; ok {
+						pr := proposalRowToResponse(p)
+						items[i].Goals[j].PendingProposal = &pr
+					}
+				}
+			}
+		}
 	}
 
 	resp := dtogoal.CategoryListResponse{
@@ -175,7 +202,6 @@ func (h *GoalHandler) ListCategories(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, resp)
 }
 
-// CreateCategory handles POST /api/v1/employees/{empId}/categories.
 func (h *GoalHandler) CreateCategory(w http.ResponseWriter, r *http.Request) {
 	empID, err := parseEmpID(r)
 	if err != nil {
@@ -198,7 +224,6 @@ func (h *GoalHandler) CreateCategory(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusCreated, categoryRowToResponse(cat))
 }
 
-// UpdateCategory handles PUT /api/v1/employees/{empId}/categories/{catId}.
 func (h *GoalHandler) UpdateCategory(w http.ResponseWriter, r *http.Request) {
 	empID, err := parseEmpID(r)
 	if err != nil {
@@ -228,7 +253,6 @@ func (h *GoalHandler) UpdateCategory(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, categoryRowToResponse(cat))
 }
 
-// DeleteCategory handles DELETE /api/v1/employees/{empId}/categories/{catId}.
 func (h *GoalHandler) DeleteCategory(w http.ResponseWriter, r *http.Request) {
 	empID, err := parseEmpID(r)
 	if err != nil {
@@ -255,7 +279,6 @@ func (h *GoalHandler) DeleteCategory(w http.ResponseWriter, r *http.Request) {
 // Goal Handlers
 // ============================================================================
 
-// goalRowToResponse converts a repo GoalRow to an API response.
 func goalRowToResponse(g *repogoal.GoalRow, kpis ...[]dtogoal.KpiResponse) dtogoal.GoalResponse {
 	baselineVal := 0.0
 	if g.BaselineValue != nil {
@@ -285,7 +308,6 @@ func goalRowToResponse(g *repogoal.GoalRow, kpis ...[]dtogoal.KpiResponse) dtogo
 	}
 }
 
-// CreateGoal handles POST /api/v1/employees/{empId}/categories/{catId}/goals.
 func (h *GoalHandler) CreateGoal(w http.ResponseWriter, r *http.Request) {
 	empID, err := parseEmpID(r)
 	if err != nil {
@@ -315,7 +337,6 @@ func (h *GoalHandler) CreateGoal(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusCreated, goalRowToResponse(goal))
 }
 
-// UpdateGoal handles PUT /api/v1/goals/{goalId}.
 func (h *GoalHandler) UpdateGoal(w http.ResponseWriter, r *http.Request) {
 	empID, err := parseEmpID(r)
 	if err != nil {
@@ -345,7 +366,6 @@ func (h *GoalHandler) UpdateGoal(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, goalRowToResponse(goal))
 }
 
-// DeleteGoal handles DELETE /api/v1/goals/{goalId}.
 func (h *GoalHandler) DeleteGoal(w http.ResponseWriter, r *http.Request) {
 	empID, err := parseEmpID(r)
 	if err != nil {
@@ -368,7 +388,6 @@ func (h *GoalHandler) DeleteGoal(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// UpdateGoalProgress handles PATCH /api/v1/goals/{goalId}/progress.
 func (h *GoalHandler) UpdateGoalProgress(w http.ResponseWriter, r *http.Request) {
 	empID, err := parseEmpID(r)
 	if err != nil {
@@ -395,7 +414,6 @@ func (h *GoalHandler) UpdateGoalProgress(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	// Log activity: progreso de meta actualizado
 	if h.activitySvc != nil {
 		_ = h.activitySvc.LogActivity(r.Context(), empID, "goal_progress",
 			"Actualizaste el progreso de tu meta", "Metas", nil)
@@ -408,7 +426,6 @@ func (h *GoalHandler) UpdateGoalProgress(w http.ResponseWriter, r *http.Request)
 // Batch Handlers
 // ============================================================================
 
-// BatchGoals handles POST /api/v1/goals/batch.
 func (h *GoalHandler) BatchGoals(w http.ResponseWriter, r *http.Request) {
 	empID, err := parseEmpID(r)
 	if err != nil {
@@ -440,7 +457,6 @@ func (h *GoalHandler) BatchGoals(w http.ResponseWriter, r *http.Request) {
 // Weight Validation Handlers
 // ============================================================================
 
-// ValidateWeights handles POST /api/v1/employees/{empId}/validate-weights.
 func (h *GoalHandler) ValidateWeights(w http.ResponseWriter, r *http.Request) {
 	empID, err := parseEmpID(r)
 	if err != nil {
@@ -461,9 +477,7 @@ func (h *GoalHandler) ValidateWeights(w http.ResponseWriter, r *http.Request) {
 // KPI Handlers
 // ============================================================================
 
-// kpiRowToResponse converts a repo KpiRow to an API response.
 func kpiRowToResponse(k *repogoal.KpiRow) dtogoal.KpiResponse {
-	// KPIs don't have a target_value, so progress is 0 when not calculated
 	progressPercent := 0.0
 	return dtogoal.KpiResponse{
 		ID:              k.ID.String(),
@@ -471,6 +485,7 @@ func kpiRowToResponse(k *repogoal.KpiRow) dtogoal.KpiResponse {
 		Unit:            k.Unit,
 		Description:     k.Description,
 		Direction:       k.Direction,
+		TargetValue:     k.TargetValue,
 		CurrentValue:    k.CurrentValue,
 		ProgressPercent: progressPercent,
 		CreatedAt:       k.CreatedAt.Format(time.RFC3339),
@@ -478,7 +493,6 @@ func kpiRowToResponse(k *repogoal.KpiRow) dtogoal.KpiResponse {
 	}
 }
 
-// ListKPIs handles GET /api/v1/kpis.
 func (h *GoalHandler) ListKPIs(w http.ResponseWriter, r *http.Request) {
 	kpis, err := h.kpiService.ListKPIs(r.Context())
 	if err != nil {
@@ -495,7 +509,6 @@ func (h *GoalHandler) ListKPIs(w http.ResponseWriter, r *http.Request) {
 		Items: items,
 	}
 
-	// Handle cursor pagination
 	cursorStr := r.URL.Query().Get("cursor")
 	limitStr := r.URL.Query().Get("limit")
 	limit := 20
@@ -507,7 +520,6 @@ func (h *GoalHandler) ListKPIs(w http.ResponseWriter, r *http.Request) {
 	}
 	_ = cursorStr
 
-	// Apply cursor-based pagination
 	if len(items) > limit {
 		hasMore := true
 		items = items[:limit]
@@ -517,7 +529,7 @@ func (h *GoalHandler) ListKPIs(w http.ResponseWriter, r *http.Request) {
 			last := items[len(items)-1]
 			c := &cursor.Cursor{
 				ID:        uuid.MustParse(last.ID),
-				UpdatedAt: time.Now(), // simplified; real impl uses actual timestamp
+				UpdatedAt: time.Now(),
 			}
 			next, err := c.Encode()
 			if err == nil {
@@ -530,7 +542,6 @@ func (h *GoalHandler) ListKPIs(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, resp)
 }
 
-// CreateKPI handles POST /api/v1/kpis.
 func (h *GoalHandler) CreateKPI(w http.ResponseWriter, r *http.Request) {
 	var req dtogoal.CreateKpiRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -547,7 +558,6 @@ func (h *GoalHandler) CreateKPI(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusCreated, kpiRowToResponse(kpi))
 }
 
-// UpdateKPI handles PUT /api/v1/kpis/{kpiId}.
 func (h *GoalHandler) UpdateKPI(w http.ResponseWriter, r *http.Request) {
 	kpiIDStr := chi.URLParam(r, "kpiId")
 	kpiID, err := uuid.Parse(kpiIDStr)
@@ -571,7 +581,6 @@ func (h *GoalHandler) UpdateKPI(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, kpiRowToResponse(kpi))
 }
 
-// DeleteKPI handles DELETE /api/v1/kpis/{kpiId}.
 func (h *GoalHandler) DeleteKPI(w http.ResponseWriter, r *http.Request) {
 	kpiIDStr := chi.URLParam(r, "kpiId")
 	kpiID, err := uuid.Parse(kpiIDStr)
@@ -588,7 +597,6 @@ func (h *GoalHandler) DeleteKPI(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// UpdateKPIValue handles PATCH /api/v1/kpis/{kpiId}/value.
 func (h *GoalHandler) UpdateKPIValue(w http.ResponseWriter, r *http.Request) {
 	kpiIDStr := chi.URLParam(r, "kpiId")
 	kpiID, err := uuid.Parse(kpiIDStr)
@@ -609,7 +617,6 @@ func (h *GoalHandler) UpdateKPIValue(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Log activity: valor de KPI actualizado
 	if h.activitySvc != nil {
 		if empID, ok := auth.GetEmployeeID(r.Context()); ok {
 			_ = h.activitySvc.LogActivity(r.Context(), empID, "goal_progress",
@@ -624,7 +631,6 @@ func (h *GoalHandler) UpdateKPIValue(w http.ResponseWriter, r *http.Request) {
 // KPI Linking Handlers
 // ============================================================================
 
-// LinkKPI handles POST /api/v1/goals/{goalId}/kpis.
 func (h *GoalHandler) LinkKPI(w http.ResponseWriter, r *http.Request) {
 	empID, err := parseEmpID(r)
 	if err != nil {
@@ -656,7 +662,6 @@ func (h *GoalHandler) LinkKPI(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Return the updated goal with linked KPIs
 	goal, err := h.goalRepo.GetGoal(r.Context(), goalID)
 	if err != nil {
 		writeError(w, err)
@@ -673,7 +678,6 @@ func (h *GoalHandler) LinkKPI(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, goalRowToResponse(goal, kpis))
 }
 
-// UnlinkKPI handles DELETE /api/v1/goals/{goalId}/kpis/{kpiId}.
 func (h *GoalHandler) UnlinkKPI(w http.ResponseWriter, r *http.Request) {
 	empID, err := parseEmpID(r)
 	if err != nil {
@@ -707,7 +711,6 @@ func (h *GoalHandler) UnlinkKPI(w http.ResponseWriter, r *http.Request) {
 // Scoring Handlers
 // ============================================================================
 
-// GetEmployeeScore handles GET /api/v1/employees/{empId}/score.
 func (h *GoalHandler) GetEmployeeScore(w http.ResponseWriter, r *http.Request) {
 	empID, err := parseEmpID(r)
 	if err != nil {
@@ -728,7 +731,6 @@ func (h *GoalHandler) GetEmployeeScore(w http.ResponseWriter, r *http.Request) {
 // Assignment Handlers
 // ============================================================================
 
-// assignmentRowToResponse converts a repo AssignmentRow to an API response.
 func assignmentRowToResponse(a *repogoal.AssignmentRow) dtogoal.AssignmentResponse {
 	return dtogoal.AssignmentResponse{
 		ID:         a.ID.String(),
@@ -738,7 +740,6 @@ func assignmentRowToResponse(a *repogoal.AssignmentRow) dtogoal.AssignmentRespon
 	}
 }
 
-// GetAssignment handles GET /api/v1/employees/{empId}/assignments.
 func (h *GoalHandler) GetAssignment(w http.ResponseWriter, r *http.Request) {
 	empID, err := parseEmpID(r)
 	if err != nil {
@@ -748,8 +749,6 @@ func (h *GoalHandler) GetAssignment(w http.ResponseWriter, r *http.Request) {
 
 	assignment, err := h.assignRepo.GetAssignment(r.Context(), empID)
 	if err != nil {
-		// ponytail: no assignment is not an error — return null so the
-		// frontend can distinguish "no data" from "server error".
 		var de *pkgerrors.DomainError
 		if pkgerrors.AsDomainError(err, &de) && de.Code == pkgerrors.GoalNotFound {
 			writeJSON(w, http.StatusOK, nil)
@@ -761,13 +760,12 @@ func (h *GoalHandler) GetAssignment(w http.ResponseWriter, r *http.Request) {
 
 	resp := assignmentRowToResponse(assignment)
 
-	// Fetch categories for the assignment
 	cats, _ := h.catRepo.ListCategoriesByEmployee(r.Context(), empID)
 	if cats != nil {
 		catResponses := make([]dtogoal.CategoryResponse, len(cats))
+		var allGoalIDs []uuid.UUID
 		for i, c := range cats {
 			cr := categoryRowToResponse(c)
-			// Fetch goals for each category
 			goals, _ := h.goalRepo.ListGoalsByCategory(r.Context(), c.ID)
 			if goals != nil {
 				goalResponses := make([]dtogoal.GoalResponse, len(goals))
@@ -780,18 +778,40 @@ func (h *GoalHandler) GetAssignment(w http.ResponseWriter, r *http.Request) {
 						}
 					}
 					goalResponses[j] = goalRowToResponse(g, kpis)
+					allGoalIDs = append(allGoalIDs, g.ID)
 				}
 				cr.Goals = goalResponses
 			}
 			catResponses[i] = cr
 		}
+
+		if len(allGoalIDs) > 0 {
+			pendingProps, err := h.proposalRepo.ListPendingByGoalIDs(r.Context(), allGoalIDs)
+			if err == nil && len(pendingProps) > 0 {
+				pendingByGoal := make(map[string]*repogoal.GoalProposalRow, len(pendingProps))
+				for _, p := range pendingProps {
+					pendingByGoal[p.GoalID.String()] = p
+				}
+				for i := range catResponses {
+					if catResponses[i].Goals == nil {
+						continue
+					}
+					for j := range catResponses[i].Goals {
+						if p, ok := pendingByGoal[catResponses[i].Goals[j].ID]; ok {
+							pr := proposalRowToResponse(p)
+							catResponses[i].Goals[j].PendingProposal = &pr
+						}
+					}
+				}
+			}
+		}
+
 		resp.Categories = catResponses
 	}
 
 	writeJSON(w, http.StatusOK, resp)
 }
 
-// CreateAssignment handles POST /api/v1/employees/{empId}/assignments.
 func (h *GoalHandler) CreateAssignment(w http.ResponseWriter, r *http.Request) {
 	empID, err := parseEmpID(r)
 	if err != nil {
@@ -819,7 +839,6 @@ func (h *GoalHandler) CreateAssignment(w http.ResponseWriter, r *http.Request) {
 
 	resp := assignmentRowToResponse(assignment)
 
-	// Fetch categories
 	cats, _ := h.catRepo.ListCategoriesByEmployee(r.Context(), empID)
 	if cats != nil {
 		catResponses := make([]dtogoal.CategoryResponse, len(cats))
@@ -830,4 +849,152 @@ func (h *GoalHandler) CreateAssignment(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusCreated, resp)
+}
+
+// ============================================================================
+// Goal Proposal Handlers
+// ============================================================================
+
+func proposalRowToResponse(p *repogoal.GoalProposalRow) dtogoal.GoalProposalResponse {
+	var kpiIDs []string
+	var reviewedBy *string
+	var reviewedAt *string
+
+	if p.ReviewedBy != nil {
+		s := p.ReviewedBy.String()
+		reviewedBy = &s
+	}
+	if p.ReviewedAt != nil {
+		s := p.ReviewedAt.Format(time.RFC3339)
+		reviewedAt = &s
+	}
+
+	return dtogoal.GoalProposalResponse{
+		ID:            p.ID.String(),
+		GoalID:        p.GoalID.String(),
+		RequestedBy:   p.RequestedBy.String(),
+		Name:          p.Name,
+		Description:   p.Description,
+		Unit:          p.Unit,
+		Weight:        p.Weight,
+		TargetValue:   p.TargetValue,
+		Direction:     p.Direction,
+		BaselineValue: p.BaselineValue,
+		KpiIDs:        kpiIDs,
+		Status:        p.Status,
+		ReviewedBy:    reviewedBy,
+		ReviewedAt:    reviewedAt,
+		CreatedAt:     p.CreatedAt.Format(time.RFC3339),
+		UpdatedAt:     p.UpdatedAt.Format(time.RFC3339),
+	}
+}
+
+func (h *GoalHandler) CreateGoalProposal(w http.ResponseWriter, r *http.Request) {
+	callerIDStr := middleware.EmployeeIDFromContext(r.Context())
+	callerID, err := uuid.Parse(callerIDStr)
+	if err != nil {
+		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest, "invalid authenticated employee ID", err))
+		return
+	}
+
+	goalIDStr := chi.URLParam(r, "goalId")
+	goalID, err := uuid.Parse(goalIDStr)
+	if err != nil {
+		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest, "invalid goal ID", err))
+		return
+	}
+
+	var req dtogoal.CreateGoalProposalRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest, "invalid JSON body", err))
+		return
+	}
+
+	proposal, err := h.proposalSvc.CreateProposal(r.Context(), callerID, goalID, req)
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+
+	writeJSON(w, http.StatusCreated, proposalRowToResponse(proposal))
+}
+
+func (h *GoalHandler) ListGoalProposals(w http.ResponseWriter, r *http.Request) {
+	goalIDStr := chi.URLParam(r, "goalId")
+	goalID, err := uuid.Parse(goalIDStr)
+	if err != nil {
+		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest, "invalid goal ID", err))
+		return
+	}
+
+	proposals, err := h.proposalRepo.ListByGoal(r.Context(), goalID)
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+
+	items := make([]dtogoal.GoalProposalResponse, len(proposals))
+	for i, p := range proposals {
+		items[i] = proposalRowToResponse(p)
+	}
+
+	writeJSON(w, http.StatusOK, map[string]interface{}{"items": items})
+}
+
+func (h *GoalHandler) UpdateGoalProposal(w http.ResponseWriter, r *http.Request) {
+	callerIDStr := middleware.EmployeeIDFromContext(r.Context())
+	callerID, err := uuid.Parse(callerIDStr)
+	if err != nil {
+		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest, "invalid authenticated employee ID", err))
+		return
+	}
+
+	goalIDStr := chi.URLParam(r, "goalId")
+	_, err = uuid.Parse(goalIDStr)
+	if err != nil {
+		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest, "invalid goal ID", err))
+		return
+	}
+
+	propIDStr := chi.URLParam(r, "propId")
+	propID, err := uuid.Parse(propIDStr)
+	if err != nil {
+		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest, "invalid proposal ID", err))
+		return
+	}
+
+	var req dtogoal.UpdateGoalProposalRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest, "invalid JSON body", err))
+		return
+	}
+
+	switch req.Status {
+	case "accepted":
+		updatedGoal, err := h.proposalSvc.AcceptProposal(r.Context(), callerID, propID)
+		if err != nil {
+			writeError(w, err)
+			return
+		}
+		resp := goalRowToResponse(updatedGoal)
+
+		pendingProps, err := h.proposalRepo.ListPendingByGoalIDs(r.Context(), []uuid.UUID{updatedGoal.ID})
+		if err == nil && len(pendingProps) > 0 {
+			pr := proposalRowToResponse(pendingProps[0])
+			resp.PendingProposal = &pr
+		}
+
+		writeJSON(w, http.StatusOK, resp)
+
+	case "rejected":
+		proposal, err := h.proposalSvc.RejectProposal(r.Context(), callerID, propID)
+		if err != nil {
+			writeError(w, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, proposalRowToResponse(proposal))
+
+	default:
+		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest, "status must be 'accepted' or 'rejected'", nil))
+	}
 }

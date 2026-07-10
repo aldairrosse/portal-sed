@@ -200,6 +200,27 @@ func RegisterRoutes(r chi.Router, handler *GoalHandler, authSvc *authsvc.AuthSer
 			r.Get("/employees/{empId}/score", handler.GetEmployeeScore)
 		})
 
+		// --- Goal proposal endpoints ---
+
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.RequireAnyPermission(writePerms...))
+			r.Use(middleware.RateLimit(writeRateLimit))
+			r.Use(middleware.Idempotency(idempStore, 24*time.Hour))
+			r.Post("/goals/{goalId}/proposals", handler.CreateGoalProposal)
+		})
+
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.RequirePermission(auth.PermGoalRead))
+			r.Use(middleware.RateLimit(readRateLimit))
+			r.Get("/goals/{goalId}/proposals", handler.ListGoalProposals)
+		})
+
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.RequireAnyPermission(writePerms...))
+			r.Use(middleware.RateLimit(writeRateLimit))
+			r.Patch("/goals/{goalId}/proposals/{propId}", handler.UpdateGoalProposal)
+		})
+
 		// --- Assignment endpoints ---
 
 		r.Group(func(r chi.Router) {
