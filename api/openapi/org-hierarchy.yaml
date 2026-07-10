@@ -351,6 +351,37 @@ paths:
                     $ref: '#/components/schemas/EmployeeDetail'
         '404':
           $ref: '#/components/responses/EmployeeNotFound'
+    put:
+      operationId: updateEmployee
+      summary: Update employee profile and department
+      description: Updates an employee's evaluation profile and/or org node (department).
+      parameters:
+        - name: empId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateEmployeeRequest'
+      responses:
+        '200':
+          description: Updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/EmployeeDetail'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/EmployeeNotFound'
 
   /employees/{empId}/evaluatees:
     get:
@@ -805,6 +836,19 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/AreaMetricsEmployee'
+
+    UpdateEmployeeRequest:
+      type: object
+      required: [profileId, orgNodeId]
+      properties:
+        profileId:
+          type: string
+          format: uuid
+          description: New evaluation profile ID
+        orgNodeId:
+          type: string
+          format: uuid
+          description: New org node (department) ID
 
     AreaMetricsEmployee:
       type: object
