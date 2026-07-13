@@ -60,5 +60,9 @@ Cambios
 
 > Agregar gestión y visualización de pilares de metas
 
+> Ir atrás en una fase
+
+> Borrar todo en metas
+
 > Agregar botón de descargar global. OK
 
