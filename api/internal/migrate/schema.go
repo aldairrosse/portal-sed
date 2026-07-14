@@ -101,7 +101,7 @@ var (
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "version", Type: field.TypeInt, Default: 1},
 		{Name: "year", Type: field.TypeInt},
-		{Name: "current_phase", Type: field.TypeEnum, Enums: []string{"asignacion", "avance", "cierre"}},
+		{Name: "current_phase", Type: field.TypeEnum, Enums: []string{"asignacion", "avance", "cierre"}, SchemaType: map[string]string{"postgres": "phase"}},
 		{Name: "started_at", Type: field.TypeTime, Nullable: true},
 		{Name: "finished_at", Type: field.TypeTime, Nullable: true},
 		{Name: "organization_id", Type: field.TypeUUID},
@@ -171,8 +171,8 @@ var (
 		{Name: "created_by", Type: field.TypeUUID},
 		{Name: "updated_by", Type: field.TypeUUID},
 		{Name: "version", Type: field.TypeInt, Default: 1},
-		{Name: "phase", Type: field.TypeEnum, Enums: []string{"asignacion", "avance", "cierre"}},
-		{Name: "state", Type: field.TypeEnum, Enums: []string{"pendiente_asignacion", "pendiente_avance", "pendiente_evaluacion_final", "completada"}},
+		{Name: "phase", Type: field.TypeEnum, Enums: []string{"asignacion", "avance", "cierre"}, SchemaType: map[string]string{"postgres": "phase"}},
+		{Name: "state", Type: field.TypeEnum, Enums: []string{"pendiente_asignacion", "pendiente_avance", "pendiente_evaluacion_final", "completada"}, SchemaType: map[string]string{"postgres": "evaluation_state"}},
 		{Name: "self_evaluation_completed_at", Type: field.TypeTime, Nullable: true},
 		{Name: "rh_evaluation_completed_at", Type: field.TypeTime, Nullable: true},
 		{Name: "cycle_id", Type: field.TypeUUID},
@@ -317,13 +317,13 @@ var (
 		{Name: "version", Type: field.TypeInt, Default: 1},
 		{Name: "name", Type: field.TypeString},
 		{Name: "description", Type: field.TypeString, Nullable: true, Size: 2147483647},
-		{Name: "unit", Type: field.TypeEnum, Enums: []string{"porcentaje", "moneda", "numero"}},
+		{Name: "unit", Type: field.TypeEnum, Enums: []string{"porcentaje", "moneda", "numero"}, SchemaType: map[string]string{"postgres": "goal_unit"}},
 		{Name: "weight", Type: field.TypeFloat64},
 		{Name: "target_value", Type: field.TypeFloat64},
 		{Name: "current_value", Type: field.TypeFloat64, Default: 0},
 		{Name: "direction", Type: field.TypeEnum, Enums: []string{"ascendente", "descendente"}, Default: "ascendente"},
 		{Name: "baseline_value", Type: field.TypeFloat64, Nullable: true},
-		{Name: "state", Type: field.TypeEnum, Enums: []string{"borrador", "fijada", "en_seguimiento", "evaluada", "cerrada"}},
+		{Name: "state", Type: field.TypeEnum, Enums: []string{"borrador", "fijada", "en_seguimiento", "evaluada", "cerrada"}, SchemaType: map[string]string{"postgres": "goal_state"}},
 		{Name: "category_id", Type: field.TypeUUID},
 	}
 	// GoalsTable holds the schema information for the "goals" table.
@@ -427,10 +427,11 @@ var (
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "name", Type: field.TypeString, Unique: true},
-		{Name: "unit", Type: field.TypeEnum, Enums: []string{"porcentaje", "moneda", "numero"}},
+		{Name: "unit", Type: field.TypeEnum, Enums: []string{"porcentaje", "moneda", "numero", "binario"}, SchemaType: map[string]string{"postgres": "goal_unit"}},
 		{Name: "description", Type: field.TypeString, Nullable: true, Size: 2147483647},
 		{Name: "direction", Type: field.TypeEnum, Enums: []string{"ascendente", "descendente"}, Default: "ascendente"},
 		{Name: "current_value", Type: field.TypeFloat64, Nullable: true},
+		{Name: "target_value", Type: field.TypeFloat64, Nullable: true},
 	}
 	// KpIsTable holds the schema information for the "kp_is" table.
 	KpIsTable = &schema.Table{
@@ -541,7 +542,7 @@ var (
 	// NineBoxScalesColumns holds the columns for the "nine_box_scales" table.
 	NineBoxScalesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
-		{Name: "axis", Type: field.TypeEnum, Enums: []string{"performance", "potential"}},
+		{Name: "axis", Type: field.TypeEnum, Enums: []string{"performance", "potential"}, SchemaType: map[string]string{"postgres": "axis"}},
 		{Name: "level", Type: field.TypeInt},
 		{Name: "label", Type: field.TypeString},
 		{Name: "description", Type: field.TypeString, Nullable: true, Size: 2147483647},
@@ -559,10 +560,10 @@ var (
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "version", Type: field.TypeInt, Default: 1},
 		{Name: "name", Type: field.TypeString},
-		{Name: "type", Type: field.TypeEnum, Enums: []string{"corporate", "retail"}},
+		{Name: "type", Type: field.TypeEnum, Enums: []string{"corporate", "retail"}, SchemaType: map[string]string{"postgres": "org_node_type"}},
 		{Name: "code", Type: field.TypeString},
 		{Name: "metadata", Type: field.TypeJSON, Nullable: true},
-		{Name: "path", Type: field.TypeString, Nullable: true},
+		{Name: "path", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "ltree"}},
 		{Name: "parent_id", Type: field.TypeUUID, Nullable: true},
 		{Name: "head_employee_id", Type: field.TypeUUID, Nullable: true},
 		{Name: "organization_id", Type: field.TypeUUID},
@@ -600,6 +601,7 @@ var (
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "name", Type: field.TypeString},
 		{Name: "slug", Type: field.TypeString, Unique: true},
+		{Name: "root_node_id", Type: field.TypeUUID, Nullable: true},
 	}
 	// OrganizationsTable holds the schema information for the "organizations" table.
 	OrganizationsTable = &schema.Table{
@@ -612,7 +614,7 @@ var (
 		{Name: "id", Type: field.TypeUUID},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
-		{Name: "phase", Type: field.TypeEnum, Enums: []string{"asignacion", "avance", "cierre"}},
+		{Name: "phase", Type: field.TypeEnum, Enums: []string{"asignacion", "avance", "cierre"}, SchemaType: map[string]string{"postgres": "phase"}},
 		{Name: "label", Type: field.TypeString},
 		{Name: "order", Type: field.TypeInt},
 		{Name: "allowed_actors", Type: field.TypeJSON, Nullable: true},
@@ -637,9 +639,9 @@ var (
 	// PhaseTransitionsColumns holds the columns for the "phase_transitions" table.
 	PhaseTransitionsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
-		{Name: "from_phase", Type: field.TypeEnum, Enums: []string{"asignacion", "avance", "cierre"}},
-		{Name: "to_phase", Type: field.TypeEnum, Enums: []string{"asignacion", "avance", "cierre"}},
-		{Name: "trigger", Type: field.TypeEnum, Enums: []string{"auto", "manual_rh"}},
+		{Name: "from_phase", Type: field.TypeEnum, Enums: []string{"asignacion", "avance", "cierre"}, SchemaType: map[string]string{"postgres": "phase"}},
+		{Name: "to_phase", Type: field.TypeEnum, Enums: []string{"asignacion", "avance", "cierre"}, SchemaType: map[string]string{"postgres": "phase"}},
+		{Name: "trigger", Type: field.TypeEnum, Enums: []string{"auto", "manual_rh"}, SchemaType: map[string]string{"postgres": "trigger_type"}},
 		{Name: "conditions", Type: field.TypeJSON, Nullable: true},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "cycle_id", Type: field.TypeUUID},
@@ -714,7 +716,7 @@ var (
 				Symbol:     "scale_criterions_pillars_scale_criteria",
 				Columns:    []*schema.Column{ScaleCriterionsColumns[7]},
 				RefColumns: []*schema.Column{PillarsColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.Cascade,
 			},
 		},
 	}

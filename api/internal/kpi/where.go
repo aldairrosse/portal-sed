@@ -81,6 +81,11 @@ func CurrentValue(v float64) predicate.KPI {
 	return predicate.KPI(sql.FieldEQ(FieldCurrentValue, v))
 }
 
+// TargetValue applies equality check predicate on the "target_value" field. It's identical to TargetValueEQ.
+func TargetValue(v float64) predicate.KPI {
+	return predicate.KPI(sql.FieldEQ(FieldTargetValue, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.KPI {
 	return predicate.KPI(sql.FieldEQ(FieldCreatedAt, v))
@@ -391,42 +396,52 @@ func CurrentValueNotNil() predicate.KPI {
 	return predicate.KPI(sql.FieldNotNull(FieldCurrentValue))
 }
 
-// TargetValue applies equality check on the "target_value" field.
-func TargetValue(v float64) predicate.KPI {
+// TargetValueEQ applies the EQ predicate on the "target_value" field.
+func TargetValueEQ(v float64) predicate.KPI {
 	return predicate.KPI(sql.FieldEQ(FieldTargetValue, v))
 }
 
-// TargetValueNot applies not-equal check on the "target_value" field.
-func TargetValueNot(v float64) predicate.KPI {
+// TargetValueNEQ applies the NEQ predicate on the "target_value" field.
+func TargetValueNEQ(v float64) predicate.KPI {
 	return predicate.KPI(sql.FieldNEQ(FieldTargetValue, v))
 }
 
-// TargetValueGT applies greater-than check on the "target_value" field.
+// TargetValueIn applies the In predicate on the "target_value" field.
+func TargetValueIn(vs ...float64) predicate.KPI {
+	return predicate.KPI(sql.FieldIn(FieldTargetValue, vs...))
+}
+
+// TargetValueNotIn applies the NotIn predicate on the "target_value" field.
+func TargetValueNotIn(vs ...float64) predicate.KPI {
+	return predicate.KPI(sql.FieldNotIn(FieldTargetValue, vs...))
+}
+
+// TargetValueGT applies the GT predicate on the "target_value" field.
 func TargetValueGT(v float64) predicate.KPI {
 	return predicate.KPI(sql.FieldGT(FieldTargetValue, v))
 }
 
-// TargetValueGTE applies greater-or-equal check on the "target_value" field.
+// TargetValueGTE applies the GTE predicate on the "target_value" field.
 func TargetValueGTE(v float64) predicate.KPI {
 	return predicate.KPI(sql.FieldGTE(FieldTargetValue, v))
 }
 
-// TargetValueLT applies less-than check on the "target_value" field.
+// TargetValueLT applies the LT predicate on the "target_value" field.
 func TargetValueLT(v float64) predicate.KPI {
 	return predicate.KPI(sql.FieldLT(FieldTargetValue, v))
 }
 
-// TargetValueLTE applies less-or-equal check on the "target_value" field.
+// TargetValueLTE applies the LTE predicate on the "target_value" field.
 func TargetValueLTE(v float64) predicate.KPI {
 	return predicate.KPI(sql.FieldLTE(FieldTargetValue, v))
 }
 
-// TargetValueIsNil applies null check on the "target_value" field.
+// TargetValueIsNil applies the IsNil predicate on the "target_value" field.
 func TargetValueIsNil() predicate.KPI {
 	return predicate.KPI(sql.FieldIsNull(FieldTargetValue))
 }
 
-// TargetValueNotNil applies not-null check on the "target_value" field.
+// TargetValueNotNil applies the NotNil predicate on the "target_value" field.
 func TargetValueNotNil() predicate.KPI {
 	return predicate.KPI(sql.FieldNotNull(FieldTargetValue))
 }

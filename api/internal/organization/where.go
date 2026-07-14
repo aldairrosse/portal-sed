@@ -76,6 +76,11 @@ func Slug(v string) predicate.Organization {
 	return predicate.Organization(sql.FieldEQ(FieldSlug, v))
 }
 
+// RootNodeID applies equality check predicate on the "root_node_id" field. It's identical to RootNodeIDEQ.
+func RootNodeID(v uuid.UUID) predicate.Organization {
+	return predicate.Organization(sql.FieldEQ(FieldRootNodeID, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.Organization {
 	return predicate.Organization(sql.FieldEQ(FieldCreatedAt, v))
@@ -284,6 +289,56 @@ func SlugEqualFold(v string) predicate.Organization {
 // SlugContainsFold applies the ContainsFold predicate on the "slug" field.
 func SlugContainsFold(v string) predicate.Organization {
 	return predicate.Organization(sql.FieldContainsFold(FieldSlug, v))
+}
+
+// RootNodeIDEQ applies the EQ predicate on the "root_node_id" field.
+func RootNodeIDEQ(v uuid.UUID) predicate.Organization {
+	return predicate.Organization(sql.FieldEQ(FieldRootNodeID, v))
+}
+
+// RootNodeIDNEQ applies the NEQ predicate on the "root_node_id" field.
+func RootNodeIDNEQ(v uuid.UUID) predicate.Organization {
+	return predicate.Organization(sql.FieldNEQ(FieldRootNodeID, v))
+}
+
+// RootNodeIDIn applies the In predicate on the "root_node_id" field.
+func RootNodeIDIn(vs ...uuid.UUID) predicate.Organization {
+	return predicate.Organization(sql.FieldIn(FieldRootNodeID, vs...))
+}
+
+// RootNodeIDNotIn applies the NotIn predicate on the "root_node_id" field.
+func RootNodeIDNotIn(vs ...uuid.UUID) predicate.Organization {
+	return predicate.Organization(sql.FieldNotIn(FieldRootNodeID, vs...))
+}
+
+// RootNodeIDGT applies the GT predicate on the "root_node_id" field.
+func RootNodeIDGT(v uuid.UUID) predicate.Organization {
+	return predicate.Organization(sql.FieldGT(FieldRootNodeID, v))
+}
+
+// RootNodeIDGTE applies the GTE predicate on the "root_node_id" field.
+func RootNodeIDGTE(v uuid.UUID) predicate.Organization {
+	return predicate.Organization(sql.FieldGTE(FieldRootNodeID, v))
+}
+
+// RootNodeIDLT applies the LT predicate on the "root_node_id" field.
+func RootNodeIDLT(v uuid.UUID) predicate.Organization {
+	return predicate.Organization(sql.FieldLT(FieldRootNodeID, v))
+}
+
+// RootNodeIDLTE applies the LTE predicate on the "root_node_id" field.
+func RootNodeIDLTE(v uuid.UUID) predicate.Organization {
+	return predicate.Organization(sql.FieldLTE(FieldRootNodeID, v))
+}
+
+// RootNodeIDIsNil applies the IsNil predicate on the "root_node_id" field.
+func RootNodeIDIsNil() predicate.Organization {
+	return predicate.Organization(sql.FieldIsNull(FieldRootNodeID))
+}
+
+// RootNodeIDNotNil applies the NotNil predicate on the "root_node_id" field.
+func RootNodeIDNotNil() predicate.Organization {
+	return predicate.Organization(sql.FieldNotNull(FieldRootNodeID))
 }
 
 // HasOrgNodes applies the HasEdge predicate on the "org_nodes" edge.

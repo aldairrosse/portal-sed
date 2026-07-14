@@ -139,6 +139,12 @@ func (_u *KPIUpdate) SetNillableTargetValue(v *float64) *KPIUpdate {
 	return _u
 }
 
+// AddTargetValue adds value to the "target_value" field.
+func (_u *KPIUpdate) AddTargetValue(v float64) *KPIUpdate {
+	_u.mutation.AddTargetValue(v)
+	return _u
+}
+
 // ClearTargetValue clears the value of the "target_value" field.
 func (_u *KPIUpdate) ClearTargetValue() *KPIUpdate {
 	_u.mutation.ClearTargetValue()
@@ -283,6 +289,9 @@ func (_u *KPIUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.TargetValue(); ok {
 		_spec.SetField(kpi.FieldTargetValue, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedTargetValue(); ok {
+		_spec.AddField(kpi.FieldTargetValue, field.TypeFloat64, value)
 	}
 	if _u.mutation.TargetValueCleared() {
 		_spec.ClearField(kpi.FieldTargetValue, field.TypeFloat64)
@@ -462,6 +471,12 @@ func (_u *KPIUpdateOne) SetNillableTargetValue(v *float64) *KPIUpdateOne {
 	return _u
 }
 
+// AddTargetValue adds value to the "target_value" field.
+func (_u *KPIUpdateOne) AddTargetValue(v float64) *KPIUpdateOne {
+	_u.mutation.AddTargetValue(v)
+	return _u
+}
+
 // ClearTargetValue clears the value of the "target_value" field.
 func (_u *KPIUpdateOne) ClearTargetValue() *KPIUpdateOne {
 	_u.mutation.ClearTargetValue()
@@ -636,6 +651,9 @@ func (_u *KPIUpdateOne) sqlSave(ctx context.Context) (_node *KPI, err error) {
 	}
 	if value, ok := _u.mutation.TargetValue(); ok {
 		_spec.SetField(kpi.FieldTargetValue, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedTargetValue(); ok {
+		_spec.AddField(kpi.FieldTargetValue, field.TypeFloat64, value)
 	}
 	if _u.mutation.TargetValueCleared() {
 		_spec.ClearField(kpi.FieldTargetValue, field.TypeFloat64)

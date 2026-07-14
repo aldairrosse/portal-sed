@@ -23,6 +23,8 @@ const (
 	FieldName = "name"
 	// FieldSlug holds the string denoting the slug field in the database.
 	FieldSlug = "slug"
+	// FieldRootNodeID holds the string denoting the root_node_id field in the database.
+	FieldRootNodeID = "root_node_id"
 	// EdgeOrgNodes holds the string denoting the org_nodes edge name in mutations.
 	EdgeOrgNodes = "org_nodes"
 	// EdgeCycles holds the string denoting the cycles edge name in mutations.
@@ -52,6 +54,7 @@ var Columns = []string{
 	FieldUpdatedAt,
 	FieldName,
 	FieldSlug,
+	FieldRootNodeID,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -105,6 +108,11 @@ func ByName(opts ...sql.OrderTermOption) OrderOption {
 // BySlug orders the results by the slug field.
 func BySlug(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSlug, opts...).ToFunc()
+}
+
+// ByRootNodeID orders the results by the root_node_id field.
+func ByRootNodeID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRootNodeID, opts...).ToFunc()
 }
 
 // ByOrgNodesCount orders the results by org_nodes count.

@@ -63,6 +63,20 @@ func (_c *OrganizationCreate) SetSlug(v string) *OrganizationCreate {
 	return _c
 }
 
+// SetRootNodeID sets the "root_node_id" field.
+func (_c *OrganizationCreate) SetRootNodeID(v uuid.UUID) *OrganizationCreate {
+	_c.mutation.SetRootNodeID(v)
+	return _c
+}
+
+// SetNillableRootNodeID sets the "root_node_id" field if the given value is not nil.
+func (_c *OrganizationCreate) SetNillableRootNodeID(v *uuid.UUID) *OrganizationCreate {
+	if v != nil {
+		_c.SetRootNodeID(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *OrganizationCreate) SetID(v uuid.UUID) *OrganizationCreate {
 	_c.mutation.SetID(v)
@@ -230,6 +244,10 @@ func (_c *OrganizationCreate) createSpec() (*Organization, *sqlgraph.CreateSpec)
 	if value, ok := _c.mutation.Slug(); ok {
 		_spec.SetField(organization.FieldSlug, field.TypeString, value)
 		_node.Slug = value
+	}
+	if value, ok := _c.mutation.RootNodeID(); ok {
+		_spec.SetField(organization.FieldRootNodeID, field.TypeUUID, value)
+		_node.RootNodeID = &value
 	}
 	if nodes := _c.mutation.OrgNodesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

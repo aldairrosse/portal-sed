@@ -39,6 +39,9 @@ func (Pillar) Edges() []ent.Edge {
 			Annotations(entsql.Annotation{
 				OnDelete: entsql.Cascade,
 			}),
-		edge.To("scale_criteria", ScaleCriterion.Type),
+		edge.To("scale_criteria", ScaleCriterion.Type).
+			Annotations(entsql.Annotation{
+				OnDelete: entsql.Cascade,
+			}),
 	}
 }

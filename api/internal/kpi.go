@@ -63,9 +63,7 @@ func (*KPI) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case kpi.FieldTargetValue:
-			values[i] = new(sql.NullFloat64)
-		case kpi.FieldCurrentValue:
+		case kpi.FieldCurrentValue, kpi.FieldTargetValue:
 			values[i] = new(sql.NullFloat64)
 		case kpi.FieldName, kpi.FieldUnit, kpi.FieldDescription, kpi.FieldDirection:
 			values[i] = new(sql.NullString)
@@ -130,19 +128,19 @@ func (_m *KPI) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.Direction = kpi.Direction(value.String)
 			}
-		case kpi.FieldTargetValue:
-			if value, ok := values[i].(*sql.NullFloat64); !ok {
-				return fmt.Errorf("unexpected type %T for field target_value", values[i])
-			} else if value.Valid {
-				_m.TargetValue = new(float64)
-				*_m.TargetValue = value.Float64
-			}
 		case kpi.FieldCurrentValue:
 			if value, ok := values[i].(*sql.NullFloat64); !ok {
 				return fmt.Errorf("unexpected type %T for field current_value", values[i])
 			} else if value.Valid {
 				_m.CurrentValue = new(float64)
 				*_m.CurrentValue = value.Float64
+			}
+		case kpi.FieldTargetValue:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field target_value", values[i])
+			} else if value.Valid {
+				_m.TargetValue = new(float64)
+				*_m.TargetValue = value.Float64
 			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
@@ -203,13 +201,13 @@ func (_m *KPI) String() string {
 	builder.WriteString("direction=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Direction))
 	builder.WriteString(", ")
-	if v := _m.TargetValue; v != nil {
-		builder.WriteString("target_value=")
+	if v := _m.CurrentValue; v != nil {
+		builder.WriteString("current_value=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
 	builder.WriteString(", ")
-	if v := _m.CurrentValue; v != nil {
-		builder.WriteString("current_value=")
+	if v := _m.TargetValue; v != nil {
+		builder.WriteString("target_value=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
 	builder.WriteByte(')')

@@ -65,6 +65,26 @@ func (_u *OrganizationUpdate) SetNillableSlug(v *string) *OrganizationUpdate {
 	return _u
 }
 
+// SetRootNodeID sets the "root_node_id" field.
+func (_u *OrganizationUpdate) SetRootNodeID(v uuid.UUID) *OrganizationUpdate {
+	_u.mutation.SetRootNodeID(v)
+	return _u
+}
+
+// SetNillableRootNodeID sets the "root_node_id" field if the given value is not nil.
+func (_u *OrganizationUpdate) SetNillableRootNodeID(v *uuid.UUID) *OrganizationUpdate {
+	if v != nil {
+		_u.SetRootNodeID(*v)
+	}
+	return _u
+}
+
+// ClearRootNodeID clears the value of the "root_node_id" field.
+func (_u *OrganizationUpdate) ClearRootNodeID() *OrganizationUpdate {
+	_u.mutation.ClearRootNodeID()
+	return _u
+}
+
 // AddOrgNodeIDs adds the "org_nodes" edge to the OrgNode entity by IDs.
 func (_u *OrganizationUpdate) AddOrgNodeIDs(ids ...uuid.UUID) *OrganizationUpdate {
 	_u.mutation.AddOrgNodeIDs(ids...)
@@ -214,6 +234,12 @@ func (_u *OrganizationUpdate) sqlSave(ctx context.Context) (_node int, err error
 	if value, ok := _u.mutation.Slug(); ok {
 		_spec.SetField(organization.FieldSlug, field.TypeString, value)
 	}
+	if value, ok := _u.mutation.RootNodeID(); ok {
+		_spec.SetField(organization.FieldRootNodeID, field.TypeUUID, value)
+	}
+	if _u.mutation.RootNodeIDCleared() {
+		_spec.ClearField(organization.FieldRootNodeID, field.TypeUUID)
+	}
 	if _u.mutation.OrgNodesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -355,6 +381,26 @@ func (_u *OrganizationUpdateOne) SetNillableSlug(v *string) *OrganizationUpdateO
 	if v != nil {
 		_u.SetSlug(*v)
 	}
+	return _u
+}
+
+// SetRootNodeID sets the "root_node_id" field.
+func (_u *OrganizationUpdateOne) SetRootNodeID(v uuid.UUID) *OrganizationUpdateOne {
+	_u.mutation.SetRootNodeID(v)
+	return _u
+}
+
+// SetNillableRootNodeID sets the "root_node_id" field if the given value is not nil.
+func (_u *OrganizationUpdateOne) SetNillableRootNodeID(v *uuid.UUID) *OrganizationUpdateOne {
+	if v != nil {
+		_u.SetRootNodeID(*v)
+	}
+	return _u
+}
+
+// ClearRootNodeID clears the value of the "root_node_id" field.
+func (_u *OrganizationUpdateOne) ClearRootNodeID() *OrganizationUpdateOne {
+	_u.mutation.ClearRootNodeID()
 	return _u
 }
 
@@ -536,6 +582,12 @@ func (_u *OrganizationUpdateOne) sqlSave(ctx context.Context) (_node *Organizati
 	}
 	if value, ok := _u.mutation.Slug(); ok {
 		_spec.SetField(organization.FieldSlug, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.RootNodeID(); ok {
+		_spec.SetField(organization.FieldRootNodeID, field.TypeUUID, value)
+	}
+	if _u.mutation.RootNodeIDCleared() {
+		_spec.ClearField(organization.FieldRootNodeID, field.TypeUUID)
 	}
 	if _u.mutation.OrgNodesCleared() {
 		edge := &sqlgraph.EdgeSpec{

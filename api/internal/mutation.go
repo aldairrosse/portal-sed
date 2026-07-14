@@ -13586,6 +13586,7 @@ type KPIMutation struct {
 	current_value     *float64
 	addcurrent_value  *float64
 	target_value      *float64
+	addtarget_value   *float64
 	clearedFields     map[string]struct{}
 	goal_links        map[int]struct{}
 	removedgoal_links map[int]struct{}
@@ -14001,6 +14002,7 @@ func (m *KPIMutation) ResetCurrentValue() {
 // SetTargetValue sets the "target_value" field.
 func (m *KPIMutation) SetTargetValue(f float64) {
 	m.target_value = &f
+	m.addtarget_value = nil
 }
 
 // TargetValue returns the value of the "target_value" field in the mutation.
@@ -14012,8 +14014,9 @@ func (m *KPIMutation) TargetValue() (r float64, exists bool) {
 	return *v, true
 }
 
-// OldTargetValue returns the old "target_value" field's value from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the query failed.
+// OldTargetValue returns the old "target_value" field's value of the KPI entity.
+// If the KPI object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
 func (m *KPIMutation) OldTargetValue(ctx context.Context) (v *float64, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldTargetValue is only allowed on UpdateOne operations")
@@ -14028,9 +14031,28 @@ func (m *KPIMutation) OldTargetValue(ctx context.Context) (v *float64, err error
 	return oldValue.TargetValue, nil
 }
 
+// AddTargetValue adds f to the "target_value" field.
+func (m *KPIMutation) AddTargetValue(f float64) {
+	if m.addtarget_value != nil {
+		*m.addtarget_value += f
+	} else {
+		m.addtarget_value = &f
+	}
+}
+
+// AddedTargetValue returns the value that was added to the "target_value" field in this mutation.
+func (m *KPIMutation) AddedTargetValue() (r float64, exists bool) {
+	v := m.addtarget_value
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
 // ClearTargetValue clears the value of the "target_value" field.
 func (m *KPIMutation) ClearTargetValue() {
 	m.target_value = nil
+	m.addtarget_value = nil
 	m.clearedFields[kpi.FieldTargetValue] = struct{}{}
 }
 
@@ -14043,6 +14065,7 @@ func (m *KPIMutation) TargetValueCleared() bool {
 // ResetTargetValue resets all changes to the "target_value" field.
 func (m *KPIMutation) ResetTargetValue() {
 	m.target_value = nil
+	m.addtarget_value = nil
 	delete(m.clearedFields, kpi.FieldTargetValue)
 }
 
@@ -14284,6 +14307,9 @@ func (m *KPIMutation) AddedFields() []string {
 	if m.addcurrent_value != nil {
 		fields = append(fields, kpi.FieldCurrentValue)
 	}
+	if m.addtarget_value != nil {
+		fields = append(fields, kpi.FieldTargetValue)
+	}
 	return fields
 }
 
@@ -14294,6 +14320,8 @@ func (m *KPIMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
 	case kpi.FieldCurrentValue:
 		return m.AddedCurrentValue()
+	case kpi.FieldTargetValue:
+		return m.AddedTargetValue()
 	}
 	return nil, false
 }
@@ -14309,6 +14337,13 @@ func (m *KPIMutation) AddField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddCurrentValue(v)
+		return nil
+	case kpi.FieldTargetValue:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddTargetValue(v)
 		return nil
 	}
 	return fmt.Errorf("unknown KPI numeric field %s", name)
@@ -19523,6 +19558,7 @@ type OrganizationMutation struct {
 	updated_at       *time.Time
 	name             *string
 	slug             *string
+	root_node_id     *uuid.UUID
 	clearedFields    map[string]struct{}
 	org_nodes        map[uuid.UUID]struct{}
 	removedorg_nodes map[uuid.UUID]struct{}
@@ -19783,6 +19819,55 @@ func (m *OrganizationMutation) ResetSlug() {
 	m.slug = nil
 }
 
+// SetRootNodeID sets the "root_node_id" field.
+func (m *OrganizationMutation) SetRootNodeID(u uuid.UUID) {
+	m.root_node_id = &u
+}
+
+// RootNodeID returns the value of the "root_node_id" field in the mutation.
+func (m *OrganizationMutation) RootNodeID() (r uuid.UUID, exists bool) {
+	v := m.root_node_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRootNodeID returns the old "root_node_id" field's value of the Organization entity.
+// If the Organization object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *OrganizationMutation) OldRootNodeID(ctx context.Context) (v *uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRootNodeID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRootNodeID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRootNodeID: %w", err)
+	}
+	return oldValue.RootNodeID, nil
+}
+
+// ClearRootNodeID clears the value of the "root_node_id" field.
+func (m *OrganizationMutation) ClearRootNodeID() {
+	m.root_node_id = nil
+	m.clearedFields[organization.FieldRootNodeID] = struct{}{}
+}
+
+// RootNodeIDCleared returns if the "root_node_id" field was cleared in this mutation.
+func (m *OrganizationMutation) RootNodeIDCleared() bool {
+	_, ok := m.clearedFields[organization.FieldRootNodeID]
+	return ok
+}
+
+// ResetRootNodeID resets all changes to the "root_node_id" field.
+func (m *OrganizationMutation) ResetRootNodeID() {
+	m.root_node_id = nil
+	delete(m.clearedFields, organization.FieldRootNodeID)
+}
+
 // AddOrgNodeIDs adds the "org_nodes" edge to the OrgNode entity by ids.
 func (m *OrganizationMutation) AddOrgNodeIDs(ids ...uuid.UUID) {
 	if m.org_nodes == nil {
@@ -19925,7 +20010,7 @@ func (m *OrganizationMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *OrganizationMutation) Fields() []string {
-	fields := make([]string, 0, 4)
+	fields := make([]string, 0, 5)
 	if m.created_at != nil {
 		fields = append(fields, organization.FieldCreatedAt)
 	}
@@ -19937,6 +20022,9 @@ func (m *OrganizationMutation) Fields() []string {
 	}
 	if m.slug != nil {
 		fields = append(fields, organization.FieldSlug)
+	}
+	if m.root_node_id != nil {
+		fields = append(fields, organization.FieldRootNodeID)
 	}
 	return fields
 }
@@ -19954,6 +20042,8 @@ func (m *OrganizationMutation) Field(name string) (ent.Value, bool) {
 		return m.Name()
 	case organization.FieldSlug:
 		return m.Slug()
+	case organization.FieldRootNodeID:
+		return m.RootNodeID()
 	}
 	return nil, false
 }
@@ -19971,6 +20061,8 @@ func (m *OrganizationMutation) OldField(ctx context.Context, name string) (ent.V
 		return m.OldName(ctx)
 	case organization.FieldSlug:
 		return m.OldSlug(ctx)
+	case organization.FieldRootNodeID:
+		return m.OldRootNodeID(ctx)
 	}
 	return nil, fmt.Errorf("unknown Organization field %s", name)
 }
@@ -20008,6 +20100,13 @@ func (m *OrganizationMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetSlug(v)
 		return nil
+	case organization.FieldRootNodeID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRootNodeID(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Organization field %s", name)
 }
@@ -20037,7 +20136,11 @@ func (m *OrganizationMutation) AddField(name string, value ent.Value) error {
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
 func (m *OrganizationMutation) ClearedFields() []string {
-	return nil
+	var fields []string
+	if m.FieldCleared(organization.FieldRootNodeID) {
+		fields = append(fields, organization.FieldRootNodeID)
+	}
+	return fields
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
@@ -20050,6 +20153,11 @@ func (m *OrganizationMutation) FieldCleared(name string) bool {
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *OrganizationMutation) ClearField(name string) error {
+	switch name {
+	case organization.FieldRootNodeID:
+		m.ClearRootNodeID()
+		return nil
+	}
 	return fmt.Errorf("unknown Organization nullable field %s", name)
 }
 
@@ -20068,6 +20176,9 @@ func (m *OrganizationMutation) ResetField(name string) error {
 		return nil
 	case organization.FieldSlug:
 		m.ResetSlug()
+		return nil
+	case organization.FieldRootNodeID:
+		m.ResetRootNodeID()
 		return nil
 	}
 	return fmt.Errorf("unknown Organization field %s", name)
