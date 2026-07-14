@@ -145,13 +145,18 @@
 					<!-- Display mode -->
 					<tr>
 						<td class="font-medium">
-							<a
-								href="/rh/pilares/{pillar.id}/competencias"
-								class="link link-hover text-primary flex items-center gap-1.5"
-							>
-								{pillar.name}
-								<ChevronRight class="w-3.5 h-3.5 flex-shrink-0" strokeWidth={2} />
-							</a>
+						    {#if pillarType === 'competencias'}
+								<a
+									href="/rh/pilares/{pillar.id}/competencias"
+									class="link link-hover text-primary flex items-center gap-1.5"
+								>
+									{pillar.name}
+									<ChevronRight class="w-3.5 h-3.5 flex-shrink-0" strokeWidth={2} />
+								</a>
+
+							{:else}
+							{pillar.name}
+							{/if}
 						</td>
 						<td class="text-base-content/60 text-sm">{pillar.description}</td>
 						<td class="text-right">
