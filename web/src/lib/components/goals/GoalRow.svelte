@@ -316,14 +316,12 @@
                         {/if}
                         {#if goal.pendingProposal}
                             <button
-                                class="btn btn-ghost btn-xs text-info relative"
+                                class="btn btn-ghost btn-xs btn-square"
                                 title="Ver propuesta"
                                 onclick={() => { showReviewProposal = true; }}
                                 aria-label="Ver propuesta de {goal.name}"
                             >
                                 <Eye class="w-3.5 h-3.5" />
-                                Ver propuesta
-                                <span class="badge badge-xs badge-warning absolute -top-2 -right-2">1</span>
                             </button>
                         {:else}
                             <button
@@ -354,11 +352,19 @@
                             onclick={() => { isProposing = true; }}
                             aria-label="Proponer cambio en {goal.name}"
                         >
-                            <MessageSquare class="w-3.5 h-3.5" />
-                            Proponer cambio
+                            <Pencil class="w-3.5 h-3.5" />
+                            Proponer
+                        </button>
+                        <button
+                            class="btn btn-ghost btn-square btn-xs relative"
+                            title="Comentarios"
+                            onclick={() => onOpenComments?.(goal)}
+                            aria-label="Comentarios de {goal.name}"
+                        >
+                            <MessageCircle class="w-3.5 h-3.5" />
                             {#if (goal.comments?.length ?? 0) > 0}
                                 <span
-                                    class="badge badge-xs badge-warning absolute -top-2 -right-2"
+                                    class="badge badge-xs badge-primary absolute -top-1.5 -right-1.5"
                                     >{goal.comments?.length}</span
                                 >
                             {/if}

@@ -8,6 +8,7 @@
         FileDown,
         Target,
         Trash,
+        MessageCircle,
     } from "@lucide/svelte";
     import type {
         Goal,
@@ -627,7 +628,7 @@
                 {#if mode === "editor" && phase !== "medio-anio" && phase !== "fin-anio"}
                     <div class="flex-1"></div>
                     <button
-                        class="btn btn-error btn-sm"
+                        class="btn btn-error btn-sm btn-ghost"
                         disabled={deletingAll}
                         onclick={handleDeleteAssignment}
                     >
@@ -644,12 +645,12 @@
                     </button>
                 {:else if mode === "reader"}
                     <button
-                        class="btn btn-warning btn-sm ml-auto"
+                        class="btn btn-primary btn-sm ml-auto"
                         onclick={handleRequestAssignmentChange}
-                        aria-label="Solicitar cambio en asignación"
+                        aria-label="Comentar en asignación"
                     >
-                        <MessageSquare class="w-4 h-4" />
-                        Solicitar cambio
+                        <MessageCircle class="w-4 h-4" />
+                        Comentar
                     </button>
                 {/if}
             </div>
@@ -840,7 +841,7 @@
         onAdd={handleAddComment}
         onDelete={handleDeleteComment}
         onClose={() => (showCommentModal = false)}
-        currentUserId={viewerProfile}
+        currentUserId={viewerEmployeeId}
     />
 {/if}
 
@@ -852,7 +853,7 @@
         onAdd={handleAddCategoryComment}
         onDelete={handleDeleteCategoryComment}
         onClose={() => (showCategoryCommentModal = false)}
-        currentUserId={viewerProfile}
+        currentUserId={viewerEmployeeId}
         category={commentCategory}
     />
 {/if}

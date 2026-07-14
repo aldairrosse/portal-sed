@@ -205,17 +205,17 @@
 								<Trash2 class="w-4 h-4" />
 							</button>
 						{/if}
-				{:else if onRequestChangeCategory}
+				{:else if onOpenCategoryComments}
 					<button
-						class="btn btn-ghost btn-sm text-warning relative"
-						title="Solicitar cambio"
-						onclick={() => onRequestChangeCategory(category)}
-						aria-label="Solicitar cambio en categoría {category.name}"
+						class="btn btn-sm relative"
+						title="Comentar"
+						onclick={() => onOpenCategoryComments?.(category)}
+						aria-label="Comentar en categoría {category.name}"
 					>
-						<MessageSquare class="w-4 h-4" />
-						Solicitar cambio
+						<MessageCircle class="w-4 h-4" />
+						Comentar
 						{#if (category.comments?.length ?? 0) > 0}
-							<span class="badge badge-xs badge-warning absolute -top-2 -right-2">{category.comments?.length}</span>
+							<span class="badge badge-xs badge-primary absolute -top-2 -right-2">{category.comments?.length}</span>
 						{/if}
 					</button>
 				{/if}
