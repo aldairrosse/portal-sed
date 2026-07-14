@@ -88,7 +88,7 @@
         porcentaje: "%",
         moneda: "$",
         numero: "#",
-        binario: "Sí/No",
+        binario: "",
     };
 
     // ─── Inline edit state ────────────────────────────────────────────────
@@ -204,7 +204,11 @@
             {:else}
                 <TrendingDown class="w-3 h-3" />
             {/if}
+            {#if goal.unit === "binario"}
+                {goal.targetValue ? "Sí" : "No"}
+            {:else}
             {goal.targetValue}{unitLabels[goal.unit] ?? goal.unit}
+            {/if}
         </td>
         <td class="text-sm text-base-content/70">
             {goal.weight}%</td
