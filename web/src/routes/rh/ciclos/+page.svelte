@@ -79,7 +79,7 @@
 		if (!confirmAdvance) return;
 		advancingId = confirmAdvance.id;
 		localError = null;
-		const ok = await advancePhase(confirmAdvance.id);
+		const ok = await advancePhase(confirmAdvance.id, confirmAdvance.toPhase);
 		advancingId = null;
 		confirmAdvance = null;
 		if (!ok) {
@@ -255,12 +255,14 @@
 </div>
 
 {#if confirmAdvance}
+	{@const cycle = cycles.find((c) => c.id === confirmAdvance!.id)}
+	{@const isAdvance = getNextPhase(cycle?.current_phase ?? 'asignacion') === confirmAdvance.toPhase}
 	<dialog class="modal modal-open">
 		<div class="modal-box">
-			<h3 class="font-bold text-lg">Avanzar fase del ciclo</h3>
+			<h3 class="font-bold text-lg">{isAdvance ? 'Avanzar' : 'Retroceder'} fase del ciclo</h3>
 			<p class="py-4">
-				¿Deseas avanzar el ciclo {cycles.find((c) => c.id === confirmAdvance!.id)?.year} de
-				<span class="font-medium">{API_PHASE_LABELS[confirmAdvance.toPhase === 'avance' ? 'asignacion' : 'avance']}</span>
+				¿Deseas {isAdvance ? 'avanzar' : 'retroceder'} el ciclo {cycle?.year} de
+				<span class="font-medium">{API_PHASE_LABELS[cycle?.current_phase ?? 'asignacion']}</span>
 				a
 				<span class="font-medium">{API_PHASE_LABELS[confirmAdvance.toPhase]}</span>?
 			</p>
