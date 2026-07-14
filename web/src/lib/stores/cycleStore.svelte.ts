@@ -1,5 +1,6 @@
 import { client } from '$lib/api/client';
 import { getSession } from '$lib/api/session.svelte';
+import { loadCycle } from '$lib/api/cycle.svelte';
 import type { Cycle, PhaseTransition, ApiCyclePhase } from '$lib/types/cycle';
 import type { components } from '$lib/api/schemas/cycle';
 
@@ -203,6 +204,8 @@ export async function advancePhase(cycleId: string, toPhase: ApiCyclePhase): Pro
 					}
 				: c
 		);
+		// sync getActivePhase() consumers (cycle.svelte.ts)
+		loadCycle();
 		return true;
 	} catch (e) {
 		error = e instanceof Error ? e.message : 'Error al avanzar fase';

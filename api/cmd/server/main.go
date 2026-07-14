@@ -273,7 +273,7 @@ func main() {
 	authSvc := authsvc.NewAuthService(sessionStore, employeeReader, db)
 
 	// Goal services
-	phaseChecker := nopPhaseChecker{}
+	phaseChecker := goalsvc.NewCyclePhaseCheck(cycleRepo, employeeRepo, orgNodeRepo)
 	phaseCheck := goalsvc.NewPhaseCheck(phaseChecker)
 
 	catSvc := goalsvc.NewCategoryService(catRepo, pillarRepo, phaseCheck)
