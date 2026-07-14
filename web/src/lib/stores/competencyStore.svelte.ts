@@ -41,6 +41,7 @@ function resolveProfileUuid(name: EvaluationProfile): string {
 let data = $state<StoreData | null>(null);
 let loading = $state(true);
 let error = $state<string | null>(null);
+let currentType: 'competencias' | 'metas' | undefined = undefined;
 
 /** @returns true while load() is in progress. */
 export function isLoading(): boolean {
@@ -61,6 +62,9 @@ export async function load(type?: 'competencias' | 'metas'): Promise<void> {
 }
 
 async function _doLoad(type?: 'competencias' | 'metas'): Promise<void> {
+    if (type !== undefined) {
+        currentType = type;
+    }
     loading = true;
     error = null;
 
@@ -232,9 +236,9 @@ async function _doLoad(type?: 'competencias' | 'metas'): Promise<void> {
     }
 }
 
-/** Alias for load(). */
+/** Reload with the last-used type filter. */
 export function reload(): Promise<void> {
-    return load();
+    return load(currentType);
 }
 
 // ─── Getters: Profiles ────────────────────────────────────────────────────────
