@@ -166,7 +166,7 @@ async function getCycle(cycleId: string): Promise<Cycle | null> {
 	};
 }
 
-export async function advancePhase(cycleId: string): Promise<boolean> {
+export async function advancePhase(cycleId: string, toPhase: ApiCyclePhase): Promise<boolean> {
 	// ponytail: refresh cycle first to get latest version (avoids stale _loaded guard)
 	const fresh = await getCycle(cycleId);
 	if (!fresh) return false;
@@ -180,7 +180,7 @@ export async function advancePhase(cycleId: string): Promise<boolean> {
 					'Idempotency-Key': crypto.randomUUID()
 				}
 			},
-			body: { trigger: 'manual_rh', reason: '' }
+			body: { trigger: 'manual_rh', to_phase: toPhase, reason: '' }
 		});
 
 		if (apiError) {
