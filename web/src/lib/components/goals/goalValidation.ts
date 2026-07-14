@@ -32,7 +32,7 @@ export function validateGoal(data: {
   if (!data.name.trim()) return 'El nombre es obligatorio.';
   if (!data.description.trim()) return 'La descripción es obligatoria.';
   if (data.weight < 0 || data.weight > 100) return 'El peso debe estar entre 0 y 100.';
-  if (data.targetValue <= 0) return 'El valor objetivo debe ser mayor a 0.';
+  if (data.targetValue < 0) return 'El valor objetivo no puede ser negativo.';
   if (data.direction === 'descendente') {
     if (data.baselineValue === undefined || data.baselineValue === null || isNaN(data.baselineValue))
       return 'El valor inicial es obligatorio para metas descendentes.';

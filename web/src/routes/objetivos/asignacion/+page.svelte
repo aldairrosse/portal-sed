@@ -250,6 +250,33 @@
         deleteCategoryComment(catId, commentId);
     }
 
+    // ─── Assignment comment modal state ────────────────────────────────────
+
+    let showAssignmentCommentModal = $state(false);
+    let assignmentCommentTarget: EmployeeAssignment | null = $state(null);
+
+    $effect(() => {
+        const t = targetAssignment;
+        if (t?.id && !t.id.startsWith('stub-')) {
+            loadAssignmentComments(t.id);
+        }
+    });
+
+    function openAssignmentComments() {
+        if (!targetAssignment) return;
+        assignmentCommentTarget = targetAssignment;
+        loadAssignmentComments(targetAssignment.id);
+        showAssignmentCommentModal = true;
+    }
+
+    function handleAddAssignmentComment(assignmentId: string, content: string) {
+        addAssignmentComment(assignmentId, viewerEmployeeId, session.user?.name ?? "", content);
+    }
+
+    function handleDeleteAssignmentComment(assignmentId: string, commentId: string) {
+        deleteAssignmentComment(assignmentId, commentId);
+    }
+
     // ─── Existing page state ─────────────────────────────────────────────────
 
     let creatingCategory = $state(false);
@@ -487,15 +514,6 @@
         openRequestModal("category", category.id, category.name);
     }
 
-    function handleRequestAssignmentChange() {
-        if (!targetAssignment) return;
-        openRequestModal("assignment", targetAssignment.id, targetEmployeeName);
-    }
-
-    function handleRequestChangeCreated() {
-        loadAllGoalComments();
-    }
-
     function handleRequestAddComment(entityId: string, content: string) {
         if (requestEntityType === "goal") {
             addGoalComment(entityId, viewerEmployeeId, session.user?.name ?? "", content);
@@ -655,13 +673,17 @@
                         Enviar asignación
                     </button>
                 {:else if mode === "reader"}
+                    {@const count = assignmentCommentTarget?.id ? getAssignmentComments(assignmentCommentTarget.id).length : 0}
                     <button
                         class="btn btn-primary btn-sm ml-auto"
-                        onclick={handleRequestAssignmentChange}
+                        onclick={openAssignmentComments}
                         aria-label="Comentar en asignación"
                     >
                         <MessageCircle class="w-4 h-4" />
                         Comentar
+                        {#if count > 0}
+                            <span class="badge badge-sm">{count}</span>
+                        {/if}
                     </button>
                 {/if}
             </div>
@@ -840,7 +862,6 @@
         entityName={requestEntityName}
         requestedBy={viewerEmployeeId}
         onClose={closeRequestModal}
-        onCreated={handleRequestChangeCreated}
         comments={requestComments}
         onAddComment={handleRequestAddComment}
         currentUserId={viewerEmployeeId}
@@ -869,6 +890,19 @@
         onClose={() => (showCategoryCommentModal = false)}
         currentUserId={viewerEmployeeId}
         category={commentCategory}
+    />
+{/if}
+
+{#if showAssignmentCommentModal && assignmentCommentTarget}
+    <CommentPopover
+        open={showAssignmentCommentModal}
+        goal={null}
+        comments={getAssignmentComments(assignmentCommentTarget.id)}
+        onAdd={handleAddAssignmentComment}
+        onDelete={handleDeleteAssignmentComment}
+        onClose={() => (showAssignmentCommentModal = false)}
+        currentUserId={viewerEmployeeId}
+        assignment={{ id: assignmentCommentTarget.id, name: assignmentCommentTarget.employeeName || assignmentCommentTarget.employeeId }}
     />
 {/if}
 
