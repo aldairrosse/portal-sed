@@ -181,7 +181,8 @@ function normalizeApiData(
 			id: ac.id ?? crypto.randomUUID(),
 			name: ac.name ?? '',
 			description: ac.description ?? '',
-			weight: ac.weight ?? 0
+			weight: ac.weight ?? 0,
+			pillarId: (ac as any).pillar_id ?? undefined
 		});
 
 		const catId = ac.id ?? '';
@@ -617,9 +618,11 @@ export function isCategoryGoalsWeightValid(categoryId: string): boolean {
 
 export async function addCategory(category: GoalCategory): Promise<void> {
 	const empId = getEmployeeId();
+	const body: Record<string, unknown> = { name: category.name, description: category.description, weight: category.weight };
+	if (category.pillarId) body.pillar_id = category.pillarId;
 	const { error: apiError } = await client.POST('/employees/{empId}/categories', {
 		params: { path: { empId } },
-		body: { name: category.name, description: category.description, weight: category.weight }
+		body
 	});
 	if (apiError) throw new Error((apiError as { error?: { message?: string } })?.error?.message ?? 'Error al crear categoría');
 	await reload();
@@ -627,13 +630,15 @@ export async function addCategory(category: GoalCategory): Promise<void> {
 
 export async function updateCategory(id: string, updates: Partial<Omit<GoalCategory, 'id'>>): Promise<void> {
 	const empId = getEmployeeId();
+	const body: Record<string, unknown> = {
+		name: updates.name ?? '',
+		description: updates.description ?? '',
+		weight: updates.weight ?? 0
+	};
+	if (updates.pillarId) body.pillar_id = updates.pillarId;
 	const { error: apiError } = await client.PUT('/employees/{empId}/categories/{catId}', {
 		params: { path: { empId, catId: id } },
-		body: {
-			name: updates.name ?? '',
-			description: updates.description ?? '',
-			weight: updates.weight ?? 0
-		}
+		body
 	});
 	if (apiError) throw new Error((apiError as { error?: { message?: string } })?.error?.message ?? 'Error al actualizar categoría');
 	await reload();

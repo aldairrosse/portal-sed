@@ -1,21 +1,22 @@
 <script lang="ts">
-	import { Pencil, Trash2, Plus, MessageSquare, MessageCircle, Check } from '@lucide/svelte';
+	import { Pencil, Trash2, Plus, MessageCircle } from '@lucide/svelte';
 	import type { Goal, GoalCategory, GoalUnit, KPI, CyclePhase } from '$lib/types/goal';
-	import { validateCategory } from './goalValidation';
 	import WeightIndicator from './WeightIndicator.svelte';
 	import ProgressIndicator from './ProgressIndicator.svelte';
 	import GoalRow from './GoalRow.svelte';
 	import GoalForm from './GoalForm.svelte';
+	import CategoryCreateForm from './CategoryCreateForm.svelte';
 
 	interface Props {
 		category: GoalCategory;
 		goals: Goal[];
 		getKpisForGoal: (goalId: string) => KPI[];
-		onSaveCategory: (data: { id?: string; name: string; description: string; weight: number }) => void;
+		onSaveCategory: (data: { id?: string; name: string; description: string; weight: number; pillarId?: string }) => void;
 		onDeleteCategory: (categoryId: string) => void;
 		onSaveGoal: (data: { id?: string; categoryId: string; name: string; description: string; unit: GoalUnit; weight: number; targetValue: number; direction: 'ascendente' | 'descendente'; baselineValue?: number; linkedKpiIds: string[] }) => void;
 		onDeleteGoal: (goalId: string) => void;
 		mode?: 'editor' | 'reader';
+		pillars?: { value: string; label: string }[];
 		onRequestChangeCategory?: (category: GoalCategory) => void;
 		onSaveProposal?: (goalId: string, data: { name: string; description: string; unit: GoalUnit; weight: number; targetValue: number; direction: 'ascendente' | 'descendente'; baselineValue?: number; kpiIds: string[] }) => void | Promise<void>;
 		onAcceptProposal?: (goalId: string, proposalId: string) => void | Promise<void>;
@@ -42,6 +43,7 @@
 		onSaveGoal,
 		onDeleteGoal,
 		mode = 'editor',
+		pillars = [],
 		onRequestChangeCategory,
 		onSaveProposal,
 		onAcceptProposal,
@@ -62,28 +64,17 @@
 	// ─── Category inline edit state ────────────────────────────────────────
 
 	let isEditingCategory = $state(false);
-	let editCatName = $state('');
-	let editCatDesc = $state('');
-	let editCatWeight = $state(0);
-	let editCatError = $state('');
 
 	function handleStartEditCategory() {
-		editCatName = category.name;
-		editCatDesc = category.description;
-		editCatWeight = category.weight;
-		editCatError = '';
 		isEditingCategory = true;
 	}
 
 	function handleCancelEditCategory() {
 		isEditingCategory = false;
-		editCatError = '';
 	}
 
-	async function handleSaveCategoryInline() {
-		const err = validateCategory({ name: editCatName, description: editCatDesc, weight: editCatWeight, categoryId: category.id });
-		if (err) { editCatError = err; return; }
-		await onSaveCategory({ id: category.id, name: editCatName.trim(), description: editCatDesc.trim(), weight: editCatWeight });
+	async function handleSaveCategoryInline(data: { id?: string; name: string; description: string; weight: number; pillarId?: string }) {
+		await onSaveCategory(data);
 		isEditingCategory = false;
 	}
 
@@ -140,27 +131,14 @@
 		<div class="flex flex-wrap items-start justify-between gap-4 mb-4">
 			{#if isEditingCategory}
 				<div class="flex-1 min-w-0 w-full">
-					<div class="border border-base-300 rounded-lg p-4 bg-base-200/50 w-full">
-						{#if editCatError}<div class="alert alert-error text-sm mb-3" role="alert"><span>{editCatError}</span></div>{/if}
-						<div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-							<div class="form-control">
-								<label class="label" for="edit-cat-name-{category.id}"><span class="label-text text-xs">Nombre</span></label>
-								<input id="edit-cat-name-{category.id}" type="text" class="input input-bordered input-sm w-full" bind:value={editCatName} placeholder="Nombre" required />
-							</div>
-							<div class="form-control">
-								<label class="label" for="edit-cat-desc-{category.id}"><span class="label-text text-xs">Descripción</span></label>
-								<textarea id="edit-cat-desc-{category.id}" class="textarea textarea-bordered textarea-sm w-full" rows={1} bind:value={editCatDesc} placeholder="Descripción" required></textarea>
-							</div>
-							<div class="form-control">
-								<label class="label" for="edit-cat-weight-{category.id}"><span class="label-text text-xs">Peso (%)</span></label>
-								<input id="edit-cat-weight-{category.id}" type="number" class="input input-bordered input-sm w-full" bind:value={editCatWeight} min={0} max={100} step={0.1} required />
-							</div>
-						</div>
-						<div class="flex justify-end gap-2 mt-3">
-							<button class="btn btn-ghost btn-sm" onclick={handleCancelEditCategory}>Cancelar</button>
-							<button class="btn btn-primary btn-sm" onclick={handleSaveCategoryInline}><Check class="w-4 h-4" /> Guardar categoría</button>
-						</div>
-					</div>
+					<CategoryCreateForm
+						mode="edit"
+						{category}
+						{pillars}
+						onSave={handleSaveCategoryInline}
+						onCancel={handleCancelEditCategory}
+						submitLabel="Guardar cambios"
+					/>
 				</div>
 			{:else}
 				<div class="flex-1 min-w-0">

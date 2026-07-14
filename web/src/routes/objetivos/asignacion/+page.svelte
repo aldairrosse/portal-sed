@@ -61,6 +61,7 @@
         getRoot,
     } from "$lib/stores/orgHierarchyStore.svelte";
     import { loadTeam, getTeamMembers } from "$lib/stores/teamStore.svelte";
+    import { load as loadPillars, getPillars } from "$lib/stores/competencyStore.svelte";
     import WeightIndicator from "$lib/components/goals/WeightIndicator.svelte";
     import ProgressIndicator from "$lib/components/goals/ProgressIndicator.svelte";
     import CategoryCard from "$lib/components/goals/CategoryCard.svelte";
@@ -86,6 +87,13 @@
     $effect(() => {
         loadOrgHierarchy();
     });
+    $effect(() => {
+        loadPillars('metas');
+    });
+
+    const pillarOptions = $derived(
+        getPillars().map(p => ({ value: p.id, label: p.name }))
+    );
 
     // ─── Mode detection ──────────────────────────────────────────────────────
 
@@ -314,6 +322,7 @@
         name: string;
         description: string;
         weight: number;
+        pillarId?: string;
     }) {
         try {
             if (data.id) {
@@ -321,6 +330,7 @@
                     name: data.name,
                     description: data.description,
                     weight: data.weight,
+                    pillarId: data.pillarId,
                 });
             } else {
                 const newCat: GoalCategory = {
@@ -328,6 +338,7 @@
                     name: data.name,
                     description: data.description,
                     weight: data.weight,
+                    pillarId: data.pillarId,
                 };
                 await addCategory(newCat);
             }
@@ -764,6 +775,7 @@
                         onSaveGoal={handleSaveGoal}
                         onDeleteGoal={handleDeleteGoal}
                         {mode}
+                        {pillars}
                         onRequestChangeCategory={handleRequestChangeCategory}
                         onSaveProposal={handleSaveProposal}
                         onAcceptProposal={handleAcceptProposal}
@@ -796,6 +808,8 @@
             <div class="pt-2">
                 {#if creatingCategory}
                     <CategoryCreateForm
+                        mode="create"
+                        pillars={pillarOptions}
                         onSave={(data) => handleSaveCategory(data)}
                         onCancel={() => {
                             creatingCategory = false;

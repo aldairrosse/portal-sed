@@ -31,6 +31,7 @@ export interface GoalCategory {
 	name: string;
 	description: string;
 	weight: number;
+	pillarId?: string;
 	comments?: GoalComment[];
 }
 
