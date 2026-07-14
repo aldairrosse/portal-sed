@@ -28,6 +28,7 @@ interface StoreData {
 	goalKpiLinks: GoalKpiLink[];
 	assignments: EmployeeAssignment[];
 	changeRequests: ChangeRequest[];
+	assignmentComments: SvelteMap<string, GoalComment[]>;
 }
 
 // ─── Tolerance ────────────────────────────────────────────────────────────────
@@ -97,6 +98,7 @@ function mapToGoalComment(raw: unknown): GoalComment {
         createdAt: (c.created_at as string) ?? '',
         goalId: c.goal_id as string | undefined,
         categoryId: c.category_id as string | undefined,
+        assignmentId: c.assignment_id as string | undefined,
     };
 }
 
@@ -249,7 +251,8 @@ function normalizeApiData(
 		kpis: [...kpisMap.values()],
 		goalKpiLinks,
 		assignments,
-		changeRequests: []
+		changeRequests: [],
+		assignmentComments: new SvelteMap<string, GoalComment[]>(),
 	};
 }
 
@@ -1025,4 +1028,53 @@ export async function deleteCategoryComment(categoryId: string, commentId: strin
 				: c
 		)
 	};
+}
+
+// ─── Mutations: Assignment Comments ──────────────────────────────────────────
+
+export function getAssignmentComments(assignmentId: string): GoalComment[] {
+	return storeState.data?.assignmentComments.get(assignmentId) ?? [];
+}
+
+export async function loadAssignmentComments(assignmentId: string): Promise<void> {
+	if (!storeState.data) return;
+	const { data, error: apiError } = await client.GET('/assignments/{assignId}/comments', {
+		params: { path: { assignId: assignmentId } }
+	});
+	if (apiError || !data) return;
+	const comments = (data as unknown as GoalComment[]).map(mapToGoalComment);
+	const newMap = new SvelteMap(storeState.data.assignmentComments);
+	newMap.set(assignmentId, comments);
+	storeState.data = { ...storeState.data, assignmentComments: newMap };
+}
+
+export async function addAssignmentComment(
+	assignmentId: string,
+	authorId: string,
+	authorName: string,
+	content: string
+): Promise<void> {
+	const { data, error: apiError } = await client.POST('/assignments/{assignId}/comments', {
+		params: { path: { assignId: assignmentId } },
+		body: { content, author_id: authorId, author_name: authorName }
+	});
+	if (apiError) throw new Error('Error al guardar comentario');
+	if (data) {
+		const comment = mapToGoalComment(data);
+		const existing = storeState.data?.assignmentComments.get(assignmentId) ?? [];
+		const newMap = new SvelteMap(storeState.data?.assignmentComments ?? new SvelteMap());
+		newMap.set(assignmentId, [...existing, comment]);
+		storeState.data = { ...storeState.data!, assignmentComments: newMap };
+	}
+}
+
+export async function deleteAssignmentComment(assignmentId: string, commentId: string): Promise<void> {
+	const { error: apiError } = await client.DELETE('/assignments/{assignId}/comments/{commentId}', {
+		params: { path: { assignId: assignmentId, commentId } }
+	});
+	if (apiError) throw new Error('Error al eliminar comentario');
+	const existing = storeState.data?.assignmentComments.get(assignmentId) ?? [];
+	const newMap = new SvelteMap(storeState.data?.assignmentComments ?? new SvelteMap());
+	newMap.set(assignmentId, existing.filter((c) => c.id !== commentId));
+	storeState.data = { ...storeState.data!, assignmentComments: newMap };
 }
