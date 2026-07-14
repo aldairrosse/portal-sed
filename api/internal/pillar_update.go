@@ -92,6 +92,20 @@ func (_u *PillarUpdate) ClearDescription() *PillarUpdate {
 	return _u
 }
 
+// SetType sets the "type" field.
+func (_u *PillarUpdate) SetType(v pillar.Type) *PillarUpdate {
+	_u.mutation.SetType(v)
+	return _u
+}
+
+// SetNillableType sets the "type" field if the given value is not nil.
+func (_u *PillarUpdate) SetNillableType(v *pillar.Type) *PillarUpdate {
+	if v != nil {
+		_u.SetType(*v)
+	}
+	return _u
+}
+
 // AddCompetencyIDs adds the "competencies" edge to the Competency entity by IDs.
 func (_u *PillarUpdate) AddCompetencyIDs(ids ...uuid.UUID) *PillarUpdate {
 	_u.mutation.AddCompetencyIDs(ids...)
@@ -217,6 +231,11 @@ func (_u *PillarUpdate) check() error {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`internal: validator failed for field "Pillar.name": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.GetType(); ok {
+		if err := pillar.TypeValidator(v); err != nil {
+			return &ValidationError{Name: "type", err: fmt.Errorf(`internal: validator failed for field "Pillar.type": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -249,6 +268,9 @@ func (_u *PillarUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.DescriptionCleared() {
 		_spec.ClearField(pillar.FieldDescription, field.TypeString)
+	}
+	if value, ok := _u.mutation.GetType(); ok {
+		_spec.SetField(pillar.FieldType, field.TypeEnum, value)
 	}
 	if _u.mutation.CompetenciesCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -421,6 +443,20 @@ func (_u *PillarUpdateOne) ClearDescription() *PillarUpdateOne {
 	return _u
 }
 
+// SetType sets the "type" field.
+func (_u *PillarUpdateOne) SetType(v pillar.Type) *PillarUpdateOne {
+	_u.mutation.SetType(v)
+	return _u
+}
+
+// SetNillableType sets the "type" field if the given value is not nil.
+func (_u *PillarUpdateOne) SetNillableType(v *pillar.Type) *PillarUpdateOne {
+	if v != nil {
+		_u.SetType(*v)
+	}
+	return _u
+}
+
 // AddCompetencyIDs adds the "competencies" edge to the Competency entity by IDs.
 func (_u *PillarUpdateOne) AddCompetencyIDs(ids ...uuid.UUID) *PillarUpdateOne {
 	_u.mutation.AddCompetencyIDs(ids...)
@@ -559,6 +595,11 @@ func (_u *PillarUpdateOne) check() error {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`internal: validator failed for field "Pillar.name": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.GetType(); ok {
+		if err := pillar.TypeValidator(v); err != nil {
+			return &ValidationError{Name: "type", err: fmt.Errorf(`internal: validator failed for field "Pillar.type": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -608,6 +649,9 @@ func (_u *PillarUpdateOne) sqlSave(ctx context.Context) (_node *Pillar, err erro
 	}
 	if _u.mutation.DescriptionCleared() {
 		_spec.ClearField(pillar.FieldDescription, field.TypeString)
+	}
+	if value, ok := _u.mutation.GetType(); ok {
+		_spec.SetField(pillar.FieldType, field.TypeEnum, value)
 	}
 	if _u.mutation.CompetenciesCleared() {
 		edge := &sqlgraph.EdgeSpec{

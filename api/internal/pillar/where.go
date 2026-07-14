@@ -341,6 +341,26 @@ func DescriptionContainsFold(v string) predicate.Pillar {
 	return predicate.Pillar(sql.FieldContainsFold(FieldDescription, v))
 }
 
+// TypeEQ applies the EQ predicate on the "type" field.
+func TypeEQ(v Type) predicate.Pillar {
+	return predicate.Pillar(sql.FieldEQ(FieldType, v))
+}
+
+// TypeNEQ applies the NEQ predicate on the "type" field.
+func TypeNEQ(v Type) predicate.Pillar {
+	return predicate.Pillar(sql.FieldNEQ(FieldType, v))
+}
+
+// TypeIn applies the In predicate on the "type" field.
+func TypeIn(vs ...Type) predicate.Pillar {
+	return predicate.Pillar(sql.FieldIn(FieldType, vs...))
+}
+
+// TypeNotIn applies the NotIn predicate on the "type" field.
+func TypeNotIn(vs ...Type) predicate.Pillar {
+	return predicate.Pillar(sql.FieldNotIn(FieldType, vs...))
+}
+
 // HasCompetencies applies the HasEdge predicate on the "competencies" edge.
 func HasCompetencies() predicate.Pillar {
 	return predicate.Pillar(func(s *sql.Selector) {

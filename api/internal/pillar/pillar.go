@@ -3,6 +3,7 @@
 package pillar
 
 import (
+	"fmt"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
@@ -25,6 +26,8 @@ const (
 	FieldName = "name"
 	// FieldDescription holds the string denoting the description field in the database.
 	FieldDescription = "description"
+	// FieldType holds the string denoting the type field in the database.
+	FieldType = "type"
 	// EdgeCompetencies holds the string denoting the competencies edge name in mutations.
 	EdgeCompetencies = "competencies"
 	// EdgeScaleCriteria holds the string denoting the scale_criteria edge name in mutations.
@@ -55,6 +58,7 @@ var Columns = []string{
 	FieldVersion,
 	FieldName,
 	FieldDescription,
+	FieldType,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -83,6 +87,32 @@ var (
 	// DefaultID holds the default value on creation for the "id" field.
 	DefaultID func() uuid.UUID
 )
+
+// Type defines the type for the "type" enum field.
+type Type string
+
+// TypeCompetencias is the default value of the Type enum.
+const DefaultType = TypeCompetencias
+
+// Type values.
+const (
+	TypeCompetencias Type = "competencias"
+	TypeMetas        Type = "metas"
+)
+
+func (_type Type) String() string {
+	return string(_type)
+}
+
+// TypeValidator is a validator for the "type" field enum values. It is called by the builders before save.
+func TypeValidator(_type Type) error {
+	switch _type {
+	case TypeCompetencias, TypeMetas:
+		return nil
+	default:
+		return fmt.Errorf("pillar: invalid enum value for type field: %q", _type)
+	}
+}
 
 // OrderOption defines the ordering options for the Pillar queries.
 type OrderOption func(*sql.Selector)
@@ -115,6 +145,11 @@ func ByName(opts ...sql.OrderTermOption) OrderOption {
 // ByDescription orders the results by the description field.
 func ByDescription(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldDescription, opts...).ToFunc()
+}
+
+// ByType orders the results by the type field.
+func ByType(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldType, opts...).ToFunc()
 }
 
 // ByCompetenciesCount orders the results by competencies count.

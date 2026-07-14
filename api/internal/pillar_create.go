@@ -85,6 +85,20 @@ func (_c *PillarCreate) SetNillableDescription(v *string) *PillarCreate {
 	return _c
 }
 
+// SetType sets the "type" field.
+func (_c *PillarCreate) SetType(v pillar.Type) *PillarCreate {
+	_c.mutation.SetType(v)
+	return _c
+}
+
+// SetNillableType sets the "type" field if the given value is not nil.
+func (_c *PillarCreate) SetNillableType(v *pillar.Type) *PillarCreate {
+	if v != nil {
+		_c.SetType(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *PillarCreate) SetID(v uuid.UUID) *PillarCreate {
 	_c.mutation.SetID(v)
@@ -176,6 +190,10 @@ func (_c *PillarCreate) defaults() {
 		v := pillar.DefaultVersion
 		_c.mutation.SetVersion(v)
 	}
+	if _, ok := _c.mutation.GetType(); !ok {
+		v := pillar.DefaultType
+		_c.mutation.SetType(v)
+	}
 	if _, ok := _c.mutation.ID(); !ok {
 		v := pillar.DefaultID()
 		_c.mutation.SetID(v)
@@ -204,6 +222,14 @@ func (_c *PillarCreate) check() error {
 	if v, ok := _c.mutation.Name(); ok {
 		if err := pillar.NameValidator(v); err != nil {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`internal: validator failed for field "Pillar.name": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.GetType(); !ok {
+		return &ValidationError{Name: "type", err: errors.New(`internal: missing required field "Pillar.type"`)}
+	}
+	if v, ok := _c.mutation.GetType(); ok {
+		if err := pillar.TypeValidator(v); err != nil {
+			return &ValidationError{Name: "type", err: fmt.Errorf(`internal: validator failed for field "Pillar.type": %w`, err)}
 		}
 	}
 	return nil
@@ -260,6 +286,10 @@ func (_c *PillarCreate) createSpec() (*Pillar, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.Description(); ok {
 		_spec.SetField(pillar.FieldDescription, field.TypeString, value)
 		_node.Description = value
+	}
+	if value, ok := _c.mutation.GetType(); ok {
+		_spec.SetField(pillar.FieldType, field.TypeEnum, value)
+		_node.Type = value
 	}
 	if nodes := _c.mutation.CompetenciesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

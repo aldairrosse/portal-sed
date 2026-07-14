@@ -30,6 +30,9 @@ func (Pillar) Fields() []ent.Field {
 			NotEmpty(),
 		field.Text("description").
 			Optional(),
+		field.Enum("type").
+			Values("competencias", "metas").
+			Default("competencias"),
 	}
 }
 

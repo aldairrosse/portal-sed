@@ -28,6 +28,8 @@ type Pillar struct {
 	Name string `json:"name,omitempty"`
 	// Description holds the value of the "description" field.
 	Description string `json:"description,omitempty"`
+	// Type holds the value of the "type" field.
+	Type pillar.Type `json:"type,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the PillarQuery when eager-loading is set.
 	Edges        PillarEdges `json:"edges"`
@@ -70,7 +72,7 @@ func (*Pillar) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case pillar.FieldVersion:
 			values[i] = new(sql.NullInt64)
-		case pillar.FieldName, pillar.FieldDescription:
+		case pillar.FieldName, pillar.FieldDescription, pillar.FieldType:
 			values[i] = new(sql.NullString)
 		case pillar.FieldCreatedAt, pillar.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -126,6 +128,12 @@ func (_m *Pillar) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field description", values[i])
 			} else if value.Valid {
 				_m.Description = value.String
+			}
+		case pillar.FieldType:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field type", values[i])
+			} else if value.Valid {
+				_m.Type = pillar.Type(value.String)
 			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
@@ -187,6 +195,9 @@ func (_m *Pillar) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("description=")
 	builder.WriteString(_m.Description)
+	builder.WriteString(", ")
+	builder.WriteString("type=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Type))
 	builder.WriteByte(')')
 	return builder.String()
 }

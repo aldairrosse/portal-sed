@@ -682,6 +682,7 @@ var (
 		{Name: "version", Type: field.TypeInt, Default: 1},
 		{Name: "name", Type: field.TypeString, Unique: true},
 		{Name: "description", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "type", Type: field.TypeEnum, Enums: []string{"competencias", "metas"}, Default: "competencias"},
 	}
 	// PillarsTable holds the schema information for the "pillars" table.
 	PillarsTable = &schema.Table{

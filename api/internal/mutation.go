@@ -22426,6 +22426,7 @@ type PillarMutation struct {
 	addversion            *int
 	name                  *string
 	description           *string
+	_type                 *pillar.Type
 	clearedFields         map[string]struct{}
 	competencies          map[uuid.UUID]struct{}
 	removedcompetencies   map[uuid.UUID]struct{}
@@ -22755,6 +22756,42 @@ func (m *PillarMutation) ResetDescription() {
 	delete(m.clearedFields, pillar.FieldDescription)
 }
 
+// SetType sets the "type" field.
+func (m *PillarMutation) SetType(pi pillar.Type) {
+	m._type = &pi
+}
+
+// GetType returns the value of the "type" field in the mutation.
+func (m *PillarMutation) GetType() (r pillar.Type, exists bool) {
+	v := m._type
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldType returns the old "type" field's value of the Pillar entity.
+// If the Pillar object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PillarMutation) OldType(ctx context.Context) (v pillar.Type, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldType is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldType requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldType: %w", err)
+	}
+	return oldValue.Type, nil
+}
+
+// ResetType resets all changes to the "type" field.
+func (m *PillarMutation) ResetType() {
+	m._type = nil
+}
+
 // AddCompetencyIDs adds the "competencies" edge to the Competency entity by ids.
 func (m *PillarMutation) AddCompetencyIDs(ids ...uuid.UUID) {
 	if m.competencies == nil {
@@ -22897,7 +22934,7 @@ func (m *PillarMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *PillarMutation) Fields() []string {
-	fields := make([]string, 0, 5)
+	fields := make([]string, 0, 6)
 	if m.created_at != nil {
 		fields = append(fields, pillar.FieldCreatedAt)
 	}
@@ -22912,6 +22949,9 @@ func (m *PillarMutation) Fields() []string {
 	}
 	if m.description != nil {
 		fields = append(fields, pillar.FieldDescription)
+	}
+	if m._type != nil {
+		fields = append(fields, pillar.FieldType)
 	}
 	return fields
 }
@@ -22931,6 +22971,8 @@ func (m *PillarMutation) Field(name string) (ent.Value, bool) {
 		return m.Name()
 	case pillar.FieldDescription:
 		return m.Description()
+	case pillar.FieldType:
+		return m.GetType()
 	}
 	return nil, false
 }
@@ -22950,6 +22992,8 @@ func (m *PillarMutation) OldField(ctx context.Context, name string) (ent.Value, 
 		return m.OldName(ctx)
 	case pillar.FieldDescription:
 		return m.OldDescription(ctx)
+	case pillar.FieldType:
+		return m.OldType(ctx)
 	}
 	return nil, fmt.Errorf("unknown Pillar field %s", name)
 }
@@ -22993,6 +23037,13 @@ func (m *PillarMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetDescription(v)
+		return nil
+	case pillar.FieldType:
+		v, ok := value.(pillar.Type)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetType(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Pillar field %s", name)
@@ -23081,6 +23132,9 @@ func (m *PillarMutation) ResetField(name string) error {
 		return nil
 	case pillar.FieldDescription:
 		m.ResetDescription()
+		return nil
+	case pillar.FieldType:
+		m.ResetType()
 		return nil
 	}
 	return fmt.Errorf("unknown Pillar field %s", name)
