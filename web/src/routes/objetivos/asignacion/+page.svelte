@@ -775,7 +775,7 @@
                         onSaveGoal={handleSaveGoal}
                         onDeleteGoal={handleDeleteGoal}
                         {mode}
-                        {pillars}
+                        pillars={pillarOptions}
                         onRequestChangeCategory={handleRequestChangeCategory}
                         onSaveProposal={handleSaveProposal}
                         onAcceptProposal={handleAcceptProposal}
