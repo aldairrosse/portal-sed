@@ -54,6 +54,10 @@
         createGoalProposal,
         acceptGoalProposal,
         rejectGoalProposal,
+        getAssignmentComments,
+        loadAssignmentComments,
+        addAssignmentComment,
+        deleteAssignmentComment,
     } from "$lib/stores/goalsStore.svelte";
     import { getSession } from "$lib/api/session.svelte";
     import {
