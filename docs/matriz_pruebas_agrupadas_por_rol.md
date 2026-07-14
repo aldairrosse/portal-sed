@@ -60,7 +60,7 @@ Cambios
 
 > Agregar gestión y visualización de pilares de metas
 
-> Ir atrás en una fase
+> Ir atrás en una fase. OK
 
 > Borrar todo en metas
 
