@@ -31,13 +31,14 @@ var appBaseURL = func() string {
 // --- DTOs ---
 
 type GoalComment struct {
-	ID         string  `json:"id"`
-	GoalID     *string `json:"goal_id,omitempty"`
-	CategoryID *string `json:"category_id,omitempty"`
-	AuthorID   string  `json:"author_id"`
-	AuthorName string  `json:"author_name"`
-	Content    string  `json:"content"`
-	CreatedAt  string  `json:"created_at"`
+	ID           string  `json:"id"`
+	GoalID       *string `json:"goal_id,omitempty"`
+	CategoryID   *string `json:"category_id,omitempty"`
+	AssignmentID *string `json:"assignment_id,omitempty"`
+	AuthorID     string  `json:"author_id"`
+	AuthorName   string  `json:"author_name"`
+	Content      string  `json:"content"`
+	CreatedAt    string  `json:"created_at"`
 }
 
 type CreateCommentRequest struct {
@@ -106,7 +107,7 @@ func (h *Handler) ListComments(w http.ResponseWriter, r *http.Request) {
 	}
 
 	rows, err := h.db.Query(`
-		SELECT id, goal_id, category_id, author_id, author_name, content, created_at
+		SELECT id, goal_id, category_id, assignment_id, author_id, author_name, content, created_at
 		FROM goal_comments WHERE goal_id = $1 ORDER BY created_at ASC
 	`, goalID)
 	if err != nil {
@@ -118,7 +119,7 @@ func (h *Handler) ListComments(w http.ResponseWriter, r *http.Request) {
 	var comments []GoalComment
 	for rows.Next() {
 		var c GoalComment
-		if err := rows.Scan(&c.ID, &c.GoalID, &c.CategoryID, &c.AuthorID, &c.AuthorName, &c.Content, &c.CreatedAt); err != nil {
+		if err := rows.Scan(&c.ID, &c.GoalID, &c.CategoryID, &c.AssignmentID, &c.AuthorID, &c.AuthorName, &c.Content, &c.CreatedAt); err != nil {
 			writeError(w, 500, "failed to scan comment")
 			return
 		}
@@ -169,9 +170,9 @@ func (h *Handler) CreateComment(w http.ResponseWriter, r *http.Request) {
 	err := h.db.QueryRow(`
 		INSERT INTO goal_comments (id, goal_id, author_id, author_name, content)
 		VALUES ($1, $2, $3, $4, $5)
-		RETURNING id, goal_id, category_id, author_id, author_name, content, created_at
+		RETURNING id, goal_id, category_id, assignment_id, author_id, author_name, content, created_at
 	`, id, goalID, authorID, authorName, req.Content,
-	).Scan(&comment.ID, &comment.GoalID, &comment.CategoryID, &comment.AuthorID, &comment.AuthorName, &comment.Content, &comment.CreatedAt)
+	).Scan(&comment.ID, &comment.GoalID, &comment.CategoryID, &comment.AssignmentID, &comment.AuthorID, &comment.AuthorName, &comment.Content, &comment.CreatedAt)
 	if err != nil {
 		writeError(w, 500, "failed to create comment")
 		return
@@ -232,7 +233,7 @@ func (h *Handler) ListCategoryComments(w http.ResponseWriter, r *http.Request) {
 	}
 
 	rows, err := h.db.Query(`
-		SELECT id, goal_id, category_id, author_id, author_name, content, created_at
+		SELECT id, goal_id, category_id, assignment_id, author_id, author_name, content, created_at
 		FROM goal_comments WHERE category_id = $1 ORDER BY created_at ASC
 	`, catID)
 	if err != nil {
@@ -244,7 +245,7 @@ func (h *Handler) ListCategoryComments(w http.ResponseWriter, r *http.Request) {
 	var comments []GoalComment
 	for rows.Next() {
 		var c GoalComment
-		if err := rows.Scan(&c.ID, &c.GoalID, &c.CategoryID, &c.AuthorID, &c.AuthorName, &c.Content, &c.CreatedAt); err != nil {
+		if err := rows.Scan(&c.ID, &c.GoalID, &c.CategoryID, &c.AssignmentID, &c.AuthorID, &c.AuthorName, &c.Content, &c.CreatedAt); err != nil {
 			writeError(w, 500, "failed to scan comment")
 			return
 		}
@@ -294,9 +295,9 @@ func (h *Handler) CreateCategoryComment(w http.ResponseWriter, r *http.Request) 
 	err := h.db.QueryRow(`
 		INSERT INTO goal_comments (id, category_id, author_id, author_name, content)
 		VALUES ($1, $2, $3, $4, $5)
-		RETURNING id, goal_id, category_id, author_id, author_name, content, created_at
+		RETURNING id, goal_id, category_id, assignment_id, author_id, author_name, content, created_at
 	`, id, catID, authorID, authorName, req.Content,
-	).Scan(&comment.ID, &comment.GoalID, &comment.CategoryID, &comment.AuthorID, &comment.AuthorName, &comment.Content, &comment.CreatedAt)
+	).Scan(&comment.ID, &comment.GoalID, &comment.CategoryID, &comment.AssignmentID, &comment.AuthorID, &comment.AuthorName, &comment.Content, &comment.CreatedAt)
 	if err != nil {
 		writeError(w, 500, "failed to create category comment")
 		return
@@ -519,6 +520,114 @@ func itoa(n int) string {
 	return string(buf[i:])
 }
 
+// --- Assignment Comments ---
+
+func (h *Handler) ListAssignmentComments(w http.ResponseWriter, r *http.Request) {
+	assignID := chi.URLParam(r, "assignId")
+	if _, err := uuid.Parse(assignID); err != nil {
+		writeError(w, 400, "invalid assignment ID")
+		return
+	}
+
+	rows, err := h.db.Query(`
+		SELECT id, goal_id, category_id, assignment_id, author_id, author_name, content, created_at
+		FROM goal_comments WHERE assignment_id = $1 ORDER BY created_at ASC
+	`, assignID)
+	if err != nil {
+		writeError(w, 500, "failed to list assignment comments")
+		return
+	}
+	defer rows.Close()
+
+	var comments []GoalComment
+	for rows.Next() {
+		var c GoalComment
+		if err := rows.Scan(&c.ID, &c.GoalID, &c.CategoryID, &c.AssignmentID, &c.AuthorID, &c.AuthorName, &c.Content, &c.CreatedAt); err != nil {
+			writeError(w, 500, "failed to scan comment")
+			return
+		}
+		comments = append(comments, c)
+	}
+	if comments == nil {
+		comments = []GoalComment{}
+	}
+	writeJSON(w, 200, comments)
+}
+
+func (h *Handler) CreateAssignmentComment(w http.ResponseWriter, r *http.Request) {
+	assignID := chi.URLParam(r, "assignId")
+	if _, err := uuid.Parse(assignID); err != nil {
+		writeError(w, 400, "invalid assignment ID")
+		return
+	}
+
+	authorID, ok := auth.GetEmployeeID(r.Context())
+	if !ok {
+		writeError(w, 401, "unauthenticated")
+		return
+	}
+
+	var req CreateCommentRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, 400, "invalid request body")
+		return
+	}
+	if req.Content == "" {
+		writeError(w, 400, "content is required")
+		return
+	}
+
+	var authorName string
+	if err := h.db.QueryRow(
+		`SELECT first_name || ' ' || last_name FROM employees WHERE id = $1`,
+		authorID,
+	).Scan(&authorName); err != nil {
+		log.Printf("commentchange: author lookup failed for %s: %v", authorID, err)
+		writeError(w, 500, "failed to resolve author")
+		return
+	}
+
+	id := uuid.New().String()
+	var comment GoalComment
+	err := h.db.QueryRow(`
+		INSERT INTO goal_comments (id, assignment_id, author_id, author_name, content)
+		VALUES ($1, $2, $3, $4, $5)
+		RETURNING id, goal_id, category_id, assignment_id, author_id, author_name, content, created_at
+	`, id, assignID, authorID, authorName, req.Content,
+	).Scan(&comment.ID, &comment.GoalID, &comment.CategoryID, &comment.AssignmentID, &comment.AuthorID, &comment.AuthorName, &comment.Content, &comment.CreatedAt)
+	if err != nil {
+		writeError(w, 500, "failed to create assignment comment")
+		return
+	}
+
+	writeJSON(w, 201, comment)
+}
+
+func (h *Handler) DeleteAssignmentComment(w http.ResponseWriter, r *http.Request) {
+	assignID := chi.URLParam(r, "assignId")
+	commentID := chi.URLParam(r, "commentId")
+	if _, err := uuid.Parse(assignID); err != nil {
+		writeError(w, 400, "invalid assignment ID")
+		return
+	}
+	if _, err := uuid.Parse(commentID); err != nil {
+		writeError(w, 400, "invalid comment ID")
+		return
+	}
+
+	result, err := h.db.Exec(`DELETE FROM goal_comments WHERE id = $1 AND assignment_id = $2`, commentID, assignID)
+	if err != nil {
+		writeError(w, 500, "failed to delete assignment comment")
+		return
+	}
+	n, _ := result.RowsAffected()
+	if n == 0 {
+		writeError(w, 404, "comment not found")
+		return
+	}
+	w.WriteHeader(204)
+}
+
 // RegisterRoutes registers comment and change-request endpoints on the given router.
 // Expected mount: /api/v1
 func RegisterRoutes(r chi.Router, handler *Handler, authSvc *authsvc.AuthService) {
@@ -568,6 +677,23 @@ func RegisterRoutes(r chi.Router, handler *Handler, authSvc *authsvc.AuthService
 			r.Use(middleware.RequirePermission(auth.PermGoalRead))
 			r.Use(middleware.RateLimit(writeRateLimit))
 			r.Delete("/categories/{catId}/comments/{commentId}", handler.DeleteCategoryComment)
+		})
+
+		// Assignment comments
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.RequirePermission(auth.PermGoalRead))
+			r.Use(middleware.RateLimit(readRateLimit))
+			r.Get("/assignments/{assignId}/comments", handler.ListAssignmentComments)
+		})
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.RequirePermission(auth.PermGoalRead))
+			r.Use(middleware.RateLimit(writeRateLimit))
+			r.Post("/assignments/{assignId}/comments", handler.CreateAssignmentComment)
+		})
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.RequirePermission(auth.PermGoalRead))
+			r.Use(middleware.RateLimit(writeRateLimit))
+			r.Delete("/assignments/{assignId}/comments/{commentId}", handler.DeleteAssignmentComment)
 		})
 
 		// Change requests

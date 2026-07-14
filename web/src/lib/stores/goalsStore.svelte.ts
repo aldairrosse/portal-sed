@@ -16,6 +16,7 @@ import type { EvaluationProfile } from '$lib/types/evaluation';
 import { getActivePhase } from '$lib/api/cycle.svelte';
 import { getSession } from '$lib/api/session.svelte';
 import { client } from '$lib/api/client';
+import { getActiveCycle } from '$lib/stores/cycleStore.svelte';
 import { progressPercent } from '$lib/utils/scoring';
 import { SvelteDate, SvelteMap } from 'svelte/reactivity';
 
@@ -313,9 +314,7 @@ async function _doLoad(empIdOverride?: string): Promise<void> {
 			);
 		}
 
-		const apiCategories = (catsRes.data as { items?: Array<unknown> })?.items ?? [];
-		const apiKpis = (kpisRes.data as { items?: Array<unknown> })?.items ?? [];
-		const apiAssignment = assignmentRes.data as
+		let apiAssignment = (assignmentRes.data as
 			| {
 					id?: string;
 					employee_id?: string;
@@ -324,7 +323,26 @@ async function _doLoad(empIdOverride?: string): Promise<void> {
 					created_at?: string;
 			  }
 			| null
-			| undefined;
+			| undefined) ?? null;
+
+		if (empIdOverride && !apiAssignment?.id) {
+			const activeCycle = getActiveCycle();
+			if (activeCycle?.id) {
+				const { error: createErr } = await client.POST('/employees/{empId}/assignments', {
+					params: { path: { empId } },
+					body: { cycle_id: activeCycle.id }
+				});
+				if (!createErr) {
+					const { data: fresh } = await client.GET('/employees/{empId}/assignments', {
+						params: { path: { empId } }
+					});
+					apiAssignment = (fresh as typeof apiAssignment) ?? null;
+				}
+			}
+		}
+
+		const apiCategories = (catsRes.data as { items?: Array<unknown> })?.items ?? [];
+		const apiKpis = (kpisRes.data as { items?: Array<unknown> })?.items ?? [];
 
 		storeState.data = normalizeApiData(
 			apiCategories as Parameters<typeof normalizeApiData>[0],
@@ -1037,6 +1055,17 @@ export function getAssignmentComments(assignmentId: string): GoalComment[] {
 }
 
 export async function loadAssignmentComments(assignmentId: string): Promise<void> {
+	if (!storeState.data) return;
+	if (storeState.data.assignmentComments.has(assignmentId)) return;
+	await fetchAndSetAssignmentComments(assignmentId);
+}
+
+export async function refreshAssignmentComments(assignmentId: string): Promise<void> {
+	if (!storeState.data) return;
+	await fetchAndSetAssignmentComments(assignmentId);
+}
+
+async function fetchAndSetAssignmentComments(assignmentId: string): Promise<void> {
 	if (!storeState.data) return;
 	const { data, error: apiError } = await client.GET('/assignments/{assignId}/comments', {
 		params: { path: { assignId: assignmentId } }

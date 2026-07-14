@@ -44,7 +44,6 @@
 		onDeleteGoal,
 		mode = 'editor',
 		pillars = [],
-		onRequestChangeCategory,
 		onSaveProposal,
 		onAcceptProposal,
 		onRejectProposal,

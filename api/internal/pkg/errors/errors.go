@@ -23,7 +23,7 @@ const (
 	InvalidIfMatch       DomainCode = "INVALID_IF_MATCH"
 	RequestTimeout       DomainCode = "REQUEST_TIMEOUT"
 
-	// Goal-specific domain error codes
+	// Códigos de error de dominio específicos de objetivos
 	CategoryNotFound        DomainCode = "CATEGORY_NOT_FOUND"
 	GoalNotFound            DomainCode = "GOAL_NOT_FOUND"
 	KpiNotFound             DomainCode = "KPI_NOT_FOUND"
@@ -43,7 +43,7 @@ const (
 	InvalidDirection        DomainCode = "INVALID_DIRECTION"
 	InvalidQuadrant         DomainCode = "INVALID_QUADRANT"
 
-	// Org-hierarchy domain error codes
+	// Códigos de error de dominio de jerarquía organizacional
 	TreeNotFound         DomainCode = "TREE_NOT_FOUND"
 	NodeNotFound         DomainCode = "NODE_NOT_FOUND"
 	EmployeeNotFound     DomainCode = "EMPLOYEE_NOT_FOUND"
@@ -87,51 +87,51 @@ func (e *DomainError) WithDetails(details ...string) *DomainError {
 
 // Sentinel error values for switch/type-assertion checks.
 var (
-	ErrCycleNotFound        = &DomainError{Code: CycleNotFound, Message: "The requested cycle was not found."}
-	ErrInvalidTransition    = &DomainError{Code: InvalidTransition, Message: "The requested phase transition is not valid from the current phase."}
-	ErrCycleAlreadyActive   = &DomainError{Code: CycleAlreadyActive, Message: "A cycle already exists for this organization and year."}
-	ErrPhaseNotAdvanceable  = &DomainError{Code: PhaseNotAdvanceable, Message: "The current phase cannot be advanced; conditions not met."}
-	ErrConcurrentUpdate     = &DomainError{Code: ConcurrentUpdate, Message: "The resource was modified by another request; retry with the latest version."}
-	ErrIdempotencyConflict  = &DomainError{Code: IdempotencyKeyConflict, Message: "Idempotency-Key already used with a different payload."}
-	ErrRateLimitExceeded    = &DomainError{Code: RateLimitExceeded, Message: "Rate limit exceeded for this organization."}
-	ErrInvalidRequest       = &DomainError{Code: InvalidRequest, Message: "The request contains invalid parameters."}
-	ErrMissingIfMatch       = &DomainError{Code: MissingIfMatch, Message: "If-Match header is required for this operation."}
-	ErrInvalidIfMatch       = &DomainError{Code: InvalidIfMatch, Message: "If-Match header is malformed; expected an integer version."}
-	ErrRequestTimeout       = &DomainError{Code: RequestTimeout, Message: "The request timed out before completion."}
+	ErrCycleNotFound        = &DomainError{Code: CycleNotFound, Message: "El ciclo solicitado no fue encontrado."}
+	ErrInvalidTransition    = &DomainError{Code: InvalidTransition, Message: "La transición de fase solicitada no es válida desde la fase actual."}
+	ErrCycleAlreadyActive   = &DomainError{Code: CycleAlreadyActive, Message: "Ya existe un ciclo para esta organización y año."}
+	ErrPhaseNotAdvanceable  = &DomainError{Code: PhaseNotAdvanceable, Message: "La fase actual no se puede avanzar; condiciones no cumplidas."}
+	ErrConcurrentUpdate     = &DomainError{Code: ConcurrentUpdate, Message: "El recurso fue modificado por otra solicitud; reintente con la versión más reciente."}
+	ErrIdempotencyConflict  = &DomainError{Code: IdempotencyKeyConflict, Message: "La clave de idempotencia ya fue usada con un payload diferente."}
+	ErrRateLimitExceeded    = &DomainError{Code: RateLimitExceeded, Message: "Límite de velocidad excedido para esta organización."}
+	ErrInvalidRequest       = &DomainError{Code: InvalidRequest, Message: "La solicitud contiene parámetros inválidos."}
+	ErrMissingIfMatch       = &DomainError{Code: MissingIfMatch, Message: "El encabezado If-Match es requerido para esta operación."}
+	ErrInvalidIfMatch       = &DomainError{Code: InvalidIfMatch, Message: "El encabezado If-Match está malformado; se esperaba una versión entera."}
+	ErrRequestTimeout       = &DomainError{Code: RequestTimeout, Message: "La solicitud expiró antes de completarse."}
 
 	// Goal-specific sentinel errors
-	ErrCategoryNotFound        = &DomainError{Code: CategoryNotFound, Message: "The requested category was not found."}
-	ErrGoalNotFound            = &DomainError{Code: GoalNotFound, Message: "The requested goal was not found."}
-	ErrKpiNotFound             = &DomainError{Code: KpiNotFound, Message: "The requested KPI was not found."}
-	ErrWeightSumInvalid        = &DomainError{Code: WeightSumInvalid, Message: "Weight sum validation failed; categories and/or goals must each sum to 100%."}
-	ErrPhaseRestricted         = &DomainError{Code: PhaseRestricted, Message: "This operation is not allowed in the current cycle phase."}
-	ErrDuplicateCategoryName   = &DomainError{Code: DuplicateCategoryName, Message: "A category with this name already exists for this employee."}
-	ErrInvalidWeightRange      = &DomainError{Code: InvalidWeightRange, Message: "Weight must be between 0 and 100."}
-	ErrInvalidTargetValue      = &DomainError{Code: InvalidTargetValue, Message: "Target value must be greater than 0."}
-	ErrInvalidUnit             = &DomainError{Code: InvalidUnit, Message: "Unit must be one of: porcentaje, moneda, numero, binario."}
-	ErrGoalWeightOverflow      = &DomainError{Code: GoalWeightOverflow, Message: "Adding this goal would exceed the 100% weight limit for this category."}
-	ErrGoalNotDeletableInPhase = &DomainError{Code: GoalNotDeletableInPhase, Message: "Goals cannot be deleted in the current cycle phase."}
-	ErrKpiLinkedCannotDelete   = &DomainError{Code: KpiLinkedCannotDelete, Message: "Cannot delete a KPI that is linked to one or more goals."}
-	ErrConcurrentModification  = &DomainError{Code: ConcurrentModification, Message: "The resource was modified by another request; retry with the latest version."}
-	ErrBatchSizeExceeded       = &DomainError{Code: BatchSizeExceeded, Message: "Batch size exceeds the maximum allowed (50)."}
-	ErrKpiLinkLimitExceeded    = &DomainError{Code: KpiLinkLimitExceeded, Message: "A goal cannot have more than 5 linked KPIs."}
-	ErrInvalidBaselineValue = &DomainError{Code: InvalidBaselineValue, Message: "Baseline value must be greater than target value for descendente goals."}
-	ErrInvalidDirection     = &DomainError{Code: InvalidDirection, Message: "Direction must be 'ascendente' or 'descendente'."}
-	ErrInvalidQuadrant      = &DomainError{Code: InvalidQuadrant, Message: "Quadrant must be an integer between 1 and 9."}
+	ErrCategoryNotFound        = &DomainError{Code: CategoryNotFound, Message: "La categoría solicitada no fue encontrada."}
+	ErrGoalNotFound            = &DomainError{Code: GoalNotFound, Message: "El objetivo solicitado no fue encontrado."}
+	ErrKpiNotFound             = &DomainError{Code: KpiNotFound, Message: "El KPI solicitado no fue encontrado."}
+	ErrWeightSumInvalid        = &DomainError{Code: WeightSumInvalid, Message: "La validación de la suma de pesos falló; las categorías y/o objetivos deben sumar cada uno 100%."}
+	ErrPhaseRestricted         = &DomainError{Code: PhaseRestricted, Message: "Esta operación no está permitida en la fase actual del ciclo."}
+	ErrDuplicateCategoryName   = &DomainError{Code: DuplicateCategoryName, Message: "Ya existe una categoría con este nombre para este empleado."}
+	ErrInvalidWeightRange      = &DomainError{Code: InvalidWeightRange, Message: "El peso debe estar entre 0 y 100."}
+	ErrInvalidTargetValue      = &DomainError{Code: InvalidTargetValue, Message: "El valor objetivo debe ser mayor que 0."}
+	ErrInvalidUnit             = &DomainError{Code: InvalidUnit, Message: "La unidad debe ser una de: porcentaje, moneda, número, binario."}
+	ErrGoalWeightOverflow      = &DomainError{Code: GoalWeightOverflow, Message: "Agregar este objetivo excedería el límite de peso del 100% para esta categoría."}
+	ErrGoalNotDeletableInPhase = &DomainError{Code: GoalNotDeletableInPhase, Message: "Los objetivos no pueden ser eliminados en la fase actual del ciclo."}
+	ErrKpiLinkedCannotDelete   = &DomainError{Code: KpiLinkedCannotDelete, Message: "No se puede eliminar un KPI que está vinculado a uno o más objetivos."}
+	ErrConcurrentModification  = &DomainError{Code: ConcurrentModification, Message: "El recurso fue modificado por otra solicitud; reintente con la versión más reciente."}
+	ErrBatchSizeExceeded       = &DomainError{Code: BatchSizeExceeded, Message: "El tamaño del lote excede el máximo permitido (50)."}
+	ErrKpiLinkLimitExceeded    = &DomainError{Code: KpiLinkLimitExceeded, Message: "Un objetivo no puede tener más de 5 KPIs vinculados."}
+	ErrInvalidBaselineValue = &DomainError{Code: InvalidBaselineValue, Message: "El valor base debe ser mayor que el valor objetivo para objetivos descendentes."}
+	ErrInvalidDirection     = &DomainError{Code: InvalidDirection, Message: "La dirección debe ser 'ascendente' o 'descendente'."}
+	ErrInvalidQuadrant      = &DomainError{Code: InvalidQuadrant, Message: "El cuadrante debe ser un entero entre 1 y 9."}
 
 	// Forbidden
-	ErrForbidden = &DomainError{Code: "FORBIDDEN", Message: "You do not have permission to access this resource."}
+	ErrForbidden = &DomainError{Code: "FORBIDDEN", Message: "No tiene permiso para acceder a este recurso."}
 
 	// Org-hierarchy sentinel errors
-	ErrTreeNotFound         = &DomainError{Code: TreeNotFound, Message: "Organizational tree not found."}
-	ErrNodeNotFound         = &DomainError{Code: NodeNotFound, Message: "Org node not found."}
-	ErrEmployeeNotFound     = &DomainError{Code: EmployeeNotFound, Message: "Employee not found."}
-	ErrOrganizationNotFound = &DomainError{Code: OrganizationNotFound, Message: "Organization not found."}
-	ErrNodeHasChildren      = &DomainError{Code: NodeHasChildren, Message: "Cannot delete node with children."}
-	ErrInvalidParent    = &DomainError{Code: InvalidParent, Message: "Invalid parent: would create a cycle."}
-	ErrStaleVersion     = &DomainError{Code: StaleVersion, Message: "Optimistic lock failed; version mismatch."}
-	ErrInvalidTreeType  = &DomainError{Code: InvalidTreeType, Message: "Tree type must be 'corporate' or 'retail'."}
-	ErrScopeNotFound    = &DomainError{Code: ScopeNotFound, Message: "Evaluator scope not found."}
+	ErrTreeNotFound         = &DomainError{Code: TreeNotFound, Message: "El árbol organizacional no fue encontrado."}
+	ErrNodeNotFound         = &DomainError{Code: NodeNotFound, Message: "El nodo organizacional no fue encontrado."}
+	ErrEmployeeNotFound     = &DomainError{Code: EmployeeNotFound, Message: "El empleado no fue encontrado."}
+	ErrOrganizationNotFound = &DomainError{Code: OrganizationNotFound, Message: "La organización no fue encontrada."}
+	ErrNodeHasChildren      = &DomainError{Code: NodeHasChildren, Message: "No se puede eliminar un nodo con hijos."}
+	ErrInvalidParent    = &DomainError{Code: InvalidParent, Message: "Padre inválido: crearía un ciclo."}
+	ErrStaleVersion     = &DomainError{Code: StaleVersion, Message: "El bloqueo optimista falló; discordancia de versión."}
+	ErrInvalidTreeType  = &DomainError{Code: InvalidTreeType, Message: "El tipo de árbol debe ser 'corporate' o 'retail'."}
+	ErrScopeNotFound    = &DomainError{Code: ScopeNotFound, Message: "El ámbito del evaluador no fue encontrado."}
 )
 
 // HTTPStatus returns the HTTP status code for a domain error.

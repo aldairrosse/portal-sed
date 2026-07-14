@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { MessageCircle } from '@lucide/svelte';
+	import { MessageCircle, RefreshCcw } from '@lucide/svelte';
 	import type { Goal, GoalComment } from '$lib/types/goal';
 	import { getSession } from '$lib/api/session.svelte';
 
@@ -7,9 +7,11 @@
 		open: boolean;
 		goal: Goal | null;
 		comments: GoalComment[];
+		assignment?: { id: string; name: string } | null;
 		onAdd: (goalId: string, content: string) => void;
 		onDelete?: (goalId: string, commentId: string) => void;
 		onClose: () => void;
+		onRefresh?: () => void;
 		currentUserId?: string;
 		/** When set, operates in category mode instead of goal mode */
 		category?: { id: string; name: string } | null;
@@ -20,21 +22,20 @@
 		goal,
 		comments,
 		onAdd,
-		onDelete,
 		onClose,
+		onRefresh,
 		currentUserId,
-		category = null
+		category = null,
+		assignment = null,
 	}: Props = $props();
 
 	const resolvedUserId = $derived(currentUserId ?? getSession().user?.employeeId ?? '');
-	$effect(() => { console.log('[GoalCommentModal] resolvedUserId:', resolvedUserId, 'comments:', comments.map(c => ({ id: c.id, authorId: c.authorId }))); });
 
 	let dialogEl: HTMLDialogElement | undefined = $state();
 	let newComment = $state('');
 	let chatContainer: HTMLDivElement | undefined = $state();
 
-	const entityId = $derived(category?.id ?? goal?.id ?? '');
-	const entityName = $derived(category?.name ?? goal?.name ?? 'Comentarios');
+	const entityId = $derived(assignment?.id ?? category?.id ?? goal?.id ?? '');
 
 	const modalTitle = $derived.by(() => {
 		if (category) return `Comentarios de categoría: ${category.name}`;
@@ -70,7 +71,8 @@
 
 	function handleSubmit(e: Event) {
 		e.preventDefault();
-		if (entityId && newComment.trim()) {
+		if(!newComment.trim()) return;
+		if (entityId) {
 			onAdd(entityId, newComment.trim());
 			newComment = '';
 		}
@@ -104,6 +106,9 @@
 			<h3 id="comment-modal-title" class="font-semibold text-base-content flex-1">
 				{modalTitle}
 			</h3>
+			<button class="btn btn-ghost btn-sm btn-circle" aria-label="Actualizar comentarios" onclick={()=> onRefresh?.()}>
+				<RefreshCcw class="w-4 h-4" />
+			</button>
 			<form method="dialog">
 				<button class="btn btn-ghost btn-sm btn-circle" aria-label="Cerrar">✕</button>
 			</form>

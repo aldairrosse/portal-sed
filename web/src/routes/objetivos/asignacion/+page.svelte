@@ -4,7 +4,6 @@
         Save,
         Plus,
         Library,
-        MessageSquare,
         FileDown,
         Target,
         Trash,
@@ -44,18 +43,19 @@
         addCategoryComment,
         deleteCategoryComment,
         getCategoryComments,
-        loadAllGoalComments,
         getWeightedScore,
         getCategoryProgressAverage,
         storeState,
         load,
         reload,
         loadForEmployee,
+        loadAllGoalComments,
         createGoalProposal,
         acceptGoalProposal,
         rejectGoalProposal,
         getAssignmentComments,
         loadAssignmentComments,
+        refreshAssignmentComments,
         addAssignmentComment,
         deleteAssignmentComment,
     } from "$lib/stores/goalsStore.svelte";
@@ -81,6 +81,7 @@
     import ExportCsvModal from "$lib/components/goals/ExportCsvModal.svelte";
     import { toCsv } from "$lib/utils/export";
     import * as notifications from "$lib/stores/notifications.svelte";
+    import { loadCycles } from "$lib/stores/cycleStore.svelte";
     import { SvelteSet } from "svelte/reactivity";
 
     // ─── Load data ────────────────────────────────────────────────────────────
@@ -90,6 +91,9 @@
     });
     $effect(() => {
         loadOrgHierarchy();
+    });
+    $effect(() => {
+        loadCycles();
     });
     $effect(() => {
         loadPillars('metas');
@@ -268,17 +272,33 @@
 
     function openAssignmentComments() {
         if (!targetAssignment) return;
+        if (targetAssignment.id.startsWith('stub-')) return;
         assignmentCommentTarget = targetAssignment;
         loadAssignmentComments(targetAssignment.id);
         showAssignmentCommentModal = true;
     }
 
-    function handleAddAssignmentComment(assignmentId: string, content: string) {
-        addAssignmentComment(assignmentId, viewerEmployeeId, session.user?.name ?? "", content);
+    async function handleAddAssignmentComment(assignmentId: string, content: string) {
+        try {
+            await addAssignmentComment(assignmentId, viewerEmployeeId, session.user?.name ?? "", content);
+        } catch (e) {
+            notifications.error(e instanceof Error ? e.message : "Error al guardar comentario");
+        }
     }
 
-    function handleDeleteAssignmentComment(assignmentId: string, commentId: string) {
-        deleteAssignmentComment(assignmentId, commentId);
+    async function handleDeleteAssignmentComment(assignmentId: string, commentId: string) {
+        try {
+            await deleteAssignmentComment(assignmentId, commentId);
+        } catch (e) {
+            notifications.error(e instanceof Error ? e.message : "Error al eliminar comentario");
+        }
+    }
+
+    async function handleRefreshComments() {
+        await loadAllGoalComments(viewerEmployeeId);
+        if (targetAssignment?.id && !targetAssignment.id.startsWith("stub-")) {
+            await refreshAssignmentComments(targetAssignment.id);
+        }
     }
 
     // ─── Existing page state ─────────────────────────────────────────────────
@@ -690,6 +710,20 @@
                         {/if}
                     </button>
                 {/if}
+
+                {#if mode === "editor" && targetAssignment?.id && !targetAssignment.id.startsWith("stub-")}
+                    {@const count = getAssignmentComments(targetAssignment.id).length}
+                    <button
+                        class="btn btn-ghost btn-sm ml-auto relative"
+                        onclick={openAssignmentComments}
+                        aria-label="Ver comentarios de asignación"
+                    >
+                        <MessageCircle class="w-4 h-4" />
+                        {#if count > 0}
+                            <span class="badge badge-xs badge-primary absolute -top-1.5 -right-1.5">{count}</span>
+                        {/if}
+                    </button>
+                {/if}
             </div>
         </div>
 
@@ -880,6 +914,7 @@
         onAdd={handleAddComment}
         onDelete={handleDeleteComment}
         onClose={() => (showCommentModal = false)}
+        onRefresh={handleRefreshComments}
         currentUserId={viewerEmployeeId}
     />
 {/if}
@@ -892,6 +927,7 @@
         onAdd={handleAddCategoryComment}
         onDelete={handleDeleteCategoryComment}
         onClose={() => (showCategoryCommentModal = false)}
+        onRefresh={handleRefreshComments}
         currentUserId={viewerEmployeeId}
         category={commentCategory}
     />
@@ -905,6 +941,7 @@
         onAdd={handleAddAssignmentComment}
         onDelete={handleDeleteAssignmentComment}
         onClose={() => (showAssignmentCommentModal = false)}
+        onRefresh={handleRefreshComments}
         currentUserId={viewerEmployeeId}
         assignment={{ id: assignmentCommentTarget.id, name: assignmentCommentTarget.employeeName || assignmentCommentTarget.employeeId }}
     />
