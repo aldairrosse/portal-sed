@@ -37,6 +37,10 @@ type mockEvalService struct {
 	updateRHErr    error
 	finalizeResp   *dto.EvaluationDetailResponse
 	finalizeErr    error
+	goalStateResp  *dto.EvaluationDetailResponse
+	goalStateErr   error
+	goalCommentsResp *dto.EvaluationDetailResponse
+	goalCommentsErr  error
 	mu             sync.Mutex
 	callCount      map[string]int
 	delay          time.Duration
@@ -92,6 +96,16 @@ func (m *mockEvalService) UpdateRHEvaluation(ctx context.Context, evaluationID u
 func (m *mockEvalService) FinalizeEvaluation(ctx context.Context, evaluationID uuid.UUID, req dto.FinalizeEvaluationRequest) (*dto.EvaluationDetailResponse, error) {
 	m.recordCall("FinalizeEvaluation")
 	return m.finalizeResp, m.finalizeErr
+}
+
+func (m *mockEvalService) UpdateGoalState(ctx context.Context, evaluationID uuid.UUID, input dto.GoalStateUpdateInput, ifMatch int) (*dto.EvaluationDetailResponse, error) {
+	m.recordCall("UpdateGoalState")
+	return m.goalStateResp, m.goalStateErr
+}
+
+func (m *mockEvalService) UpdateGoalComments(ctx context.Context, evaluationID uuid.UUID, input dto.GoalCommentUpdateInput, ifMatch int) (*dto.EvaluationDetailResponse, error) {
+	m.recordCall("UpdateGoalComments")
+	return m.goalCommentsResp, m.goalCommentsErr
 }
 
 func (m *mockEvalService) GetCompetencyResults(ctx context.Context, cycleID uuid.UUID, query string, scope string, currentUserID uuid.UUID, offset, limit int) (*dto.CompetencyResultsResponse, error) {

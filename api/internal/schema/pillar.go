@@ -46,5 +46,9 @@ func (Pillar) Edges() []ent.Edge {
 			Annotations(entsql.Annotation{
 				OnDelete: entsql.Cascade,
 			}),
+		edge.To("goal_categories", GoalCategory.Type).
+			Annotations(entsql.Annotation{
+				OnDelete: entsql.SetNull,
+			}),
 	}
 }

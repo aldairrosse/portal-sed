@@ -195,11 +195,11 @@ func (m *mockCategoryRepo) ListCategoriesByEmployee(ctx context.Context, empID u
 	return nil, nil
 }
 
-func (m *mockCategoryRepo) CreateCategory(ctx context.Context, empID uuid.UUID, name, description string, weight float64) (*repogoal.CategoryRow, error) {
+func (m *mockCategoryRepo) CreateCategory(ctx context.Context, empID uuid.UUID, name, description string, weight float64, pillarID *uuid.UUID) (*repogoal.CategoryRow, error) {
 	return nil, nil
 }
 
-func (m *mockCategoryRepo) UpdateCategory(ctx context.Context, catID uuid.UUID, name, description string, weight float64, updatedBy uuid.UUID) (*repogoal.CategoryRow, error) {
+func (m *mockCategoryRepo) UpdateCategory(ctx context.Context, catID uuid.UUID, name, description string, weight float64, updatedBy uuid.UUID, pillarID *uuid.UUID) (*repogoal.CategoryRow, error) {
 	return nil, nil
 }
 
@@ -257,10 +257,10 @@ type mockKpiRepo struct{}
 
 func (m *mockKpiRepo) ListKPIs(ctx context.Context) ([]*repogoal.KpiRow, error)                  { return nil, nil }
 func (m *mockKpiRepo) GetKPI(ctx context.Context, kpiID uuid.UUID) (*repogoal.KpiRow, error)       { return nil, nil }
-func (m *mockKpiRepo) CreateKPI(ctx context.Context, name, unit, description string) (*repogoal.KpiRow, error) {
+func (m *mockKpiRepo) CreateKPI(ctx context.Context, name, unit, description string, targetValue *float64) (*repogoal.KpiRow, error) {
 	return nil, nil
 }
-func (m *mockKpiRepo) UpdateKPI(ctx context.Context, kpiID uuid.UUID, name, unit, description string) (*repogoal.KpiRow, error) {
+func (m *mockKpiRepo) UpdateKPI(ctx context.Context, kpiID uuid.UUID, name, unit, description string, targetValue *float64) (*repogoal.KpiRow, error) {
 	return nil, nil
 }
 func (m *mockKpiRepo) UpdateKPIValue(ctx context.Context, kpiID uuid.UUID, currentValue float64) (*repogoal.KpiRow, error) {

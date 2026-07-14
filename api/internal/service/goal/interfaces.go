@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/sed-evaluacion-desempeno/api/internal"
 	dtogoal "github.com/sed-evaluacion-desempeno/api/internal/dto/goal"
 	repogoal "github.com/sed-evaluacion-desempeno/api/internal/repository/goal"
 )
@@ -11,11 +12,16 @@ import (
 // CategoryRepository defines the storage contract for categories.
 type CategoryRepository interface {
 	ListCategoriesByEmployee(ctx context.Context, empID uuid.UUID) ([]*repogoal.CategoryRow, error)
-	CreateCategory(ctx context.Context, empID uuid.UUID, name, description string, weight float64) (*repogoal.CategoryRow, error)
-	UpdateCategory(ctx context.Context, catID uuid.UUID, name, description string, weight float64, updatedBy uuid.UUID) (*repogoal.CategoryRow, error)
+	CreateCategory(ctx context.Context, empID uuid.UUID, name, description string, weight float64, pillarID *uuid.UUID) (*repogoal.CategoryRow, error)
+	UpdateCategory(ctx context.Context, catID uuid.UUID, name, description string, weight float64, updatedBy uuid.UUID, pillarID *uuid.UUID) (*repogoal.CategoryRow, error)
 	DeleteCategory(ctx context.Context, catID uuid.UUID) error
 	GetCategory(ctx context.Context, catID uuid.UUID) (*repogoal.CategoryRow, error)
 	LockCategory(ctx context.Context, catID uuid.UUID) (*repogoal.CategoryRow, error)
+}
+
+// PillarRepository defines the contract for looking up pillars.
+type PillarRepository interface {
+	Get(ctx context.Context, id string, includeCompetencies bool) (*internal.Pillar, error)
 }
 
 // GoalRepository defines the storage contract for goals.

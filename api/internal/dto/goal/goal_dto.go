@@ -8,6 +8,7 @@ type CreateCategoryRequest struct {
 	Name        string  `json:"name"`
 	Description string  `json:"description,omitempty"`
 	Weight      float64 `json:"weight"`
+	PillarID    *string `json:"pillar_id,omitempty"`
 }
 
 // UpdateCategoryRequest is the request body for updating a goal category.
@@ -15,6 +16,7 @@ type UpdateCategoryRequest struct {
 	Name        string  `json:"name"`
 	Description string  `json:"description,omitempty"`
 	Weight      float64 `json:"weight"`
+	PillarID    *string `json:"pillar_id,omitempty"`
 }
 
 // CategoryResponse is the response body for a single category with nested goals.
@@ -24,6 +26,7 @@ type CategoryResponse struct {
 	Name        string           `json:"name"`
 	Description string           `json:"description,omitempty"`
 	Weight      float64          `json:"weight"`
+	PillarID    *string          `json:"pillar_id,omitempty"`
 	Goals       []GoalResponse   `json:"goals,omitempty"`
 	CreatedAt   string           `json:"created_at"`
 	UpdatedAt   string           `json:"updated_at"`
@@ -69,23 +72,23 @@ type UpdateProgressRequest struct {
 
 // GoalResponse is the response body for a single goal.
 type GoalResponse struct {
-	ID              string               `json:"id"`
-	CategoryID      string               `json:"category_id"`
-	Name            string               `json:"name"`
-	Description     string               `json:"description,omitempty"`
-	Unit            string               `json:"unit"`
-	Weight          float64              `json:"weight"`
-	TargetValue     float64              `json:"target_value"`
-	CurrentValue    float64              `json:"current_value"`
-	Direction       string               `json:"direction"`
-	BaselineValue   *float64             `json:"baseline_value,omitempty"`
-	ProgressPercent float64              `json:"progress_percent"`
-	State           string               `json:"state"`
-	Version         int                  `json:"version"`
-	KPIs            []KpiResponse        `json:"kpis,omitempty"`
+	ID              string                `json:"id"`
+	CategoryID      string                `json:"category_id"`
+	Name            string                `json:"name"`
+	Description     string                `json:"description,omitempty"`
+	Unit            string                `json:"unit"`
+	Weight          float64               `json:"weight"`
+	TargetValue     float64               `json:"target_value"`
+	CurrentValue    float64               `json:"current_value"`
+	Direction       string                `json:"direction"`
+	BaselineValue   *float64              `json:"baseline_value,omitempty"`
+	ProgressPercent float64               `json:"progress_percent"`
+	State           string                `json:"state"`
+	Version         int                   `json:"version"`
+	KPIs            []KpiResponse         `json:"kpis,omitempty"`
 	PendingProposal *GoalProposalResponse `json:"pending_proposal,omitempty"`
-	CreatedAt       string               `json:"created_at"`
-	UpdatedAt       string               `json:"updated_at"`
+	CreatedAt       string                `json:"created_at"`
+	UpdatedAt       string                `json:"updated_at"`
 }
 
 // KPI DTOs
@@ -140,10 +143,10 @@ type LinkKpiRequest struct {
 
 // BatchGoalItem represents a single operation in a batch request.
 type BatchGoalItem struct {
-	Operation  string             `json:"operation"` // "create" or "update"
-	CategoryID string             `json:"category_id,omitempty"`
-	GoalID     string             `json:"goal_id,omitempty"`
-	Goal       CreateGoalRequest  `json:"goal"`
+	Operation  string            `json:"operation"` // "create" or "update"
+	CategoryID string            `json:"category_id,omitempty"`
+	GoalID     string            `json:"goal_id,omitempty"`
+	Goal       CreateGoalRequest `json:"goal"`
 }
 
 // BatchGoalRequest is the request body for batch operations.
@@ -151,7 +154,7 @@ type BatchGoalRequest struct {
 	Items []BatchGoalItem `json:"items"`
 }
 
-// BatchGoalResponse is the response body for batch operations.
+// BatchGoalResponse is the response body for a batch operations.
 type BatchGoalResponse struct {
 	Items []GoalResponse `json:"items"`
 }
@@ -160,11 +163,11 @@ type BatchGoalResponse struct {
 
 // WeightValidationResponse is the response body for weight validation.
 type WeightValidationResponse struct {
-	Valid       bool               `json:"valid"`
-	CategorySum float64            `json:"category_sum"`
-	ExpectedSum float64            `json:"expected_sum"`
-	Deficit     float64            `json:"deficit"`
-	GoalSums    []CategoryGoalSum  `json:"goal_sums,omitempty"`
+	Valid       bool              `json:"valid"`
+	CategorySum float64           `json:"category_sum"`
+	ExpectedSum float64           `json:"expected_sum"`
+	Deficit     float64           `json:"deficit"`
+	GoalSums    []CategoryGoalSum `json:"goal_sums,omitempty"`
 }
 
 // CategoryGoalSum provides per-category weight sum details.

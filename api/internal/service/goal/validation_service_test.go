@@ -21,11 +21,11 @@ func (m *mockCategoryRepoForValidation) ListCategoriesByEmployee(ctx context.Con
 	return m.cats, m.err
 }
 
-func (m *mockCategoryRepoForValidation) CreateCategory(ctx context.Context, empID uuid.UUID, name, description string, weight float64) (*repogoal.CategoryRow, error) {
+func (m *mockCategoryRepoForValidation) CreateCategory(ctx context.Context, empID uuid.UUID, name, description string, weight float64, pillarID *uuid.UUID) (*repogoal.CategoryRow, error) {
 	return nil, nil
 }
 
-func (m *mockCategoryRepoForValidation) UpdateCategory(ctx context.Context, catID uuid.UUID, name, description string, weight float64, updatedBy uuid.UUID) (*repogoal.CategoryRow, error) {
+func (m *mockCategoryRepoForValidation) UpdateCategory(ctx context.Context, catID uuid.UUID, name, description string, weight float64, updatedBy uuid.UUID, pillarID *uuid.UUID) (*repogoal.CategoryRow, error) {
 	return nil, nil
 }
 

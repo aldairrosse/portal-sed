@@ -430,10 +430,14 @@ func (s *EvaluationService) GetEvaluation(ctx context.Context, id uuid.UUID) (*d
 
 // UpdateGoalState updates per-goal final_progress, self_assessment and rh_assessment.
 // Only fields provided in the input are modified; the rest are left untouched.
-func (s *EvaluationService) UpdateGoalState(ctx context.Context, evaluationID uuid.UUID, input dto.GoalStateUpdateInput) (*dto.EvaluationDetailResponse, error) {
+func (s *EvaluationService) UpdateGoalState(ctx context.Context, evaluationID uuid.UUID, input dto.GoalStateUpdateInput, ifMatch int) (*dto.EvaluationDetailResponse, error) {
 	row, err := s.evalRepo.GetByID(ctx, evaluationID)
 	if err != nil {
 		return nil, err
+	}
+	// ponytail: optimistic lock — reject if version doesn't match.
+	if ifMatch > 0 && row.Version != ifMatch {
+		return nil, errors.ErrConcurrentUpdate
 	}
 	if err := s.validatePhase(ctx, row.CycleID); err != nil {
 		return nil, err
@@ -474,10 +478,14 @@ func (s *EvaluationService) UpdateGoalState(ctx context.Context, evaluationID uu
 }
 
 // UpdateGoalComments updates per-goal manager_comment.
-func (s *EvaluationService) UpdateGoalComments(ctx context.Context, evaluationID uuid.UUID, input dto.GoalCommentUpdateInput) (*dto.EvaluationDetailResponse, error) {
+func (s *EvaluationService) UpdateGoalComments(ctx context.Context, evaluationID uuid.UUID, input dto.GoalCommentUpdateInput, ifMatch int) (*dto.EvaluationDetailResponse, error) {
 	row, err := s.evalRepo.GetByID(ctx, evaluationID)
 	if err != nil {
 		return nil, err
+	}
+	// ponytail: optimistic lock — reject if version doesn't match.
+	if ifMatch > 0 && row.Version != ifMatch {
+		return nil, errors.ErrConcurrentUpdate
 	}
 	if err := s.validatePhase(ctx, row.CycleID); err != nil {
 		return nil, err

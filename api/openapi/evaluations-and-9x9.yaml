@@ -178,6 +178,64 @@ paths:
         "409": { $ref: "#/components/responses/Conflict" }
         "503": { $ref: "#/components/responses/ServiceUnavailable" }
 
+  /evaluations/{id}/goal-state:
+    put:
+      operationId: updateGoalState
+      summary: Update per-goal state (finalProgress, selfAssessment, rhAssessment)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: If-Match
+          in: header
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/GoalStateUpdateInput" }
+      responses:
+        "200":
+          description: Goal state updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/EvaluationDetailResponse" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "428": { $ref: "#/components/responses/PreconditionRequired" }
+
+  /evaluations/{id}/goal-comments:
+    put:
+      operationId: updateGoalComments
+      summary: Update per-goal manager comment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: If-Match
+          in: header
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/GoalCommentUpdateInput" }
+      responses:
+        "200":
+          description: Goal comment updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/EvaluationDetailResponse" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "428": { $ref: "#/components/responses/PreconditionRequired" }
+
   /evaluations/employee/{employeeId}:
     get:
       operationId: getEmployeeCompetencies
@@ -565,6 +623,23 @@ components:
         description: { type: string }
         colorHex: { type: string, pattern: "^#[0-9a-fA-F]{6}$" }
 
+    GoalStateUpdateInput:
+      type: object
+      required: [goalId]
+      properties:
+        goalId: { type: string, format: uuid }
+        finalProgress: { type: number, nullable: true }
+        selfAssessment: { type: string, nullable: true }
+        rhAssessment: { type: string, nullable: true }
+
+    GoalCommentUpdateInput:
+      type: object
+      required: [goalId, role]
+      properties:
+        goalId: { type: string, format: uuid }
+        role: { type: string, enum: [manager] }
+        comment: { type: string }
+
     ErrorResponse:
       type: object
       properties:
@@ -607,6 +682,11 @@ components:
       headers:
         Retry-After:
           schema: { type: integer }
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorResponse" }
+    PreconditionRequired:
+      description: If-Match header is required for this operation
       content:
         application/json:
           schema: { $ref: "#/components/schemas/ErrorResponse" }

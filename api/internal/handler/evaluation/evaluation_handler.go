@@ -350,6 +350,8 @@ func (h *EvaluationHandler) UpdateGoalState(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	ifMatch := middleware.ExpectedVersionFromContext(r.Context())
+
 	var req dto.GoalStateUpdateInput
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
@@ -369,7 +371,7 @@ func (h *EvaluationHandler) UpdateGoalState(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	result, err := h.evalSvc.UpdateGoalState(r.Context(), id, req)
+	result, err := h.evalSvc.UpdateGoalState(r.Context(), id, req, ifMatch)
 	if err != nil {
 		writeError(w, err)
 		return
@@ -387,6 +389,8 @@ func (h *EvaluationHandler) UpdateGoalComments(w http.ResponseWriter, r *http.Re
 			"evaluation id must be a valid UUID v4", err))
 		return
 	}
+
+	ifMatch := middleware.ExpectedVersionFromContext(r.Context())
 
 	var req dto.GoalCommentUpdateInput
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -407,7 +411,7 @@ func (h *EvaluationHandler) UpdateGoalComments(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	result, err := h.evalSvc.UpdateGoalComments(r.Context(), id, req)
+	result, err := h.evalSvc.UpdateGoalComments(r.Context(), id, req, ifMatch)
 	if err != nil {
 		writeError(w, err)
 		return

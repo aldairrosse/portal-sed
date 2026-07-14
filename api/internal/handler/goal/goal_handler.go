@@ -127,12 +127,18 @@ func callerID(r *http.Request) (uuid.UUID, error) {
 }
 
 func categoryRowToResponse(c *repogoal.CategoryRow) dtogoal.CategoryResponse {
+	var pillarID *string
+	if c.PillarID != nil {
+		s := c.PillarID.String()
+		pillarID = &s
+	}
 	return dtogoal.CategoryResponse{
 		ID:          c.ID.String(),
 		EmployeeID:  c.EmployeeID.String(),
 		Name:        c.Name,
 		Description: c.Description,
 		Weight:      c.Weight,
+		PillarID:    pillarID,
 		Goals:       nil,
 		CreatedAt:   c.CreatedAt.Format(time.RFC3339),
 		UpdatedAt:   c.UpdatedAt.Format(time.RFC3339),

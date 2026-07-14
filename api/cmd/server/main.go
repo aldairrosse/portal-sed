@@ -276,7 +276,7 @@ func main() {
 	phaseChecker := nopPhaseChecker{}
 	phaseCheck := goalsvc.NewPhaseCheck(phaseChecker)
 
-	catSvc := goalsvc.NewCategoryService(catRepo, phaseCheck)
+	catSvc := goalsvc.NewCategoryService(catRepo, pillarRepo, phaseCheck)
 	goalSvc := goalsvc.NewGoalService(goalRepo, catRepo, kpiRepo, linkRepo, weightQ, phaseCheck)
 	progressSvc := goalsvc.NewProgressService(goalRepo, catRepo, phaseCheck)
 	kpiSvc := goalsvc.NewKPIService(kpiRepo, linkRepo, goalRepo, catRepo, phaseCheck)

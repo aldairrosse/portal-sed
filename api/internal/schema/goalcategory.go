@@ -32,6 +32,9 @@ func (GoalCategory) Fields() []ent.Field {
 		field.Float("weight").
 			Range(0, 100),
 		field.UUID("employee_id", uuid.UUID{}),
+		field.UUID("pillar_id", uuid.UUID{}).
+			Optional().
+			Nillable(),
 	}
 }
 
@@ -46,6 +49,10 @@ func (GoalCategory) Edges() []ent.Edge {
 			Annotations(entsql.Annotation{
 				OnDelete: entsql.Cascade,
 			}),
+		edge.From("pillar", Pillar.Type).
+			Ref("goal_categories").
+			Unique().
+			Field("pillar_id"),
 	}
 }
 
@@ -54,5 +61,6 @@ func (GoalCategory) Index() []ent.Index {
 		index.Fields("employee_id"),
 		index.Fields("employee_id", "name").
 			Unique(),
+		index.Fields("pillar_id"),
 	}
 }

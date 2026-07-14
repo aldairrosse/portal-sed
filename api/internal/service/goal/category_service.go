@@ -12,13 +12,15 @@ import (
 // CategoryService handles business logic for goal categories.
 type CategoryService struct {
 	catRepo    CategoryRepository
+	pillarRepo PillarRepository
 	phaseCheck *PhaseCheck
 }
 
 // NewCategoryService creates a new CategoryService.
-func NewCategoryService(catRepo CategoryRepository, phaseCheck *PhaseCheck) *CategoryService {
+func NewCategoryService(catRepo CategoryRepository, pillarRepo PillarRepository, phaseCheck *PhaseCheck) *CategoryService {
 	return &CategoryService{
 		catRepo:    catRepo,
+		pillarRepo: pillarRepo,
 		phaseCheck: phaseCheck,
 	}
 }
@@ -41,7 +43,12 @@ func (s *CategoryService) CreateCategory(ctx context.Context, empID uuid.UUID, r
 		return nil, pkgerrors.NewDomainError(pkgerrors.InvalidRequest, "category name is required", nil)
 	}
 
-	return s.catRepo.CreateCategory(ctx, empID, req.Name, req.Description, req.Weight)
+	pillarID, err := s.resolvePillarID(ctx, req.PillarID)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.catRepo.CreateCategory(ctx, empID, req.Name, req.Description, req.Weight, pillarID)
 }
 
 // UpdateCategory updates a category.
@@ -55,6 +62,11 @@ func (s *CategoryService) UpdateCategory(ctx context.Context, empID, catID uuid.
 	}
 	if req.Name == "" {
 		return nil, pkgerrors.NewDomainError(pkgerrors.InvalidRequest, "category name is required", nil)
+	}
+
+	pillarID, err := s.resolvePillarID(ctx, req.PillarID)
+	if err != nil {
+		return nil, err
 	}
 
 	// In avance phase, only weight changes are allowed
@@ -73,7 +85,7 @@ func (s *CategoryService) UpdateCategory(ctx context.Context, empID, catID uuid.
 		}
 	}
 
-	return s.catRepo.UpdateCategory(ctx, catID, req.Name, req.Description, req.Weight, empID)
+	return s.catRepo.UpdateCategory(ctx, catID, req.Name, req.Description, req.Weight, empID, pillarID)
 }
 
 // DeleteCategory deletes a category.
@@ -92,4 +104,24 @@ func (s *CategoryService) DeleteCategory(ctx context.Context, empID, catID uuid.
 	}
 
 	return s.catRepo.DeleteCategory(ctx, catID)
+}
+
+// resolvePillarID validates that the given pillar ID exists and has type 'metas'.
+// Returns nil when no pillar is provided (optional field).
+func (s *CategoryService) resolvePillarID(ctx context.Context, pillarIDStr *string) (*uuid.UUID, error) {
+	if pillarIDStr == nil || *pillarIDStr == "" {
+		return nil, nil
+	}
+	pillarID, err := uuid.Parse(*pillarIDStr)
+	if err != nil {
+		return nil, pkgerrors.NewDomainError(pkgerrors.InvalidRequest, "invalid pillar_id", err)
+	}
+	pillar, err := s.pillarRepo.Get(ctx, pillarID.String(), false)
+	if err != nil {
+		return nil, pkgerrors.NewDomainError(pkgerrors.InvalidRequest, "pillar not found", err)
+	}
+	if pillar.Type != "metas" {
+		return nil, pkgerrors.NewDomainError(pkgerrors.InvalidRequest, "pillar must be of type 'metas'", nil)
+	}
+	return &pillarID, nil
 }
