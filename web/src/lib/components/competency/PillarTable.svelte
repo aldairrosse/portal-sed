@@ -4,13 +4,14 @@
 	import { getPillars } from '$lib/stores/competencyStore.svelte';
 
 	interface Props {
+		pillarType: 'competencias' | 'metas';
 		pillars: Pillar[];
 		editingId?: string | null;
 		onSave: (data: { name: string; description: string; id?: string }) => Promise<void>;
 		onDelete: (pillar: Pillar) => void;
 	}
 
-	let { pillars, editingId = $bindable(null), onSave, onDelete }: Props = $props();
+	let { pillarType, pillars, editingId = $bindable(null), onSave, onDelete }: Props = $props();
 
 	let editName = $state('');
 	let editDescription = $state('');
