@@ -165,18 +165,18 @@
 			</p>
 		</div>
 		<!-- Phase selector -->
-	<div role="tablist" class="tabs tabs-box gap-0">
-		{#each NINEBOX_PHASES as phase (phase.id)}
-			<button
-				role="tab"
-				type="button"
-				class="tab {selectedPhase === phase.id ? 'tab-active' : ''}"
-				onclick={() => { selectedPhase = phase.id; }}
-			>
-				{phase.label}
-			</button>
-		{/each}
-	</div>
+		<div role="tablist" class="tabs tabs-box gap-0">
+			{#each NINEBOX_PHASES as phase (phase.id)}
+				<button
+					role="tab"
+					type="button"
+					class="tab {selectedPhase === phase.id ? 'tab-active' : ''}"
+					onclick={() => { selectedPhase = phase.id; }}
+				>
+					{phase.label}
+				</button>
+			{/each}
+		</div>
 	</div>
 
 	{#if !isAuthorized}
