@@ -56,6 +56,7 @@ type TransitionPhaseRequest struct {
 	CycleID         string `json:"-"`
 	ExpectedVersion int    `json:"-"`
 	Trigger         string `json:"trigger"`
+	ToPhase         string `json:"to_phase"`
 	Reason          string `json:"reason"`
 	IdempotencyKey  string `json:"-"`
 }
@@ -253,12 +254,18 @@ func (s *service) TransitionPhase(ctx context.Context, req TransitionPhaseReques
 		)
 	}
 
-	// Step 3: Resolve next phase (linear)
-	nextPhase, ok := resolveNextPhase(row.CurrentPhase)
-	if !ok {
-		return nil, pkgerrors.NewDomainError(pkgerrors.InvalidTransition,
-			"the current phase '"+string(row.CurrentPhase)+"' has no next phase; the cycle is at its final phase", nil,
-		).WithDetails("current_phase: " + string(row.CurrentPhase))
+	// Step 3: Resolve target phase
+	var nextPhase cycle.CurrentPhase
+	if req.ToPhase != "" {
+		nextPhase = cycle.CurrentPhase(req.ToPhase)
+	} else {
+		var ok bool
+		nextPhase, ok = resolveNextPhase(row.CurrentPhase)
+		if !ok {
+			return nil, pkgerrors.NewDomainError(pkgerrors.InvalidTransition,
+				"the current phase '"+string(row.CurrentPhase)+"' has no next phase; the cycle is at its final phase", nil,
+			).WithDetails("current_phase: " + string(row.CurrentPhase))
+		}
 	}
 
 	// Step 4: Validate transition exists

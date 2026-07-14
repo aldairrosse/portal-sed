@@ -329,6 +329,10 @@ components:
           enum: [auto, manual_rh]
           default: manual_rh
           description: Transition trigger type
+        to_phase:
+          type: string
+          enum: [asignacion, avance, cierre]
+          description: Target phase for the transition
         reason:
           type: string
           maxLength: 500

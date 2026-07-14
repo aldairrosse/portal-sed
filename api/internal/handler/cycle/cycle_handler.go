@@ -201,6 +201,7 @@ func (h *CycleHandler) TransitionPhase(w http.ResponseWriter, r *http.Request) {
 	// Parse optional body
 	var body struct {
 		Trigger string `json:"trigger"`
+		ToPhase string `json:"to_phase"`
 		Reason  string `json:"reason"`
 	}
 	_ = json.NewDecoder(r.Body).Decode(&body)
@@ -215,6 +216,7 @@ func (h *CycleHandler) TransitionPhase(w http.ResponseWriter, r *http.Request) {
 		CycleID:         id,
 		ExpectedVersion: expectedVersion,
 		Trigger:         body.Trigger,
+		ToPhase:         body.ToPhase,
 		Reason:          body.Reason,
 		IdempotencyKey:  idempotencyKey,
 	}
