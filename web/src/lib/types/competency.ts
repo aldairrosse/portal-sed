@@ -8,6 +8,7 @@ export interface Pillar {
 	id: string;
 	name: string;
 	description: string;
+	type: 'competencias' | 'metas';
 	updatedAt: string;
 }
 

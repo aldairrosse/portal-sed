@@ -56,19 +56,28 @@ export function getError(): string | null {
  * Load competency data.
  *
  */
-export async function load(): Promise<void> {
-   return _doLoad();
+export async function load(type?: 'competencias' | 'metas'): Promise<void> {
+   return _doLoad(type);
 }
 
-async function _doLoad(): Promise<void> {
+async function _doLoad(type?: 'competencias' | 'metas'): Promise<void> {
     loading = true;
     error = null;
 
     try {
+        const pillarQuery: Record<string, string> = {};
+        if (type) {
+            pillarQuery.type = type;
+        }
+        // For competencias, include competencies; for metas, skip
+        if (!type || type === 'competencias') {
+            pillarQuery.include = 'competencies';
+        }
+
         const [pillarsRes, levelsRes, profilesRes, acceptanceRes] =
             await Promise.all([
                 client.GET("/pillars", {
-                    params: { query: { include: "competencies" } },
+                    params: { query: pillarQuery },
                 }),
                 client.GET("/levels", {}),
                 client.GET("/profiles", {}),
@@ -82,6 +91,7 @@ async function _doLoad(): Promise<void> {
                         id?: string;
                         name?: string;
                         description?: string;
+                        type?: string;
                         updated_at?: string;
                         competencies?: Array<{
                             id?: string;
@@ -116,6 +126,7 @@ async function _doLoad(): Promise<void> {
                 id: pillarId,
                 name: p.name ?? "",
                 description: p.description ?? "",
+                type: (p.type === 'metas' ? 'metas' : 'competencias') as 'competencias' | 'metas',
                 updatedAt: p.updated_at ?? new Date().toISOString(),
             });
             for (const c of p.competencies ?? []) {
@@ -321,7 +332,7 @@ export function getCompetencyAcceptanceLevel(
 
 export async function addPillar(pillar: Pillar): Promise<void> {
     const { error: apiError } = await client.POST("/pillars", {
-        body: { name: pillar.name, description: pillar.description },
+        body: { name: pillar.name, description: pillar.description, type: pillar.type },
         params: { header: { "Idempotency-Key": crypto.randomUUID() } },
     });
     if (apiError)
@@ -345,6 +356,7 @@ export async function updatePillar(
         body: {
             name: updates.name ?? "",
             description: updates.description ?? "",
+            type: updates.type,
         },
     });
     if (apiError)

@@ -28,7 +28,7 @@
 	let pillarlen = $derived(pillars.length);
 
 	$effect(() => {
-		load();
+		load(selectedType);
 	});
 
 	function generateId(): string {
@@ -48,7 +48,7 @@
 				notifications.error(e instanceof Error ? e.message : 'Error al actualizar pilar');
 			}
 		} else {
-			const newPillar: Pillar = { id: generateId(), name: data.name, description: data.description, updatedAt: new Date().toISOString() };
+			const newPillar: Pillar = { id: generateId(), name: data.name, description: data.description, type: selectedType, updatedAt: new Date().toISOString() };
 			try {
 				await addPillar(newPillar);
 				notifications.success(`Pilar "${data.name}" creado correctamente.`);
@@ -93,7 +93,7 @@
 			<p class="text-base-content/50 text-sm mt-1">
 				Gestiona los pilares del marco de competencias y metas.
 			</p>
-			<button class="btn btn-primary btn-sm" onclick={handleNew} disabled={isAnyInlineEditing}>
+			<button class="btn btn-primary btn-sm mt-4" onclick={handleNew} disabled={isAnyInlineEditing}>
 				<Plus class="w-4 h-4" />
 				Nuevo pilar
 			</button>
@@ -125,7 +125,7 @@
 	{:else if pillarlen === 0 && editingId !== '__new__'}
 		<EmptyState
 			title="Sin pilares"
-			message="Aún no hay pilares creados. Crea el primer pilar para comenzar."
+			message="Aún no hay pilares de {selectedType === 'competencias' ? 'competencias' : 'metas'} creados. Crea el primer pilar para comenzar."
 		/>
 	{:else}
 		<PillarTable pillarType={selectedType} {pillars} bind:editingId onSave={handlePillarSave} onDelete={handleDelete} />
