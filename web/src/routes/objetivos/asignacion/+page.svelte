@@ -7,6 +7,7 @@
         MessageSquare,
         FileDown,
         Target,
+        Trash,
     } from "@lucide/svelte";
     import type {
         Goal,
@@ -47,6 +48,7 @@
         getCategoryProgressAverage,
         storeState,
         load,
+        reload,
         loadForEmployee,
         createGoalProposal,
         acceptGoalProposal,
@@ -69,6 +71,8 @@
     import ErrorState from "$lib/components/ui/ErrorState.svelte";
     import EmptyState from "$lib/components/ui/EmptyState.svelte";
     import CategoryCreateForm from "$lib/components/goals/CategoryCreateForm.svelte";
+    import ConfirmDialog from "$lib/components/ui/ConfirmDialog.svelte";
+    import ExportCsvModal from "$lib/components/goals/ExportCsvModal.svelte";
     import { toCsv } from "$lib/utils/export";
     import * as notifications from "$lib/stores/notifications.svelte";
     import { SvelteSet } from "svelte/reactivity";
@@ -253,6 +257,8 @@
     // ─── Request change modal state ─────────────────────────────────────────
 
     let showRequestModal = $state(false);
+    let showDeleteAllConfirm = $state(false);
+    let deletingAll = $state(false);
     let requestEntityType: ChangeRequest["entityType"] = $state("goal");
     let requestEntityId = $state("");
     let requestEntityName = $state("");
@@ -287,6 +293,14 @@
         } else {
             loadForEmployee(employeeId);
         }
+    }
+
+    function handleExportCsv() {
+        if(!isBoss) {
+            exportCurrent();
+            return;
+        }
+        showExportModal = true;
     }
 
     function startCreateCategory() {
@@ -411,6 +425,29 @@
         }
     }
 
+    async function handleDeleteAssignment() {
+        showDeleteAllConfirm = true;
+    }
+
+    async function confirmDeleteAll() {
+        if (deletingAll) return;
+        deletingAll = true;
+        try {
+            for (const cat of categories) {
+                await deleteCategory(cat.id, { skipReload: true });
+            }
+            await reload();
+            notifications.success("Asignación borrada correctamente.");
+        } catch (e) {
+            notifications.error(
+                e instanceof Error ? e.message : "Error al borrar la asignación",
+            );
+        } finally {
+            deletingAll = false;
+            showDeleteAllConfirm = false;
+        }
+    }
+
     async function handleSaveAssignment() {
         if (!targetAssignment) return;
         try {
@@ -432,10 +469,6 @@
                 e instanceof Error ? e.message : "Error al guardar asignación",
             );
         }
-    }
-
-    function handleRequestChangeGoal(goal: Goal) {
-        openRequestModal("goal", goal.id, goal.name);
     }
 
     function handleRequestChangeCategory(category: GoalCategory) {
@@ -482,10 +515,6 @@
     // ─── Export CSV modal ────────────────────────────────────────────────────────
 
     let showExportModal = $state(false);
-
-    function handleExportCsv() {
-        showExportModal = true;
-    }
 
     function buildRows(
         assignment: EmployeeAssignment,
@@ -567,7 +596,7 @@
                             : "Defina las categorías y metas para el período de evaluación."}
                     </p>
                 </div>
-                {#if phase !== "medio-anio"}
+                {#if phase === "inicio-anio"}
                     <button
                         class="btn btn-ghost btn-sm"
                         onclick={() => goto("/objetivos/asignacion/biblioteca")}
@@ -598,12 +627,20 @@
                 {#if mode === "editor" && phase !== "medio-anio" && phase !== "fin-anio"}
                     <div class="flex-1"></div>
                     <button
+                        class="btn btn-error btn-sm"
+                        disabled={deletingAll}
+                        onclick={handleDeleteAssignment}
+                    >
+                        <Trash class="w-4 h-4" />
+                        Borrar todo
+                    </button>
+                    <button
                         class="btn btn-primary btn-sm"
                         disabled={!valid}
                         onclick={handleSaveAssignment}
                     >
                         <Save class="w-4 h-4" />
-                        Guardar asignación
+                        Enviar asignación
                     </button>
                 {:else if mode === "reader"}
                     <button
@@ -820,37 +857,24 @@
     />
 {/if}
 
-<dialog class="modal" class:modal-open={showExportModal}>
-    <div class="modal-box max-w-md">
-        <h3 class="font-semibold text-base-content">Exportar CSV</h3>
-        <p class="text-sm text-base-content/60 mt-2">
-            ¿Qué datos desea exportar?
-        </p>
-        <div class="mt-4 space-y-2">
-            <button
-                class="btn btn-outline w-full justify-start"
-                onclick={exportCurrent}
-            >
-                <FileDown class="w-4 h-4" />
-                {targetAssignment?.employeeName ?? "Empleado actual"}
-            </button>
-            {#if isBoss}
-                <button
-                    class="btn btn-outline w-full justify-start"
-                    onclick={exportAll}
-                >
-                    <FileDown class="w-4 h-4" />
-                    Todos ({availableAssignments.length} empleados)
-                </button>
-            {/if}
-        </div>
-        <div class="modal-action">
-            <button class="btn btn-ghost btn-sm" onclick={() => (showExportModal = false)}>
-                Cancelar
-            </button>
-        </div>
-    </div>
-    <form method="dialog" class="modal-backdrop">
-        <button onclick={() => (showExportModal = false)}>close</button>
-    </form>
-</dialog>
+<ExportCsvModal
+    open={showExportModal}
+    {targetAssignment}
+    {availableAssignments}
+    {isBoss}
+    onExportCurrent={exportCurrent}
+    onExportAll={exportAll}
+    onClose={() => (showExportModal = false)}
+/>
+
+<ConfirmDialog
+    open={showDeleteAllConfirm}
+    variant="error"
+    title="Borrar toda la asignación"
+    message="Se eliminarán todas las categorías y sus metas. Esta acción no se puede deshacer."
+    confirmLabel="Sí, borrar todo"
+    cancelLabel="Cancelar"
+    onconfirm={confirmDeleteAll}
+    disabled={deletingAll}
+    oncancel={() => (showDeleteAllConfirm = false)}
+/>

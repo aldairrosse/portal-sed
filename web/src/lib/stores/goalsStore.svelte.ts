@@ -639,7 +639,7 @@ export async function updateCategory(id: string, updates: Partial<Omit<GoalCateg
 	await reload();
 }
 
-export async function deleteCategory(id: string): Promise<void> {
+export async function deleteCategory(id: string, opts?: { skipReload?: boolean }): Promise<void> {
 	// Block deletion outside 'inicio-anio' phase
 	const phase = getActivePhase() ?? 'inicio-anio';
 	if (phase === 'medio-anio' || phase === 'fin-anio') return;
@@ -649,7 +649,7 @@ export async function deleteCategory(id: string): Promise<void> {
 		params: { path: { empId, catId: id } }
 	});
 	if (apiError) throw new Error((apiError as { error?: { message?: string } })?.error?.message ?? 'Error al eliminar categoría');
-	await reload();
+	if (!opts?.skipReload) await reload();
 }
 
 // ─── Mutations: Goals ─────────────────────────────────────────────────────────
@@ -691,7 +691,7 @@ export async function updateGoal(id: string, updates: Partial<Omit<Goal, 'id'>>)
 	await reload();
 }
 
-export async function deleteGoal(id: string): Promise<void> {
+export async function deleteGoal(id: string, opts?: { skipReload?: boolean }): Promise<void> {
 	// Block deletion outside 'inicio-anio' phase
 	const phase = getActivePhase() ?? 'inicio-anio';
 	if (phase === 'medio-anio' || phase === 'fin-anio') return;
@@ -700,7 +700,7 @@ export async function deleteGoal(id: string): Promise<void> {
 		params: { path: { goalId: id } }
 	});
 	if (apiError) throw new Error((apiError as { error?: { message?: string } })?.error?.message ?? 'Error al eliminar meta');
-	await reload();
+	if (!opts?.skipReload) await reload();
 }
 
 // ─── Mutations: Goal Proposals ─────────────────────────────────────────────────

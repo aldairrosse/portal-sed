@@ -6,6 +6,7 @@
 		confirmLabel?: string;
 		cancelLabel?: string;
 		variant?: 'error' | 'warning' | 'info';
+		disabled?: boolean;
 		onconfirm: () => void;
 		oncancel: () => void;
 	}
@@ -18,7 +19,8 @@
 		cancelLabel = 'Cancelar',
 		variant = 'info',
 		onconfirm,
-		oncancel
+		oncancel,
+		disabled = false
 	}: Props = $props();
 
 	function handleCancel() {
@@ -45,7 +47,7 @@
 <svelte:window onkeydown={handleKeydown} />
 
 {#if open}
-	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+	<!-- svelte-ignore a11y_click_events_have_key_events -->
 	<div
 		class="modal modal-open"
 		role="dialog"
@@ -64,6 +66,7 @@
 				<button
 					class="btn btn-{variant} btn-sm"
 					onclick={handleConfirm}
+					disabled={disabled}
 				>
 					{confirmLabel}
 				</button>
