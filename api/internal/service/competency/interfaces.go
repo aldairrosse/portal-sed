@@ -15,6 +15,7 @@ type ListOptions struct {
 	Cursor  string
 	Limit   int
 	Include []string
+	Type    *string
 }
 
 // ListResult holds a paginated result set.

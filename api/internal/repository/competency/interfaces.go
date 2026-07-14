@@ -17,15 +17,15 @@ type TxFunc func(tx *internal.Tx) error
 type PillarRepo interface {
 	// WithTx runs a function inside a database transaction.
 	WithTx(ctx context.Context, fn TxFunc) error
-	// List returns paginated pillars ordered by name. Cursor is a base64-encoded
-	// JSON with the last item's name. includeCompetencies eager-loads competencies.
-	List(ctx context.Context, cursor string, limit int, includeCompetencies bool) ([]*internal.Pillar, string, error)
+	// List returns paginated pillars ordered by createdAt. Cursor is a base64-encoded
+	// JSON with the last item's created_at. includeCompetencies eager-loads competencies.
+	List(ctx context.Context, cursor string, limit int, includeCompetencies bool, typeFilter *string) ([]*internal.Pillar, string, error)
 	// Get returns a single pillar by ID, optionally with competencies eager-loaded.
 	Get(ctx context.Context, id string, includeCompetencies bool) (*internal.Pillar, error)
-	// Create inserts a new pillar.
-	Create(ctx context.Context, name, description string) (*internal.Pillar, error)
+	// Create inserts a new pillar with the given type.
+	Create(ctx context.Context, name, description, pillarType string) (*internal.Pillar, error)
 	// Update updates a pillar with optimistic locking via ifMatch (updated_at).
-	Update(ctx context.Context, id string, name, description string, ifMatch time.Time) (*internal.Pillar, error)
+	Update(ctx context.Context, id string, name, description, pillarType string, ifMatch time.Time) (*internal.Pillar, error)
 	// Delete removes a pillar by ID.
 	Delete(ctx context.Context, id string) error
 	// CountCompetencies returns the number of competencies in a pillar.

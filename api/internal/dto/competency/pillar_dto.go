@@ -8,6 +8,7 @@ type PillarListItem struct {
 	ID              string           `json:"id"`
 	Name            string           `json:"name"`
 	Description     string           `json:"description,omitempty"`
+	Type            string           `json:"type"`
 	UpdatedAt       time.Time        `json:"updated_at"`
 	CompetencyCount int              `json:"competency_count"`
 	Competencies    []CompetencyLite `json:"competencies,omitempty"`
@@ -18,6 +19,7 @@ type PillarDetail struct {
 	ID           string           `json:"id"`
 	Name         string           `json:"name"`
 	Description  string           `json:"description,omitempty"`
+	Type         string           `json:"type"`
 	Competencies []CompetencyLite `json:"competencies,omitempty"`
 	CreatedAt    time.Time        `json:"created_at"`
 	UpdatedAt    time.Time        `json:"updated_at"`
@@ -27,12 +29,14 @@ type PillarDetail struct {
 type CreatePillarRequest struct {
 	Name        string `json:"name" validate:"required,min=1,max=255"`
 	Description string `json:"description,omitempty" validate:"max=2000"`
+	Type        string `json:"type,omitempty" validate:"omitempty,oneof=competencias metas"`
 }
 
 // UpdatePillarRequest is the request body for PUT /api/v1/pillars/:id.
 type UpdatePillarRequest struct {
 	Name        string `json:"name" validate:"required,min=1,max=255"`
 	Description string `json:"description,omitempty" validate:"max=2000"`
+	Type        string `json:"type,omitempty" validate:"omitempty,oneof=competencias metas"`
 }
 
 // CompetencyLite is the light projection used in nested competency arrays.

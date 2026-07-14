@@ -94,10 +94,14 @@ func (r *pillarRepo) WithTx(ctx context.Context, fn TxFunc) error {
 	return tx.Commit()
 }
 
-func (r *pillarRepo) List(ctx context.Context, cursor string, limit int, includeCompetencies bool) ([]*internal.Pillar, string, error) {
+func (r *pillarRepo) List(ctx context.Context, cursor string, limit int, includeCompetencies bool, typeFilter *string) ([]*internal.Pillar, string, error) {
 	q := r.client.Pillar.Query().
 		Order(internal.Asc(pillar.FieldCreatedAt)).
 		Limit(limit + 1)
+
+	if typeFilter != nil {
+		q = q.Where(pillar.TypeEQ(pillar.Type(*typeFilter)))
+	}
 
 	if includeCompetencies {
 		q = q.WithCompetencies(func(cq *internal.CompetencyQuery) {
@@ -147,10 +151,11 @@ func (r *pillarRepo) Get(ctx context.Context, id string, includeCompetencies boo
 	return p, nil
 }
 
-func (r *pillarRepo) Create(ctx context.Context, name, description string) (*internal.Pillar, error) {
+func (r *pillarRepo) Create(ctx context.Context, name, description, pillarType string) (*internal.Pillar, error) {
 	p, err := r.client.Pillar.Create().
 		SetName(name).
 		SetNillableDescription(strPtr(description)).
+		SetType(pillar.Type(pillarType)).
 		Save(ctx)
 	if err != nil {
 		if internal.IsConstraintError(err) {
@@ -162,7 +167,7 @@ func (r *pillarRepo) Create(ctx context.Context, name, description string) (*int
 	return p, nil
 }
 
-func (r *pillarRepo) Update(ctx context.Context, id string, name, description string, ifMatch time.Time) (*internal.Pillar, error) {
+func (r *pillarRepo) Update(ctx context.Context, id string, name, description, pillarType string, ifMatch time.Time) (*internal.Pillar, error) {
 	current, err := r.client.Pillar.Query().
 		Where(pillar.IDEQ(uuid.MustParse(id))).
 		Only(ctx)
@@ -181,10 +186,28 @@ func (r *pillarRepo) Update(ctx context.Context, id string, name, description st
 			nil)
 	}
 
-	updated, err := r.client.Pillar.UpdateOneID(uuid.MustParse(id)).
+	// Reject type change if competencies exist
+	if pillarType != "" && pillarType != string(current.Type) {
+		count, err := r.CountCompetencies(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+		if count > 0 {
+			return nil, pkgerrors.NewDomainError("PILLAR_HAS_COMPETENCIES",
+				"cannot change pillar type: pillar has associated competencies",
+				nil)
+		}
+	}
+
+	updateOne := r.client.Pillar.UpdateOneID(uuid.MustParse(id)).
 		SetName(name).
-		SetNillableDescription(strPtr(description)).
-		Save(ctx)
+		SetNillableDescription(strPtr(description))
+
+	if pillarType != "" {
+		updateOne.SetType(pillar.Type(pillarType))
+	}
+
+	updated, err := updateOne.Save(ctx)
 	if err != nil {
 		if internal.IsConstraintError(err) {
 			return nil, pkgerrors.NewDomainError("DUPLICATE_NAME",

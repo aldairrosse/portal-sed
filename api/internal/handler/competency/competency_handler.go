@@ -194,10 +194,23 @@ func (h *Handler) ListPillars(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// Parse optional type filter
+	var typeFilter *string
+	typeParam := r.URL.Query().Get("type")
+	if typeParam != "" {
+		if typeParam != "competencias" && typeParam != "metas" {
+			writeError(w, pkgerrors.NewDomainError("INVALID_PARAMETER",
+				"type must be 'competencias' or 'metas'", nil))
+			return
+		}
+		typeFilter = &typeParam
+	}
+
 	result, err := h.pillarSvc.List(r.Context(), svc.ListOptions{
 		Cursor:  cursor,
 		Limit:   limit,
 		Include: cleanInclude,
+		Type:    typeFilter,
 	})
 	if err != nil {
 		writeError(w, err)

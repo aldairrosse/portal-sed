@@ -37,7 +37,12 @@ func (s *pillarService) List(ctx context.Context, opts ListOptions) (*ListResult
 		}
 	}
 
-	pillars, nextCursor, err := s.repo.List(ctx, opts.Cursor, limit, includeCompetencies)
+	// For metas type, never include competencies
+	if opts.Type != nil && *opts.Type == "metas" {
+		includeCompetencies = false
+	}
+
+	pillars, nextCursor, err := s.repo.List(ctx, opts.Cursor, limit, includeCompetencies, opts.Type)
 	if err != nil {
 		return nil, err
 	}
@@ -48,6 +53,7 @@ func (s *pillarService) List(ctx context.Context, opts ListOptions) (*ListResult
 			ID:          p.ID.String(),
 			Name:        p.Name,
 			Description: p.Description,
+			Type:        string(p.Type),
 			UpdatedAt:   p.UpdatedAt,
 		}
 		count := len(p.Edges.Competencies)
@@ -90,6 +96,7 @@ func (s *pillarService) Get(ctx context.Context, id string, includeCompetencies 
 		ID:          p.ID.String(),
 		Name:        p.Name,
 		Description: p.Description,
+		Type:        string(p.Type),
 		CreatedAt:   p.CreatedAt,
 		UpdatedAt:   p.UpdatedAt,
 	}
@@ -122,7 +129,12 @@ func (s *pillarService) Create(ctx context.Context, req dto.CreatePillarRequest)
 			"description must be at most 2000 characters", nil)
 	}
 
-	p, err := s.repo.Create(ctx, req.Name, req.Description)
+	pillarType := req.Type
+	if pillarType == "" {
+		pillarType = "competencias"
+	}
+
+	p, err := s.repo.Create(ctx, req.Name, req.Description, pillarType)
 	if err != nil {
 		return nil, err
 	}
@@ -131,6 +143,7 @@ func (s *pillarService) Create(ctx context.Context, req dto.CreatePillarRequest)
 		ID:          p.ID.String(),
 		Name:        p.Name,
 		Description: p.Description,
+		Type:        string(p.Type),
 		CreatedAt:   p.CreatedAt,
 		UpdatedAt:   p.UpdatedAt,
 	}, nil
@@ -150,7 +163,7 @@ func (s *pillarService) Update(ctx context.Context, id string, req dto.UpdatePil
 			"description must be at most 2000 characters", nil)
 	}
 
-	p, err := s.repo.Update(ctx, id, req.Name, req.Description, ifMatch)
+	p, err := s.repo.Update(ctx, id, req.Name, req.Description, req.Type, ifMatch)
 	if err != nil {
 		return nil, err
 	}
@@ -159,6 +172,7 @@ func (s *pillarService) Update(ctx context.Context, id string, req dto.UpdatePil
 		ID:          p.ID.String(),
 		Name:        p.Name,
 		Description: p.Description,
+		Type:        string(p.Type),
 		CreatedAt:   p.CreatedAt,
 		UpdatedAt:   p.UpdatedAt,
 	}, nil
