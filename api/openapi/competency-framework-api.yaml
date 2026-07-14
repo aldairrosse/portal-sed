@@ -18,6 +18,12 @@ paths:
           schema:
             type: string
             enum: [competencies]
+        - name: type
+          in: query
+          description: Filter pillars by type. Omit to return all.
+          schema:
+            type: string
+            enum: [competencias, metas]
         - name: cursor
           in: query
           schema:
@@ -504,6 +510,9 @@ components:
           type: string
         description:
           type: string
+        type:
+          type: string
+          enum: [competencias, metas]
         competency_count:
           type: integer
     PillarListResponse:
@@ -530,6 +539,9 @@ components:
           type: string
         description:
           type: string
+        type:
+          type: string
+          enum: [competencias, metas]
         competencies:
           type: array
           items:
@@ -551,6 +563,10 @@ components:
         description:
           type: string
           maxLength: 2000
+        type:
+          type: string
+          enum: [competencias, metas]
+          default: competencias
     UpdatePillarRequest:
       type: object
       required: [name]
@@ -562,6 +578,9 @@ components:
         description:
           type: string
           maxLength: 2000
+        type:
+          type: string
+          enum: [competencias, metas]
     CompetencyLite:
       type: object
       properties:
