@@ -31,6 +31,12 @@
 		loadCycles();
 	});
 
+	function getPrevPhase(current: ApiCyclePhase): ApiCyclePhase | null {
+		if (current === 'avance') return 'asignacion';
+		if (current === 'cierre') return 'avance';
+		return null;
+	}
+
 	function getNextPhase(current: ApiCyclePhase): ApiCyclePhase | null {
 		if (current === 'asignacion') return 'avance';
 		if (current === 'avance') return 'cierre';
@@ -174,8 +180,21 @@
 							{/if}
 						</div>
 
-						{#if !cycle.finished_at && getNextPhase(cycle.current_phase)}
-							<div class="card-actions justify-end mt-2">
+						<div class="card-actions justify-end mt-2">
+							{#if getPrevPhase(cycle.current_phase)}
+								<button
+									class="btn btn-ghost btn-sm"
+									onclick={() => requestAdvance(cycle.id, getPrevPhase(cycle.current_phase)!)}
+									disabled={advancingId === cycle.id}
+								>
+									{#if advancingId === cycle.id}
+										<span class="loading loading-spinner loading-xs"></span>
+									{:else}
+										Retroceder
+									{/if}
+								</button>
+							{/if}
+							{#if !cycle.finished_at && getNextPhase(cycle.current_phase)}
 								{#if cycle.current_phase === 'asignacion'}
 									<button
 										class="btn btn-accent btn-sm"
@@ -198,11 +217,11 @@
 									{#if advancingId === cycle.id}
 										<span class="loading loading-spinner loading-xs"></span>
 									{:else}
-										Avanzar a {API_PHASE_LABELS[getNextPhase(cycle.current_phase)!]}
+										Avanzar
 									{/if}
 								</button>
+								{/if}
 							</div>
-						{/if}
 
 						{#if cycle.finished_at}
 							<div class="flex items-center gap-1 mt-1 text-xs text-success/70">
