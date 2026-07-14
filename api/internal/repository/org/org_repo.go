@@ -84,7 +84,7 @@ func (r *OrgTreeRepo) readClient() *internal.Client {
 // If treeType is non-empty, filters by node type.
 func (r *OrgTreeRepo) List(ctx context.Context, treeType string) ([]*OrgTreeRow, error) {
 	query := `SELECT o.id, o.name,
-	           COALESCE((SELECT on2.type FROM org_nodes on2 WHERE on2.organization_id = o.id LIMIT 1), '') as type,
+	           COALESCE((SELECT on2.type::text FROM org_nodes on2 WHERE on2.organization_id = o.id LIMIT 1), '') as type,
 	           (SELECT COUNT(1) FROM org_nodes on2 WHERE on2.organization_id = o.id) as node_count,
 	           o.root_node_id
 	           FROM organizations o
@@ -126,7 +126,7 @@ func (r *OrgTreeRepo) GetByID(ctx context.Context, orgID uuid.UUID) (*OrgTreeRow
 	var rootNodeID sql.NullString
 	err := r.db.QueryRowContext(ctx,
 		`SELECT o.id, o.name,
-		        COALESCE((SELECT on2.type FROM org_nodes on2 WHERE on2.organization_id = o.id LIMIT 1), '') as type,
+		        COALESCE((SELECT on2.type::text FROM org_nodes on2 WHERE on2.organization_id = o.id LIMIT 1), '') as type,
 		        (SELECT COUNT(1) FROM org_nodes on2 WHERE on2.organization_id = o.id) as node_count,
 		        o.root_node_id
 		 FROM organizations o WHERE o.id = $1`, orgID,
