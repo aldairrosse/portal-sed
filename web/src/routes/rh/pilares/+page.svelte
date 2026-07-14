@@ -22,6 +22,7 @@
 	const storeError = $derived(getError());
 	let editingId = $state<string | null>(null);
 	let deletingPillar: Pillar | null = $state(null);
+	let selectedType = $state<'competencias' | 'metas'>('competencias');
 
 	let isAnyInlineEditing = $derived(editingId !== null);
 	let pillarlen = $derived(pillars.length);
@@ -90,13 +91,31 @@
 				Pilares
 			</h1>
 			<p class="text-base-content/50 text-sm mt-1">
-				Gestiona los pilares del marco de competencias.
+				Gestiona los pilares del marco de competencias y metas.
 			</p>
+			<button class="btn btn-primary btn-sm" onclick={handleNew} disabled={isAnyInlineEditing}>
+				<Plus class="w-4 h-4" />
+				Nuevo pilar
+			</button>
 		</div>
-		<button class="btn btn-primary btn-sm" onclick={handleNew} disabled={isAnyInlineEditing}>
-			<Plus class="w-4 h-4" />
-			Nuevo pilar
-		</button>
+		<div role="tablist" class="tabs tabs-box gap-0">
+			<button
+				role="tab"
+				type="button"
+				class="tab {selectedType === 'competencias' ? 'tab-active' : ''}"
+				onclick={() => { selectedType = 'competencias'; }}
+			>
+				Competencias
+			</button>
+			<button
+				role="tab"
+				type="button"
+				class="tab {selectedType === 'metas' ? 'tab-active' : ''}"
+				onclick={() => { selectedType = 'metas'; }}
+			>
+				Metas
+			</button>
+		</div>
 	</div>
 
 	{#if loading}
@@ -109,7 +128,7 @@
 			message="Aún no hay pilares creados. Crea el primer pilar para comenzar."
 		/>
 	{:else}
-		<PillarTable {pillars} bind:editingId onSave={handlePillarSave} onDelete={handleDelete} />
+		<PillarTable pillarType={selectedType} {pillars} bind:editingId onSave={handlePillarSave} onDelete={handleDelete} />
 	{/if}
 </div>
 
