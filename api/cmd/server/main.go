@@ -165,6 +165,30 @@ func main() {
 	// ponytail: drop materialized views and indexes that block Ent column type alters
 	db.ExecContext(bgCtx, `DROP MATERIALIZED VIEW IF EXISTS evaluation_summary`)
 	db.ExecContext(bgCtx, `DROP INDEX IF EXISTS idx_org_nodes_path`)
+	// ponytail: Ent can't auto-cast between enum types; ensure custom PG types before migration
+	for _, stmt := range []string{
+		// phase
+		`ALTER TABLE cycles ALTER COLUMN current_phase TYPE phase USING current_phase::text::phase`,
+		`ALTER TABLE evaluations ALTER COLUMN phase TYPE phase USING phase::text::phase`,
+		`ALTER TABLE phase_definitions ALTER COLUMN phase TYPE phase USING phase::text::phase`,
+		`ALTER TABLE phase_transitions ALTER COLUMN from_phase TYPE phase USING from_phase::text::phase`,
+		`ALTER TABLE phase_transitions ALTER COLUMN to_phase TYPE phase USING to_phase::text::phase`,
+		// evaluation_state
+		`ALTER TABLE evaluations ALTER COLUMN state TYPE evaluation_state USING state::text::evaluation_state`,
+		// goal_unit
+		`ALTER TABLE goals ALTER COLUMN unit TYPE goal_unit USING unit::text::goal_unit`,
+		`ALTER TABLE kp_is ALTER COLUMN unit TYPE goal_unit USING unit::text::goal_unit`,
+		// goal_state
+		`ALTER TABLE goals ALTER COLUMN state TYPE goal_state USING state::text::goal_state`,
+		// org_node_type
+		`ALTER TABLE org_nodes ALTER COLUMN type TYPE org_node_type USING type::text::org_node_type`,
+		// axis
+		`ALTER TABLE nine_box_scales ALTER COLUMN axis TYPE axis USING axis::text::axis`,
+		// trigger_type
+		`ALTER TABLE phase_transitions ALTER COLUMN "trigger" TYPE trigger_type USING "trigger"::text::trigger_type`,
+	} {
+		db.ExecContext(bgCtx, stmt)
+	}
 
 	if err := client.Schema.Create(bgCtx); err != nil {
 		log.Fatalf("[server] failed to auto-migrate: %v", err)
