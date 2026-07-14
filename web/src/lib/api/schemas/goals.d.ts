@@ -393,6 +393,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/assignments/{assignId}/comments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List comments for an assignment */
+        get: operations["listAssignmentComments"];
+        put?: never;
+        /** Add a comment to an assignment */
+        post: operations["createAssignmentComment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/assignments/{assignId}/comments/{commentId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete an assignment comment */
+        delete: operations["deleteAssignmentComment"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -637,6 +672,8 @@ export interface components {
             goal_id?: string | null;
             /** Format: uuid */
             category_id?: string | null;
+            /** Format: uuid */
+            assignment_id?: string | null;
             author_id?: string;
             author_name?: string;
             content?: string;
@@ -1585,6 +1622,75 @@ export interface operations {
             header?: never;
             path: {
                 catId: string;
+                commentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Comment deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    listAssignmentComments: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assignId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of assignment comments */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoalCommentResponse"][];
+                };
+            };
+        };
+    };
+    createAssignmentComment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assignId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateGoalCommentRequest"];
+            };
+        };
+        responses: {
+            /** @description Created assignment comment */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoalCommentResponse"];
+                };
+            };
+        };
+    };
+    deleteAssignmentComment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assignId: string;
                 commentId: string;
             };
             cookie?: never;
