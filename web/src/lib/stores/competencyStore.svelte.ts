@@ -62,6 +62,7 @@ export async function load(type?: 'competencias' | 'metas'): Promise<void> {
 }
 
 async function _doLoad(type?: 'competencias' | 'metas'): Promise<void> {
+    const effectiveType = type ?? 'competencias';
     if (type !== undefined) {
         currentType = type;
     }
@@ -70,11 +71,11 @@ async function _doLoad(type?: 'competencias' | 'metas'): Promise<void> {
 
     try {
         const pillarQuery: Record<string, string> = {};
-        if (type) {
-            pillarQuery.type = type;
+        if (effectiveType) {
+            pillarQuery.type = effectiveType;
         }
         // For competencias, include competencies; for metas, skip
-        if (!type || type === 'competencias') {
+        if (effectiveType === 'competencias') {
             pillarQuery.include = 'competencies';
         }
 
