@@ -5,6 +5,7 @@ go 1.26.3
 require (
 	entgo.io/ent v0.14.6
 	github.com/DATA-DOG/go-sqlmock v1.5.2
+	github.com/coreos/go-oidc/v3 v3.12.0
 	github.com/go-chi/chi/v5 v5.1.0
 	github.com/go-chi/cors v1.2.1
 	github.com/go-sql-driver/mysql v1.10.0
@@ -12,6 +13,7 @@ require (
 	github.com/jackc/pgx/v5 v5.7.2
 	github.com/joho/godotenv v1.5.1
 	github.com/stretchr/testify v1.11.1
+	golang.org/x/oauth2 v0.25.0
 )
 
 require (
@@ -21,6 +23,7 @@ require (
 	github.com/apparentlymart/go-textseg/v15 v15.0.0 // indirect
 	github.com/bmatcuk/doublestar v1.3.4 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/go-jose/go-jose/v4 v4.0.4 // indirect
 	github.com/go-openapi/inflect v0.19.0 // indirect
 	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/hashicorp/hcl/v2 v2.18.1 // indirect

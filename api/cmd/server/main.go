@@ -24,6 +24,7 @@ import (
 
 	"github.com/sed-evaluacion-desempeno/api/internal"
 	"github.com/sed-evaluacion-desempeno/api/internal/auth"
+	"github.com/sed-evaluacion-desempeno/api/internal/auth/sso"
 	authsvc "github.com/sed-evaluacion-desempeno/api/internal/service/auth"
 
 	// Repositories
@@ -272,6 +273,22 @@ func main() {
 	// Auth
 	authSvc := authsvc.NewAuthService(sessionStore, employeeReader, db)
 
+	// SSO (OIDC) — required for all production logins
+	ssoIssuer := os.Getenv("SSO_KC_ISSUER")
+	ssoClientID := os.Getenv("SSO_CLIENT_ID")
+	ssoClientSecret := os.Getenv("SSO_CLIENT_SECRET")
+	ssoRedirectURI := os.Getenv("SSO_REDIRECT_URI")
+	ssoPostLogoutURI := os.Getenv("SSO_POST_LOGOUT_URI")
+	if ssoIssuer == "" || ssoClientID == "" || ssoClientSecret == "" || ssoRedirectURI == "" {
+		log.Fatal("[server] SSO_KC_ISSUER, SSO_CLIENT_ID, SSO_CLIENT_SECRET, SSO_REDIRECT_URI are required")
+	}
+	ssoAdapter, err := sso.NewOIDCAdapter(bgCtx, ssoIssuer, ssoClientID, ssoClientSecret, ssoRedirectURI, ssoPostLogoutURI)
+	if err != nil {
+		log.Fatalf("[server] failed to init SSO adapter: %v", err)
+	}
+	log.Printf("[server] SSO adapter initialized (issuer: %s, client: %s)", ssoIssuer, ssoClientID)
+	authSvc.WithSSOValidator(ssoAdapter)
+
 	// Goal services
 	phaseChecker := goalsvc.NewCyclePhaseCheck(cycleRepo, employeeRepo, orgNodeRepo)
 	phaseCheck := goalsvc.NewPhaseCheck(phaseChecker)
@@ -316,7 +333,7 @@ func main() {
 	// Dependency Injection — Handlers
 	// -----------------------------------------------------------------------
 
-	authH := authhandler.NewAuthHandler(authSvc)
+	authH := authhandler.NewAuthHandler(authSvc, ssoAdapter)
 	goalH := goalhandler.NewGoalHandler(
 		catSvc, goalSvc, progressSvc, kpiSvc, scoringSvc, weightSvc, batchSvc, proposalSvc,
 		catRepo, goalRepo, kpiRepo, linkRepo, assignRepo, proposalRepo, activitySvc,

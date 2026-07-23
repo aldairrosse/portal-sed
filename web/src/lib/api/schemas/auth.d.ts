@@ -230,6 +230,8 @@ export interface operations {
                     "application/json": {
                         /** @example session revoked */
                         message?: string;
+                        /** @description Keycloak end-session URL */
+                        sso_logout_url?: string;
                     };
                 };
             };

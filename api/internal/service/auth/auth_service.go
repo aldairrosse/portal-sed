@@ -5,6 +5,7 @@ package auth
 import (
 	"context"
 	"database/sql"
+	"log"
 	"strings"
 
 	"github.com/google/uuid"
@@ -14,14 +15,15 @@ import (
 
 // EmployeeRow is a lightweight read model for employee data used during auth.
 type EmployeeRow struct {
-	ID         uuid.UUID
-	FirstName  string
-	LastName   string
-	Email      string
-	ProfileID  uuid.UUID
-	IsActive   bool
-	JobTitle   string
-	OrgNodeID  uuid.UUID
+	ID             uuid.UUID
+	FirstName      string
+	LastName       string
+	Email          string
+	EmployeeNumber string
+	ProfileID      uuid.UUID
+	IsActive       bool
+	JobTitle       string
+	OrgNodeID      uuid.UUID
 }
 
 // EmployeeReader defines the data access interface for employee lookups
@@ -29,6 +31,7 @@ type EmployeeRow struct {
 type EmployeeReader interface {
 	GetByID(ctx context.Context, id uuid.UUID) (*EmployeeRow, error)
 	GetByEmail(ctx context.Context, email string) (*EmployeeRow, error)
+	GetByEmployeeNumber(ctx context.Context, employeeNumber string) (*EmployeeRow, error)
 }
 
 // employeeReader is the production implementation of EmployeeReader
@@ -46,9 +49,9 @@ func (r *employeeReader) GetByID(ctx context.Context, id uuid.UUID) (*EmployeeRo
 	row := &EmployeeRow{}
 	var jobTitle sql.NullString
 	err := r.db.QueryRowContext(ctx,
-		`SELECT id, first_name, last_name, email, profile_id, is_active, job_title, org_node_id
+		`SELECT id, first_name, last_name, email, employee_number, profile_id, is_active, job_title, org_node_id
 		 FROM employees WHERE id = $1`, id,
-	).Scan(&row.ID, &row.FirstName, &row.LastName, &row.Email, &row.ProfileID, &row.IsActive, &jobTitle, &row.OrgNodeID)
+	).Scan(&row.ID, &row.FirstName, &row.LastName, &row.Email, &row.EmployeeNumber, &row.ProfileID, &row.IsActive, &jobTitle, &row.OrgNodeID)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, pkgerrors.ErrEmployeeNotFound
@@ -63,9 +66,9 @@ func (r *employeeReader) GetByEmail(ctx context.Context, email string) (*Employe
 	row := &EmployeeRow{}
 	var jobTitle sql.NullString
 	err := r.db.QueryRowContext(ctx,
-		`SELECT id, first_name, last_name, email, profile_id, is_active, job_title, org_node_id
+		`SELECT id, first_name, last_name, email, employee_number, profile_id, is_active, job_title, org_node_id
 		 FROM employees WHERE email = $1`, email,
-	).Scan(&row.ID, &row.FirstName, &row.LastName, &row.Email, &row.ProfileID, &row.IsActive, &jobTitle, &row.OrgNodeID)
+	).Scan(&row.ID, &row.FirstName, &row.LastName, &row.Email, &row.EmployeeNumber, &row.ProfileID, &row.IsActive, &jobTitle, &row.OrgNodeID)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, pkgerrors.ErrEmployeeNotFound
@@ -76,11 +79,34 @@ func (r *employeeReader) GetByEmail(ctx context.Context, email string) (*Employe
 	return row, nil
 }
 
+func (r *employeeReader) GetByEmployeeNumber(ctx context.Context, employeeNumber string) (*EmployeeRow, error) {
+	row := &EmployeeRow{}
+	var jobTitle sql.NullString
+	err := r.db.QueryRowContext(ctx,
+		`SELECT id, first_name, last_name, email, employee_number, profile_id, is_active, job_title, org_node_id
+		 FROM employees WHERE employee_number = $1`, employeeNumber,
+	).Scan(&row.ID, &row.FirstName, &row.LastName, &row.Email, &row.EmployeeNumber, &row.ProfileID, &row.IsActive, &jobTitle, &row.OrgNodeID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, pkgerrors.ErrEmployeeNotFound
+		}
+		return nil, err
+	}
+	row.JobTitle = jobTitle.String
+	return row, nil
+}
+
+// SSOTokenValidator validates access tokens against the SSO provider.
+type SSOTokenValidator interface {
+	ValidateAccessToken(ctx context.Context, accessToken string) error
+}
+
 // AuthService provides authentication operations.
 type AuthService struct {
 	sessionStore *auth.SessionStore
 	employeeRepo EmployeeReader
 	db           *sql.DB // for direct profile name lookups
+	ssoValidator SSOTokenValidator
 }
 
 // NewAuthService creates a new AuthService.
@@ -90,6 +116,12 @@ func NewAuthService(sessionStore *auth.SessionStore, employeeRepo EmployeeReader
 		employeeRepo: employeeRepo,
 		db:           db,
 	}
+}
+
+// WithSSOValidator sets the SSO token validator for session-bound SSO checks.
+func (s *AuthService) WithSSOValidator(v SSOTokenValidator) *AuthService {
+	s.ssoValidator = v
+	return s
 }
 
 // LoginResult holds the response data after a successful login.
@@ -127,7 +159,7 @@ func (s *AuthService) Login(ctx context.Context, email, ip, ua string) (*LoginRe
 
 	role := auth.ProfileNameToRole(profile.Name)
 
-	session, token, err := s.sessionStore.Create(ctx, emp.ID, ip, ua)
+	session, token, err := s.sessionStore.Create(ctx, emp.ID, ip, ua, "", "", "")
 	if err != nil {
 		return nil, err
 	}
@@ -157,6 +189,15 @@ func (s *AuthService) ValidateSession(ctx context.Context, token string) (*Valid
 	if session == nil {
 		return nil, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
 			"invalid or expired session", nil)
+	}
+
+	if s.ssoValidator != nil && session.AccessToken != "" {
+		if err := s.ssoValidator.ValidateAccessToken(ctx, session.AccessToken); err != nil {
+			log.Printf("auth: SSO token invalid for session %s, revoking local session: %v", session.ID, err)
+			_ = s.sessionStore.Revoke(ctx, session.ID)
+			return nil, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
+				"SSO session expired", err)
+		}
 	}
 
 	emp, err := s.employeeRepo.GetByID(ctx, session.EmployeeID)
@@ -196,6 +237,11 @@ func (s *AuthService) Employee(ctx context.Context, id uuid.UUID) (*EmployeeRow,
 // EmployeeByEmail retrieves an employee by email.
 func (s *AuthService) EmployeeByEmail(ctx context.Context, email string) (*EmployeeRow, error) {
 	return s.employeeRepo.GetByEmail(ctx, email)
+}
+
+// EmployeeByEmployeeNumber retrieves an employee by employee_number (SSO lookup).
+func (s *AuthService) EmployeeByEmployeeNumber(ctx context.Context, employeeNumber string) (*EmployeeRow, error) {
+	return s.employeeRepo.GetByEmployeeNumber(ctx, employeeNumber)
 }
 
 // EmployeeRoleAndProfile returns the role and profile for an employee based

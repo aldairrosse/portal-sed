@@ -80,7 +80,7 @@ func CreateDevSession(ctx context.Context, sessionStore *auth.SessionStore, user
 	role := auth.ProfileNameToRole(user.Profile)
 
 	// Create a real session in the sessions table
-	session, token, err := sessionStore.Create(ctx, empID, ip, ua)
+	session, token, err := sessionStore.Create(ctx, empID, ip, ua, "", "", "")
 	if err != nil {
 		return nil, err
 	}

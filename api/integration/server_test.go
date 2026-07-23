@@ -47,6 +47,7 @@ import (
 	orghandler "github.com/sed-evaluacion-desempeno/api/internal/handler/org"
 
 	"github.com/sed-evaluacion-desempeno/api/internal/auth"
+	"github.com/sed-evaluacion-desempeno/api/internal/auth/sso"
 )
 
 // nopPhaseChecker always returns "asignacion" as the current phase.
@@ -252,7 +253,7 @@ func setupTestServerWithPhaseChecker(t *testing.T, phaseChecker goalsvc.PhaseChe
 	activitySvc := activitysvc.NewService(activityRepo)
 
 	// Handlers
-	authH := authhandler.NewAuthHandler(authSvc)
+	authH := authhandler.NewAuthHandler(authSvc, sso.NewNoopAdapter())
 	goalH := goalhandler.NewGoalHandler(
 		catSvc, goalSvc, progressSvc, kpiSvc, scoringSvc, weightSvc, batchSvc, proposalSvc,
 		catRepo, goalRepo, kpiRepo, linkRepo, assignRepo, proposalRepo, activitySvc,

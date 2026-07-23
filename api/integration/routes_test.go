@@ -42,7 +42,7 @@ func allRoutes() []routeTestCase {
 
 		// --- Auth ---
 		{"POST", "/api/v1/auth/login", "AuthLogin", []int{200, 400, 405}},
-		{"POST", "/api/v1/auth/logout", "AuthLogout", []int{200, 400, 401}},
+		{"GET", "/api/v1/auth/logout", "AuthLogout", []int{302, 400, 401}},
 		{"POST", "/api/v1/auth/refresh", "AuthRefresh", []int{200, 400, 401}},
 		{"GET", "/api/v1/auth/me", "AuthMe", []int{200, 400, 401}},
 

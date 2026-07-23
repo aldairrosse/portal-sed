@@ -26,7 +26,11 @@ services:
       DATABASE_URL: postgres://sed:sed@postgres:5432/sed?sslmode=disable
       ENV: production
       CORS_ORIGINS: https://localhost:8088
-      ENABLE_DEV_LOGIN: "true"
+      SSO_KC_ISSUER: ${SSO_KC_ISSUER}
+      SSO_CLIENT_ID: ${SSO_CLIENT_ID}
+      SSO_CLIENT_SECRET: ${SSO_CLIENT_SECRET}
+      SSO_REDIRECT_URI: ${SSO_REDIRECT_URI}
+      SSO_POST_LOGOUT_URI: ${SSO_POST_LOGOUT_URI}
 
   import:
     build: ./api
@@ -42,9 +46,6 @@ services:
   web:
     build:
       context: ./web
-      args:
-        VITE_SHOW_DEV_TOOLBAR: "false"
-        VITE_SHOW_DEMO_USERS: "true"
     depends_on:
       - api
 

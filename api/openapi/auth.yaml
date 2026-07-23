@@ -7,55 +7,46 @@ servers:
   - url: /api/v1
     description: API v1 base path
 paths:
-  /auth/login:
-    post:
-      operationId: login
-      summary: Authenticate user (dev mode)
+  /auth/sso-login:
+    get:
+      operationId: ssoLogin
+      summary: Redirect to Keycloak SSO
       description: >
-        Authenticates an employee by email. Dev mode accepts email only —
-        no password required. Returns a session token and sets an httpOnly
-        cookie. The token must be sent as `Authorization: Bearer <token>` for
-        subsequent requests.
-        TODO(auth:prod): Replace with password/SSO authentication.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [email]
-              properties:
-                email:
-                  type: string
-                  format: email
-                  description: Employee corporate email
-              example:
-                email: juan.perez@empresa.com
+        Redirects the browser to the Keycloak authorization endpoint.
+        Sets an httpOnly sso_state cookie for CSRF protection.
       responses:
-        "200":
-          description: Successfully authenticated
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/LoginResponse"
-          headers:
-            Set-Cookie:
-              schema:
-                type: string
-              description: >
-                `session_token=<token>; HttpOnly; Secure; SameSite=Strict; Path=/`
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "404":
-          $ref: "#/components/responses/NotFound"
+        "302":
+          description: Redirect to Keycloak login
+
+  /auth/sso-callback:
+    get:
+      operationId: ssoCallback
+      summary: Handle OIDC callback from Keycloak
+      description: >
+        Exchanges the authorization code for tokens, validates the id_token
+        via JWKS, checks resource_access for the "access" role, looks up
+        the employee by employee_number (preferred_username), creates a
+        local session, and redirects to the frontend.
+      parameters:
+        - name: code
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: state
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "302":
+          description: Redirect to frontend (root on success, /login?sso_error= on failure)
 
   /auth/logout:
     post:
       operationId: logout
-      summary: Revoke current session
-      description: Revokes the authenticated session and clears the session cookie.
-      security:
-        - bearerAuth: []
+      summary: Revoke current session and return SSO logout URL
+      description: Revokes the authenticated session, clears the cookie, and returns the Keycloak end-session URL for the frontend to redirect to.
       responses:
         "200":
           description: Session revoked successfully
@@ -66,7 +57,10 @@ paths:
                 properties:
                   message:
                     type: string
-                    example: session revoked
+                    example: Sesión revocada
+                  sso_logout_url:
+                    type: string
+                    example: http://auth.sso.mobo.com.mx/realms/mobo/protocol/openid-connect/logout?post_logout_redirect_uri=.../
         "401":
           $ref: "#/components/responses/Unauthorized"
 
@@ -119,49 +113,10 @@ components:
       scheme: bearer
       bearerFormat: UUID
       description: >
-        Session token obtained from POST /auth/login.
+        Session token obtained from SSO callback.
         Send as `Authorization: Bearer <token>`.
 
   schemas:
-    LoginResponse:
-      type: object
-      required: [session, token, employee, role]
-      properties:
-        session:
-          type: object
-          properties:
-            id:
-              type: string
-              format: uuid
-              description: Session ID
-            expires_at:
-              type: string
-              format: date-time
-              description: Session expiry timestamp
-        token:
-          type: string
-          description: Raw session token (shown only once at login)
-        employee:
-          type: object
-          properties:
-            id:
-              type: string
-              format: uuid
-              description: Employee UUID
-        role:
-          type: string
-          enum:
-            - colaborador
-            - jefe
-            - vendedor
-            - gerente-tienda
-            - divisional
-            - regional
-            - director
-            - director-general
-            - rh
-          description: Evaluation profile / role
-
     MeResponse:
       type: object
       required: [employee, role, profile]

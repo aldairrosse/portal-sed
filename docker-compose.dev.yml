@@ -27,6 +27,11 @@ services:
     environment:
       DATABASE_URL: postgres://sed:sed@postgres:5432/sed?sslmode=disable
       ENV: development
+      SSO_KC_ISSUER: ${SSO_KC_ISSUER}
+      SSO_CLIENT_ID: ${SSO_CLIENT_ID}
+      SSO_CLIENT_SECRET: ${SSO_CLIENT_SECRET}
+      SSO_REDIRECT_URI: ${SSO_REDIRECT_URI}
+      SSO_POST_LOGOUT_URI: ${SSO_POST_LOGOUT_URI}
 
   web:
     build:

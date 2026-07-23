@@ -1,21 +1,23 @@
-// Package auth provides HTTP handlers for authentication endpoints.
 package auth
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"strings"
 	"time"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/sed-evaluacion-desempeno/api/internal/auth"
+	"github.com/sed-evaluacion-desempeno/api/internal/auth/sso"
 	pkgerrors "github.com/sed-evaluacion-desempeno/api/internal/pkg/errors"
 	svc "github.com/sed-evaluacion-desempeno/api/internal/service/auth"
 )
 
-// writeJSON writes a JSON response with the given status code.
 func writeJSON(w http.ResponseWriter, status int, v interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
@@ -24,7 +26,6 @@ func writeJSON(w http.ResponseWriter, status int, v interface{}) {
 	}
 }
 
-// writeError writes a structured error response.
 func writeError(w http.ResponseWriter, err error) {
 	traceID := uuid.New().String()[:8]
 
@@ -42,16 +43,121 @@ func writeError(w http.ResponseWriter, err error) {
 // AuthHandler handles authentication HTTP requests.
 type AuthHandler struct {
 	svc *svc.AuthService
+	sso sso.SSOAdapter
 }
 
-// NewAuthHandler creates a new AuthHandler.
-func NewAuthHandler(svc *svc.AuthService) *AuthHandler {
-	return &AuthHandler{svc: svc}
+// NewAuthHandler creates a new AuthHandler with the given SSO adapter.
+func NewAuthHandler(svc *svc.AuthService, ssoAdapter sso.SSOAdapter) *AuthHandler {
+	return &AuthHandler{svc: svc, sso: ssoAdapter}
 }
 
-// LoginRequest is the JSON body for POST /auth/login.
-type LoginRequest struct {
-	Email string `json:"email"`
+// redirectError redirects to the frontend login page with an SSO error code.
+func (h *AuthHandler) redirectError(w http.ResponseWriter, r *http.Request, code string) {
+	frontendHost := os.Getenv("CORS_ORIGINS")
+	if frontendHost == "" {
+		frontendHost = "http://localhost:5173"
+	}
+	host := strings.Split(frontendHost, ",")[0]
+	http.Redirect(w, r, host+"/login?sso_error="+code, http.StatusFound)
+}
+
+// SSOLoginRedirect handles GET /auth/sso-login.
+// Redirects the user to the Keycloak authorization endpoint.
+func (h *AuthHandler) SSOLoginRedirect(w http.ResponseWriter, r *http.Request) {
+	state, err := auth.GenerateToken()
+	if err != nil {
+		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
+			"Error al iniciar SSO", err))
+		return
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "sso_state",
+		Value:    state,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   r.TLS != nil,
+		SameSite: http.SameSiteLaxMode,
+		MaxAge:   600,
+	})
+
+	authURL := h.sso.AuthorizationURL(state)
+	http.Redirect(w, r, authURL, http.StatusFound)
+}
+
+// SSOCallback handles GET /auth/sso-callback.
+func (h *AuthHandler) SSOCallback(w http.ResponseWriter, r *http.Request) {
+	code := r.URL.Query().Get("code")
+	state := r.URL.Query().Get("state")
+	if code == "" || state == "" {
+		h.redirectError(w, r, "parametros_invalidos")
+		return
+	}
+
+	accessToken, rawIDToken, refreshToken, err := h.sso.ExchangeCode(r.Context(), code)
+	if err != nil {
+		log.Printf("sso callback: exchange failed: %v", err)
+		h.redirectError(w, r, "token_exchange_fallido")
+		return
+	}
+
+	if _, err := h.sso.ValidateToken(r.Context(), rawIDToken); err != nil {
+		log.Printf("sso callback: id_token invalid: %v", err)
+		h.redirectError(w, r, "id_token_invalido")
+		return
+	}
+
+	if !h.sso.HasAccess(r.Context(), accessToken) {
+		log.Printf("sso callback: access denied — user lacks 'access' role for client in resource_access")
+		h.redirectError(w, r, "sin_acceso")
+		return
+	}
+
+	ssoUser, err := h.sso.GetUserFromToken(r.Context(), accessToken)
+	if err != nil {
+		log.Printf("sso callback: get user failed: %v", err)
+		h.redirectError(w, r, "error_usuario")
+		return
+	}
+
+	emp, err := h.svc.EmployeeByEmployeeNumber(r.Context(), ssoUser.ExternalID)
+	if err != nil {
+		if errors.Is(err, pkgerrors.ErrEmployeeNotFound) {
+			h.redirectError(w, r, "usuario_no_encontrado")
+			return
+		}
+		log.Printf("sso callback: employee lookup failed: %v", err)
+		h.redirectError(w, r, "error_bd")
+		return
+	}
+
+	if !emp.IsActive {
+		h.redirectError(w, r, "usuario_inactivo")
+		return
+	}
+
+	ip := r.RemoteAddr
+	ua := r.UserAgent()
+	session, token, err := h.svc.SessionStore().Create(r.Context(), emp.ID, ip, ua, rawIDToken, accessToken, refreshToken)
+	if err != nil {
+		log.Printf("sso callback: session creation failed: %v", err)
+		h.redirectError(w, r, "error_sesion")
+		return
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name: "session_token", Value: token, Path: "/",
+		HttpOnly: true,
+		Secure:   r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https",
+		SameSite: http.SameSiteLaxMode, Expires: session.ExpiresAt,
+	})
+
+	frontendHost := os.Getenv("CORS_ORIGINS")
+	if frontendHost == "" {
+		frontendHost = "http://localhost:5173"
+	}
+	host := strings.Split(frontendHost, ",")[0]
+	http.Redirect(w, r, host+"/", http.StatusFound)
 }
 
 // LoginResponse is the JSON body returned after successful login.
@@ -64,13 +170,11 @@ type LoginResponse struct {
 	OrganizationID string       `json:"organization_id"`
 }
 
-// SessionInfo contains session metadata returned to the client.
 type SessionInfo struct {
 	ID        string `json:"id"`
 	ExpiresAt string `json:"expires_at"`
 }
 
-// EmployeeInfo contains basic employee information.
 type EmployeeInfo struct {
 	ID             string `json:"id"`
 	FirstName      string `json:"first_name"`
@@ -82,185 +186,95 @@ type EmployeeInfo struct {
 	OrganizationID string `json:"organization_id"`
 }
 
-// Login handles POST /auth/login.
-// Dev mode: accepts email only, no password required.
-// TODO(auth:prod): Add password validation and SSO support.
-func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
-	var req LoginRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
-			"Solicitud inválida", err))
-		return
-	}
-
-	if req.Email == "" {
-		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
-			"El correo electrónico es requerido", nil))
-		return
-	}
-
-	ip := r.RemoteAddr
-	ua := r.UserAgent()
-
-	result, err := h.svc.Login(r.Context(), req.Email, ip, ua)
-	if err != nil {
-		writeError(w, err)
-		return
-	}
-
-	// Set httpOnly cookie with the session token
-	http.SetCookie(w, &http.Cookie{
-		Name:     "session_token",
-		Value:    result.Token,
-		Path:     "/",
-		HttpOnly: true,
-		Secure:   r.TLS != nil,
-		SameSite: http.SameSiteStrictMode,
-		Expires:  result.Session.ExpiresAt,
-	})
-
-	// Resolve organization_id from the employee's org node
-	var orgIDStr string
-	if emp, err := h.svc.Employee(r.Context(), result.Session.EmployeeID); err == nil {
-		if _, orgID, err := h.svc.OrgNodeInfo(r.Context(), emp.OrgNodeID); err == nil {
-			orgIDStr = orgID.String()
-		}
-	}
-
-	resp := LoginResponse{
-		Session: SessionInfo{
-			ID:        result.Session.ID.String(),
-			ExpiresAt: result.Session.ExpiresAt.Format(time.RFC3339),
-		},
-		Token: result.Token,
-		Employee: EmployeeInfo{
-			ID: result.Session.EmployeeID.String(),
-			// First and last name not available from session alone;
-			// client can GET /auth/me for full details.
-		},
-		Role:           string(result.Role),
-		OrganizationID: orgIDStr,
-	}
-
-	writeJSON(w, http.StatusOK, resp)
-}
-
-// DevLogin handles POST /auth/dev-login.
-// Only available in ENV=development. Looks up an employee by email
-// and creates a session without password/SSO — just needs the email
-// to exist in the employees table.
-func (h *AuthHandler) DevLogin(w http.ResponseWriter, r *http.Request) {
-	if os.Getenv("ENV") != "development" && os.Getenv("ENABLE_DEV_LOGIN") != "true" {
-		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
-			"Este inicio de sesión no está disponible en producción", nil))
-		return
-	}
-
-	var req LoginRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
-			"Solicitud inválida", err))
-		return
-	}
-
-	if req.Email == "" {
-		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
-			"El correo electrónico es requerido", nil))
-		return
-	}
-
-	// Look up employee by email in the DB
-	emp, err := h.svc.EmployeeByEmail(r.Context(), req.Email)
-	if err != nil {
-		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
-			"El empleado "+req.Email+" no existe", err))
-		return
-	}
-
-	ip := r.RemoteAddr
-	ua := r.UserAgent()
-
-	// Create a real session — same as Login but skips password/SSO
-	session, token, err := h.svc.SessionStore().Create(r.Context(), emp.ID, ip, ua)
-	if err != nil {
-		writeError(w, err)
-		return
-	}
-
-	// Look up the role and profile from the employee's evaluation profile
-	role, profile, _ := h.svc.EmployeeRoleAndProfile(r.Context(), emp.ID)
-
-	orgNodeName, orgID, _ := h.svc.OrgNodeInfo(r.Context(), emp.OrgNodeID)
-
-	http.SetCookie(w, &http.Cookie{
-		Name:     "session_token",
-		Value:    token,
-		Path:     "/",
-		HttpOnly: true,
-		Secure:   r.TLS != nil,
-		SameSite: http.SameSiteStrictMode,
-		Expires:  session.ExpiresAt,
-	})
-
-	resp := LoginResponse{
-		Session: SessionInfo{
-			ID:        session.ID.String(),
-			ExpiresAt: session.ExpiresAt.Format(time.RFC3339),
-		},
-		Token: token,
-		Employee: EmployeeInfo{
-			ID:             emp.ID.String(),
-			FirstName:      emp.FirstName,
-			LastName:       emp.LastName,
-			Email:          emp.Email,
-			JobTitle:       emp.JobTitle,
-			OrgNodeID:      emp.OrgNodeID.String(),
-			OrgNodeName:    orgNodeName,
-			OrganizationID: orgID.String(),
-		},
-		Role: string(role),
-		Profile: ProfileInfo{
-			ID:   profile.ID.String(),
-			Name: string(role),
-		},
-		OrganizationID: orgID.String(),
-	}
-
-	writeJSON(w, http.StatusOK, resp)
-}
-
-// Logout handles POST /auth/logout.
-// Revokes the current session identified by the session_token cookie
-// or Authorization: Bearer header. Self-contained for the same reason
-// as /me — clients need to be able to log out without first going
-// through RequireAuth (which would 401 a stale or expired session).
+// Logout handles GET /auth/logout.
 func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	token := extractSessionToken(r)
-
-	// If we have a valid session, revoke it server-side
+	var idTokenHint string
 	if token != "" {
-		if result, err := h.svc.ValidateSession(r.Context(), token); err == nil && result != nil && result.Session != nil {
-			_ = h.svc.Logout(r.Context(), result.Session.ID)
+		if sess, err := h.svc.SessionStore().GetByToken(r.Context(), token); err == nil && sess != nil {
+			_ = h.svc.Logout(r.Context(), sess.ID)
+			idTokenHint = sess.IDToken
 		}
 	}
 
-	// Always clear the session cookie, even if no session was found —
-	// the client should not see a stale cookie after a logout attempt.
 	http.SetCookie(w, &http.Cookie{
-		Name:     "session_token",
-		Value:    "",
-		Path:     "/",
+		Name: "session_token", Value: "", Path: "/",
 		HttpOnly: true,
-		Secure:   r.TLS != nil,
-		SameSite: http.SameSiteStrictMode,
-		MaxAge:   -1,
+		Secure:   r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https",
+		SameSite: http.SameSiteLaxMode, MaxAge: -1,
 	})
 
-	writeJSON(w, http.StatusOK, map[string]string{"message": "Sesión revocada"})
+	endSessionURL, err := h.sso.GetEndSessionURL(r.Context(), idTokenHint)
+	if err != nil {
+		http.Redirect(w, r, "/login", http.StatusFound)
+		return
+	}
+	http.Redirect(w, r, endSessionURL, http.StatusFound)
+}
+
+// LogoutComplete handles GET /auth/logout-complete.
+// Keycloak redirects here after a successful logout (post_logout_redirect_uri).
+// Redirects to the frontend login page, which will auto-redirect to Keycloak's
+// login form since the SSO session is no longer valid.
+func (h *AuthHandler) LogoutComplete(w http.ResponseWriter, r *http.Request) {
+	frontendHost := os.Getenv("CORS_ORIGINS")
+	if frontendHost == "" {
+		frontendHost = "http://localhost:5173"
+	}
+	host := strings.Split(frontendHost, ",")[0]
+	http.Redirect(w, r, host+"/login", http.StatusFound)
+}
+
+// RevokeEmployeeSessions handles POST /auth/admin/revoke-employee/{empId}.
+// Protects by checking X-Admin-Revoke-Key header against ADMIN_REVOKE_KEY env var.
+// TODO(auth:admin): when role-based UI exists, also accept RequirePermission(PermAdminAll).
+func (h *AuthHandler) RevokeEmployeeSessions(w http.ResponseWriter, r *http.Request) {
+	adminKey := os.Getenv("ADMIN_REVOKE_KEY")
+	if adminKey != "" && r.Header.Get("X-Admin-Revoke-Key") != adminKey {
+		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
+			"Acceso no autorizado", nil))
+		return
+	}
+
+	empIDStr := chi.URLParam(r, "empId")
+	empID, err := uuid.Parse(empIDStr)
+	if err != nil {
+		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
+			"ID de empleado inválido", err))
+		return
+	}
+
+	sessions, err := h.svc.SessionStore().ListByEmployeeID(r.Context(), empID)
+	if err != nil {
+		log.Printf("admin revoke: failed to list sessions for %s: %v", empID, err)
+		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
+			"Error al buscar sesiones", err))
+		return
+	}
+
+	for _, sess := range sessions {
+		if sess.RefreshToken != "" {
+			if err := h.sso.RevokeToken(r.Context(), sess.RefreshToken); err != nil {
+				log.Printf("admin revoke: SSO revoke failed for session %s: %v", sess.ID, err)
+			}
+		}
+	}
+
+	if err := h.svc.SessionStore().RevokeAllEmployeeSessions(r.Context(), empID); err != nil {
+		log.Printf("admin revoke: local revoke failed for %s: %v", empID, err)
+		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
+			"Error al revocar sesiones", err))
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]string{
+		"message":        "Sesiones revocadas",
+		"employee_id":    empID.String(),
+		"sessions_count": fmt.Sprintf("%d", len(sessions)),
+	})
 }
 
 // Refresh handles POST /auth/refresh.
-// Extends the expiry time of the current session.
 func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 	session, ok := auth.GetSession(r.Context())
 	if !ok || session == nil {
@@ -281,7 +295,6 @@ func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// MeResponse is the JSON body returned by GET /auth/me.
 type MeResponse struct {
 	Employee       EmployeeInfo `json:"employee"`
 	Role           string       `json:"role"`
@@ -289,18 +302,12 @@ type MeResponse struct {
 	OrganizationID string       `json:"organization_id"`
 }
 
-// ProfileInfo holds evaluation profile information for the /me endpoint.
 type ProfileInfo struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
 }
 
 // Me handles GET /auth/me.
-// Returns the current authenticated user's information.
-// Self-contained: extracts the session token from the session_token cookie
-// or Authorization header, then validates it directly. (The /me endpoint
-// runs outside the RequireAuth middleware by design — clients need to be
-// able to ask "who am I?" to recover from a stale session.)
 func (h *AuthHandler) Me(w http.ResponseWriter, r *http.Request) {
 	token := extractSessionToken(r)
 	if token == "" {
@@ -346,8 +353,6 @@ func (h *AuthHandler) Me(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, resp)
 }
 
-// extractSessionToken pulls the session token from the session_token cookie
-// or the Authorization: Bearer header, in that order.
 func extractSessionToken(r *http.Request) string {
 	if c, err := r.Cookie("session_token"); err == nil && c.Value != "" {
 		return c.Value
