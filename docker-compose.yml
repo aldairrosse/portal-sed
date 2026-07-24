@@ -25,7 +25,7 @@ services:
     environment:
       DATABASE_URL: postgres://sed:sed@postgres:5432/sed?sslmode=disable
       ENV: production
-      CORS_ORIGINS: https://localhost:8088
+      CORS_ORIGINS: ${CORS_ORIGINS}
       SSO_KC_ISSUER: ${SSO_KC_ISSUER}
       SSO_CLIENT_ID: ${SSO_CLIENT_ID}
       SSO_CLIENT_SECRET: ${SSO_CLIENT_SECRET}
