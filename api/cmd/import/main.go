@@ -655,8 +655,12 @@ func passSSOSeed(ctx context.Context, tgtDB *sql.DB, dryRun bool) passResult {
 	}
 
 	skipEmp := os.Getenv("SEED_SSO_DEV_EMPLOYEE_NUMBER")
-	issuer := os.Getenv("SSO_KC_ISSUER")
-	baseURL := ssoBaseURL(issuer)
+
+	baseURL := os.Getenv("SSO_SEED_BASE_URL")
+	if baseURL == "" {
+		issuer := os.Getenv("SSO_KC_ISSUER")
+		baseURL = ssoBaseURL(issuer)
+	}
 
 	clientID := os.Getenv("SSO_CLIENT_ID")
 	if clientID == "" {
