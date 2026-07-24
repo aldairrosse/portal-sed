@@ -28,6 +28,10 @@ import (
 // to derive the base URL (e.g. for the SSO seed admin API).
 var ssoBaseRe = regexp.MustCompile(`^(.*?)/realms/[^/]+/?$`)
 
+// ssoUserNotFoundRe extracts the employee number from a 400 error like:
+// {"error":"Usuario \"20569\" no encontrado"}
+var ssoUserNotFoundRe = regexp.MustCompile(`Usuario\s+"(\d+)"\s+no\s+encontrado`)
+
 type reasons map[string]int
 
 func (r reasons) add(key string)      { r[key]++ }
@@ -721,31 +725,65 @@ func passSSOSeed(ctx context.Context, tgtDB *sql.DB, dryRun bool) passResult {
 		return pr
 	}
 
-	// Register all employees
+	// Register all employees — retry on "Usuario X no encontrado" by excluding that user
 	seedURL := baseURL + "/api/seed/sistemas/usuarios"
-	seedBody := ssoSeedPayload{
-		SyncKeycloak: true,
-		Items: []ssoSeedItem{
-			{ClientID: clientID, Usuarios: usuarios},
-		},
-	}
+	var discarded int
 
-	log.Printf("[import] SSO seed → %s (%d users)", seedURL, len(usuarios))
-	status, body, err = doJSON(ctx, http.MethodPost, seedURL, loginResp.Token, seedBody, nil)
-	if err != nil {
-		log.Printf("[import] SSO seed ERROR: %v (url=%s)", err, seedURL)
-		pr.reasons.add("seed_error")
-		return pr
-	}
-	if status < 200 || status >= 300 {
-		log.Printf("[import] SSO seed ERROR: url=%s status=%d body=%s", seedURL, status, string(body))
-		pr.reasons.add("seed_http_error")
-		return pr
-	}
+	for {
+		seedBody := ssoSeedPayload{
+			SyncKeycloak: true,
+			Items: []ssoSeedItem{
+				{ClientID: clientID, Usuarios: usuarios},
+			},
+		}
 
-	log.Printf("[import] SSO seed OK: status=%d users=%d", status, len(usuarios))
-	pr.written = len(usuarios)
-	return pr
+		log.Printf("[import] SSO seed → %s (%d users)", seedURL, len(usuarios))
+		status, body, err := doJSON(ctx, http.MethodPost, seedURL, loginResp.Token, seedBody, nil)
+		if err != nil {
+			log.Printf("[import] SSO seed ERROR: %v (url=%s)", err, seedURL)
+			pr.reasons.add("seed_error")
+			return pr
+		}
+		if status >= 200 && status < 300 {
+			log.Printf("[import] SSO seed OK: status=%d users=%d discarded=%d", status, len(usuarios), discarded)
+			pr.written = len(usuarios)
+			return pr
+		}
+
+		// Non-2xx — check if it's a "user not found" error we can recover from
+		m := ssoUserNotFoundRe.FindStringSubmatch(string(body))
+		if m == nil || status != 400 {
+			log.Printf("[import] SSO seed ERROR: url=%s status=%d body=%s", seedURL, status, string(body))
+			pr.reasons.add("seed_http_error")
+			return pr
+		}
+
+		notFoundUser := m[1]
+		found := false
+		for i, u := range usuarios {
+			if u.User == notFoundUser {
+				usuarios = append(usuarios[:i], usuarios[i+1:]...)
+				found = true
+				break
+			}
+		}
+		if !found {
+			log.Printf("[import] SSO seed ERROR: user %q not found in local list, url=%s status=%d body=%s",
+				notFoundUser, seedURL, status, string(body))
+			pr.reasons.add("seed_http_error")
+			return pr
+		}
+
+		discarded++
+		log.Printf("[import] SSO seed retry: removed user %s (not in SSO), retrying with %d users",
+			notFoundUser, len(usuarios))
+
+		if len(usuarios) == 0 {
+			log.Println("[import] SSO seed: no users left after exclusions")
+			pr.reasons.add("all_excluded")
+			return pr
+		}
+	}
 }
 
 func shortCode(name string) string {
