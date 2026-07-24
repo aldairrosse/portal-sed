@@ -1,14 +1,20 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
+	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
 	"log"
+	"net/http"
 	"os"
+	"regexp"
 	"sort"
 	"strings"
+	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/jackc/pgx/v5/stdlib"
@@ -17,6 +23,10 @@ import (
 
 	"github.com/sed-evaluacion-desempeno/api/internal/seed"
 )
+
+// ssoBaseRe strips the /realms/<realm> suffix from an OIDC issuer
+// to derive the base URL (e.g. for the SSO seed admin API).
+var ssoBaseRe = regexp.MustCompile(`^(.*?)/realms/[^/]+/?$`)
 
 type reasons map[string]int
 
@@ -97,6 +107,7 @@ func main() {
 	r3, empIDMap, managerMap := passEmployees(ctx, tgtDB, extDB, srcEmps, orgIDMap, *dryRun)
 	r4 := passManagers(ctx, tgtDB, empIDMap, managerMap, *dryRun)
 	r5 := passHeadEmployees(ctx, tgtDB, headEmailMap, empIDMap, *dryRun)
+	r6 := passSSOSeed(ctx, tgtDB, *dryRun)
 
 	// ── Summary ──
 	log.Println("[import] ═════════════════════════════════════════════════════════════")
@@ -111,6 +122,7 @@ func main() {
 	log.Println(r3)
 	log.Println(r4)
 	log.Println(r5)
+	log.Println(r6)
 	log.Println("[import]")
 	if *dryRun {
 		log.Println("[import]   (dry run — nothing was written)")
@@ -551,6 +563,182 @@ func passHeadEmployees(ctx context.Context, tgtDB *sql.DB, headMap map[uuid.UUID
 		pr.written++
 	}
 
+	return pr
+}
+
+// ── Pass 6: SSO seed ────────────────────────────────────────────────────
+
+type ssoSeedUser struct {
+	User        string   `json:"user"`
+	RoleCodigos []string `json:"role_codigos,omitempty"`
+}
+
+type ssoSeedItem struct {
+	ClientID string        `json:"client_id"`
+	Usuarios []ssoSeedUser `json:"usuarios"`
+}
+
+type ssoSeedPayload struct {
+	SyncKeycloak bool          `json:"sync_keycloak"`
+	Items        []ssoSeedItem `json:"items"`
+}
+
+type ssoLoginResponse struct {
+	Token string `json:"token"`
+}
+
+func ssoBaseURL(issuer string) string {
+	if m := ssoBaseRe.FindStringSubmatch(issuer); m != nil {
+		return m[1]
+	}
+	log.Printf("[import] SSO warn: cannot derive base URL from issuer %q, using as-is", issuer)
+	return issuer
+}
+
+func doJSON(ctx context.Context, method, url, token string, reqBody, respOut interface{}) (int, []byte, error) {
+	var body io.Reader
+	if reqBody != nil {
+		data, err := json.Marshal(reqBody)
+		if err != nil {
+			return 0, nil, fmt.Errorf("marshal: %w", err)
+		}
+		body = bytes.NewReader(data)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, method, url, body)
+	if err != nil {
+		return 0, nil, fmt.Errorf("new request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	if token != "" {
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
+
+	client := &http.Client{Timeout: 30 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return 0, nil, fmt.Errorf("do: %w", err)
+	}
+	defer resp.Body.Close()
+
+	respData, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return resp.StatusCode, nil, fmt.Errorf("read body: %w", err)
+	}
+
+	if respOut != nil {
+		if err := json.Unmarshal(respData, respOut); err != nil {
+			return resp.StatusCode, respData, fmt.Errorf("unmarshal: %w", err)
+		}
+	}
+
+	return resp.StatusCode, respData, nil
+}
+
+// passSSOSeed registers all active employees in the SSO portal via the seed admin API.
+// Best-effort: errors are logged but never abort the import.
+func passSSOSeed(ctx context.Context, tgtDB *sql.DB, dryRun bool) passResult {
+	pr := passResult{label: "sso_seed", reasons: make(reasons)}
+
+	if dryRun {
+		log.Println("[import] SSO seed skipped: dry run")
+		pr.reasons.add("dry_run")
+		return pr
+	}
+
+	adminUser := os.Getenv("SSO_SEED_ADMIN_USER")
+	adminPass := os.Getenv("SSO_SEED_ADMIN_PASSWORD")
+	if adminUser == "" || adminPass == "" {
+		log.Println("[import] SSO seed skipped: credentials not configured (SSO_SEED_ADMIN_USER/SSO_SEED_ADMIN_PASSWORD)")
+		pr.reasons.add("no_creds")
+		return pr
+	}
+
+	skipEmp := os.Getenv("SEED_SSO_DEV_EMPLOYEE_NUMBER")
+	issuer := os.Getenv("SSO_KC_ISSUER")
+	baseURL := ssoBaseURL(issuer)
+
+	clientID := os.Getenv("SSO_CLIENT_ID")
+	if clientID == "" {
+		log.Println("[import] SSO seed skipped: SSO_CLIENT_ID not configured")
+		pr.reasons.add("no_client_id")
+		return pr
+	}
+
+	rows, err := tgtDB.QueryContext(ctx, `SELECT employee_number FROM employees WHERE is_active = true`)
+	if err != nil {
+		log.Printf("[import] SSO seed ERROR: query employees: %v", err)
+		pr.reasons.add("query_error")
+		return pr
+	}
+	defer rows.Close()
+
+	var usuarios []ssoSeedUser
+	for rows.Next() {
+		var empNum string
+		if err := rows.Scan(&empNum); err != nil {
+			pr.reasons.add("scan_error")
+			continue
+		}
+		if skipEmp != "" && strings.EqualFold(empNum, skipEmp) {
+			pr.reasons.add("skipped")
+			continue
+		}
+		usuarios = append(usuarios, ssoSeedUser{User: empNum, RoleCodigos: []string{"usuario"}})
+	}
+	if err := rows.Err(); err != nil {
+		log.Printf("[import] SSO seed ERROR: rows iteration: %v", err)
+		pr.reasons.add("rows_error")
+		return pr
+	}
+
+	pr.sourceTotal = len(usuarios)
+	if len(usuarios) == 0 {
+		log.Println("[import] SSO seed skipped: no active employees to seed")
+		pr.reasons.add("no_users")
+		return pr
+	}
+
+	// Login to get admin token
+	loginURL := baseURL + "/api/seed/login"
+	loginBody := map[string]string{"user": adminUser, "password": adminPass}
+	var loginResp ssoLoginResponse
+
+	status, body, err := doJSON(ctx, http.MethodPost, loginURL, "", loginBody, &loginResp)
+	if err != nil {
+		log.Printf("[import] SSO seed login ERROR: %v", err)
+		pr.reasons.add("login_error")
+		return pr
+	}
+	if status < 200 || status >= 300 {
+		log.Printf("[import] SSO seed login ERROR: status=%d body=%s", status, string(body))
+		pr.reasons.add("login_http_error")
+		return pr
+	}
+
+	// Register all employees
+	seedURL := baseURL + "/api/seed/sistemas/usuarios"
+	seedBody := ssoSeedPayload{
+		SyncKeycloak: true,
+		Items: []ssoSeedItem{
+			{ClientID: clientID, Usuarios: usuarios},
+		},
+	}
+
+	status, body, err = doJSON(ctx, http.MethodPost, seedURL, loginResp.Token, seedBody, nil)
+	if err != nil {
+		log.Printf("[import] SSO seed ERROR: %v", err)
+		pr.reasons.add("seed_error")
+		return pr
+	}
+	if status < 200 || status >= 300 {
+		log.Printf("[import] SSO seed ERROR: status=%d body=%s", status, string(body))
+		pr.reasons.add("seed_http_error")
+		return pr
+	}
+
+	log.Printf("[import] SSO seed OK: status=%d users=%d", status, len(usuarios))
+	pr.written = len(usuarios)
 	return pr
 }
 
