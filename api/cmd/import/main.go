@@ -704,14 +704,15 @@ func passSSOSeed(ctx context.Context, tgtDB *sql.DB, dryRun bool) passResult {
 	loginBody := map[string]string{"user": adminUser, "password": adminPass}
 	var loginResp ssoLoginResponse
 
+	log.Printf("[import] SSO seed login → %s", loginURL)
 	status, body, err := doJSON(ctx, http.MethodPost, loginURL, "", loginBody, &loginResp)
 	if err != nil {
-		log.Printf("[import] SSO seed login ERROR: %v", err)
+		log.Printf("[import] SSO seed login ERROR: %v (url=%s)", err, loginURL)
 		pr.reasons.add("login_error")
 		return pr
 	}
 	if status < 200 || status >= 300 {
-		log.Printf("[import] SSO seed login ERROR: status=%d body=%s", status, string(body))
+		log.Printf("[import] SSO seed login ERROR: url=%s status=%d body=%s", loginURL, status, string(body))
 		pr.reasons.add("login_http_error")
 		return pr
 	}
@@ -725,14 +726,15 @@ func passSSOSeed(ctx context.Context, tgtDB *sql.DB, dryRun bool) passResult {
 		},
 	}
 
+	log.Printf("[import] SSO seed → %s (%d users)", seedURL, len(usuarios))
 	status, body, err = doJSON(ctx, http.MethodPost, seedURL, loginResp.Token, seedBody, nil)
 	if err != nil {
-		log.Printf("[import] SSO seed ERROR: %v", err)
+		log.Printf("[import] SSO seed ERROR: %v (url=%s)", err, seedURL)
 		pr.reasons.add("seed_error")
 		return pr
 	}
 	if status < 200 || status >= 300 {
-		log.Printf("[import] SSO seed ERROR: status=%d body=%s", status, string(body))
+		log.Printf("[import] SSO seed ERROR: url=%s status=%d body=%s", seedURL, status, string(body))
 		pr.reasons.add("seed_http_error")
 		return pr
 	}
