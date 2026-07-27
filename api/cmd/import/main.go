@@ -31,7 +31,8 @@ var ssoBaseRe = regexp.MustCompile(`^(.*?)/realms/[^/]+/?$`)
 // ssoUserNotFoundRe extracts the employee number from a 400 error like:
 // {"error":"Usuario \"20569\" no encontrado"}
 // The quotes may be JSON-escaped (\"…\") or plain ("…").
-var ssoUserNotFoundRe = regexp.MustCompile(`Usuario\s+\\?"(\d+)\\"?\s+no\s+encontrado`)
+// Employee numbers can be negative (e.g. \"-13\").
+var ssoUserNotFoundRe = regexp.MustCompile(`Usuario\s+\\?"(-?\d+)\\"?\s+no\s+encontrado`)
 
 type reasons map[string]int
 
