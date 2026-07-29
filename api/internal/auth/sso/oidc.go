@@ -68,7 +68,7 @@ func GeneratePKCE() (verifier, challenge string, err error) {
 	return verifier, challenge, nil
 }
 
-func (a *OIDCAdapter) AuthorizationURL(state, acr, codeVerifier string) string {
+func (a *OIDCAdapter) AuthorizationURL(state, nonce, acr, codeVerifier string) string {
 	challenge := ""
 	if codeVerifier != "" {
 		h := sha256.Sum256([]byte(codeVerifier))
@@ -79,6 +79,9 @@ func (a *OIDCAdapter) AuthorizationURL(state, acr, codeVerifier string) string {
 	params = append(params, oauth2.SetAuthURLParam("response_type", "code"))
 	if acr != "" {
 		params = append(params, oauth2.SetAuthURLParam("acr_values", acr))
+	}
+	if nonce != "" {
+		params = append(params, oauth2.SetAuthURLParam("nonce", nonce))
 	}
 	if challenge != "" {
 		params = append(params, oauth2.SetAuthURLParam("code_challenge", challenge))
@@ -113,6 +116,7 @@ type idTokenClaims struct {
 	Name              string                    `json:"name"`
 	PreferredUsername string                    `json:"preferred_username"`
 	ACR               string                    `json:"acr"`
+	Nonce             string                    `json:"nonce"`
 	ResourceAccess    map[string]clientRolesRaw `json:"resource_access"`
 }
 
@@ -150,8 +154,8 @@ func HasLoA2(claims *AccessTokenClaims) bool {
 	return claims.ACR == "mobo-2fa"
 }
 
-func (a *OIDCAdapter) ValidateToken(ctx context.Context, token string) (*SSOUser, error) {
-	idToken, err := a.verifier.Verify(ctx, token)
+func (a *OIDCAdapter) ValidateToken(ctx context.Context, rawIDToken string, expectedNonce string) (*SSOUser, error) {
+	idToken, err := a.verifier.Verify(ctx, rawIDToken)
 	if err != nil {
 		return nil, fmt.Errorf("oidc: invalid id_token: %w", err)
 	}
@@ -159,6 +163,10 @@ func (a *OIDCAdapter) ValidateToken(ctx context.Context, token string) (*SSOUser
 	var claims idTokenClaims
 	if err := idToken.Claims(&claims); err != nil {
 		return nil, fmt.Errorf("oidc: failed to parse id_token: %w", err)
+	}
+
+	if expectedNonce != "" && claims.Nonce != expectedNonce {
+		return nil, fmt.Errorf("oidc: nonce mismatch")
 	}
 
 	user := &SSOUser{
@@ -173,7 +181,13 @@ func (a *OIDCAdapter) ValidateToken(ctx context.Context, token string) (*SSOUser
 	return user, nil
 }
 
-func (a *OIDCAdapter) GetUserFromToken(ctx context.Context, accessToken string) (*SSOUser, error) {
+// VerifyAccessToken validates the access token via introspection and
+// returns the parsed claims. Returns an error if the token is invalid.
+func (a *OIDCAdapter) VerifyAccessToken(ctx context.Context, accessToken string) (*AccessTokenClaims, error) {
+	if err := a.ValidateAccessToken(ctx, accessToken); err != nil {
+		return nil, err
+	}
+
 	parts := strings.Split(accessToken, ".")
 	if len(parts) != 3 {
 		return nil, fmt.Errorf("oidc: invalid access_token format")
@@ -187,6 +201,15 @@ func (a *OIDCAdapter) GetUserFromToken(ctx context.Context, accessToken string) 
 	var claims AccessTokenClaims
 	if err := json.Unmarshal(payload, &claims); err != nil {
 		return nil, fmt.Errorf("oidc: failed to parse access_token claims: %w", err)
+	}
+
+	return &claims, nil
+}
+
+func (a *OIDCAdapter) GetUserFromToken(ctx context.Context, accessToken string) (*SSOUser, error) {
+	claims, err := a.VerifyAccessToken(ctx, accessToken)
+	if err != nil {
+		return nil, err
 	}
 
 	var roles []string
@@ -204,7 +227,7 @@ func (a *OIDCAdapter) GetUserFromToken(ctx context.Context, accessToken string) 
 		Name:        claims.Name,
 		Roles:       roles,
 		ACR:         claims.ACR,
-		Requires2FA: Requires2FA(&claims, a.clientID),
+		Requires2FA: Requires2FA(claims, a.clientID),
 	}
 	if claims.PreferredUsername != "" {
 		user.ExternalID = claims.PreferredUsername

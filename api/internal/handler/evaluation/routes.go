@@ -61,6 +61,7 @@ func RegisterRoutes(r chi.Router, handler *EvaluationHandler, authSvc *authsvc.A
 	// All evaluation endpoints require auth
 	r.Group(func(r chi.Router) {
 		r.Use(middleware.RequireAuth(authSvc))
+		r.Use(middleware.RequireLoA2())
 
 		// --- Evaluation Endpoints ---
 

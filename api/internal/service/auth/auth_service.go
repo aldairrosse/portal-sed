@@ -216,9 +216,17 @@ func (s *AuthService) ValidateSession(ctx context.Context, token string) (*Valid
 				if ssoUser.ACR != session.ACR || ssoUser.Requires2FA != session.Requires2FA {
 					session.ACR = ssoUser.ACR
 					session.Requires2FA = ssoUser.Requires2FA
+					_ = s.sessionStore.UpdateSecurityContext(ctx, session.ID,
+						session.IDToken, session.AccessToken, session.RefreshToken,
+						session.ACR, session.Requires2FA)
 				}
 			}
 		}
+	}
+
+	if session.Requires2FA && session.ACR != "mobo-2fa" {
+		return nil, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
+			"Se requiere autenticación de dos factores", nil)
 	}
 
 	emp, err := s.employeeRepo.GetByID(ctx, session.EmployeeID)

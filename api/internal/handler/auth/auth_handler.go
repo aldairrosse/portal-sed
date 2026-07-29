@@ -41,9 +41,9 @@ func writeError(w http.ResponseWriter, err error) {
 }
 
 type AuthHandler struct {
-	svc      *svc.AuthService
-	sso      sso.SSOAdapter
-	txStore  *sso.TransactionStore
+	svc     *svc.AuthService
+	sso     sso.SSOAdapter
+	txStore *sso.TransactionStore
 }
 
 func NewAuthHandler(svc *svc.AuthService, ssoAdapter sso.SSOAdapter) *AuthHandler {
@@ -78,6 +78,11 @@ func (h *AuthHandler) SSOLoginRedirect(w http.ResponseWriter, r *http.Request) {
 		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest, "Error al iniciar SSO", err))
 		return
 	}
+	nonce, err := auth.GenerateToken()
+	if err != nil {
+		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest, "Error al generar nonce", err))
+		return
+	}
 
 	codeVerifier, _, err := sso.GeneratePKCE()
 	if err != nil {
@@ -86,11 +91,13 @@ func (h *AuthHandler) SSOLoginRedirect(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.txStore.Store(state, &sso.OIDCTransaction{
+		State:        state,
+		Nonce:        nonce,
 		CodeVerifier: codeVerifier,
 		ReturnTo:     "/",
 	})
 
-	authURL := h.sso.AuthorizationURL(state, "", codeVerifier)
+	authURL := h.sso.AuthorizationURL(state, nonce, "", codeVerifier)
 	http.Redirect(w, r, authURL, http.StatusFound)
 }
 
@@ -98,6 +105,11 @@ func (h *AuthHandler) SSOStepUp(w http.ResponseWriter, r *http.Request) {
 	state, err := auth.GenerateToken()
 	if err != nil {
 		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest, "Error al iniciar step-up", err))
+		return
+	}
+	nonce, err := auth.GenerateToken()
+	if err != nil {
+		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest, "Error al generar nonce", err))
 		return
 	}
 
@@ -108,18 +120,36 @@ func (h *AuthHandler) SSOStepUp(w http.ResponseWriter, r *http.Request) {
 	}
 
 	returnTo := r.URL.Query().Get("return_to")
-	if returnTo == "" {
+	if !validReturnTo(returnTo) {
 		returnTo = "/"
 	}
 
 	h.txStore.Store(state, &sso.OIDCTransaction{
+		State:        state,
+		Nonce:        nonce,
 		CodeVerifier: codeVerifier,
 		ReturnTo:     returnTo,
 		RequestedACR: "mobo-2fa",
 	})
 
-	authURL := h.sso.AuthorizationURL(state, "mobo-2fa", codeVerifier)
+	authURL := h.sso.AuthorizationURL(state, nonce, "mobo-2fa", codeVerifier)
 	http.Redirect(w, r, authURL, http.StatusFound)
+}
+
+func validReturnTo(value string) bool {
+	if value == "" {
+		return false
+	}
+	if !strings.HasPrefix(value, "/") {
+		return false
+	}
+	if strings.HasPrefix(value, "//") {
+		return false
+	}
+	if strings.Contains(value, "\\") {
+		return false
+	}
+	return true
 }
 
 func (h *AuthHandler) SSOCallback(w http.ResponseWriter, r *http.Request) {
@@ -143,7 +173,7 @@ func (h *AuthHandler) SSOCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if _, err := h.sso.ValidateToken(r.Context(), rawIDToken); err != nil {
+	if _, err := h.sso.ValidateToken(r.Context(), rawIDToken, tx.Nonce); err != nil {
 		log.Printf("sso callback: id_token invalid: %v", err)
 		h.redirectError(w, r, "id_token_invalido")
 		return
@@ -178,14 +208,7 @@ func (h *AuthHandler) SSOCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	role, _, err := h.svc.EmployeeRoleAndProfile(r.Context(), emp.ID)
-	if err != nil {
-		log.Printf("sso callback: role lookup failed: %v", err)
-		h.redirectError(w, r, "error_bd")
-		return
-	}
-
-	requires2FA := ssoUser.Requires2FA || sso.Requires2FAFromLocalRole(role)
+	requires2FA := ssoUser.Requires2FA
 	hasLoA2 := ssoUser.ACR == "mobo-2fa"
 
 	if tx.IsStepUp() {
@@ -226,7 +249,7 @@ func (h *AuthHandler) SSOCallback(w http.ResponseWriter, r *http.Request) {
 	host := strings.Split(frontendHost, ",")[0]
 
 	redirectTo := tx.ReturnTo
-	if redirectTo == "" || !strings.HasPrefix(redirectTo, "/") {
+	if !validReturnTo(redirectTo) {
 		redirectTo = "/"
 	}
 	http.Redirect(w, r, host+redirectTo, http.StatusFound)
@@ -239,6 +262,12 @@ func (h *AuthHandler) initiateStepUp(w http.ResponseWriter, r *http.Request, ret
 		h.redirectError(w, r, "stepup_error")
 		return
 	}
+	nonce, err := auth.GenerateToken()
+	if err != nil {
+		log.Printf("sso step-up: failed to generate nonce: %v", err)
+		h.redirectError(w, r, "stepup_error")
+		return
+	}
 
 	codeVerifier, _, err := sso.GeneratePKCE()
 	if err != nil {
@@ -248,12 +277,14 @@ func (h *AuthHandler) initiateStepUp(w http.ResponseWriter, r *http.Request, ret
 	}
 
 	h.txStore.Store(state, &sso.OIDCTransaction{
+		State:        state,
+		Nonce:        nonce,
 		CodeVerifier: codeVerifier,
 		ReturnTo:     returnTo,
 		RequestedACR: "mobo-2fa",
 	})
 
-	authURL := h.sso.AuthorizationURL(state, "mobo-2fa", codeVerifier)
+	authURL := h.sso.AuthorizationURL(state, nonce, "mobo-2fa", codeVerifier)
 	http.Redirect(w, r, authURL, http.StatusFound)
 }
 

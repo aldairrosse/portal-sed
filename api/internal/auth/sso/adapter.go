@@ -14,17 +14,19 @@ import "context"
 // Implement this interface to integrate with OIDC, SAML, or LDAP.
 type SSOAdapter interface {
 	// AuthorizationURL returns the provider's login URL with the given
-	// CSRF state parameter and optional ACR value for step-up auth.
-	AuthorizationURL(state, acr string, codeVerifier string) string
+	// CSRF state parameter, nonce for replay protection, optional ACR value
+	// for step-up auth, and PKCE code verifier.
+	AuthorizationURL(state, nonce, acr string, codeVerifier string) string
 
 	// ExchangeCode exchanges an OIDC authorization code for tokens.
 	// Returns the access_token, id_token, and refresh_token strings.
 	ExchangeCode(ctx context.Context, code, codeVerifier string) (accessToken, idToken, refreshToken string, err error)
 
 	// ValidateToken verifies an external token from the SSO provider
-	// (OIDC id_token, SAML assertion, etc.). Returns the parsed user
-	// info on success, or an error if the token is invalid/expired.
-	ValidateToken(ctx context.Context, token string) (*SSOUser, error)
+	// (OIDC id_token, SAML assertion, etc.), validating the nonce claim
+	// against the expected value. Returns the parsed user info on success,
+	// or an error if the token is invalid/expired.
+	ValidateToken(ctx context.Context, rawIDToken string, expectedNonce string) (*SSOUser, error)
 
 	// GetUserFromToken extracts user information from the access_token.
 	// This includes identity details (name, email), authorization claims
@@ -56,12 +58,12 @@ type SSOAdapter interface {
 
 // SSOUser represents a user authenticated via an external SSO provider.
 type SSOUser struct {
-	ExternalID   string
-	Email        string
-	Name         string
-	Roles        []string
-	ACR          string
-	Requires2FA  bool
+	ExternalID  string
+	Email       string
+	Name        string
+	Roles       []string
+	ACR         string
+	Requires2FA bool
 
 	OrganizationID string
 }
@@ -81,7 +83,7 @@ func NewNoopAdapter() SSOAdapter {
 }
 
 // AuthorizationURL returns an empty string — no SSO provider configured.
-func (a *noopAdapter) AuthorizationURL(_, _, _ string) string { return "" }
+func (a *noopAdapter) AuthorizationURL(_, _, _, _ string) string { return "" }
 
 // ExchangeCode always returns an error — no SSO provider configured.
 func (a *noopAdapter) ExchangeCode(_ context.Context, _, _ string) (string, string, string, error) {
@@ -89,7 +91,7 @@ func (a *noopAdapter) ExchangeCode(_ context.Context, _, _ string) (string, stri
 }
 
 // ValidateToken always returns an error — no SSO provider configured.
-func (a *noopAdapter) ValidateToken(_ context.Context, _ string) (*SSOUser, error) {
+func (a *noopAdapter) ValidateToken(_ context.Context, _, _ string) (*SSOUser, error) {
 	return nil, errNoSSO
 }
 

@@ -71,6 +71,7 @@ func RegisterRoutes(r chi.Router, handler *GoalHandler, authSvc *authsvc.AuthSer
 	// so middleware can be added after other handlers have registered on the parent router.
 	r.Group(func(r chi.Router) {
 		r.Use(middleware.RequireAuth(authSvc))
+		r.Use(middleware.RequireLoA2())
 
 		// --- Category endpoints ---
 

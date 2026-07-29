@@ -6,12 +6,12 @@ import (
 )
 
 type OIDCTransaction struct {
-	State         string
-	Nonce         string
-	CodeVerifier  string
-	ReturnTo      string
-	RequestedACR  string
-	CreatedAt     time.Time
+	State        string
+	Nonce        string
+	CodeVerifier string
+	ReturnTo     string
+	RequestedACR string
+	CreatedAt    time.Time
 }
 
 func (t *OIDCTransaction) IsStepUp() bool {
@@ -19,9 +19,9 @@ func (t *OIDCTransaction) IsStepUp() bool {
 }
 
 type TransactionStore struct {
-	mu       sync.Mutex
-	entries  map[string]*OIDCTransaction
-	ttl      time.Duration
+	mu      sync.Mutex
+	entries map[string]*OIDCTransaction
+	ttl     time.Duration
 }
 
 func NewTransactionStore(ttl time.Duration) *TransactionStore {

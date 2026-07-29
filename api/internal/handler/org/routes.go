@@ -56,6 +56,7 @@ func RegisterRoutes(r chi.Router, handler *OrgHandler, authSvc *authsvc.AuthServ
 	// All org endpoints require auth
 	r.Group(func(r chi.Router) {
 		r.Use(middleware.RequireAuth(authSvc))
+		r.Use(middleware.RequireLoA2())
 
 		// --- Organization Tree endpoints (read) ---
 

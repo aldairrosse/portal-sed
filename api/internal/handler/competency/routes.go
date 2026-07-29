@@ -43,6 +43,7 @@ func RegisterRoutes(r chi.Router, deps *Dependencies) {
 
 	// Common auth middleware (applied to all routes below)
 	r.Use(middleware.RequireAuth(deps.AuthSvc))
+	r.Use(middleware.RequireLoA2())
 
 	// -----------------------------------------------------------------------
 	// Pillar endpoints

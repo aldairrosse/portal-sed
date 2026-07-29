@@ -47,6 +47,7 @@ func RegisterRoutes(r chi.Router, handler *CycleHandler, authSvc *authsvc.AuthSe
 	// All cycle endpoints require auth
 	r.Group(func(r chi.Router) {
 		r.Use(middleware.RequireAuth(authSvc))
+		r.Use(middleware.RequireLoA2())
 
 		// --- Cycle endpoints ---
 

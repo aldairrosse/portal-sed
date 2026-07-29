@@ -23,6 +23,7 @@ func RegisterActivityRoutes(r chi.Router, handler *ActivityHandler, authSvc *aut
 
 	r.Group(func(r chi.Router) {
 		r.Use(middleware.RequireAuth(authSvc))
+		r.Use(middleware.RequireLoA2())
 
 		r.Group(func(r chi.Router) {
 			r.Use(middleware.RateLimit(readRateLimit))

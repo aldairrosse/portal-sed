@@ -42,9 +42,9 @@ type GoalComment struct {
 }
 
 type CreateCommentRequest struct {
-	Content    string  `json:"content"`
-	AuthorID   string  `json:"author_id"`
-	AuthorName string  `json:"author_name"`
+	Content    string `json:"content"`
+	AuthorID   string `json:"author_id"`
+	AuthorName string `json:"author_name"`
 }
 
 type ChangeRequest struct {
@@ -65,7 +65,7 @@ type CreateChangeRequestRequest struct {
 }
 
 type UpdateChangeRequestRequest struct {
-	Status    string `json:"status"`
+	Status     string `json:"status"`
 	ApprovedBy string `json:"approved_by"`
 }
 
@@ -178,22 +178,22 @@ func (h *Handler) CreateComment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-    // Best-effort notification. Use a detached ctx for the lookups so a
-    // client disconnect after the INSERT cannot blank out the email body.
-    // ponytail: org scope is implicit via the auth middleware; explicit
-    // employees.org_node_id filter would be needed if the middleware stops
-    // scoping the request.
-    titleCtx, titleCancel := context.WithTimeout(context.Background(), 2*time.Second)
-    defer titleCancel()
-    h.notifyOwner(titleCtx, notifypkg.Notification{
-        Subject:  "Nuevo comentario en tu meta",
-        Template: notifypkg.TemplateCommentCreated,
-        Data: map[string]string{
-            "AuthorName": authorName,
-            "GoalTitle":  commentGoalTitle(titleCtx, h.db, goalID),
-            "GoalURL":    appBaseURL + "/objetivos/asignacion",
-        },
-    }, goalID, "", authorID.String())
+	// Best-effort notification. Use a detached ctx for the lookups so a
+	// client disconnect after the INSERT cannot blank out the email body.
+	// ponytail: org scope is implicit via the auth middleware; explicit
+	// employees.org_node_id filter would be needed if the middleware stops
+	// scoping the request.
+	titleCtx, titleCancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer titleCancel()
+	h.notifyOwner(titleCtx, notifypkg.Notification{
+		Subject:  "Nuevo comentario en tu meta",
+		Template: notifypkg.TemplateCommentCreated,
+		Data: map[string]string{
+			"AuthorName": authorName,
+			"GoalTitle":  commentGoalTitle(titleCtx, h.db, goalID),
+			"GoalURL":    appBaseURL + "/objetivos/asignacion",
+		},
+	}, goalID, "", authorID.String())
 
 	writeJSON(w, 201, comment)
 }
@@ -303,10 +303,10 @@ func (h *Handler) CreateCategoryComment(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-    var catName string
-    catCtx, catCancel := context.WithTimeout(context.Background(), 2*time.Second)
-    defer catCancel()
-    _ = h.db.QueryRowContext(catCtx, `SELECT name FROM goal_categories WHERE id = $1`, catID).Scan(&catName)
+	var catName string
+	catCtx, catCancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer catCancel()
+	_ = h.db.QueryRowContext(catCtx, `SELECT name FROM goal_categories WHERE id = $1`, catID).Scan(&catName)
 
 	h.notifyOwner(r.Context(), notifypkg.Notification{
 		Subject:  "Nuevo comentario en tu categoría",
@@ -644,6 +644,7 @@ func RegisterRoutes(r chi.Router, handler *Handler, authSvc *authsvc.AuthService
 
 	r.Group(func(r chi.Router) {
 		r.Use(middleware.RequireAuth(authSvc))
+		r.Use(middleware.RequireLoA2())
 
 		// Goal comments
 		r.Group(func(r chi.Router) {

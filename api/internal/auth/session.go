@@ -168,6 +168,34 @@ func (s *SessionStore) Refresh(ctx context.Context, sessionID uuid.UUID) error {
 	return nil
 }
 
+// UpdateSecurityContext updates the OIDC tokens, ACR level, and 2FA flag
+// for an existing session. Used after token refresh/revalidation when the
+// security context (roles, ACR) may have changed server-side.
+func (s *SessionStore) UpdateSecurityContext(
+	ctx context.Context,
+	sessionID uuid.UUID,
+	idToken string,
+	accessToken string,
+	refreshToken string,
+	acr string,
+	requires2FA bool,
+) error {
+	result, err := s.db.ExecContext(ctx,
+		`UPDATE sessions SET id_token = $1, access_token = $2, refresh_token = $3, acr = $4, requires_2fa = $5
+		 WHERE id = $6 AND NOT is_revoked`,
+		nullString(idToken), nullString(accessToken), nullString(refreshToken),
+		nullString(acr), requires2FA, sessionID,
+	)
+	if err != nil {
+		return err
+	}
+	rows, _ := result.RowsAffected()
+	if rows == 0 {
+		return sql.ErrNoRows
+	}
+	return nil
+}
+
 // Revoke marks a session as revoked (logout).
 func (s *SessionStore) Revoke(ctx context.Context, sessionID uuid.UUID) error {
 	result, err := s.db.ExecContext(ctx,
