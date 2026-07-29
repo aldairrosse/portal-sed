@@ -287,7 +287,7 @@ func main() {
 		log.Fatalf("[server] failed to init SSO adapter: %v", err)
 	}
 	log.Printf("[server] SSO adapter initialized (issuer: %s, client: %s)", ssoIssuer, ssoClientID)
-	authSvc.WithSSOValidator(ssoAdapter)
+	authSvc.WithSSOValidator(ssoAdapter).WithSSORevalidator(ssoAdapter)
 
 	// Goal services
 	phaseChecker := goalsvc.NewCyclePhaseCheck(cycleRepo, employeeRepo, orgNodeRepo)

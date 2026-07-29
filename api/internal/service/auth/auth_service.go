@@ -10,6 +10,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/sed-evaluacion-desempeno/api/internal/auth"
+	sso "github.com/sed-evaluacion-desempeno/api/internal/auth/sso"
 	pkgerrors "github.com/sed-evaluacion-desempeno/api/internal/pkg/errors"
 )
 
@@ -101,12 +102,18 @@ type SSOTokenValidator interface {
 	ValidateAccessToken(ctx context.Context, accessToken string) error
 }
 
+// SSOTokenRevalidator can re-extract claims from an access token after renewal.
+type SSOTokenRevalidator interface {
+	GetUserFromToken(ctx context.Context, accessToken string) (*sso.SSOUser, error)
+}
+
 // AuthService provides authentication operations.
 type AuthService struct {
-	sessionStore *auth.SessionStore
-	employeeRepo EmployeeReader
-	db           *sql.DB // for direct profile name lookups
-	ssoValidator SSOTokenValidator
+	sessionStore   *auth.SessionStore
+	employeeRepo   EmployeeReader
+	db             *sql.DB
+	ssoValidator   SSOTokenValidator
+	ssoRevalidator SSOTokenRevalidator
 }
 
 // NewAuthService creates a new AuthService.
@@ -121,6 +128,12 @@ func NewAuthService(sessionStore *auth.SessionStore, employeeRepo EmployeeReader
 // WithSSOValidator sets the SSO token validator for session-bound SSO checks.
 func (s *AuthService) WithSSOValidator(v SSOTokenValidator) *AuthService {
 	s.ssoValidator = v
+	return s
+}
+
+// WithSSORevalidator sets the SSO token revalidator for 2FA/ACR revalidation on refresh.
+func (s *AuthService) WithSSORevalidator(r SSOTokenRevalidator) *AuthService {
+	s.ssoRevalidator = r
 	return s
 }
 
@@ -159,7 +172,7 @@ func (s *AuthService) Login(ctx context.Context, email, ip, ua string) (*LoginRe
 
 	role := auth.ProfileNameToRole(profile.Name)
 
-	session, token, err := s.sessionStore.Create(ctx, emp.ID, ip, ua, "", "", "")
+	session, token, err := s.sessionStore.Create(ctx, emp.ID, ip, ua, "", "", "", "", false)
 	if err != nil {
 		return nil, err
 	}
@@ -197,6 +210,14 @@ func (s *AuthService) ValidateSession(ctx context.Context, token string) (*Valid
 			_ = s.sessionStore.Revoke(ctx, session.ID)
 			return nil, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
 				"SSO session expired", err)
+		}
+		if s.ssoRevalidator != nil {
+			if ssoUser, err := s.ssoRevalidator.GetUserFromToken(ctx, session.AccessToken); err == nil {
+				if ssoUser.ACR != session.ACR || ssoUser.Requires2FA != session.Requires2FA {
+					session.ACR = ssoUser.ACR
+					session.Requires2FA = ssoUser.Requires2FA
+				}
+			}
 		}
 	}
 

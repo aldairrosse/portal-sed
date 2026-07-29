@@ -14,12 +14,12 @@ import "context"
 // Implement this interface to integrate with OIDC, SAML, or LDAP.
 type SSOAdapter interface {
 	// AuthorizationURL returns the provider's login URL with the given
-	// CSRF state parameter. The handler redirects the user here.
-	AuthorizationURL(state string) string
+	// CSRF state parameter and optional ACR value for step-up auth.
+	AuthorizationURL(state, acr string, codeVerifier string) string
 
 	// ExchangeCode exchanges an OIDC authorization code for tokens.
 	// Returns the access_token, id_token, and refresh_token strings.
-	ExchangeCode(ctx context.Context, code string) (accessToken, idToken, refreshToken string, err error)
+	ExchangeCode(ctx context.Context, code, codeVerifier string) (accessToken, idToken, refreshToken string, err error)
 
 	// ValidateToken verifies an external token from the SSO provider
 	// (OIDC id_token, SAML assertion, etc.). Returns the parsed user
@@ -56,21 +56,13 @@ type SSOAdapter interface {
 
 // SSOUser represents a user authenticated via an external SSO provider.
 type SSOUser struct {
-	// ExternalID is the unique identifier from the SSO provider
-	// (e.g., the "sub" claim in OIDC, or the NameID in SAML).
-	ExternalID string
+	ExternalID   string
+	Email        string
+	Name         string
+	Roles        []string
+	ACR          string
+	Requires2FA  bool
 
-	// Email is the verified email address from the provider.
-	Email string
-
-	// Name is the display name from the provider.
-	Name string
-
-	// Roles are the authorization roles/groups mapped from the
-	// provider's claims (e.g., OIDC "groups" claim, SAML attribute).
-	Roles []string
-
-	// OrganizationID identifies the organization in the local system.
 	OrganizationID string
 }
 
@@ -89,10 +81,10 @@ func NewNoopAdapter() SSOAdapter {
 }
 
 // AuthorizationURL returns an empty string — no SSO provider configured.
-func (a *noopAdapter) AuthorizationURL(_ string) string { return "" }
+func (a *noopAdapter) AuthorizationURL(_, _, _ string) string { return "" }
 
 // ExchangeCode always returns an error — no SSO provider configured.
-func (a *noopAdapter) ExchangeCode(_ context.Context, _ string) (string, string, string, error) {
+func (a *noopAdapter) ExchangeCode(_ context.Context, _, _ string) (string, string, string, error) {
 	return "", "", "", errNoSSO
 }
 

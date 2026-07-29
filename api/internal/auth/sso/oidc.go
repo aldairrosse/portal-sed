@@ -2,6 +2,8 @@ package sso
 
 import (
 	"context"
+	"crypto/rand"
+	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -14,20 +16,18 @@ import (
 	"golang.org/x/oauth2"
 )
 
-// OIDCAdapter implements SSOAdapter for an OpenID Connect provider (Keycloak).
 type OIDCAdapter struct {
-	provider       *oidc.Provider
-	verifier       *oidc.IDTokenVerifier
-	oauth2Cfg      *oauth2.Config
-	clientID       string
-	clientSecret   string
-	endSessionURL  string
-	introspectURL  string
-	revokeURL      string
-	postLogoutURI  string
+	provider      *oidc.Provider
+	verifier      *oidc.IDTokenVerifier
+	oauth2Cfg     *oauth2.Config
+	clientID      string
+	clientSecret  string
+	endSessionURL string
+	introspectURL string
+	revokeURL     string
+	postLogoutURI string
 }
 
-// NewOIDCAdapter creates an OIDCAdapter by discovering the provider's config.
 func NewOIDCAdapter(ctx context.Context, issuer, clientID, clientSecret, redirectURI, postLogoutURI string) (*OIDCAdapter, error) {
 	provider, err := oidc.NewProvider(ctx, issuer)
 	if err != nil {
@@ -57,16 +57,44 @@ func NewOIDCAdapter(ctx context.Context, issuer, clientID, clientSecret, redirec
 	}, nil
 }
 
-// AuthorizationURL returns the Keycloak authorization URL with the CSRF state.
-func (a *OIDCAdapter) AuthorizationURL(state string) string {
-	return a.oauth2Cfg.AuthCodeURL(state,
-		oauth2.SetAuthURLParam("response_type", "code"),
-	)
+func GeneratePKCE() (verifier, challenge string, err error) {
+	b := make([]byte, 32)
+	if _, err := rand.Read(b); err != nil {
+		return "", "", fmt.Errorf("oidc: pkce: %w", err)
+	}
+	verifier = base64.RawURLEncoding.EncodeToString(b)
+	h := sha256.Sum256([]byte(verifier))
+	challenge = base64.RawURLEncoding.EncodeToString(h[:])
+	return verifier, challenge, nil
 }
 
-// ExchangeCode exchanges an authorization code for tokens via backchannel.
-func (a *OIDCAdapter) ExchangeCode(ctx context.Context, code string) (string, string, string, error) {
-	oauth2Token, err := a.oauth2Cfg.Exchange(ctx, code)
+func (a *OIDCAdapter) AuthorizationURL(state, acr, codeVerifier string) string {
+	challenge := ""
+	if codeVerifier != "" {
+		h := sha256.Sum256([]byte(codeVerifier))
+		challenge = base64.RawURLEncoding.EncodeToString(h[:])
+	}
+
+	var params []oauth2.AuthCodeOption
+	params = append(params, oauth2.SetAuthURLParam("response_type", "code"))
+	if acr != "" {
+		params = append(params, oauth2.SetAuthURLParam("acr_values", acr))
+	}
+	if challenge != "" {
+		params = append(params, oauth2.SetAuthURLParam("code_challenge", challenge))
+		params = append(params, oauth2.SetAuthURLParam("code_challenge_method", "S256"))
+	}
+
+	return a.oauth2Cfg.AuthCodeURL(state, params...)
+}
+
+func (a *OIDCAdapter) ExchangeCode(ctx context.Context, code, codeVerifier string) (string, string, string, error) {
+	var opts []oauth2.AuthCodeOption
+	if codeVerifier != "" {
+		opts = append(opts, oauth2.SetAuthURLParam("code_verifier", codeVerifier))
+	}
+
+	oauth2Token, err := a.oauth2Cfg.Exchange(ctx, code, opts...)
 	if err != nil {
 		return "", "", "", fmt.Errorf("oidc: token exchange failed: %w", err)
 	}
@@ -79,19 +107,56 @@ func (a *OIDCAdapter) ExchangeCode(ctx context.Context, code string) (string, st
 	return oauth2Token.AccessToken, rawIDToken, oauth2Token.RefreshToken, nil
 }
 
-// ValidateToken verifies an id_token and returns the user info.
+type idTokenClaims struct {
+	Sub               string                    `json:"sub"`
+	Email             string                    `json:"email"`
+	Name              string                    `json:"name"`
+	PreferredUsername string                    `json:"preferred_username"`
+	ACR               string                    `json:"acr"`
+	ResourceAccess    map[string]clientRolesRaw `json:"resource_access"`
+}
+
+type clientRolesRaw struct {
+	Roles []string `json:"roles"`
+}
+
+type AccessTokenClaims struct {
+	Sub               string                    `json:"sub"`
+	Email             string                    `json:"email"`
+	Name              string                    `json:"name"`
+	PreferredUsername string                    `json:"preferred_username"`
+	ACR               string                    `json:"acr"`
+	ResourceAccess    map[string]clientRolesRaw `json:"resource_access"`
+}
+
+func HasClientRole(claims *AccessTokenClaims, clientID, role string) bool {
+	access, ok := claims.ResourceAccess[clientID]
+	if !ok {
+		return false
+	}
+	for _, r := range access.Roles {
+		if r == role {
+			return true
+		}
+	}
+	return false
+}
+
+func Requires2FA(claims *AccessTokenClaims, clientID string) bool {
+	return HasClientRole(claims, clientID, "otp_required")
+}
+
+func HasLoA2(claims *AccessTokenClaims) bool {
+	return claims.ACR == "mobo-2fa"
+}
+
 func (a *OIDCAdapter) ValidateToken(ctx context.Context, token string) (*SSOUser, error) {
 	idToken, err := a.verifier.Verify(ctx, token)
 	if err != nil {
 		return nil, fmt.Errorf("oidc: invalid id_token: %w", err)
 	}
 
-	var claims struct {
-		Sub               string `json:"sub"`
-		Email             string `json:"email"`
-		Name              string `json:"name"`
-		PreferredUsername string `json:"preferred_username"`
-	}
+	var claims idTokenClaims
 	if err := idToken.Claims(&claims); err != nil {
 		return nil, fmt.Errorf("oidc: failed to parse id_token: %w", err)
 	}
@@ -100,6 +165,7 @@ func (a *OIDCAdapter) ValidateToken(ctx context.Context, token string) (*SSOUser
 		ExternalID: claims.Sub,
 		Email:      claims.Email,
 		Name:       claims.Name,
+		ACR:        claims.ACR,
 	}
 	if claims.PreferredUsername != "" {
 		user.ExternalID = claims.PreferredUsername
@@ -107,9 +173,6 @@ func (a *OIDCAdapter) ValidateToken(ctx context.Context, token string) (*SSOUser
 	return user, nil
 }
 
-// GetUserFromToken extracts user info from an access_token JWT (without
-// signature verification — the token came from a backchannel code exchange
-// authenticated with the client_secret).
 func (a *OIDCAdapter) GetUserFromToken(ctx context.Context, accessToken string) (*SSOUser, error) {
 	parts := strings.Split(accessToken, ".")
 	if len(parts) != 3 {
@@ -121,15 +184,7 @@ func (a *OIDCAdapter) GetUserFromToken(ctx context.Context, accessToken string) 
 		return nil, fmt.Errorf("oidc: failed to decode access_token: %w", err)
 	}
 
-	var claims struct {
-		Sub               string `json:"sub"`
-		Email             string `json:"email"`
-		Name              string `json:"name"`
-		PreferredUsername string `json:"preferred_username"`
-		ResourceAccess    map[string]struct {
-			Roles []string `json:"roles"`
-		} `json:"resource_access"`
-	}
+	var claims AccessTokenClaims
 	if err := json.Unmarshal(payload, &claims); err != nil {
 		return nil, fmt.Errorf("oidc: failed to parse access_token claims: %w", err)
 	}
@@ -144,10 +199,12 @@ func (a *OIDCAdapter) GetUserFromToken(ctx context.Context, accessToken string) 
 	}
 
 	user := &SSOUser{
-		ExternalID: claims.Sub,
-		Email:      claims.Email,
-		Name:       claims.Name,
-		Roles:      roles,
+		ExternalID:  claims.Sub,
+		Email:       claims.Email,
+		Name:        claims.Name,
+		Roles:       roles,
+		ACR:         claims.ACR,
+		Requires2FA: Requires2FA(&claims, a.clientID),
 	}
 	if claims.PreferredUsername != "" {
 		user.ExternalID = claims.PreferredUsername
@@ -155,8 +212,6 @@ func (a *OIDCAdapter) GetUserFromToken(ctx context.Context, accessToken string) 
 	return user, nil
 }
 
-// HasAccess checks whether the access_token's resource_access contains the
-// "access" role for this adapter's client — required for app entry.
 func (a *OIDCAdapter) HasAccess(ctx context.Context, accessToken string) bool {
 	parts := strings.Split(accessToken, ".")
 	if len(parts) != 3 {
@@ -189,9 +244,6 @@ func (a *OIDCAdapter) HasAccess(ctx context.Context, accessToken string) bool {
 	return false
 }
 
-// ValidateAccessToken calls the provider's Introspect endpoint to verify the
-// access token is still active (not expired, not revoked).
-// Returns nil if active, error otherwise.
 func (a *OIDCAdapter) ValidateAccessToken(ctx context.Context, accessToken string) error {
 	data := url.Values{
 		"client_id":     {a.clientID},
@@ -229,9 +281,6 @@ func (a *OIDCAdapter) ValidateAccessToken(ctx context.Context, accessToken strin
 	return nil
 }
 
-// RevokeToken sends a token (typically refresh_token) to the provider's
-// revocation endpoint. After revocation the token can no longer be used
-// to obtain new access or refresh tokens. Returns nil on success.
 func (a *OIDCAdapter) RevokeToken(ctx context.Context, token string) error {
 	data := url.Values{
 		"client_id":       {a.clientID},
@@ -259,9 +308,6 @@ func (a *OIDCAdapter) RevokeToken(ctx context.Context, token string) error {
 	return nil
 }
 
-// GetEndSessionURL returns the Keycloak end-session URL with the
-// post_logout_redirect_uri and id_token_hint parameters so the user
-// returns to the app after SSO logout completes.
 func (a *OIDCAdapter) GetEndSessionURL(_ context.Context, idTokenHint string) (string, error) {
 	u, err := url.Parse(a.endSessionURL)
 	if err != nil {
@@ -275,4 +321,8 @@ func (a *OIDCAdapter) GetEndSessionURL(_ context.Context, idTokenHint string) (s
 	}
 	u.RawQuery = q.Encode()
 	return u.String(), nil
+}
+
+func (a *OIDCAdapter) ClientID() string {
+	return a.clientID
 }

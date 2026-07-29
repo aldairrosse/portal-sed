@@ -167,6 +167,29 @@ func RequireAnyPermission(perms ...auth.Permission) func(http.Handler) http.Hand
 	}
 }
 
+// RequireLoA2 returns middleware that checks if the authenticated session
+// has the LoA 2 (mobo-2fa) level when Requires2FA is set. Must be used after RequireAuth.
+// If the session requires 2FA but ACR != mobo-2fa, returns 403 Forbidden.
+// ponytail: single middleware guarding all portal routes, not per-route
+func RequireLoA2() func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			session, ok := auth.GetSession(r.Context())
+			if ok && session != nil && session.Requires2FA && session.ACR != "mobo-2fa" {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusForbidden)
+				de := pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
+					"Se requiere autenticación de dos factores", nil).
+					WithDetails("Tu sesión requiere OTP. Por favor completa el segundo factor.")
+				ae := pkgerrors.NewAPIErrorResponse(de, "")
+				_, _ = w.Write(ae.MustMarshalJSON())
+				return
+			}
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
 // extractBearerToken extracts the Bearer token from the Authorization header.
 func extractBearerToken(r *http.Request) (string, error) {
 	authHeader := r.Header.Get("Authorization")

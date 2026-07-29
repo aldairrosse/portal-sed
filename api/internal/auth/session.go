@@ -26,6 +26,8 @@ type Session struct {
 	IDToken      string
 	AccessToken  string
 	RefreshToken string
+	ACR          string
+	Requires2FA  bool
 }
 
 // SessionStore provides database operations for session management.
@@ -40,7 +42,7 @@ func NewSessionStore(db *sql.DB) *SessionStore {
 
 // Create generates a new session, stores it in the database, and returns
 // the raw token (only shown once at creation time).
-func (s *SessionStore) Create(ctx context.Context, employeeID uuid.UUID, ip, ua, idToken, accessToken, refreshToken string) (*Session, string, error) {
+func (s *SessionStore) Create(ctx context.Context, employeeID uuid.UUID, ip, ua, idToken, accessToken, refreshToken, acr string, requires2FA bool) (*Session, string, error) {
 	token, err := GenerateToken()
 	if err != nil {
 		return nil, "", err
@@ -71,14 +73,17 @@ func (s *SessionStore) Create(ctx context.Context, employeeID uuid.UUID, ip, ua,
 		IDToken:      idToken,
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
+		ACR:          acr,
+		Requires2FA:  requires2FA,
 	}
 
 	_, err = s.db.ExecContext(ctx,
-		`INSERT INTO sessions (id, employee_id, token_hash, ip_address, user_agent, expires_at, created_at, last_active_at, is_revoked, id_token, access_token, refresh_token)
-		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
+		`INSERT INTO sessions (id, employee_id, token_hash, ip_address, user_agent, expires_at, created_at, last_active_at, is_revoked, id_token, access_token, refresh_token, acr, requires_2fa)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
 		session.ID, session.EmployeeID, session.TokenHash, ipPtr, uaPtr,
 		session.ExpiresAt, session.CreatedAt, session.LastActiveAt, session.IsRevoked,
 		nullString(idToken), nullString(accessToken), nullString(refreshToken),
+		nullString(acr), requires2FA,
 	)
 	if err != nil {
 		return nil, "", err
@@ -95,17 +100,18 @@ func (s *SessionStore) GetByToken(ctx context.Context, token string) (*Session, 
 	session := &Session{}
 	var ipPtr, uaPtr sql.NullString
 	var idTok, accTok, refTok sql.NullString
+	var acrTok sql.NullString
 
 	err := s.db.QueryRowContext(ctx,
 		`SELECT id, employee_id, token_hash, ip_address, user_agent,
 		        expires_at, created_at, last_active_at, is_revoked,
-		        id_token, access_token, refresh_token
+		        id_token, access_token, refresh_token, acr, requires_2fa
 		 FROM sessions WHERE token_hash = $1`, tokenHash,
 	).Scan(
 		&session.ID, &session.EmployeeID, &session.TokenHash,
 		&ipPtr, &uaPtr,
 		&session.ExpiresAt, &session.CreatedAt, &session.LastActiveAt, &session.IsRevoked,
-		&idTok, &accTok, &refTok,
+		&idTok, &accTok, &refTok, &acrTok, &session.Requires2FA,
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -128,6 +134,9 @@ func (s *SessionStore) GetByToken(ctx context.Context, token string) (*Session, 
 	}
 	if refTok.Valid {
 		session.RefreshToken = refTok.String
+	}
+	if acrTok.Valid {
+		session.ACR = acrTok.String
 	}
 
 	// Check expiry and revocation
@@ -182,7 +191,7 @@ func (s *SessionStore) ListByEmployeeID(ctx context.Context, employeeID uuid.UUI
 	rows, err := s.db.QueryContext(ctx,
 		`SELECT id, employee_id, token_hash, ip_address, user_agent,
 		        expires_at, created_at, last_active_at, is_revoked,
-		        id_token, access_token, refresh_token
+		        id_token, access_token, refresh_token, acr, requires_2fa
 		 FROM sessions
 		 WHERE employee_id = $1 AND NOT is_revoked AND expires_at > NOW()`,
 		employeeID,
@@ -197,12 +206,13 @@ func (s *SessionStore) ListByEmployeeID(ctx context.Context, employeeID uuid.UUI
 		session := &Session{}
 		var ipPtr, uaPtr sql.NullString
 		var idTok, accTok, refTok sql.NullString
+		var acrTok sql.NullString
 
 		if err := rows.Scan(
 			&session.ID, &session.EmployeeID, &session.TokenHash,
 			&ipPtr, &uaPtr,
 			&session.ExpiresAt, &session.CreatedAt, &session.LastActiveAt, &session.IsRevoked,
-			&idTok, &accTok, &refTok,
+			&idTok, &accTok, &refTok, &acrTok, &session.Requires2FA,
 		); err != nil {
 			return nil, err
 		}
@@ -221,6 +231,9 @@ func (s *SessionStore) ListByEmployeeID(ctx context.Context, employeeID uuid.UUI
 		}
 		if refTok.Valid {
 			session.RefreshToken = refTok.String
+		}
+		if acrTok.Valid {
+			session.ACR = acrTok.String
 		}
 
 		sessions = append(sessions, session)

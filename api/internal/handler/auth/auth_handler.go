@@ -40,18 +40,20 @@ func writeError(w http.ResponseWriter, err error) {
 	))
 }
 
-// AuthHandler handles authentication HTTP requests.
 type AuthHandler struct {
-	svc *svc.AuthService
-	sso sso.SSOAdapter
+	svc      *svc.AuthService
+	sso      sso.SSOAdapter
+	txStore  *sso.TransactionStore
 }
 
-// NewAuthHandler creates a new AuthHandler with the given SSO adapter.
 func NewAuthHandler(svc *svc.AuthService, ssoAdapter sso.SSOAdapter) *AuthHandler {
-	return &AuthHandler{svc: svc, sso: ssoAdapter}
+	return NewAuthHandlerWithStore(svc, ssoAdapter, sso.NewTransactionStore(10*time.Minute))
 }
 
-// redirectError redirects to the frontend login page with an SSO error code.
+func NewAuthHandlerWithStore(svc *svc.AuthService, ssoAdapter sso.SSOAdapter, store *sso.TransactionStore) *AuthHandler {
+	return &AuthHandler{svc: svc, sso: ssoAdapter, txStore: store}
+}
+
 func (h *AuthHandler) redirectError(w http.ResponseWriter, r *http.Request, code string) {
 	frontendHost := os.Getenv("CORS_ORIGINS")
 	if frontendHost == "" {
@@ -61,31 +63,65 @@ func (h *AuthHandler) redirectError(w http.ResponseWriter, r *http.Request, code
 	http.Redirect(w, r, host+"/login?sso_error="+code, http.StatusFound)
 }
 
-// SSOLoginRedirect handles GET /auth/sso-login.
-// Redirects the user to the Keycloak authorization endpoint.
+func (h *AuthHandler) writeStepUpError(w http.ResponseWriter, r *http.Request) {
+	frontendHost := os.Getenv("CORS_ORIGINS")
+	if frontendHost == "" {
+		frontendHost = "http://localhost:5173"
+	}
+	host := strings.Split(frontendHost, ",")[0]
+	http.Redirect(w, r, host+"/login?sso_error=stepup_fallido", http.StatusFound)
+}
+
 func (h *AuthHandler) SSOLoginRedirect(w http.ResponseWriter, r *http.Request) {
 	state, err := auth.GenerateToken()
 	if err != nil {
-		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
-			"Error al iniciar SSO", err))
+		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest, "Error al iniciar SSO", err))
 		return
 	}
 
-	http.SetCookie(w, &http.Cookie{
-		Name:     "sso_state",
-		Value:    state,
-		Path:     "/",
-		HttpOnly: true,
-		Secure:   r.TLS != nil,
-		SameSite: http.SameSiteLaxMode,
-		MaxAge:   600,
+	codeVerifier, _, err := sso.GeneratePKCE()
+	if err != nil {
+		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest, "Error al generar PKCE", err))
+		return
+	}
+
+	h.txStore.Store(state, &sso.OIDCTransaction{
+		CodeVerifier: codeVerifier,
+		ReturnTo:     "/",
 	})
 
-	authURL := h.sso.AuthorizationURL(state)
+	authURL := h.sso.AuthorizationURL(state, "", codeVerifier)
 	http.Redirect(w, r, authURL, http.StatusFound)
 }
 
-// SSOCallback handles GET /auth/sso-callback.
+func (h *AuthHandler) SSOStepUp(w http.ResponseWriter, r *http.Request) {
+	state, err := auth.GenerateToken()
+	if err != nil {
+		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest, "Error al iniciar step-up", err))
+		return
+	}
+
+	codeVerifier, _, err := sso.GeneratePKCE()
+	if err != nil {
+		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest, "Error al generar PKCE", err))
+		return
+	}
+
+	returnTo := r.URL.Query().Get("return_to")
+	if returnTo == "" {
+		returnTo = "/"
+	}
+
+	h.txStore.Store(state, &sso.OIDCTransaction{
+		CodeVerifier: codeVerifier,
+		ReturnTo:     returnTo,
+		RequestedACR: "mobo-2fa",
+	})
+
+	authURL := h.sso.AuthorizationURL(state, "mobo-2fa", codeVerifier)
+	http.Redirect(w, r, authURL, http.StatusFound)
+}
+
 func (h *AuthHandler) SSOCallback(w http.ResponseWriter, r *http.Request) {
 	code := r.URL.Query().Get("code")
 	state := r.URL.Query().Get("state")
@@ -94,7 +130,13 @@ func (h *AuthHandler) SSOCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	accessToken, rawIDToken, refreshToken, err := h.sso.ExchangeCode(r.Context(), code)
+	tx, ok := h.txStore.Consume(state)
+	if !ok {
+		h.redirectError(w, r, "estado_invalido")
+		return
+	}
+
+	accessToken, rawIDToken, refreshToken, err := h.sso.ExchangeCode(r.Context(), code, tx.CodeVerifier)
 	if err != nil {
 		log.Printf("sso callback: exchange failed: %v", err)
 		h.redirectError(w, r, "token_exchange_fallido")
@@ -108,7 +150,7 @@ func (h *AuthHandler) SSOCallback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !h.sso.HasAccess(r.Context(), accessToken) {
-		log.Printf("sso callback: access denied — user lacks 'access' role for client in resource_access")
+		log.Printf("sso callback: access denied")
 		h.redirectError(w, r, "sin_acceso")
 		return
 	}
@@ -136,9 +178,34 @@ func (h *AuthHandler) SSOCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	role, _, err := h.svc.EmployeeRoleAndProfile(r.Context(), emp.ID)
+	if err != nil {
+		log.Printf("sso callback: role lookup failed: %v", err)
+		h.redirectError(w, r, "error_bd")
+		return
+	}
+
+	requires2FA := ssoUser.Requires2FA || sso.Requires2FAFromLocalRole(role)
+	hasLoA2 := ssoUser.ACR == "mobo-2fa"
+
+	if tx.IsStepUp() {
+		if !hasLoA2 {
+			log.Printf("sso callback: step-up demanded but acr is %q — rejecting", ssoUser.ACR)
+			h.writeStepUpError(w, r)
+			return
+		}
+	} else {
+		if requires2FA && !hasLoA2 {
+			log.Printf("sso callback: otp_required detected, initiating step-up for %s", ssoUser.ExternalID)
+			h.initiateStepUp(w, r, tx.ReturnTo)
+			return
+		}
+	}
+
 	ip := r.RemoteAddr
 	ua := r.UserAgent()
-	session, token, err := h.svc.SessionStore().Create(r.Context(), emp.ID, ip, ua, rawIDToken, accessToken, refreshToken)
+	session, token, err := h.svc.SessionStore().Create(r.Context(), emp.ID, ip, ua,
+		rawIDToken, accessToken, refreshToken, ssoUser.ACR, requires2FA)
 	if err != nil {
 		log.Printf("sso callback: session creation failed: %v", err)
 		h.redirectError(w, r, "error_sesion")
@@ -157,10 +224,39 @@ func (h *AuthHandler) SSOCallback(w http.ResponseWriter, r *http.Request) {
 		frontendHost = "http://localhost:5173"
 	}
 	host := strings.Split(frontendHost, ",")[0]
-	http.Redirect(w, r, host+"/", http.StatusFound)
+
+	redirectTo := tx.ReturnTo
+	if redirectTo == "" || !strings.HasPrefix(redirectTo, "/") {
+		redirectTo = "/"
+	}
+	http.Redirect(w, r, host+redirectTo, http.StatusFound)
 }
 
-// LoginResponse is the JSON body returned after successful login.
+func (h *AuthHandler) initiateStepUp(w http.ResponseWriter, r *http.Request, returnTo string) {
+	state, err := auth.GenerateToken()
+	if err != nil {
+		log.Printf("sso step-up: failed to generate state: %v", err)
+		h.redirectError(w, r, "stepup_error")
+		return
+	}
+
+	codeVerifier, _, err := sso.GeneratePKCE()
+	if err != nil {
+		log.Printf("sso step-up: failed to generate PKCE: %v", err)
+		h.redirectError(w, r, "stepup_error")
+		return
+	}
+
+	h.txStore.Store(state, &sso.OIDCTransaction{
+		CodeVerifier: codeVerifier,
+		ReturnTo:     returnTo,
+		RequestedACR: "mobo-2fa",
+	})
+
+	authURL := h.sso.AuthorizationURL(state, "mobo-2fa", codeVerifier)
+	http.Redirect(w, r, authURL, http.StatusFound)
+}
+
 type LoginResponse struct {
 	Session        SessionInfo  `json:"session"`
 	Token          string       `json:"token"`
@@ -186,7 +282,11 @@ type EmployeeInfo struct {
 	OrganizationID string `json:"organization_id"`
 }
 
-// Logout handles GET /auth/logout.
+type ProfileInfo struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
 func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	token := extractSessionToken(r)
 	var idTokenHint string
@@ -212,10 +312,6 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, endSessionURL, http.StatusFound)
 }
 
-// LogoutComplete handles GET /auth/logout-complete.
-// Keycloak redirects here after a successful logout (post_logout_redirect_uri).
-// Redirects to the frontend login page, which will auto-redirect to Keycloak's
-// login form since the SSO session is no longer valid.
 func (h *AuthHandler) LogoutComplete(w http.ResponseWriter, r *http.Request) {
 	frontendHost := os.Getenv("CORS_ORIGINS")
 	if frontendHost == "" {
@@ -225,30 +321,24 @@ func (h *AuthHandler) LogoutComplete(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, host+"/login", http.StatusFound)
 }
 
-// RevokeEmployeeSessions handles POST /auth/admin/revoke-employee/{empId}.
-// Protects by checking X-Admin-Revoke-Key header against ADMIN_REVOKE_KEY env var.
-// TODO(auth:admin): when role-based UI exists, also accept RequirePermission(PermAdminAll).
 func (h *AuthHandler) RevokeEmployeeSessions(w http.ResponseWriter, r *http.Request) {
 	adminKey := os.Getenv("ADMIN_REVOKE_KEY")
 	if adminKey != "" && r.Header.Get("X-Admin-Revoke-Key") != adminKey {
-		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
-			"Acceso no autorizado", nil))
+		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest, "Acceso no autorizado", nil))
 		return
 	}
 
 	empIDStr := chi.URLParam(r, "empId")
 	empID, err := uuid.Parse(empIDStr)
 	if err != nil {
-		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
-			"ID de empleado inválido", err))
+		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest, "ID de empleado inválido", err))
 		return
 	}
 
 	sessions, err := h.svc.SessionStore().ListByEmployeeID(r.Context(), empID)
 	if err != nil {
 		log.Printf("admin revoke: failed to list sessions for %s: %v", empID, err)
-		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
-			"Error al buscar sesiones", err))
+		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest, "Error al buscar sesiones", err))
 		return
 	}
 
@@ -262,8 +352,7 @@ func (h *AuthHandler) RevokeEmployeeSessions(w http.ResponseWriter, r *http.Requ
 
 	if err := h.svc.SessionStore().RevokeAllEmployeeSessions(r.Context(), empID); err != nil {
 		log.Printf("admin revoke: local revoke failed for %s: %v", empID, err)
-		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
-			"Error al revocar sesiones", err))
+		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest, "Error al revocar sesiones", err))
 		return
 	}
 
@@ -274,12 +363,10 @@ func (h *AuthHandler) RevokeEmployeeSessions(w http.ResponseWriter, r *http.Requ
 	})
 }
 
-// Refresh handles POST /auth/refresh.
 func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 	session, ok := auth.GetSession(r.Context())
 	if !ok || session == nil {
-		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
-			"Sesión no autenticada", nil))
+		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest, "Sesión no autenticada", nil))
 		return
 	}
 
@@ -302,24 +389,16 @@ type MeResponse struct {
 	OrganizationID string       `json:"organization_id"`
 }
 
-type ProfileInfo struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
-}
-
-// Me handles GET /auth/me.
 func (h *AuthHandler) Me(w http.ResponseWriter, r *http.Request) {
 	token := extractSessionToken(r)
 	if token == "" {
-		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
-			"Sesión no autenticada", nil))
+		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest, "Sesión no autenticada", nil))
 		return
 	}
 
 	result, err := h.svc.ValidateSession(r.Context(), token)
 	if err != nil || result == nil || result.Session == nil {
-		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
-			"Sesión inválida o expirada", err))
+		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest, "Sesión inválida o expirada", err))
 		return
 	}
 
