@@ -34,6 +34,18 @@ async function fetchWithCredentials(input: RequestInfo | URL, init?: RequestInit
 	if (response.status === 404) {
 		throw new HttpNotFoundError();
 	}
+	if (response.status === 403) {
+		try {
+			const cloned = response.clone();
+			const body = await cloned.json();
+			if (body?.error?.code === 'OTP_REQUIRED') {
+				window.location.href = '/api/v1/auth/sso-step-up?return_to=' + encodeURIComponent(window.location.pathname + window.location.search);
+				throw new Error('OTP_REQUIRED');
+			}
+		} catch (e) {
+			if (e instanceof Error && e.message === 'OTP_REQUIRED') throw e;
+		}
+	}
 	return response;
 }
 

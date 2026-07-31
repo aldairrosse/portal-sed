@@ -22,6 +22,7 @@ const (
 	MissingIfMatch       DomainCode = "MISSING_IF_MATCH"
 	InvalidIfMatch       DomainCode = "INVALID_IF_MATCH"
 	RequestTimeout       DomainCode = "REQUEST_TIMEOUT"
+	OTPRequired          DomainCode = "OTP_REQUIRED"
 
 	// Códigos de error de dominio específicos de objetivos
 	CategoryNotFound        DomainCode = "CATEGORY_NOT_FOUND"
@@ -151,7 +152,7 @@ func HTTPStatus(err error) int {
 	case InvalidTransition, CycleAlreadyActive, PhaseNotAdvanceable, ConcurrentUpdate, IdempotencyKeyConflict, DuplicateCategoryName, KpiLinkedCannotDelete, ConcurrentModification, NodeHasChildren, StaleVersion,
 		"EVALUATION_ALREADY_FINALIZED":
 		return 409
-	case PhaseRestricted, GoalNotDeletableInPhase, "FORBIDDEN":
+	case PhaseRestricted, GoalNotDeletableInPhase, "FORBIDDEN", OTPRequired:
 		return 403
 	case WeightSumInvalid, GoalWeightOverflow:
 		return 422

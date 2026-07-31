@@ -2,6 +2,9 @@ package auth
 
 import (
 	"github.com/go-chi/chi/v5"
+
+	"github.com/sed-evaluacion-desempeno/api/internal/middleware"
+	svc "github.com/sed-evaluacion-desempeno/api/internal/service/auth"
 )
 
 // AuthRoutes creates a Chi router with all auth endpoints registered.
@@ -18,7 +21,7 @@ import (
 //	POST  /admin/revoke-employee/{empId} — revoke SSO tokens + local sessions
 //
 // Expected mount point: /api/v1/auth
-func AuthRoutes(handler *AuthHandler) chi.Router {
+func AuthRoutes(handler *AuthHandler, authSvc *svc.AuthService) chi.Router {
 	r := chi.NewRouter()
 
 	r.Get("/sso-login", handler.SSOLoginRedirect)
@@ -26,8 +29,11 @@ func AuthRoutes(handler *AuthHandler) chi.Router {
 	r.Get("/sso-callback", handler.SSOCallback)
 	r.Get("/logout", handler.Logout)
 	r.Get("/logout-complete", handler.LogoutComplete)
-	r.Post("/refresh", handler.Refresh)
 	r.Get("/me", handler.Me)
+	r.Group(func(r chi.Router) {
+		r.Use(middleware.RequireAuth(authSvc))
+		r.Post("/refresh", handler.Refresh)
+	})
 	r.Post("/admin/revoke-employee/{empId}", handler.RevokeEmployeeSessions)
 
 	return r

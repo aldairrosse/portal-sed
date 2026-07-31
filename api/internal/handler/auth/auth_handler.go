@@ -354,8 +354,8 @@ func (h *AuthHandler) LogoutComplete(w http.ResponseWriter, r *http.Request) {
 
 func (h *AuthHandler) RevokeEmployeeSessions(w http.ResponseWriter, r *http.Request) {
 	adminKey := os.Getenv("ADMIN_REVOKE_KEY")
-	if adminKey != "" && r.Header.Get("X-Admin-Revoke-Key") != adminKey {
-		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest, "Acceso no autorizado", nil))
+	if adminKey == "" || r.Header.Get("X-Admin-Revoke-Key") != adminKey {
+		writeError(w, pkgerrors.NewDomainError("FORBIDDEN", "Acceso no autorizado", nil))
 		return
 	}
 

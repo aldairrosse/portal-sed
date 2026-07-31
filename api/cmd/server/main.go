@@ -367,7 +367,7 @@ func main() {
 	r.Group(func(r chi.Router) {
 		comphandler.RegisterRoutes(r, &comphandler.Dependencies{Handler: compH, AuthSvc: authSvc})
 	})
-	r.Mount("/api/v1/auth", authhandler.AuthRoutes(authH))
+	r.Mount("/api/v1/auth", authhandler.AuthRoutes(authH, authSvc))
 
 	// Cycle, evaluation, org, goals, and activity: register all on a single apiV1 subrouter.
 	// Each handler applies its own RequireAuth middleware.

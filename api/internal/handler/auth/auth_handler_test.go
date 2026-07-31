@@ -348,3 +348,42 @@ func TestLoginProtectedRole(t *testing.T) {
 	assert.True(t, strings.Contains(loc, "sso"), "redirect to SSO: "+loc)
 	assert.NoError(t, mockDB.ExpectationsWereMet())
 }
+
+func TestAdminRevokeWithoutKey(t *testing.T) {
+	db, mockDB, err := sqlmock.New()
+	require.NoError(t, err)
+	defer db.Close()
+
+	sessionStore := auth.NewSessionStore(db)
+	authSvc := svc.NewAuthService(sessionStore, &mockEmployeeReader{rows: map[string]*svc.EmployeeRow{}}, db)
+	h := handler.NewAuthHandlerWithStore(authSvc, &mockSSO{}, sso.NewTransactionStore(10*time.Minute))
+
+	req := httptest.NewRequest("POST", "/admin/revoke-employee/"+uuid.New().String(), nil)
+	w := httptest.NewRecorder()
+	h.RevokeEmployeeSessions(w, req)
+	resp := w.Result()
+	resp.Body.Close()
+	assert.Equal(t, http.StatusForbidden, resp.StatusCode)
+	assert.NoError(t, mockDB.ExpectationsWereMet())
+}
+
+func TestAdminRevokeWithWrongKey(t *testing.T) {
+	t.Setenv("ADMIN_REVOKE_KEY", "secure-test-key")
+
+	db, mockDB, err := sqlmock.New()
+	require.NoError(t, err)
+	defer db.Close()
+
+	sessionStore := auth.NewSessionStore(db)
+	authSvc := svc.NewAuthService(sessionStore, &mockEmployeeReader{rows: map[string]*svc.EmployeeRow{}}, db)
+	h := handler.NewAuthHandlerWithStore(authSvc, &mockSSO{}, sso.NewTransactionStore(10*time.Minute))
+
+	req := httptest.NewRequest("POST", "/admin/revoke-employee/"+uuid.New().String(), nil)
+	req.Header.Set("X-Admin-Revoke-Key", "wrong-key")
+	w := httptest.NewRecorder()
+	h.RevokeEmployeeSessions(w, req)
+	resp := w.Result()
+	resp.Body.Close()
+	assert.Equal(t, http.StatusForbidden, resp.StatusCode)
+	assert.NoError(t, mockDB.ExpectationsWereMet())
+}

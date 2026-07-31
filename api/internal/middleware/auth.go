@@ -178,7 +178,7 @@ func RequireLoA2() func(http.Handler) http.Handler {
 			if ok && session != nil && session.Requires2FA && session.ACR != "mobo-2fa" {
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusForbidden)
-				de := pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
+				de := pkgerrors.NewDomainError(pkgerrors.OTPRequired,
 					"Se requiere autenticación de dos factores", nil).
 					WithDetails("Tu sesión requiere OTP. Por favor completa el segundo factor.")
 				ae := pkgerrors.NewAPIErrorResponse(de, "")
