@@ -14,20 +14,21 @@ import (
 
 // Session represents an authenticated user session stored in the database.
 type Session struct {
-	ID           uuid.UUID
-	EmployeeID   uuid.UUID
-	TokenHash    string
-	IPAddress    *string
-	UserAgent    *string
-	ExpiresAt    time.Time
-	CreatedAt    time.Time
-	LastActiveAt time.Time
-	IsRevoked    bool
-	IDToken      string
-	AccessToken  string
-	RefreshToken string
-	ACR          string
-	Requires2FA  bool
+	ID             uuid.UUID
+	EmployeeID     uuid.UUID
+	TokenHash      string
+	IPAddress      *string
+	UserAgent      *string
+	ExpiresAt      time.Time
+	CreatedAt      time.Time
+	LastActiveAt   time.Time
+	IsRevoked      bool
+	IDToken        string
+	AccessToken    string
+	RefreshToken   string
+	ACR            string
+	Requires2FA    bool
+	TokenExpiresAt time.Time
 }
 
 // SessionStore provides database operations for session management.
@@ -42,7 +43,7 @@ func NewSessionStore(db *sql.DB) *SessionStore {
 
 // Create generates a new session, stores it in the database, and returns
 // the raw token (only shown once at creation time).
-func (s *SessionStore) Create(ctx context.Context, employeeID uuid.UUID, ip, ua, idToken, accessToken, refreshToken, acr string, requires2FA bool) (*Session, string, error) {
+func (s *SessionStore) Create(ctx context.Context, employeeID uuid.UUID, ip, ua, idToken, accessToken, refreshToken, acr string, requires2FA bool, tokenExpiresAt time.Time) (*Session, string, error) {
 	token, err := GenerateToken()
 	if err != nil {
 		return nil, "", err
@@ -61,29 +62,31 @@ func (s *SessionStore) Create(ctx context.Context, employeeID uuid.UUID, ip, ua,
 	}
 
 	session := &Session{
-		ID:           uuid.New(),
-		EmployeeID:   employeeID,
-		TokenHash:    tokenHash,
-		IPAddress:    ipPtr,
-		UserAgent:    uaPtr,
-		ExpiresAt:    expiresAt,
-		CreatedAt:    now,
-		LastActiveAt: now,
-		IsRevoked:    false,
-		IDToken:      idToken,
-		AccessToken:  accessToken,
-		RefreshToken: refreshToken,
-		ACR:          acr,
-		Requires2FA:  requires2FA,
+		ID:             uuid.New(),
+		EmployeeID:     employeeID,
+		TokenHash:      tokenHash,
+		IPAddress:      ipPtr,
+		UserAgent:      uaPtr,
+		ExpiresAt:      expiresAt,
+		CreatedAt:      now,
+		LastActiveAt:   now,
+		IsRevoked:      false,
+		IDToken:        idToken,
+		AccessToken:    accessToken,
+		RefreshToken:   refreshToken,
+		ACR:            acr,
+		Requires2FA:    requires2FA,
+		TokenExpiresAt: tokenExpiresAt,
 	}
 
 	_, err = s.db.ExecContext(ctx,
-		`INSERT INTO sessions (id, employee_id, token_hash, ip_address, user_agent, expires_at, created_at, last_active_at, is_revoked, id_token, access_token, refresh_token, acr, requires_2fa)
-		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
+		`INSERT INTO sessions (id, employee_id, token_hash, ip_address, user_agent, expires_at, created_at, last_active_at, is_revoked, id_token, access_token, refresh_token, acr, requires_2fa, token_expires_at)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
 		session.ID, session.EmployeeID, session.TokenHash, ipPtr, uaPtr,
 		session.ExpiresAt, session.CreatedAt, session.LastActiveAt, session.IsRevoked,
 		nullString(idToken), nullString(accessToken), nullString(refreshToken),
 		nullString(acr), requires2FA,
+		nullTime(tokenExpiresAt),
 	)
 	if err != nil {
 		return nil, "", err
@@ -105,13 +108,15 @@ func (s *SessionStore) GetByToken(ctx context.Context, token string) (*Session, 
 	err := s.db.QueryRowContext(ctx,
 		`SELECT id, employee_id, token_hash, ip_address, user_agent,
 		        expires_at, created_at, last_active_at, is_revoked,
-		        id_token, access_token, refresh_token, acr, requires_2fa
+		        id_token, access_token, refresh_token, acr, requires_2fa,
+		        token_expires_at
 		 FROM sessions WHERE token_hash = $1`, tokenHash,
 	).Scan(
 		&session.ID, &session.EmployeeID, &session.TokenHash,
 		&ipPtr, &uaPtr,
 		&session.ExpiresAt, &session.CreatedAt, &session.LastActiveAt, &session.IsRevoked,
 		&idTok, &accTok, &refTok, &acrTok, &session.Requires2FA,
+		&session.TokenExpiresAt,
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -196,6 +201,24 @@ func (s *SessionStore) UpdateSecurityContext(
 	return nil
 }
 
+// UpdateTokens updates the access_token, refresh_token, and token_expires_at
+// for an existing session. Used after a successful token refresh.
+func (s *SessionStore) UpdateTokens(ctx context.Context, sessionID uuid.UUID, accessToken, refreshToken string, tokenExpiresAt time.Time) error {
+	result, err := s.db.ExecContext(ctx,
+		`UPDATE sessions SET access_token = $1, refresh_token = $2, token_expires_at = $3
+		 WHERE id = $4 AND NOT is_revoked`,
+		nullString(accessToken), nullString(refreshToken), tokenExpiresAt, sessionID,
+	)
+	if err != nil {
+		return err
+	}
+	rows, _ := result.RowsAffected()
+	if rows == 0 {
+		return sql.ErrNoRows
+	}
+	return nil
+}
+
 // Revoke marks a session as revoked (logout).
 func (s *SessionStore) Revoke(ctx context.Context, sessionID uuid.UUID) error {
 	result, err := s.db.ExecContext(ctx,
@@ -219,7 +242,8 @@ func (s *SessionStore) ListByEmployeeID(ctx context.Context, employeeID uuid.UUI
 	rows, err := s.db.QueryContext(ctx,
 		`SELECT id, employee_id, token_hash, ip_address, user_agent,
 		        expires_at, created_at, last_active_at, is_revoked,
-		        id_token, access_token, refresh_token, acr, requires_2fa
+		        id_token, access_token, refresh_token, acr, requires_2fa,
+		        token_expires_at
 		 FROM sessions
 		 WHERE employee_id = $1 AND NOT is_revoked AND expires_at > NOW()`,
 		employeeID,
@@ -241,6 +265,7 @@ func (s *SessionStore) ListByEmployeeID(ctx context.Context, employeeID uuid.UUI
 			&ipPtr, &uaPtr,
 			&session.ExpiresAt, &session.CreatedAt, &session.LastActiveAt, &session.IsRevoked,
 			&idTok, &accTok, &refTok, &acrTok, &session.Requires2FA,
+			&session.TokenExpiresAt,
 		); err != nil {
 			return nil, err
 		}
@@ -305,6 +330,15 @@ func GenerateToken() (string, error) {
 		return "", err
 	}
 	return hex.EncodeToString(b), nil
+}
+
+// nullTime returns a *time.Time suitable for nullable timestamp columns,
+// or nil if the value is zero.
+func nullTime(t time.Time) *time.Time {
+	if t.IsZero() {
+		return nil
+	}
+	return &t
 }
 
 // nullString returns a *string suitable for sql.NullString-like scanning,

@@ -7,6 +7,7 @@ package dev
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/sed-evaluacion-desempeno/api/internal/auth"
@@ -80,7 +81,7 @@ func CreateDevSession(ctx context.Context, sessionStore *auth.SessionStore, user
 	role := auth.ProfileNameToRole(user.Profile)
 
 	// Create a real session in the sessions table
-	session, token, err := sessionStore.Create(ctx, empID, ip, ua, "", "", "", "", false)
+	session, token, err := sessionStore.Create(ctx, empID, ip, ua, "", "", "", "", false, time.Time{})
 	if err != nil {
 		return nil, err
 	}

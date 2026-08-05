@@ -349,3 +349,74 @@ func (a *OIDCAdapter) GetEndSessionURL(_ context.Context, idTokenHint string) (s
 func (a *OIDCAdapter) ClientID() string {
 	return a.clientID
 }
+
+// RefreshToken exchanges a refresh_token for new tokens at the provider's
+// token endpoint using the refresh_token grant type. It parses the response
+// and derives ACR and Requires2FA from the new access_token claims.
+func (a *OIDCAdapter) RefreshToken(ctx context.Context, refreshToken string) (*RefreshResult, error) {
+	data := url.Values{
+		"grant_type":    {"refresh_token"},
+		"client_id":     {a.clientID},
+		"client_secret": {a.clientSecret},
+		"refresh_token": {refreshToken},
+	}
+
+	req, err := http.NewRequestWithContext(ctx, "POST", a.oauth2Cfg.Endpoint.TokenURL, strings.NewReader(data.Encode()))
+	if err != nil {
+		return nil, fmt.Errorf("oidc: failed to create refresh request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("oidc: refresh request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("oidc: failed to read refresh response: %w", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("oidc: refresh returned %d: %s", resp.StatusCode, string(body))
+	}
+
+	var tokenResp struct {
+		AccessToken      string `json:"access_token"`
+		RefreshToken     string `json:"refresh_token"`
+		ExpiresIn        int    `json:"expires_in"`
+		RefreshExpiresIn int    `json:"refresh_expires_in"`
+	}
+	if err := json.Unmarshal(body, &tokenResp); err != nil {
+		return nil, fmt.Errorf("oidc: failed to parse refresh response: %w", err)
+	}
+
+	if tokenResp.AccessToken == "" {
+		return nil, fmt.Errorf("oidc: no access_token in refresh response")
+	}
+
+	// Derive ACR and Requires2FA from the new access_token
+	parts := strings.Split(tokenResp.AccessToken, ".")
+	var acr string
+	var requires2FA bool
+	if len(parts) == 3 {
+		payload, decErr := base64.RawURLEncoding.DecodeString(parts[1])
+		if decErr == nil {
+			var claims AccessTokenClaims
+			if json.Unmarshal(payload, &claims) == nil {
+				acr = claims.ACR
+				requires2FA = Requires2FA(&claims, a.clientID)
+			}
+		}
+	}
+
+	return &RefreshResult{
+		AccessToken:      tokenResp.AccessToken,
+		RefreshToken:     tokenResp.RefreshToken,
+		ExpiresIn:        tokenResp.ExpiresIn,
+		RefreshExpiresIn: tokenResp.RefreshExpiresIn,
+		ACR:              acr,
+		Requires2FA:      requires2FA,
+	}, nil
+}

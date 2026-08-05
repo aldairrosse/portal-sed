@@ -7,6 +7,7 @@ import (
 	"database/sql"
 	"log"
 	"strings"
+	"sync"
 
 	"github.com/google/uuid"
 	"github.com/sed-evaluacion-desempeno/api/internal/auth"
@@ -114,6 +115,17 @@ type AuthService struct {
 	db             *sql.DB
 	ssoValidator   SSOTokenValidator
 	ssoRevalidator SSOTokenRevalidator
+	ssoRefresher   sso.SSOAdapter
+
+	refreshMu   sync.Mutex
+	refreshOps  map[string]*refreshCall
+}
+
+// refreshCall is a single-flight entry for token refresh requests.
+type refreshCall struct {
+	done chan struct{}
+	res  *sso.RefreshResult
+	err  error
 }
 
 // NewAuthService creates a new AuthService.
@@ -134,6 +146,12 @@ func (s *AuthService) WithSSOValidator(v SSOTokenValidator) *AuthService {
 // WithSSORevalidator sets the SSO token revalidator for 2FA/ACR revalidation on refresh.
 func (s *AuthService) WithSSORevalidator(r SSOTokenRevalidator) *AuthService {
 	s.ssoRevalidator = r
+	return s
+}
+
+// WithSSORefresher sets the SSO adapter for token refresh operations.
+func (s *AuthService) WithSSORefresher(r sso.SSOAdapter) *AuthService {
+	s.ssoRefresher = r
 	return s
 }
 
@@ -172,7 +190,7 @@ func (s *AuthService) Login(ctx context.Context, email, ip, ua string) (*LoginRe
 
 	role := auth.ProfileNameToRole(profile.Name)
 
-	session, token, err := s.sessionStore.Create(ctx, emp.ID, ip, ua, "", "", "", "", false)
+	session, token, err := s.sessionStore.Create(ctx, emp.ID, ip, ua, "", "", "", "", false, time.Time{})
 	if err != nil {
 		return nil, err
 	}
@@ -255,6 +273,116 @@ func (s *AuthService) Logout(ctx context.Context, sessionID uuid.UUID) error {
 
 // Refresh extends the expiry time of a session.
 func (s *AuthService) Refresh(ctx context.Context, sessionID uuid.UUID) error {
+	return s.sessionStore.Refresh(ctx, sessionID)
+}
+
+// ErrRefreshFatal is returned when token refresh fails with a non-recoverable
+// error (invalid_grant, expired/revoked refresh token, session not active).
+// Callers should destroy the local session when they see this error.
+type ErrRefreshFatal struct {
+	Err error
+}
+
+func (e *ErrRefreshFatal) Error() string { return "refresh fatal: " + e.Err.Error() }
+func (e *ErrRefreshFatal) Unwrap() error { return e.Err }
+
+// RefreshTokens performs a single-flight token refresh for the given session.
+// It renews preventively if the token expires within 60 seconds or is unset.
+// Concurrent calls for the same sessionID wait for the in-flight request.
+// On success the new tokens are persisted via SessionStore.UpdateTokens.
+func (s *AuthService) RefreshTokens(ctx context.Context, session *auth.Session) (*sso.RefreshResult, error) {
+	if s.ssoRefresher == nil {
+		return nil, pkgerrors.NewDomainError(pkgerrors.InvalidRequest, "SSO refresh not available", nil)
+	}
+
+	if session.RefreshToken == "" {
+		return nil, pkgerrors.NewDomainError(pkgerrors.InvalidRequest, "no refresh token in session", nil)
+	}
+
+	// Preventive check: only refresh if token expires within 60s or is unset.
+	if !session.TokenExpiresAt.IsZero() && time.Now().UTC().Add(60*time.Second).Before(session.TokenExpiresAt) {
+		return nil, nil // token still valid, no refresh needed
+	}
+
+	s.refreshMu.Lock()
+	if s.refreshOps == nil {
+		s.refreshOps = make(map[string]*refreshCall)
+	}
+	id := session.ID.String()
+	call, inFlight := s.refreshOps[id]
+	if inFlight {
+		s.refreshMu.Unlock()
+		<-call.done
+		return call.res, call.err
+	}
+	call = &refreshCall{done: make(chan struct{})}
+	s.refreshOps[id] = call
+	s.refreshMu.Unlock()
+
+	defer func() {
+		s.refreshMu.Lock()
+		delete(s.refreshOps, id)
+		s.refreshMu.Unlock()
+		close(call.done)
+	}()
+
+	result, err := s.ssoRefresher.RefreshToken(ctx, session.RefreshToken)
+	if err != nil {
+		if isRefreshFatal(err) {
+			call.res, call.err = nil, &ErrRefreshFatal{Err: err}
+			return call.res, call.err
+		}
+		call.res, call.err = nil, err
+		return nil, err
+	}
+
+	// Persist the new tokens
+	tokenExpiresAt := time.Now().UTC().Add(time.Duration(result.ExpiresIn) * time.Second)
+	if err := s.sessionStore.UpdateTokens(ctx, session.ID, result.AccessToken, result.RefreshToken, tokenExpiresAt); err != nil {
+		call.res, call.err = nil, fmt.Errorf("auth: failed to persist refreshed tokens: %w", err)
+		return nil, call.err
+	}
+
+	// Update the session object in-memory so callers get the new values
+	session.AccessToken = result.AccessToken
+	if result.RefreshToken != "" {
+		session.RefreshToken = result.RefreshToken
+	}
+	session.TokenExpiresAt = tokenExpiresAt
+	if result.ACR != "" {
+		session.ACR = result.ACR
+	}
+	session.Requires2FA = result.Requires2FA
+
+	call.res, call.err = result, nil
+	return result, nil
+}
+
+// isRefreshFatal returns true when the error indicates the refresh token
+// is permanently invalid (invalid_grant, session not active, expired/revoked).
+func isRefreshFatal(err error) bool {
+	if err == nil {
+		return false
+	}
+	msg := strings.ToLower(err.Error())
+	for _, phrase := range []string{
+		"invalid_grant",
+		"session not active",
+		"refresh token expired",
+		"refresh token revoked",
+		"token is not active",
+	} {
+		if strings.Contains(msg, phrase) {
+			return true
+		}
+	}
+	return false
+}
+
+// Refresh extends the session expiry and updates last_active_at.
+// Deprecated: kept for backward compatibility. Use RefreshTokens for SSO token
+// rotation; this only extends the local session timeout.
+func (s *AuthService) RefreshSessionExpiry(ctx context.Context, sessionID uuid.UUID) error {
 	return s.sessionStore.Refresh(ctx, sessionID)
 }
 

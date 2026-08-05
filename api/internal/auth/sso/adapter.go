@@ -54,6 +54,20 @@ type SSOAdapter interface {
 	// provider's revocation endpoint so it can no longer be used to
 	// obtain new access tokens. Returns nil on success.
 	RevokeToken(ctx context.Context, token string) error
+
+	// RefreshToken exchanges a refresh_token for a new set of tokens
+	// (access_token and optionally a new refresh_token with token rotation).
+	RefreshToken(ctx context.Context, refreshToken string) (*RefreshResult, error)
+}
+
+// RefreshResult holds the tokens returned by a successful refresh_token grant.
+type RefreshResult struct {
+	AccessToken      string
+	RefreshToken     string
+	ExpiresIn        int
+	RefreshExpiresIn int
+	ACR              string
+	Requires2FA      bool
 }
 
 // SSOUser represents a user authenticated via an external SSO provider.
@@ -116,6 +130,11 @@ func (a *noopAdapter) GetEndSessionURL(_ context.Context, _ string) (string, err
 // RevokeToken always returns an error — no SSO provider configured.
 func (a *noopAdapter) RevokeToken(_ context.Context, _ string) error {
 	return errNoSSO
+}
+
+// RefreshToken always returns an error — no SSO provider configured.
+func (a *noopAdapter) RefreshToken(_ context.Context, _ string) (*RefreshResult, error) {
+	return nil, errNoSSO
 }
 
 // errNoSSO is returned when no SSO provider is configured.
