@@ -14,21 +14,22 @@ import (
 
 // Session represents an authenticated user session stored in the database.
 type Session struct {
-	ID             uuid.UUID
-	EmployeeID     uuid.UUID
-	TokenHash      string
-	IPAddress      *string
-	UserAgent      *string
-	ExpiresAt      time.Time
-	CreatedAt      time.Time
-	LastActiveAt   time.Time
-	IsRevoked      bool
-	IDToken        string
-	AccessToken    string
-	RefreshToken   string
-	ACR            string
-	Requires2FA    bool
-	TokenExpiresAt time.Time
+	ID                uuid.UUID
+	EmployeeID        uuid.UUID
+	TokenHash         string
+	IPAddress         *string
+	UserAgent         *string
+	ExpiresAt         time.Time
+	CreatedAt         time.Time
+	LastActiveAt      time.Time
+	IsRevoked         bool
+	IDToken           string
+	AccessToken       string
+	RefreshToken      string
+	ACR               string
+	Requires2FA       bool
+	TokenExpiresAt    time.Time
+	RefreshExpiresAt  time.Time
 }
 
 // SessionStore provides database operations for session management.
@@ -43,7 +44,7 @@ func NewSessionStore(db *sql.DB) *SessionStore {
 
 // Create generates a new session, stores it in the database, and returns
 // the raw token (only shown once at creation time).
-func (s *SessionStore) Create(ctx context.Context, employeeID uuid.UUID, ip, ua, idToken, accessToken, refreshToken, acr string, requires2FA bool, tokenExpiresAt time.Time) (*Session, string, error) {
+func (s *SessionStore) Create(ctx context.Context, employeeID uuid.UUID, ip, ua, idToken, accessToken, refreshToken, acr string, requires2FA bool, tokenExpiresAt, refreshExpiresAt time.Time) (*Session, string, error) {
 	token, err := GenerateToken()
 	if err != nil {
 		return nil, "", err
@@ -62,31 +63,32 @@ func (s *SessionStore) Create(ctx context.Context, employeeID uuid.UUID, ip, ua,
 	}
 
 	session := &Session{
-		ID:             uuid.New(),
-		EmployeeID:     employeeID,
-		TokenHash:      tokenHash,
-		IPAddress:      ipPtr,
-		UserAgent:      uaPtr,
-		ExpiresAt:      expiresAt,
-		CreatedAt:      now,
-		LastActiveAt:   now,
-		IsRevoked:      false,
-		IDToken:        idToken,
-		AccessToken:    accessToken,
-		RefreshToken:   refreshToken,
-		ACR:            acr,
-		Requires2FA:    requires2FA,
-		TokenExpiresAt: tokenExpiresAt,
+		ID:                uuid.New(),
+		EmployeeID:        employeeID,
+		TokenHash:         tokenHash,
+		IPAddress:         ipPtr,
+		UserAgent:         uaPtr,
+		ExpiresAt:         expiresAt,
+		CreatedAt:         now,
+		LastActiveAt:      now,
+		IsRevoked:         false,
+		IDToken:           idToken,
+		AccessToken:       accessToken,
+		RefreshToken:      refreshToken,
+		ACR:               acr,
+		Requires2FA:       requires2FA,
+		TokenExpiresAt:    tokenExpiresAt,
+		RefreshExpiresAt:  refreshExpiresAt,
 	}
 
 	_, err = s.db.ExecContext(ctx,
-		`INSERT INTO sessions (id, employee_id, token_hash, ip_address, user_agent, expires_at, created_at, last_active_at, is_revoked, id_token, access_token, refresh_token, acr, requires_2fa, token_expires_at)
-		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
+		`INSERT INTO sessions (id, employee_id, token_hash, ip_address, user_agent, expires_at, created_at, last_active_at, is_revoked, id_token, access_token, refresh_token, acr, requires_2fa, token_expires_at, refresh_expires_at)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)`,
 		session.ID, session.EmployeeID, session.TokenHash, ipPtr, uaPtr,
 		session.ExpiresAt, session.CreatedAt, session.LastActiveAt, session.IsRevoked,
 		nullString(idToken), nullString(accessToken), nullString(refreshToken),
 		nullString(acr), requires2FA,
-		nullTime(tokenExpiresAt),
+		nullTime(tokenExpiresAt), nullTime(refreshExpiresAt),
 	)
 	if err != nil {
 		return nil, "", err
@@ -109,14 +111,14 @@ func (s *SessionStore) GetByToken(ctx context.Context, token string) (*Session, 
 		`SELECT id, employee_id, token_hash, ip_address, user_agent,
 		        expires_at, created_at, last_active_at, is_revoked,
 		        id_token, access_token, refresh_token, acr, requires_2fa,
-		        token_expires_at
+		        token_expires_at, refresh_expires_at
 		 FROM sessions WHERE token_hash = $1`, tokenHash,
 	).Scan(
 		&session.ID, &session.EmployeeID, &session.TokenHash,
 		&ipPtr, &uaPtr,
 		&session.ExpiresAt, &session.CreatedAt, &session.LastActiveAt, &session.IsRevoked,
 		&idTok, &accTok, &refTok, &acrTok, &session.Requires2FA,
-		&session.TokenExpiresAt,
+		&session.TokenExpiresAt, &session.RefreshExpiresAt,
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -203,11 +205,11 @@ func (s *SessionStore) UpdateSecurityContext(
 
 // UpdateTokens updates the access_token, refresh_token, and token_expires_at
 // for an existing session. Used after a successful token refresh.
-func (s *SessionStore) UpdateTokens(ctx context.Context, sessionID uuid.UUID, accessToken, refreshToken string, tokenExpiresAt time.Time) error {
+func (s *SessionStore) UpdateTokens(ctx context.Context, sessionID uuid.UUID, accessToken, refreshToken string, tokenExpiresAt, refreshExpiresAt time.Time) error {
 	result, err := s.db.ExecContext(ctx,
-		`UPDATE sessions SET access_token = $1, refresh_token = $2, token_expires_at = $3
-		 WHERE id = $4 AND NOT is_revoked`,
-		nullString(accessToken), nullString(refreshToken), tokenExpiresAt, sessionID,
+		`UPDATE sessions SET access_token = $1, refresh_token = $2, token_expires_at = $3, refresh_expires_at = $4
+		 WHERE id = $5 AND NOT is_revoked`,
+		nullString(accessToken), nullString(refreshToken), tokenExpiresAt, nullTime(refreshExpiresAt), sessionID,
 	)
 	if err != nil {
 		return err
@@ -243,7 +245,7 @@ func (s *SessionStore) ListByEmployeeID(ctx context.Context, employeeID uuid.UUI
 		`SELECT id, employee_id, token_hash, ip_address, user_agent,
 		        expires_at, created_at, last_active_at, is_revoked,
 		        id_token, access_token, refresh_token, acr, requires_2fa,
-		        token_expires_at
+		        token_expires_at, refresh_expires_at
 		 FROM sessions
 		 WHERE employee_id = $1 AND NOT is_revoked AND expires_at > NOW()`,
 		employeeID,
@@ -265,7 +267,7 @@ func (s *SessionStore) ListByEmployeeID(ctx context.Context, employeeID uuid.UUI
 			&ipPtr, &uaPtr,
 			&session.ExpiresAt, &session.CreatedAt, &session.LastActiveAt, &session.IsRevoked,
 			&idTok, &accTok, &refTok, &acrTok, &session.Requires2FA,
-			&session.TokenExpiresAt,
+			&session.TokenExpiresAt, &session.RefreshExpiresAt,
 		); err != nil {
 			return nil, err
 		}

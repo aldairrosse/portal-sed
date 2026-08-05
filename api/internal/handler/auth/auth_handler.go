@@ -228,7 +228,7 @@ func (h *AuthHandler) SSOCallback(w http.ResponseWriter, r *http.Request) {
 	ip := r.RemoteAddr
 	ua := r.UserAgent()
 	session, token, err := h.svc.SessionStore().Create(r.Context(), emp.ID, ip, ua,
-		rawIDToken, accessToken, refreshToken, ssoUser.ACR, requires2FA, time.Time{})
+		rawIDToken, accessToken, refreshToken, ssoUser.ACR, requires2FA, time.Time{}, time.Time{})
 	if err != nil {
 		log.Printf("sso callback: session creation failed: %v", err)
 		h.redirectError(w, r, "error_sesion")
@@ -424,9 +424,10 @@ func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Persist new tokens
+	// Persist new tokens (access + refresh expirations, atomically)
 	tokenExpiresAt := time.Now().UTC().Add(time.Duration(result.ExpiresIn) * time.Second)
-	if err := h.svc.SessionStore().UpdateTokens(r.Context(), session.ID, result.AccessToken, result.RefreshToken, tokenExpiresAt); err != nil {
+	refreshExpiresAt := time.Now().UTC().Add(time.Duration(result.RefreshExpiresIn) * time.Second)
+	if err := h.svc.SessionStore().UpdateTokens(r.Context(), session.ID, result.AccessToken, result.RefreshToken, tokenExpiresAt, refreshExpiresAt); err != nil {
 		log.Printf("auth handler: failed to persist refreshed tokens: %v", err)
 		writeError(w, err)
 		return
@@ -442,6 +443,7 @@ func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 		"message":            "Sesión actualizada",
 		"expires_at":         newExpiry.Format(time.RFC3339),
 		"token_expires_at":   tokenExpiresAt.Format(time.RFC3339),
+		"refresh_expires_at": refreshExpiresAt.Format(time.RFC3339),
 		"refresh_expires_in": result.RefreshExpiresIn,
 	})
 }

@@ -192,7 +192,7 @@ func (s *AuthService) Login(ctx context.Context, email, ip, ua string) (*LoginRe
 
 	role := auth.ProfileNameToRole(profile.Name)
 
-	session, token, err := s.sessionStore.Create(ctx, emp.ID, ip, ua, "", "", "", "", false, time.Time{})
+	session, token, err := s.sessionStore.Create(ctx, emp.ID, ip, ua, "", "", "", "", false, time.Time{}, time.Time{})
 	if err != nil {
 		return nil, err
 	}
@@ -301,9 +301,14 @@ func (s *AuthService) RefreshTokens(ctx context.Context, session *auth.Session) 
 		return nil, pkgerrors.NewDomainError(pkgerrors.InvalidRequest, "no refresh token in session", nil)
 	}
 
-	// Preventive check: only refresh if token expires within 60s or is unset.
-	if !session.TokenExpiresAt.IsZero() && time.Now().UTC().Add(60*time.Second).Before(session.TokenExpiresAt) {
-		return nil, nil // token still valid, no refresh needed
+	// Preventive check: refresh when either token is unset or expires within
+	// 60 seconds. Both must be set and valid for the session to be skipped, so
+	// a short-lived refresh token keeps the chain alive while the access
+	// token is still valid.
+	accessOK := !session.TokenExpiresAt.IsZero() && time.Now().UTC().Add(60*time.Second).Before(session.TokenExpiresAt)
+	refreshOK := !session.RefreshExpiresAt.IsZero() && time.Now().UTC().Add(60*time.Second).Before(session.RefreshExpiresAt)
+	if accessOK && refreshOK {
+		return nil, nil // both tokens still valid, no refresh needed
 	}
 
 	s.refreshMu.Lock()
@@ -338,9 +343,10 @@ func (s *AuthService) RefreshTokens(ctx context.Context, session *auth.Session) 
 		return nil, err
 	}
 
-	// Persist the new tokens
+	// Persist the new tokens (access + refresh expirations, atomically)
 	tokenExpiresAt := time.Now().UTC().Add(time.Duration(result.ExpiresIn) * time.Second)
-	if err := s.sessionStore.UpdateTokens(ctx, session.ID, result.AccessToken, result.RefreshToken, tokenExpiresAt); err != nil {
+	refreshExpiresAt := time.Now().UTC().Add(time.Duration(result.RefreshExpiresIn) * time.Second)
+	if err := s.sessionStore.UpdateTokens(ctx, session.ID, result.AccessToken, result.RefreshToken, tokenExpiresAt, refreshExpiresAt); err != nil {
 		call.res, call.err = nil, fmt.Errorf("auth: failed to persist refreshed tokens: %w", err)
 		return nil, call.err
 	}
@@ -351,6 +357,7 @@ func (s *AuthService) RefreshTokens(ctx context.Context, session *auth.Session) 
 		session.RefreshToken = result.RefreshToken
 	}
 	session.TokenExpiresAt = tokenExpiresAt
+	session.RefreshExpiresAt = refreshExpiresAt
 	if result.ACR != "" {
 		session.ACR = result.ACR
 	}
