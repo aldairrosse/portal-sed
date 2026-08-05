@@ -242,7 +242,7 @@ func (m *mockGoalRepo) DeleteGoal(ctx context.Context, goalID uuid.UUID) error {
 	return nil
 }
 
-func (m *mockGoalRepo) UpdateGoalCurrentValue(ctx context.Context, goalID uuid.UUID, currentValue float64) (*repogoal.GoalRow, error) {
+func (m *mockGoalRepo) UpdateGoalCurrentValue(ctx context.Context, goalID uuid.UUID, currentValue float64, createdBy *uuid.UUID) (*repogoal.GoalRow, error) {
 	return nil, nil
 }
 

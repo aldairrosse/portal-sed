@@ -959,13 +959,57 @@ export async function rejectChangeRequest(id: string): Promise<void> {
 
 // ─── Mutations: Progress & Comments ───────────────────────────────────────────
 
+const debounceTimers = new SvelteMap<string, ReturnType<typeof setTimeout>>();
+
 export async function updateGoalProgress(goalId: string, progress: number): Promise<void> {
-	const { error: apiError } = await client.PATCH('/goals/{goalId}/progress', {
-		params: { path: { goalId } },
-		body: { current_value: progress }
+	// Clear pending debounce for this goal
+	const existing = debounceTimers.get(goalId);
+	if (existing) clearTimeout(existing);
+
+	return new Promise((resolve, reject) => {
+		const timer = setTimeout(async () => {
+			debounceTimers.delete(goalId);
+
+			const goal = storeState.data?.goals.find(g => g.id === goalId);
+			if (!goal) return resolve();
+
+			// Guard: no change
+			if (goal.progress === progress) return resolve();
+
+			// Snapshot for rollback
+			const previousProgress = goal.progress;
+
+			// Optimistic update (same pattern as addGoalComment)
+			storeState.data = {
+				...storeState.data!,
+				goals: storeState.data!.goals.map(g =>
+					g.id === goalId ? { ...g, progress, progressUpdatedAt: new SvelteDate().toISOString() } : g
+				)
+			};
+
+			try {
+				const { error: apiError } = await client.PATCH('/goals/{goalId}/progress', {
+					params: { path: { goalId } },
+					body: { current_value: progress }
+				});
+				if (apiError) throw new Error(
+					(apiError as { error?: { message?: string } })?.error?.message ?? 'Error al actualizar progreso'
+				);
+				resolve();
+			} catch (e) {
+				// Rollback
+				storeState.data = {
+					...storeState.data!,
+					goals: storeState.data!.goals.map(g =>
+						g.id === goalId ? { ...g, progress: previousProgress } : g
+					)
+				};
+				reject(e);
+			}
+		}, 500);
+
+		debounceTimers.set(goalId, timer);
 	});
-	if (apiError) throw new Error((apiError as { error?: { message?: string } })?.error?.message ?? 'Error al actualizar progreso');
-	await reload();
 }
 
 export async function addGoalComment(

@@ -30,7 +30,7 @@ type GoalRepository interface {
 	GetGoal(ctx context.Context, goalID uuid.UUID) (*repogoal.GoalRow, error)
 	UpdateGoal(ctx context.Context, goalID, updatedBy uuid.UUID, name, description, unit, direction string, weight, targetValue float64, baselineValue *float64, expectedVersion int) (*repogoal.GoalRow, error)
 	DeleteGoal(ctx context.Context, goalID uuid.UUID) error
-	UpdateGoalCurrentValue(ctx context.Context, goalID uuid.UUID, currentValue float64) (*repogoal.GoalRow, error)
+	UpdateGoalCurrentValue(ctx context.Context, goalID uuid.UUID, currentValue float64, createdBy *uuid.UUID) (*repogoal.GoalRow, error)
 	ListGoalsByCategory(ctx context.Context, catID uuid.UUID) ([]*repogoal.GoalRow, error)
 }
 
