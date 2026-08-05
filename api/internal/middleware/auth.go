@@ -77,6 +77,17 @@ func RequireAuth(authSvc *svc.AuthService) func(http.Handler) http.Handler {
 
 			result, err := authSvc.ValidateSession(r.Context(), token)
 			if err != nil {
+				// Try one refresh before giving up (max 1 retry, no loop)
+				if sess, getErr := authSvc.SessionStore().GetByToken(r.Context(), token); getErr == nil && sess != nil {
+					if _, refreshErr := authSvc.RefreshTokens(r.Context(), sess); refreshErr == nil {
+						if retryResult, retryErr := authSvc.ValidateSession(r.Context(), token); retryErr == nil && retryResult != nil && retryResult.Session != nil {
+							ctx := auth.WithSession(r.Context(), retryResult.Session, retryResult.Role, retryResult.ProfileID)
+							next.ServeHTTP(w, r.WithContext(ctx))
+							return
+						}
+					}
+				}
+
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusUnauthorized)
 				de := pkgerrors.NewDomainError(pkgerrors.InvalidRequest,

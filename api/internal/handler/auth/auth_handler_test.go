@@ -68,6 +68,14 @@ func (m *mockSSO) GetEndSessionURL(ctx context.Context, idTokenHint string) (str
 	return "https://sso.example.com/logout", nil
 }
 func (m *mockSSO) RevokeToken(ctx context.Context, token string) error { return nil }
+func (m *mockSSO) RefreshToken(ctx context.Context, refreshToken string) (*sso.RefreshResult, error) {
+	return &sso.RefreshResult{
+		AccessToken:      "refreshed-access",
+		RefreshToken:     "refreshed-refresh",
+		ExpiresIn:        300,
+		RefreshExpiresIn: 1800,
+	}, nil
+}
 
 type mockEmployeeReader struct {
 	rows map[string]*svc.EmployeeRow

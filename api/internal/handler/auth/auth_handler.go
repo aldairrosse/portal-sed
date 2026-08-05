@@ -228,7 +228,7 @@ func (h *AuthHandler) SSOCallback(w http.ResponseWriter, r *http.Request) {
 	ip := r.RemoteAddr
 	ua := r.UserAgent()
 	session, token, err := h.svc.SessionStore().Create(r.Context(), emp.ID, ip, ua,
-		rawIDToken, accessToken, refreshToken, ssoUser.ACR, requires2FA)
+		rawIDToken, accessToken, refreshToken, ssoUser.ACR, requires2FA, time.Time{})
 	if err != nil {
 		log.Printf("sso callback: session creation failed: %v", err)
 		h.redirectError(w, r, "error_sesion")
@@ -401,16 +401,69 @@ func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.svc.Refresh(r.Context(), session.ID); err != nil {
+	result, err := h.svc.RefreshTokens(r.Context(), session)
+	if err != nil {
+		if isFatalRefreshError(err) {
+			// Destroy local session and cookie
+			_ = h.svc.Logout(r.Context(), session.ID)
+			http.SetCookie(w, &http.Cookie{
+				Name: "session_token", Value: "", Path: "/",
+				HttpOnly: true,
+				Secure:   r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https",
+				SameSite: http.SameSiteLaxMode, MaxAge: -1,
+			})
+			writeJSON(w, http.StatusUnauthorized, map[string]string{
+				"error": "SSO_SESSION_EXPIRED",
+			})
+			return
+		}
+		// Transient error (network/timeout) → 502, session intact
+		writeJSON(w, http.StatusBadGateway, map[string]string{
+			"error": "Token refresh failed, try again",
+		})
+		return
+	}
+
+	// Persist new tokens
+	tokenExpiresAt := time.Now().UTC().Add(time.Duration(result.ExpiresIn) * time.Second)
+	if err := h.svc.SessionStore().UpdateTokens(r.Context(), session.ID, result.AccessToken, result.RefreshToken, tokenExpiresAt); err != nil {
+		log.Printf("auth handler: failed to persist refreshed tokens: %v", err)
 		writeError(w, err)
 		return
 	}
 
+	// Extend local session expiry
+	if err := h.svc.SessionStore().Refresh(r.Context(), session.ID); err != nil {
+		log.Printf("auth handler: failed to extend session expiry: %v", err)
+	}
+
 	newExpiry := time.Now().UTC().Add(24 * time.Hour)
 	writeJSON(w, http.StatusOK, map[string]interface{}{
-		"message":    "Sesión actualizada",
-		"expires_at": newExpiry.Format(time.RFC3339),
+		"message":            "Sesión actualizada",
+		"expires_at":         newExpiry.Format(time.RFC3339),
+		"token_expires_at":   tokenExpiresAt.Format(time.RFC3339),
+		"refresh_expires_in": result.RefreshExpiresIn,
 	})
+}
+
+// isFatalRefreshError returns true when the error indicates the refresh token
+// is permanently invalid and the local session should be destroyed.
+func isFatalRefreshError(err error) bool {
+	if err == nil {
+		return false
+	}
+	msg := strings.ToLower(err.Error())
+	for _, phrase := range []string{
+		"invalid_grant",
+		"session not active",
+		"refresh token expired",
+		"refresh token revoked",
+	} {
+		if strings.Contains(msg, phrase) {
+			return true
+		}
+	}
+	return false
 }
 
 type MeResponse struct {
