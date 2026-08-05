@@ -16,6 +16,7 @@ import (
 	"github.com/sed-evaluacion-desempeno/api/internal/goal"
 	"github.com/sed-evaluacion-desempeno/api/internal/goalcategory"
 	"github.com/sed-evaluacion-desempeno/api/internal/goalkpilink"
+	"github.com/sed-evaluacion-desempeno/api/internal/goalprogresslog"
 	"github.com/sed-evaluacion-desempeno/api/internal/predicate"
 )
 
@@ -261,6 +262,21 @@ func (_u *GoalUpdate) AddEvaluationGoals(v ...*EvaluationGoal) *GoalUpdate {
 	return _u.AddEvaluationGoalIDs(ids...)
 }
 
+// AddProgressLogIDs adds the "progress_logs" edge to the GoalProgressLog entity by IDs.
+func (_u *GoalUpdate) AddProgressLogIDs(ids ...uuid.UUID) *GoalUpdate {
+	_u.mutation.AddProgressLogIDs(ids...)
+	return _u
+}
+
+// AddProgressLogs adds the "progress_logs" edges to the GoalProgressLog entity.
+func (_u *GoalUpdate) AddProgressLogs(v ...*GoalProgressLog) *GoalUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddProgressLogIDs(ids...)
+}
+
 // Mutation returns the GoalMutation object of the builder.
 func (_u *GoalUpdate) Mutation() *GoalMutation {
 	return _u.mutation
@@ -312,6 +328,27 @@ func (_u *GoalUpdate) RemoveEvaluationGoals(v ...*EvaluationGoal) *GoalUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveEvaluationGoalIDs(ids...)
+}
+
+// ClearProgressLogs clears all "progress_logs" edges to the GoalProgressLog entity.
+func (_u *GoalUpdate) ClearProgressLogs() *GoalUpdate {
+	_u.mutation.ClearProgressLogs()
+	return _u
+}
+
+// RemoveProgressLogIDs removes the "progress_logs" edge to GoalProgressLog entities by IDs.
+func (_u *GoalUpdate) RemoveProgressLogIDs(ids ...uuid.UUID) *GoalUpdate {
+	_u.mutation.RemoveProgressLogIDs(ids...)
+	return _u
+}
+
+// RemoveProgressLogs removes "progress_logs" edges to GoalProgressLog entities.
+func (_u *GoalUpdate) RemoveProgressLogs(v ...*GoalProgressLog) *GoalUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveProgressLogIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -560,6 +597,51 @@ func (_u *GoalUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(evaluationgoal.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ProgressLogsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   goal.ProgressLogsTable,
+			Columns: []string{goal.ProgressLogsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(goalprogresslog.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedProgressLogsIDs(); len(nodes) > 0 && !_u.mutation.ProgressLogsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   goal.ProgressLogsTable,
+			Columns: []string{goal.ProgressLogsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(goalprogresslog.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ProgressLogsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   goal.ProgressLogsTable,
+			Columns: []string{goal.ProgressLogsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(goalprogresslog.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -816,6 +898,21 @@ func (_u *GoalUpdateOne) AddEvaluationGoals(v ...*EvaluationGoal) *GoalUpdateOne
 	return _u.AddEvaluationGoalIDs(ids...)
 }
 
+// AddProgressLogIDs adds the "progress_logs" edge to the GoalProgressLog entity by IDs.
+func (_u *GoalUpdateOne) AddProgressLogIDs(ids ...uuid.UUID) *GoalUpdateOne {
+	_u.mutation.AddProgressLogIDs(ids...)
+	return _u
+}
+
+// AddProgressLogs adds the "progress_logs" edges to the GoalProgressLog entity.
+func (_u *GoalUpdateOne) AddProgressLogs(v ...*GoalProgressLog) *GoalUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddProgressLogIDs(ids...)
+}
+
 // Mutation returns the GoalMutation object of the builder.
 func (_u *GoalUpdateOne) Mutation() *GoalMutation {
 	return _u.mutation
@@ -867,6 +964,27 @@ func (_u *GoalUpdateOne) RemoveEvaluationGoals(v ...*EvaluationGoal) *GoalUpdate
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveEvaluationGoalIDs(ids...)
+}
+
+// ClearProgressLogs clears all "progress_logs" edges to the GoalProgressLog entity.
+func (_u *GoalUpdateOne) ClearProgressLogs() *GoalUpdateOne {
+	_u.mutation.ClearProgressLogs()
+	return _u
+}
+
+// RemoveProgressLogIDs removes the "progress_logs" edge to GoalProgressLog entities by IDs.
+func (_u *GoalUpdateOne) RemoveProgressLogIDs(ids ...uuid.UUID) *GoalUpdateOne {
+	_u.mutation.RemoveProgressLogIDs(ids...)
+	return _u
+}
+
+// RemoveProgressLogs removes "progress_logs" edges to GoalProgressLog entities.
+func (_u *GoalUpdateOne) RemoveProgressLogs(v ...*GoalProgressLog) *GoalUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveProgressLogIDs(ids...)
 }
 
 // Where appends a list predicates to the GoalUpdate builder.
@@ -1145,6 +1263,51 @@ func (_u *GoalUpdateOne) sqlSave(ctx context.Context) (_node *Goal, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(evaluationgoal.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ProgressLogsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   goal.ProgressLogsTable,
+			Columns: []string{goal.ProgressLogsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(goalprogresslog.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedProgressLogsIDs(); len(nodes) > 0 && !_u.mutation.ProgressLogsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   goal.ProgressLogsTable,
+			Columns: []string{goal.ProgressLogsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(goalprogresslog.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ProgressLogsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   goal.ProgressLogsTable,
+			Columns: []string{goal.ProgressLogsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(goalprogresslog.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

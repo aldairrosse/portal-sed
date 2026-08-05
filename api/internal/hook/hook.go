@@ -165,6 +165,18 @@ func (f GoalKpiLinkFunc) Mutate(ctx context.Context, m internal.Mutation) (inter
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *internal.GoalKpiLinkMutation", m)
 }
 
+// The GoalProgressLogFunc type is an adapter to allow the use of ordinary
+// function as GoalProgressLog mutator.
+type GoalProgressLogFunc func(context.Context, *internal.GoalProgressLogMutation) (internal.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f GoalProgressLogFunc) Mutate(ctx context.Context, m internal.Mutation) (internal.Value, error) {
+	if mv, ok := m.(*internal.GoalProgressLogMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *internal.GoalProgressLogMutation", m)
+}
+
 // The KPIFunc type is an adapter to allow the use of ordinary
 // function as KPI mutator.
 type KPIFunc func(context.Context, *internal.KPIMutation) (internal.Value, error)

@@ -45,6 +45,9 @@ type GoalCategory func(*sql.Selector)
 // GoalKpiLink is the predicate function for goalkpilink builders.
 type GoalKpiLink func(*sql.Selector)
 
+// GoalProgressLog is the predicate function for goalprogresslog builders.
+type GoalProgressLog func(*sql.Selector)
+
 // KPI is the predicate function for kpi builders.
 type KPI func(*sql.Selector)
 

@@ -56,6 +56,7 @@ func (Goal) Edges() []ent.Edge {
 				OnDelete: entsql.Cascade,
 			}),
 		edge.To("evaluation_goals", EvaluationGoal.Type),
+		edge.To("progress_logs", GoalProgressLog.Type),
 	}
 }
 

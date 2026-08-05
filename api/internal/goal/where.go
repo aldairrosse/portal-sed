@@ -700,6 +700,29 @@ func HasEvaluationGoalsWith(preds ...predicate.EvaluationGoal) predicate.Goal {
 	})
 }
 
+// HasProgressLogs applies the HasEdge predicate on the "progress_logs" edge.
+func HasProgressLogs() predicate.Goal {
+	return predicate.Goal(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, ProgressLogsTable, ProgressLogsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasProgressLogsWith applies the HasEdge predicate on the "progress_logs" edge with a given conditions (other predicates).
+func HasProgressLogsWith(preds ...predicate.GoalProgressLog) predicate.Goal {
+	return predicate.Goal(func(s *sql.Selector) {
+		step := newProgressLogsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.Goal) predicate.Goal {
 	return predicate.Goal(sql.AndPredicates(predicates...))

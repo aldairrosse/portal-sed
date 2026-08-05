@@ -17,6 +17,7 @@ import (
 	"github.com/sed-evaluacion-desempeno/api/internal/goal"
 	"github.com/sed-evaluacion-desempeno/api/internal/goalcategory"
 	"github.com/sed-evaluacion-desempeno/api/internal/goalkpilink"
+	"github.com/sed-evaluacion-desempeno/api/internal/goalprogresslog"
 	"github.com/sed-evaluacion-desempeno/api/internal/predicate"
 )
 
@@ -30,6 +31,7 @@ type GoalQuery struct {
 	withCategory        *GoalCategoryQuery
 	withKpiLinks        *GoalKpiLinkQuery
 	withEvaluationGoals *EvaluationGoalQuery
+	withProgressLogs    *GoalProgressLogQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -125,6 +127,28 @@ func (_q *GoalQuery) QueryEvaluationGoals() *EvaluationGoalQuery {
 			sqlgraph.From(goal.Table, goal.FieldID, selector),
 			sqlgraph.To(evaluationgoal.Table, evaluationgoal.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, goal.EvaluationGoalsTable, goal.EvaluationGoalsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryProgressLogs chains the current query on the "progress_logs" edge.
+func (_q *GoalQuery) QueryProgressLogs() *GoalProgressLogQuery {
+	query := (&GoalProgressLogClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(goal.Table, goal.FieldID, selector),
+			sqlgraph.To(goalprogresslog.Table, goalprogresslog.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, goal.ProgressLogsTable, goal.ProgressLogsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -327,6 +351,7 @@ func (_q *GoalQuery) Clone() *GoalQuery {
 		withCategory:        _q.withCategory.Clone(),
 		withKpiLinks:        _q.withKpiLinks.Clone(),
 		withEvaluationGoals: _q.withEvaluationGoals.Clone(),
+		withProgressLogs:    _q.withProgressLogs.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
@@ -363,6 +388,17 @@ func (_q *GoalQuery) WithEvaluationGoals(opts ...func(*EvaluationGoalQuery)) *Go
 		opt(query)
 	}
 	_q.withEvaluationGoals = query
+	return _q
+}
+
+// WithProgressLogs tells the query-builder to eager-load the nodes that are connected to
+// the "progress_logs" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *GoalQuery) WithProgressLogs(opts ...func(*GoalProgressLogQuery)) *GoalQuery {
+	query := (&GoalProgressLogClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withProgressLogs = query
 	return _q
 }
 
@@ -444,10 +480,11 @@ func (_q *GoalQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Goal, e
 	var (
 		nodes       = []*Goal{}
 		_spec       = _q.querySpec()
-		loadedTypes = [3]bool{
+		loadedTypes = [4]bool{
 			_q.withCategory != nil,
 			_q.withKpiLinks != nil,
 			_q.withEvaluationGoals != nil,
+			_q.withProgressLogs != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -485,6 +522,13 @@ func (_q *GoalQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Goal, e
 		if err := _q.loadEvaluationGoals(ctx, query, nodes,
 			func(n *Goal) { n.Edges.EvaluationGoals = []*EvaluationGoal{} },
 			func(n *Goal, e *EvaluationGoal) { n.Edges.EvaluationGoals = append(n.Edges.EvaluationGoals, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withProgressLogs; query != nil {
+		if err := _q.loadProgressLogs(ctx, query, nodes,
+			func(n *Goal) { n.Edges.ProgressLogs = []*GoalProgressLog{} },
+			func(n *Goal, e *GoalProgressLog) { n.Edges.ProgressLogs = append(n.Edges.ProgressLogs, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -565,6 +609,36 @@ func (_q *GoalQuery) loadEvaluationGoals(ctx context.Context, query *EvaluationG
 	}
 	query.Where(predicate.EvaluationGoal(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(goal.EvaluationGoalsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.GoalID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "goal_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *GoalQuery) loadProgressLogs(ctx context.Context, query *GoalProgressLogQuery, nodes []*Goal, init func(*Goal), assign func(*Goal, *GoalProgressLog)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*Goal)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(goalprogresslog.FieldGoalID)
+	}
+	query.Where(predicate.GoalProgressLog(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(goal.ProgressLogsColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

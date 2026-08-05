@@ -59,9 +59,11 @@ type GoalEdges struct {
 	KpiLinks []*GoalKpiLink `json:"kpi_links,omitempty"`
 	// EvaluationGoals holds the value of the evaluation_goals edge.
 	EvaluationGoals []*EvaluationGoal `json:"evaluation_goals,omitempty"`
+	// ProgressLogs holds the value of the progress_logs edge.
+	ProgressLogs []*GoalProgressLog `json:"progress_logs,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [3]bool
+	loadedTypes [4]bool
 }
 
 // CategoryOrErr returns the Category value or an error if the edge
@@ -91,6 +93,15 @@ func (e GoalEdges) EvaluationGoalsOrErr() ([]*EvaluationGoal, error) {
 		return e.EvaluationGoals, nil
 	}
 	return nil, &NotLoadedError{edge: "evaluation_goals"}
+}
+
+// ProgressLogsOrErr returns the ProgressLogs value or an error if the edge
+// was not loaded in eager-loading.
+func (e GoalEdges) ProgressLogsOrErr() ([]*GoalProgressLog, error) {
+	if e.loadedTypes[3] {
+		return e.ProgressLogs, nil
+	}
+	return nil, &NotLoadedError{edge: "progress_logs"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -233,6 +244,11 @@ func (_m *Goal) QueryKpiLinks() *GoalKpiLinkQuery {
 // QueryEvaluationGoals queries the "evaluation_goals" edge of the Goal entity.
 func (_m *Goal) QueryEvaluationGoals() *EvaluationGoalQuery {
 	return NewGoalClient(_m.config).QueryEvaluationGoals(_m)
+}
+
+// QueryProgressLogs queries the "progress_logs" edge of the Goal entity.
+func (_m *Goal) QueryProgressLogs() *GoalProgressLogQuery {
+	return NewGoalClient(_m.config).QueryProgressLogs(_m)
 }
 
 // Update returns a builder for updating this Goal.

@@ -29,6 +29,7 @@ import (
 	"github.com/sed-evaluacion-desempeno/api/internal/goalassignment"
 	"github.com/sed-evaluacion-desempeno/api/internal/goalcategory"
 	"github.com/sed-evaluacion-desempeno/api/internal/goalkpilink"
+	"github.com/sed-evaluacion-desempeno/api/internal/goalprogresslog"
 	"github.com/sed-evaluacion-desempeno/api/internal/kpi"
 	"github.com/sed-evaluacion-desempeno/api/internal/leveldefinition"
 	"github.com/sed-evaluacion-desempeno/api/internal/nineboxentry"
@@ -74,6 +75,8 @@ type Client struct {
 	GoalCategory *GoalCategoryClient
 	// GoalKpiLink is the client for interacting with the GoalKpiLink builders.
 	GoalKpiLink *GoalKpiLinkClient
+	// GoalProgressLog is the client for interacting with the GoalProgressLog builders.
+	GoalProgressLog *GoalProgressLogClient
 	// KPI is the client for interacting with the KPI builders.
 	KPI *KPIClient
 	// LevelDefinition is the client for interacting with the LevelDefinition builders.
@@ -122,6 +125,7 @@ func (c *Client) init() {
 	c.GoalAssignment = NewGoalAssignmentClient(c.config)
 	c.GoalCategory = NewGoalCategoryClient(c.config)
 	c.GoalKpiLink = NewGoalKpiLinkClient(c.config)
+	c.GoalProgressLog = NewGoalProgressLogClient(c.config)
 	c.KPI = NewKPIClient(c.config)
 	c.LevelDefinition = NewLevelDefinitionClient(c.config)
 	c.NineBoxEntry = NewNineBoxEntryClient(c.config)
@@ -239,6 +243,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		GoalAssignment:            NewGoalAssignmentClient(cfg),
 		GoalCategory:              NewGoalCategoryClient(cfg),
 		GoalKpiLink:               NewGoalKpiLinkClient(cfg),
+		GoalProgressLog:           NewGoalProgressLogClient(cfg),
 		KPI:                       NewKPIClient(cfg),
 		LevelDefinition:           NewLevelDefinitionClient(cfg),
 		NineBoxEntry:              NewNineBoxEntryClient(cfg),
@@ -283,6 +288,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		GoalAssignment:            NewGoalAssignmentClient(cfg),
 		GoalCategory:              NewGoalCategoryClient(cfg),
 		GoalKpiLink:               NewGoalKpiLinkClient(cfg),
+		GoalProgressLog:           NewGoalProgressLogClient(cfg),
 		KPI:                       NewKPIClient(cfg),
 		LevelDefinition:           NewLevelDefinitionClient(cfg),
 		NineBoxEntry:              NewNineBoxEntryClient(cfg),
@@ -327,9 +333,9 @@ func (c *Client) Use(hooks ...Hook) {
 		c.Competency, c.CompetencyAcceptanceLevel, c.Cycle, c.Employee, c.Evaluation,
 		c.EvaluationCompetency, c.EvaluationGoal, c.EvaluationProfile,
 		c.EvaluatorScope, c.Goal, c.GoalAssignment, c.GoalCategory, c.GoalKpiLink,
-		c.KPI, c.LevelDefinition, c.NineBoxEntry, c.NineBoxMatrix, c.NineBoxQuadrant,
-		c.NineBoxScale, c.OrgNode, c.Organization, c.PhaseDefinition,
-		c.PhaseTransition, c.Pillar, c.ScaleCriterion,
+		c.GoalProgressLog, c.KPI, c.LevelDefinition, c.NineBoxEntry, c.NineBoxMatrix,
+		c.NineBoxQuadrant, c.NineBoxScale, c.OrgNode, c.Organization,
+		c.PhaseDefinition, c.PhaseTransition, c.Pillar, c.ScaleCriterion,
 	} {
 		n.Use(hooks...)
 	}
@@ -342,9 +348,9 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.Competency, c.CompetencyAcceptanceLevel, c.Cycle, c.Employee, c.Evaluation,
 		c.EvaluationCompetency, c.EvaluationGoal, c.EvaluationProfile,
 		c.EvaluatorScope, c.Goal, c.GoalAssignment, c.GoalCategory, c.GoalKpiLink,
-		c.KPI, c.LevelDefinition, c.NineBoxEntry, c.NineBoxMatrix, c.NineBoxQuadrant,
-		c.NineBoxScale, c.OrgNode, c.Organization, c.PhaseDefinition,
-		c.PhaseTransition, c.Pillar, c.ScaleCriterion,
+		c.GoalProgressLog, c.KPI, c.LevelDefinition, c.NineBoxEntry, c.NineBoxMatrix,
+		c.NineBoxQuadrant, c.NineBoxScale, c.OrgNode, c.Organization,
+		c.PhaseDefinition, c.PhaseTransition, c.Pillar, c.ScaleCriterion,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -379,6 +385,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.GoalCategory.mutate(ctx, m)
 	case *GoalKpiLinkMutation:
 		return c.GoalKpiLink.mutate(ctx, m)
+	case *GoalProgressLogMutation:
+		return c.GoalProgressLog.mutate(ctx, m)
 	case *KPIMutation:
 		return c.KPI.mutate(ctx, m)
 	case *LevelDefinitionMutation:
@@ -2353,6 +2361,22 @@ func (c *GoalClient) QueryEvaluationGoals(_m *Goal) *EvaluationGoalQuery {
 	return query
 }
 
+// QueryProgressLogs queries the progress_logs edge of a Goal.
+func (c *GoalClient) QueryProgressLogs(_m *Goal) *GoalProgressLogQuery {
+	query := (&GoalProgressLogClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(goal.Table, goal.FieldID, id),
+			sqlgraph.To(goalprogresslog.Table, goalprogresslog.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, goal.ProgressLogsTable, goal.ProgressLogsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *GoalClient) Hooks() []Hook {
 	return c.hooks.Goal
@@ -2870,6 +2894,155 @@ func (c *GoalKpiLinkClient) mutate(ctx context.Context, m *GoalKpiLinkMutation) 
 		return (&GoalKpiLinkDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("internal: unknown GoalKpiLink mutation op: %q", m.Op())
+	}
+}
+
+// GoalProgressLogClient is a client for the GoalProgressLog schema.
+type GoalProgressLogClient struct {
+	config
+}
+
+// NewGoalProgressLogClient returns a client for the GoalProgressLog from the given config.
+func NewGoalProgressLogClient(c config) *GoalProgressLogClient {
+	return &GoalProgressLogClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `goalprogresslog.Hooks(f(g(h())))`.
+func (c *GoalProgressLogClient) Use(hooks ...Hook) {
+	c.hooks.GoalProgressLog = append(c.hooks.GoalProgressLog, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `goalprogresslog.Intercept(f(g(h())))`.
+func (c *GoalProgressLogClient) Intercept(interceptors ...Interceptor) {
+	c.inters.GoalProgressLog = append(c.inters.GoalProgressLog, interceptors...)
+}
+
+// Create returns a builder for creating a GoalProgressLog entity.
+func (c *GoalProgressLogClient) Create() *GoalProgressLogCreate {
+	mutation := newGoalProgressLogMutation(c.config, OpCreate)
+	return &GoalProgressLogCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of GoalProgressLog entities.
+func (c *GoalProgressLogClient) CreateBulk(builders ...*GoalProgressLogCreate) *GoalProgressLogCreateBulk {
+	return &GoalProgressLogCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *GoalProgressLogClient) MapCreateBulk(slice any, setFunc func(*GoalProgressLogCreate, int)) *GoalProgressLogCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &GoalProgressLogCreateBulk{err: fmt.Errorf("calling to GoalProgressLogClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*GoalProgressLogCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &GoalProgressLogCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for GoalProgressLog.
+func (c *GoalProgressLogClient) Update() *GoalProgressLogUpdate {
+	mutation := newGoalProgressLogMutation(c.config, OpUpdate)
+	return &GoalProgressLogUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *GoalProgressLogClient) UpdateOne(_m *GoalProgressLog) *GoalProgressLogUpdateOne {
+	mutation := newGoalProgressLogMutation(c.config, OpUpdateOne, withGoalProgressLog(_m))
+	return &GoalProgressLogUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *GoalProgressLogClient) UpdateOneID(id uuid.UUID) *GoalProgressLogUpdateOne {
+	mutation := newGoalProgressLogMutation(c.config, OpUpdateOne, withGoalProgressLogID(id))
+	return &GoalProgressLogUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for GoalProgressLog.
+func (c *GoalProgressLogClient) Delete() *GoalProgressLogDelete {
+	mutation := newGoalProgressLogMutation(c.config, OpDelete)
+	return &GoalProgressLogDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *GoalProgressLogClient) DeleteOne(_m *GoalProgressLog) *GoalProgressLogDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *GoalProgressLogClient) DeleteOneID(id uuid.UUID) *GoalProgressLogDeleteOne {
+	builder := c.Delete().Where(goalprogresslog.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &GoalProgressLogDeleteOne{builder}
+}
+
+// Query returns a query builder for GoalProgressLog.
+func (c *GoalProgressLogClient) Query() *GoalProgressLogQuery {
+	return &GoalProgressLogQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeGoalProgressLog},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a GoalProgressLog entity by its id.
+func (c *GoalProgressLogClient) Get(ctx context.Context, id uuid.UUID) (*GoalProgressLog, error) {
+	return c.Query().Where(goalprogresslog.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *GoalProgressLogClient) GetX(ctx context.Context, id uuid.UUID) *GoalProgressLog {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryGoal queries the goal edge of a GoalProgressLog.
+func (c *GoalProgressLogClient) QueryGoal(_m *GoalProgressLog) *GoalQuery {
+	query := (&GoalClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(goalprogresslog.Table, goalprogresslog.FieldID, id),
+			sqlgraph.To(goal.Table, goal.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, goalprogresslog.GoalTable, goalprogresslog.GoalColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *GoalProgressLogClient) Hooks() []Hook {
+	return c.hooks.GoalProgressLog
+}
+
+// Interceptors returns the client interceptors.
+func (c *GoalProgressLogClient) Interceptors() []Interceptor {
+	return c.inters.GoalProgressLog
+}
+
+func (c *GoalProgressLogClient) mutate(ctx context.Context, m *GoalProgressLogMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&GoalProgressLogCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&GoalProgressLogUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&GoalProgressLogUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&GoalProgressLogDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("internal: unknown GoalProgressLog mutation op: %q", m.Op())
 	}
 }
 
@@ -4826,15 +4999,17 @@ type (
 	hooks struct {
 		Competency, CompetencyAcceptanceLevel, Cycle, Employee, Evaluation,
 		EvaluationCompetency, EvaluationGoal, EvaluationProfile, EvaluatorScope, Goal,
-		GoalAssignment, GoalCategory, GoalKpiLink, KPI, LevelDefinition, NineBoxEntry,
-		NineBoxMatrix, NineBoxQuadrant, NineBoxScale, OrgNode, Organization,
-		PhaseDefinition, PhaseTransition, Pillar, ScaleCriterion []ent.Hook
+		GoalAssignment, GoalCategory, GoalKpiLink, GoalProgressLog, KPI,
+		LevelDefinition, NineBoxEntry, NineBoxMatrix, NineBoxQuadrant, NineBoxScale,
+		OrgNode, Organization, PhaseDefinition, PhaseTransition, Pillar,
+		ScaleCriterion []ent.Hook
 	}
 	inters struct {
 		Competency, CompetencyAcceptanceLevel, Cycle, Employee, Evaluation,
 		EvaluationCompetency, EvaluationGoal, EvaluationProfile, EvaluatorScope, Goal,
-		GoalAssignment, GoalCategory, GoalKpiLink, KPI, LevelDefinition, NineBoxEntry,
-		NineBoxMatrix, NineBoxQuadrant, NineBoxScale, OrgNode, Organization,
-		PhaseDefinition, PhaseTransition, Pillar, ScaleCriterion []ent.Interceptor
+		GoalAssignment, GoalCategory, GoalKpiLink, GoalProgressLog, KPI,
+		LevelDefinition, NineBoxEntry, NineBoxMatrix, NineBoxQuadrant, NineBoxScale,
+		OrgNode, Organization, PhaseDefinition, PhaseTransition, Pillar,
+		ScaleCriterion []ent.Interceptor
 	}
 )

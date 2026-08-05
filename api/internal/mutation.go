@@ -25,6 +25,7 @@ import (
 	"github.com/sed-evaluacion-desempeno/api/internal/goalassignment"
 	"github.com/sed-evaluacion-desempeno/api/internal/goalcategory"
 	"github.com/sed-evaluacion-desempeno/api/internal/goalkpilink"
+	"github.com/sed-evaluacion-desempeno/api/internal/goalprogresslog"
 	"github.com/sed-evaluacion-desempeno/api/internal/kpi"
 	"github.com/sed-evaluacion-desempeno/api/internal/leveldefinition"
 	"github.com/sed-evaluacion-desempeno/api/internal/nineboxentry"
@@ -62,6 +63,7 @@ const (
 	TypeGoalAssignment            = "GoalAssignment"
 	TypeGoalCategory              = "GoalCategory"
 	TypeGoalKpiLink               = "GoalKpiLink"
+	TypeGoalProgressLog           = "GoalProgressLog"
 	TypeKPI                       = "KPI"
 	TypeLevelDefinition           = "LevelDefinition"
 	TypeNineBoxEntry              = "NineBoxEntry"
@@ -9074,6 +9076,9 @@ type GoalMutation struct {
 	evaluation_goals        map[uuid.UUID]struct{}
 	removedevaluation_goals map[uuid.UUID]struct{}
 	clearedevaluation_goals bool
+	progress_logs           map[uuid.UUID]struct{}
+	removedprogress_logs    map[uuid.UUID]struct{}
+	clearedprogress_logs    bool
 	done                    bool
 	oldValue                func(context.Context) (*Goal, error)
 	predicates              []predicate.Goal
@@ -9879,6 +9884,60 @@ func (m *GoalMutation) ResetEvaluationGoals() {
 	m.removedevaluation_goals = nil
 }
 
+// AddProgressLogIDs adds the "progress_logs" edge to the GoalProgressLog entity by ids.
+func (m *GoalMutation) AddProgressLogIDs(ids ...uuid.UUID) {
+	if m.progress_logs == nil {
+		m.progress_logs = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.progress_logs[ids[i]] = struct{}{}
+	}
+}
+
+// ClearProgressLogs clears the "progress_logs" edge to the GoalProgressLog entity.
+func (m *GoalMutation) ClearProgressLogs() {
+	m.clearedprogress_logs = true
+}
+
+// ProgressLogsCleared reports if the "progress_logs" edge to the GoalProgressLog entity was cleared.
+func (m *GoalMutation) ProgressLogsCleared() bool {
+	return m.clearedprogress_logs
+}
+
+// RemoveProgressLogIDs removes the "progress_logs" edge to the GoalProgressLog entity by IDs.
+func (m *GoalMutation) RemoveProgressLogIDs(ids ...uuid.UUID) {
+	if m.removedprogress_logs == nil {
+		m.removedprogress_logs = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.progress_logs, ids[i])
+		m.removedprogress_logs[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedProgressLogs returns the removed IDs of the "progress_logs" edge to the GoalProgressLog entity.
+func (m *GoalMutation) RemovedProgressLogsIDs() (ids []uuid.UUID) {
+	for id := range m.removedprogress_logs {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ProgressLogsIDs returns the "progress_logs" edge IDs in the mutation.
+func (m *GoalMutation) ProgressLogsIDs() (ids []uuid.UUID) {
+	for id := range m.progress_logs {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetProgressLogs resets all changes to the "progress_logs" edge.
+func (m *GoalMutation) ResetProgressLogs() {
+	m.progress_logs = nil
+	m.clearedprogress_logs = false
+	m.removedprogress_logs = nil
+}
+
 // Where appends a list predicates to the GoalMutation builder.
 func (m *GoalMutation) Where(ps ...predicate.Goal) {
 	m.predicates = append(m.predicates, ps...)
@@ -10276,7 +10335,7 @@ func (m *GoalMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *GoalMutation) AddedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.category != nil {
 		edges = append(edges, goal.EdgeCategory)
 	}
@@ -10285,6 +10344,9 @@ func (m *GoalMutation) AddedEdges() []string {
 	}
 	if m.evaluation_goals != nil {
 		edges = append(edges, goal.EdgeEvaluationGoals)
+	}
+	if m.progress_logs != nil {
+		edges = append(edges, goal.EdgeProgressLogs)
 	}
 	return edges
 }
@@ -10309,18 +10371,27 @@ func (m *GoalMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case goal.EdgeProgressLogs:
+		ids := make([]ent.Value, 0, len(m.progress_logs))
+		for id := range m.progress_logs {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *GoalMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.removedkpi_links != nil {
 		edges = append(edges, goal.EdgeKpiLinks)
 	}
 	if m.removedevaluation_goals != nil {
 		edges = append(edges, goal.EdgeEvaluationGoals)
+	}
+	if m.removedprogress_logs != nil {
+		edges = append(edges, goal.EdgeProgressLogs)
 	}
 	return edges
 }
@@ -10341,13 +10412,19 @@ func (m *GoalMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case goal.EdgeProgressLogs:
+		ids := make([]ent.Value, 0, len(m.removedprogress_logs))
+		for id := range m.removedprogress_logs {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *GoalMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.clearedcategory {
 		edges = append(edges, goal.EdgeCategory)
 	}
@@ -10356,6 +10433,9 @@ func (m *GoalMutation) ClearedEdges() []string {
 	}
 	if m.clearedevaluation_goals {
 		edges = append(edges, goal.EdgeEvaluationGoals)
+	}
+	if m.clearedprogress_logs {
+		edges = append(edges, goal.EdgeProgressLogs)
 	}
 	return edges
 }
@@ -10370,6 +10450,8 @@ func (m *GoalMutation) EdgeCleared(name string) bool {
 		return m.clearedkpi_links
 	case goal.EdgeEvaluationGoals:
 		return m.clearedevaluation_goals
+	case goal.EdgeProgressLogs:
+		return m.clearedprogress_logs
 	}
 	return false
 }
@@ -10397,6 +10479,9 @@ func (m *GoalMutation) ResetEdge(name string) error {
 		return nil
 	case goal.EdgeEvaluationGoals:
 		m.ResetEvaluationGoals()
+		return nil
+	case goal.EdgeProgressLogs:
+		m.ResetProgressLogs()
 		return nil
 	}
 	return fmt.Errorf("unknown Goal edge %s", name)
@@ -12435,6 +12520,839 @@ func (m *GoalKpiLinkMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown GoalKpiLink edge %s", name)
+}
+
+// GoalProgressLogMutation represents an operation that mutates the GoalProgressLog nodes in the graph.
+type GoalProgressLogMutation struct {
+	config
+	op                Op
+	typ               string
+	id                *uuid.UUID
+	created_at        *time.Time
+	updated_at        *time.Time
+	created_by        *uuid.UUID
+	updated_by        *uuid.UUID
+	employee_id       *uuid.UUID
+	previous_value    *float64
+	addprevious_value *float64
+	new_value         *float64
+	addnew_value      *float64
+	clearedFields     map[string]struct{}
+	goal              *uuid.UUID
+	clearedgoal       bool
+	done              bool
+	oldValue          func(context.Context) (*GoalProgressLog, error)
+	predicates        []predicate.GoalProgressLog
+}
+
+var _ ent.Mutation = (*GoalProgressLogMutation)(nil)
+
+// goalprogresslogOption allows management of the mutation configuration using functional options.
+type goalprogresslogOption func(*GoalProgressLogMutation)
+
+// newGoalProgressLogMutation creates new mutation for the GoalProgressLog entity.
+func newGoalProgressLogMutation(c config, op Op, opts ...goalprogresslogOption) *GoalProgressLogMutation {
+	m := &GoalProgressLogMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeGoalProgressLog,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withGoalProgressLogID sets the ID field of the mutation.
+func withGoalProgressLogID(id uuid.UUID) goalprogresslogOption {
+	return func(m *GoalProgressLogMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *GoalProgressLog
+		)
+		m.oldValue = func(ctx context.Context) (*GoalProgressLog, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().GoalProgressLog.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withGoalProgressLog sets the old GoalProgressLog of the mutation.
+func withGoalProgressLog(node *GoalProgressLog) goalprogresslogOption {
+	return func(m *GoalProgressLogMutation) {
+		m.oldValue = func(context.Context) (*GoalProgressLog, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m GoalProgressLogMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m GoalProgressLogMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("internal: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of GoalProgressLog entities.
+func (m *GoalProgressLogMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *GoalProgressLogMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *GoalProgressLogMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().GoalProgressLog.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *GoalProgressLogMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *GoalProgressLogMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the GoalProgressLog entity.
+// If the GoalProgressLog object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GoalProgressLogMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *GoalProgressLogMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *GoalProgressLogMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *GoalProgressLogMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the GoalProgressLog entity.
+// If the GoalProgressLog object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GoalProgressLogMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *GoalProgressLogMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetCreatedBy sets the "created_by" field.
+func (m *GoalProgressLogMutation) SetCreatedBy(u uuid.UUID) {
+	m.created_by = &u
+}
+
+// CreatedBy returns the value of the "created_by" field in the mutation.
+func (m *GoalProgressLogMutation) CreatedBy() (r uuid.UUID, exists bool) {
+	v := m.created_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedBy returns the old "created_by" field's value of the GoalProgressLog entity.
+// If the GoalProgressLog object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GoalProgressLogMutation) OldCreatedBy(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedBy is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedBy requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedBy: %w", err)
+	}
+	return oldValue.CreatedBy, nil
+}
+
+// ResetCreatedBy resets all changes to the "created_by" field.
+func (m *GoalProgressLogMutation) ResetCreatedBy() {
+	m.created_by = nil
+}
+
+// SetUpdatedBy sets the "updated_by" field.
+func (m *GoalProgressLogMutation) SetUpdatedBy(u uuid.UUID) {
+	m.updated_by = &u
+}
+
+// UpdatedBy returns the value of the "updated_by" field in the mutation.
+func (m *GoalProgressLogMutation) UpdatedBy() (r uuid.UUID, exists bool) {
+	v := m.updated_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedBy returns the old "updated_by" field's value of the GoalProgressLog entity.
+// If the GoalProgressLog object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GoalProgressLogMutation) OldUpdatedBy(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedBy is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedBy requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedBy: %w", err)
+	}
+	return oldValue.UpdatedBy, nil
+}
+
+// ResetUpdatedBy resets all changes to the "updated_by" field.
+func (m *GoalProgressLogMutation) ResetUpdatedBy() {
+	m.updated_by = nil
+}
+
+// SetGoalID sets the "goal_id" field.
+func (m *GoalProgressLogMutation) SetGoalID(u uuid.UUID) {
+	m.goal = &u
+}
+
+// GoalID returns the value of the "goal_id" field in the mutation.
+func (m *GoalProgressLogMutation) GoalID() (r uuid.UUID, exists bool) {
+	v := m.goal
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldGoalID returns the old "goal_id" field's value of the GoalProgressLog entity.
+// If the GoalProgressLog object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GoalProgressLogMutation) OldGoalID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldGoalID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldGoalID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldGoalID: %w", err)
+	}
+	return oldValue.GoalID, nil
+}
+
+// ResetGoalID resets all changes to the "goal_id" field.
+func (m *GoalProgressLogMutation) ResetGoalID() {
+	m.goal = nil
+}
+
+// SetEmployeeID sets the "employee_id" field.
+func (m *GoalProgressLogMutation) SetEmployeeID(u uuid.UUID) {
+	m.employee_id = &u
+}
+
+// EmployeeID returns the value of the "employee_id" field in the mutation.
+func (m *GoalProgressLogMutation) EmployeeID() (r uuid.UUID, exists bool) {
+	v := m.employee_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEmployeeID returns the old "employee_id" field's value of the GoalProgressLog entity.
+// If the GoalProgressLog object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GoalProgressLogMutation) OldEmployeeID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEmployeeID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEmployeeID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEmployeeID: %w", err)
+	}
+	return oldValue.EmployeeID, nil
+}
+
+// ResetEmployeeID resets all changes to the "employee_id" field.
+func (m *GoalProgressLogMutation) ResetEmployeeID() {
+	m.employee_id = nil
+}
+
+// SetPreviousValue sets the "previous_value" field.
+func (m *GoalProgressLogMutation) SetPreviousValue(f float64) {
+	m.previous_value = &f
+	m.addprevious_value = nil
+}
+
+// PreviousValue returns the value of the "previous_value" field in the mutation.
+func (m *GoalProgressLogMutation) PreviousValue() (r float64, exists bool) {
+	v := m.previous_value
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPreviousValue returns the old "previous_value" field's value of the GoalProgressLog entity.
+// If the GoalProgressLog object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GoalProgressLogMutation) OldPreviousValue(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPreviousValue is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPreviousValue requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPreviousValue: %w", err)
+	}
+	return oldValue.PreviousValue, nil
+}
+
+// AddPreviousValue adds f to the "previous_value" field.
+func (m *GoalProgressLogMutation) AddPreviousValue(f float64) {
+	if m.addprevious_value != nil {
+		*m.addprevious_value += f
+	} else {
+		m.addprevious_value = &f
+	}
+}
+
+// AddedPreviousValue returns the value that was added to the "previous_value" field in this mutation.
+func (m *GoalProgressLogMutation) AddedPreviousValue() (r float64, exists bool) {
+	v := m.addprevious_value
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetPreviousValue resets all changes to the "previous_value" field.
+func (m *GoalProgressLogMutation) ResetPreviousValue() {
+	m.previous_value = nil
+	m.addprevious_value = nil
+}
+
+// SetNewValue sets the "new_value" field.
+func (m *GoalProgressLogMutation) SetNewValue(f float64) {
+	m.new_value = &f
+	m.addnew_value = nil
+}
+
+// NewValue returns the value of the "new_value" field in the mutation.
+func (m *GoalProgressLogMutation) NewValue() (r float64, exists bool) {
+	v := m.new_value
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldNewValue returns the old "new_value" field's value of the GoalProgressLog entity.
+// If the GoalProgressLog object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GoalProgressLogMutation) OldNewValue(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldNewValue is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldNewValue requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldNewValue: %w", err)
+	}
+	return oldValue.NewValue, nil
+}
+
+// AddNewValue adds f to the "new_value" field.
+func (m *GoalProgressLogMutation) AddNewValue(f float64) {
+	if m.addnew_value != nil {
+		*m.addnew_value += f
+	} else {
+		m.addnew_value = &f
+	}
+}
+
+// AddedNewValue returns the value that was added to the "new_value" field in this mutation.
+func (m *GoalProgressLogMutation) AddedNewValue() (r float64, exists bool) {
+	v := m.addnew_value
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetNewValue resets all changes to the "new_value" field.
+func (m *GoalProgressLogMutation) ResetNewValue() {
+	m.new_value = nil
+	m.addnew_value = nil
+}
+
+// ClearGoal clears the "goal" edge to the Goal entity.
+func (m *GoalProgressLogMutation) ClearGoal() {
+	m.clearedgoal = true
+	m.clearedFields[goalprogresslog.FieldGoalID] = struct{}{}
+}
+
+// GoalCleared reports if the "goal" edge to the Goal entity was cleared.
+func (m *GoalProgressLogMutation) GoalCleared() bool {
+	return m.clearedgoal
+}
+
+// GoalIDs returns the "goal" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// GoalID instead. It exists only for internal usage by the builders.
+func (m *GoalProgressLogMutation) GoalIDs() (ids []uuid.UUID) {
+	if id := m.goal; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetGoal resets all changes to the "goal" edge.
+func (m *GoalProgressLogMutation) ResetGoal() {
+	m.goal = nil
+	m.clearedgoal = false
+}
+
+// Where appends a list predicates to the GoalProgressLogMutation builder.
+func (m *GoalProgressLogMutation) Where(ps ...predicate.GoalProgressLog) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the GoalProgressLogMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *GoalProgressLogMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.GoalProgressLog, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *GoalProgressLogMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *GoalProgressLogMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (GoalProgressLog).
+func (m *GoalProgressLogMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *GoalProgressLogMutation) Fields() []string {
+	fields := make([]string, 0, 8)
+	if m.created_at != nil {
+		fields = append(fields, goalprogresslog.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, goalprogresslog.FieldUpdatedAt)
+	}
+	if m.created_by != nil {
+		fields = append(fields, goalprogresslog.FieldCreatedBy)
+	}
+	if m.updated_by != nil {
+		fields = append(fields, goalprogresslog.FieldUpdatedBy)
+	}
+	if m.goal != nil {
+		fields = append(fields, goalprogresslog.FieldGoalID)
+	}
+	if m.employee_id != nil {
+		fields = append(fields, goalprogresslog.FieldEmployeeID)
+	}
+	if m.previous_value != nil {
+		fields = append(fields, goalprogresslog.FieldPreviousValue)
+	}
+	if m.new_value != nil {
+		fields = append(fields, goalprogresslog.FieldNewValue)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *GoalProgressLogMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case goalprogresslog.FieldCreatedAt:
+		return m.CreatedAt()
+	case goalprogresslog.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case goalprogresslog.FieldCreatedBy:
+		return m.CreatedBy()
+	case goalprogresslog.FieldUpdatedBy:
+		return m.UpdatedBy()
+	case goalprogresslog.FieldGoalID:
+		return m.GoalID()
+	case goalprogresslog.FieldEmployeeID:
+		return m.EmployeeID()
+	case goalprogresslog.FieldPreviousValue:
+		return m.PreviousValue()
+	case goalprogresslog.FieldNewValue:
+		return m.NewValue()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *GoalProgressLogMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case goalprogresslog.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case goalprogresslog.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case goalprogresslog.FieldCreatedBy:
+		return m.OldCreatedBy(ctx)
+	case goalprogresslog.FieldUpdatedBy:
+		return m.OldUpdatedBy(ctx)
+	case goalprogresslog.FieldGoalID:
+		return m.OldGoalID(ctx)
+	case goalprogresslog.FieldEmployeeID:
+		return m.OldEmployeeID(ctx)
+	case goalprogresslog.FieldPreviousValue:
+		return m.OldPreviousValue(ctx)
+	case goalprogresslog.FieldNewValue:
+		return m.OldNewValue(ctx)
+	}
+	return nil, fmt.Errorf("unknown GoalProgressLog field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *GoalProgressLogMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case goalprogresslog.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case goalprogresslog.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case goalprogresslog.FieldCreatedBy:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedBy(v)
+		return nil
+	case goalprogresslog.FieldUpdatedBy:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedBy(v)
+		return nil
+	case goalprogresslog.FieldGoalID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetGoalID(v)
+		return nil
+	case goalprogresslog.FieldEmployeeID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEmployeeID(v)
+		return nil
+	case goalprogresslog.FieldPreviousValue:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPreviousValue(v)
+		return nil
+	case goalprogresslog.FieldNewValue:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetNewValue(v)
+		return nil
+	}
+	return fmt.Errorf("unknown GoalProgressLog field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *GoalProgressLogMutation) AddedFields() []string {
+	var fields []string
+	if m.addprevious_value != nil {
+		fields = append(fields, goalprogresslog.FieldPreviousValue)
+	}
+	if m.addnew_value != nil {
+		fields = append(fields, goalprogresslog.FieldNewValue)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *GoalProgressLogMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case goalprogresslog.FieldPreviousValue:
+		return m.AddedPreviousValue()
+	case goalprogresslog.FieldNewValue:
+		return m.AddedNewValue()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *GoalProgressLogMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case goalprogresslog.FieldPreviousValue:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddPreviousValue(v)
+		return nil
+	case goalprogresslog.FieldNewValue:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddNewValue(v)
+		return nil
+	}
+	return fmt.Errorf("unknown GoalProgressLog numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *GoalProgressLogMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *GoalProgressLogMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *GoalProgressLogMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown GoalProgressLog nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *GoalProgressLogMutation) ResetField(name string) error {
+	switch name {
+	case goalprogresslog.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case goalprogresslog.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case goalprogresslog.FieldCreatedBy:
+		m.ResetCreatedBy()
+		return nil
+	case goalprogresslog.FieldUpdatedBy:
+		m.ResetUpdatedBy()
+		return nil
+	case goalprogresslog.FieldGoalID:
+		m.ResetGoalID()
+		return nil
+	case goalprogresslog.FieldEmployeeID:
+		m.ResetEmployeeID()
+		return nil
+	case goalprogresslog.FieldPreviousValue:
+		m.ResetPreviousValue()
+		return nil
+	case goalprogresslog.FieldNewValue:
+		m.ResetNewValue()
+		return nil
+	}
+	return fmt.Errorf("unknown GoalProgressLog field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *GoalProgressLogMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.goal != nil {
+		edges = append(edges, goalprogresslog.EdgeGoal)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *GoalProgressLogMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case goalprogresslog.EdgeGoal:
+		if id := m.goal; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *GoalProgressLogMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *GoalProgressLogMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *GoalProgressLogMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedgoal {
+		edges = append(edges, goalprogresslog.EdgeGoal)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *GoalProgressLogMutation) EdgeCleared(name string) bool {
+	switch name {
+	case goalprogresslog.EdgeGoal:
+		return m.clearedgoal
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *GoalProgressLogMutation) ClearEdge(name string) error {
+	switch name {
+	case goalprogresslog.EdgeGoal:
+		m.ClearGoal()
+		return nil
+	}
+	return fmt.Errorf("unknown GoalProgressLog unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *GoalProgressLogMutation) ResetEdge(name string) error {
+	switch name {
+	case goalprogresslog.EdgeGoal:
+		m.ResetGoal()
+		return nil
+	}
+	return fmt.Errorf("unknown GoalProgressLog edge %s", name)
 }
 
 // KPIMutation represents an operation that mutates the KPI nodes in the graph.

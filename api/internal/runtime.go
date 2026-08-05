@@ -19,6 +19,7 @@ import (
 	"github.com/sed-evaluacion-desempeno/api/internal/goalassignment"
 	"github.com/sed-evaluacion-desempeno/api/internal/goalcategory"
 	"github.com/sed-evaluacion-desempeno/api/internal/goalkpilink"
+	"github.com/sed-evaluacion-desempeno/api/internal/goalprogresslog"
 	"github.com/sed-evaluacion-desempeno/api/internal/kpi"
 	"github.com/sed-evaluacion-desempeno/api/internal/leveldefinition"
 	"github.com/sed-evaluacion-desempeno/api/internal/nineboxentry"
@@ -355,6 +356,25 @@ func init() {
 	goalkpilinkDescCreatedAt := goalkpilinkFields[2].Descriptor()
 	// goalkpilink.DefaultCreatedAt holds the default value on creation for the created_at field.
 	goalkpilink.DefaultCreatedAt = goalkpilinkDescCreatedAt.Default.(func() time.Time)
+	goalprogresslogMixin := schema.GoalProgressLog{}.Mixin()
+	goalprogresslogMixinFields0 := goalprogresslogMixin[0].Fields()
+	_ = goalprogresslogMixinFields0
+	goalprogresslogFields := schema.GoalProgressLog{}.Fields()
+	_ = goalprogresslogFields
+	// goalprogresslogDescCreatedAt is the schema descriptor for created_at field.
+	goalprogresslogDescCreatedAt := goalprogresslogMixinFields0[0].Descriptor()
+	// goalprogresslog.DefaultCreatedAt holds the default value on creation for the created_at field.
+	goalprogresslog.DefaultCreatedAt = goalprogresslogDescCreatedAt.Default.(func() time.Time)
+	// goalprogresslogDescUpdatedAt is the schema descriptor for updated_at field.
+	goalprogresslogDescUpdatedAt := goalprogresslogMixinFields0[1].Descriptor()
+	// goalprogresslog.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	goalprogresslog.DefaultUpdatedAt = goalprogresslogDescUpdatedAt.Default.(func() time.Time)
+	// goalprogresslog.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	goalprogresslog.UpdateDefaultUpdatedAt = goalprogresslogDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// goalprogresslogDescID is the schema descriptor for id field.
+	goalprogresslogDescID := goalprogresslogFields[0].Descriptor()
+	// goalprogresslog.DefaultID holds the default value on creation for the id field.
+	goalprogresslog.DefaultID = goalprogresslogDescID.Default.(func() uuid.UUID)
 	kpiMixin := schema.KPI{}.Mixin()
 	kpiMixinFields0 := kpiMixin[0].Fields()
 	_ = kpiMixinFields0

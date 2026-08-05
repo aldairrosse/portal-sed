@@ -385,6 +385,32 @@ var (
 			},
 		},
 	}
+	// GoalProgressLogsColumns holds the columns for the "goal_progress_logs" table.
+	GoalProgressLogsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "created_by", Type: field.TypeUUID},
+		{Name: "updated_by", Type: field.TypeUUID},
+		{Name: "employee_id", Type: field.TypeUUID},
+		{Name: "previous_value", Type: field.TypeFloat64},
+		{Name: "new_value", Type: field.TypeFloat64},
+		{Name: "goal_id", Type: field.TypeUUID},
+	}
+	// GoalProgressLogsTable holds the schema information for the "goal_progress_logs" table.
+	GoalProgressLogsTable = &schema.Table{
+		Name:       "goal_progress_logs",
+		Columns:    GoalProgressLogsColumns,
+		PrimaryKey: []*schema.Column{GoalProgressLogsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "goal_progress_logs_goals_progress_logs",
+				Columns:    []*schema.Column{GoalProgressLogsColumns[8]},
+				RefColumns: []*schema.Column{GoalsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+	}
 	// KpIsColumns holds the columns for the "kp_is" table.
 	KpIsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
@@ -679,6 +705,7 @@ var (
 		GoalAssignmentsTable,
 		GoalCategoriesTable,
 		GoalKpiLinksTable,
+		GoalProgressLogsTable,
 		KpIsTable,
 		LevelDefinitionsTable,
 		NineBoxEntriesTable,
@@ -717,6 +744,7 @@ func init() {
 	GoalCategoriesTable.ForeignKeys[0].RefTable = EmployeesTable
 	GoalKpiLinksTable.ForeignKeys[0].RefTable = GoalsTable
 	GoalKpiLinksTable.ForeignKeys[1].RefTable = KpIsTable
+	GoalProgressLogsTable.ForeignKeys[0].RefTable = GoalsTable
 	NineBoxEntriesTable.ForeignKeys[0].RefTable = EmployeesTable
 	NineBoxEntriesTable.ForeignKeys[1].RefTable = NineBoxMatrixesTable
 	NineBoxMatrixesTable.ForeignKeys[0].RefTable = CyclesTable

@@ -15,6 +15,7 @@ import (
 	"github.com/sed-evaluacion-desempeno/api/internal/goal"
 	"github.com/sed-evaluacion-desempeno/api/internal/goalcategory"
 	"github.com/sed-evaluacion-desempeno/api/internal/goalkpilink"
+	"github.com/sed-evaluacion-desempeno/api/internal/goalprogresslog"
 )
 
 // GoalCreate is the builder for creating a Goal entity.
@@ -189,6 +190,21 @@ func (_c *GoalCreate) AddEvaluationGoals(v ...*EvaluationGoal) *GoalCreate {
 		ids[i] = v[i].ID
 	}
 	return _c.AddEvaluationGoalIDs(ids...)
+}
+
+// AddProgressLogIDs adds the "progress_logs" edge to the GoalProgressLog entity by IDs.
+func (_c *GoalCreate) AddProgressLogIDs(ids ...uuid.UUID) *GoalCreate {
+	_c.mutation.AddProgressLogIDs(ids...)
+	return _c
+}
+
+// AddProgressLogs adds the "progress_logs" edges to the GoalProgressLog entity.
+func (_c *GoalCreate) AddProgressLogs(v ...*GoalProgressLog) *GoalCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddProgressLogIDs(ids...)
 }
 
 // Mutation returns the GoalMutation object of the builder.
@@ -444,6 +460,22 @@ func (_c *GoalCreate) createSpec() (*Goal, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(evaluationgoal.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.ProgressLogsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   goal.ProgressLogsTable,
+			Columns: []string{goal.ProgressLogsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(goalprogresslog.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

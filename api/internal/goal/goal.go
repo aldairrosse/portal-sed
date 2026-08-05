@@ -48,6 +48,8 @@ const (
 	EdgeKpiLinks = "kpi_links"
 	// EdgeEvaluationGoals holds the string denoting the evaluation_goals edge name in mutations.
 	EdgeEvaluationGoals = "evaluation_goals"
+	// EdgeProgressLogs holds the string denoting the progress_logs edge name in mutations.
+	EdgeProgressLogs = "progress_logs"
 	// Table holds the table name of the goal in the database.
 	Table = "goals"
 	// CategoryTable is the table that holds the category relation/edge.
@@ -71,6 +73,13 @@ const (
 	EvaluationGoalsInverseTable = "evaluation_goals"
 	// EvaluationGoalsColumn is the table column denoting the evaluation_goals relation/edge.
 	EvaluationGoalsColumn = "goal_id"
+	// ProgressLogsTable is the table that holds the progress_logs relation/edge.
+	ProgressLogsTable = "goal_progress_logs"
+	// ProgressLogsInverseTable is the table name for the GoalProgressLog entity.
+	// It exists in this package in order to avoid circular dependency with the "goalprogresslog" package.
+	ProgressLogsInverseTable = "goal_progress_logs"
+	// ProgressLogsColumn is the table column denoting the progress_logs relation/edge.
+	ProgressLogsColumn = "goal_id"
 )
 
 // Columns holds all SQL columns for goal fields.
@@ -281,6 +290,20 @@ func ByEvaluationGoals(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newEvaluationGoalsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByProgressLogsCount orders the results by progress_logs count.
+func ByProgressLogsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newProgressLogsStep(), opts...)
+	}
+}
+
+// ByProgressLogs orders the results by progress_logs terms.
+func ByProgressLogs(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newProgressLogsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newCategoryStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -300,5 +323,12 @@ func newEvaluationGoalsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(EvaluationGoalsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, EvaluationGoalsTable, EvaluationGoalsColumn),
+	)
+}
+func newProgressLogsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ProgressLogsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, ProgressLogsTable, ProgressLogsColumn),
 	)
 }
