@@ -37,3 +37,4 @@ sidebar.png
 .codebase-memory/
 
 certs/
+.codegraph/codegraph.db
