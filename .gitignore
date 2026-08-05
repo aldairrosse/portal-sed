@@ -35,6 +35,10 @@ select actual.png
 sidebar.png
 
 .codebase-memory/
-
+.serena/
+.codegraph/*
 certs/
 .codegraph/codegraph.db
+.codegraph/codegraph.db
+.codegraph/daemon.pid
+.codegraph/codegraph.db-shm
