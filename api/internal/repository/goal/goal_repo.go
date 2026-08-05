@@ -3,6 +3,7 @@ package goal
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"time"
 
 	"github.com/google/uuid"
@@ -154,21 +155,51 @@ func (r *GoalRepo) UpdateGoal(ctx context.Context, goalID, updatedBy uuid.UUID, 
 	return r.goalToRow(ctx, g)
 }
 
-// UpdateGoalCurrentValue updates only the currentValue field and increments version.
-func (r *GoalRepo) UpdateGoalCurrentValue(ctx context.Context, goalID uuid.UUID, currentValue float64) (*GoalRow, error) {
+// UpdateGoalCurrentValue updates only the currentValue field, increments version,
+// and logs the change in goal_progress_logs when the value actually changes.
+// The update and log insert run in a single transaction for atomicity.
+func (r *GoalRepo) UpdateGoalCurrentValue(ctx context.Context, goalID uuid.UUID, currentValue float64, createdBy *uuid.UUID) (*GoalRow, error) {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	// SELECT current value to check if it actually changed
+	var existingValue float64
+	err = tx.QueryRowContext(ctx, `SELECT current_value FROM goals WHERE id = $1`, goalID).Scan(&existingValue)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, pkgerrors.ErrGoalNotFound
+		}
+		return nil, err
+	}
+
 	now := time.Now()
-	res, err := r.db.ExecContext(ctx,
+	res, err := tx.ExecContext(ctx,
 		`UPDATE goals
 		 SET current_value = $1, updated_at = $2, version = version + 1
-		 WHERE id = $3`,
+		 WHERE id = $3 AND current_value IS DISTINCT FROM $1`,
 		currentValue, now, goalID,
 	)
 	if err != nil {
 		return nil, err
 	}
+
 	affected, _ := res.RowsAffected()
-	if affected == 0 {
-		return nil, pkgerrors.ErrGoalNotFound
+	if affected > 0 {
+		// Value changed → log it
+		_, err = tx.ExecContext(ctx,
+			`INSERT INTO goal_progress_logs (goal_id, value, created_by) VALUES ($1, $2, $3)`,
+			goalID, currentValue, createdBy,
+		)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, err
 	}
 
 	g, err := r.client.Goal.Query().Where(goal.ID(goalID)).Only(ctx)

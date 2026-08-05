@@ -53,5 +53,5 @@ func (s *ProgressService) UpdateGoalProgress(ctx context.Context, empID, goalID 
 		return nil, pkgerrors.ErrGoalNotFound
 	}
 
-	return s.goalRepo.UpdateGoalCurrentValue(ctx, goalID, req.CurrentValue)
+	return s.goalRepo.UpdateGoalCurrentValue(ctx, goalID, req.CurrentValue, &empID)
 }
