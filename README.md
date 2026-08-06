@@ -2,18 +2,18 @@
 
 Portal web para fijación y evaluación de objetivos de empleados (catálogo, mis evaluados, mi evaluación, objetivos).
 
-**Estado:** especificación y principios. Sin implementación de aplicación aún.
+**Estado:** implementado — backend Go + frontend SvelteKit operativos.
 
-## Stack (objetivo)
+## Stack
 
 | Capa | Tecnología |
 |------|------------|
-| Frontend | Vite, Svelte 5, DaisyUI, TypeScript |
-| Backend | Go 1.22+, router Chi, ORM (Ent recomendado; GORM alternativa) |
-| Base de datos | PostgreSQL |
-| Contratos | OpenAPI 3.1 (fuente de verdad en API) + tipos TS generados |
+| Frontend | Vite, Svelte 5, SvelteKit (SPA), DaisyUI 5, Tailwind CSS 4, TypeScript |
+| Backend | Go 1.22+, router Chi, ORM Ent, PostgreSQL |
+| Base de datos | PostgreSQL 15+ |
+| Contratos | OpenAPI 3.1 (fuente de verdad en `api/openapi/`) + tipos TS generados |
 | Specs / SDD | [OpenSpec](https://github.com/Fission-AI/OpenSpec) |
-| Contenedores | Docker multi-stage (futuro `api/`, `web/`) |
+| Contenedores | Docker multi-stage (`api/`, `web/`) |
 
 ## Requerimientos funcionales (resumen)
 
@@ -33,8 +33,15 @@ sed-evaluacion-desempeno/
 ├── principles/            # Decisiones y estándares (sin código de app)
 ├── docs/get-started/      # Guías de arranque
 ├── openspec/              # SDD: specs, changes, archive
-├── api/                   # (futuro) servicio Go
-└── web/                   # (futuro) Vite + Svelte
+├── api/                   # Go + Chi + Ent + OpenAPI 3.1 (7 specs)
+│   ├── cmd/               # Entry points (server, import)
+│   ├── internal/          # Lógica de dominio y handlers
+│   ├── openapi/           # 7 specs YAML (auth, cycle, goals, evaluations, competency, org-hierarchy, activity-logs)
+│   └── .air.toml          # Hot reload config
+└── web/                   # Vite + SvelteKit (SPA) + DaisyUI
+    ├── src/routes/        # 22+ rutas (login, mis-evaluados, mi-evaluacion, objetivos, evaluacion/9x9, rh/*, perfil, dev)
+    ├── src/lib/api/       # Cliente TS generado desde OpenAPI
+    └── package.json       # Scripts: dev, build, check, lint, format, gen:api, test
 ```
 
 ## OpenSpec (Spec-Driven Development)
@@ -56,9 +63,7 @@ Flujo sugerido:
 
 Ver `docs/get-started/openspec.md`.
 
-## Cómo levantar (cuando exista código)
-
-Hoy solo hay documentación. Cuando existan `api/` y `web/`:
+## Cómo levantar (desarrollo local)
 
 ### Prerrequisitos
 
@@ -67,36 +72,54 @@ Hoy solo hay documentación. Cuando existan `api/` y `web/`:
 - Docker y Docker Compose
 - PostgreSQL 15+ (local o contenedor)
 
-### Desarrollo local (previsto)
+### Opción A: Docker Compose (recomendado)
 
 ```bash
-# Base de datos
-docker compose up -d db
+# Levantar todo (DB + API + Web + Proxy)
+docker compose -f docker-compose.dev.yml up --build
+# API en http://localhost:8080, Web en http://localhost:5173 (o proxy en 8088)
+```
 
-# API Go (hot reload con air)
+### Opción B: Procesos nativos
+
+```bash
+# 1. Base de datos
+docker compose up -d postgres   # o usar docker-compose.dev.yml solo postgres
+
+# 2. API Go (hot reload con air)
 cd api && air
 
-# Frontend
+# 3. Frontend
 cd web && pnpm install && pnpm dev
 ```
 
-### Producción (previsto)
+### Generar cliente TypeScript (frontend)
 
-- Imagen `api`: binario Go estático (multi-stage).
-- Imagen `web`: build Vite servido por nginx o contenedor Node según decisión en spec.
-- Proxy (Caddy/Traefik/Nginx): `/api` → Go, `/` → frontend.
-- AWS: ECS Fargate + RDS PostgreSQL + ALB.
-
-Detalle: `docs/get-started/local-setup.md` y `principles/architecture.md`.
+```bash
+cd web && pnpm gen:api
+# Genera tipos en src/lib/api/schemas/*.d.ts desde api/openapi/*.yaml
+```
 
 ## Contratos API ↔ frontend
 
-- OpenAPI generado o mantenido desde el backend.
-- Cliente TS con `openapi-typescript` + `openapi-fetch` (sin axios pesado).
+- OpenAPI mantenido en `api/openapi/` (7 archivos YAML, uno por dominio).
+- Cliente TS con `openapi-typescript` + `openapi-fetch` en `web/src/lib/api/`.
 - Paginación cursor-based en listas grandes; campos mínimos en listados, detalle en segundo request.
 - Caché HTTP y ETag donde aplique; sin duplicar reglas de negocio en el cliente.
 
 Ver `principles/contracts-api.md`.
+
+## Dominios OpenAPI (api/openapi/)
+
+| Archivo | Dominio |
+|---------|---------|
+| `auth.yaml` | Autenticación y sesiones |
+| `cycle.yaml` | Ciclos de evaluación |
+| `goals-api.yaml` | Objetivos (catálogo, asignación, avance) |
+| `evaluations-and-9x9.yaml` | Evaluaciones y matriz 9x9 |
+| `competency-framework-api.yaml` | Marco de competencias (pilares, criterios, niveles) |
+| `org-hierarchy.yaml` | Jerarquía organizacional |
+| `activity-logs.yaml` | Auditoría / logs de actividad |
 
 ## Contribuir
 
