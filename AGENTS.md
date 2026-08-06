@@ -78,18 +78,35 @@ Artefactos en `openspec/specs/` son la verdad a largo plazo; `openspec/changes/`
 
 ## Módulos de producto (referencia)
 
-1. Catálogo de objetivos  
-2. Mis evaluados  
-3. Mi evaluación  
-4. Objetivos (fijación / evaluación / metas)
+**Implementados (con specs OpenAPI en `api/openapi/` y rutas en `web/src/routes/`):**
 
-Cada módulo = al menos una spec OpenSpec antes de UI o handlers.
+1. **Goals / Objetivos** — fijación, avance, asignación, biblioteca (`goals-api.yaml`)
+2. **Org-Hierarchy / Jerarquía organizacional** — árbol, evaluados por jefe (`org-hierarchy.yaml`)
+3. **Nine-Box 9×9** — matriz 9×9, competencias por empleado (`evaluations-and-9x9.yaml`)
+4. **Competency-Framework / Marco de competencias** — pilares, competencias, niveles, criterios (`competency-framework-api.yaml`)
+5. **Activity-Logs / Registros de actividad** — auditoría de cambios (`activity-logs.yaml`)
+6. **Comment-Changes / Cambios de comentario** — propuestas, revisiones, historial (parte de goals/evaluations)
+7. **Catálogo** — catálogo base de objetivos/KPIs
+8. **Evaluaciones / Ciclos** — ciclos, criterios de escala, niveles de aceptación (`cycle.yaml`, `evaluations-and-9x9.yaml`)
+9. **Identidad / Acceso** — auth, sesión, RBAC (`auth.yaml`)
+10. **Notificaciones** — toast, alertas, centro de notificaciones
+
+Cada módulo = al menos una spec OpenAPI en `api/openapi/` antes de UI o handlers.
 
 ## Documentación humana
 
 - Principios: `principles/`
 - Arranque: `docs/get-started/`
 - Este archivo prevalece para agentes si hay conflicto con README salvo decisiones de producto en OpenSpec.
+
+## Cómo orientarse rápido
+
+**Leer primero `principles/`** — AGENTS.md solo enlaza, no duplica:
+
+- `principles/architecture.md` — arquitectura general, bounded contexts, API, frontend
+- `principles/contracts-api.md` — OpenAPI, generación de tipos, validación, versionado
+- `principles/data-and-orm.md` — Ent/GORM, migraciones, índices, transacciones
+- `principles/evaluations-domain.md` — dominio de evaluaciones, ciclos, nine-box, competencias
 
 ## Idioma
 
