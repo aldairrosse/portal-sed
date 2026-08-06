@@ -145,6 +145,10 @@ type mockCycleChecker struct {
 	err      error
 }
 
+func (m *mockCycleChecker) GetActiveCycleID(ctx context.Context, empID uuid.UUID) (uuid.UUID, error) {
+	return uuid.Nil, nil
+}
+
 func (m *mockCycleChecker) GetPhase(ctx context.Context, cycleID uuid.UUID) (string, error) {
 	return m.phase, m.err
 }

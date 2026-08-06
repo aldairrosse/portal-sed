@@ -74,6 +74,10 @@ type mockEmployeeService struct {
 	searchEmployeesFunc func(ctx context.Context, query string, limit int) (*dto.EmployeeListResponse, error)
 }
 
+func (m *mockEmployeeService) UpdateEmployee(ctx context.Context, empID string, req dto.UpdateEmployeeRequest, updatedBy uuid.UUID) (*dto.EmployeeDetailResponse, error) {
+	return nil, nil
+}
+
 func (m *mockEmployeeService) ListEmployees(ctx context.Context, treeID, nodeID, profileID, isActive, query string, offset, limit int) (*dto.EmployeeListResponse, error) {
 	return m.listEmployeesFunc(ctx, treeID, nodeID, profileID, isActive, query, offset, limit)
 }

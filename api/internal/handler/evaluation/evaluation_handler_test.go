@@ -55,6 +55,11 @@ func (m *mockEvalService) recordCall(name string) {
 	m.callCount[name]++
 }
 
+func (m *mockEvalService) ResolveActiveCycleID(ctx context.Context, empID uuid.UUID) (uuid.UUID, error) {
+	m.recordCall("ResolveActiveCycleID")
+	return uuid.Nil, nil
+}
+
 func (m *mockEvalService) ListEvaluations(ctx context.Context, cycleID uuid.UUID, stateFilter string, cursor string, limit int) (*dto.EvaluationListResponse, error) {
 	m.recordCall("ListEvaluations")
 	if m.delay > 0 {

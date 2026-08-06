@@ -218,7 +218,7 @@ func setupTestServerWithPhaseChecker(t *testing.T, phaseChecker goalsvc.PhaseChe
 	authSvc := authsvc.NewAuthService(sessionStore, employeeReader, db)
 
 	phaseCheck := goalsvc.NewPhaseCheck(phaseChecker)
-	catSvc := goalsvc.NewCategoryService(catRepo, phaseCheck)
+	catSvc := goalsvc.NewCategoryService(catRepo, pillarRepo, phaseCheck)
 	goalSvc := goalsvc.NewGoalService(goalRepo, catRepo, kpiRepo, linkRepo, weightQ, phaseCheck)
 	progressSvc := goalsvc.NewProgressService(goalRepo, catRepo, phaseCheck)
 	kpiSvc := goalsvc.NewKPIService(kpiRepo, linkRepo, goalRepo, catRepo, phaseCheck)
@@ -258,7 +258,7 @@ func setupTestServerWithPhaseChecker(t *testing.T, phaseChecker goalsvc.PhaseChe
 		catSvc, goalSvc, progressSvc, kpiSvc, scoringSvc, weightSvc, batchSvc, proposalSvc,
 		catRepo, goalRepo, kpiRepo, linkRepo, assignRepo, proposalRepo, activitySvc,
 	)
-	cycleH := cyclehandler.NewCycleHandler(cycleSvc, phaseSvc, activitySvc)
+	cycleH := cyclehandler.NewCycleHandler(cycleSvc, phaseSvc, activitySvc, assignRepo, employeeRepo)
 	compH := comphandler.NewHandler(pillarSvc, competencySvc, scaleSvc, catalogSvc, acceptanceSvc, activitySvc)
 	evalH := evalhandler.NewEvaluationHandler(evalSvc, nineBoxSvc, dashboardSvc, activitySvc)
 	orgH := orghandler.NewOrgHandler(orgTreeSvc, orgNodeSvc, employeeSvc, evaluateeSvc, metricsSvc)
@@ -281,7 +281,7 @@ func setupTestServerWithPhaseChecker(t *testing.T, phaseChecker goalsvc.PhaseChe
 	r.Group(func(r chi.Router) {
 		comphandler.RegisterRoutes(r, &comphandler.Dependencies{Handler: compH, AuthSvc: authSvc})
 	})
-	r.Mount("/api/v1/auth", authhandler.AuthRoutes(authH))
+	r.Mount("/api/v1/auth", authhandler.AuthRoutes(authH, authSvc))
 	r.Mount("/", goalhandler.NewRouter(goalH, authSvc))
 
 	apiV1 := chi.NewRouter()
