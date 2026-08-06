@@ -88,6 +88,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/cycles/{id}/assign-all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Assign all eligible employees to a cycle
+         * @description Creates evaluations for all active employees in the organization for the given cycle. Idempotent operation.
+         */
+        post: operations["assignAllEmployees"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/cycles/{id}/transitions": {
         parameters: {
             query?: never;
@@ -184,6 +204,11 @@ export interface components {
              * @enum {string}
              */
             trigger: "auto" | "manual_rh";
+            /**
+             * @description Target phase for the transition
+             * @enum {string}
+             */
+            to_phase?: "asignacion" | "avance" | "cierre";
             /** @description Reason for the transition */
             reason?: string;
         };
@@ -445,6 +470,41 @@ export interface operations {
                 };
                 content?: never;
             };
+        };
+    };
+    assignAllEmployees: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Unique idempotency key (UUID v4) */
+                "Idempotency-Key": string;
+            };
+            path: {
+                /** @description Cycle UUID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Assignment completed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @example Assigned 150 employees */
+                        message?: string;
+                        /** @example 150 */
+                        assigned_count?: number;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            429: components["responses"]["RateLimit"];
         };
     };
     getAvailableTransitions: {

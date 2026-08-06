@@ -1,3 +1,5 @@
+import { SvelteDate } from 'svelte/reactivity';
+
 const API = '/dev/api/comments';
 const STORAGE_KEY = 'sed-dev-comentarios';
 
@@ -58,7 +60,7 @@ export async function agregarComentario(requisitoId: number, texto: string): Pro
 	const entry: CommentEntry = {
 		id: Date.now(),
 		texto: texto.trim(),
-		fecha: new Date().toISOString()
+		fecha: new SvelteDate().toISOString()
 	};
 	if (!map[requisitoId]) map[requisitoId] = [];
 	map[requisitoId] = [...map[requisitoId], entry];
@@ -81,7 +83,7 @@ export async function exportarComentariosJSON(): Promise<void> {
 	const url = URL.createObjectURL(blob);
 	const a = document.createElement('a');
 	a.href = url;
-	a.download = `comentarios-requisitos-${new Date().toISOString().slice(0, 10)}.json`;
+	a.download = `comentarios-requisitos-${new SvelteDate().toISOString().slice(0, 10)}.json`;
 	a.click();
 	URL.revokeObjectURL(url);
 }

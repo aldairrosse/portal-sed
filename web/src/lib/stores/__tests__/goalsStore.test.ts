@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // ─── Mock dependencies ─────────────────────────────────────────────────────────
 // These are hoisted by Vitest and apply before any import.
@@ -120,7 +120,7 @@ describe('goalsStore – DEV mode', () => {
 	});
 
 	it('load() populates from fixture files when DEV && !VITE_USE_API', async () => {
-		const store = await import('../goalsStore.svelte.ts');
+		const store = await import('../goalsStore.svelte');
 
 		// Initial state before load
 		expect(store.storeState.loading).toBe(true);
@@ -138,7 +138,7 @@ describe('goalsStore – DEV mode', () => {
 	}, 15000);
 
 	it('does not call client API in DEV mode', async () => {
-		const store = await import('../goalsStore.svelte.ts');
+		const store = await import('../goalsStore.svelte');
 		await store.load();
 
 		const cm = await getClientMock();
@@ -146,7 +146,7 @@ describe('goalsStore – DEV mode', () => {
 	});
 
 	it('getCategories() returns fixture categories', async () => {
-		const store = await import('../goalsStore.svelte.ts');
+		const store = await import('../goalsStore.svelte');
 		await store.load();
 
 		const cats = store.getCategories();
@@ -156,7 +156,7 @@ describe('goalsStore – DEV mode', () => {
 	});
 
 	it('getGoalsByCategory() filters correctly', async () => {
-		const store = await import('../goalsStore.svelte.ts');
+		const store = await import('../goalsStore.svelte');
 		await store.load();
 
 		const goals = store.getGoalsByCategory('cat-ventas-finanzas');
@@ -165,7 +165,7 @@ describe('goalsStore – DEV mode', () => {
 	});
 
 	it('getKpisForGoal() returns linked KPIs', async () => {
-		const store = await import('../goalsStore.svelte.ts');
+		const store = await import('../goalsStore.svelte');
 		await store.load();
 
 		const kpis = store.getKpisForGoal('goal-alcanzar-ventas');
@@ -174,7 +174,7 @@ describe('goalsStore – DEV mode', () => {
 	});
 
 	it('getCategoryProgressAverage() computes direction-aware average from goals with progress', async () => {
-		const store = await import('../goalsStore.svelte.ts');
+		const store = await import('../goalsStore.svelte');
 		await store.load();
 
 		// cat-ventas-finanzas has 3 goals:
@@ -187,7 +187,7 @@ describe('goalsStore – DEV mode', () => {
 	});
 
 	it('getWeightedScore() calculates total weighted score across all categories', async () => {
-		const store = await import('../goalsStore.svelte.ts');
+		const store = await import('../goalsStore.svelte');
 		await store.load();
 
 		// cat-ventas-finanzas (w=40):
@@ -212,21 +212,21 @@ describe('goalsStore – DEV mode', () => {
 	});
 
 	it('getGoalsByCategory() returns empty array for unknown category', async () => {
-		const store = await import('../goalsStore.svelte.ts');
+		const store = await import('../goalsStore.svelte');
 		await store.load();
 
 		expect(store.getGoalsByCategory('cat-nonexistent')).toEqual([]);
 	});
 
 	it('isAssignmentValid() returns true for fixture data', async () => {
-		const store = await import('../goalsStore.svelte.ts');
+		const store = await import('../goalsStore.svelte');
 		await store.load();
 
 		expect(store.isAssignmentValid()).toBe(true);
 	});
 
 	it('addCategory() mutates local state without API call', async () => {
-		const store = await import('../goalsStore.svelte.ts');
+		const store = await import('../goalsStore.svelte');
 		await store.load();
 
 		const before = store.getCategories().length;
@@ -245,7 +245,7 @@ describe('goalsStore – DEV mode', () => {
 	});
 
 	it('updateCategory() mutates local state without API call', async () => {
-		const store = await import('../goalsStore.svelte.ts');
+		const store = await import('../goalsStore.svelte');
 		await store.load();
 
 		await store.updateCategory('cat-ventas-finanzas', { name: 'Ventas actualizado' });
@@ -255,7 +255,7 @@ describe('goalsStore – DEV mode', () => {
 	});
 
 	it('deleteCategory() removes category and cascade deletes goals and links', async () => {
-		const store = await import('../goalsStore.svelte.ts');
+		const store = await import('../goalsStore.svelte');
 		await store.load();
 
 		await store.deleteCategory('cat-operaciones-procesos');
@@ -266,14 +266,14 @@ describe('goalsStore – DEV mode', () => {
 	});
 
 	it('getChangeRequests() returns empty until a change is recorded', async () => {
-		const store = await import('../goalsStore.svelte.ts');
+		const store = await import('../goalsStore.svelte');
 		await store.load();
 
 		expect(store.getChangeRequests()).toHaveLength(0);
 	});
 
 	it('recordChangeRequest() appends to change requests', async () => {
-		const store = await import('../goalsStore.svelte.ts');
+		const store = await import('../goalsStore.svelte');
 		await store.load();
 
 		await store.recordChangeRequest({
@@ -316,7 +316,7 @@ describe('goalsStore – API mode', () => {
 			return Promise.resolve({ data: SAMPLE_API_ASSIGNMENT, error: null });
 		});
 
-		const store = await import('../goalsStore.svelte.ts');
+		const store = await import('../goalsStore.svelte');
 		await store.load();
 
 		expect(store.storeState.loading).toBe(false);
@@ -340,7 +340,7 @@ describe('goalsStore – API mode', () => {
 		});
 		cm.POST.mockResolvedValue({ error: null });
 
-		const store = await import('../goalsStore.svelte.ts');
+		const store = await import('../goalsStore.svelte');
 		await store.addCategory({
 			id: 'cat-new',
 			name: 'Nueva',
@@ -361,7 +361,7 @@ describe('goalsStore – API mode', () => {
 			error: { error: { message: 'Error al cargar categorías' } }
 		});
 
-		const store = await import('../goalsStore.svelte.ts');
+		const store = await import('../goalsStore.svelte');
 		await store.load();
 
 		expect(store.storeState.loading).toBe(false);
@@ -378,7 +378,7 @@ describe('goalsStore – API mode', () => {
 			return Promise.resolve(okGetResponse([]));
 		});
 
-		const store = await import('../goalsStore.svelte.ts');
+		const store = await import('../goalsStore.svelte');
 		await store.load();
 
 		expect(store.storeState.loading).toBe(false);

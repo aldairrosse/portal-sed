@@ -2,11 +2,8 @@
 	import { X, Plus, Trash2, Save } from '@lucide/svelte';
 	import {
 		getScaleCriteriaForCell,
-		updateScaleCriterion,
-		addScaleCriterion,
-		removeScaleCriterion
+		replaceScaleCriteria
 	} from '$lib/stores/competencyStore.svelte';
-	import type { ScaleCriterion } from '$lib/types/competency';
 
 	interface Props {
 		open: boolean;
@@ -75,47 +72,19 @@
 		}
 	}
 
-	function handleSubmit(e: Event) {
+	async function handleSubmit(e: Event) {
 		e.preventDefault();
-		// Get existing criteria IDs before save (snapshot for diff)
-		const existingIds = new Set(
-			getScaleCriteriaForCell(competencyId, pillarId).map((c) => c.id)
-		);
-		// eslint-disable-next-line svelte/prefer-svelte-reactivity
-		const finalIds = new Set<string>();
-		const newEntries: Array<Omit<ScaleCriterion, 'id'>> = [];
-		const updatePairs: Array<{ id: string; description: string }> = [];
-
+		// Build final criteria list and replace in one batch (API only supports batch replace)
+		const finalCriteria: { level: number; description: string }[] = [];
 		for (const entry of entries) {
-			if (entry.serverId) {
-				finalIds.add(entry.serverId);
-				updatePairs.push({ id: entry.serverId, description: entry.description.trim() });
-			} else {
-				newEntries.push({
-					competencyId,
-					pillarId,
+			if (entry.description.trim()) {
+				finalCriteria.push({
 					level: entry.level as 1 | 2 | 3 | 4 | 5,
 					description: entry.description.trim()
 				});
 			}
 		}
-
-		// Remove deleted
-		for (const id of existingIds) {
-			if (!finalIds.has(id)) {
-				removeScaleCriterion(id);
-			}
-		}
-
-		// Update changed
-		for (const pair of updatePairs) {
-			updateScaleCriterion(pair.id, pair.description);
-		}
-
-		// Add new
-		for (const nc of newEntries) {
-			addScaleCriterion(nc);
-		}
+		await replaceScaleCriteria(competencyId, finalCriteria);
 
 		onSave();
 	}

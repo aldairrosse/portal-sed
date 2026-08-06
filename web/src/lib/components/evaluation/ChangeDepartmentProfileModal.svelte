@@ -91,9 +91,9 @@
 {#if loading}
 	<dialog class="modal modal-open">
 		<div class="modal-box">
-			<div class="skeleton h-6 w-48 mb-4" />
-			<div class="skeleton h-8 w-full mb-2" />
-			<div class="skeleton h-64 w-full" />
+			<div class="skeleton h-6 w-48 mb-4"></div>
+			<div class="skeleton h-8 w-full mb-2"></div>
+			<div class="skeleton h-64 w-full"></div>
 		</div>
 	</dialog>
 {:else}

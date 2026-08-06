@@ -1,5 +1,6 @@
 <script lang="ts">
-	import DATA, { type Requisito, type SeccionData } from '$lib/dev/requisitosData';
+	import DATA from '$lib/dev/requisitosData';
+	import { SvelteSet } from 'svelte/reactivity';
 	import {
 		getComentarios,
 		agregarComentario,
@@ -10,9 +11,9 @@
 	} from '$lib/dev/commentsStore.svelte';
 	import { FileDown, FileUp, FileText, MessageSquare, Trash2, ChevronDown, ChevronRight } from '@lucide/svelte';
 
-	let expandedSections = $state<Set<string>>(new Set(DATA.map((s) => s.seccion)));
-	let expandedEntregables = $state<Set<number>>(new Set());
-	let expandedComentarios = $state<Set<number>>(new Set());
+	let expandedSections = new SvelteSet(DATA.map((s) => s.seccion));
+	let expandedEntregables = new SvelteSet<number>();
+	let expandedComentarios = new SvelteSet<number>();
 	let comentarioTexto = $state<Record<number, string>>({});
 
 	function toggleSection(seccion: string) {
@@ -21,7 +22,6 @@
 		} else {
 			expandedSections.add(seccion);
 		}
-		expandedSections = new Set(expandedSections);
 	}
 
 	function toggleEntregables(id: number) {
@@ -30,7 +30,6 @@
 		} else {
 			expandedEntregables.add(id);
 		}
-		expandedEntregables = new Set(expandedEntregables);
 	}
 
 	function toggleComentarios(id: number) {
@@ -39,7 +38,6 @@
 		} else {
 			expandedComentarios.add(id);
 		}
-		expandedComentarios = new Set(expandedComentarios);
 	}
 
 	function getComentarioTexto(requisitoId: number): string {
@@ -122,9 +120,9 @@
 
 	function toggleAllSections(expand: boolean) {
 		if (expand) {
-			expandedSections = new Set(DATA.map((s) => s.seccion));
+			expandedSections = new SvelteSet(DATA.map((s) => s.seccion));
 		} else {
-			expandedSections = new Set();
+			expandedSections = new SvelteSet();
 		}
 	}
 
@@ -219,13 +217,13 @@
 										</td>
 										<td>
 											<div class="flex flex-col gap-1.5">
-												{#each req.entregables as ent, i}
+												{#each req.entregables as ent (ent.item)}
 													<div class="text-xs text-base-content/70 leading-relaxed">
 														{ent.item}
 													</div>
 													{#if expandedEntregables.has(req.id) && ent.archivos.length > 0}
 														<div class="flex flex-col gap-0.5 ml-2 mb-1">
-															{#each ent.archivos as archivo}
+															{#each ent.archivos as archivo (archivo)}
 																<code class="text-[10px] text-base-content/30 font-mono">{archivo}</code>
 															{/each}
 														</div>
@@ -258,7 +256,7 @@
 
 												{#if expandedComentarios.has(req.id)}
 													<div class="flex flex-col gap-2 min-w-[150px]">
-														{#each getComentarios(req.id) as comment}
+														{#each getComentarios(req.id) as comment (comment.id)}
 															<div class="bg-base-200/50 rounded-lg p-2 text-xs">
 																<p class="text-base-content/70">{comment.texto}</p>
 																<div class="flex items-center justify-between mt-1">
@@ -310,8 +308,9 @@
 </div>
 
 {#if showImportModal}
-	<!-- svelte-ignore a11y_interactive_supports_focus -->
+	
 	<div class="modal modal-open" role="dialog" tabindex="-1" onclick={cancelImport} onkeydown={(e) => e.key === 'Escape' && cancelImport()}>
+	<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 		<div class="modal-box" role="document" tabindex="-1" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()}>
 			<h3 class="text-lg font-bold mb-2">Importar comentarios</h3>
 

@@ -19,7 +19,6 @@
 		ShieldCheck
 	} from '@lucide/svelte';
 	import type { Goal, KPI } from '$lib/types/goal';
-	import type { Pillar, Competency, LevelDefinition } from '$lib/types/competency';
 
 	const session = $derived(getSession());
 	const profile = $derived(getProfile());

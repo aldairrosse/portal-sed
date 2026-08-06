@@ -21,7 +21,7 @@ function interceptLocationHref() {
 				}
 			};
 		},
-		set(val: any) {
+		set(val: unknown) {
 			if (typeof val === 'string') {
 				assignedHref = val;
 			}
@@ -67,7 +67,7 @@ describe('client.ts', () => {
 		it('sets credentials: include on requests', async () => {
 			mockFetch.mockResolvedValue(new Response(JSON.stringify({}), { status: 200 }));
 
-			await (client as any).GET('/test');
+			await (client as unknown as { GET(url: string): Promise<unknown> }).GET('/test');
 
 			expect(mockFetch).toHaveBeenCalledWith(
 				expect.any(Request),
@@ -79,7 +79,7 @@ describe('client.ts', () => {
 			const { getAssignedHref, restore } = interceptLocationHref();
 			mockFetch.mockResolvedValue(new Response(null, { status: 401 }));
 
-			await (client as any).GET('/test');
+			await (client as unknown as { GET(url: string): Promise<unknown> }).GET('/test');
 
 			expect(getAssignedHref()).toBe('/login');
 			restore();

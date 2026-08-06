@@ -225,6 +225,8 @@ export interface components {
             id?: string;
             name?: string;
             description?: string;
+            /** @enum {string} */
+            type?: "competencias" | "metas";
             competency_count?: number;
         };
         PillarListResponse: {
@@ -239,6 +241,8 @@ export interface components {
             id?: string;
             name?: string;
             description?: string;
+            /** @enum {string} */
+            type?: "competencias" | "metas";
             competencies?: components["schemas"]["CompetencyLite"][];
             /** Format: date-time */
             created_at?: string;
@@ -248,10 +252,17 @@ export interface components {
         CreatePillarRequest: {
             name: string;
             description?: string;
+            /**
+             * @default competencias
+             * @enum {string}
+             */
+            type: "competencias" | "metas";
         };
         UpdatePillarRequest: {
             name: string;
             description?: string;
+            /** @enum {string} */
+            type?: "competencias" | "metas";
         };
         CompetencyLite: {
             /** Format: uuid */
@@ -419,6 +430,8 @@ export interface operations {
         parameters: {
             query?: {
                 include?: "competencies";
+                /** @description Filter pillars by type. Omit to return all. */
+                type?: "competencias" | "metas";
                 cursor?: string;
                 limit?: number;
             };

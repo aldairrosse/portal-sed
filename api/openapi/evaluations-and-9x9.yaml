@@ -554,6 +554,17 @@ components:
           items: { $ref: "#/components/schemas/GoalCommentInput" }
       required: [competencies]
 
+    CompetencyResultItem:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        profileName: { type: string }
+        selfRatingAvg: { type: number, nullable: true }
+        rhRatingAvg: { type: number, nullable: true }
+        status: { type: string }
+      required: [id, name, profileName, status]
+
     CompetencyRatingInput:
       type: object
       properties:

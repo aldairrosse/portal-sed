@@ -148,9 +148,7 @@ async function getCycle(cycleId: string): Promise<Cycle | null> {
 		params: { path: { id: cycleId } }
 	});
 	if (apiError || !data) {
-		error = typeof apiError === 'object' && apiError !== null
-			? ((apiError as Record<string, unknown>).error as Record<string, unknown> ?? {})?.message ?? 'Error al obtener ciclo'
-			: 'Error al obtener ciclo';
+		error = (apiError as { error?: { message?: string } })?.error?.message ?? 'Error al obtener ciclo';
 		return null;
 	}
 	const raw = data as components['schemas']['Cycle'];
@@ -185,9 +183,7 @@ export async function advancePhase(cycleId: string, toPhase: ApiCyclePhase): Pro
 		});
 
 		if (apiError) {
-			const msg = typeof apiError === 'object' && apiError !== null
-				? ((apiError as Record<string, unknown>).error as Record<string, unknown> ?? {})?.message ?? JSON.stringify(apiError)
-				: String(apiError);
+			const msg = (apiError as { error?: { message?: string } })?.error?.message ?? JSON.stringify(apiError);
 			console.error('[advancePhase] 409 body:', apiError, 'sent version:', fresh.version);
 			throw new Error(msg);
 		}
@@ -257,8 +253,4 @@ export async function assignAll(cycleId: string): Promise<{ assigned: number; sk
 
 // ─── Helpers ────────────────────────────────────────────────────────────────────
 
-function getNextPhase(current: ApiCyclePhase): ApiCyclePhase | null {
-	if (current === 'asignacion') return 'avance';
-	if (current === 'avance') return 'cierre';
-	return null;
-}
+

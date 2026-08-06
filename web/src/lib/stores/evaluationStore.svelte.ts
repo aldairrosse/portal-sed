@@ -2,6 +2,7 @@ import type { CompetencyRating, GoalClosure, EvaluationStatus } from '$lib/types
 import { getActivePhase } from '$lib/api/cycle.svelte';
 import { getSession } from '$lib/api/session.svelte';
 import { client, HttpNotFoundError } from '$lib/api/client';
+import { SvelteSet } from 'svelte/reactivity';
 
 
 // ─── Internal data shape ──────────────────────────────────────────────────────
@@ -259,14 +260,13 @@ export async function rateCompetency(
 				: r.selfComment
 	}));
 	// If the competency isn't in the list yet, add it
-	const existingIds = new Set(competencies.map((c) => c.competencyId));
+	const existingIds = new SvelteSet(competencies.map((c) => c.competencyId));
 	if (!existingIds.has(competencyId)) {
 		competencies.push({ competencyId, rating: level, comments: comment });
 	}
 
 	const { error: apiError } = await client.PUT('/evaluations/{id}/self-evaluation', {
-		params: { path: { id: empId } },
-		header: { 'If-Match': 1 } as never,
+		params: { path: { id: empId }, header: { 'If-Match': 1 } },
 		body: { competencies }
 	});
 	if (apiError) throw new Error('Error al guardar autoevaluación');
@@ -285,8 +285,7 @@ export async function closeGoal(
 	if (!empId) return;
 
 	const { error: apiError } = await client.PUT('/evaluations/{id}/goal-state', {
-		params: { path: { id: empId } },
-		header: { 'If-Match': 1 } as never,
+		params: { path: { id: empId }, header: { 'If-Match': 1 } },
 		body: {
 			goalId,
 			finalProgress,
@@ -324,14 +323,13 @@ export async function rhRateCompetency(
 				? comment
 				: (r.rhComment ?? r.selfComment)
 	}));
-	const existingIds = new Set(competencies.map((c) => c.competencyId));
+	const existingIds = new SvelteSet(competencies.map((c) => c.competencyId));
 	if (!existingIds.has(competencyId)) {
 		competencies.push({ competencyId, rating: level, comments: comment });
 	}
 
 	const { error: apiError } = await client.PUT('/evaluations/{id}/rh-evaluation', {
-		params: { path: { id: empId } },
-		header: { 'If-Match': 1 } as never,
+		params: { path: { id: empId }, header: { 'If-Match': 1 } },
 		body: { competencies }
 	});
 	if (apiError) throw new Error('Error al guardar evaluación RH');
@@ -349,8 +347,7 @@ export async function rhAssessGoal(
 	if (!empId) return;
 
 	const { error: apiError } = await client.PUT('/evaluations/{id}/goal-state', {
-		params: { path: { id: empId } },
-		header: { 'If-Match': 1 } as never,
+		params: { path: { id: empId }, header: { 'If-Match': 1 } },
 		body: {
 			goalId,
 			rhAssessment
@@ -373,8 +370,7 @@ export async function addManagerComment(
 	if (!empId) return;
 
 	const { error: apiError } = await client.PUT('/evaluations/{id}/goal-comments', {
-		params: { path: { id: empId } },
-		header: { 'If-Match': 1 } as never,
+		params: { path: { id: empId }, header: { 'If-Match': 1 } },
 		body: {
 			goalId,
 			role: 'manager',
@@ -404,8 +400,7 @@ export async function submitSelfEvaluation(): Promise<void> {
 	);
 
 	const { error: apiError } = await client.POST('/evaluations/{id}/self-evaluation', {
-		params: { path: { id: empId } },
-		header: { 'Idempotency-Key': `self-eval-${empId}-${Date.now()}` } as never,
+		params: { path: { id: empId }, header: { 'Idempotency-Key': `self-eval-${empId}-${Date.now()}` } },
 		body: {
 			competencies: empRatings.map((r) => ({
 				competencyId: r.competencyId,
@@ -435,8 +430,7 @@ export async function submitRHEvaluation(employeeId: string): Promise<void> {
 	);
 
 	const { error: apiError } = await client.POST('/evaluations/{id}/rh-evaluation', {
-		params: { path: { id: empId } },
-		header: { 'Idempotency-Key': `rh-eval-${empId}-${employeeId}-${Date.now()}` } as never,
+		params: { path: { id: empId }, header: { 'Idempotency-Key': `rh-eval-${empId}-${employeeId}-${Date.now()}` } },
 		body: {
 			competencies: empRatings.map((r) => ({
 				competencyId: r.competencyId,
@@ -467,7 +461,7 @@ export async function finalizeEvaluation(reason?: string): Promise<void> {
 
 // ─── Internal helpers ─────────────────────────────────────────────────────────
 
-function applyRating(
+function _applyRating(
 	ratings: CompetencyRating[],
 	employeeId: string,
 	competencyId: string,

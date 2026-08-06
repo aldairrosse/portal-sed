@@ -184,7 +184,11 @@ export interface paths {
          * @description Returns a single employee with nested org node and manager info.
          */
         get: operations["getEmployee"];
-        put?: never;
+        /**
+         * Update employee profile and department
+         * @description Updates an employee's evaluation profile and/or org node (department).
+         */
+        put: operations["updateEmployee"];
         post?: never;
         delete?: never;
         options?: never;
@@ -427,8 +431,8 @@ export interface components {
             /** Format: uuid */
             profileId?: string;
             isActive?: boolean;
-            jobTitle?: string;
             profileName?: string;
+            jobTitle?: string;
         };
         EmployeeDetail: components["schemas"]["Employee"] & {
             orgNode?: {
@@ -479,6 +483,18 @@ export interface components {
             avgRating?: number | null;
             ratingsCount?: number;
             employees?: components["schemas"]["AreaMetricsEmployee"][];
+        };
+        UpdateEmployeeRequest: {
+            /**
+             * Format: uuid
+             * @description New evaluation profile ID
+             */
+            profileId: string;
+            /**
+             * Format: uuid
+             * @description New org node (department) ID
+             */
+            orgNodeId: string;
         };
         AreaMetricsEmployee: {
             /** Format: uuid */
@@ -869,6 +885,7 @@ export interface operations {
                 profileId?: string;
                 isActive?: boolean;
                 q?: string;
+                offset?: number;
                 /** @description Cursor for pagination (UUID of last item) */
                 cursor?: string;
                 limit?: number;
@@ -912,6 +929,36 @@ export interface operations {
                     };
                 };
             };
+            404: components["responses"]["EmployeeNotFound"];
+        };
+    };
+    updateEmployee: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                empId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateEmployeeRequest"];
+            };
+        };
+        responses: {
+            /** @description Updated successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data?: components["schemas"]["EmployeeDetail"];
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
             404: components["responses"]["EmployeeNotFound"];
         };
     };

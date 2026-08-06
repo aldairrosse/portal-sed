@@ -527,6 +527,252 @@ paths:
         '404':
           $ref: '#/components/responses/GoalNotFound'
 
+  # ============================================================================
+  # Comments (goal / category / assignment)
+  # ============================================================================
+  /goals/{goalId}/comments:
+    get:
+      operationId: listGoalComments
+      summary: List comments for a goal
+      parameters:
+        - $ref: '#/components/parameters/GoalId'
+      responses:
+        '200':
+          description: List of comments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GoalComment'
+    post:
+      operationId: createGoalComment
+      summary: Create a comment on a goal
+      parameters:
+        - $ref: '#/components/parameters/GoalId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCommentRequest'
+      responses:
+        '201':
+          description: Comment created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GoalComment'
+
+  /goals/{goalId}/comments/{commentId}:
+    delete:
+      operationId: deleteGoalComment
+      summary: Delete a comment
+      parameters:
+        - $ref: '#/components/parameters/GoalId'
+        - name: commentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Comment deleted
+
+  /categories/{catId}/comments:
+    get:
+      operationId: listCategoryComments
+      summary: List comments for a category
+      parameters:
+        - name: catId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List of comments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GoalComment'
+    post:
+      operationId: createCategoryComment
+      summary: Create a comment on a category
+      parameters:
+        - name: catId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCommentRequest'
+      responses:
+        '201':
+          description: Comment created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GoalComment'
+
+  /categories/{catId}/comments/{commentId}:
+    delete:
+      operationId: deleteCategoryComment
+      summary: Delete a comment
+      parameters:
+        - name: catId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: commentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Comment deleted
+
+  /assignments/{assignId}/comments:
+    get:
+      operationId: listAssignmentComments
+      summary: List comments for an assignment
+      parameters:
+        - $ref: '#/components/parameters/AssignmentId'
+      responses:
+        '200':
+          description: List of comments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GoalComment'
+    post:
+      operationId: createAssignmentComment
+      summary: Create a comment on an assignment
+      parameters:
+        - $ref: '#/components/parameters/AssignmentId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCommentRequest'
+      responses:
+        '201':
+          description: Comment created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GoalComment'
+
+  /assignments/{assignId}/comments/{commentId}:
+    delete:
+      operationId: deleteAssignmentComment
+      summary: Delete a comment
+      parameters:
+        - $ref: '#/components/parameters/AssignmentId'
+        - name: commentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Comment deleted
+
+  # ============================================================================
+  # Change Requests
+  # ============================================================================
+  /change-requests:
+    get:
+      operationId: listChangeRequests
+      summary: List change requests
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, approved, rejected]
+        - name: entity_type
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: List of change requests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ChangeRequest'
+    post:
+      operationId: createChangeRequest
+      summary: Create a change request
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateChangeRequestRequest'
+      responses:
+        '201':
+          description: Change request created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChangeRequest'
+
+  /change-requests/{crId}:
+    patch:
+      operationId: updateChangeRequest
+      summary: Approve or reject a change request
+      parameters:
+        - name: crId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateChangeRequestRequest'
+      responses:
+        '200':
+          description: Updated change request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChangeRequest'
+
 components:
   parameters:
     EmpId:
@@ -545,6 +791,13 @@ components:
         format: uuid
     GoalId:
       name: goalId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    AssignmentId:
+      name: assignId
       in: path
       required: true
       schema:
@@ -685,7 +938,7 @@ components:
           type: string
         unit:
           type: string
-          enum: [porcentaje, moneda, numero]
+          enum: [porcentaje, moneda, numero, binario]
         weight:
           type: number
           minimum: 0.01
@@ -721,7 +974,7 @@ components:
           type: string
         unit:
           type: string
-          enum: [porcentaje, moneda, numero]
+          enum: [porcentaje, moneda, numero, binario]
         weight:
           type: number
           minimum: 0.01
@@ -826,7 +1079,7 @@ components:
           type: string
         unit:
           type: string
-          enum: [porcentaje, moneda, numero]
+          enum: [porcentaje, moneda, numero, binario]
         weight:
           type: number
           minimum: 0.01
@@ -993,7 +1246,7 @@ components:
           maxLength: 255
         unit:
           type: string
-          enum: [porcentaje, moneda, numero]
+          enum: [porcentaje, moneda, numero, binario]
         description:
           type: string
         direction:
@@ -1011,7 +1264,7 @@ components:
           maxLength: 255
         unit:
           type: string
-          enum: [porcentaje, moneda, numero]
+          enum: [porcentaje, moneda, numero, binario]
         description:
           type: string
         direction:
@@ -1093,6 +1346,93 @@ components:
       required: [cycle_id]
       properties:
         cycle_id:
+          type: string
+          format: uuid
+
+    GoalComment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        goal_id:
+          type: string
+          format: uuid
+          nullable: true
+        category_id:
+          type: string
+          format: uuid
+          nullable: true
+        assignment_id:
+          type: string
+          format: uuid
+          nullable: true
+        author_id:
+          type: string
+          format: uuid
+        author_name:
+          type: string
+        content:
+          type: string
+        created_at:
+          type: string
+
+    CreateCommentRequest:
+      type: object
+      required: [content]
+      properties:
+        content:
+          type: string
+          minLength: 1
+
+    ChangeRequest:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        entity_type:
+          type: string
+        entity_id:
+          type: string
+          format: uuid
+        requested_by:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [pending, approved, rejected]
+        approved_by:
+          type: string
+          format: uuid
+          nullable: true
+        approved_at:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+
+    CreateChangeRequestRequest:
+      type: object
+      required: [entity_type, entity_id, requested_by]
+      properties:
+        entity_type:
+          type: string
+        entity_id:
+          type: string
+          format: uuid
+        requested_by:
+          type: string
+          format: uuid
+
+    UpdateChangeRequestRequest:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [pending, approved, rejected]
+        approved_by:
           type: string
           format: uuid
 

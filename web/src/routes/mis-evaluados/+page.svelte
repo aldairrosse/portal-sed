@@ -14,7 +14,6 @@
 		hasPrevItems,
 		getCurrentPage,
 		getTotalCount,
-		getSearchQuery,
 		load,
 		search,
 		next,
@@ -30,7 +29,6 @@
 	const hasPrev = $derived(hasPrevItems());
 	const currentPage = $derived(getCurrentPage());
 	const totalCount = $derived(getTotalCount());
-	const searchQuery = $derived(getSearchQuery());
 
 	const phase = $derived(getActivePhase() ?? 'inicio-anio');
 	const isFinAnio = $derived(phase === 'fin-anio');

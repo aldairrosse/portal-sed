@@ -92,40 +92,6 @@ export interface paths {
         patch: operations["updateGoalProgress"];
         trace?: never;
     };
-    "/goals/{goalId}/proposals": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Create a proposal for a goal */
-        post: operations["createGoalProposal"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/goals/{goalId}/proposals/{propId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /** Accept or reject a goal proposal */
-        patch: operations["updateGoalProposal"];
-        trace?: never;
-    };
     "/goals/batch": {
         parameters: {
             query?: never;
@@ -250,6 +216,50 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/goals/{goalId}/proposals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List proposals for a goal
+         * @description Returns all proposals (pending, accepted, rejected) for audit trail.
+         */
+        get: operations["listGoalProposals"];
+        put?: never;
+        /**
+         * Create a proposal for a goal
+         * @description Proposes changes to a goal's values (name, weight, target, KPIs) for manager review.
+         */
+        post: operations["createGoalProposal"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/goals/{goalId}/proposals/{propId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Accept or reject a goal proposal
+         * @description Manager accepts or rejects a pending proposal. Accepting applies the proposed changes to the goal.
+         */
+        patch: operations["updateGoalProposal"];
+        trace?: never;
+    };
     "/employees/{empId}/assignments": {
         parameters: {
             query?: never;
@@ -298,7 +308,7 @@ export interface paths {
         /** List comments for a goal */
         get: operations["listGoalComments"];
         put?: never;
-        /** Add a comment to a goal */
+        /** Create a comment on a goal */
         post: operations["createGoalComment"];
         delete?: never;
         options?: never;
@@ -316,8 +326,78 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        /** Delete a goal comment */
+        /** Delete a comment */
         delete: operations["deleteGoalComment"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/categories/{catId}/comments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List comments for a category */
+        get: operations["listCategoryComments"];
+        put?: never;
+        /** Create a comment on a category */
+        post: operations["createCategoryComment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/categories/{catId}/comments/{commentId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete a comment */
+        delete: operations["deleteCategoryComment"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/assignments/{assignId}/comments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List comments for an assignment */
+        get: operations["listAssignmentComments"];
+        put?: never;
+        /** Create a comment on an assignment */
+        post: operations["createAssignmentComment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/assignments/{assignId}/comments/{commentId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete a comment */
+        delete: operations["deleteAssignmentComment"];
         options?: never;
         head?: never;
         patch?: never;
@@ -356,76 +436,6 @@ export interface paths {
         head?: never;
         /** Approve or reject a change request */
         patch: operations["updateChangeRequest"];
-        trace?: never;
-    };
-    "/categories/{catId}/comments": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List comments for a category */
-        get: operations["listCategoryComments"];
-        put?: never;
-        /** Add a comment to a category */
-        post: operations["createCategoryComment"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/categories/{catId}/comments/{commentId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** Delete a category comment */
-        delete: operations["deleteCategoryComment"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/assignments/{assignId}/comments": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List comments for an assignment */
-        get: operations["listAssignmentComments"];
-        put?: never;
-        /** Add a comment to an assignment */
-        post: operations["createAssignmentComment"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/assignments/{assignId}/comments/{commentId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** Delete an assignment comment */
-        delete: operations["deleteAssignmentComment"];
-        options?: never;
-        head?: never;
-        patch?: never;
         trace?: never;
     };
 }
@@ -472,7 +482,7 @@ export interface components {
             name: string;
             description?: string;
             /** @enum {string} */
-            unit: "porcentaje" | "moneda" | "numero";
+            unit: "porcentaje" | "moneda" | "numero" | "binario";
             weight: number;
             target_value: number;
             /**
@@ -488,7 +498,7 @@ export interface components {
             name: string;
             description?: string;
             /** @enum {string} */
-            unit: "porcentaje" | "moneda" | "numero";
+            unit: "porcentaje" | "moneda" | "numero" | "binario";
             weight: number;
             target_value: number;
             /**
@@ -499,6 +509,53 @@ export interface components {
             /** @description Required when direction is descendente; must be > target_value */
             baseline_value?: number | null;
             version: number;
+            kpi_ids?: string[];
+        };
+        GoalResponse: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            category_id?: string;
+            name?: string;
+            description?: string;
+            unit?: string;
+            weight?: number;
+            target_value?: number;
+            current_value?: number;
+            /** @enum {string} */
+            direction?: "ascendente" | "descendente";
+            baseline_value?: number | null;
+            progress_percent?: number;
+            /** @enum {string} */
+            state?: "borrador" | "fijada" | "en_seguimiento" | "evaluada" | "cerrada";
+            version?: number;
+            kpis?: components["schemas"]["KpiResponse"][];
+            pending_proposal?: components["schemas"]["GoalProposalResponse"];
+            /** Format: date-time */
+            created_at?: string;
+            /** Format: date-time */
+            updated_at?: string;
+        };
+        UpdateProgressRequest: {
+            current_value: number;
+        };
+        KpiUpdateValueRequest: {
+            current_value: number;
+        };
+        CreateGoalProposalRequest: {
+            name: string;
+            description?: string;
+            /** @enum {string} */
+            unit: "porcentaje" | "moneda" | "numero" | "binario";
+            weight: number;
+            target_value: number;
+            /**
+             * @default ascendente
+             * @enum {string}
+             */
+            direction: "ascendente" | "descendente";
+            /** @description Required when direction is descendente; must be > target_value */
+            baseline_value?: number | null;
             kpi_ids?: string[];
         };
         GoalProposalResponse: {
@@ -525,55 +582,10 @@ export interface components {
             /** Format: date-time */
             updated_at?: string;
         };
-        CreateGoalProposalRequest: {
-            name: string;
-            description?: string;
-            /** @enum {string} */
-            unit: "porcentaje" | "moneda" | "numero";
-            weight: number;
-            target_value: number;
-            /**
-             * @default ascendente
-             * @enum {string}
-             */
-            direction: "ascendente" | "descendente";
-            baseline_value?: number | null;
-            kpi_ids?: string[];
-        };
         UpdateGoalProposalRequest: {
-            status: string;
+            /** @enum {string} */
+            status: "accepted" | "rejected";
             reviewed_by: string;
-        };
-        GoalResponse: {
-            /** Format: uuid */
-            id?: string;
-            /** Format: uuid */
-            category_id?: string;
-            name?: string;
-            description?: string;
-            unit?: string;
-            weight?: number;
-            target_value?: number;
-            current_value?: number;
-            /** @enum {string} */
-            direction?: "ascendente" | "descendente";
-            baseline_value?: number | null;
-            progress_percent?: number;
-            /** @enum {string} */
-            state?: "borrador" | "fijada" | "en_seguimiento" | "evaluada" | "cerrada";
-            version?: number;
-            pending_proposal?: components["schemas"]["GoalProposalResponse"];
-            kpis?: components["schemas"]["KpiResponse"][];
-            /** Format: date-time */
-            created_at?: string;
-            /** Format: date-time */
-            updated_at?: string;
-        };
-        UpdateProgressRequest: {
-            current_value: number;
-        };
-        KpiUpdateValueRequest: {
-            current_value: number;
         };
         BatchGoalItem: {
             /** @enum {string} */
@@ -608,7 +620,7 @@ export interface components {
         CreateKpiRequest: {
             name: string;
             /** @enum {string} */
-            unit: "porcentaje" | "moneda" | "numero";
+            unit: "porcentaje" | "moneda" | "numero" | "binario";
             description?: string;
             /**
              * @default ascendente
@@ -619,7 +631,7 @@ export interface components {
         UpdateKpiRequest: {
             name: string;
             /** @enum {string} */
-            unit: "porcentaje" | "moneda" | "numero";
+            unit: "porcentaje" | "moneda" | "numero" | "binario";
             description?: string;
             /**
              * @default ascendente
@@ -665,7 +677,7 @@ export interface components {
             /** Format: uuid */
             cycle_id: string;
         };
-        GoalCommentResponse: {
+        GoalComment: {
             /** Format: uuid */
             id?: string;
             /** Format: uuid */
@@ -674,38 +686,42 @@ export interface components {
             category_id?: string | null;
             /** Format: uuid */
             assignment_id?: string | null;
+            /** Format: uuid */
             author_id?: string;
             author_name?: string;
             content?: string;
-            /** Format: date-time */
             created_at?: string;
         };
-        CreateGoalCommentRequest: {
+        CreateCommentRequest: {
             content: string;
-            author_id: string;
-            author_name: string;
         };
-        ChangeRequestResponse: {
+        ChangeRequest: {
             /** Format: uuid */
             id?: string;
             entity_type?: string;
+            /** Format: uuid */
             entity_id?: string;
+            /** Format: uuid */
             requested_by?: string;
-            status?: string;
+            /** @enum {string} */
+            status?: "pending" | "approved" | "rejected";
+            /** Format: uuid */
             approved_by?: string | null;
-            /** Format: date-time */
             approved_at?: string | null;
-            /** Format: date-time */
             created_at?: string;
         };
         CreateChangeRequestRequest: {
             entity_type: string;
+            /** Format: uuid */
             entity_id: string;
+            /** Format: uuid */
             requested_by: string;
         };
         UpdateChangeRequestRequest: {
-            status: string;
-            approved_by: string;
+            /** @enum {string} */
+            status: "pending" | "approved" | "rejected";
+            /** Format: uuid */
+            approved_by?: string;
         };
     };
     responses: {
@@ -840,7 +856,9 @@ export interface components {
         EmpId: string;
         CatId: string;
         GoalId: string;
+        AssignmentId: string;
         KpiId: string;
+        PropId: string;
         Cursor: string;
         Limit: number;
     };
@@ -1071,59 +1089,6 @@ export interface operations {
             404: components["responses"]["GoalNotFound"];
         };
     };
-    createGoalProposal: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                goalId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateGoalProposalRequest"];
-            };
-        };
-        responses: {
-            /** @description Created proposal */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GoalProposalResponse"];
-                };
-            };
-        };
-    };
-    updateGoalProposal: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                goalId: string;
-                propId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateGoalProposalRequest"];
-            };
-        };
-        responses: {
-            /** @description Updated proposal */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GoalProposalResponse"];
-                };
-            };
-        };
-    };
     batchGoals: {
         parameters: {
             query?: never;
@@ -1351,6 +1316,91 @@ export interface operations {
             404: components["responses"]["GoalNotFound"];
         };
     };
+    listGoalProposals: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                goalId: components["parameters"]["GoalId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of proposals */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items?: components["schemas"]["GoalProposalResponse"][];
+                    };
+                };
+            };
+            404: components["responses"]["GoalNotFound"];
+        };
+    };
+    createGoalProposal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                goalId: components["parameters"]["GoalId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateGoalProposalRequest"];
+            };
+        };
+        responses: {
+            /** @description Created proposal */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoalProposalResponse"];
+                };
+            };
+            400: components["responses"]["InvalidGoalRequest"];
+            403: components["responses"]["PhaseRestricted"];
+            404: components["responses"]["GoalNotFound"];
+            429: components["responses"]["RateLimit"];
+        };
+    };
+    updateGoalProposal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                goalId: components["parameters"]["GoalId"];
+                propId: components["parameters"]["PropId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateGoalProposalRequest"];
+            };
+        };
+        responses: {
+            /** @description Updated proposal or goal (on accept) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoalProposalResponse"];
+                };
+            };
+            400: components["responses"]["InvalidRequest"];
+            403: components["responses"]["PhaseRestricted"];
+            404: components["responses"]["GoalNotFound"];
+        };
+    };
     getAssignment: {
         parameters: {
             query?: never;
@@ -1443,7 +1493,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GoalCommentResponse"][];
+                    "application/json": components["schemas"]["GoalComment"][];
                 };
             };
         };
@@ -1459,17 +1509,17 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateGoalCommentRequest"];
+                "application/json": components["schemas"]["CreateCommentRequest"];
             };
         };
         responses: {
-            /** @description Created comment */
+            /** @description Comment created */
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GoalCommentResponse"];
+                    "application/json": components["schemas"]["GoalComment"];
                 };
             };
         };
@@ -1495,79 +1545,6 @@ export interface operations {
             };
         };
     };
-    listChangeRequests: {
-        parameters: {
-            query?: {
-                entity_type?: string;
-                entity_id?: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description List of change requests */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ChangeRequestResponse"][];
-                };
-            };
-        };
-    };
-    createChangeRequest: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateChangeRequestRequest"];
-            };
-        };
-        responses: {
-            /** @description Created change request */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ChangeRequestResponse"];
-                };
-            };
-        };
-    };
-    updateChangeRequest: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                crId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateChangeRequestRequest"];
-            };
-        };
-        responses: {
-            /** @description Updated change request */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ChangeRequestResponse"];
-                };
-            };
-        };
-    };
     listCategoryComments: {
         parameters: {
             query?: never;
@@ -1579,13 +1556,13 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description List of category comments */
+            /** @description List of comments */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GoalCommentResponse"][];
+                    "application/json": components["schemas"]["GoalComment"][];
                 };
             };
         };
@@ -1601,17 +1578,17 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateGoalCommentRequest"];
+                "application/json": components["schemas"]["CreateCommentRequest"];
             };
         };
         responses: {
-            /** @description Created category comment */
+            /** @description Comment created */
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GoalCommentResponse"];
+                    "application/json": components["schemas"]["GoalComment"];
                 };
             };
         };
@@ -1642,19 +1619,19 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                assignId: string;
+                assignId: components["parameters"]["AssignmentId"];
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description List of assignment comments */
+            /** @description List of comments */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GoalCommentResponse"][];
+                    "application/json": components["schemas"]["GoalComment"][];
                 };
             };
         };
@@ -1664,23 +1641,23 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                assignId: string;
+                assignId: components["parameters"]["AssignmentId"];
             };
             cookie?: never;
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateGoalCommentRequest"];
+                "application/json": components["schemas"]["CreateCommentRequest"];
             };
         };
         responses: {
-            /** @description Created assignment comment */
+            /** @description Comment created */
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GoalCommentResponse"];
+                    "application/json": components["schemas"]["GoalComment"];
                 };
             };
         };
@@ -1690,7 +1667,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                assignId: string;
+                assignId: components["parameters"]["AssignmentId"];
                 commentId: string;
             };
             cookie?: never;
@@ -1703,6 +1680,81 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    listChangeRequests: {
+        parameters: {
+            query?: {
+                status?: "pending" | "approved" | "rejected";
+                entity_type?: string;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of change requests */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChangeRequest"][];
+                };
+            };
+        };
+    };
+    createChangeRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateChangeRequestRequest"];
+            };
+        };
+        responses: {
+            /** @description Change request created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChangeRequest"];
+                };
+            };
+        };
+    };
+    updateChangeRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                crId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateChangeRequestRequest"];
+            };
+        };
+        responses: {
+            /** @description Updated change request */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChangeRequest"];
+                };
             };
         };
     };

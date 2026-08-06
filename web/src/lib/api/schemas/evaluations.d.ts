@@ -142,6 +142,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/evaluations/competency-results": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get competency results with pagination
+         * @description Returns paginated competency ratings across evaluations for a cycle.
+         */
+        get: operations["getCompetencyResults"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/evaluations/summary": {
         parameters: {
             query?: never;
@@ -350,6 +370,14 @@ export interface components {
             competencies: components["schemas"]["CompetencyRatingInput"][];
             goalComments?: components["schemas"]["GoalCommentInput"][];
         };
+        CompetencyResultItem: {
+            id: string;
+            name: string;
+            profileName: string;
+            selfRatingAvg?: number | null;
+            rhRatingAvg?: number | null;
+            status: string;
+        };
         CompetencyRatingInput: {
             /** Format: uuid */
             competencyId: string;
@@ -367,20 +395,6 @@ export interface components {
         };
         FinalizeEvaluationRequest: {
             reason?: string;
-        };
-        GoalStateUpdateInput: {
-            /** Format: uuid */
-            goalId: string;
-            /** Format: double */
-            finalProgress?: number;
-            selfAssessment?: string;
-            rhAssessment?: string;
-        };
-        GoalCommentUpdateInput: {
-            /** Format: uuid */
-            goalId: string;
-            role: string;
-            comment?: string;
         };
         EvaluationSummaryResponse: {
             /** Format: uuid */
@@ -460,6 +474,20 @@ export interface components {
             description?: string;
             colorHex?: string;
         };
+        GoalStateUpdateInput: {
+            /** Format: uuid */
+            goalId: string;
+            finalProgress?: number | null;
+            selfAssessment?: string | null;
+            rhAssessment?: string | null;
+        };
+        GoalCommentUpdateInput: {
+            /** Format: uuid */
+            goalId: string;
+            /** @enum {string} */
+            role: "manager";
+            comment?: string;
+        };
         ErrorResponse: {
             error?: {
                 code?: string;
@@ -511,6 +539,15 @@ export interface components {
         ServiceUnavailable: {
             headers: {
                 "Retry-After"?: number;
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ErrorResponse"];
+            };
+        };
+        /** @description If-Match header is required for this operation */
+        PreconditionRequired: {
+            headers: {
                 [name: string]: unknown;
             };
             content: {
@@ -723,7 +760,9 @@ export interface operations {
     updateGoalState: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                "If-Match": number;
+            };
             path: {
                 id: string;
             };
@@ -747,12 +786,15 @@ export interface operations {
             400: components["responses"]["BadRequest"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
+            428: components["responses"]["PreconditionRequired"];
         };
     };
     updateGoalComments: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                "If-Match": number;
+            };
             path: {
                 id: string;
             };
@@ -776,6 +818,7 @@ export interface operations {
             400: components["responses"]["BadRequest"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
+            428: components["responses"]["PreconditionRequired"];
         };
     };
     getEmployeeCompetencies: {
@@ -802,6 +845,35 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             404: components["responses"]["NotFound"];
+        };
+    };
+    getCompetencyResults: {
+        parameters: {
+            query: {
+                cycle_id: string;
+                cursor?: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Paginated competency results */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data?: components["schemas"]["CompetencyResultItem"][];
+                        nextCursor?: string | null;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            429: components["responses"]["RateLimit"];
         };
     };
     getEvaluationSummary: {

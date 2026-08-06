@@ -59,11 +59,10 @@ export async function load(): Promise<void> {
 
 	try {
 		const offset = currentPage * PAGE_SIZE;
+		// ponytail: path-level query is `never` in generated types but operation supports q/offset/limit
 		const res = await client.GET('/employees', {
-			params: {
-				query: { q: currentQ, offset, limit: PAGE_SIZE }
-			}
-		});
+			params: { query: { q: currentQ, offset, limit: PAGE_SIZE } }
+		}) as { data?: unknown; error?: unknown };
 
 		if (res.error) {
 			throw new Error(apiErrorMessage(res.error, 'Error al cargar empleados'));

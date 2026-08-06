@@ -48,7 +48,8 @@ function makeAreaMetrics(overrides?: Partial<AreaMetrics>): AreaMetrics {
 				lastName: 'Smith',
 				jobTitle: 'Developer',
 				profileId: 'colaborador',
-				profileDescription: 'Colaborador'
+				profileDescription: 'Colaborador',
+				profileName: 'Colaborador'
 			},
 			{
 				id: 'emp-2',
@@ -56,7 +57,8 @@ function makeAreaMetrics(overrides?: Partial<AreaMetrics>): AreaMetrics {
 				lastName: 'Jones',
 				jobTitle: 'Designer',
 				profileId: 'colaborador',
-				profileDescription: 'Colaborador'
+				profileDescription: 'Colaborador',
+				profileName: 'Colaborador'
 			}
 		],
 		...overrides

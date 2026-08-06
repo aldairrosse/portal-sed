@@ -77,7 +77,7 @@ export async function load(): Promise<void> {
 
 	try {
 		const offset = currentPage * PAGE_SIZE;
-		const res = await (client as any).GET('/evaluations/competency-results', {
+		const res = await client.GET('/evaluations/competency-results', {
 			params: {
 				query: { cycle_id: cycleId, q: currentQ, scope: scopeFilter, offset, limit: PAGE_SIZE }
 			}

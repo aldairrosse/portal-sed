@@ -305,6 +305,13 @@ paths:
           required: false
           schema:
             type: string
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
         - name: cursor
           in: query
           required: false

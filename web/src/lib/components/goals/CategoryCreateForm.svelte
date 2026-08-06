@@ -15,7 +15,6 @@
 	}
 
 	let {
-		mode = 'create',
 		category,
 		pillars,
 		onSave,
@@ -105,9 +104,9 @@
 				/>
 			</div>
 			<div class="form-control">
-				<label class="label">
+				<span class="label">
 					<span class="label-text text-xs">Pilar</span>
-				</label>
+				</span>
 				<CustomSelect
 					options={pillarOptions}
 					value={pillarId}

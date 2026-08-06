@@ -65,6 +65,7 @@ export interface GoalComment {
 	createdAt: string;
 	goalId?: string;
 	categoryId?: string;
+	assignmentId?: string;
 }
 
 // ─── GoalKpiLink (N:M) ─────────────────────────────────────────────────────────

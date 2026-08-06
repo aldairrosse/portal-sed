@@ -1,11 +1,12 @@
 <script lang="ts">
 	import { dismiss, getNotifications } from '$lib/stores/notifications.svelte';
 	import type { Notification } from '$lib/stores/notifications.svelte';
+	import { SvelteSet } from 'svelte/reactivity';
 
 	let notifications = $derived(getNotifications());
 
 	// Track which notifications already have timers to avoid duplicates
-	let handledIds = new Set<string>();
+	let handledIds = new SvelteSet<string>();
 
 	$effect(() => {
 		const current = notifications;
@@ -16,7 +17,7 @@
 			}
 		}
 		// Clean up stale ids
-		handledIds = new Set(current.map((n) => n.id));
+		handledIds = new SvelteSet(current.map((n) => n.id));
 	});
 
 	function icon(type: Notification['type']): string {

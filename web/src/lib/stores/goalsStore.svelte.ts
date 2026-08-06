@@ -68,24 +68,24 @@ function getEmployeeId(): string {
 	return getSession().user?.employeeId ?? '';
 }
 
-function mapToGoalProposal(pp: any): GoalProposal {
+function mapToGoalProposal(pp: Record<string, unknown>): GoalProposal {
     return {
-        id: pp.id ?? '',
-        goalId: pp.goal_id ?? '',
-        requestedBy: pp.requested_by ?? '',
-        name: pp.name ?? '',
-        description: pp.description ?? '',
+        id: (pp.id as string) ?? '',
+        goalId: (pp.goal_id as string) ?? '',
+        requestedBy: (pp.requested_by as string) ?? '',
+        name: (pp.name as string) ?? '',
+        description: (pp.description as string) ?? '',
         unit: (pp.unit as GoalUnit) ?? 'numero',
         direction: (pp.direction as 'ascendente' | 'descendente') ?? 'ascendente',
-        weight: pp.weight ?? 0,
-        targetValue: pp.target_value ?? 0,
-        baselineValue: pp.baseline_value,
-        kpiIds: pp.kpi_ids ?? [],
-        status: pp.status ?? 'pending',
-        reviewedBy: pp.reviewed_by,
-        reviewedAt: pp.reviewed_at,
-        createdAt: pp.created_at ?? '',
-        updatedAt: pp.updated_at ?? '',
+        weight: (pp.weight as number) ?? 0,
+        targetValue: (pp.target_value as number) ?? 0,
+        baselineValue: pp.baseline_value as number | undefined,
+        kpiIds: (pp.kpi_ids as string[]) ?? [],
+        status: (pp.status as 'pending' | 'accepted' | 'rejected') ?? 'pending',
+        reviewedBy: pp.reviewed_by as string | undefined,
+        reviewedAt: pp.reviewed_at as string | undefined,
+        createdAt: (pp.created_at as string) ?? '',
+        updatedAt: (pp.updated_at as string) ?? '',
     };
 }
 
@@ -134,6 +134,7 @@ function normalizeApiData(
 				description?: string;
 				direction?: string;
 				current_value?: number;
+				target_value?: number;
 			}>;
 			created_at?: string;
 			updated_at?: string;
@@ -146,6 +147,7 @@ function normalizeApiData(
 		description?: string;
 		direction?: string;
 		current_value?: number;
+		target_value?: number;
 	}>,
 	apiAssignment: {
 		id?: string;
@@ -185,7 +187,7 @@ function normalizeApiData(
 			name: ac.name ?? '',
 			description: ac.description ?? '',
 			weight: ac.weight ?? 0,
-			pillarId: (ac as any).pillar_id ?? undefined
+			pillarId: (ac as Record<string, unknown>)?.pillar_id as string | undefined
 		});
 
 		const catId = ac.id ?? '';
@@ -639,11 +641,9 @@ export function isCategoryGoalsWeightValid(categoryId: string): boolean {
 
 export async function addCategory(category: GoalCategory): Promise<void> {
 	const empId = getEmployeeId();
-	const body: Record<string, unknown> = { name: category.name, description: category.description, weight: category.weight };
-	if (category.pillarId) body.pillar_id = category.pillarId;
 	const { error: apiError } = await client.POST('/employees/{empId}/categories', {
 		params: { path: { empId } },
-		body
+		body: { name: category.name, description: category.description, weight: category.weight, ...(category.pillarId ? { pillar_id: category.pillarId } : {}) }
 	});
 	if (apiError) throw new Error((apiError as { error?: { message?: string } })?.error?.message ?? 'Error al crear categoría');
 	await reload();
@@ -651,15 +651,9 @@ export async function addCategory(category: GoalCategory): Promise<void> {
 
 export async function updateCategory(id: string, updates: Partial<Omit<GoalCategory, 'id'>>): Promise<void> {
 	const empId = getEmployeeId();
-	const body: Record<string, unknown> = {
-		name: updates.name ?? '',
-		description: updates.description ?? '',
-		weight: updates.weight ?? 0
-	};
-	if (updates.pillarId) body.pillar_id = updates.pillarId;
 	const { error: apiError } = await client.PUT('/employees/{empId}/categories/{catId}', {
 		params: { path: { empId, catId: id } },
-		body
+		body: { name: updates.name ?? '', description: updates.description ?? '', weight: updates.weight ?? 0, ...(updates.pillarId ? { pillar_id: updates.pillarId } : {}) }
 	});
 	if (apiError) throw new Error((apiError as { error?: { message?: string } })?.error?.message ?? 'Error al actualizar categoría');
 	await reload();
@@ -1135,7 +1129,7 @@ export async function addAssignmentComment(
 	if (data) {
 		const comment = mapToGoalComment(data);
 		const existing = storeState.data?.assignmentComments.get(assignmentId) ?? [];
-		const newMap = new SvelteMap(storeState.data?.assignmentComments ?? new SvelteMap());
+		const newMap = new SvelteMap<string, GoalComment[]>(storeState.data?.assignmentComments ?? new SvelteMap());
 		newMap.set(assignmentId, [...existing, comment]);
 		storeState.data = { ...storeState.data!, assignmentComments: newMap };
 	}
@@ -1147,7 +1141,7 @@ export async function deleteAssignmentComment(assignmentId: string, commentId: s
 	});
 	if (apiError) throw new Error('Error al eliminar comentario');
 	const existing = storeState.data?.assignmentComments.get(assignmentId) ?? [];
-	const newMap = new SvelteMap(storeState.data?.assignmentComments ?? new SvelteMap());
+	const newMap = new SvelteMap<string, GoalComment[]>(storeState.data?.assignmentComments ?? new SvelteMap());
 	newMap.set(assignmentId, existing.filter((c) => c.id !== commentId));
 	storeState.data = { ...storeState.data!, assignmentComments: newMap };
 }

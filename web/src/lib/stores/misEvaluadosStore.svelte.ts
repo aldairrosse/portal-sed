@@ -69,12 +69,12 @@ export async function load(): Promise<void> {
 	try {
 		const offset = currentPage * PAGE_SIZE;
 		// ponytail: cast needed until PR 1 updates the schema to include query params
-		const res = await (client as any).GET('/employees/{empId}/evaluatees', {
+		const res = await (client as unknown as { GET(url: string, init: unknown): Promise<{ data?: unknown; error?: unknown }> }).GET('/employees/{empId}/evaluatees', {
 			params: {
 				path: { empId: employeeId },
 				query: { q: currentQ, offset, limit: PAGE_SIZE }
 			}
-		}) as { data?: unknown; error?: unknown };
+		});
 
 		if (res.error) {
 			throw new Error(apiErrorMessage(res.error, 'Error al cargar evaluados'));

@@ -167,7 +167,7 @@
     </div>
     {#if allKpis.length > 0}
         <div class="form-control mb-3">
-            <label class="label"><span class="label-text text-xs">Indicadores clave (KPI)</span></label>
+            <span class="label"><span class="label-text text-xs">Indicadores clave (KPI)</span></span>
             <div class="flex flex-wrap gap-2">
                 {#each allKpis as kpi (kpi.id)}
                     <label class="flex items-center gap-1.5 cursor-pointer px-2 py-1 rounded border border-base-300 hover:bg-base-200/50 text-xs">

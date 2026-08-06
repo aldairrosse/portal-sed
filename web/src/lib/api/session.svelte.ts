@@ -19,14 +19,14 @@ export const MIN_LOGIN_MS = 400;
 let user = $state<AuthUser | null>(null);
 let loading = $state(true);
 let error = $state<string | null>(null);
-let loggingOut = $state(false);
+const loggingOut = $state(false);
 
 export async function ensureSession(): Promise<void> {
 	loading = true;
 	error = null;
 
 	try {
-		const { data, error: apiError } = await (client as any).GET('/auth/me');
+		const { data, error: apiError } = await client.GET('/auth/me');
 		if (apiError) {
 			throw apiError;
 		}
