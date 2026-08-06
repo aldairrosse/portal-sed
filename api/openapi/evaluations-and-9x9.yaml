@@ -7,8 +7,8 @@ info:
     Handles self-evaluations, RH evaluations, and 9×9 manager matrices.
 
 servers:
-  - url: http://localhost:8080/api/v1
-    description: Local development
+  - url: /api/v1
+    description: API v1 base path
 
 paths:
   /evaluations:
@@ -258,6 +258,49 @@ paths:
         "400": { $ref: "#/components/responses/BadRequest" }
         "404": { $ref: "#/components/responses/NotFound" }
 
+  /evaluations/competency-results:
+    get:
+      operationId: getCompetencyResults
+      summary: Get competency results with pagination
+      description: Returns paginated competency ratings across evaluations for a cycle.
+      parameters:
+        - name: cycle_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+      responses:
+        "200":
+          description: Paginated competency results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/CompetencyResultItem"
+                  nextCursor:
+                    type: string
+                    nullable: true
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "429":
+          $ref: "#/components/responses/RateLimit"
   /evaluations/summary:
     get:
       operationId: getEvaluationSummary

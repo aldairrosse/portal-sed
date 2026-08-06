@@ -198,6 +198,48 @@ paths:
                       $ref: "#/components/schemas/PhaseDefinition"
         "304":
           description: Not Modified (ETag match)
+  /cycles/{id}/assign-all:
+    post:
+      operationId: assignAllEmployees
+      summary: Assign all eligible employees to a cycle
+      description: Creates evaluations for all active employees in the organization for the given cycle. Idempotent operation.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Cycle UUID
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Unique idempotency key (UUID v4)
+      responses:
+        "200":
+          description: Assignment completed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Assigned 150 employees"
+                  assigned_count:
+                    type: integer
+                    example: 150
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "429":
+          $ref: "#/components/responses/RateLimit"
   /cycles/{id}/transitions:
     get:
       operationId: getAvailableTransitions
