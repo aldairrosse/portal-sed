@@ -29,6 +29,7 @@ async function fetchWithCredentials(input: RequestInfo | URL, init?: RequestInit
 	}
 	const response = await fetch(input, { ...init, headers, credentials: 'include' });
 	if (response.status === 401) {
+		console.warn('[sso] 401 -> redirect /login', window.location.pathname);
 		window.location.href = '/login';
 	}
 	if (response.status === 404) {
@@ -39,6 +40,7 @@ async function fetchWithCredentials(input: RequestInfo | URL, init?: RequestInit
 			const cloned = response.clone();
 			const body = await cloned.json();
 			if (body?.error?.code === 'OTP_REQUIRED') {
+				console.warn('[sso] 403 OTP_REQUIRED -> redirect step-up', window.location.pathname);
 				window.location.href = '/api/v1/auth/sso-step-up?return_to=' + encodeURIComponent(window.location.pathname + window.location.search);
 				throw new Error('OTP_REQUIRED');
 			}
