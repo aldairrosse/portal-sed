@@ -216,7 +216,6 @@ type ValidateSessionResult struct {
 // enriched role and profile information.
 func (s *AuthService) ValidateSession(ctx context.Context, token string) (*ValidateSessionResult, error) {
 	session, err := s.sessionStore.GetByToken(ctx, token)
-	log.Printf("auth: ValidateSession token-search err=%v sessionNil=%v", err, session == nil)
 	if err != nil {
 		return nil, err
 	}
