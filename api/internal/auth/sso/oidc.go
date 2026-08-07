@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/coreos/go-oidc/v3/oidc"
 	"golang.org/x/oauth2"
@@ -26,6 +27,7 @@ type OIDCAdapter struct {
 	introspectURL string
 	revokeURL     string
 	postLogoutURI string
+	httpClient    *http.Client
 }
 
 func NewOIDCAdapter(ctx context.Context, issuer, clientID, clientSecret, redirectURI, postLogoutURI string) (*OIDCAdapter, error) {
@@ -54,7 +56,21 @@ func NewOIDCAdapter(ctx context.Context, issuer, clientID, clientSecret, redirec
 		introspectURL: base + "/token/introspect",
 		revokeURL:     base + "/revoke",
 		postLogoutURI: postLogoutURI,
+		// ponytail: single client with timeout for every SSO call; DefaultClient
+		// has none and the caller's ctx may cancel mid-call, turning a slow
+		// Keycloak response into an auth failure (error_usuario -> login loop).
+		httpClient: &http.Client{Timeout: 10 * time.Second},
 	}, nil
+}
+
+// httpClientOrDefault returns the adapter's HTTP client, or a time-bounded
+// default for adapters built directly in tests. All SSO calls must go through
+// it so a slow Keycloak response cannot hang past the caller's deadline.
+func (a *OIDCAdapter) httpClientOrDefault() *http.Client {
+	if a.httpClient != nil {
+		return a.httpClient
+	}
+	return &http.Client{Timeout: 10 * time.Second}
 }
 
 func GeneratePKCE() (verifier, challenge string, err error) {
@@ -280,7 +296,7 @@ func (a *OIDCAdapter) ValidateAccessToken(ctx context.Context, accessToken strin
 	}
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := a.httpClientOrDefault().Do(req)
 	if err != nil {
 		return fmt.Errorf("oidc: introspect request failed: %w", err)
 	}
@@ -318,7 +334,7 @@ func (a *OIDCAdapter) RevokeToken(ctx context.Context, token string) error {
 	}
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := a.httpClientOrDefault().Do(req)
 	if err != nil {
 		return fmt.Errorf("oidc: revoke request failed: %w", err)
 	}
@@ -367,7 +383,7 @@ func (a *OIDCAdapter) RefreshToken(ctx context.Context, refreshToken string) (*R
 	}
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := a.httpClientOrDefault().Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("oidc: refresh request failed: %w", err)
 	}
