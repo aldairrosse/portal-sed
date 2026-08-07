@@ -487,6 +487,7 @@ func (h *AuthHandler) Me(w http.ResponseWriter, r *http.Request) {
 
 	result, err := h.svc.ValidateSession(r.Context(), token)
 	if err != nil || result == nil || result.Session == nil {
+		log.Printf("auth handler: /me ValidateSession failed: %v", err)
 		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest, "Sesión inválida o expirada", err))
 		return
 	}

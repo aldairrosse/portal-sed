@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"database/sql"
 	"encoding/hex"
+	"log"
 	"net"
 	"time"
 
@@ -122,6 +123,7 @@ func (s *SessionStore) GetByToken(ctx context.Context, token string) (*Session, 
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
+			log.Printf("session store: GetByToken no_rows tokenHash(last8)=%s", tokenHash[len(tokenHash)-8:])
 			return nil, nil
 		}
 		return nil, err
