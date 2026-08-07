@@ -304,11 +304,11 @@ func (r *OrgNodeRepo) GetPathToRoot(ctx context.Context, nodeID uuid.UUID) ([]*O
 	return queryNodeRows(r.db, ctx,
 		`WITH RECURSIVE ancestors AS (
 		    SELECT id, created_at, updated_at, name, type, code, organization_id, parent_id,
-		           COALESCE(path::text, '') as path, COALESCE(version, 0), head_employee_id, 1 as depth
+		           COALESCE(path::text, '') as path, COALESCE(version, 0) as version, head_employee_id, 1 as depth
 		    FROM org_nodes WHERE id = $1
 		    UNION ALL
 		    SELECT n.id, n.created_at, n.updated_at, n.name, n.type, n.code, n.organization_id,
-		           n.parent_id, COALESCE(n.path::text, '') as path, COALESCE(n.version, 0), n.head_employee_id, a.depth + 1
+		           n.parent_id, COALESCE(n.path::text, '') as path, COALESCE(n.version, 0) as version, n.head_employee_id, a.depth + 1
 		    FROM org_nodes n
 		    JOIN ancestors a ON n.id = a.parent_id
 		)
