@@ -264,10 +264,11 @@ function normalizeApiData(
  *
  * In DEV without VITE_USE_API: loads from fixture files (structured clone).
  * In production / VITE_USE_API=true: fetches from the real API endpoints.
+ * @param forceRefresh - if true, bypasses the freshness guard and forces a reload
  */
-export async function load(): Promise<void> {
+export async function load(forceRefresh = false): Promise<void> {
 	if (loadPromise) return loadPromise;
-	if (storeState.data && Date.now() - lastLoadTime < FRESHNESS_MS) return;
+	if (!forceRefresh && storeState.data && Date.now() - lastLoadTime < FRESHNESS_MS) return;
 	loadPromise = _doLoad();
 	try {
 		await loadPromise;
@@ -436,8 +437,8 @@ export async function loadAllGoalComments(_empId?: string): Promise<void> {
 
 
 /** Alias for load(). */
-export function reload(): Promise<void> {
-	return load();
+export function reload(forceRefresh = false): Promise<void> {
+	return load(forceRefresh);
 }
 
 // ─── Getters: General ─────────────────────────────────────────────────────────
@@ -646,7 +647,7 @@ export async function addCategory(category: GoalCategory): Promise<void> {
 		body: { name: category.name, description: category.description, weight: category.weight, ...(category.pillarId ? { pillar_id: category.pillarId } : {}) }
 	});
 	if (apiError) throw new Error((apiError as { error?: { message?: string } })?.error?.message ?? 'Error al crear categoría');
-	await reload();
+	await reload(true);
 }
 
 export async function updateCategory(id: string, updates: Partial<Omit<GoalCategory, 'id'>>): Promise<void> {
@@ -656,7 +657,7 @@ export async function updateCategory(id: string, updates: Partial<Omit<GoalCateg
 		body: { name: updates.name ?? '', description: updates.description ?? '', weight: updates.weight ?? 0, ...(updates.pillarId ? { pillar_id: updates.pillarId } : {}) }
 	});
 	if (apiError) throw new Error((apiError as { error?: { message?: string } })?.error?.message ?? 'Error al actualizar categoría');
-	await reload();
+	await reload(true);
 }
 
 export async function deleteCategory(id: string, opts?: { skipReload?: boolean }): Promise<void> {
@@ -669,7 +670,7 @@ export async function deleteCategory(id: string, opts?: { skipReload?: boolean }
 		params: { path: { empId, catId: id } }
 	});
 	if (apiError) throw new Error((apiError as { error?: { message?: string } })?.error?.message ?? 'Error al eliminar categoría');
-	if (!opts?.skipReload) await reload();
+	if (!opts?.skipReload) await reload(true);
 }
 
 // ─── Mutations: Goals ─────────────────────────────────────────────────────────
@@ -689,7 +690,7 @@ export async function addGoal(goal: Goal): Promise<string> {
 		}
 	});
 	if (apiError) throw new Error((apiError as { error?: { message?: string } })?.error?.message ?? 'Error al crear meta');
-	await reload();
+	await reload(true);
 	return data?.id ?? goal.id;
 }
 
@@ -708,7 +709,7 @@ export async function updateGoal(id: string, updates: Partial<Omit<Goal, 'id'>>)
 		}
 	});
 	if (apiError) throw new Error((apiError as { error?: { message?: string } })?.error?.message ?? 'Error al actualizar meta');
-	await reload();
+	await reload(true);
 }
 
 export async function deleteGoal(id: string, opts?: { skipReload?: boolean }): Promise<void> {
@@ -720,7 +721,7 @@ export async function deleteGoal(id: string, opts?: { skipReload?: boolean }): P
 		params: { path: { goalId: id } }
 	});
 	if (apiError) throw new Error((apiError as { error?: { message?: string } })?.error?.message ?? 'Error al eliminar meta');
-	if (!opts?.skipReload) await reload();
+	if (!opts?.skipReload) await reload(true);
 }
 
 // ─── Mutations: Goal Proposals ─────────────────────────────────────────────────
@@ -751,7 +752,7 @@ export async function createGoalProposal(goalId: string, data: {
 	if (error) throw new Error(
 		(error as { error?: { message?: string } })?.error?.message ?? 'Error al crear propuesta'
 	);
-	await reload();
+	await reload(true);
 }
 
 export async function acceptGoalProposal(goalId: string, proposalId: string, reviewedBy: string): Promise<void> {
@@ -762,7 +763,7 @@ export async function acceptGoalProposal(goalId: string, proposalId: string, rev
 	if (error) throw new Error(
 		(error as { error?: { message?: string } })?.error?.message ?? 'Error al aceptar propuesta'
 	);
-	await reload();
+	await reload(true);
 }
 
 export async function rejectGoalProposal(goalId: string, proposalId: string): Promise<void> {
@@ -773,7 +774,7 @@ export async function rejectGoalProposal(goalId: string, proposalId: string): Pr
 	if (error) throw new Error(
 		(error as { error?: { message?: string } })?.error?.message ?? 'Error al rechazar propuesta'
 	);
-	await reload();
+	await reload(true);
 }
 
 // ─── Getters: Proposals ───────────────────────────────────────────────────────
@@ -795,7 +796,7 @@ export async function addKpi(kpi: KPI): Promise<void> {
 		}
 	});
 	if (apiError) throw new Error((apiError as { error?: { message?: string } })?.error?.message ?? 'Error al crear KPI');
-	await reload();
+	await reload(true);
 }
 
 export async function updateKpi(id: string, updates: Partial<Omit<KPI, 'id'>>): Promise<void> {
@@ -810,7 +811,7 @@ export async function updateKpi(id: string, updates: Partial<Omit<KPI, 'id'>>): 
 		}
 	});
 	if (apiError) throw new Error((apiError as { error?: { message?: string } })?.error?.message ?? 'Error al actualizar KPI');
-	await reload();
+	await reload(true);
 }
 
 export async function deleteKpi(id: string): Promise<void> {
@@ -818,7 +819,7 @@ export async function deleteKpi(id: string): Promise<void> {
 		params: { path: { kpiId: id } }
 	});
 	if (apiError) throw new Error((apiError as { error?: { message?: string } })?.error?.message ?? 'Error al eliminar KPI');
-	await reload();
+	await reload(true);
 }
 
 // ─── Mutations: GoalKpiLink (N:M) ─────────────────────────────────────────────
@@ -833,7 +834,7 @@ export async function linkKpiToGoal(goalId: string, kpiId: string): Promise<void
 		body: { kpi_id: kpiId }
 	});
 	if (apiError) throw new Error((apiError as { error?: { message?: string } })?.error?.message ?? 'Error al vincular KPI');
-	await reload();
+	await reload(true);
 }
 
 export async function unlinkKpiFromGoal(goalId: string, kpiId: string): Promise<void> {
@@ -841,7 +842,7 @@ export async function unlinkKpiFromGoal(goalId: string, kpiId: string): Promise<
 		params: { path: { goalId, kpiId } }
 	});
 	if (apiError) throw new Error((apiError as { error?: { message?: string } })?.error?.message ?? 'Error al desvincular KPI');
-	await reload();
+	await reload(true);
 }
 
 export async function updateLinkWeight(goalId: string, kpiId: string, weight: number | undefined): Promise<void> {
@@ -863,7 +864,7 @@ export async function addAssignment(assignment: EmployeeAssignment): Promise<voi
 		body: { cycle_id: assignment.id }
 	});
 	if (apiError) throw new Error((apiError as { error?: { message?: string } })?.error?.message ?? 'Error al crear asignación');
-	await reload();
+	await reload(true);
 }
 
 export async function updateAssignment(
@@ -939,7 +940,7 @@ export async function approveChangeRequest(id: string, approvedBy: string): Prom
 		body: { status: 'approved', approved_by: approvedBy }
 	});
 	if (apiError) throw new Error('Error al aprobar solicitud');
-	await reload();
+	await reload(true);
 }
 
 export async function rejectChangeRequest(id: string): Promise<void> {
@@ -948,7 +949,7 @@ export async function rejectChangeRequest(id: string): Promise<void> {
 		body: { status: 'rejected', approved_by: '' }
 	});
 	if (apiError) throw new Error('Error al rechazar solicitud');
-	await reload();
+	await reload(true);
 }
 
 // ─── Mutations: Progress & Comments ───────────────────────────────────────────
