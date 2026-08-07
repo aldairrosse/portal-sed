@@ -284,13 +284,29 @@ func (a *OIDCAdapter) HasAccess(ctx context.Context, accessToken string) bool {
 }
 
 func (a *OIDCAdapter) ValidateAccessToken(ctx context.Context, accessToken string) error {
+	// Local-first: validate signature + exp + issuer against the JWKS already
+	// cached in memory by go-oidc's provider/verifier. Keycloak signs access and
+	// ID tokens with the same key, so this avoids a remote introspection HTTP
+	// round-trip on every request. Use a detached 5s deadline so a slow/failed
+	// key refresh cannot cancel the caller's worker thread mid-call.
+	vctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Second)
+	defer cancel()
+
+	if _, err := a.verifier.Verify(vctx, accessToken); err == nil {
+		return nil
+	}
+
+	// Fallback: remote introspection. Kept as a safety net because local JWT
+	// validation cannot detect tokens revoked in Keycloak (a valid signature
+	// stays valid even after revocation). Isolated from the request context so a
+	// flaky network never propagates cancellation to the HTTP worker.
 	data := url.Values{
 		"client_id":     {a.clientID},
 		"client_secret": {a.clientSecret},
 		"token":         {accessToken},
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "POST", a.introspectURL, strings.NewReader(data.Encode()))
+	req, err := http.NewRequestWithContext(vctx, "POST", a.introspectURL, strings.NewReader(data.Encode()))
 	if err != nil {
 		return fmt.Errorf("oidc: failed to create introspect request: %w", err)
 	}
@@ -311,7 +327,7 @@ func (a *OIDCAdapter) ValidateAccessToken(ctx context.Context, accessToken strin
 		Active bool `json:"active"`
 	}
 	if err := json.Unmarshal(body, &result); err != nil {
-		return fmt.Errorf("oidc: failed to decode introspect response: %w", err)
+		return fmt.Errorf("oidc: failed to parse introspect response: %w", err)
 	}
 
 	if !result.Active {
