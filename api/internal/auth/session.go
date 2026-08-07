@@ -107,6 +107,7 @@ func (s *SessionStore) GetByToken(ctx context.Context, token string) (*Session, 
 	var ipPtr, uaPtr sql.NullString
 	var idTok, accTok, refTok sql.NullString
 	var acrTok sql.NullString
+	var tokenExp, refreshExp sql.NullTime
 
 	err := s.db.QueryRowContext(ctx,
 		`SELECT id, employee_id, token_hash, ip_address, user_agent,
@@ -119,7 +120,7 @@ func (s *SessionStore) GetByToken(ctx context.Context, token string) (*Session, 
 		&ipPtr, &uaPtr,
 		&session.ExpiresAt, &session.CreatedAt, &session.LastActiveAt, &session.IsRevoked,
 		&idTok, &accTok, &refTok, &acrTok, &session.Requires2FA,
-		&session.TokenExpiresAt, &session.RefreshExpiresAt,
+		&tokenExp, &refreshExp,
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -146,6 +147,12 @@ func (s *SessionStore) GetByToken(ctx context.Context, token string) (*Session, 
 	}
 	if acrTok.Valid {
 		session.ACR = acrTok.String
+	}
+	if tokenExp.Valid {
+		session.TokenExpiresAt = tokenExp.Time
+	}
+	if refreshExp.Valid {
+		session.RefreshExpiresAt = refreshExp.Time
 	}
 
 	// Check expiry and revocation
@@ -263,13 +270,14 @@ func (s *SessionStore) ListByEmployeeID(ctx context.Context, employeeID uuid.UUI
 		var ipPtr, uaPtr sql.NullString
 		var idTok, accTok, refTok sql.NullString
 		var acrTok sql.NullString
+		var tokenExp, refreshExp sql.NullTime
 
 		if err := rows.Scan(
 			&session.ID, &session.EmployeeID, &session.TokenHash,
 			&ipPtr, &uaPtr,
 			&session.ExpiresAt, &session.CreatedAt, &session.LastActiveAt, &session.IsRevoked,
 			&idTok, &accTok, &refTok, &acrTok, &session.Requires2FA,
-			&session.TokenExpiresAt, &session.RefreshExpiresAt,
+			&tokenExp, &refreshExp,
 		); err != nil {
 			return nil, err
 		}
@@ -291,6 +299,12 @@ func (s *SessionStore) ListByEmployeeID(ctx context.Context, employeeID uuid.UUI
 		}
 		if acrTok.Valid {
 			session.ACR = acrTok.String
+		}
+		if tokenExp.Valid {
+			session.TokenExpiresAt = tokenExp.Time
+		}
+		if refreshExp.Valid {
+			session.RefreshExpiresAt = refreshExp.Time
 		}
 
 		sessions = append(sessions, session)
