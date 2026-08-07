@@ -40,7 +40,15 @@
 		}
 
 		// No session, no error → redirect to SSO
-		window.location.href = '/api/v1/auth/sso-login';
+		const count = Number(sessionStorage.getItem('sso_redirect_count')) || 0;
+		if (count >= 3) {
+			error = 'No se pudo completar la autenticación con el SSO. Contacta a soporte.';
+			pageLoading = false;
+		} else {
+			sessionStorage.setItem('sso_redirect_count', String(count + 1));
+			console.warn('[sso] redirect a sso-login, intento', count + 1);
+			window.location.href = '/api/v1/auth/sso-login';
+		}
 	});
 </script>
 

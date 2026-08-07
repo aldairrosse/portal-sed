@@ -245,7 +245,8 @@ func (s *AuthService) ValidateSession(ctx context.Context, token string) (*Valid
 	}
 
 	if session.Requires2FA && session.ACR != "mobo-2fa" {
-		return nil, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
+		log.Printf("auth: session %s requires 2FA but acr=%q, respondiendo 403 OTP_REQUIRED", session.ID, session.ACR)
+		return nil, pkgerrors.NewDomainError(pkgerrors.OTPRequired,
 			"Se requiere autenticación de dos factores", nil)
 	}
 
