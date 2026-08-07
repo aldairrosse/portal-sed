@@ -64,6 +64,7 @@ func (h *AuthHandler) redirectError(w http.ResponseWriter, r *http.Request, code
 }
 
 func (h *AuthHandler) writeStepUpError(w http.ResponseWriter, r *http.Request) {
+	log.Printf("sso callback: step-up FAILED, redirecting sso_error=stepup_fallido")
 	frontendHost := os.Getenv("CORS_ORIGINS")
 	if frontendHost == "" {
 		frontendHost = "http://localhost:5173"
@@ -192,6 +193,10 @@ func (h *AuthHandler) SSOCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	requires2FA := ssoUser.Requires2FA
+	hasLoA2 := ssoUser.ACR == "mobo-2fa"
+	log.Printf("sso callback: step-up decide ext=%s acr=%q requires2FA=%v isStepUp=%v hasLoA2=%v", ssoUser.ExternalID, ssoUser.ACR, requires2FA, tx.IsStepUp(), hasLoA2)
+
 	emp, err := h.svc.EmployeeByEmployeeNumber(r.Context(), ssoUser.ExternalID)
 	if err != nil {
 		if errors.Is(err, pkgerrors.ErrEmployeeNotFound) {
@@ -207,9 +212,6 @@ func (h *AuthHandler) SSOCallback(w http.ResponseWriter, r *http.Request) {
 		h.redirectError(w, r, "usuario_inactivo")
 		return
 	}
-
-	requires2FA := ssoUser.Requires2FA
-	hasLoA2 := ssoUser.ACR == "mobo-2fa"
 
 	if tx.IsStepUp() {
 		if !hasLoA2 {
@@ -252,6 +254,7 @@ func (h *AuthHandler) SSOCallback(w http.ResponseWriter, r *http.Request) {
 	if !validReturnTo(redirectTo) {
 		redirectTo = "/"
 	}
+	log.Printf("sso callback: session created id=%s acr=%q requires2FA=%v redirecting to %s", session.ID, ssoUser.ACR, requires2FA, host+redirectTo)
 	http.Redirect(w, r, host+redirectTo, http.StatusFound)
 }
 

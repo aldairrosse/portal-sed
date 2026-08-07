@@ -19,6 +19,9 @@
 		'error_bd': 'Error interno. Contacta a soporte.',
 		'error_sesion': 'Error al crear la sesión. Intenta de nuevo.',
 		'error_usuario': 'Error al obtener tus datos del SSO.',
+		'estado_invalido': 'La solicitud de autenticación caducó o fue reutilizada. Intenta de nuevo.',
+		'stepup_fallido': 'No se pudo completar la verificación en dos pasos. Intenta de nuevo.',
+		'stepup_error': 'Error al iniciar la verificación en dos pasos. Intenta de nuevo.',
 	};
 
 	$effect(() => {
