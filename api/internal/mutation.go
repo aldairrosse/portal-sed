@@ -12150,6 +12150,8 @@ type GoalCategoryMutation struct {
 	goals           map[uuid.UUID]struct{}
 	removedgoals    map[uuid.UUID]struct{}
 	clearedgoals    bool
+	pillar          *uuid.UUID
+	clearedpillar   bool
 	done            bool
 	oldValue        func(context.Context) (*GoalCategory, error)
 	predicates      []predicate.GoalCategory
@@ -12580,6 +12582,55 @@ func (m *GoalCategoryMutation) ResetEmployeeID() {
 	m.employee = nil
 }
 
+// SetPillarID sets the "pillar_id" field.
+func (m *GoalCategoryMutation) SetPillarID(u uuid.UUID) {
+	m.pillar = &u
+}
+
+// PillarID returns the value of the "pillar_id" field in the mutation.
+func (m *GoalCategoryMutation) PillarID() (r uuid.UUID, exists bool) {
+	v := m.pillar
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPillarID returns the old "pillar_id" field's value of the GoalCategory entity.
+// If the GoalCategory object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GoalCategoryMutation) OldPillarID(ctx context.Context) (v *uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPillarID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPillarID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPillarID: %w", err)
+	}
+	return oldValue.PillarID, nil
+}
+
+// ClearPillarID clears the value of the "pillar_id" field.
+func (m *GoalCategoryMutation) ClearPillarID() {
+	m.pillar = nil
+	m.clearedFields[goalcategory.FieldPillarID] = struct{}{}
+}
+
+// PillarIDCleared returns if the "pillar_id" field was cleared in this mutation.
+func (m *GoalCategoryMutation) PillarIDCleared() bool {
+	_, ok := m.clearedFields[goalcategory.FieldPillarID]
+	return ok
+}
+
+// ResetPillarID resets all changes to the "pillar_id" field.
+func (m *GoalCategoryMutation) ResetPillarID() {
+	m.pillar = nil
+	delete(m.clearedFields, goalcategory.FieldPillarID)
+}
+
 // ClearEmployee clears the "employee" edge to the Employee entity.
 func (m *GoalCategoryMutation) ClearEmployee() {
 	m.clearedemployee = true
@@ -12661,6 +12712,33 @@ func (m *GoalCategoryMutation) ResetGoals() {
 	m.removedgoals = nil
 }
 
+// ClearPillar clears the "pillar" edge to the Pillar entity.
+func (m *GoalCategoryMutation) ClearPillar() {
+	m.clearedpillar = true
+	m.clearedFields[goalcategory.FieldPillarID] = struct{}{}
+}
+
+// PillarCleared reports if the "pillar" edge to the Pillar entity was cleared.
+func (m *GoalCategoryMutation) PillarCleared() bool {
+	return m.PillarIDCleared() || m.clearedpillar
+}
+
+// PillarIDs returns the "pillar" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// PillarID instead. It exists only for internal usage by the builders.
+func (m *GoalCategoryMutation) PillarIDs() (ids []uuid.UUID) {
+	if id := m.pillar; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetPillar resets all changes to the "pillar" edge.
+func (m *GoalCategoryMutation) ResetPillar() {
+	m.pillar = nil
+	m.clearedpillar = false
+}
+
 // Where appends a list predicates to the GoalCategoryMutation builder.
 func (m *GoalCategoryMutation) Where(ps ...predicate.GoalCategory) {
 	m.predicates = append(m.predicates, ps...)
@@ -12695,7 +12773,7 @@ func (m *GoalCategoryMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *GoalCategoryMutation) Fields() []string {
-	fields := make([]string, 0, 8)
+	fields := make([]string, 0, 9)
 	if m.created_at != nil {
 		fields = append(fields, goalcategory.FieldCreatedAt)
 	}
@@ -12719,6 +12797,9 @@ func (m *GoalCategoryMutation) Fields() []string {
 	}
 	if m.employee != nil {
 		fields = append(fields, goalcategory.FieldEmployeeID)
+	}
+	if m.pillar != nil {
+		fields = append(fields, goalcategory.FieldPillarID)
 	}
 	return fields
 }
@@ -12744,6 +12825,8 @@ func (m *GoalCategoryMutation) Field(name string) (ent.Value, bool) {
 		return m.Weight()
 	case goalcategory.FieldEmployeeID:
 		return m.EmployeeID()
+	case goalcategory.FieldPillarID:
+		return m.PillarID()
 	}
 	return nil, false
 }
@@ -12769,6 +12852,8 @@ func (m *GoalCategoryMutation) OldField(ctx context.Context, name string) (ent.V
 		return m.OldWeight(ctx)
 	case goalcategory.FieldEmployeeID:
 		return m.OldEmployeeID(ctx)
+	case goalcategory.FieldPillarID:
+		return m.OldPillarID(ctx)
 	}
 	return nil, fmt.Errorf("unknown GoalCategory field %s", name)
 }
@@ -12834,6 +12919,13 @@ func (m *GoalCategoryMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetEmployeeID(v)
 		return nil
+	case goalcategory.FieldPillarID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPillarID(v)
+		return nil
 	}
 	return fmt.Errorf("unknown GoalCategory field %s", name)
 }
@@ -12882,6 +12974,9 @@ func (m *GoalCategoryMutation) ClearedFields() []string {
 	if m.FieldCleared(goalcategory.FieldDescription) {
 		fields = append(fields, goalcategory.FieldDescription)
 	}
+	if m.FieldCleared(goalcategory.FieldPillarID) {
+		fields = append(fields, goalcategory.FieldPillarID)
+	}
 	return fields
 }
 
@@ -12898,6 +12993,9 @@ func (m *GoalCategoryMutation) ClearField(name string) error {
 	switch name {
 	case goalcategory.FieldDescription:
 		m.ClearDescription()
+		return nil
+	case goalcategory.FieldPillarID:
+		m.ClearPillarID()
 		return nil
 	}
 	return fmt.Errorf("unknown GoalCategory nullable field %s", name)
@@ -12931,18 +13029,24 @@ func (m *GoalCategoryMutation) ResetField(name string) error {
 	case goalcategory.FieldEmployeeID:
 		m.ResetEmployeeID()
 		return nil
+	case goalcategory.FieldPillarID:
+		m.ResetPillarID()
+		return nil
 	}
 	return fmt.Errorf("unknown GoalCategory field %s", name)
 }
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *GoalCategoryMutation) AddedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.employee != nil {
 		edges = append(edges, goalcategory.EdgeEmployee)
 	}
 	if m.goals != nil {
 		edges = append(edges, goalcategory.EdgeGoals)
+	}
+	if m.pillar != nil {
+		edges = append(edges, goalcategory.EdgePillar)
 	}
 	return edges
 }
@@ -12961,13 +13065,17 @@ func (m *GoalCategoryMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case goalcategory.EdgePillar:
+		if id := m.pillar; id != nil {
+			return []ent.Value{*id}
+		}
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *GoalCategoryMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.removedgoals != nil {
 		edges = append(edges, goalcategory.EdgeGoals)
 	}
@@ -12990,12 +13098,15 @@ func (m *GoalCategoryMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *GoalCategoryMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.clearedemployee {
 		edges = append(edges, goalcategory.EdgeEmployee)
 	}
 	if m.clearedgoals {
 		edges = append(edges, goalcategory.EdgeGoals)
+	}
+	if m.clearedpillar {
+		edges = append(edges, goalcategory.EdgePillar)
 	}
 	return edges
 }
@@ -13008,6 +13119,8 @@ func (m *GoalCategoryMutation) EdgeCleared(name string) bool {
 		return m.clearedemployee
 	case goalcategory.EdgeGoals:
 		return m.clearedgoals
+	case goalcategory.EdgePillar:
+		return m.clearedpillar
 	}
 	return false
 }
@@ -13018,6 +13131,9 @@ func (m *GoalCategoryMutation) ClearEdge(name string) error {
 	switch name {
 	case goalcategory.EdgeEmployee:
 		m.ClearEmployee()
+		return nil
+	case goalcategory.EdgePillar:
+		m.ClearPillar()
 		return nil
 	}
 	return fmt.Errorf("unknown GoalCategory unique edge %s", name)
@@ -13032,6 +13148,9 @@ func (m *GoalCategoryMutation) ResetEdge(name string) error {
 		return nil
 	case goalcategory.EdgeGoals:
 		m.ResetGoals()
+		return nil
+	case goalcategory.EdgePillar:
+		m.ResetPillar()
 		return nil
 	}
 	return fmt.Errorf("unknown GoalCategory edge %s", name)
@@ -13591,6 +13710,8 @@ type KPIMutation struct {
 	goal_links        map[int]struct{}
 	removedgoal_links map[int]struct{}
 	clearedgoal_links bool
+	org_node          *uuid.UUID
+	clearedorg_node   bool
 	done              bool
 	oldValue          func(context.Context) (*KPI, error)
 	predicates        []predicate.KPI
@@ -13893,6 +14014,55 @@ func (m *KPIMutation) ResetDescription() {
 	delete(m.clearedFields, kpi.FieldDescription)
 }
 
+// SetOrgNodeID sets the "org_node_id" field.
+func (m *KPIMutation) SetOrgNodeID(u uuid.UUID) {
+	m.org_node = &u
+}
+
+// OrgNodeID returns the value of the "org_node_id" field in the mutation.
+func (m *KPIMutation) OrgNodeID() (r uuid.UUID, exists bool) {
+	v := m.org_node
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldOrgNodeID returns the old "org_node_id" field's value of the KPI entity.
+// If the KPI object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *KPIMutation) OldOrgNodeID(ctx context.Context) (v *uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldOrgNodeID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldOrgNodeID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldOrgNodeID: %w", err)
+	}
+	return oldValue.OrgNodeID, nil
+}
+
+// ClearOrgNodeID clears the value of the "org_node_id" field.
+func (m *KPIMutation) ClearOrgNodeID() {
+	m.org_node = nil
+	m.clearedFields[kpi.FieldOrgNodeID] = struct{}{}
+}
+
+// OrgNodeIDCleared returns if the "org_node_id" field was cleared in this mutation.
+func (m *KPIMutation) OrgNodeIDCleared() bool {
+	_, ok := m.clearedFields[kpi.FieldOrgNodeID]
+	return ok
+}
+
+// ResetOrgNodeID resets all changes to the "org_node_id" field.
+func (m *KPIMutation) ResetOrgNodeID() {
+	m.org_node = nil
+	delete(m.clearedFields, kpi.FieldOrgNodeID)
+}
+
 // SetDirection sets the "direction" field.
 func (m *KPIMutation) SetDirection(k kpi.Direction) {
 	m.direction = &k
@@ -14123,6 +14293,33 @@ func (m *KPIMutation) ResetGoalLinks() {
 	m.removedgoal_links = nil
 }
 
+// ClearOrgNode clears the "org_node" edge to the OrgNode entity.
+func (m *KPIMutation) ClearOrgNode() {
+	m.clearedorg_node = true
+	m.clearedFields[kpi.FieldOrgNodeID] = struct{}{}
+}
+
+// OrgNodeCleared reports if the "org_node" edge to the OrgNode entity was cleared.
+func (m *KPIMutation) OrgNodeCleared() bool {
+	return m.OrgNodeIDCleared() || m.clearedorg_node
+}
+
+// OrgNodeIDs returns the "org_node" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// OrgNodeID instead. It exists only for internal usage by the builders.
+func (m *KPIMutation) OrgNodeIDs() (ids []uuid.UUID) {
+	if id := m.org_node; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetOrgNode resets all changes to the "org_node" edge.
+func (m *KPIMutation) ResetOrgNode() {
+	m.org_node = nil
+	m.clearedorg_node = false
+}
+
 // Where appends a list predicates to the KPIMutation builder.
 func (m *KPIMutation) Where(ps ...predicate.KPI) {
 	m.predicates = append(m.predicates, ps...)
@@ -14157,7 +14354,7 @@ func (m *KPIMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *KPIMutation) Fields() []string {
-	fields := make([]string, 0, 8)
+	fields := make([]string, 0, 9)
 	if m.created_at != nil {
 		fields = append(fields, kpi.FieldCreatedAt)
 	}
@@ -14172,6 +14369,9 @@ func (m *KPIMutation) Fields() []string {
 	}
 	if m.description != nil {
 		fields = append(fields, kpi.FieldDescription)
+	}
+	if m.org_node != nil {
+		fields = append(fields, kpi.FieldOrgNodeID)
 	}
 	if m.direction != nil {
 		fields = append(fields, kpi.FieldDirection)
@@ -14200,6 +14400,8 @@ func (m *KPIMutation) Field(name string) (ent.Value, bool) {
 		return m.Unit()
 	case kpi.FieldDescription:
 		return m.Description()
+	case kpi.FieldOrgNodeID:
+		return m.OrgNodeID()
 	case kpi.FieldDirection:
 		return m.Direction()
 	case kpi.FieldCurrentValue:
@@ -14225,6 +14427,8 @@ func (m *KPIMutation) OldField(ctx context.Context, name string) (ent.Value, err
 		return m.OldUnit(ctx)
 	case kpi.FieldDescription:
 		return m.OldDescription(ctx)
+	case kpi.FieldOrgNodeID:
+		return m.OldOrgNodeID(ctx)
 	case kpi.FieldDirection:
 		return m.OldDirection(ctx)
 	case kpi.FieldCurrentValue:
@@ -14274,6 +14478,13 @@ func (m *KPIMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetDescription(v)
+		return nil
+	case kpi.FieldOrgNodeID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetOrgNodeID(v)
 		return nil
 	case kpi.FieldDirection:
 		v, ok := value.(kpi.Direction)
@@ -14356,6 +14567,9 @@ func (m *KPIMutation) ClearedFields() []string {
 	if m.FieldCleared(kpi.FieldDescription) {
 		fields = append(fields, kpi.FieldDescription)
 	}
+	if m.FieldCleared(kpi.FieldOrgNodeID) {
+		fields = append(fields, kpi.FieldOrgNodeID)
+	}
 	if m.FieldCleared(kpi.FieldCurrentValue) {
 		fields = append(fields, kpi.FieldCurrentValue)
 	}
@@ -14378,6 +14592,9 @@ func (m *KPIMutation) ClearField(name string) error {
 	switch name {
 	case kpi.FieldDescription:
 		m.ClearDescription()
+		return nil
+	case kpi.FieldOrgNodeID:
+		m.ClearOrgNodeID()
 		return nil
 	case kpi.FieldCurrentValue:
 		m.ClearCurrentValue()
@@ -14408,6 +14625,9 @@ func (m *KPIMutation) ResetField(name string) error {
 	case kpi.FieldDescription:
 		m.ResetDescription()
 		return nil
+	case kpi.FieldOrgNodeID:
+		m.ResetOrgNodeID()
+		return nil
 	case kpi.FieldDirection:
 		m.ResetDirection()
 		return nil
@@ -14423,9 +14643,12 @@ func (m *KPIMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *KPIMutation) AddedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.goal_links != nil {
 		edges = append(edges, kpi.EdgeGoalLinks)
+	}
+	if m.org_node != nil {
+		edges = append(edges, kpi.EdgeOrgNode)
 	}
 	return edges
 }
@@ -14440,13 +14663,17 @@ func (m *KPIMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case kpi.EdgeOrgNode:
+		if id := m.org_node; id != nil {
+			return []ent.Value{*id}
+		}
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *KPIMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.removedgoal_links != nil {
 		edges = append(edges, kpi.EdgeGoalLinks)
 	}
@@ -14469,9 +14696,12 @@ func (m *KPIMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *KPIMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.clearedgoal_links {
 		edges = append(edges, kpi.EdgeGoalLinks)
+	}
+	if m.clearedorg_node {
+		edges = append(edges, kpi.EdgeOrgNode)
 	}
 	return edges
 }
@@ -14482,6 +14712,8 @@ func (m *KPIMutation) EdgeCleared(name string) bool {
 	switch name {
 	case kpi.EdgeGoalLinks:
 		return m.clearedgoal_links
+	case kpi.EdgeOrgNode:
+		return m.clearedorg_node
 	}
 	return false
 }
@@ -14490,6 +14722,9 @@ func (m *KPIMutation) EdgeCleared(name string) bool {
 // if that edge is not defined in the schema.
 func (m *KPIMutation) ClearEdge(name string) error {
 	switch name {
+	case kpi.EdgeOrgNode:
+		m.ClearOrgNode()
+		return nil
 	}
 	return fmt.Errorf("unknown KPI unique edge %s", name)
 }
@@ -14500,6 +14735,9 @@ func (m *KPIMutation) ResetEdge(name string) error {
 	switch name {
 	case kpi.EdgeGoalLinks:
 		m.ResetGoalLinks()
+		return nil
+	case kpi.EdgeOrgNode:
+		m.ResetOrgNode()
 		return nil
 	}
 	return fmt.Errorf("unknown KPI edge %s", name)
@@ -18275,6 +18513,9 @@ type OrgNodeMutation struct {
 	clearedemployees     bool
 	head_employee        *uuid.UUID
 	clearedhead_employee bool
+	kpis                 map[uuid.UUID]struct{}
+	removedkpis          map[uuid.UUID]struct{}
+	clearedkpis          bool
 	done                 bool
 	oldValue             func(context.Context) (*OrgNode, error)
 	predicates           []predicate.OrgNode
@@ -19041,6 +19282,60 @@ func (m *OrgNodeMutation) ResetHeadEmployee() {
 	m.clearedhead_employee = false
 }
 
+// AddKpiIDs adds the "kpis" edge to the KPI entity by ids.
+func (m *OrgNodeMutation) AddKpiIDs(ids ...uuid.UUID) {
+	if m.kpis == nil {
+		m.kpis = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.kpis[ids[i]] = struct{}{}
+	}
+}
+
+// ClearKpis clears the "kpis" edge to the KPI entity.
+func (m *OrgNodeMutation) ClearKpis() {
+	m.clearedkpis = true
+}
+
+// KpisCleared reports if the "kpis" edge to the KPI entity was cleared.
+func (m *OrgNodeMutation) KpisCleared() bool {
+	return m.clearedkpis
+}
+
+// RemoveKpiIDs removes the "kpis" edge to the KPI entity by IDs.
+func (m *OrgNodeMutation) RemoveKpiIDs(ids ...uuid.UUID) {
+	if m.removedkpis == nil {
+		m.removedkpis = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.kpis, ids[i])
+		m.removedkpis[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedKpis returns the removed IDs of the "kpis" edge to the KPI entity.
+func (m *OrgNodeMutation) RemovedKpisIDs() (ids []uuid.UUID) {
+	for id := range m.removedkpis {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// KpisIDs returns the "kpis" edge IDs in the mutation.
+func (m *OrgNodeMutation) KpisIDs() (ids []uuid.UUID) {
+	for id := range m.kpis {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetKpis resets all changes to the "kpis" edge.
+func (m *OrgNodeMutation) ResetKpis() {
+	m.kpis = nil
+	m.clearedkpis = false
+	m.removedkpis = nil
+}
+
 // Where appends a list predicates to the OrgNodeMutation builder.
 func (m *OrgNodeMutation) Where(ps ...predicate.OrgNode) {
 	m.predicates = append(m.predicates, ps...)
@@ -19386,7 +19681,7 @@ func (m *OrgNodeMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *OrgNodeMutation) AddedEdges() []string {
-	edges := make([]string, 0, 5)
+	edges := make([]string, 0, 6)
 	if m.organization != nil {
 		edges = append(edges, orgnode.EdgeOrganization)
 	}
@@ -19401,6 +19696,9 @@ func (m *OrgNodeMutation) AddedEdges() []string {
 	}
 	if m.head_employee != nil {
 		edges = append(edges, orgnode.EdgeHeadEmployee)
+	}
+	if m.kpis != nil {
+		edges = append(edges, orgnode.EdgeKpis)
 	}
 	return edges
 }
@@ -19433,18 +19731,27 @@ func (m *OrgNodeMutation) AddedIDs(name string) []ent.Value {
 		if id := m.head_employee; id != nil {
 			return []ent.Value{*id}
 		}
+	case orgnode.EdgeKpis:
+		ids := make([]ent.Value, 0, len(m.kpis))
+		for id := range m.kpis {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *OrgNodeMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 5)
+	edges := make([]string, 0, 6)
 	if m.removedchildren != nil {
 		edges = append(edges, orgnode.EdgeChildren)
 	}
 	if m.removedemployees != nil {
 		edges = append(edges, orgnode.EdgeEmployees)
+	}
+	if m.removedkpis != nil {
+		edges = append(edges, orgnode.EdgeKpis)
 	}
 	return edges
 }
@@ -19465,13 +19772,19 @@ func (m *OrgNodeMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case orgnode.EdgeKpis:
+		ids := make([]ent.Value, 0, len(m.removedkpis))
+		for id := range m.removedkpis {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *OrgNodeMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 5)
+	edges := make([]string, 0, 6)
 	if m.clearedorganization {
 		edges = append(edges, orgnode.EdgeOrganization)
 	}
@@ -19486,6 +19799,9 @@ func (m *OrgNodeMutation) ClearedEdges() []string {
 	}
 	if m.clearedhead_employee {
 		edges = append(edges, orgnode.EdgeHeadEmployee)
+	}
+	if m.clearedkpis {
+		edges = append(edges, orgnode.EdgeKpis)
 	}
 	return edges
 }
@@ -19504,6 +19820,8 @@ func (m *OrgNodeMutation) EdgeCleared(name string) bool {
 		return m.clearedemployees
 	case orgnode.EdgeHeadEmployee:
 		return m.clearedhead_employee
+	case orgnode.EdgeKpis:
+		return m.clearedkpis
 	}
 	return false
 }
@@ -19543,6 +19861,9 @@ func (m *OrgNodeMutation) ResetEdge(name string) error {
 		return nil
 	case orgnode.EdgeHeadEmployee:
 		m.ResetHeadEmployee()
+		return nil
+	case orgnode.EdgeKpis:
+		m.ResetKpis()
 		return nil
 	}
 	return fmt.Errorf("unknown OrgNode edge %s", name)
@@ -22417,26 +22738,29 @@ func (m *PhaseTransitionMutation) ResetEdge(name string) error {
 // PillarMutation represents an operation that mutates the Pillar nodes in the graph.
 type PillarMutation struct {
 	config
-	op                    Op
-	typ                   string
-	id                    *uuid.UUID
-	created_at            *time.Time
-	updated_at            *time.Time
-	version               *int
-	addversion            *int
-	name                  *string
-	description           *string
-	_type                 *pillar.Type
-	clearedFields         map[string]struct{}
-	competencies          map[uuid.UUID]struct{}
-	removedcompetencies   map[uuid.UUID]struct{}
-	clearedcompetencies   bool
-	scale_criteria        map[uuid.UUID]struct{}
-	removedscale_criteria map[uuid.UUID]struct{}
-	clearedscale_criteria bool
-	done                  bool
-	oldValue              func(context.Context) (*Pillar, error)
-	predicates            []predicate.Pillar
+	op                     Op
+	typ                    string
+	id                     *uuid.UUID
+	created_at             *time.Time
+	updated_at             *time.Time
+	version                *int
+	addversion             *int
+	name                   *string
+	description            *string
+	_type                  *pillar.Type
+	clearedFields          map[string]struct{}
+	competencies           map[uuid.UUID]struct{}
+	removedcompetencies    map[uuid.UUID]struct{}
+	clearedcompetencies    bool
+	scale_criteria         map[uuid.UUID]struct{}
+	removedscale_criteria  map[uuid.UUID]struct{}
+	clearedscale_criteria  bool
+	goal_categories        map[uuid.UUID]struct{}
+	removedgoal_categories map[uuid.UUID]struct{}
+	clearedgoal_categories bool
+	done                   bool
+	oldValue               func(context.Context) (*Pillar, error)
+	predicates             []predicate.Pillar
 }
 
 var _ ent.Mutation = (*PillarMutation)(nil)
@@ -22900,6 +23224,60 @@ func (m *PillarMutation) ResetScaleCriteria() {
 	m.removedscale_criteria = nil
 }
 
+// AddGoalCategoryIDs adds the "goal_categories" edge to the GoalCategory entity by ids.
+func (m *PillarMutation) AddGoalCategoryIDs(ids ...uuid.UUID) {
+	if m.goal_categories == nil {
+		m.goal_categories = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.goal_categories[ids[i]] = struct{}{}
+	}
+}
+
+// ClearGoalCategories clears the "goal_categories" edge to the GoalCategory entity.
+func (m *PillarMutation) ClearGoalCategories() {
+	m.clearedgoal_categories = true
+}
+
+// GoalCategoriesCleared reports if the "goal_categories" edge to the GoalCategory entity was cleared.
+func (m *PillarMutation) GoalCategoriesCleared() bool {
+	return m.clearedgoal_categories
+}
+
+// RemoveGoalCategoryIDs removes the "goal_categories" edge to the GoalCategory entity by IDs.
+func (m *PillarMutation) RemoveGoalCategoryIDs(ids ...uuid.UUID) {
+	if m.removedgoal_categories == nil {
+		m.removedgoal_categories = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.goal_categories, ids[i])
+		m.removedgoal_categories[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedGoalCategories returns the removed IDs of the "goal_categories" edge to the GoalCategory entity.
+func (m *PillarMutation) RemovedGoalCategoriesIDs() (ids []uuid.UUID) {
+	for id := range m.removedgoal_categories {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// GoalCategoriesIDs returns the "goal_categories" edge IDs in the mutation.
+func (m *PillarMutation) GoalCategoriesIDs() (ids []uuid.UUID) {
+	for id := range m.goal_categories {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetGoalCategories resets all changes to the "goal_categories" edge.
+func (m *PillarMutation) ResetGoalCategories() {
+	m.goal_categories = nil
+	m.clearedgoal_categories = false
+	m.removedgoal_categories = nil
+}
+
 // Where appends a list predicates to the PillarMutation builder.
 func (m *PillarMutation) Where(ps ...predicate.Pillar) {
 	m.predicates = append(m.predicates, ps...)
@@ -23142,12 +23520,15 @@ func (m *PillarMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *PillarMutation) AddedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.competencies != nil {
 		edges = append(edges, pillar.EdgeCompetencies)
 	}
 	if m.scale_criteria != nil {
 		edges = append(edges, pillar.EdgeScaleCriteria)
+	}
+	if m.goal_categories != nil {
+		edges = append(edges, pillar.EdgeGoalCategories)
 	}
 	return edges
 }
@@ -23168,18 +23549,27 @@ func (m *PillarMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case pillar.EdgeGoalCategories:
+		ids := make([]ent.Value, 0, len(m.goal_categories))
+		for id := range m.goal_categories {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *PillarMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.removedcompetencies != nil {
 		edges = append(edges, pillar.EdgeCompetencies)
 	}
 	if m.removedscale_criteria != nil {
 		edges = append(edges, pillar.EdgeScaleCriteria)
+	}
+	if m.removedgoal_categories != nil {
+		edges = append(edges, pillar.EdgeGoalCategories)
 	}
 	return edges
 }
@@ -23200,18 +23590,27 @@ func (m *PillarMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case pillar.EdgeGoalCategories:
+		ids := make([]ent.Value, 0, len(m.removedgoal_categories))
+		for id := range m.removedgoal_categories {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *PillarMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.clearedcompetencies {
 		edges = append(edges, pillar.EdgeCompetencies)
 	}
 	if m.clearedscale_criteria {
 		edges = append(edges, pillar.EdgeScaleCriteria)
+	}
+	if m.clearedgoal_categories {
+		edges = append(edges, pillar.EdgeGoalCategories)
 	}
 	return edges
 }
@@ -23224,6 +23623,8 @@ func (m *PillarMutation) EdgeCleared(name string) bool {
 		return m.clearedcompetencies
 	case pillar.EdgeScaleCriteria:
 		return m.clearedscale_criteria
+	case pillar.EdgeGoalCategories:
+		return m.clearedgoal_categories
 	}
 	return false
 }
@@ -23245,6 +23646,9 @@ func (m *PillarMutation) ResetEdge(name string) error {
 		return nil
 	case pillar.EdgeScaleCriteria:
 		m.ResetScaleCriteria()
+		return nil
+	case pillar.EdgeGoalCategories:
+		m.ResetGoalCategories()
 		return nil
 	}
 	return fmt.Errorf("unknown Pillar edge %s", name)

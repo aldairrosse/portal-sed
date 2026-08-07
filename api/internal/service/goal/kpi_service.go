@@ -7,15 +7,19 @@ import (
 	dtogoal "github.com/sed-evaluacion-desempeno/api/internal/dto/goal"
 	pkgerrors "github.com/sed-evaluacion-desempeno/api/internal/pkg/errors"
 	repogoal "github.com/sed-evaluacion-desempeno/api/internal/repository/goal"
+	repoorganization "github.com/sed-evaluacion-desempeno/api/internal/repository/org"
 )
 
 // KPIService handles business logic for KPIs and their linking.
 type KPIService struct {
-	kpiRepo    KPIRepository
-	linkRepo   LinkKPIRepository
-	goalRepo   GoalRepository
-	catRepo    CategoryRepository
-	phaseCheck *PhaseCheck
+	kpiRepo      KPIRepository
+	linkRepo     LinkKPIRepository
+	goalRepo     GoalRepository
+	catRepo      CategoryRepository
+	phaseCheck   *PhaseCheck
+	orgNodeRepo  *repoorganization.OrgNodeRepo
+	orgTreeRepo  *repoorganization.OrgTreeRepo
+	employeeRepo *repoorganization.EmployeeRepo
 }
 
 // NewKPIService creates a new KPIService.
@@ -25,23 +29,33 @@ func NewKPIService(
 	goalRepo GoalRepository,
 	catRepo CategoryRepository,
 	phaseCheck *PhaseCheck,
+	orgNodeRepo *repoorganization.OrgNodeRepo,
+	orgTreeRepo *repoorganization.OrgTreeRepo,
+	employeeRepo *repoorganization.EmployeeRepo,
 ) *KPIService {
 	return &KPIService{
-		kpiRepo:    kpiRepo,
-		linkRepo:   linkRepo,
-		goalRepo:   goalRepo,
-		catRepo:    catRepo,
-		phaseCheck: phaseCheck,
+		kpiRepo:      kpiRepo,
+		linkRepo:     linkRepo,
+		goalRepo:     goalRepo,
+		catRepo:      catRepo,
+		phaseCheck:   phaseCheck,
+		orgNodeRepo:  orgNodeRepo,
+		orgTreeRepo:  orgTreeRepo,
+		employeeRepo: employeeRepo,
 	}
 }
 
 // ListKPIs returns all KPIs.
-func (s *KPIService) ListKPIs(ctx context.Context) ([]*repogoal.KpiRow, error) {
-	return s.kpiRepo.ListKPIs(ctx)
+func (s *KPIService) ListKPIs(ctx context.Context, employeeID uuid.UUID) ([]*repogoal.KpiRow, error) {
+	dept, err := s.resolveDepartmentOrgNode(ctx, employeeID)
+	if err != nil {
+		return nil, err
+	}
+	return s.kpiRepo.ListKPIs(ctx, dept)
 }
 
 // CreateKPI creates a new KPI.
-func (s *KPIService) CreateKPI(ctx context.Context, req dtogoal.CreateKpiRequest) (*repogoal.KpiRow, error) {
+func (s *KPIService) CreateKPI(ctx context.Context, req dtogoal.CreateKpiRequest, employeeID uuid.UUID) (*repogoal.KpiRow, error) {
 	if req.Name == "" {
 		return nil, pkgerrors.NewDomainError(pkgerrors.InvalidRequest, "KPI name is required", nil)
 	}
@@ -58,7 +72,11 @@ func (s *KPIService) CreateKPI(ctx context.Context, req dtogoal.CreateKpiRequest
 		v := normalizeBinaryValue(req.Unit, *req.TargetValue)
 		normalizedTarget = &v
 	}
-	return s.kpiRepo.CreateKPI(ctx, req.Name, req.Unit, req.Description, normalizedTarget)
+	dept, err := s.resolveDepartmentOrgNode(ctx, employeeID)
+	if err != nil {
+		return nil, err
+	}
+	return s.kpiRepo.CreateKPI(ctx, req.Name, req.Unit, req.Description, normalizedTarget, dept)
 }
 
 // UpdateKPI updates an existing KPI.
@@ -163,4 +181,49 @@ func (s *KPIService) UnlinkKPI(ctx context.Context, empID, goalID, kpiID uuid.UU
 // ListKpiIDsByGoal returns the KPI IDs linked to a goal.
 func (s *KPIService) ListKpiIDsByGoal(ctx context.Context, goalID uuid.UUID) ([]uuid.UUID, error) {
 	return s.linkRepo.ListKpiIDsByGoal(ctx, goalID)
+}
+
+func (s *KPIService) resolveDepartmentOrgNode(ctx context.Context, employeeID uuid.UUID) (*uuid.UUID, error) {
+	emp, err := s.employeeRepo.GetByID(ctx, employeeID)
+	if err != nil {
+		return nil, err
+	}
+	if emp.OrgNodeID == uuid.Nil {
+		return nil, nil
+	}
+
+	path, err := s.orgNodeRepo.GetPathToRoot(ctx, emp.OrgNodeID)
+	if err != nil {
+		return nil, err
+	}
+	if len(path) == 0 {
+		return nil, nil
+	}
+
+	t := path[len(path)-1]
+	if t.ParentID != nil {
+		for i := len(path) - 1; i >= 0; i-- {
+			if path[i].ParentID == nil {
+				t = path[i]
+				break
+			}
+		}
+	}
+
+	tree, err := s.orgTreeRepo.GetByID(ctx, t.OrganizationID)
+	if err != nil || tree == nil {
+		return &t.ID, nil
+	}
+
+	rootID := tree.RootNodeID
+	if rootID != nil && *rootID == t.ID {
+		for _, n := range path {
+			if n.ID != t.ID && n.ParentID != nil && *n.ParentID == *rootID {
+				return &n.ID, nil
+			}
+		}
+		return &t.ID, nil
+	}
+
+	return &t.ID, nil
 }

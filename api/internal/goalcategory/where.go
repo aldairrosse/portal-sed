@@ -96,6 +96,11 @@ func EmployeeID(v uuid.UUID) predicate.GoalCategory {
 	return predicate.GoalCategory(sql.FieldEQ(FieldEmployeeID, v))
 }
 
+// PillarID applies equality check predicate on the "pillar_id" field. It's identical to PillarIDEQ.
+func PillarID(v uuid.UUID) predicate.GoalCategory {
+	return predicate.GoalCategory(sql.FieldEQ(FieldPillarID, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.GoalCategory {
 	return predicate.GoalCategory(sql.FieldEQ(FieldCreatedAt, v))
@@ -456,6 +461,36 @@ func EmployeeIDNotIn(vs ...uuid.UUID) predicate.GoalCategory {
 	return predicate.GoalCategory(sql.FieldNotIn(FieldEmployeeID, vs...))
 }
 
+// PillarIDEQ applies the EQ predicate on the "pillar_id" field.
+func PillarIDEQ(v uuid.UUID) predicate.GoalCategory {
+	return predicate.GoalCategory(sql.FieldEQ(FieldPillarID, v))
+}
+
+// PillarIDNEQ applies the NEQ predicate on the "pillar_id" field.
+func PillarIDNEQ(v uuid.UUID) predicate.GoalCategory {
+	return predicate.GoalCategory(sql.FieldNEQ(FieldPillarID, v))
+}
+
+// PillarIDIn applies the In predicate on the "pillar_id" field.
+func PillarIDIn(vs ...uuid.UUID) predicate.GoalCategory {
+	return predicate.GoalCategory(sql.FieldIn(FieldPillarID, vs...))
+}
+
+// PillarIDNotIn applies the NotIn predicate on the "pillar_id" field.
+func PillarIDNotIn(vs ...uuid.UUID) predicate.GoalCategory {
+	return predicate.GoalCategory(sql.FieldNotIn(FieldPillarID, vs...))
+}
+
+// PillarIDIsNil applies the IsNil predicate on the "pillar_id" field.
+func PillarIDIsNil() predicate.GoalCategory {
+	return predicate.GoalCategory(sql.FieldIsNull(FieldPillarID))
+}
+
+// PillarIDNotNil applies the NotNil predicate on the "pillar_id" field.
+func PillarIDNotNil() predicate.GoalCategory {
+	return predicate.GoalCategory(sql.FieldNotNull(FieldPillarID))
+}
+
 // HasEmployee applies the HasEdge predicate on the "employee" edge.
 func HasEmployee() predicate.GoalCategory {
 	return predicate.GoalCategory(func(s *sql.Selector) {
@@ -494,6 +529,29 @@ func HasGoals() predicate.GoalCategory {
 func HasGoalsWith(preds ...predicate.Goal) predicate.GoalCategory {
 	return predicate.GoalCategory(func(s *sql.Selector) {
 		step := newGoalsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasPillar applies the HasEdge predicate on the "pillar" edge.
+func HasPillar() predicate.GoalCategory {
+	return predicate.GoalCategory(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, PillarTable, PillarColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasPillarWith applies the HasEdge predicate on the "pillar" edge with a given conditions (other predicates).
+func HasPillarWith(preds ...predicate.Pillar) predicate.GoalCategory {
+	return predicate.GoalCategory(func(s *sql.Selector) {
+		step := newPillarStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

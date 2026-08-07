@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"github.com/google/uuid"
 	"github.com/sed-evaluacion-desempeno/api/internal/kpi"
+	"github.com/sed-evaluacion-desempeno/api/internal/orgnode"
 )
 
 // KPI is the model entity for the KPI schema.
@@ -28,6 +29,8 @@ type KPI struct {
 	Unit kpi.Unit `json:"unit,omitempty"`
 	// Description holds the value of the "description" field.
 	Description string `json:"description,omitempty"`
+	// OrgNodeID holds the value of the "org_node_id" field.
+	OrgNodeID *uuid.UUID `json:"org_node_id,omitempty"`
 	// Direction holds the value of the "direction" field.
 	Direction kpi.Direction `json:"direction,omitempty"`
 	// CurrentValue holds the value of the "current_value" field.
@@ -44,9 +47,11 @@ type KPI struct {
 type KPIEdges struct {
 	// GoalLinks holds the value of the goal_links edge.
 	GoalLinks []*GoalKpiLink `json:"goal_links,omitempty"`
+	// OrgNode holds the value of the org_node edge.
+	OrgNode *OrgNode `json:"org_node,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
+	loadedTypes [2]bool
 }
 
 // GoalLinksOrErr returns the GoalLinks value or an error if the edge
@@ -58,11 +63,24 @@ func (e KPIEdges) GoalLinksOrErr() ([]*GoalKpiLink, error) {
 	return nil, &NotLoadedError{edge: "goal_links"}
 }
 
+// OrgNodeOrErr returns the OrgNode value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e KPIEdges) OrgNodeOrErr() (*OrgNode, error) {
+	if e.OrgNode != nil {
+		return e.OrgNode, nil
+	} else if e.loadedTypes[1] {
+		return nil, &NotFoundError{label: orgnode.Label}
+	}
+	return nil, &NotLoadedError{edge: "org_node"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*KPI) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case kpi.FieldOrgNodeID:
+			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		case kpi.FieldCurrentValue, kpi.FieldTargetValue:
 			values[i] = new(sql.NullFloat64)
 		case kpi.FieldName, kpi.FieldUnit, kpi.FieldDescription, kpi.FieldDirection:
@@ -122,6 +140,13 @@ func (_m *KPI) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.Description = value.String
 			}
+		case kpi.FieldOrgNodeID:
+			if value, ok := values[i].(*sql.NullScanner); !ok {
+				return fmt.Errorf("unexpected type %T for field org_node_id", values[i])
+			} else if value.Valid {
+				_m.OrgNodeID = new(uuid.UUID)
+				*_m.OrgNodeID = *value.S.(*uuid.UUID)
+			}
 		case kpi.FieldDirection:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field direction", values[i])
@@ -158,6 +183,11 @@ func (_m *KPI) Value(name string) (ent.Value, error) {
 // QueryGoalLinks queries the "goal_links" edge of the KPI entity.
 func (_m *KPI) QueryGoalLinks() *GoalKpiLinkQuery {
 	return NewKPIClient(_m.config).QueryGoalLinks(_m)
+}
+
+// QueryOrgNode queries the "org_node" edge of the KPI entity.
+func (_m *KPI) QueryOrgNode() *OrgNodeQuery {
+	return NewKPIClient(_m.config).QueryOrgNode(_m)
 }
 
 // Update returns a builder for updating this KPI.
@@ -197,6 +227,11 @@ func (_m *KPI) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("description=")
 	builder.WriteString(_m.Description)
+	builder.WriteString(", ")
+	if v := _m.OrgNodeID; v != nil {
+		builder.WriteString("org_node_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
 	builder.WriteString(", ")
 	builder.WriteString("direction=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Direction))

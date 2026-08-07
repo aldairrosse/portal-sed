@@ -485,6 +485,11 @@ func (h *GoalHandler) ValidateWeights(w http.ResponseWriter, r *http.Request) {
 
 func kpiRowToResponse(k *repogoal.KpiRow) dtogoal.KpiResponse {
 	progressPercent := 0.0
+	var orgNodeID *string
+	if k.OrgNodeID != nil {
+		s := k.OrgNodeID.String()
+		orgNodeID = &s
+	}
 	return dtogoal.KpiResponse{
 		ID:              k.ID.String(),
 		Name:            k.Name,
@@ -496,11 +501,17 @@ func kpiRowToResponse(k *repogoal.KpiRow) dtogoal.KpiResponse {
 		ProgressPercent: progressPercent,
 		CreatedAt:       k.CreatedAt.Format(time.RFC3339),
 		UpdatedAt:       k.UpdatedAt.Format(time.RFC3339),
+		OrgNodeID:       orgNodeID,
 	}
 }
 
 func (h *GoalHandler) ListKPIs(w http.ResponseWriter, r *http.Request) {
-	kpis, err := h.kpiService.ListKPIs(r.Context())
+	empID, err := callerID(r)
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+	kpis, err := h.kpiService.ListKPIs(r.Context(), empID)
 	if err != nil {
 		writeError(w, err)
 		return
@@ -555,7 +566,12 @@ func (h *GoalHandler) CreateKPI(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	kpi, err := h.kpiService.CreateKPI(r.Context(), req)
+	empID, err := callerID(r)
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+	kpi, err := h.kpiService.CreateKPI(r.Context(), req, empID)
 	if err != nil {
 		writeError(w, err)
 		return

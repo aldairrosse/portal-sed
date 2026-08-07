@@ -32,6 +32,8 @@ const (
 	EdgeCompetencies = "competencies"
 	// EdgeScaleCriteria holds the string denoting the scale_criteria edge name in mutations.
 	EdgeScaleCriteria = "scale_criteria"
+	// EdgeGoalCategories holds the string denoting the goal_categories edge name in mutations.
+	EdgeGoalCategories = "goal_categories"
 	// Table holds the table name of the pillar in the database.
 	Table = "pillars"
 	// CompetenciesTable is the table that holds the competencies relation/edge.
@@ -48,6 +50,13 @@ const (
 	ScaleCriteriaInverseTable = "scale_criterions"
 	// ScaleCriteriaColumn is the table column denoting the scale_criteria relation/edge.
 	ScaleCriteriaColumn = "pillar_id"
+	// GoalCategoriesTable is the table that holds the goal_categories relation/edge.
+	GoalCategoriesTable = "goal_categories"
+	// GoalCategoriesInverseTable is the table name for the GoalCategory entity.
+	// It exists in this package in order to avoid circular dependency with the "goalcategory" package.
+	GoalCategoriesInverseTable = "goal_categories"
+	// GoalCategoriesColumn is the table column denoting the goal_categories relation/edge.
+	GoalCategoriesColumn = "pillar_id"
 )
 
 // Columns holds all SQL columns for pillar fields.
@@ -179,6 +188,20 @@ func ByScaleCriteria(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newScaleCriteriaStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByGoalCategoriesCount orders the results by goal_categories count.
+func ByGoalCategoriesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newGoalCategoriesStep(), opts...)
+	}
+}
+
+// ByGoalCategories orders the results by goal_categories terms.
+func ByGoalCategories(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newGoalCategoriesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newCompetenciesStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -191,5 +214,12 @@ func newScaleCriteriaStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(ScaleCriteriaInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, ScaleCriteriaTable, ScaleCriteriaColumn),
+	)
+}
+func newGoalCategoriesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(GoalCategoriesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, GoalCategoriesTable, GoalCategoriesColumn),
 	)
 }

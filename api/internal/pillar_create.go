@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
 	"github.com/sed-evaluacion-desempeno/api/internal/competency"
+	"github.com/sed-evaluacion-desempeno/api/internal/goalcategory"
 	"github.com/sed-evaluacion-desempeno/api/internal/pillar"
 	"github.com/sed-evaluacion-desempeno/api/internal/scalecriterion"
 )
@@ -141,6 +142,21 @@ func (_c *PillarCreate) AddScaleCriteria(v ...*ScaleCriterion) *PillarCreate {
 		ids[i] = v[i].ID
 	}
 	return _c.AddScaleCriteriumIDs(ids...)
+}
+
+// AddGoalCategoryIDs adds the "goal_categories" edge to the GoalCategory entity by IDs.
+func (_c *PillarCreate) AddGoalCategoryIDs(ids ...uuid.UUID) *PillarCreate {
+	_c.mutation.AddGoalCategoryIDs(ids...)
+	return _c
+}
+
+// AddGoalCategories adds the "goal_categories" edges to the GoalCategory entity.
+func (_c *PillarCreate) AddGoalCategories(v ...*GoalCategory) *PillarCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddGoalCategoryIDs(ids...)
 }
 
 // Mutation returns the PillarMutation object of the builder.
@@ -316,6 +332,22 @@ func (_c *PillarCreate) createSpec() (*Pillar, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(scalecriterion.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.GoalCategoriesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   pillar.GoalCategoriesTable,
+			Columns: []string{pillar.GoalCategoriesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(goalcategory.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

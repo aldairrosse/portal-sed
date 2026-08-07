@@ -14,6 +14,7 @@ import (
 	"github.com/sed-evaluacion-desempeno/api/internal/employee"
 	"github.com/sed-evaluacion-desempeno/api/internal/goal"
 	"github.com/sed-evaluacion-desempeno/api/internal/goalcategory"
+	"github.com/sed-evaluacion-desempeno/api/internal/pillar"
 )
 
 // GoalCategoryCreate is the builder for creating a GoalCategory entity.
@@ -95,6 +96,20 @@ func (_c *GoalCategoryCreate) SetEmployeeID(v uuid.UUID) *GoalCategoryCreate {
 	return _c
 }
 
+// SetPillarID sets the "pillar_id" field.
+func (_c *GoalCategoryCreate) SetPillarID(v uuid.UUID) *GoalCategoryCreate {
+	_c.mutation.SetPillarID(v)
+	return _c
+}
+
+// SetNillablePillarID sets the "pillar_id" field if the given value is not nil.
+func (_c *GoalCategoryCreate) SetNillablePillarID(v *uuid.UUID) *GoalCategoryCreate {
+	if v != nil {
+		_c.SetPillarID(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *GoalCategoryCreate) SetID(v uuid.UUID) *GoalCategoryCreate {
 	_c.mutation.SetID(v)
@@ -127,6 +142,11 @@ func (_c *GoalCategoryCreate) AddGoals(v ...*Goal) *GoalCategoryCreate {
 		ids[i] = v[i].ID
 	}
 	return _c.AddGoalIDs(ids...)
+}
+
+// SetPillar sets the "pillar" edge to the Pillar entity.
+func (_c *GoalCategoryCreate) SetPillar(v *Pillar) *GoalCategoryCreate {
+	return _c.SetPillarID(v.ID)
 }
 
 // Mutation returns the GoalCategoryMutation object of the builder.
@@ -308,6 +328,23 @@ func (_c *GoalCategoryCreate) createSpec() (*GoalCategory, *sqlgraph.CreateSpec)
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.PillarIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   goalcategory.PillarTable,
+			Columns: []string{goalcategory.PillarColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(pillar.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.PillarID = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

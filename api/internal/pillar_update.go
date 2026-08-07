@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
 	"github.com/sed-evaluacion-desempeno/api/internal/competency"
+	"github.com/sed-evaluacion-desempeno/api/internal/goalcategory"
 	"github.com/sed-evaluacion-desempeno/api/internal/pillar"
 	"github.com/sed-evaluacion-desempeno/api/internal/predicate"
 	"github.com/sed-evaluacion-desempeno/api/internal/scalecriterion"
@@ -136,6 +137,21 @@ func (_u *PillarUpdate) AddScaleCriteria(v ...*ScaleCriterion) *PillarUpdate {
 	return _u.AddScaleCriteriumIDs(ids...)
 }
 
+// AddGoalCategoryIDs adds the "goal_categories" edge to the GoalCategory entity by IDs.
+func (_u *PillarUpdate) AddGoalCategoryIDs(ids ...uuid.UUID) *PillarUpdate {
+	_u.mutation.AddGoalCategoryIDs(ids...)
+	return _u
+}
+
+// AddGoalCategories adds the "goal_categories" edges to the GoalCategory entity.
+func (_u *PillarUpdate) AddGoalCategories(v ...*GoalCategory) *PillarUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddGoalCategoryIDs(ids...)
+}
+
 // Mutation returns the PillarMutation object of the builder.
 func (_u *PillarUpdate) Mutation() *PillarMutation {
 	return _u.mutation
@@ -181,6 +197,27 @@ func (_u *PillarUpdate) RemoveScaleCriteria(v ...*ScaleCriterion) *PillarUpdate 
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveScaleCriteriumIDs(ids...)
+}
+
+// ClearGoalCategories clears all "goal_categories" edges to the GoalCategory entity.
+func (_u *PillarUpdate) ClearGoalCategories() *PillarUpdate {
+	_u.mutation.ClearGoalCategories()
+	return _u
+}
+
+// RemoveGoalCategoryIDs removes the "goal_categories" edge to GoalCategory entities by IDs.
+func (_u *PillarUpdate) RemoveGoalCategoryIDs(ids ...uuid.UUID) *PillarUpdate {
+	_u.mutation.RemoveGoalCategoryIDs(ids...)
+	return _u
+}
+
+// RemoveGoalCategories removes "goal_categories" edges to GoalCategory entities.
+func (_u *PillarUpdate) RemoveGoalCategories(v ...*GoalCategory) *PillarUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveGoalCategoryIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -362,6 +399,51 @@ func (_u *PillarUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if _u.mutation.GoalCategoriesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   pillar.GoalCategoriesTable,
+			Columns: []string{pillar.GoalCategoriesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(goalcategory.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedGoalCategoriesIDs(); len(nodes) > 0 && !_u.mutation.GoalCategoriesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   pillar.GoalCategoriesTable,
+			Columns: []string{pillar.GoalCategoriesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(goalcategory.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.GoalCategoriesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   pillar.GoalCategoriesTable,
+			Columns: []string{pillar.GoalCategoriesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(goalcategory.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{pillar.Label}
@@ -487,6 +569,21 @@ func (_u *PillarUpdateOne) AddScaleCriteria(v ...*ScaleCriterion) *PillarUpdateO
 	return _u.AddScaleCriteriumIDs(ids...)
 }
 
+// AddGoalCategoryIDs adds the "goal_categories" edge to the GoalCategory entity by IDs.
+func (_u *PillarUpdateOne) AddGoalCategoryIDs(ids ...uuid.UUID) *PillarUpdateOne {
+	_u.mutation.AddGoalCategoryIDs(ids...)
+	return _u
+}
+
+// AddGoalCategories adds the "goal_categories" edges to the GoalCategory entity.
+func (_u *PillarUpdateOne) AddGoalCategories(v ...*GoalCategory) *PillarUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddGoalCategoryIDs(ids...)
+}
+
 // Mutation returns the PillarMutation object of the builder.
 func (_u *PillarUpdateOne) Mutation() *PillarMutation {
 	return _u.mutation
@@ -532,6 +629,27 @@ func (_u *PillarUpdateOne) RemoveScaleCriteria(v ...*ScaleCriterion) *PillarUpda
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveScaleCriteriumIDs(ids...)
+}
+
+// ClearGoalCategories clears all "goal_categories" edges to the GoalCategory entity.
+func (_u *PillarUpdateOne) ClearGoalCategories() *PillarUpdateOne {
+	_u.mutation.ClearGoalCategories()
+	return _u
+}
+
+// RemoveGoalCategoryIDs removes the "goal_categories" edge to GoalCategory entities by IDs.
+func (_u *PillarUpdateOne) RemoveGoalCategoryIDs(ids ...uuid.UUID) *PillarUpdateOne {
+	_u.mutation.RemoveGoalCategoryIDs(ids...)
+	return _u
+}
+
+// RemoveGoalCategories removes "goal_categories" edges to GoalCategory entities.
+func (_u *PillarUpdateOne) RemoveGoalCategories(v ...*GoalCategory) *PillarUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveGoalCategoryIDs(ids...)
 }
 
 // Where appends a list predicates to the PillarUpdate builder.
@@ -736,6 +854,51 @@ func (_u *PillarUpdateOne) sqlSave(ctx context.Context) (_node *Pillar, err erro
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(scalecriterion.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.GoalCategoriesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   pillar.GoalCategoriesTable,
+			Columns: []string{pillar.GoalCategoriesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(goalcategory.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedGoalCategoriesIDs(); len(nodes) > 0 && !_u.mutation.GoalCategoriesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   pillar.GoalCategoriesTable,
+			Columns: []string{pillar.GoalCategoriesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(goalcategory.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.GoalCategoriesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   pillar.GoalCategoriesTable,
+			Columns: []string{pillar.GoalCategoriesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(goalcategory.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

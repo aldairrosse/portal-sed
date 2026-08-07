@@ -14,6 +14,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
 	"github.com/sed-evaluacion-desempeno/api/internal/employee"
+	"github.com/sed-evaluacion-desempeno/api/internal/kpi"
 	"github.com/sed-evaluacion-desempeno/api/internal/organization"
 	"github.com/sed-evaluacion-desempeno/api/internal/orgnode"
 	"github.com/sed-evaluacion-desempeno/api/internal/predicate"
@@ -31,6 +32,7 @@ type OrgNodeQuery struct {
 	withChildren     *OrgNodeQuery
 	withEmployees    *EmployeeQuery
 	withHeadEmployee *EmployeeQuery
+	withKpis         *KPIQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -170,6 +172,28 @@ func (_q *OrgNodeQuery) QueryHeadEmployee() *EmployeeQuery {
 			sqlgraph.From(orgnode.Table, orgnode.FieldID, selector),
 			sqlgraph.To(employee.Table, employee.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, false, orgnode.HeadEmployeeTable, orgnode.HeadEmployeeColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryKpis chains the current query on the "kpis" edge.
+func (_q *OrgNodeQuery) QueryKpis() *KPIQuery {
+	query := (&KPIClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(orgnode.Table, orgnode.FieldID, selector),
+			sqlgraph.To(kpi.Table, kpi.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, orgnode.KpisTable, orgnode.KpisColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -374,6 +398,7 @@ func (_q *OrgNodeQuery) Clone() *OrgNodeQuery {
 		withChildren:     _q.withChildren.Clone(),
 		withEmployees:    _q.withEmployees.Clone(),
 		withHeadEmployee: _q.withHeadEmployee.Clone(),
+		withKpis:         _q.withKpis.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
@@ -432,6 +457,17 @@ func (_q *OrgNodeQuery) WithHeadEmployee(opts ...func(*EmployeeQuery)) *OrgNodeQ
 		opt(query)
 	}
 	_q.withHeadEmployee = query
+	return _q
+}
+
+// WithKpis tells the query-builder to eager-load the nodes that are connected to
+// the "kpis" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *OrgNodeQuery) WithKpis(opts ...func(*KPIQuery)) *OrgNodeQuery {
+	query := (&KPIClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withKpis = query
 	return _q
 }
 
@@ -513,12 +549,13 @@ func (_q *OrgNodeQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*OrgN
 	var (
 		nodes       = []*OrgNode{}
 		_spec       = _q.querySpec()
-		loadedTypes = [5]bool{
+		loadedTypes = [6]bool{
 			_q.withOrganization != nil,
 			_q.withParent != nil,
 			_q.withChildren != nil,
 			_q.withEmployees != nil,
 			_q.withHeadEmployee != nil,
+			_q.withKpis != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -568,6 +605,13 @@ func (_q *OrgNodeQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*OrgN
 	if query := _q.withHeadEmployee; query != nil {
 		if err := _q.loadHeadEmployee(ctx, query, nodes, nil,
 			func(n *OrgNode, e *Employee) { n.Edges.HeadEmployee = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withKpis; query != nil {
+		if err := _q.loadKpis(ctx, query, nodes,
+			func(n *OrgNode) { n.Edges.Kpis = []*KPI{} },
+			func(n *OrgNode, e *KPI) { n.Edges.Kpis = append(n.Edges.Kpis, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -727,6 +771,39 @@ func (_q *OrgNodeQuery) loadHeadEmployee(ctx context.Context, query *EmployeeQue
 		for i := range nodes {
 			assign(nodes[i], n)
 		}
+	}
+	return nil
+}
+func (_q *OrgNodeQuery) loadKpis(ctx context.Context, query *KPIQuery, nodes []*OrgNode, init func(*OrgNode), assign func(*OrgNode, *KPI)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*OrgNode)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(kpi.FieldOrgNodeID)
+	}
+	query.Where(predicate.KPI(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(orgnode.KpisColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.OrgNodeID
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "org_node_id" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "org_node_id" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
 	}
 	return nil
 }

@@ -247,7 +247,8 @@ paths:
   /kpis:
     get:
       operationId: listKPIs
-      summary: List all KPIs
+      summary: List KPIs
+      description: "Returns the KPIs of the caller's department plus global KPIs (org_node_id null). The department is derived from the authenticated user's org node."
       parameters:
         - $ref: '#/components/parameters/Cursor'
         - $ref: '#/components/parameters/Limit'
@@ -261,6 +262,7 @@ paths:
     post:
       operationId: createKPI
       summary: Create a KPI
+      description: "Creates a KPI. The owning department (org_node_id) is derived from the authenticated creator's org node: the node directly below the organization root, or the top-level node when it does not match the explicit org root. No org_node_id is accepted from the client; null means a global KPI."
       requestBody:
         required: true
         content:
@@ -1287,6 +1289,11 @@ components:
         direction:
           type: string
           enum: [ascendente, descendente]
+        org_node_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: "Org node (department) that owns the KPI; null means a global KPI visible across the organization."
         current_value:
           type: number
           nullable: true

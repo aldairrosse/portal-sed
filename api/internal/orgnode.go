@@ -61,9 +61,11 @@ type OrgNodeEdges struct {
 	Employees []*Employee `json:"employees,omitempty"`
 	// HeadEmployee holds the value of the head_employee edge.
 	HeadEmployee *Employee `json:"head_employee,omitempty"`
+	// Kpis holds the value of the kpis edge.
+	Kpis []*KPI `json:"kpis,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [5]bool
+	loadedTypes [6]bool
 }
 
 // OrganizationOrErr returns the Organization value or an error if the edge
@@ -115,6 +117,15 @@ func (e OrgNodeEdges) HeadEmployeeOrErr() (*Employee, error) {
 		return nil, &NotFoundError{label: employee.Label}
 	}
 	return nil, &NotLoadedError{edge: "head_employee"}
+}
+
+// KpisOrErr returns the Kpis value or an error if the edge
+// was not loaded in eager-loading.
+func (e OrgNodeEdges) KpisOrErr() ([]*KPI, error) {
+	if e.loadedTypes[5] {
+		return e.Kpis, nil
+	}
+	return nil, &NotLoadedError{edge: "kpis"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -261,6 +272,11 @@ func (_m *OrgNode) QueryEmployees() *EmployeeQuery {
 // QueryHeadEmployee queries the "head_employee" edge of the OrgNode entity.
 func (_m *OrgNode) QueryHeadEmployee() *EmployeeQuery {
 	return NewOrgNodeClient(_m.config).QueryHeadEmployee(_m)
+}
+
+// QueryKpis queries the "kpis" edge of the OrgNode entity.
+func (_m *OrgNode) QueryKpis() *KPIQuery {
+	return NewOrgNodeClient(_m.config).QueryKpis(_m)
 }
 
 // Update returns a builder for updating this OrgNode.

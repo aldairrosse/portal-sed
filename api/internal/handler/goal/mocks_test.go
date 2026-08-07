@@ -88,8 +88,8 @@ func (m *mockProgressService) UpdateGoalProgress(ctx context.Context, empID, goa
 }
 
 type mockKPIService struct {
-	listFunc        func(ctx context.Context) ([]*repogoal.KpiRow, error)
-	createFunc      func(ctx context.Context, req dtogoal.CreateKpiRequest) (*repogoal.KpiRow, error)
+	listFunc        func(ctx context.Context, employeeID uuid.UUID) ([]*repogoal.KpiRow, error)
+	createFunc      func(ctx context.Context, req dtogoal.CreateKpiRequest, employeeID uuid.UUID) (*repogoal.KpiRow, error)
 	updateFunc      func(ctx context.Context, kpiID uuid.UUID, req dtogoal.UpdateKpiRequest) (*repogoal.KpiRow, error)
 	updateValueFunc func(ctx context.Context, kpiID uuid.UUID, currentValue float64) (*repogoal.KpiRow, error)
 	deleteFunc      func(ctx context.Context, kpiID uuid.UUID) error
@@ -97,16 +97,16 @@ type mockKPIService struct {
 	unlinkFunc      func(ctx context.Context, empID, goalID, kpiID uuid.UUID) error
 }
 
-func (m *mockKPIService) ListKPIs(ctx context.Context) ([]*repogoal.KpiRow, error) {
+func (m *mockKPIService) ListKPIs(ctx context.Context, employeeID uuid.UUID) ([]*repogoal.KpiRow, error) {
 	if m.listFunc != nil {
-		return m.listFunc(ctx)
+		return m.listFunc(ctx, employeeID)
 	}
 	return nil, nil
 }
 
-func (m *mockKPIService) CreateKPI(ctx context.Context, req dtogoal.CreateKpiRequest) (*repogoal.KpiRow, error) {
+func (m *mockKPIService) CreateKPI(ctx context.Context, req dtogoal.CreateKpiRequest, employeeID uuid.UUID) (*repogoal.KpiRow, error) {
 	if m.createFunc != nil {
-		return m.createFunc(ctx, req)
+		return m.createFunc(ctx, req, employeeID)
 	}
 	return nil, nil
 }
@@ -255,9 +255,9 @@ func (m *mockGoalRepo) ListGoalsByCategory(ctx context.Context, catID uuid.UUID)
 
 type mockKpiRepo struct{}
 
-func (m *mockKpiRepo) ListKPIs(ctx context.Context) ([]*repogoal.KpiRow, error)                  { return nil, nil }
+func (m *mockKpiRepo) ListKPIs(ctx context.Context, orgNodeID *uuid.UUID) ([]*repogoal.KpiRow, error) { return nil, nil }
 func (m *mockKpiRepo) GetKPI(ctx context.Context, kpiID uuid.UUID) (*repogoal.KpiRow, error)       { return nil, nil }
-func (m *mockKpiRepo) CreateKPI(ctx context.Context, name, unit, description string, targetValue *float64) (*repogoal.KpiRow, error) {
+func (m *mockKpiRepo) CreateKPI(ctx context.Context, name, unit, description string, targetValue *float64, orgNodeID *uuid.UUID) (*repogoal.KpiRow, error) {
 	return nil, nil
 }
 func (m *mockKpiRepo) UpdateKPI(ctx context.Context, kpiID uuid.UUID, name, unit, description string, targetValue *float64) (*repogoal.KpiRow, error) {

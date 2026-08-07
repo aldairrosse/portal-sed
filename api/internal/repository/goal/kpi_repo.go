@@ -13,15 +13,16 @@ import (
 
 // KpiRow is the full representation of a KPI.
 type KpiRow struct {
-	ID           uuid.UUID `json:"id"`
-	CreatedAt    time.Time `json:"created_at"`
-	UpdatedAt    time.Time `json:"updated_at"`
-	Name         string    `json:"name"`
-	Unit         string    `json:"unit"`
-	Description  string    `json:"description"`
-	Direction    string    `json:"direction"`
-	TargetValue  *float64  `json:"target_value,omitempty"`
-	CurrentValue *float64  `json:"current_value,omitempty"`
+	ID           uuid.UUID  `json:"id"`
+	CreatedAt    time.Time  `json:"created_at"`
+	UpdatedAt    time.Time  `json:"updated_at"`
+	Name         string     `json:"name"`
+	Unit         string     `json:"unit"`
+	Description  string     `json:"description"`
+	Direction    string     `json:"direction"`
+	TargetValue  *float64   `json:"target_value,omitempty"`
+	CurrentValue *float64   `json:"current_value,omitempty"`
+	OrgNodeID    *uuid.UUID `json:"org_node_id,omitempty"`
 }
 
 // kpiToRow converts an ent KPI to a KpiRow.
@@ -39,6 +40,7 @@ func kpiToRow(k *internal.KPI) *KpiRow {
 		Direction:    string(k.Direction),
 		TargetValue:  k.TargetValue,
 		CurrentValue: k.CurrentValue,
+		OrgNodeID:    k.OrgNodeID,
 	}
 }
 
@@ -54,10 +56,16 @@ func NewKpiRepo(client *internal.Client, db *sql.DB) *KpiRepo {
 }
 
 // ListKPIs returns all KPIs with optional cursor-based pagination.
-func (r *KpiRepo) ListKPIs(ctx context.Context) ([]*KpiRow, error) {
-	kpis, err := r.client.KPI.Query().
-		Order(internal.Asc(kpi.FieldName)).
-		All(ctx)
+func (r *KpiRepo) ListKPIs(ctx context.Context, orgNodeID *uuid.UUID) ([]*KpiRow, error) {
+	query := r.client.KPI.Query().
+		Order(internal.Asc(kpi.FieldName))
+	if orgNodeID != nil {
+		query = query.Where(kpi.Or(
+			kpi.OrgNodeIDEQ(*orgNodeID),
+			kpi.OrgNodeIDIsNil(),
+		))
+	}
+	kpis, err := query.All(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -97,11 +105,12 @@ func (r *KpiRepo) UpdateKPIValue(ctx context.Context, kpiID uuid.UUID, currentVa
 }
 
 // CreateKPI inserts a new KPI.
-func (r *KpiRepo) CreateKPI(ctx context.Context, name, unit, description string, targetValue *float64) (*KpiRow, error) {
+func (r *KpiRepo) CreateKPI(ctx context.Context, name, unit, description string, targetValue *float64, orgNodeID *uuid.UUID) (*KpiRow, error) {
 	create := r.client.KPI.Create().
 		SetName(name).
 		SetUnit(kpi.Unit(unit)).
-		SetDescription(description)
+		SetDescription(description).
+		SetNillableOrgNodeID(orgNodeID)
 	if targetValue != nil {
 		create = create.SetTargetValue(*targetValue)
 	}

@@ -16,6 +16,7 @@ import (
 	"github.com/sed-evaluacion-desempeno/api/internal/employee"
 	"github.com/sed-evaluacion-desempeno/api/internal/goal"
 	"github.com/sed-evaluacion-desempeno/api/internal/goalcategory"
+	"github.com/sed-evaluacion-desempeno/api/internal/pillar"
 	"github.com/sed-evaluacion-desempeno/api/internal/predicate"
 )
 
@@ -28,6 +29,7 @@ type GoalCategoryQuery struct {
 	predicates   []predicate.GoalCategory
 	withEmployee *EmployeeQuery
 	withGoals    *GoalQuery
+	withPillar   *PillarQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -101,6 +103,28 @@ func (_q *GoalCategoryQuery) QueryGoals() *GoalQuery {
 			sqlgraph.From(goalcategory.Table, goalcategory.FieldID, selector),
 			sqlgraph.To(goal.Table, goal.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, goalcategory.GoalsTable, goalcategory.GoalsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryPillar chains the current query on the "pillar" edge.
+func (_q *GoalCategoryQuery) QueryPillar() *PillarQuery {
+	query := (&PillarClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(goalcategory.Table, goalcategory.FieldID, selector),
+			sqlgraph.To(pillar.Table, pillar.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, goalcategory.PillarTable, goalcategory.PillarColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -302,6 +326,7 @@ func (_q *GoalCategoryQuery) Clone() *GoalCategoryQuery {
 		predicates:   append([]predicate.GoalCategory{}, _q.predicates...),
 		withEmployee: _q.withEmployee.Clone(),
 		withGoals:    _q.withGoals.Clone(),
+		withPillar:   _q.withPillar.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
@@ -327,6 +352,17 @@ func (_q *GoalCategoryQuery) WithGoals(opts ...func(*GoalQuery)) *GoalCategoryQu
 		opt(query)
 	}
 	_q.withGoals = query
+	return _q
+}
+
+// WithPillar tells the query-builder to eager-load the nodes that are connected to
+// the "pillar" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *GoalCategoryQuery) WithPillar(opts ...func(*PillarQuery)) *GoalCategoryQuery {
+	query := (&PillarClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withPillar = query
 	return _q
 }
 
@@ -408,9 +444,10 @@ func (_q *GoalCategoryQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]
 	var (
 		nodes       = []*GoalCategory{}
 		_spec       = _q.querySpec()
-		loadedTypes = [2]bool{
+		loadedTypes = [3]bool{
 			_q.withEmployee != nil,
 			_q.withGoals != nil,
+			_q.withPillar != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -441,6 +478,12 @@ func (_q *GoalCategoryQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]
 		if err := _q.loadGoals(ctx, query, nodes,
 			func(n *GoalCategory) { n.Edges.Goals = []*Goal{} },
 			func(n *GoalCategory, e *Goal) { n.Edges.Goals = append(n.Edges.Goals, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withPillar; query != nil {
+		if err := _q.loadPillar(ctx, query, nodes, nil,
+			func(n *GoalCategory, e *Pillar) { n.Edges.Pillar = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -506,6 +549,38 @@ func (_q *GoalCategoryQuery) loadGoals(ctx context.Context, query *GoalQuery, no
 	}
 	return nil
 }
+func (_q *GoalCategoryQuery) loadPillar(ctx context.Context, query *PillarQuery, nodes []*GoalCategory, init func(*GoalCategory), assign func(*GoalCategory, *Pillar)) error {
+	ids := make([]uuid.UUID, 0, len(nodes))
+	nodeids := make(map[uuid.UUID][]*GoalCategory)
+	for i := range nodes {
+		if nodes[i].PillarID == nil {
+			continue
+		}
+		fk := *nodes[i].PillarID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(pillar.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "pillar_id" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
 
 func (_q *GoalCategoryQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := _q.querySpec()
@@ -534,6 +609,9 @@ func (_q *GoalCategoryQuery) querySpec() *sqlgraph.QuerySpec {
 		}
 		if _q.withEmployee != nil {
 			_spec.Node.AddColumnOnce(goalcategory.FieldEmployeeID)
+		}
+		if _q.withPillar != nil {
+			_spec.Node.AddColumnOnce(goalcategory.FieldPillarID)
 		}
 	}
 	if ps := _q.predicates; len(ps) > 0 {

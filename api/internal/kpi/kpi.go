@@ -26,6 +26,8 @@ const (
 	FieldUnit = "unit"
 	// FieldDescription holds the string denoting the description field in the database.
 	FieldDescription = "description"
+	// FieldOrgNodeID holds the string denoting the org_node_id field in the database.
+	FieldOrgNodeID = "org_node_id"
 	// FieldDirection holds the string denoting the direction field in the database.
 	FieldDirection = "direction"
 	// FieldCurrentValue holds the string denoting the current_value field in the database.
@@ -34,6 +36,8 @@ const (
 	FieldTargetValue = "target_value"
 	// EdgeGoalLinks holds the string denoting the goal_links edge name in mutations.
 	EdgeGoalLinks = "goal_links"
+	// EdgeOrgNode holds the string denoting the org_node edge name in mutations.
+	EdgeOrgNode = "org_node"
 	// Table holds the table name of the kpi in the database.
 	Table = "kp_is"
 	// GoalLinksTable is the table that holds the goal_links relation/edge.
@@ -43,6 +47,13 @@ const (
 	GoalLinksInverseTable = "goal_kpi_links"
 	// GoalLinksColumn is the table column denoting the goal_links relation/edge.
 	GoalLinksColumn = "kpi_id"
+	// OrgNodeTable is the table that holds the org_node relation/edge.
+	OrgNodeTable = "kp_is"
+	// OrgNodeInverseTable is the table name for the OrgNode entity.
+	// It exists in this package in order to avoid circular dependency with the "orgnode" package.
+	OrgNodeInverseTable = "org_nodes"
+	// OrgNodeColumn is the table column denoting the org_node relation/edge.
+	OrgNodeColumn = "org_node_id"
 )
 
 // Columns holds all SQL columns for kpi fields.
@@ -53,6 +64,7 @@ var Columns = []string{
 	FieldName,
 	FieldUnit,
 	FieldDescription,
+	FieldOrgNodeID,
 	FieldDirection,
 	FieldCurrentValue,
 	FieldTargetValue,
@@ -165,6 +177,11 @@ func ByDescription(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldDescription, opts...).ToFunc()
 }
 
+// ByOrgNodeID orders the results by the org_node_id field.
+func ByOrgNodeID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldOrgNodeID, opts...).ToFunc()
+}
+
 // ByDirection orders the results by the direction field.
 func ByDirection(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldDirection, opts...).ToFunc()
@@ -193,10 +210,24 @@ func ByGoalLinks(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newGoalLinksStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByOrgNodeField orders the results by org_node field.
+func ByOrgNodeField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newOrgNodeStep(), sql.OrderByField(field, opts...))
+	}
+}
 func newGoalLinksStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(GoalLinksInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, GoalLinksTable, GoalLinksColumn),
+	)
+}
+func newOrgNodeStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(OrgNodeInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, OrgNodeTable, OrgNodeColumn),
 	)
 }

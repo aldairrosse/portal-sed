@@ -14,6 +14,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
 	"github.com/sed-evaluacion-desempeno/api/internal/competency"
+	"github.com/sed-evaluacion-desempeno/api/internal/goalcategory"
 	"github.com/sed-evaluacion-desempeno/api/internal/pillar"
 	"github.com/sed-evaluacion-desempeno/api/internal/predicate"
 	"github.com/sed-evaluacion-desempeno/api/internal/scalecriterion"
@@ -22,12 +23,13 @@ import (
 // PillarQuery is the builder for querying Pillar entities.
 type PillarQuery struct {
 	config
-	ctx               *QueryContext
-	order             []pillar.OrderOption
-	inters            []Interceptor
-	predicates        []predicate.Pillar
-	withCompetencies  *CompetencyQuery
-	withScaleCriteria *ScaleCriterionQuery
+	ctx                *QueryContext
+	order              []pillar.OrderOption
+	inters             []Interceptor
+	predicates         []predicate.Pillar
+	withCompetencies   *CompetencyQuery
+	withScaleCriteria  *ScaleCriterionQuery
+	withGoalCategories *GoalCategoryQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -101,6 +103,28 @@ func (_q *PillarQuery) QueryScaleCriteria() *ScaleCriterionQuery {
 			sqlgraph.From(pillar.Table, pillar.FieldID, selector),
 			sqlgraph.To(scalecriterion.Table, scalecriterion.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, pillar.ScaleCriteriaTable, pillar.ScaleCriteriaColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryGoalCategories chains the current query on the "goal_categories" edge.
+func (_q *PillarQuery) QueryGoalCategories() *GoalCategoryQuery {
+	query := (&GoalCategoryClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(pillar.Table, pillar.FieldID, selector),
+			sqlgraph.To(goalcategory.Table, goalcategory.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, pillar.GoalCategoriesTable, pillar.GoalCategoriesColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -295,13 +319,14 @@ func (_q *PillarQuery) Clone() *PillarQuery {
 		return nil
 	}
 	return &PillarQuery{
-		config:            _q.config,
-		ctx:               _q.ctx.Clone(),
-		order:             append([]pillar.OrderOption{}, _q.order...),
-		inters:            append([]Interceptor{}, _q.inters...),
-		predicates:        append([]predicate.Pillar{}, _q.predicates...),
-		withCompetencies:  _q.withCompetencies.Clone(),
-		withScaleCriteria: _q.withScaleCriteria.Clone(),
+		config:             _q.config,
+		ctx:                _q.ctx.Clone(),
+		order:              append([]pillar.OrderOption{}, _q.order...),
+		inters:             append([]Interceptor{}, _q.inters...),
+		predicates:         append([]predicate.Pillar{}, _q.predicates...),
+		withCompetencies:   _q.withCompetencies.Clone(),
+		withScaleCriteria:  _q.withScaleCriteria.Clone(),
+		withGoalCategories: _q.withGoalCategories.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
@@ -327,6 +352,17 @@ func (_q *PillarQuery) WithScaleCriteria(opts ...func(*ScaleCriterionQuery)) *Pi
 		opt(query)
 	}
 	_q.withScaleCriteria = query
+	return _q
+}
+
+// WithGoalCategories tells the query-builder to eager-load the nodes that are connected to
+// the "goal_categories" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *PillarQuery) WithGoalCategories(opts ...func(*GoalCategoryQuery)) *PillarQuery {
+	query := (&GoalCategoryClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withGoalCategories = query
 	return _q
 }
 
@@ -408,9 +444,10 @@ func (_q *PillarQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Pilla
 	var (
 		nodes       = []*Pillar{}
 		_spec       = _q.querySpec()
-		loadedTypes = [2]bool{
+		loadedTypes = [3]bool{
 			_q.withCompetencies != nil,
 			_q.withScaleCriteria != nil,
+			_q.withGoalCategories != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -442,6 +479,13 @@ func (_q *PillarQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Pilla
 		if err := _q.loadScaleCriteria(ctx, query, nodes,
 			func(n *Pillar) { n.Edges.ScaleCriteria = []*ScaleCriterion{} },
 			func(n *Pillar, e *ScaleCriterion) { n.Edges.ScaleCriteria = append(n.Edges.ScaleCriteria, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withGoalCategories; query != nil {
+		if err := _q.loadGoalCategories(ctx, query, nodes,
+			func(n *Pillar) { n.Edges.GoalCategories = []*GoalCategory{} },
+			func(n *Pillar, e *GoalCategory) { n.Edges.GoalCategories = append(n.Edges.GoalCategories, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -503,6 +547,39 @@ func (_q *PillarQuery) loadScaleCriteria(ctx context.Context, query *ScaleCriter
 		node, ok := nodeids[fk]
 		if !ok {
 			return fmt.Errorf(`unexpected referenced foreign-key "pillar_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *PillarQuery) loadGoalCategories(ctx context.Context, query *GoalCategoryQuery, nodes []*Pillar, init func(*Pillar), assign func(*Pillar, *GoalCategory)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*Pillar)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(goalcategory.FieldPillarID)
+	}
+	query.Where(predicate.GoalCategory(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(pillar.GoalCategoriesColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.PillarID
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "pillar_id" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "pillar_id" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}

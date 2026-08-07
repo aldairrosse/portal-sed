@@ -42,9 +42,11 @@ type PillarEdges struct {
 	Competencies []*Competency `json:"competencies,omitempty"`
 	// ScaleCriteria holds the value of the scale_criteria edge.
 	ScaleCriteria []*ScaleCriterion `json:"scale_criteria,omitempty"`
+	// GoalCategories holds the value of the goal_categories edge.
+	GoalCategories []*GoalCategory `json:"goal_categories,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
+	loadedTypes [3]bool
 }
 
 // CompetenciesOrErr returns the Competencies value or an error if the edge
@@ -63,6 +65,15 @@ func (e PillarEdges) ScaleCriteriaOrErr() ([]*ScaleCriterion, error) {
 		return e.ScaleCriteria, nil
 	}
 	return nil, &NotLoadedError{edge: "scale_criteria"}
+}
+
+// GoalCategoriesOrErr returns the GoalCategories value or an error if the edge
+// was not loaded in eager-loading.
+func (e PillarEdges) GoalCategoriesOrErr() ([]*GoalCategory, error) {
+	if e.loadedTypes[2] {
+		return e.GoalCategories, nil
+	}
+	return nil, &NotLoadedError{edge: "goal_categories"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -156,6 +167,11 @@ func (_m *Pillar) QueryCompetencies() *CompetencyQuery {
 // QueryScaleCriteria queries the "scale_criteria" edge of the Pillar entity.
 func (_m *Pillar) QueryScaleCriteria() *ScaleCriterionQuery {
 	return NewPillarClient(_m.config).QueryScaleCriteria(_m)
+}
+
+// QueryGoalCategories queries the "goal_categories" edge of the Pillar entity.
+func (_m *Pillar) QueryGoalCategories() *GoalCategoryQuery {
+	return NewPillarClient(_m.config).QueryGoalCategories(_m)
 }
 
 // Update returns a builder for updating this Pillar.

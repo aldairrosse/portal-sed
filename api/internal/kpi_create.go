@@ -13,6 +13,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/sed-evaluacion-desempeno/api/internal/goalkpilink"
 	"github.com/sed-evaluacion-desempeno/api/internal/kpi"
+	"github.com/sed-evaluacion-desempeno/api/internal/orgnode"
 )
 
 // KPICreate is the builder for creating a KPI entity.
@@ -72,6 +73,20 @@ func (_c *KPICreate) SetDescription(v string) *KPICreate {
 func (_c *KPICreate) SetNillableDescription(v *string) *KPICreate {
 	if v != nil {
 		_c.SetDescription(*v)
+	}
+	return _c
+}
+
+// SetOrgNodeID sets the "org_node_id" field.
+func (_c *KPICreate) SetOrgNodeID(v uuid.UUID) *KPICreate {
+	_c.mutation.SetOrgNodeID(v)
+	return _c
+}
+
+// SetNillableOrgNodeID sets the "org_node_id" field if the given value is not nil.
+func (_c *KPICreate) SetNillableOrgNodeID(v *uuid.UUID) *KPICreate {
+	if v != nil {
+		_c.SetOrgNodeID(*v)
 	}
 	return _c
 }
@@ -145,6 +160,11 @@ func (_c *KPICreate) AddGoalLinks(v ...*GoalKpiLink) *KPICreate {
 		ids[i] = v[i].ID
 	}
 	return _c.AddGoalLinkIDs(ids...)
+}
+
+// SetOrgNode sets the "org_node" edge to the OrgNode entity.
+func (_c *KPICreate) SetOrgNode(v *OrgNode) *KPICreate {
+	return _c.SetOrgNodeID(v.ID)
 }
 
 // Mutation returns the KPIMutation object of the builder.
@@ -313,6 +333,23 @@ func (_c *KPICreate) createSpec() (*KPI, *sqlgraph.CreateSpec) {
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.OrgNodeIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   kpi.OrgNodeTable,
+			Columns: []string{kpi.OrgNodeColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(orgnode.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.OrgNodeID = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
 	"github.com/sed-evaluacion-desempeno/api/internal/employee"
+	"github.com/sed-evaluacion-desempeno/api/internal/kpi"
 	"github.com/sed-evaluacion-desempeno/api/internal/organization"
 	"github.com/sed-evaluacion-desempeno/api/internal/orgnode"
 	"github.com/sed-evaluacion-desempeno/api/internal/predicate"
@@ -231,6 +232,21 @@ func (_u *OrgNodeUpdate) SetHeadEmployee(v *Employee) *OrgNodeUpdate {
 	return _u.SetHeadEmployeeID(v.ID)
 }
 
+// AddKpiIDs adds the "kpis" edge to the KPI entity by IDs.
+func (_u *OrgNodeUpdate) AddKpiIDs(ids ...uuid.UUID) *OrgNodeUpdate {
+	_u.mutation.AddKpiIDs(ids...)
+	return _u
+}
+
+// AddKpis adds the "kpis" edges to the KPI entity.
+func (_u *OrgNodeUpdate) AddKpis(v ...*KPI) *OrgNodeUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddKpiIDs(ids...)
+}
+
 // Mutation returns the OrgNodeMutation object of the builder.
 func (_u *OrgNodeUpdate) Mutation() *OrgNodeMutation {
 	return _u.mutation
@@ -294,6 +310,27 @@ func (_u *OrgNodeUpdate) RemoveEmployees(v ...*Employee) *OrgNodeUpdate {
 func (_u *OrgNodeUpdate) ClearHeadEmployee() *OrgNodeUpdate {
 	_u.mutation.ClearHeadEmployee()
 	return _u
+}
+
+// ClearKpis clears all "kpis" edges to the KPI entity.
+func (_u *OrgNodeUpdate) ClearKpis() *OrgNodeUpdate {
+	_u.mutation.ClearKpis()
+	return _u
+}
+
+// RemoveKpiIDs removes the "kpis" edge to KPI entities by IDs.
+func (_u *OrgNodeUpdate) RemoveKpiIDs(ids ...uuid.UUID) *OrgNodeUpdate {
+	_u.mutation.RemoveKpiIDs(ids...)
+	return _u
+}
+
+// RemoveKpis removes "kpis" edges to KPI entities.
+func (_u *OrgNodeUpdate) RemoveKpis(v ...*KPI) *OrgNodeUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveKpiIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -579,6 +616,51 @@ func (_u *OrgNodeUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if _u.mutation.KpisCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   orgnode.KpisTable,
+			Columns: []string{orgnode.KpisColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(kpi.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedKpisIDs(); len(nodes) > 0 && !_u.mutation.KpisCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   orgnode.KpisTable,
+			Columns: []string{orgnode.KpisColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(kpi.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.KpisIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   orgnode.KpisTable,
+			Columns: []string{orgnode.KpisColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(kpi.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{orgnode.Label}
@@ -799,6 +881,21 @@ func (_u *OrgNodeUpdateOne) SetHeadEmployee(v *Employee) *OrgNodeUpdateOne {
 	return _u.SetHeadEmployeeID(v.ID)
 }
 
+// AddKpiIDs adds the "kpis" edge to the KPI entity by IDs.
+func (_u *OrgNodeUpdateOne) AddKpiIDs(ids ...uuid.UUID) *OrgNodeUpdateOne {
+	_u.mutation.AddKpiIDs(ids...)
+	return _u
+}
+
+// AddKpis adds the "kpis" edges to the KPI entity.
+func (_u *OrgNodeUpdateOne) AddKpis(v ...*KPI) *OrgNodeUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddKpiIDs(ids...)
+}
+
 // Mutation returns the OrgNodeMutation object of the builder.
 func (_u *OrgNodeUpdateOne) Mutation() *OrgNodeMutation {
 	return _u.mutation
@@ -862,6 +959,27 @@ func (_u *OrgNodeUpdateOne) RemoveEmployees(v ...*Employee) *OrgNodeUpdateOne {
 func (_u *OrgNodeUpdateOne) ClearHeadEmployee() *OrgNodeUpdateOne {
 	_u.mutation.ClearHeadEmployee()
 	return _u
+}
+
+// ClearKpis clears all "kpis" edges to the KPI entity.
+func (_u *OrgNodeUpdateOne) ClearKpis() *OrgNodeUpdateOne {
+	_u.mutation.ClearKpis()
+	return _u
+}
+
+// RemoveKpiIDs removes the "kpis" edge to KPI entities by IDs.
+func (_u *OrgNodeUpdateOne) RemoveKpiIDs(ids ...uuid.UUID) *OrgNodeUpdateOne {
+	_u.mutation.RemoveKpiIDs(ids...)
+	return _u
+}
+
+// RemoveKpis removes "kpis" edges to KPI entities.
+func (_u *OrgNodeUpdateOne) RemoveKpis(v ...*KPI) *OrgNodeUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveKpiIDs(ids...)
 }
 
 // Where appends a list predicates to the OrgNodeUpdate builder.
@@ -1170,6 +1288,51 @@ func (_u *OrgNodeUpdateOne) sqlSave(ctx context.Context) (_node *OrgNode, err er
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(employee.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.KpisCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   orgnode.KpisTable,
+			Columns: []string{orgnode.KpisColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(kpi.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedKpisIDs(); len(nodes) > 0 && !_u.mutation.KpisCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   orgnode.KpisTable,
+			Columns: []string{orgnode.KpisColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(kpi.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.KpisIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   orgnode.KpisTable,
+			Columns: []string{orgnode.KpisColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(kpi.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

@@ -2872,6 +2872,22 @@ func (c *GoalCategoryClient) QueryGoals(_m *GoalCategory) *GoalQuery {
 	return query
 }
 
+// QueryPillar queries the pillar edge of a GoalCategory.
+func (c *GoalCategoryClient) QueryPillar(_m *GoalCategory) *PillarQuery {
+	query := (&PillarClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(goalcategory.Table, goalcategory.FieldID, id),
+			sqlgraph.To(pillar.Table, pillar.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, goalcategory.PillarTable, goalcategory.PillarColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *GoalCategoryClient) Hooks() []Hook {
 	return c.hooks.GoalCategory
@@ -3179,6 +3195,22 @@ func (c *KPIClient) QueryGoalLinks(_m *KPI) *GoalKpiLinkQuery {
 			sqlgraph.From(kpi.Table, kpi.FieldID, id),
 			sqlgraph.To(goalkpilink.Table, goalkpilink.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, kpi.GoalLinksTable, kpi.GoalLinksColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryOrgNode queries the org_node edge of a KPI.
+func (c *KPIClient) QueryOrgNode(_m *KPI) *OrgNodeQuery {
+	query := (&OrgNodeClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(kpi.Table, kpi.FieldID, id),
+			sqlgraph.To(orgnode.Table, orgnode.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, kpi.OrgNodeTable, kpi.OrgNodeColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
@@ -4160,6 +4192,22 @@ func (c *OrgNodeClient) QueryHeadEmployee(_m *OrgNode) *EmployeeQuery {
 	return query
 }
 
+// QueryKpis queries the kpis edge of a OrgNode.
+func (c *OrgNodeClient) QueryKpis(_m *OrgNode) *KPIQuery {
+	query := (&KPIClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(orgnode.Table, orgnode.FieldID, id),
+			sqlgraph.To(kpi.Table, kpi.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, orgnode.KpisTable, orgnode.KpisColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *OrgNodeClient) Hooks() []Hook {
 	return c.hooks.OrgNode
@@ -4861,6 +4909,22 @@ func (c *PillarClient) QueryScaleCriteria(_m *Pillar) *ScaleCriterionQuery {
 			sqlgraph.From(pillar.Table, pillar.FieldID, id),
 			sqlgraph.To(scalecriterion.Table, scalecriterion.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, pillar.ScaleCriteriaTable, pillar.ScaleCriteriaColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryGoalCategories queries the goal_categories edge of a Pillar.
+func (c *PillarClient) QueryGoalCategories(_m *Pillar) *GoalCategoryQuery {
+	query := (&GoalCategoryClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(pillar.Table, pillar.FieldID, id),
+			sqlgraph.To(goalcategory.Table, goalcategory.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, pillar.GoalCategoriesTable, pillar.GoalCategoriesColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil

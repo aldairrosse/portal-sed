@@ -15,6 +15,7 @@ import (
 	"github.com/sed-evaluacion-desempeno/api/internal/employee"
 	"github.com/sed-evaluacion-desempeno/api/internal/goal"
 	"github.com/sed-evaluacion-desempeno/api/internal/goalcategory"
+	"github.com/sed-evaluacion-desempeno/api/internal/pillar"
 	"github.com/sed-evaluacion-desempeno/api/internal/predicate"
 )
 
@@ -134,6 +135,26 @@ func (_u *GoalCategoryUpdate) SetNillableEmployeeID(v *uuid.UUID) *GoalCategoryU
 	return _u
 }
 
+// SetPillarID sets the "pillar_id" field.
+func (_u *GoalCategoryUpdate) SetPillarID(v uuid.UUID) *GoalCategoryUpdate {
+	_u.mutation.SetPillarID(v)
+	return _u
+}
+
+// SetNillablePillarID sets the "pillar_id" field if the given value is not nil.
+func (_u *GoalCategoryUpdate) SetNillablePillarID(v *uuid.UUID) *GoalCategoryUpdate {
+	if v != nil {
+		_u.SetPillarID(*v)
+	}
+	return _u
+}
+
+// ClearPillarID clears the value of the "pillar_id" field.
+func (_u *GoalCategoryUpdate) ClearPillarID() *GoalCategoryUpdate {
+	_u.mutation.ClearPillarID()
+	return _u
+}
+
 // SetEmployee sets the "employee" edge to the Employee entity.
 func (_u *GoalCategoryUpdate) SetEmployee(v *Employee) *GoalCategoryUpdate {
 	return _u.SetEmployeeID(v.ID)
@@ -152,6 +173,11 @@ func (_u *GoalCategoryUpdate) AddGoals(v ...*Goal) *GoalCategoryUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.AddGoalIDs(ids...)
+}
+
+// SetPillar sets the "pillar" edge to the Pillar entity.
+func (_u *GoalCategoryUpdate) SetPillar(v *Pillar) *GoalCategoryUpdate {
+	return _u.SetPillarID(v.ID)
 }
 
 // Mutation returns the GoalCategoryMutation object of the builder.
@@ -184,6 +210,12 @@ func (_u *GoalCategoryUpdate) RemoveGoals(v ...*Goal) *GoalCategoryUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveGoalIDs(ids...)
+}
+
+// ClearPillar clears the "pillar" edge to the Pillar entity.
+func (_u *GoalCategoryUpdate) ClearPillar() *GoalCategoryUpdate {
+	_u.mutation.ClearPillar()
+	return _u
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -350,6 +382,35 @@ func (_u *GoalCategoryUpdate) sqlSave(ctx context.Context) (_node int, err error
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if _u.mutation.PillarCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   goalcategory.PillarTable,
+			Columns: []string{goalcategory.PillarColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(pillar.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.PillarIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   goalcategory.PillarTable,
+			Columns: []string{goalcategory.PillarColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(pillar.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{goalcategory.Label}
@@ -473,6 +534,26 @@ func (_u *GoalCategoryUpdateOne) SetNillableEmployeeID(v *uuid.UUID) *GoalCatego
 	return _u
 }
 
+// SetPillarID sets the "pillar_id" field.
+func (_u *GoalCategoryUpdateOne) SetPillarID(v uuid.UUID) *GoalCategoryUpdateOne {
+	_u.mutation.SetPillarID(v)
+	return _u
+}
+
+// SetNillablePillarID sets the "pillar_id" field if the given value is not nil.
+func (_u *GoalCategoryUpdateOne) SetNillablePillarID(v *uuid.UUID) *GoalCategoryUpdateOne {
+	if v != nil {
+		_u.SetPillarID(*v)
+	}
+	return _u
+}
+
+// ClearPillarID clears the value of the "pillar_id" field.
+func (_u *GoalCategoryUpdateOne) ClearPillarID() *GoalCategoryUpdateOne {
+	_u.mutation.ClearPillarID()
+	return _u
+}
+
 // SetEmployee sets the "employee" edge to the Employee entity.
 func (_u *GoalCategoryUpdateOne) SetEmployee(v *Employee) *GoalCategoryUpdateOne {
 	return _u.SetEmployeeID(v.ID)
@@ -491,6 +572,11 @@ func (_u *GoalCategoryUpdateOne) AddGoals(v ...*Goal) *GoalCategoryUpdateOne {
 		ids[i] = v[i].ID
 	}
 	return _u.AddGoalIDs(ids...)
+}
+
+// SetPillar sets the "pillar" edge to the Pillar entity.
+func (_u *GoalCategoryUpdateOne) SetPillar(v *Pillar) *GoalCategoryUpdateOne {
+	return _u.SetPillarID(v.ID)
 }
 
 // Mutation returns the GoalCategoryMutation object of the builder.
@@ -523,6 +609,12 @@ func (_u *GoalCategoryUpdateOne) RemoveGoals(v ...*Goal) *GoalCategoryUpdateOne 
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveGoalIDs(ids...)
+}
+
+// ClearPillar clears the "pillar" edge to the Pillar entity.
+func (_u *GoalCategoryUpdateOne) ClearPillar() *GoalCategoryUpdateOne {
+	_u.mutation.ClearPillar()
+	return _u
 }
 
 // Where appends a list predicates to the GoalCategoryUpdate builder.
@@ -712,6 +804,35 @@ func (_u *GoalCategoryUpdateOne) sqlSave(ctx context.Context) (_node *GoalCatego
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(goal.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.PillarCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   goalcategory.PillarTable,
+			Columns: []string{goalcategory.PillarColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(pillar.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.PillarIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   goalcategory.PillarTable,
+			Columns: []string{goalcategory.PillarColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(pillar.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

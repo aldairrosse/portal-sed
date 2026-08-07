@@ -36,9 +36,9 @@ type GoalRepository interface {
 
 // KPIRepository defines the storage contract for KPIs.
 type KPIRepository interface {
-	ListKPIs(ctx context.Context) ([]*repogoal.KpiRow, error)
+	ListKPIs(ctx context.Context, orgNodeID *uuid.UUID) ([]*repogoal.KpiRow, error)
 	GetKPI(ctx context.Context, kpiID uuid.UUID) (*repogoal.KpiRow, error)
-	CreateKPI(ctx context.Context, name, unit, description string, targetValue *float64) (*repogoal.KpiRow, error)
+	CreateKPI(ctx context.Context, name, unit, description string, targetValue *float64, orgNodeID *uuid.UUID) (*repogoal.KpiRow, error)
 	UpdateKPI(ctx context.Context, kpiID uuid.UUID, name, unit, description string, targetValue *float64) (*repogoal.KpiRow, error)
 	UpdateKPIValue(ctx context.Context, kpiID uuid.UUID, currentValue float64) (*repogoal.KpiRow, error)
 	DeleteKPI(ctx context.Context, kpiID uuid.UUID) error
@@ -93,8 +93,8 @@ type ProgressServicer interface {
 
 // KpiServicer handles KPI business logic.
 type KpiServicer interface {
-	ListKPIs(ctx context.Context) ([]*repogoal.KpiRow, error)
-	CreateKPI(ctx context.Context, req dtogoal.CreateKpiRequest) (*repogoal.KpiRow, error)
+	ListKPIs(ctx context.Context, employeeID uuid.UUID) ([]*repogoal.KpiRow, error)
+	CreateKPI(ctx context.Context, req dtogoal.CreateKpiRequest, employeeID uuid.UUID) (*repogoal.KpiRow, error)
 	UpdateKPI(ctx context.Context, kpiID uuid.UUID, req dtogoal.UpdateKpiRequest) (*repogoal.KpiRow, error)
 	UpdateKPIValue(ctx context.Context, kpiID uuid.UUID, currentValue float64) (*repogoal.KpiRow, error)
 	DeleteKPI(ctx context.Context, kpiID uuid.UUID) error

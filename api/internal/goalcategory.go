@@ -12,6 +12,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/sed-evaluacion-desempeno/api/internal/employee"
 	"github.com/sed-evaluacion-desempeno/api/internal/goalcategory"
+	"github.com/sed-evaluacion-desempeno/api/internal/pillar"
 )
 
 // GoalCategory is the model entity for the GoalCategory schema.
@@ -35,6 +36,8 @@ type GoalCategory struct {
 	Weight float64 `json:"weight,omitempty"`
 	// EmployeeID holds the value of the "employee_id" field.
 	EmployeeID uuid.UUID `json:"employee_id,omitempty"`
+	// PillarID holds the value of the "pillar_id" field.
+	PillarID *uuid.UUID `json:"pillar_id,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the GoalCategoryQuery when eager-loading is set.
 	Edges        GoalCategoryEdges `json:"edges"`
@@ -47,9 +50,11 @@ type GoalCategoryEdges struct {
 	Employee *Employee `json:"employee,omitempty"`
 	// Goals holds the value of the goals edge.
 	Goals []*Goal `json:"goals,omitempty"`
+	// Pillar holds the value of the pillar edge.
+	Pillar *Pillar `json:"pillar,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
+	loadedTypes [3]bool
 }
 
 // EmployeeOrErr returns the Employee value or an error if the edge
@@ -72,11 +77,24 @@ func (e GoalCategoryEdges) GoalsOrErr() ([]*Goal, error) {
 	return nil, &NotLoadedError{edge: "goals"}
 }
 
+// PillarOrErr returns the Pillar value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e GoalCategoryEdges) PillarOrErr() (*Pillar, error) {
+	if e.Pillar != nil {
+		return e.Pillar, nil
+	} else if e.loadedTypes[2] {
+		return nil, &NotFoundError{label: pillar.Label}
+	}
+	return nil, &NotLoadedError{edge: "pillar"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*GoalCategory) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case goalcategory.FieldPillarID:
+			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		case goalcategory.FieldWeight:
 			values[i] = new(sql.NullFloat64)
 		case goalcategory.FieldName, goalcategory.FieldDescription:
@@ -154,6 +172,13 @@ func (_m *GoalCategory) assignValues(columns []string, values []any) error {
 			} else if value != nil {
 				_m.EmployeeID = *value
 			}
+		case goalcategory.FieldPillarID:
+			if value, ok := values[i].(*sql.NullScanner); !ok {
+				return fmt.Errorf("unexpected type %T for field pillar_id", values[i])
+			} else if value.Valid {
+				_m.PillarID = new(uuid.UUID)
+				*_m.PillarID = *value.S.(*uuid.UUID)
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -175,6 +200,11 @@ func (_m *GoalCategory) QueryEmployee() *EmployeeQuery {
 // QueryGoals queries the "goals" edge of the GoalCategory entity.
 func (_m *GoalCategory) QueryGoals() *GoalQuery {
 	return NewGoalCategoryClient(_m.config).QueryGoals(_m)
+}
+
+// QueryPillar queries the "pillar" edge of the GoalCategory entity.
+func (_m *GoalCategory) QueryPillar() *PillarQuery {
+	return NewGoalCategoryClient(_m.config).QueryPillar(_m)
 }
 
 // Update returns a builder for updating this GoalCategory.
@@ -223,6 +253,11 @@ func (_m *GoalCategory) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("employee_id=")
 	builder.WriteString(fmt.Sprintf("%v", _m.EmployeeID))
+	builder.WriteString(", ")
+	if v := _m.PillarID; v != nil {
+		builder.WriteString("pillar_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
 	builder.WriteByte(')')
 	return builder.String()
 }

@@ -36,6 +36,10 @@ func (KPI) Fields() []ent.Field {
 			}),
 		field.Text("description").
 			Optional(),
+		field.UUID("org_node_id", uuid.UUID{}).
+			Optional().
+			Nillable().
+			StorageKey("org_node_id"),
 		field.Enum("direction").
 			Values("ascendente", "descendente").
 			Default("ascendente"),
@@ -54,6 +58,10 @@ func (KPI) Edges() []ent.Edge {
 			Annotations(entsql.Annotation{
 				OnDelete: entsql.Cascade,
 			}),
+		edge.From("org_node", OrgNode.Type).
+			Ref("kpis").
+			Unique().
+			Field("org_node_id"),
 	}
 }
 

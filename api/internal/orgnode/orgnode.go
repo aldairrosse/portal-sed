@@ -48,6 +48,8 @@ const (
 	EdgeEmployees = "employees"
 	// EdgeHeadEmployee holds the string denoting the head_employee edge name in mutations.
 	EdgeHeadEmployee = "head_employee"
+	// EdgeKpis holds the string denoting the kpis edge name in mutations.
+	EdgeKpis = "kpis"
 	// Table holds the table name of the orgnode in the database.
 	Table = "org_nodes"
 	// OrganizationTable is the table that holds the organization relation/edge.
@@ -79,6 +81,13 @@ const (
 	HeadEmployeeInverseTable = "employees"
 	// HeadEmployeeColumn is the table column denoting the head_employee relation/edge.
 	HeadEmployeeColumn = "head_employee_id"
+	// KpisTable is the table that holds the kpis relation/edge.
+	KpisTable = "kp_is"
+	// KpisInverseTable is the table name for the KPI entity.
+	// It exists in this package in order to avoid circular dependency with the "kpi" package.
+	KpisInverseTable = "kp_is"
+	// KpisColumn is the table column denoting the kpis relation/edge.
+	KpisColumn = "org_node_id"
 )
 
 // Columns holds all SQL columns for orgnode fields.
@@ -255,6 +264,20 @@ func ByHeadEmployeeField(field string, opts ...sql.OrderTermOption) OrderOption 
 		sqlgraph.OrderByNeighborTerms(s, newHeadEmployeeStep(), sql.OrderByField(field, opts...))
 	}
 }
+
+// ByKpisCount orders the results by kpis count.
+func ByKpisCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newKpisStep(), opts...)
+	}
+}
+
+// ByKpis orders the results by kpis terms.
+func ByKpis(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newKpisStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newOrganizationStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -288,5 +311,12 @@ func newHeadEmployeeStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(HeadEmployeeInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2O, false, HeadEmployeeTable, HeadEmployeeColumn),
+	)
+}
+func newKpisStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(KpisInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, KpisTable, KpisColumn),
 	)
 }

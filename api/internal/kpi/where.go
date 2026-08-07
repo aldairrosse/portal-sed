@@ -76,6 +76,11 @@ func Description(v string) predicate.KPI {
 	return predicate.KPI(sql.FieldEQ(FieldDescription, v))
 }
 
+// OrgNodeID applies equality check predicate on the "org_node_id" field. It's identical to OrgNodeIDEQ.
+func OrgNodeID(v uuid.UUID) predicate.KPI {
+	return predicate.KPI(sql.FieldEQ(FieldOrgNodeID, v))
+}
+
 // CurrentValue applies equality check predicate on the "current_value" field. It's identical to CurrentValueEQ.
 func CurrentValue(v float64) predicate.KPI {
 	return predicate.KPI(sql.FieldEQ(FieldCurrentValue, v))
@@ -326,6 +331,36 @@ func DescriptionContainsFold(v string) predicate.KPI {
 	return predicate.KPI(sql.FieldContainsFold(FieldDescription, v))
 }
 
+// OrgNodeIDEQ applies the EQ predicate on the "org_node_id" field.
+func OrgNodeIDEQ(v uuid.UUID) predicate.KPI {
+	return predicate.KPI(sql.FieldEQ(FieldOrgNodeID, v))
+}
+
+// OrgNodeIDNEQ applies the NEQ predicate on the "org_node_id" field.
+func OrgNodeIDNEQ(v uuid.UUID) predicate.KPI {
+	return predicate.KPI(sql.FieldNEQ(FieldOrgNodeID, v))
+}
+
+// OrgNodeIDIn applies the In predicate on the "org_node_id" field.
+func OrgNodeIDIn(vs ...uuid.UUID) predicate.KPI {
+	return predicate.KPI(sql.FieldIn(FieldOrgNodeID, vs...))
+}
+
+// OrgNodeIDNotIn applies the NotIn predicate on the "org_node_id" field.
+func OrgNodeIDNotIn(vs ...uuid.UUID) predicate.KPI {
+	return predicate.KPI(sql.FieldNotIn(FieldOrgNodeID, vs...))
+}
+
+// OrgNodeIDIsNil applies the IsNil predicate on the "org_node_id" field.
+func OrgNodeIDIsNil() predicate.KPI {
+	return predicate.KPI(sql.FieldIsNull(FieldOrgNodeID))
+}
+
+// OrgNodeIDNotNil applies the NotNil predicate on the "org_node_id" field.
+func OrgNodeIDNotNil() predicate.KPI {
+	return predicate.KPI(sql.FieldNotNull(FieldOrgNodeID))
+}
+
 // DirectionEQ applies the EQ predicate on the "direction" field.
 func DirectionEQ(v Direction) predicate.KPI {
 	return predicate.KPI(sql.FieldEQ(FieldDirection, v))
@@ -461,6 +496,29 @@ func HasGoalLinks() predicate.KPI {
 func HasGoalLinksWith(preds ...predicate.GoalKpiLink) predicate.KPI {
 	return predicate.KPI(func(s *sql.Selector) {
 		step := newGoalLinksStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasOrgNode applies the HasEdge predicate on the "org_node" edge.
+func HasOrgNode() predicate.KPI {
+	return predicate.KPI(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, OrgNodeTable, OrgNodeColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasOrgNodeWith applies the HasEdge predicate on the "org_node" edge with a given conditions (other predicates).
+func HasOrgNodeWith(preds ...predicate.OrgNode) predicate.KPI {
+	return predicate.KPI(func(s *sql.Selector) {
+		step := newOrgNodeStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

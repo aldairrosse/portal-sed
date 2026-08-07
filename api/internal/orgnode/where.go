@@ -651,6 +651,29 @@ func HasHeadEmployeeWith(preds ...predicate.Employee) predicate.OrgNode {
 	})
 }
 
+// HasKpis applies the HasEdge predicate on the "kpis" edge.
+func HasKpis() predicate.OrgNode {
+	return predicate.OrgNode(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, KpisTable, KpisColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasKpisWith applies the HasEdge predicate on the "kpis" edge with a given conditions (other predicates).
+func HasKpisWith(preds ...predicate.KPI) predicate.OrgNode {
+	return predicate.OrgNode(func(s *sql.Selector) {
+		step := newKpisStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.OrgNode) predicate.OrgNode {
 	return predicate.OrgNode(sql.AndPredicates(predicates...))

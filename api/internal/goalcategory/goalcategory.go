@@ -31,10 +31,14 @@ const (
 	FieldWeight = "weight"
 	// FieldEmployeeID holds the string denoting the employee_id field in the database.
 	FieldEmployeeID = "employee_id"
+	// FieldPillarID holds the string denoting the pillar_id field in the database.
+	FieldPillarID = "pillar_id"
 	// EdgeEmployee holds the string denoting the employee edge name in mutations.
 	EdgeEmployee = "employee"
 	// EdgeGoals holds the string denoting the goals edge name in mutations.
 	EdgeGoals = "goals"
+	// EdgePillar holds the string denoting the pillar edge name in mutations.
+	EdgePillar = "pillar"
 	// Table holds the table name of the goalcategory in the database.
 	Table = "goal_categories"
 	// EmployeeTable is the table that holds the employee relation/edge.
@@ -51,6 +55,13 @@ const (
 	GoalsInverseTable = "goals"
 	// GoalsColumn is the table column denoting the goals relation/edge.
 	GoalsColumn = "category_id"
+	// PillarTable is the table that holds the pillar relation/edge.
+	PillarTable = "goal_categories"
+	// PillarInverseTable is the table name for the Pillar entity.
+	// It exists in this package in order to avoid circular dependency with the "pillar" package.
+	PillarInverseTable = "pillars"
+	// PillarColumn is the table column denoting the pillar relation/edge.
+	PillarColumn = "pillar_id"
 )
 
 // Columns holds all SQL columns for goalcategory fields.
@@ -64,6 +75,7 @@ var Columns = []string{
 	FieldDescription,
 	FieldWeight,
 	FieldEmployeeID,
+	FieldPillarID,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -139,6 +151,11 @@ func ByEmployeeID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldEmployeeID, opts...).ToFunc()
 }
 
+// ByPillarID orders the results by the pillar_id field.
+func ByPillarID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPillarID, opts...).ToFunc()
+}
+
 // ByEmployeeField orders the results by employee field.
 func ByEmployeeField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -159,6 +176,13 @@ func ByGoals(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newGoalsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByPillarField orders the results by pillar field.
+func ByPillarField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newPillarStep(), sql.OrderByField(field, opts...))
+	}
+}
 func newEmployeeStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -171,5 +195,12 @@ func newGoalsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(GoalsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, GoalsTable, GoalsColumn),
+	)
+}
+func newPillarStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(PillarInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, PillarTable, PillarColumn),
 	)
 }

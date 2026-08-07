@@ -379,6 +379,7 @@ var (
 		{Name: "description", Type: field.TypeString, Nullable: true, Size: 2147483647},
 		{Name: "weight", Type: field.TypeFloat64},
 		{Name: "employee_id", Type: field.TypeUUID},
+		{Name: "pillar_id", Type: field.TypeUUID, Nullable: true},
 	}
 	// GoalCategoriesTable holds the schema information for the "goal_categories" table.
 	GoalCategoriesTable = &schema.Table{
@@ -391,6 +392,12 @@ var (
 				Columns:    []*schema.Column{GoalCategoriesColumns[8]},
 				RefColumns: []*schema.Column{EmployeesColumns[0]},
 				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "goal_categories_pillars_goal_categories",
+				Columns:    []*schema.Column{GoalCategoriesColumns[9]},
+				RefColumns: []*schema.Column{PillarsColumns[0]},
+				OnDelete:   schema.SetNull,
 			},
 		},
 	}
@@ -432,12 +439,21 @@ var (
 		{Name: "direction", Type: field.TypeEnum, Enums: []string{"ascendente", "descendente"}, Default: "ascendente"},
 		{Name: "current_value", Type: field.TypeFloat64, Nullable: true},
 		{Name: "target_value", Type: field.TypeFloat64, Nullable: true},
+		{Name: "org_node_id", Type: field.TypeUUID, Nullable: true},
 	}
 	// KpIsTable holds the schema information for the "kp_is" table.
 	KpIsTable = &schema.Table{
 		Name:       "kp_is",
 		Columns:    KpIsColumns,
 		PrimaryKey: []*schema.Column{KpIsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "kp_is_org_nodes_kpis",
+				Columns:    []*schema.Column{KpIsColumns[9]},
+				RefColumns: []*schema.Column{OrgNodesColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
 	}
 	// LevelDefinitionsColumns holds the columns for the "level_definitions" table.
 	LevelDefinitionsColumns = []*schema.Column{
@@ -777,8 +793,10 @@ func init() {
 	GoalAssignmentsTable.ForeignKeys[0].RefTable = CyclesTable
 	GoalAssignmentsTable.ForeignKeys[1].RefTable = EmployeesTable
 	GoalCategoriesTable.ForeignKeys[0].RefTable = EmployeesTable
+	GoalCategoriesTable.ForeignKeys[1].RefTable = PillarsTable
 	GoalKpiLinksTable.ForeignKeys[0].RefTable = GoalsTable
 	GoalKpiLinksTable.ForeignKeys[1].RefTable = KpIsTable
+	KpIsTable.ForeignKeys[0].RefTable = OrgNodesTable
 	NineBoxEntriesTable.ForeignKeys[0].RefTable = EmployeesTable
 	NineBoxEntriesTable.ForeignKeys[1].RefTable = NineBoxMatrixesTable
 	NineBoxMatrixesTable.ForeignKeys[0].RefTable = CyclesTable

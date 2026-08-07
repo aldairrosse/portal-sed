@@ -15,6 +15,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/sed-evaluacion-desempeno/api/internal/goalkpilink"
 	"github.com/sed-evaluacion-desempeno/api/internal/kpi"
+	"github.com/sed-evaluacion-desempeno/api/internal/orgnode"
 	"github.com/sed-evaluacion-desempeno/api/internal/predicate"
 )
 
@@ -26,6 +27,7 @@ type KPIQuery struct {
 	inters        []Interceptor
 	predicates    []predicate.KPI
 	withGoalLinks *GoalKpiLinkQuery
+	withOrgNode   *OrgNodeQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -77,6 +79,28 @@ func (_q *KPIQuery) QueryGoalLinks() *GoalKpiLinkQuery {
 			sqlgraph.From(kpi.Table, kpi.FieldID, selector),
 			sqlgraph.To(goalkpilink.Table, goalkpilink.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, kpi.GoalLinksTable, kpi.GoalLinksColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryOrgNode chains the current query on the "org_node" edge.
+func (_q *KPIQuery) QueryOrgNode() *OrgNodeQuery {
+	query := (&OrgNodeClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(kpi.Table, kpi.FieldID, selector),
+			sqlgraph.To(orgnode.Table, orgnode.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, kpi.OrgNodeTable, kpi.OrgNodeColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -277,6 +301,7 @@ func (_q *KPIQuery) Clone() *KPIQuery {
 		inters:        append([]Interceptor{}, _q.inters...),
 		predicates:    append([]predicate.KPI{}, _q.predicates...),
 		withGoalLinks: _q.withGoalLinks.Clone(),
+		withOrgNode:   _q.withOrgNode.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
@@ -291,6 +316,17 @@ func (_q *KPIQuery) WithGoalLinks(opts ...func(*GoalKpiLinkQuery)) *KPIQuery {
 		opt(query)
 	}
 	_q.withGoalLinks = query
+	return _q
+}
+
+// WithOrgNode tells the query-builder to eager-load the nodes that are connected to
+// the "org_node" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *KPIQuery) WithOrgNode(opts ...func(*OrgNodeQuery)) *KPIQuery {
+	query := (&OrgNodeClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withOrgNode = query
 	return _q
 }
 
@@ -372,8 +408,9 @@ func (_q *KPIQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*KPI, err
 	var (
 		nodes       = []*KPI{}
 		_spec       = _q.querySpec()
-		loadedTypes = [1]bool{
+		loadedTypes = [2]bool{
 			_q.withGoalLinks != nil,
+			_q.withOrgNode != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -398,6 +435,12 @@ func (_q *KPIQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*KPI, err
 		if err := _q.loadGoalLinks(ctx, query, nodes,
 			func(n *KPI) { n.Edges.GoalLinks = []*GoalKpiLink{} },
 			func(n *KPI, e *GoalKpiLink) { n.Edges.GoalLinks = append(n.Edges.GoalLinks, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withOrgNode; query != nil {
+		if err := _q.loadOrgNode(ctx, query, nodes, nil,
+			func(n *KPI, e *OrgNode) { n.Edges.OrgNode = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -434,6 +477,38 @@ func (_q *KPIQuery) loadGoalLinks(ctx context.Context, query *GoalKpiLinkQuery, 
 	}
 	return nil
 }
+func (_q *KPIQuery) loadOrgNode(ctx context.Context, query *OrgNodeQuery, nodes []*KPI, init func(*KPI), assign func(*KPI, *OrgNode)) error {
+	ids := make([]uuid.UUID, 0, len(nodes))
+	nodeids := make(map[uuid.UUID][]*KPI)
+	for i := range nodes {
+		if nodes[i].OrgNodeID == nil {
+			continue
+		}
+		fk := *nodes[i].OrgNodeID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(orgnode.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "org_node_id" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
 
 func (_q *KPIQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := _q.querySpec()
@@ -459,6 +534,9 @@ func (_q *KPIQuery) querySpec() *sqlgraph.QuerySpec {
 			if fields[i] != kpi.FieldID {
 				_spec.Node.Columns = append(_spec.Node.Columns, fields[i])
 			}
+		}
+		if _q.withOrgNode != nil {
+			_spec.Node.AddColumnOnce(kpi.FieldOrgNodeID)
 		}
 	}
 	if ps := _q.predicates; len(ps) > 0 {

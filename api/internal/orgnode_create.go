@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
 	"github.com/sed-evaluacion-desempeno/api/internal/employee"
+	"github.com/sed-evaluacion-desempeno/api/internal/kpi"
 	"github.com/sed-evaluacion-desempeno/api/internal/organization"
 	"github.com/sed-evaluacion-desempeno/api/internal/orgnode"
 )
@@ -194,6 +195,21 @@ func (_c *OrgNodeCreate) AddEmployees(v ...*Employee) *OrgNodeCreate {
 // SetHeadEmployee sets the "head_employee" edge to the Employee entity.
 func (_c *OrgNodeCreate) SetHeadEmployee(v *Employee) *OrgNodeCreate {
 	return _c.SetHeadEmployeeID(v.ID)
+}
+
+// AddKpiIDs adds the "kpis" edge to the KPI entity by IDs.
+func (_c *OrgNodeCreate) AddKpiIDs(ids ...uuid.UUID) *OrgNodeCreate {
+	_c.mutation.AddKpiIDs(ids...)
+	return _c
+}
+
+// AddKpis adds the "kpis" edges to the KPI entity.
+func (_c *OrgNodeCreate) AddKpis(v ...*KPI) *OrgNodeCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddKpiIDs(ids...)
 }
 
 // Mutation returns the OrgNodeMutation object of the builder.
@@ -443,6 +459,22 @@ func (_c *OrgNodeCreate) createSpec() (*OrgNode, *sqlgraph.CreateSpec) {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.HeadEmployeeID = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.KpisIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   orgnode.KpisTable,
+			Columns: []string{orgnode.KpisColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(kpi.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

@@ -289,7 +289,7 @@ func TestValidateWeights_Success(t *testing.T) {
 
 func TestListKPIs_Success(t *testing.T) {
 	kpiSvc := &mockKPIService{
-		listFunc: func(ctx context.Context) ([]*repogoal.KpiRow, error) {
+		listFunc: func(ctx context.Context, employeeID uuid.UUID) ([]*repogoal.KpiRow, error) {
 			return []*repogoal.KpiRow{
 				{ID: uuid.MustParse("dddddddd-dddd-dddd-dddd-dddddddddddd"), Name: "KPI-1", Unit: "numero", CreatedAt: fixedTime(), UpdatedAt: fixedTime()},
 				{ID: uuid.MustParse("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"), Name: "KPI-2", Unit: "porcentaje", CreatedAt: fixedTime(), UpdatedAt: fixedTime()},
@@ -302,6 +302,8 @@ func TestListKPIs_Success(t *testing.T) {
 	r.Get("/kpis", h.ListKPIs)
 
 	req := httptest.NewRequest(http.MethodGet, "/kpis", nil)
+	ctx := context.WithValue(req.Context(), auth.EmployeeIDKey, mustParseUUID("11111111-1111-1111-1111-111111111111"))
+	req = req.WithContext(ctx)
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 
@@ -315,7 +317,7 @@ func TestListKPIs_Success(t *testing.T) {
 func TestCreateKPI_Success(t *testing.T) {
 	kpiID := uuid.MustParse("dddddddd-dddd-dddd-dddd-dddddddddddd")
 	kpiSvc := &mockKPIService{
-		createFunc: func(ctx context.Context, req dtogoal.CreateKpiRequest) (*repogoal.KpiRow, error) {
+		createFunc: func(ctx context.Context, req dtogoal.CreateKpiRequest, employeeID uuid.UUID) (*repogoal.KpiRow, error) {
 			return &repogoal.KpiRow{ID: kpiID, Name: req.Name, Unit: req.Unit, Description: req.Description, CreatedAt: fixedTime(), UpdatedAt: fixedTime()}, nil
 		},
 	}
@@ -327,6 +329,8 @@ func TestCreateKPI_Success(t *testing.T) {
 	body := `{"name":"NPS","unit":"numero","description":"Net Promoter Score"}`
 	req := httptest.NewRequest(http.MethodPost, "/kpis", strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
+	ctx := context.WithValue(req.Context(), auth.EmployeeIDKey, mustParseUUID("11111111-1111-1111-1111-111111111111"))
+	req = req.WithContext(ctx)
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 

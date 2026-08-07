@@ -121,6 +121,7 @@ type KpiResponse struct {
 	ProgressPercent float64  `json:"progress_percent"`
 	CreatedAt       string   `json:"created_at"`
 	UpdatedAt       string   `json:"updated_at"`
+	OrgNodeID       *string  `json:"org_node_id,omitempty"`
 }
 
 // KpiUpdateValueRequest is the request body for updating a KPI's current value.

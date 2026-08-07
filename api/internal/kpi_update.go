@@ -11,8 +11,10 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/google/uuid"
 	"github.com/sed-evaluacion-desempeno/api/internal/goalkpilink"
 	"github.com/sed-evaluacion-desempeno/api/internal/kpi"
+	"github.com/sed-evaluacion-desempeno/api/internal/orgnode"
 	"github.com/sed-evaluacion-desempeno/api/internal/predicate"
 )
 
@@ -80,6 +82,26 @@ func (_u *KPIUpdate) SetNillableDescription(v *string) *KPIUpdate {
 // ClearDescription clears the value of the "description" field.
 func (_u *KPIUpdate) ClearDescription() *KPIUpdate {
 	_u.mutation.ClearDescription()
+	return _u
+}
+
+// SetOrgNodeID sets the "org_node_id" field.
+func (_u *KPIUpdate) SetOrgNodeID(v uuid.UUID) *KPIUpdate {
+	_u.mutation.SetOrgNodeID(v)
+	return _u
+}
+
+// SetNillableOrgNodeID sets the "org_node_id" field if the given value is not nil.
+func (_u *KPIUpdate) SetNillableOrgNodeID(v *uuid.UUID) *KPIUpdate {
+	if v != nil {
+		_u.SetOrgNodeID(*v)
+	}
+	return _u
+}
+
+// ClearOrgNodeID clears the value of the "org_node_id" field.
+func (_u *KPIUpdate) ClearOrgNodeID() *KPIUpdate {
+	_u.mutation.ClearOrgNodeID()
 	return _u
 }
 
@@ -166,6 +188,11 @@ func (_u *KPIUpdate) AddGoalLinks(v ...*GoalKpiLink) *KPIUpdate {
 	return _u.AddGoalLinkIDs(ids...)
 }
 
+// SetOrgNode sets the "org_node" edge to the OrgNode entity.
+func (_u *KPIUpdate) SetOrgNode(v *OrgNode) *KPIUpdate {
+	return _u.SetOrgNodeID(v.ID)
+}
+
 // Mutation returns the KPIMutation object of the builder.
 func (_u *KPIUpdate) Mutation() *KPIMutation {
 	return _u.mutation
@@ -190,6 +217,12 @@ func (_u *KPIUpdate) RemoveGoalLinks(v ...*GoalKpiLink) *KPIUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveGoalLinkIDs(ids...)
+}
+
+// ClearOrgNode clears the "org_node" edge to the OrgNode entity.
+func (_u *KPIUpdate) ClearOrgNode() *KPIUpdate {
+	_u.mutation.ClearOrgNode()
+	return _u
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -341,6 +374,35 @@ func (_u *KPIUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if _u.mutation.OrgNodeCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   kpi.OrgNodeTable,
+			Columns: []string{kpi.OrgNodeColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(orgnode.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.OrgNodeIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   kpi.OrgNodeTable,
+			Columns: []string{kpi.OrgNodeColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(orgnode.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{kpi.Label}
@@ -412,6 +474,26 @@ func (_u *KPIUpdateOne) SetNillableDescription(v *string) *KPIUpdateOne {
 // ClearDescription clears the value of the "description" field.
 func (_u *KPIUpdateOne) ClearDescription() *KPIUpdateOne {
 	_u.mutation.ClearDescription()
+	return _u
+}
+
+// SetOrgNodeID sets the "org_node_id" field.
+func (_u *KPIUpdateOne) SetOrgNodeID(v uuid.UUID) *KPIUpdateOne {
+	_u.mutation.SetOrgNodeID(v)
+	return _u
+}
+
+// SetNillableOrgNodeID sets the "org_node_id" field if the given value is not nil.
+func (_u *KPIUpdateOne) SetNillableOrgNodeID(v *uuid.UUID) *KPIUpdateOne {
+	if v != nil {
+		_u.SetOrgNodeID(*v)
+	}
+	return _u
+}
+
+// ClearOrgNodeID clears the value of the "org_node_id" field.
+func (_u *KPIUpdateOne) ClearOrgNodeID() *KPIUpdateOne {
+	_u.mutation.ClearOrgNodeID()
 	return _u
 }
 
@@ -498,6 +580,11 @@ func (_u *KPIUpdateOne) AddGoalLinks(v ...*GoalKpiLink) *KPIUpdateOne {
 	return _u.AddGoalLinkIDs(ids...)
 }
 
+// SetOrgNode sets the "org_node" edge to the OrgNode entity.
+func (_u *KPIUpdateOne) SetOrgNode(v *OrgNode) *KPIUpdateOne {
+	return _u.SetOrgNodeID(v.ID)
+}
+
 // Mutation returns the KPIMutation object of the builder.
 func (_u *KPIUpdateOne) Mutation() *KPIMutation {
 	return _u.mutation
@@ -522,6 +609,12 @@ func (_u *KPIUpdateOne) RemoveGoalLinks(v ...*GoalKpiLink) *KPIUpdateOne {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveGoalLinkIDs(ids...)
+}
+
+// ClearOrgNode clears the "org_node" edge to the OrgNode entity.
+func (_u *KPIUpdateOne) ClearOrgNode() *KPIUpdateOne {
+	_u.mutation.ClearOrgNode()
+	return _u
 }
 
 // Where appends a list predicates to the KPIUpdate builder.
@@ -696,6 +789,35 @@ func (_u *KPIUpdateOne) sqlSave(ctx context.Context) (_node *KPI, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(goalkpilink.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.OrgNodeCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   kpi.OrgNodeTable,
+			Columns: []string{kpi.OrgNodeColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(orgnode.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.OrgNodeIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   kpi.OrgNodeTable,
+			Columns: []string{kpi.OrgNodeColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(orgnode.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

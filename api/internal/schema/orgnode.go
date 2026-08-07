@@ -72,6 +72,10 @@ func (OrgNode) Edges() []ent.Edge {
 		edge.To("head_employee", Employee.Type).
 			Unique().
 			Field("head_employee_id"),
+		edge.To("kpis", KPI.Type).
+			Annotations(entsql.Annotation{
+				OnDelete: entsql.Cascade,
+			}),
 	}
 }
 
