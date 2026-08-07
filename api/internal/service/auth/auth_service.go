@@ -119,8 +119,8 @@ type AuthService struct {
 	ssoRevalidator SSOTokenRevalidator
 	ssoRefresher   sso.SSOAdapter
 
-	refreshMu   sync.Mutex
-	refreshOps  map[string]*refreshCall
+	refreshMu  sync.Mutex
+	refreshOps map[string]*refreshCall
 }
 
 // refreshCall is a single-flight entry for token refresh requests.
@@ -226,10 +226,13 @@ func (s *AuthService) ValidateSession(ctx context.Context, token string) (*Valid
 
 	if s.ssoValidator != nil && session.AccessToken != "" {
 		if err := s.ssoValidator.ValidateAccessToken(ctx, session.AccessToken); err != nil {
-			log.Printf("auth: SSO token invalid for session %s, revoking local session: %v", session.ID, err)
-			_ = s.sessionStore.Revoke(ctx, session.ID)
-			return nil, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
-				"SSO session expired", err)
+			// The access token is invalid at the SSO provider but the local
+			// session is still alive and may still be refreshable. Do NOT revoke
+			// the session here: RequireAuth attempts one silent refresh before
+			// failing the request, and revoking first would make that refresh
+			// impossible (a revoked session is invisible to GetByToken).
+			log.Printf("auth: SSO token invalid for session %s, refresh may resolve: %v", session.ID, err)
+			return nil, &ErrAccessTokenInvalid{Err: err}
 		}
 		if s.ssoRevalidator != nil {
 			if ssoUser, err := s.ssoRevalidator.GetUserFromToken(ctx, session.AccessToken); err == nil {
@@ -288,6 +291,20 @@ type ErrRefreshFatal struct {
 
 func (e *ErrRefreshFatal) Error() string { return "refresh fatal: " + e.Err.Error() }
 func (e *ErrRefreshFatal) Unwrap() error { return e.Err }
+
+// ErrAccessTokenInvalid is returned by ValidateSession when the SSO access
+// token fails validation but the local session is still alive and may be
+// refreshable. Callers (RequireAuth) should attempt a silent refresh before
+// treating the session as expired; they must NOT revoke the local session
+// just because the access token no longer validates.
+type ErrAccessTokenInvalid struct {
+	Err error
+}
+
+func (e *ErrAccessTokenInvalid) Error() string {
+	return "access token invalid, session may still be refreshable: " + e.Err.Error()
+}
+func (e *ErrAccessTokenInvalid) Unwrap() error { return e.Err }
 
 // RefreshTokens performs a single-flight token refresh for the given session.
 // It renews preventively if the token expires within 60 seconds or is unset.
