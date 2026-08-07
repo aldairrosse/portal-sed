@@ -79,6 +79,7 @@ export interface GoalKpiLink {
 // ─── EmployeeAssignment ────────────────────────────────────────────────────────
 
 export interface EmployeeAssignment {
+	// Assignment ID (not the cycle id) - the active cycle is resolved server-side / via cycleStore.
 	id: string;
 	employeeId: string;
 	employeeName: string;

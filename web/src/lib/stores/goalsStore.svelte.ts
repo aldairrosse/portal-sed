@@ -859,9 +859,11 @@ export async function updateLinkWeight(goalId: string, kpiId: string, weight: nu
 
 export async function addAssignment(assignment: EmployeeAssignment): Promise<void> {
 	const empId = getEmployeeId();
+	const activeCycle = getActiveCycle();
+	if (!activeCycle?.id) throw new Error('No hay un ciclo activo para asignar');
 	const { error: apiError } = await client.POST('/employees/{empId}/assignments', {
 		params: { path: { empId } },
-		body: { cycle_id: assignment.id }
+		body: { cycle_id: activeCycle.id }
 	});
 	if (apiError) throw new Error((apiError as { error?: { message?: string } })?.error?.message ?? 'Error al crear asignación');
 	await reload(true);

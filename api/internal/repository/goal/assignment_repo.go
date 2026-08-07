@@ -10,6 +10,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/sed-evaluacion-desempeno/api/internal"
+	"github.com/sed-evaluacion-desempeno/api/internal/cycle"
 	"github.com/sed-evaluacion-desempeno/api/internal/goalassignment"
 	pkgerrors "github.com/sed-evaluacion-desempeno/api/internal/pkg/errors"
 )
@@ -79,6 +80,14 @@ func (r *AssignmentRepo) GetAssignmentByEmployeeAndCycle(ctx context.Context, em
 
 // CreateAssignment inserts a new assignment with advisory lock to prevent duplicates.
 func (r *AssignmentRepo) CreateAssignment(ctx context.Context, empID, cycleID uuid.UUID) (*AssignmentRow, error) {
+	exists, err := r.client.Cycle.Query().Where(cycle.ID(cycleID)).Exist(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if !exists {
+		return nil, pkgerrors.ErrCycleNotFound
+	}
+
 	// Acquire advisory lock
 	lockKey := hashEmployeeCycle(empID, cycleID)
 	conn, err := r.db.Conn(ctx)

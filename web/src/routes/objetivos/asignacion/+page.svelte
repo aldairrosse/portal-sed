@@ -516,7 +516,7 @@
         try {
             if (targetAssignment.id.startsWith("stub-")) {
                 await addAssignment({
-                    id: "",
+                    id: `stub-${targetAssignment.employeeId}`,
                     employeeId: targetAssignment.employeeId,
                     employeeName: targetAssignment.employeeName,
                     profileId: targetAssignment.profileId,

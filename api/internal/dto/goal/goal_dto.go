@@ -21,15 +21,15 @@ type UpdateCategoryRequest struct {
 
 // CategoryResponse is the response body for a single category with nested goals.
 type CategoryResponse struct {
-	ID          string           `json:"id"`
-	EmployeeID  string           `json:"employee_id"`
-	Name        string           `json:"name"`
-	Description string           `json:"description,omitempty"`
-	Weight      float64          `json:"weight"`
-	PillarID    *string          `json:"pillar_id,omitempty"`
-	Goals       []GoalResponse   `json:"goals,omitempty"`
-	CreatedAt   string           `json:"created_at"`
-	UpdatedAt   string           `json:"updated_at"`
+	ID          string         `json:"id"`
+	EmployeeID  string         `json:"employee_id"`
+	Name        string         `json:"name"`
+	Description string         `json:"description,omitempty"`
+	Weight      float64        `json:"weight"`
+	PillarID    *string        `json:"pillar_id,omitempty"`
+	Goals       []GoalResponse `json:"goals,omitempty"`
+	CreatedAt   string         `json:"created_at"`
+	UpdatedAt   string         `json:"updated_at"`
 }
 
 // CategoryListResponse is the paginated response for listing categories.
@@ -184,7 +184,7 @@ type CategoryGoalSum struct {
 
 // CreateAssignmentRequest is the request body for creating an assignment.
 type CreateAssignmentRequest struct {
-	CycleID string `json:"cycle_id"`
+	CycleID *string `json:"cycle_id"`
 }
 
 // AssignmentResponse is the response body for a goal assignment.

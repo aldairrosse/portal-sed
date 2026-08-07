@@ -1,6 +1,7 @@
 package goal
 
 import (
+	"context"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -9,15 +10,15 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
+	"github.com/sed-evaluacion-desempeno/api/internal/auth"
 	dtogoal "github.com/sed-evaluacion-desempeno/api/internal/dto/goal"
 	"github.com/sed-evaluacion-desempeno/api/internal/middleware"
 	"github.com/sed-evaluacion-desempeno/api/internal/pkg/cursor"
 	pkgerrors "github.com/sed-evaluacion-desempeno/api/internal/pkg/errors"
 	"github.com/sed-evaluacion-desempeno/api/internal/pkg/scoring"
 	repogoal "github.com/sed-evaluacion-desempeno/api/internal/repository/goal"
-	"github.com/sed-evaluacion-desempeno/api/internal/auth"
-	svcgoal "github.com/sed-evaluacion-desempeno/api/internal/service/goal"
 	activitysvc "github.com/sed-evaluacion-desempeno/api/internal/service/activity"
+	svcgoal "github.com/sed-evaluacion-desempeno/api/internal/service/goal"
 )
 
 func generateTraceID() string {
@@ -49,22 +50,26 @@ func writeError(w http.ResponseWriter, err error) {
 	))
 }
 
+type CycleResolver interface {
+	ResolveActiveCycleID(ctx context.Context, employeeID uuid.UUID) (uuid.UUID, error)
+}
 type GoalHandler struct {
-	catService     svcgoal.CategoryServicer
-	goalService    svcgoal.GoalServicer
-	progressSvc    svcgoal.ProgressServicer
-	kpiService     svcgoal.KpiServicer
-	scoringSvc     svcgoal.ScoringServicer
-	weightSvc      svcgoal.WeightValidationServicer
-	batchService   svcgoal.BatchServicer
-	proposalSvc    svcgoal.GoalProposalServicer
-	catRepo        svcgoal.CategoryRepository
-	goalRepo       svcgoal.GoalRepository
-	kpiRepo        svcgoal.KPIRepository
-	linkRepo       svcgoal.LinkKPIRepository
-	assignRepo     svcgoal.AssignmentRepository
-	proposalRepo   svcgoal.GoalProposalRepository
-	activitySvc    activitysvc.Service
+	catService    svcgoal.CategoryServicer
+	goalService   svcgoal.GoalServicer
+	progressSvc   svcgoal.ProgressServicer
+	kpiService    svcgoal.KpiServicer
+	scoringSvc    svcgoal.ScoringServicer
+	weightSvc     svcgoal.WeightValidationServicer
+	batchService  svcgoal.BatchServicer
+	proposalSvc   svcgoal.GoalProposalServicer
+	catRepo       svcgoal.CategoryRepository
+	goalRepo      svcgoal.GoalRepository
+	kpiRepo       svcgoal.KPIRepository
+	linkRepo      svcgoal.LinkKPIRepository
+	assignRepo    svcgoal.AssignmentRepository
+	proposalRepo  svcgoal.GoalProposalRepository
+	activitySvc   activitysvc.Service
+	cycleResolver CycleResolver
 }
 
 func NewGoalHandler(
@@ -83,23 +88,25 @@ func NewGoalHandler(
 	assignRepo svcgoal.AssignmentRepository,
 	proposalRepo svcgoal.GoalProposalRepository,
 	activitySvc activitysvc.Service,
+	cycleResolver CycleResolver,
 ) *GoalHandler {
 	return &GoalHandler{
-		catService:   catService,
-		goalService:  goalService,
-		progressSvc:  progressSvc,
-		kpiService:   kpiService,
-		scoringSvc:   scoringSvc,
-		weightSvc:    weightSvc,
-		batchService: batchService,
-		proposalSvc:  proposalSvc,
-		catRepo:      catRepo,
-		goalRepo:     goalRepo,
-		kpiRepo:      kpiRepo,
-		linkRepo:     linkRepo,
-		assignRepo:   assignRepo,
-		proposalRepo: proposalRepo,
-		activitySvc:  activitySvc,
+		catService:    catService,
+		goalService:   goalService,
+		progressSvc:   progressSvc,
+		kpiService:    kpiService,
+		scoringSvc:    scoringSvc,
+		weightSvc:     weightSvc,
+		batchService:  batchService,
+		proposalSvc:   proposalSvc,
+		catRepo:       catRepo,
+		goalRepo:      goalRepo,
+		kpiRepo:       kpiRepo,
+		linkRepo:      linkRepo,
+		assignRepo:    assignRepo,
+		proposalRepo:  proposalRepo,
+		activitySvc:   activitySvc,
+		cycleResolver: cycleResolver,
 	}
 }
 
@@ -847,9 +854,21 @@ func (h *GoalHandler) CreateAssignment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cycleID, err := uuid.Parse(req.CycleID)
-	if err != nil {
-		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest, "invalid cycle ID", err))
+	var cycleID uuid.UUID
+	if req.CycleID != nil && *req.CycleID != "" {
+		cycleID, err = uuid.Parse(*req.CycleID)
+		if err != nil {
+			writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest, "invalid cycle ID", err))
+			return
+		}
+	} else if h.cycleResolver != nil {
+		cycleID, err = h.cycleResolver.ResolveActiveCycleID(r.Context(), empID)
+		if err != nil {
+			writeError(w, err)
+			return
+		}
+	} else {
+		writeError(w, pkgerrors.ErrCycleNotFound)
 		return
 	}
 
