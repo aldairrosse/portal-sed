@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"context"
-	"errors"
 	"log"
 	"net/http"
 	"strings"
@@ -91,29 +90,16 @@ func RequireAuth(authSvc *svc.AuthService) func(http.Handler) http.Handler {
 					}
 				}
 
-				// Transient refresh failure (network/IdP unavailable, session NOT
-				// destroyed) → 502 so the client keeps the session and retries.
-				// Fatal (no local session or refresh token permanently invalid)
-				// → 401 SSO_SESSION_EXPIRED, client must re-login.
-				var fatal *svc.ErrRefreshFatal
-				if refreshErr != nil && !errors.As(refreshErr, &fatal) {
-					log.Printf("auth middleware: transient refresh failure, keeping session alive: %v", refreshErr)
-					w.Header().Set("Content-Type", "application/json")
-					w.WriteHeader(http.StatusBadGateway)
-					de := pkgerrors.NewDomainError("SSO_REFRESH_UNAVAILABLE",
-						"No se pudo renovar la sesión. Intenta de nuevo.", refreshErr)
-					ae := pkgerrors.NewAPIErrorResponse(de, "")
-					_, _ = w.Write(ae.MustMarshalJSON())
-					return
-				}
-
+			if refreshErr != nil {
+				log.Printf("auth middleware: refresh failed, forcing re-login: %v", refreshErr)
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusUnauthorized)
 				de := pkgerrors.NewDomainError("SSO_SESSION_EXPIRED",
-					"invalid or expired session", err)
+					"invalid or expired session", refreshErr)
 				ae := pkgerrors.NewAPIErrorResponse(de, "")
 				_, _ = w.Write(ae.MustMarshalJSON())
 				return
+			}
 			}
 
 			if result == nil || result.Session == nil {
