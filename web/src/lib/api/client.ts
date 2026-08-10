@@ -39,6 +39,7 @@ async function fetchWithCredentials(input: RequestInfo | URL, init?: RequestInit
 				console.warn('[sso] 401 SSO_SESSION_EXPIRED -> redirect /login', window.location.pathname);
 				sessionStorage.setItem('return_to', window.location.pathname + window.location.search);
 				sessionStorage.removeItem('sso_redirect_count');
+				sessionStorage.setItem('sso_session_expired', '1');
 				window.location.href = '/login';
 			}
 		} catch {

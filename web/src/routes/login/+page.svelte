@@ -34,6 +34,16 @@
 	onMount(() => {
 		if (session.user) return;
 
+		const isExpired = sessionStorage.getItem('sso_session_expired') === '1';
+		if (isExpired) {
+			sessionStorage.removeItem('sso_session_expired');
+			const returnTo = sessionStorage.getItem('return_to') || '/';
+			sessionStorage.removeItem('return_to');
+			sessionStorage.removeItem('sso_redirect_count');
+			window.location.href = '/api/v1/auth/sso-login?return_to=' + encodeURIComponent(returnTo);
+			return;
+		}
+
 		const params = new URLSearchParams(window.location.search);
 		const ssoError = params.get('sso_error');
 		if (ssoError) {
