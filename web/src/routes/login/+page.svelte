@@ -49,8 +49,10 @@
 			pageLoading = false;
 		} else {
 			sessionStorage.setItem('sso_redirect_count', String(count + 1));
+			const returnTo = sessionStorage.getItem('return_to') || '/';
+			sessionStorage.removeItem('return_to');
 			console.warn('[sso] redirect a sso-login, intento', count + 1);
-			window.location.href = '/api/v1/auth/sso-login';
+			window.location.href = '/api/v1/auth/sso-login?return_to=' + encodeURIComponent(returnTo);
 		}
 	});
 </script>

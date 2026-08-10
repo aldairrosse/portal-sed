@@ -75,13 +75,42 @@ describe('client.ts', () => {
 			);
 		});
 
-		it('redirects to /login on 401 response', async () => {
+		it('redirects to /login and saves return_to on SSO_SESSION_EXPIRED 401', async () => {
 			const { getAssignedHref, restore } = interceptLocationHref();
-			mockFetch.mockResolvedValue(new Response(null, { status: 401 }));
+			sessionStorage.clear();
+			// Absolute baseURL (relative "/api/v1" fails to parse in node's Request)
+			vi.stubEnv('VITE_API_URL', 'http://localhost:8080/api/v1');
+			vi.resetModules();
+			const { client: clientMod } = await import('./client');
+			mockFetch.mockResolvedValue(
+				new Response(JSON.stringify({ error: { code: 'SSO_SESSION_EXPIRED' } }), {
+					status: 401,
+					headers: { 'Content-Type': 'application/json' }
+				})
+			);
 
-			await (client as unknown as { GET(url: string): Promise<unknown> }).GET('/test');
+			await (clientMod as unknown as { GET(url: string): Promise<unknown> }).GET('/test');
 
 			expect(getAssignedHref()).toBe('/login');
+			expect(sessionStorage.getItem('return_to')).toBe(window.location.pathname + window.location.search);
+			restore();
+		});
+
+		it('does not redirect on 401 without SSO_SESSION_EXPIRED code', async () => {
+			const { getAssignedHref, restore } = interceptLocationHref();
+			vi.stubEnv('VITE_API_URL', 'http://localhost:8080/api/v1');
+			vi.resetModules();
+			const { client: clientMod } = await import('./client');
+			mockFetch.mockResolvedValue(
+				new Response(JSON.stringify({ error: { code: 'INVALID_REQUEST' } }), {
+					status: 401,
+					headers: { 'Content-Type': 'application/json' }
+				})
+			);
+
+			await (clientMod as unknown as { GET(url: string): Promise<unknown> }).GET('/test');
+
+			expect(getAssignedHref()).toBeNull();
 			restore();
 		});
 	});

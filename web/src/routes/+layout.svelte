@@ -45,6 +45,10 @@
 		if (ready) return;
 		if (!authResolved && minTimeElapsed) {
 			// Session resolved with no user, min time passed → redirect
+			// Keep the intended destination for the post-SSO redirect (single use).
+			if (!sessionStorage.getItem('return_to')) {
+				sessionStorage.setItem('return_to', location.pathname + location.search);
+			}
 			goto('/login');
 		}
 	});

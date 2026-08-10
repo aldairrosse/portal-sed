@@ -29,8 +29,21 @@ async function fetchWithCredentials(input: RequestInfo | URL, init?: RequestInit
 	}
 	const response = await fetch(input, { ...init, headers, credentials: 'include' });
 	if (response.status === 401) {
-		console.warn('[sso] 401 -> redirect /login', window.location.pathname);
-		window.location.href = '/login';
+		try {
+			const cloned = response.clone();
+			const body = await cloned.json();
+			// Only a fatal session-expiry 401 (refresh token permanently invalid)
+			// forces re-login. Transient failures (5xx or other codes) fall
+			// through so the caller can surface the error without losing the session.
+			if (body?.error?.code === 'SSO_SESSION_EXPIRED') {
+				console.warn('[sso] 401 SSO_SESSION_EXPIRED -> redirect /login', window.location.pathname);
+				sessionStorage.setItem('return_to', window.location.pathname + window.location.search);
+				sessionStorage.removeItem('sso_redirect_count');
+				window.location.href = '/login';
+			}
+		} catch {
+			// Unparseable 401 body — fall through, caller handles the error
+		}
 	}
 	if (response.status === 404) {
 		throw new HttpNotFoundError();

@@ -316,7 +316,7 @@ func (s *AuthService) RefreshTokens(ctx context.Context, session *auth.Session) 
 	}
 
 	if session.RefreshToken == "" {
-		return nil, pkgerrors.NewDomainError(pkgerrors.InvalidRequest, "no refresh token in session", nil)
+		return nil, &ErrRefreshFatal{Err: pkgerrors.NewDomainError(pkgerrors.InvalidRequest, "no refresh token in session", nil)}
 	}
 
 	// Preventive check: refresh when either token is unset or expires within

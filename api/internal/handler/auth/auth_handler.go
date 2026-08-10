@@ -91,11 +91,16 @@ func (h *AuthHandler) SSOLoginRedirect(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	returnTo := r.URL.Query().Get("return_to")
+	if !validReturnTo(returnTo) {
+		returnTo = "/"
+	}
+
 	h.txStore.Store(state, &sso.OIDCTransaction{
 		State:        state,
 		Nonce:        nonce,
 		CodeVerifier: codeVerifier,
-		ReturnTo:     "/",
+		ReturnTo:     returnTo,
 	})
 
 	authURL := h.sso.AuthorizationURL(state, nonce, "", codeVerifier)
@@ -139,6 +144,14 @@ func (h *AuthHandler) SSOStepUp(w http.ResponseWriter, r *http.Request) {
 
 func validReturnTo(value string) bool {
 	if value == "" {
+		return false
+	}
+	// Reject CR/LF and other control chars: decoded %0d/%0a would pass the
+	// path checks below but http.Redirect writes them into the Location
+	// header verbatim (header injection).
+	if strings.ContainsFunc(value, func(r rune) bool {
+		return r < 0x20 || r == 0x7f
+	}) {
 		return false
 	}
 	if !strings.HasPrefix(value, "/") {

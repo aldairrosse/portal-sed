@@ -2,6 +2,8 @@ package middleware
 
 import (
 	"context"
+	"errors"
+	"log"
 	"net/http"
 	"strings"
 
@@ -78,8 +80,9 @@ func RequireAuth(authSvc *svc.AuthService) func(http.Handler) http.Handler {
 			result, err := authSvc.ValidateSession(r.Context(), token)
 			if err != nil {
 				// Try one refresh before giving up (max 1 retry, no loop)
+				var refreshErr error
 				if sess, getErr := authSvc.SessionStore().GetByToken(r.Context(), token); getErr == nil && sess != nil {
-					if _, refreshErr := authSvc.RefreshTokens(r.Context(), sess); refreshErr == nil {
+					if _, refreshErr = authSvc.RefreshTokens(r.Context(), sess); refreshErr == nil {
 						if retryResult, retryErr := authSvc.ValidateSession(r.Context(), token); retryErr == nil && retryResult != nil && retryResult.Session != nil {
 							ctx := auth.WithSession(r.Context(), retryResult.Session, retryResult.Role, retryResult.ProfileID)
 							next.ServeHTTP(w, r.WithContext(ctx))
@@ -88,9 +91,25 @@ func RequireAuth(authSvc *svc.AuthService) func(http.Handler) http.Handler {
 					}
 				}
 
+				// Transient refresh failure (network/IdP unavailable, session NOT
+				// destroyed) → 502 so the client keeps the session and retries.
+				// Fatal (no local session or refresh token permanently invalid)
+				// → 401 SSO_SESSION_EXPIRED, client must re-login.
+				var fatal *svc.ErrRefreshFatal
+				if refreshErr != nil && !errors.As(refreshErr, &fatal) {
+					log.Printf("auth middleware: transient refresh failure, keeping session alive: %v", refreshErr)
+					w.Header().Set("Content-Type", "application/json")
+					w.WriteHeader(http.StatusBadGateway)
+					de := pkgerrors.NewDomainError("SSO_REFRESH_UNAVAILABLE",
+						"No se pudo renovar la sesión. Intenta de nuevo.", refreshErr)
+					ae := pkgerrors.NewAPIErrorResponse(de, "")
+					_, _ = w.Write(ae.MustMarshalJSON())
+					return
+				}
+
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusUnauthorized)
-				de := pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
+				de := pkgerrors.NewDomainError("SSO_SESSION_EXPIRED",
 					"invalid or expired session", err)
 				ae := pkgerrors.NewAPIErrorResponse(de, "")
 				_, _ = w.Write(ae.MustMarshalJSON())
