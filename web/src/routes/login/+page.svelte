@@ -26,6 +26,7 @@
 
 	$effect(() => {
 		if (!session.loading && session.user) {
+			sessionStorage.removeItem('sso_redirect_count');
 			goto('/');
 		}
 	});
@@ -71,9 +72,14 @@
 		<div class="flex flex-col items-center gap-3 max-w-md px-4">
 			<AlertCircle class="w-8 h-8 text-error" />
 			<p class="text-sm text-center">{error}</p>
-			<a href="/api/v1/auth/sso-login" class="btn btn-outline btn-sm mt-2">
+			<button class="btn btn-outline btn-sm mt-2" onclick={() => {
+				sessionStorage.removeItem('sso_redirect_count');
+				const returnTo = sessionStorage.getItem('return_to') || '/';
+				sessionStorage.removeItem('return_to');
+				window.location.href = '/api/v1/auth/sso-login?return_to=' + encodeURIComponent(returnTo);
+			}}>
 				Intentar de nuevo
-			</a>
+			</button>
 		</div>
 	{/if}
 </div>
