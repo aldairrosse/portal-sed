@@ -59,7 +59,7 @@
 		return null;
 	}
 
-	function handleAddSubmit(e: Event) {
+	async function handleAddSubmit(e: Event) {
 		e.preventDefault();
 		const err = validateAddForm();
 		if (err) {
@@ -74,9 +74,13 @@
 			direction: addFormDirection,
 			targetValue: addFormTargetValue
 		};
-		addKpi(newKpi);
-		showAddForm = false;
-		resetAddForm();
+		try {
+			await addKpi(newKpi);
+			showAddForm = false;
+			resetAddForm();
+		} catch (err: any) {
+			notifications.error(err.message);
+		}
 	}
 
 	// ─── Inline edit state ─────────────────────────────────────────────────────
@@ -101,7 +105,7 @@
 		editingId = null;
 	}
 
-	function handleEditSubmit(e: Event) {
+	async function handleEditSubmit(e: Event) {
 		e.preventDefault();
 		if (!editName.trim()) {
 			notifications.error('El nombre es obligatorio.');
@@ -112,14 +116,18 @@
 			return;
 		}
 		if (!editingId) return;
-		updateKpi(editingId, {
-			name: editName.trim(),
-			description: editDescription.trim(),
-			unit: editUnit,
-			direction: editDirection,
-			targetValue: editTargetValue
-		});
-		editingId = null;
+		try {
+			await updateKpi(editingId, {
+				name: editName.trim(),
+				description: editDescription.trim(),
+				unit: editUnit,
+				direction: editDirection,
+				targetValue: editTargetValue
+			});
+			editingId = null;
+		} catch (err: any) {
+			notifications.error(err.message);
+		}
 	}
 
 	// ─── Delete confirmation ───────────────────────────────────────────────────
@@ -132,9 +140,13 @@
 		deleteTargetName = kpi.name;
 	}
 
-	function confirmDelete() {
+	async function confirmDelete() {
 		if (deleteTargetId) {
-			deleteKpi(deleteTargetId);
+			try {
+				await deleteKpi(deleteTargetId);
+			} catch (err: any) {
+				notifications.error(err.message);
+			}
 		}
 		deleteTargetId = null;
 		deleteTargetName = '';
