@@ -23,6 +23,7 @@ const (
 	InvalidIfMatch       DomainCode = "INVALID_IF_MATCH"
 	RequestTimeout       DomainCode = "REQUEST_TIMEOUT"
 	OTPRequired          DomainCode = "OTP_REQUIRED"
+	NotAuthenticated     DomainCode = "NOT_AUTHENTICATED"
 
 	// Códigos de error de dominio específicos de objetivos
 	CategoryNotFound        DomainCode = "CATEGORY_NOT_FOUND"
@@ -165,6 +166,8 @@ func HTTPStatus(err error) int {
 		return 400
 	case RequestTimeout:
 		return 408
+	case NotAuthenticated:
+		return 401
 	default:
 		return 500
 	}

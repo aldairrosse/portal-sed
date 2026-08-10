@@ -413,7 +413,7 @@ func (h *AuthHandler) RevokeEmployeeSessions(w http.ResponseWriter, r *http.Requ
 func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 	session, ok := auth.GetSession(r.Context())
 	if !ok || session == nil {
-		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest, "Sesión no autenticada", nil))
+		writeError(w, pkgerrors.NewDomainError(pkgerrors.NotAuthenticated, "Sesión no autenticada", nil))
 		return
 	}
 
@@ -494,13 +494,13 @@ type MeResponse struct {
 func (h *AuthHandler) Me(w http.ResponseWriter, r *http.Request) {
 	token := extractSessionToken(r)
 	if token == "" {
-		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest, "Sesión no autenticada", nil))
+		writeError(w, pkgerrors.NewDomainError(pkgerrors.NotAuthenticated, "Sesión no autenticada", nil))
 		return
 	}
 
 	result, err := h.svc.ValidateSession(r.Context(), token)
 	if err != nil || result == nil || result.Session == nil {
-		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest, "Sesión inválida o expirada", err))
+		writeError(w, pkgerrors.NewDomainError(pkgerrors.NotAuthenticated, "Sesión inválida o expirada", err))
 		return
 	}
 
