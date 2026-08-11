@@ -75,9 +75,12 @@ func main() {
 		log.Fatal("[import] SEED_DB_URL is required (e.g. user:pass@tcp(host:3306)/mobonet?parseTime=true)")
 	}
 
-	databaseURL := os.Getenv("DATABASE_URL")
+	databaseURL := os.Getenv("IMPORT_DATABASE_URL")
 	if databaseURL == "" {
-		log.Fatal("[import] DATABASE_URL is required (internal PostgreSQL)")
+		databaseURL = os.Getenv("DATABASE_URL")
+	}
+	if databaseURL == "" {
+		log.Fatal("[import] IMPORT_DATABASE_URL or DATABASE_URL is required (internal PostgreSQL)")
 	}
 
 	extDB, err := sql.Open("mysql", seedDBURL)

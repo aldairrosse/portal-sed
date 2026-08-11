@@ -19,7 +19,6 @@ services:
       postgres: { condition: service_healthy }
     env_file: .env
     container_name: portal-sed-api
-    env_file: .env
     environment:
       ENV: production
     healthcheck:

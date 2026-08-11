@@ -2,6 +2,7 @@
   "name": "sed-web",
   "version": "0.0.1",
   "private": true,
+  "packageManager": "pnpm@10.34.5",
   "type": "module",
   "scripts": {
     "dev": "vite dev",

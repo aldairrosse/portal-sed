@@ -33,6 +33,16 @@ services:
       timeout: 5s
       retries: 5
 
+  import:
+    build: ./api
+    profiles: ["import"]
+    network_mode: host
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file: .env
+    entrypoint: ["/opt/api/import"]
+
   web:
     build:
       context: ./web
