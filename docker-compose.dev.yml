@@ -27,6 +27,11 @@ services:
     env_file: .env
     environment:
       ENV: development
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   web:
     build:
