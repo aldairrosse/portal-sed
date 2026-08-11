@@ -660,7 +660,7 @@ func passSSOSeed(ctx context.Context, tgtDB *sql.DB, dryRun bool) passResult {
 		return pr
 	}
 
-	skipEmp := os.Getenv("SEED_SSO_DEV_EMPLOYEE_NUMBER")
+	skipEmp := os.Getenv("SSO_SEED_DEV_EMPLOYEE_NUMBER")
 
 	baseURL := os.Getenv("SSO_SEED_BASE_URL")
 	if baseURL == "" {

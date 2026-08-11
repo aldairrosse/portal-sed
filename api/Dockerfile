@@ -8,7 +8,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o /api ./cmd/server
 RUN CGO_ENABLED=0 GOOS=linux go build -o /import ./cmd/import
 
 # Runtime stage
-FROM alpine:3.19
+FROM alpine:3.22
 RUN adduser -D -u 1000 app
 USER app
 COPY --from=builder /api /opt/api/api

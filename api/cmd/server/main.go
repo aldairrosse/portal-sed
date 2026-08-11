@@ -216,7 +216,7 @@ func main() {
 		log.Printf("[server] warn: failed to recreate idx_org_nodes_path: %v", err)
 	}
 
-	// Seeder — seed.Run handles its own guards (flag --seed, SEED_ON_START env, empty-DB check)
+	// Seeder — seed.Run handles its own guards 
 	if err := seed.Run(bgCtx, client); err != nil {
 		log.Printf("[seed] error: %v", err)
 	}

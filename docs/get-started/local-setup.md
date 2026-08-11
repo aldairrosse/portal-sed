@@ -41,7 +41,7 @@ SSO_POST_LOGOUT_URI=http://localhost:5173/login
 SSO_SEED_BASE_URL=https://sso.example.com
 SSO_SEED_ADMIN_USER=admin
 SSO_SEED_ADMIN_PASSWORD=*****
-SEED_SSO_DEV_EMPLOYEE_NUMBER=12345
+SSO_SEED_DEV_EMPLOYEE_NUMBER=12345
 ```
 
 ## Opción A: Docker Compose (recomendado — todo en contenedores)
