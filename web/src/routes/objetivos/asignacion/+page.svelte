@@ -798,7 +798,7 @@
                         class="collapse collapse-arrow bg-base-100 border border-base-300 rounded-lg mt-2"
                     >
                         <summary
-                            class="collapse-title text-sm font-semibold text-base-content/70 min-h-0 px-4 py-2"
+                            class="collapse-title text-sm font-semibold text-base-content/70 min-h-0 pl-4 pr-8 py-2"
                         >
                             Desglose por categoría
                         </summary>

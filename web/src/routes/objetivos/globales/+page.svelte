@@ -160,7 +160,7 @@
 
         <!-- Cualitativos -->
         <details open class="collapse collapse-arrow bg-base-100 border border-base-300 rounded-lg mb-4">
-            <summary class="collapse-title min-h-0 px-4 py-3 flex items-center justify-between gap-2">
+            <summary class="collapse-title min-h-0 pl-4 pr-8 py-3 flex items-center justify-between gap-2">
                 <div class="flex items-center gap-2">
                     <Globe class="w-5 h-5 text-primary" />
                     <span class="font-medium">Cualitativos</span>
@@ -237,7 +237,7 @@
 
         <!-- Cuantitativos -->
         <details open class="collapse collapse-arrow bg-base-100 border border-base-300 rounded-lg mb-4">
-            <summary class="collapse-title min-h-0 px-4 py-3 flex items-center justify-between gap-2">
+            <summary class="collapse-title min-h-0 pl-4 pr-8 py-3 flex items-center justify-between gap-2">
                 <div class="flex items-center gap-2">
                     <Users class="w-5 h-5 text-secondary" />
                     <span class="font-medium">Cuantitativos</span>
