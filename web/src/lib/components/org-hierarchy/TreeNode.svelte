@@ -97,9 +97,9 @@
 
 <li>
 	{#if isExpandable}
-		<details bind:open={isOpen}>
+		<details bind:open={isOpen} class="collapse collapse-arrow">
 			<summary
-				class="flex items-center gap-2 cursor-pointer flex-grow"
+				class="collapse-title flex items-center gap-2 cursor-pointer flex-grow min-h-0 px-2 py-1 rounded-lg"
 				class:menu-active={isSelected}
 				onclick={handleSummaryClick}
 			>
@@ -123,6 +123,7 @@
 					</span>
 				</div>
 			</summary>
+			<div class="collapse-content p-0">
 			<ul>
 				{#each children as child (child.id)}
 					<TreeNode
@@ -166,6 +167,7 @@
 					</li>
 				{/each}
 			</ul>
+			</div>
 		</details>
 	{:else}
 		<button

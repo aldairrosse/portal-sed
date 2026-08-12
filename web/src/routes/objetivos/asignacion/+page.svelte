@@ -794,13 +794,16 @@
                             >
                         </span>
                     </div>
-                    <details class="mt-2">
+                    <details
+                        class="collapse collapse-arrow bg-base-100 border border-base-300 rounded-lg mt-2"
+                    >
                         <summary
-                            class="text-xs text-base-content/50 cursor-pointer hover:text-base-content/80 select-none"
+                            class="collapse-title text-sm font-semibold text-base-content/70 min-h-0 px-4 py-2"
                         >
                             Desglose por categoría
                         </summary>
-                        <div class="mt-2 space-y-1.5">
+                        <div class="collapse-content text-sm px-4">
+                            <div class="space-y-1.5">
                             {#each categories as cat (cat.id)}
                                 {@const catProgress =
                                     getCategoryProgressAverage(cat.id)}
@@ -815,6 +818,7 @@
                                     >
                                 </div>
                             {/each}
+                            </div>
                         </div>
                     </details>
                 </div>
