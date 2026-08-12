@@ -2,7 +2,8 @@
     import { Loader2, Plus, Trash2 } from '@lucide/svelte';
     import CustomSelect from '$lib/components/ui/CustomSelect.svelte';
     import { createGlobalGoal, updateGlobalGoal, type CreateGlobalGoalRequest } from '$lib/api/globalGoals';
-    import { load, getRoot, getAllLeafIds, getNodeById, getScopeIds } from '$lib/stores/orgHierarchyStore.svelte';
+    import { load, getRoot, getNodeById, getScopeIds } from '$lib/stores/orgHierarchyStore.svelte';
+    import { loadFirstPage, search, loadMore, getEmployeeOptions, hasMoreEmployees, isLoadingMore } from '$lib/stores/employeePickerStore.svelte';
     import type { OrgNode } from '$lib/types/org-hierarchy';
 
     interface Props {
@@ -36,12 +37,7 @@
 
     const root = $derived(getRoot());
 
-    const employeeOptions = $derived(
-        (root?.id ? getAllLeafIds(root.id) : [])
-            .map(id => getNodeById(id))
-            .filter((n): n is OrgNode => !!n?.headEmployee)
-            .map(n => ({ value: n.headEmployee!.id, label: `${n.headEmployee!.firstName} ${n.headEmployee!.lastName}` }))
-    );
+    const employeeOptions = $derived(getEmployeeOptions());
 
     const departmentOptions = $derived(
         (root?.id ? getScopeIds(root.id) : [])
@@ -75,6 +71,7 @@
     let employeeSelect = $state('');
     let error = $state('');
     let saving = $state(false);
+    let pickerInitialized = $state(false);
 
     $effect(() => {
         if (open) {
@@ -99,6 +96,10 @@
             error = '';
             saving = false;
             load();
+            if (!goalId && !pickerInitialized) {
+                pickerInitialized = true;
+                loadFirstPage();
+            }
         }
     });
 
@@ -272,6 +273,10 @@
                         onChange={(v) => { employeeSelect = v; }}
                         ariaLabel="Empleado"
                         searchable
+                        onSearch={(q) => search(q)}
+                        loadMore={() => loadMore()}
+                        allLoaded={!hasMoreEmployees()}
+                        loadingMore={isLoadingMore()}
                     />
                     <button class="btn btn-outline btn-sm" onclick={addAssignment} type="button">
                         <Plus class="w-4 h-4" /> Agregar
@@ -279,7 +284,7 @@
                 </div>
             </div>
             {#if employeeOptions.length === 0}
-                <p class="text-xs text-base-content/60">No hay empleados disponibles en el árbol organizacional.</p>
+                <p class="text-xs text-base-content/60">No hay empleados disponibles.</p>
             {/if}
             {#if assignments.length > 0}
                 <div class="space-y-2">

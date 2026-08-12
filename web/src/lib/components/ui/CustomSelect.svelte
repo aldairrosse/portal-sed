@@ -14,6 +14,10 @@
 		ariaLabel?: string;
 		class?: string;
 		searchable?: boolean;
+		onSearch?: (q: string) => void;
+		loadMore?: () => void;
+		allLoaded?: boolean;
+		loadingMore?: boolean;
 	}
 
 	let {
@@ -23,7 +27,11 @@
 		placeholder = 'Seleccionar',
 		ariaLabel,
 		class: className = '',
-		searchable = false
+		searchable = false,
+		onSearch,
+		loadMore,
+		allLoaded = false,
+		loadingMore = false
 	}: Props = $props();
 
 	const uid = $props.id();
@@ -36,7 +44,7 @@
 	let menuEl: HTMLUListElement | undefined = $state();
 
 	const filteredOptions = $derived(
-		searchable
+		searchable && !onSearch
 			? query.trim() === ''
 				? options
 				: options.filter((o) => o.label.toLowerCase().includes(query.trim().toLowerCase()))
@@ -62,6 +70,7 @@
 		open = e.newState === 'open';
 		if (e.newState === 'close') {
 			query = '';
+			if (onSearch) onSearch('');
 			return;
 		}
 		requestAnimationFrame(() => {
@@ -75,6 +84,13 @@
 				target.focus({ preventScroll: true });
 			}
 		});
+	}
+
+	function handleMenuScroll() {
+		if (allLoaded || loadingMore || !loadMore || !menuEl) return;
+		if (menuEl.scrollTop + menuEl.clientHeight >= menuEl.scrollHeight - 40) {
+			loadMore();
+		}
 	}
 
 	function handleKeydown(e: KeyboardEvent) {
@@ -143,6 +159,7 @@
 	role="listbox"
 	aria-label={ariaLabel}
 	ontoggle={handleToggle}
+	onscroll={handleMenuScroll}
 >
 	{#if searchable}
 		<li class="mb-1 sticky top-0 z-10 bg-base-100 border-base-300">
@@ -151,6 +168,7 @@
 				class="input input-bordered input-xs w-full bg-base-100"
 				placeholder="Buscar…"
 				bind:value={query}
+				oninput={(e) => { if (onSearch) onSearch(e.currentTarget.value); }}
 				onkeydown={(e) => e.stopPropagation()}
 				aria-label="Buscar opción"
 			/>
@@ -168,7 +186,10 @@
 			</button>
 		</li>
 	{/each}
-	{#if searchable && filteredOptions.length === 0}
+	{#if loadingMore}
+		<li class="px-2 py-1 text-xs text-base-content/50">Cargando…</li>
+	{/if}
+	{#if (searchable || onSearch) && filteredOptions.length === 0}
 		<li class="px-2 py-1 text-xs text-base-content/50">Sin resultados</li>
 	{/if}
 </ul>
