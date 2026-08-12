@@ -22,7 +22,7 @@ func NewGlobalGoalHandler(service servicegoal.GlobalGoalServicer) *GlobalGoalHan
 
 // RegisterRoutes registers the routes for global goals.
 func (h *GlobalGoalHandler) RegisterRoutes(r chi.Router) {
-	r.Route("/api/v1/goals/global", func(r chi.Router) {
+	r.Route("/goals/global", func(r chi.Router) {
 		r.Post("/", h.Create)
 		r.Get("/", h.List)
 		r.Get("/{goalID}", h.Get)

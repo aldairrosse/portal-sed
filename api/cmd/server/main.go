@@ -54,6 +54,9 @@ import (
 	evalhandler "github.com/sed-evaluacion-desempeno/api/internal/handler/evaluation"
 	orghandler "github.com/sed-evaluacion-desempeno/api/internal/handler/org"
 
+	// Middleware
+	"github.com/sed-evaluacion-desempeno/api/internal/middleware"
+
 	// Seed
 	"github.com/sed-evaluacion-desempeno/api/internal/seed"
 )
@@ -382,8 +385,12 @@ func main() {
 	evalhandler.RegisterRoutes(apiV1, evalH, authSvc)
 	orghandler.RegisterRoutes(apiV1, orgH, authSvc)
 	goalhandler.RegisterRoutes(apiV1, goalH, authSvc)
-	globalGoalH.RegisterRoutes(apiV1)
-	sharedGoalH.RegisterRoutes(apiV1)
+	apiV1.Group(func(r chi.Router) {
+		r.Use(middleware.RequireAuth(authSvc))
+		r.Use(middleware.RequireLoA2())
+		globalGoalH.RegisterRoutes(r)
+		sharedGoalH.RegisterRoutes(r)
+	})
 	commentchangehandler.RegisterRoutes(apiV1, commentChangeH, authSvc)
 	activityhandler.RegisterActivityRoutes(apiV1, activityH, authSvc)
 	r.Mount("/api/v1", apiV1)

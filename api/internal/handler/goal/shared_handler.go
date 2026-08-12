@@ -22,7 +22,7 @@ func NewSharedGoalHandler(service servicegoal.SharedGoalServicer) *SharedGoalHan
 
 // RegisterRoutes registers the routes for shared goals.
 func (h *SharedGoalHandler) RegisterRoutes(r chi.Router) {
-	r.Route("/api/v1/goals/shared", func(r chi.Router) {
+	r.Route("/goals/shared", func(r chi.Router) {
 		r.Post("/", h.Create)
 		r.Get("/", h.List)
 		r.Get("/{goalID}", h.Get)
