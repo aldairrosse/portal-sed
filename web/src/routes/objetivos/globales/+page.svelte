@@ -5,12 +5,15 @@
     import { Target, Plus, ChevronDown, ChevronUp, Globe, Users, Loader2 } from '@lucide/svelte';
     import WeightIndicator from '$lib/components/goals/WeightIndicator.svelte';
     import { listGlobalGoals, deleteGlobalGoal, type GlobalGoal } from '$lib/api/globalGoals';
+    import GlobalGoalCreateForm from '$lib/components/goals/GlobalGoalCreateForm.svelte';
 
     const profile = $derived(getProfile());
 
     let goals = $state<GlobalGoal[]>([]);
     let loading = $state(true);
     let error = $state('');
+    let showCreate = $state(false);
+    let createKind = $state<'qualitative' | 'quantitative'>('qualitative');
 
     onMount(() => {
         if (profile !== 'rh') {
@@ -141,7 +144,7 @@
                             {/each}
                         </div>
                     {/if}
-                    <button class="btn btn-outline btn-sm mt-4 w-full">
+                    <button class="btn btn-outline btn-sm mt-4 w-full" onclick={() => { createKind = 'qualitative'; showCreate = true; }}>
                         <Plus class="w-4 h-4" /> Nueva meta cualitativa
                     </button>
                 </div>
@@ -194,7 +197,7 @@
                             {/each}
                         </div>
                     {/if}
-                    <button class="btn btn-outline btn-sm mt-4 w-full">
+                    <button class="btn btn-outline btn-sm mt-4 w-full" onclick={() => { createKind = 'quantitative'; showCreate = true; }}>
                         <Plus class="w-4 h-4" /> Nueva meta cuantitativa
                     </button>
                 </div>
@@ -208,4 +211,11 @@
             </button>
         </div>
     {/if}
+
+    <GlobalGoalCreateForm
+        open={showCreate}
+        goalKind={createKind}
+        oncancel={() => showCreate = false}
+        onsaved={() => { showCreate = false; loadGoals(); }}
+    />
 </div>
