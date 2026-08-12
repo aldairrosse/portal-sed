@@ -2,7 +2,7 @@
 	export type OutlineIconName =
 		| 'analytics-report'
 		| 'arrow-right'
-		| 'bussines-bag'
+		| 'business-bag'
 		| 'caret-down'
 		| 'caret-up'
 		| 'check-circle'
@@ -34,7 +34,9 @@
 		size?: number;
 		color?: string;
 		class?: string;
-		[key: string]: unknown;
+		'aria-label'?: string;
+		role?: string;
+		'aria-hidden'?: boolean | 'true' | 'false';
 	}
 
 	// Raw SVG markup, keyed by file path (e.g. '../../assets/icons/outline/star.svg').
@@ -75,16 +77,26 @@
 		}
 	}
 
-	let { name, variant = 'outline', size = 24, color, class: className, ...rest }: Props =
-		$props();
+	let {
+		name,
+		variant = 'outline',
+		size = 24,
+		color,
+		class: className,
+		'aria-label': ariaLabel,
+		role,
+		'aria-hidden': ariaHidden
+	}: Props = $props();
 
 	const icon = $derived(variant === 'colorfull' ? colorfullIcons[name] : outlineIcons[name]);
 </script>
 
 <span
-	{...rest}
 	class="icon {variant} {className ?? ''}"
 	style="display:inline-flex;position:relative;width:{size}px;height:{size}px;{color ? `color:${color};` : ''}"
+	aria-label={ariaLabel}
+	role={role}
+	aria-hidden={ariaHidden}
 >
 	{#if icon}
 		{@html icon}
