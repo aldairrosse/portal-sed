@@ -2,7 +2,7 @@
     import { getProfile } from '$lib/stores/devContext.svelte';
     import { goto } from '$app/navigation';
     import { onMount } from 'svelte';
-    import { Users, Plus, ChevronDown, ChevronUp, Edit, Trash, Loader2 } from '@lucide/svelte';
+    import { Users, Plus, Edit, Trash, Loader2 } from '@lucide/svelte';
     import WeightIndicator from '$lib/components/goals/WeightIndicator.svelte';
     import SharedGoalCreateForm from '$lib/components/goals/SharedGoalCreateForm.svelte';
     import { listSharedGoals, deleteSharedGoal, updateSharedGoal, type SharedGoal, type UpdateSharedGoalRequest } from '$lib/api/sharedGoals';
@@ -82,8 +82,6 @@
         }, 800);
     }
 
-    let showQualitative = $state(true);
-    let showQuantitative = $state(true);
     let showCreate = $state(false);
     let createKind = $state<'qualitative' | 'quantitative'>('qualitative');
 
@@ -139,28 +137,18 @@
         </div>
 
         <!-- Cualitativos -->
-        <div class="border border-base-300 rounded-lg mb-4">
-            <button
-                class="w-full flex items-center justify-between p-4 hover:bg-base-200 transition-colors"
-                onclick={() => showQualitative = !showQualitative}
-            >
+        <details open class="collapse collapse-arrow bg-base-100 border border-base-300 rounded-lg mb-4">
+            <summary class="collapse-title min-h-0 px-4 py-3 flex items-center justify-between gap-2">
                 <div class="flex items-center gap-2">
                     <span class="font-medium">Cualitativos</span>
                     <span class="badge badge-sm">{qualitativeGoals.length}</span>
                 </div>
                 <div class="flex items-center gap-2">
                     <span class="text-sm text-base-content/60">{qualitativeSum}%</span>
-                    {#if showQualitative}
-                        <ChevronUp class="w-4 h-4" />
-                    {:else}
-                        <ChevronDown class="w-4 h-4" />
-                    {/if}
                 </div>
-            </button>
-
-            {#if showQualitative}
-                <div class="border-t border-base-300 p-4">
-                    {#if qualitativeGoals.length === 0}
+            </summary>
+            <div class="collapse-content px-4">
+                {#if qualitativeGoals.length === 0}
                         <p class="text-center text-base-content/60 py-4">No hay metas cualitativas</p>
                     {:else}
                         <div class="space-y-2">
@@ -207,33 +195,22 @@
                     >
                         <Plus class="w-4 h-4" /> Nueva meta cualitativa
                     </button>
-                </div>
-            {/if}
-        </div>
+            </div>
+        </details>
 
         <!-- Cuantitativos -->
-        <div class="border border-base-300 rounded-lg mb-4">
-            <button
-                class="w-full flex items-center justify-between p-4 hover:bg-base-200 transition-colors"
-                onclick={() => showQuantitative = !showQuantitative}
-            >
+        <details open class="collapse collapse-arrow bg-base-100 border border-base-300 rounded-lg mb-4">
+            <summary class="collapse-title min-h-0 px-4 py-3 flex items-center justify-between gap-2">
                 <div class="flex items-center gap-2">
                     <span class="font-medium">Cuantitativos</span>
                     <span class="badge badge-sm">{quantitativeGoals.length}</span>
                 </div>
                 <div class="flex items-center gap-2">
                     <span class="text-sm text-base-content/60">{quantitativeSum}%</span>
-                    {#if showQuantitative}
-                        <ChevronUp class="w-4 h-4" />
-                    {:else}
-                        <ChevronDown class="w-4 h-4" />
-                    {/if}
                 </div>
-            </button>
-
-            {#if showQuantitative}
-                <div class="border-t border-base-300 p-4">
-                    {#if quantitativeGoals.length === 0}
+            </summary>
+            <div class="collapse-content px-4">
+                {#if quantitativeGoals.length === 0}
                         <p class="text-center text-base-content/60 py-4">No hay metas cuantitativas</p>
                     {:else}
                         <div class="space-y-2">
@@ -280,9 +257,8 @@
                     >
                         <Plus class="w-4 h-4" /> Nueva meta cuantitativa
                     </button>
-                </div>
-            {/if}
-        </div>
+            </div>
+        </details>
     {/if}
 </div>
 

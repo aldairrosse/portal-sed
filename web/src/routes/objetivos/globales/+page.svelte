@@ -2,7 +2,7 @@
     import { getProfile } from '$lib/stores/devContext.svelte';
     import { goto } from '$app/navigation';
     import { onMount } from 'svelte';
-    import { Target, Plus, ChevronDown, ChevronUp, Globe, Users, Loader2 } from '@lucide/svelte';
+    import { Target, Plus, Globe, Users, Loader2 } from '@lucide/svelte';
     import WeightIndicator from '$lib/components/goals/WeightIndicator.svelte';
     import { listGlobalGoals, deleteGlobalGoal, executeRules, updateGlobalGoal, type GlobalGoal } from '$lib/api/globalGoals';
     import GlobalGoalCreateForm from '$lib/components/goals/GlobalGoalCreateForm.svelte';
@@ -101,9 +101,6 @@
         }
     }
 
-    let showQualitative = $state(true);
-    let showQuantitative = $state(true);
-
     const qualitativeGoals = $derived(goals.filter(g => g.goal_kind === 'qualitative'));
     const quantitativeGoals = $derived(goals.filter(g => g.goal_kind === 'quantitative'));
 
@@ -162,11 +159,8 @@
         </div>
 
         <!-- Cualitativos -->
-        <div class="border border-base-300 rounded-lg mb-4">
-            <button
-                class="w-full flex items-center justify-between p-4 hover:bg-base-200 transition-colors"
-                onclick={() => showQualitative = !showQualitative}
-            >
+        <details open class="collapse collapse-arrow bg-base-100 border border-base-300 rounded-lg mb-4">
+            <summary class="collapse-title min-h-0 px-4 py-3 flex items-center justify-between gap-2">
                 <div class="flex items-center gap-2">
                     <Globe class="w-5 h-5 text-primary" />
                     <span class="font-medium">Cualitativos</span>
@@ -174,17 +168,10 @@
                 </div>
                 <div class="flex items-center gap-2">
                     <span class="text-sm text-base-content/60">{qualitativeSum}%</span>
-                    {#if showQualitative}
-                        <ChevronUp class="w-4 h-4" />
-                    {:else}
-                        <ChevronDown class="w-4 h-4" />
-                    {/if}
                 </div>
-            </button>
-
-            {#if showQualitative}
-                <div class="border-t border-base-300 p-4">
-                    {#if qualitativeGoals.length === 0}
+            </summary>
+            <div class="collapse-content px-4">
+                {#if qualitativeGoals.length === 0}
                         <p class="text-center text-base-content/60 py-4">No hay metas cualitativas</p>
                     {:else}
                         <div class="space-y-2">
@@ -245,16 +232,12 @@
                     <button class="btn btn-outline btn-sm mt-4 w-full" onclick={() => { createKind = 'qualitative'; editGoal = null; showCreate = true; }}>
                         <Plus class="w-4 h-4" /> Nueva meta cualitativa
                     </button>
-                </div>
-            {/if}
-        </div>
+            </div>
+        </details>
 
         <!-- Cuantitativos -->
-        <div class="border border-base-300 rounded-lg mb-4">
-            <button
-                class="w-full flex items-center justify-between p-4 hover:bg-base-200 transition-colors"
-                onclick={() => showQuantitative = !showQuantitative}
-            >
+        <details open class="collapse collapse-arrow bg-base-100 border border-base-300 rounded-lg mb-4">
+            <summary class="collapse-title min-h-0 px-4 py-3 flex items-center justify-between gap-2">
                 <div class="flex items-center gap-2">
                     <Users class="w-5 h-5 text-secondary" />
                     <span class="font-medium">Cuantitativos</span>
@@ -262,17 +245,10 @@
                 </div>
                 <div class="flex items-center gap-2">
                     <span class="text-sm text-base-content/60">{quantitativeSum}%</span>
-                    {#if showQuantitative}
-                        <ChevronUp class="w-4 h-4" />
-                    {:else}
-                        <ChevronDown class="w-4 h-4" />
-                    {/if}
                 </div>
-            </button>
-
-            {#if showQuantitative}
-                <div class="border-t border-base-300 p-4">
-                    {#if quantitativeGoals.length === 0}
+            </summary>
+            <div class="collapse-content px-4">
+                {#if quantitativeGoals.length === 0}
                         <p class="text-center text-base-content/60 py-4">No hay metas cuantitativas</p>
                     {:else}
                         <div class="space-y-2">
@@ -333,9 +309,8 @@
                     <button class="btn btn-outline btn-sm mt-4 w-full" onclick={() => { createKind = 'quantitative'; editGoal = null; showCreate = true; }}>
                         <Plus class="w-4 h-4" /> Nueva meta cuantitativa
                     </button>
-                </div>
-            {/if}
-        </div>
+            </div>
+        </details>
     {/if}
 
     <GlobalGoalCreateForm
