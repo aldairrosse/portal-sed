@@ -144,7 +144,7 @@
                     <span class="badge badge-sm">{qualitativeGoals.length}</span>
                 </div>
                 <div class="flex items-center gap-2">
-                    <span class="text-sm text-base-content/60">{qualitativeSum}%</span>
+                    <span class="text-sm text-base-content/60 mr-4">{qualitativeSum}%</span>
                 </div>
             </summary>
             <div class="collapse-content px-4">
@@ -206,7 +206,7 @@
                     <span class="badge badge-sm">{quantitativeGoals.length}</span>
                 </div>
                 <div class="flex items-center gap-2">
-                    <span class="text-sm text-base-content/60">{quantitativeSum}%</span>
+                    <span class="text-sm text-base-content/60 mr-4">{quantitativeSum}%</span>
                 </div>
             </summary>
             <div class="collapse-content px-4">
