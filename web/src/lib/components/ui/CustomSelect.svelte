@@ -13,6 +13,7 @@
 		placeholder?: string;
 		ariaLabel?: string;
 		class?: string;
+		searchable?: boolean;
 	}
 
 	let {
@@ -21,7 +22,8 @@
 		onChange,
 		placeholder = 'Seleccionar',
 		ariaLabel,
-		class: className = ''
+		class: className = '',
+		searchable = false
 	}: Props = $props();
 
 	const uid = $props.id();
@@ -34,9 +36,11 @@
 	let menuEl: HTMLUListElement | undefined = $state();
 
 	const filteredOptions = $derived(
-		query.trim() === ''
-			? options
-			: options.filter((o) => o.label.toLowerCase().includes(query.trim().toLowerCase()))
+		searchable
+			? query.trim() === ''
+				? options
+				: options.filter((o) => o.label.toLowerCase().includes(query.trim().toLowerCase()))
+			: options
 	);
 
 	const selectedLabel = $derived(
@@ -140,16 +144,18 @@
 	aria-label={ariaLabel}
 	ontoggle={handleToggle}
 >
-	<li class="mb-1 sticky top-0 bg-base-100">
-		<input
-			type="search"
-			class="input input-bordered input-xs w-full"
-			placeholder="Buscar…"
-			bind:value={query}
-			onkeydown={(e) => e.stopPropagation()}
-			aria-label="Buscar opción"
-		/>
-	</li>
+	{#if searchable}
+		<li class="mb-1 sticky top-0 bg-base-100">
+			<input
+				type="search"
+				class="input input-bordered input-xs w-full"
+				placeholder="Buscar…"
+				bind:value={query}
+				onkeydown={(e) => e.stopPropagation()}
+				aria-label="Buscar opción"
+			/>
+		</li>
+	{/if}
 	{#each filteredOptions as option (option.value)}
 		<li role="option" aria-selected={option.value === value} data-value={option.value} class="last:mb-0 mb-1">
 			<button
@@ -162,7 +168,7 @@
 			</button>
 		</li>
 	{/each}
-	{#if filteredOptions.length === 0}
+	{#if searchable && filteredOptions.length === 0}
 		<li class="px-2 py-1 text-xs text-base-content/50">Sin resultados</li>
 	{/if}
 </ul>

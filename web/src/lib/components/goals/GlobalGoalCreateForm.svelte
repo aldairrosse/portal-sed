@@ -271,6 +271,7 @@
                         value={employeeSelect}
                         onChange={(v) => { employeeSelect = v; }}
                         ariaLabel="Empleado"
+                        searchable
                     />
                     <button class="btn btn-outline btn-sm" onclick={addAssignment} type="button">
                         <Plus class="w-4 h-4" /> Agregar
