@@ -149,7 +149,7 @@
     }
 </script>
 
-<dialog class="modal" open={open} role="dialog" aria-modal="true">
+<dialog class="modal" open={open} aria-modal="true">
     <div class="modal-box max-w-2xl">
         <div class="flex items-center justify-between mb-4">
             <h3 class="font-bold text-lg">
