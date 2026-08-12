@@ -1,18 +1,27 @@
 <script lang="ts">
     import { Loader2, Plus, Trash2 } from '@lucide/svelte';
     import CustomSelect from '$lib/components/ui/CustomSelect.svelte';
-    import { createGlobalGoal, type CreateGlobalGoalRequest } from '$lib/api/globalGoals';
+    import { createGlobalGoal, updateGlobalGoal, type CreateGlobalGoalRequest } from '$lib/api/globalGoals';
     import { load, getRoot, getAllLeafIds, getNodeById, getScopeIds } from '$lib/stores/orgHierarchyStore.svelte';
     import type { OrgNode } from '$lib/types/org-hierarchy';
 
     interface Props {
         open: boolean;
         goalKind: 'qualitative' | 'quantitative';
+        goalId?: string;
+        initial?: {
+            name: string;
+            description: string;
+            unit: string;
+            direction: 'ascendente' | 'descendente';
+            weight: number;
+            target_value: number;
+        };
         oncancel: () => void;
         onsaved: () => void;
     }
 
-    let { open, goalKind, oncancel, onsaved }: Props = $props();
+    let { open, goalKind, goalId, initial, oncancel, onsaved }: Props = $props();
 
     const UNIT_OPTIONS = [
         { value: 'porcentaje', label: 'Porcentaje (%)' },
@@ -69,12 +78,21 @@
 
     $effect(() => {
         if (open) {
-            name = '';
-            description = '';
-            unit = 'porcentaje';
-            direction = 'ascendente';
-            weight = 0;
-            targetValue = 0;
+            if (initial) {
+                name = initial.name;
+                description = initial.description;
+                unit = initial.unit;
+                direction = initial.direction;
+                weight = initial.weight;
+                targetValue = initial.target_value;
+            } else {
+                name = '';
+                description = '';
+                unit = 'porcentaje';
+                direction = 'ascendente';
+                weight = 0;
+                targetValue = 0;
+            }
             assignments = [];
             rules = [];
             employeeSelect = '';
@@ -112,7 +130,7 @@
         if (!name.trim()) return 'El nombre es obligatorio';
         if (!(weight >= 0 && weight <= 100)) return 'La ponderación debe estar entre 0 y 100';
         if (!(targetValue > 0)) return 'El valor objetivo debe ser mayor a 0';
-        if (assignments.length === 0 && rules.length === 0) return 'Selecciona al menos un empleado o una regla';
+        if (!goalId && assignments.length === 0 && rules.length === 0) return 'Selecciona al menos un empleado o una regla';
         for (const a of assignments) {
             if (!(a.weight >= 0 && a.weight <= 100)) return 'Ponderación de empleado inválida (0-100)';
             if (!(a.targetValue > 0)) return 'El valor objetivo del empleado debe ser mayor a 0';
@@ -131,30 +149,42 @@
         error = '';
         saving = true;
         try {
-            const request: CreateGlobalGoalRequest = {
-                name: name.trim(),
-                description: description.trim(),
-                unit,
-                direction,
-                goal_kind: goalKind,
-                weight,
-                target_value: targetValue,
-                assignments: assignments.length > 0
-                    ? assignments.map(a => ({
-                        employee_id: a.employeeId,
-                        weight: a.weight,
-                        target_value: a.targetValue,
-                    }))
-                    : undefined,
-                rules: rules.length > 0
-                    ? rules.map(r => ({
-                        rule_type: r.ruleType,
-                        ...(r.ruleType === 'department' ? { department_id: r.departmentId } : { min_direct_reports: r.minDirectReports }),
-                        default_weight: r.defaultWeight,
-                    }))
-                    : undefined,
-            };
-            await createGlobalGoal(request);
+            if (goalId) {
+                await updateGlobalGoal(goalId, {
+                    name: name.trim(),
+                    description: description.trim(),
+                    unit,
+                    direction,
+                    goal_kind: goalKind,
+                    weight,
+                    target_value: targetValue,
+                });
+            } else {
+                const request: CreateGlobalGoalRequest = {
+                    name: name.trim(),
+                    description: description.trim(),
+                    unit,
+                    direction,
+                    goal_kind: goalKind,
+                    weight,
+                    target_value: targetValue,
+                    assignments: assignments.length > 0
+                        ? assignments.map(a => ({
+                            employee_id: a.employeeId,
+                            weight: a.weight,
+                            target_value: a.targetValue,
+                        }))
+                        : undefined,
+                    rules: rules.length > 0
+                        ? rules.map(r => ({
+                            rule_type: r.ruleType,
+                            ...(r.ruleType === 'department' ? { department_id: r.departmentId } : { min_direct_reports: r.minDirectReports }),
+                            default_weight: r.defaultWeight,
+                        }))
+                        : undefined,
+                };
+                await createGlobalGoal(request);
+            }
             onsaved();
         } catch (e) {
             error = e instanceof Error ? e.message : 'Error al guardar';
@@ -172,7 +202,7 @@
 >
     <div class="modal-box max-w-2xl">
         <h3 class="font-bold text-lg mb-4">
-            Nueva meta {goalKind === 'qualitative' ? 'cualitativa' : 'cuantitativa'}
+            {goalId ? 'Editar' : 'Nueva'} meta {goalKind === 'qualitative' ? 'cualitativa' : 'cuantitativa'}
         </h3>
 
         {#if error}
@@ -230,6 +260,7 @@
             </div>
         </div>
 
+        {#if !goalId}
         <!-- Asignación a empleados -->
         <div class="border border-base-300 rounded-lg p-3 mb-3">
             <div class="flex items-center justify-between mb-2">
@@ -318,6 +349,7 @@
                 </div>
             {/if}
         </div>
+        {/if}
 
         <div class="modal-action">
             <button class="btn btn-ghost btn-sm" onclick={oncancel} disabled={saving} type="button">Cancelar</button>

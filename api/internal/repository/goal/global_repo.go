@@ -225,13 +225,14 @@ func (r *GlobalGoalRepo) ListGlobalGoalsByCycle(ctx context.Context, cycleID uui
 }
 
 // UpdateGlobalGoal updates a global goal.
-func (r *GlobalGoalRepo) UpdateGlobalGoal(ctx context.Context, goalID uuid.UUID, name, description, unit, direction, goalKind string, targetValue float64, expectedVersion int) (*GlobalGoalRow, error) {
+func (r *GlobalGoalRepo) UpdateGlobalGoal(ctx context.Context, goalID uuid.UUID, name, description, unit, direction, goalKind string, weight, targetValue float64, expectedVersion int) (*GlobalGoalRow, error) {
 	g, err := r.client.Goal.UpdateOneID(goalID).
 		SetName(name).
 		SetDescription(description).
 		SetUnit(goal.Unit(unit)).
 		SetDirection(goal.Direction(direction)).
 		SetGoalKind(goal.GoalKind(goalKind)).
+		SetWeight(weight).
 		SetTargetValue(targetValue).
 		Save(ctx)
 	if err != nil {

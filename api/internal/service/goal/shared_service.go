@@ -50,6 +50,7 @@ type UpdateSharedGoalRequest struct {
 	Unit        string  `json:"unit" validate:"required,oneof=porcentaje moneda numero"`
 	Direction   string  `json:"direction" validate:"required,oneof=ascendente descendente"`
 	GoalKind    string  `json:"goal_kind" validate:"required,oneof=qualitative quantitative"`
+	Weight      float64 `json:"weight" validate:"required,min=0,max=100"`
 	TargetValue float64 `json:"target_value" validate:"required,gt=0"`
 }
 
@@ -121,7 +122,7 @@ func (s *sharedGoalService) UpdateSharedGoal(ctx context.Context, goalID uuid.UU
 		return nil, ErrNotCreator
 	}
 
-	return s.repo.UpdateSharedGoal(ctx, goalID, req.Name, req.Description, req.Unit, req.Direction, req.GoalKind, req.TargetValue)
+	return s.repo.UpdateSharedGoal(ctx, goalID, req.Name, req.Description, req.Unit, req.Direction, req.GoalKind, req.Weight, req.TargetValue)
 }
 
 // DeleteSharedGoal deletes a shared goal.

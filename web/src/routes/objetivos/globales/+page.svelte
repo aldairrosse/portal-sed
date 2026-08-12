@@ -4,7 +4,7 @@
     import { onMount } from 'svelte';
     import { Target, Plus, ChevronDown, ChevronUp, Globe, Users, Loader2 } from '@lucide/svelte';
     import WeightIndicator from '$lib/components/goals/WeightIndicator.svelte';
-    import { listGlobalGoals, deleteGlobalGoal, type GlobalGoal } from '$lib/api/globalGoals';
+    import { listGlobalGoals, deleteGlobalGoal, executeRules, updateGlobalGoal, type GlobalGoal } from '$lib/api/globalGoals';
     import GlobalGoalCreateForm from '$lib/components/goals/GlobalGoalCreateForm.svelte';
 
     const profile = $derived(getProfile());
@@ -14,6 +14,10 @@
     let error = $state('');
     let showCreate = $state(false);
     let createKind = $state<'qualitative' | 'quantitative'>('qualitative');
+    let editGoal = $state<GlobalGoal | null>(null);
+    let notice = $state('');
+    let runningRules = $state('');
+    let savingIds = $state<string[]>([]);
 
     onMount(() => {
         if (profile !== 'rh') {
@@ -41,6 +45,59 @@
             await loadGoals();
         } catch (e) {
             error = e instanceof Error ? e.message : 'Error al eliminar';
+        }
+    }
+
+    function showNotice(msg: string) {
+        notice = msg;
+        setTimeout(() => { if (notice === msg) notice = ''; }, 5000);
+    }
+
+    function openEdit(goal: GlobalGoal) {
+        editGoal = goal;
+        createKind = goal.goal_kind === 'quantitative' ? 'quantitative' : 'qualitative';
+        showCreate = true;
+    }
+
+    async function handleExecuteRules(goalId: string) {
+        runningRules = goalId;
+        try {
+            const res = await executeRules(goalId);
+            showNotice(`Se asignó la meta a ${res.assignments_created} empleados`);
+        } catch (e) {
+            error = e instanceof Error ? e.message : 'Error al ejecutar asignación';
+        } finally {
+            runningRules = '';
+        }
+    }
+
+    const weightTimers = new Map<string, ReturnType<typeof setTimeout>>();
+
+    function scheduleWeightSave(goal: GlobalGoal) {
+        const prev = weightTimers.get(goal.id);
+        if (prev) clearTimeout(prev);
+        weightTimers.set(goal.id, setTimeout(() => saveWeight(goal.id), 800));
+    }
+
+    async function saveWeight(goalId: string) {
+        weightTimers.delete(goalId);
+        const goal = goals.find(g => g.id === goalId);
+        if (!goal) return;
+        savingIds = [...savingIds, goalId];
+        try {
+            await updateGlobalGoal(goalId, {
+                name: goal.name,
+                description: goal.description,
+                unit: goal.unit,
+                direction: goal.direction,
+                goal_kind: goal.goal_kind,
+                weight: goal.weight,
+                target_value: goal.target_value,
+            });
+        } catch (e) {
+            error = e instanceof Error ? e.message : 'Error al guardar ponderación';
+        } finally {
+            savingIds = savingIds.filter(id => id !== goalId);
         }
     }
 
@@ -80,6 +137,12 @@
         <div class="alert alert-error mb-4">
             <span>{error}</span>
             <button class="btn btn-ghost btn-xs" onclick={() => error = ''}>×</button>
+        </div>
+    {/if}
+
+    {#if notice}
+        <div class="alert alert-success mb-4">
+            <span>{notice}</span>
         </div>
     {/if}
 
@@ -132,7 +195,42 @@
                                         <p class="text-sm text-base-content/60">Target: {formatTarget(goal)}</p>
                                     </div>
                                     <div class="flex items-center gap-2">
-                                        <span class="badge badge-primary">{goal.weight}%</span>
+                                        <div class="flex items-center gap-1">
+                                            <input
+                                                type="number"
+                                                class="input input-bordered input-xs w-20"
+                                                bind:value={goal.weight}
+                                                oninput={() => scheduleWeightSave(goal)}
+                                                min={0}
+                                                max={100}
+                                                step={0.1}
+                                                aria-label={`Ponderación de ${goal.name}`}
+                                            />
+                                            <span class="text-xs text-base-content/60">%</span>
+                                            {#if savingIds.includes(goal.id)}
+                                                <span class="text-xs text-base-content/40">Guardando…</span>
+                                            {/if}
+                                        </div>
+                                        {#if goal.rules.length > 0}
+                                            <button
+                                                class="btn btn-outline btn-xs"
+                                                disabled={runningRules !== ''}
+                                                onclick={() => handleExecuteRules(goal.id)}
+                                            >
+                                                {#if runningRules === goal.id}
+                                                    <Loader2 class="w-3 h-3 animate-spin" />
+                                                    Ejecutando…
+                                                {:else}
+                                                    Ejecutar asignación
+                                                {/if}
+                                            </button>
+                                        {/if}
+                                        <button
+                                            class="btn btn-ghost btn-xs"
+                                            onclick={() => openEdit(goal)}
+                                        >
+                                            Editar
+                                        </button>
                                         <button
                                             class="btn btn-ghost btn-xs text-error"
                                             onclick={() => handleDelete(goal.id)}
@@ -144,7 +242,7 @@
                             {/each}
                         </div>
                     {/if}
-                    <button class="btn btn-outline btn-sm mt-4 w-full" onclick={() => { createKind = 'qualitative'; showCreate = true; }}>
+                    <button class="btn btn-outline btn-sm mt-4 w-full" onclick={() => { createKind = 'qualitative'; editGoal = null; showCreate = true; }}>
                         <Plus class="w-4 h-4" /> Nueva meta cualitativa
                     </button>
                 </div>
@@ -185,7 +283,42 @@
                                         <p class="text-sm text-base-content/60">Target: {formatTarget(goal)}</p>
                                     </div>
                                     <div class="flex items-center gap-2">
-                                        <span class="badge badge-secondary">{goal.weight}%</span>
+                                        <div class="flex items-center gap-1">
+                                            <input
+                                                type="number"
+                                                class="input input-bordered input-xs w-20"
+                                                bind:value={goal.weight}
+                                                oninput={() => scheduleWeightSave(goal)}
+                                                min={0}
+                                                max={100}
+                                                step={0.1}
+                                                aria-label={`Ponderación de ${goal.name}`}
+                                            />
+                                            <span class="text-xs text-base-content/60">%</span>
+                                            {#if savingIds.includes(goal.id)}
+                                                <span class="text-xs text-base-content/40">Guardando…</span>
+                                            {/if}
+                                        </div>
+                                        {#if goal.rules.length > 0}
+                                            <button
+                                                class="btn btn-outline btn-xs"
+                                                disabled={runningRules !== ''}
+                                                onclick={() => handleExecuteRules(goal.id)}
+                                            >
+                                                {#if runningRules === goal.id}
+                                                    <Loader2 class="w-3 h-3 animate-spin" />
+                                                    Ejecutando…
+                                                {:else}
+                                                    Ejecutar asignación
+                                                {/if}
+                                            </button>
+                                        {/if}
+                                        <button
+                                            class="btn btn-ghost btn-xs"
+                                            onclick={() => openEdit(goal)}
+                                        >
+                                            Editar
+                                        </button>
                                         <button
                                             class="btn btn-ghost btn-xs text-error"
                                             onclick={() => handleDelete(goal.id)}
@@ -197,25 +330,27 @@
                             {/each}
                         </div>
                     {/if}
-                    <button class="btn btn-outline btn-sm mt-4 w-full" onclick={() => { createKind = 'quantitative'; showCreate = true; }}>
+                    <button class="btn btn-outline btn-sm mt-4 w-full" onclick={() => { createKind = 'quantitative'; editGoal = null; showCreate = true; }}>
                         <Plus class="w-4 h-4" /> Nueva meta cuantitativa
                     </button>
                 </div>
             {/if}
-        </div>
-
-        <div class="flex justify-end gap-2 mt-6">
-            <button class="btn btn-ghost">Cancelar</button>
-            <button class="btn btn-primary" disabled={totalSum !== 100}>
-                Guardar objetivos
-            </button>
         </div>
     {/if}
 
     <GlobalGoalCreateForm
         open={showCreate}
         goalKind={createKind}
-        oncancel={() => showCreate = false}
-        onsaved={() => { showCreate = false; loadGoals(); }}
+        goalId={editGoal?.id}
+        initial={editGoal ? {
+            name: editGoal.name,
+            description: editGoal.description,
+            unit: editGoal.unit,
+            direction: editGoal.direction as 'ascendente' | 'descendente',
+            weight: editGoal.weight,
+            target_value: editGoal.target_value,
+        } : undefined}
+        oncancel={() => { showCreate = false; editGoal = null; }}
+        onsaved={() => { showCreate = false; editGoal = null; loadGoals(); }}
     />
 </div>

@@ -219,13 +219,14 @@ func (r *SharedGoalRepo) ListSharedGoalsAsMember(ctx context.Context, employeeID
 }
 
 // UpdateSharedGoal updates a shared goal.
-func (r *SharedGoalRepo) UpdateSharedGoal(ctx context.Context, goalID uuid.UUID, name, description, unit, direction, goalKind string, targetValue float64) (*SharedGoalRow, error) {
+func (r *SharedGoalRepo) UpdateSharedGoal(ctx context.Context, goalID uuid.UUID, name, description, unit, direction, goalKind string, weight, targetValue float64) (*SharedGoalRow, error) {
 	_, err := r.client.Goal.UpdateOneID(goalID).
 		SetName(name).
 		SetDescription(description).
 		SetUnit(goal.Unit(unit)).
 		SetDirection(goal.Direction(direction)).
 		SetGoalKind(goal.GoalKind(goalKind)).
+		SetWeight(weight).
 		SetTargetValue(targetValue).
 		Save(ctx)
 	if err != nil {

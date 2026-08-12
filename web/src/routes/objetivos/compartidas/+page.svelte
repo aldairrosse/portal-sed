@@ -5,7 +5,7 @@
     import { Users, Plus, ChevronDown, ChevronUp, Edit, Trash, Loader2 } from '@lucide/svelte';
     import WeightIndicator from '$lib/components/goals/WeightIndicator.svelte';
     import SharedGoalCreateForm from '$lib/components/goals/SharedGoalCreateForm.svelte';
-    import { listSharedGoals, deleteSharedGoal, type SharedGoal } from '$lib/api/sharedGoals';
+    import { listSharedGoals, deleteSharedGoal, updateSharedGoal, type SharedGoal, type UpdateSharedGoalRequest } from '$lib/api/sharedGoals';
 
     const profile = $derived(getProfile());
     const allowedProfiles = ['jefe', 'gerente-tienda', 'divisional', 'regional', 'director'];
@@ -41,6 +41,45 @@
         } catch (e) {
             error = e instanceof Error ? e.message : 'Error al eliminar';
         }
+    }
+
+    let editGoal = $state<SharedGoal | null>(null);
+
+    const editInitial = $derived(
+        editGoal
+            ? {
+                  name: editGoal.name,
+                  description: editGoal.description,
+                  unit: editGoal.unit,
+                  direction: editGoal.direction as 'ascendente' | 'descendente',
+                  weight: editGoal.weight,
+                  target_value: editGoal.target_value,
+              }
+            : undefined
+    );
+
+    let weightTimer: ReturnType<typeof setTimeout> | undefined;
+
+    function scheduleWeightSave(goal: SharedGoal) {
+        clearTimeout(weightTimer);
+        weightTimer = setTimeout(async () => {
+            const w = Number(goal.weight);
+            if (!Number.isFinite(w)) return;
+            try {
+                // ponytail: UpdateSharedGoalRequest type lacks weight; backend accepts it
+                await updateSharedGoal(goal.id, {
+                    name: goal.name,
+                    description: goal.description,
+                    unit: goal.unit,
+                    direction: goal.direction,
+                    goal_kind: goal.goal_kind,
+                    weight: w,
+                    target_value: goal.target_value,
+                } as UpdateSharedGoalRequest);
+            } catch (e) {
+                error = e instanceof Error ? e.message : 'Error al guardar la ponderación';
+            }
+        }, 800);
     }
 
     let showQualitative = $state(true);
@@ -134,8 +173,21 @@
                                         </p>
                                     </div>
                                     <div class="flex items-center gap-2">
-                                        <span class="badge badge-primary">{goal.weight}%</span>
-                                        <button class="btn btn-ghost btn-xs">
+                                        <input
+                                            type="number"
+                                            class="input input-bordered input-xs w-20"
+                                            bind:value={goal.weight}
+                                            min={0}
+                                            max={100}
+                                            step={0.1}
+                                            oninput={() => scheduleWeightSave(goal)}
+                                            aria-label={`Ponderación de ${goal.name}`}
+                                        />
+                                        <button
+                                            type="button"
+                                            class="btn btn-ghost btn-xs"
+                                            onclick={() => { editGoal = goal; createKind = goal.goal_kind as 'qualitative' | 'quantitative'; showCreate = true; }}
+                                        >
                                             <Edit class="w-3 h-3" />
                                         </button>
                                         <button
@@ -194,8 +246,21 @@
                                         </p>
                                     </div>
                                     <div class="flex items-center gap-2">
-                                        <span class="badge badge-secondary">{goal.weight}%</span>
-                                        <button class="btn btn-ghost btn-xs">
+                                        <input
+                                            type="number"
+                                            class="input input-bordered input-xs w-20"
+                                            bind:value={goal.weight}
+                                            min={0}
+                                            max={100}
+                                            step={0.1}
+                                            oninput={() => scheduleWeightSave(goal)}
+                                            aria-label={`Ponderación de ${goal.name}`}
+                                        />
+                                        <button
+                                            type="button"
+                                            class="btn btn-ghost btn-xs"
+                                            onclick={() => { editGoal = goal; createKind = goal.goal_kind as 'qualitative' | 'quantitative'; showCreate = true; }}
+                                        >
                                             <Edit class="w-3 h-3" />
                                         </button>
                                         <button
@@ -218,19 +283,14 @@
                 </div>
             {/if}
         </div>
-
-        <div class="flex justify-end gap-2 mt-6">
-            <button class="btn btn-ghost">Cancelar</button>
-            <button class="btn btn-primary" disabled={totalSum !== 100}>
-                Guardar metas compartidas
-            </button>
-        </div>
     {/if}
 </div>
 
 <SharedGoalCreateForm
     open={showCreate}
     goalKind={createKind}
-    oncancel={() => showCreate = false}
-    onsaved={() => { showCreate = false; loadGoals(); }}
+    goalId={editGoal?.id}
+    initial={editInitial}
+    oncancel={() => { showCreate = false; editGoal = null; }}
+    onsaved={() => { showCreate = false; editGoal = null; loadGoals(); }}
 />

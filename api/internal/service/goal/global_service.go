@@ -53,6 +53,7 @@ type UpdateGlobalGoalRequest struct {
 	Unit        string  `json:"unit" validate:"required,oneof=porcentaje moneda numero"`
 	Direction   string  `json:"direction" validate:"required,oneof=ascendente descendente"`
 	GoalKind    string  `json:"goal_kind" validate:"required,oneof=qualitative quantitative"`
+	Weight      float64 `json:"weight" validate:"required,min=0,max=100"`
 	TargetValue float64 `json:"target_value" validate:"required,gt=0"`
 }
 
@@ -108,7 +109,7 @@ func (s *globalGoalService) ListGlobalGoals(ctx context.Context, cycleID uuid.UU
 
 // UpdateGlobalGoal updates a global goal.
 func (s *globalGoalService) UpdateGlobalGoal(ctx context.Context, goalID uuid.UUID, req UpdateGlobalGoalRequest) (*repogoal.GlobalGoalRow, error) {
-	return s.repo.UpdateGlobalGoal(ctx, goalID, req.Name, req.Description, req.Unit, req.Direction, req.GoalKind, req.TargetValue, 0)
+	return s.repo.UpdateGlobalGoal(ctx, goalID, req.Name, req.Description, req.Unit, req.Direction, req.GoalKind, req.Weight, req.TargetValue, 0)
 }
 
 // DeleteGlobalGoal deletes a global goal.

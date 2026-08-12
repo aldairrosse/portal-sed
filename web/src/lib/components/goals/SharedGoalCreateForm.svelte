@@ -3,16 +3,25 @@
     import CustomSelect from '$lib/components/ui/CustomSelect.svelte';
     import { getSession } from '$lib/api/session.svelte';
     import { loadTeam, getTeamMembers, type TeamMember } from '$lib/stores/teamStore.svelte';
-    import { createSharedGoal, type CreateSharedGoalRequest, type CreateMemberRequest } from '$lib/api/sharedGoals';
+    import { createSharedGoal, updateSharedGoal, type CreateSharedGoalRequest, type CreateMemberRequest, type UpdateSharedGoalRequest } from '$lib/api/sharedGoals';
 
     interface Props {
         open: boolean;
         goalKind: 'qualitative' | 'quantitative';
+        goalId?: string;
+        initial?: {
+            name: string;
+            description: string;
+            unit: string;
+            direction: 'ascendente' | 'descendente';
+            weight: number;
+            target_value: number;
+        };
         oncancel: () => void;
         onsaved: () => void;
     }
 
-    let { open, goalKind, oncancel, onsaved }: Props = $props();
+    let { open, goalKind, goalId, initial, oncancel, onsaved }: Props = $props();
 
     const UNIT_OPTIONS = [
         { value: 'porcentaje', label: 'Porcentaje' },
@@ -48,7 +57,17 @@
 
     $effect(() => {
         if (!open) return;
-        reset();
+        if (initial) {
+            name = initial.name;
+            description = initial.description;
+            unit = initial.unit;
+            direction = initial.direction;
+            weight = initial.weight;
+            targetValue = initial.target_value;
+            error = '';
+        } else {
+            reset();
+        }
         const user = getSession().user;
         if (user?.employeeId) {
             loadTeam(user.employeeId).then(() => {
@@ -77,10 +96,10 @@
 
     function validate(): string {
         if (!name.trim()) return 'El nombre de la meta es obligatorio';
-        if (!groupName.trim()) return 'El nombre del grupo es obligatorio';
+        if (!goalId && !groupName.trim()) return 'El nombre del grupo es obligatorio';
         if (weight < 0 || weight > 100) return 'La ponderación debe estar entre 0 y 100';
         if (targetValue <= 0) return 'El valor objetivo debe ser mayor a 0';
-        if (Object.keys(memberForm).length === 0) return 'Selecciona al menos un miembro del grupo';
+        if (!goalId && Object.keys(memberForm).length === 0) return 'Selecciona al menos un miembro del grupo';
         return '';
     }
 
@@ -90,24 +109,37 @@
         error = '';
         saving = true;
         try {
-            const membersPayload: CreateMemberRequest[] = Object.values(memberForm).map((m) => ({
-                employee_id: m.employee_id,
-                weight: m.weight,
-                target_value: m.target_value,
-            }));
-            const request: CreateSharedGoalRequest = {
-                name: name.trim(),
-                description: description.trim(),
-                unit,
-                direction,
-                goal_kind: goalKind,
-                weight,
-                target_value: targetValue,
-                group_name: groupName.trim(),
-                group_description: groupDescription.trim(),
-                members: membersPayload,
-            };
-            await createSharedGoal(request);
+            if (goalId) {
+                // ponytail: UpdateSharedGoalRequest type lacks weight; backend accepts it
+                await updateSharedGoal(goalId, {
+                    name: name.trim(),
+                    description: description.trim(),
+                    unit,
+                    direction,
+                    goal_kind: goalKind,
+                    weight,
+                    target_value: targetValue,
+                } as UpdateSharedGoalRequest);
+            } else {
+                const membersPayload: CreateMemberRequest[] = Object.values(memberForm).map((m) => ({
+                    employee_id: m.employee_id,
+                    weight: m.weight,
+                    target_value: m.target_value,
+                }));
+                const request: CreateSharedGoalRequest = {
+                    name: name.trim(),
+                    description: description.trim(),
+                    unit,
+                    direction,
+                    goal_kind: goalKind,
+                    weight,
+                    target_value: targetValue,
+                    group_name: groupName.trim(),
+                    group_description: groupDescription.trim(),
+                    members: membersPayload,
+                };
+                await createSharedGoal(request);
+            }
             onsaved();
         } catch (e) {
             error = e instanceof Error ? e.message : 'Error al guardar la meta compartida';
@@ -121,7 +153,9 @@
     <div class="modal-box max-w-2xl">
         <div class="flex items-center justify-between mb-4">
             <h3 class="font-bold text-lg">
-                Nueva meta {goalKind === 'qualitative' ? 'cualitativa' : 'cuantitativa'}
+                {goalId
+                    ? `Editar meta ${goalKind === 'qualitative' ? 'cualitativa' : 'cuantitativa'}`
+                    : `Nueva meta ${goalKind === 'qualitative' ? 'cualitativa' : 'cuantitativa'}`}
             </h3>
             <button class="btn btn-sm btn-ghost btn-circle" onclick={oncancel} disabled={saving}>
                 <X class="w-4 h-4" />
@@ -193,6 +227,7 @@
             </div>
         </div>
 
+        {#if !goalId}
         <div class="form-control">
             <span class="label"><span class="label-text text-xs">Miembros del grupo</span></span>
             {#if members.length === 0}
@@ -222,6 +257,7 @@
                 </div>
             {/if}
         </div>
+        {/if}
 
         <div class="modal-action">
             <button class="btn btn-ghost" onclick={oncancel} disabled={saving}>Cancelar</button>

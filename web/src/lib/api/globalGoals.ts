@@ -69,6 +69,7 @@ export interface UpdateGlobalGoalRequest {
   unit: string;
   direction: string;
   goal_kind: string;
+  weight: number;
   target_value: number;
 }
 
