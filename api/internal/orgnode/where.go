@@ -674,6 +674,29 @@ func HasKpisWith(preds ...predicate.KPI) predicate.OrgNode {
 	})
 }
 
+// HasGlobalGoalRules applies the HasEdge predicate on the "global_goal_rules" edge.
+func HasGlobalGoalRules() predicate.OrgNode {
+	return predicate.OrgNode(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, GlobalGoalRulesTable, GlobalGoalRulesColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasGlobalGoalRulesWith applies the HasEdge predicate on the "global_goal_rules" edge with a given conditions (other predicates).
+func HasGlobalGoalRulesWith(preds ...predicate.GlobalGoalRule) predicate.OrgNode {
+	return predicate.OrgNode(func(s *sql.Selector) {
+		step := newGlobalGoalRulesStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.OrgNode) predicate.OrgNode {
 	return predicate.OrgNode(sql.AndPredicates(predicates...))

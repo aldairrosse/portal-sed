@@ -972,6 +972,98 @@ func HasActivityLogsWith(preds ...predicate.ActivityLog) predicate.Employee {
 	})
 }
 
+// HasGoalTemplates applies the HasEdge predicate on the "goal_templates" edge.
+func HasGoalTemplates() predicate.Employee {
+	return predicate.Employee(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, GoalTemplatesTable, GoalTemplatesColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasGoalTemplatesWith applies the HasEdge predicate on the "goal_templates" edge with a given conditions (other predicates).
+func HasGoalTemplatesWith(preds ...predicate.GoalTemplate) predicate.Employee {
+	return predicate.Employee(func(s *sql.Selector) {
+		step := newGoalTemplatesStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasGlobalGoalAssignments applies the HasEdge predicate on the "global_goal_assignments" edge.
+func HasGlobalGoalAssignments() predicate.Employee {
+	return predicate.Employee(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, GlobalGoalAssignmentsTable, GlobalGoalAssignmentsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasGlobalGoalAssignmentsWith applies the HasEdge predicate on the "global_goal_assignments" edge with a given conditions (other predicates).
+func HasGlobalGoalAssignmentsWith(preds ...predicate.GlobalGoalAssignment) predicate.Employee {
+	return predicate.Employee(func(s *sql.Selector) {
+		step := newGlobalGoalAssignmentsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasSharedGoalGroups applies the HasEdge predicate on the "shared_goal_groups" edge.
+func HasSharedGoalGroups() predicate.Employee {
+	return predicate.Employee(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, SharedGoalGroupsTable, SharedGoalGroupsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasSharedGoalGroupsWith applies the HasEdge predicate on the "shared_goal_groups" edge with a given conditions (other predicates).
+func HasSharedGoalGroupsWith(preds ...predicate.SharedGoalGroup) predicate.Employee {
+	return predicate.Employee(func(s *sql.Selector) {
+		step := newSharedGoalGroupsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasSharedGoalMembers applies the HasEdge predicate on the "shared_goal_members" edge.
+func HasSharedGoalMembers() predicate.Employee {
+	return predicate.Employee(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, SharedGoalMembersTable, SharedGoalMembersColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasSharedGoalMembersWith applies the HasEdge predicate on the "shared_goal_members" edge with a given conditions (other predicates).
+func HasSharedGoalMembersWith(preds ...predicate.SharedGoalMember) predicate.Employee {
+	return predicate.Employee(func(s *sql.Selector) {
+		step := newSharedGoalMembersStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.Employee) predicate.Employee {
 	return predicate.Employee(sql.AndPredicates(predicates...))

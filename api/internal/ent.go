@@ -22,10 +22,14 @@ import (
 	"github.com/sed-evaluacion-desempeno/api/internal/evaluationgoal"
 	"github.com/sed-evaluacion-desempeno/api/internal/evaluationprofile"
 	"github.com/sed-evaluacion-desempeno/api/internal/evaluatorscope"
+	"github.com/sed-evaluacion-desempeno/api/internal/globalgoalassignment"
+	"github.com/sed-evaluacion-desempeno/api/internal/globalgoalrule"
 	"github.com/sed-evaluacion-desempeno/api/internal/goal"
 	"github.com/sed-evaluacion-desempeno/api/internal/goalassignment"
 	"github.com/sed-evaluacion-desempeno/api/internal/goalcategory"
 	"github.com/sed-evaluacion-desempeno/api/internal/goalkpilink"
+	"github.com/sed-evaluacion-desempeno/api/internal/goaltemplate"
+	"github.com/sed-evaluacion-desempeno/api/internal/goaltemplatekpilink"
 	"github.com/sed-evaluacion-desempeno/api/internal/kpi"
 	"github.com/sed-evaluacion-desempeno/api/internal/leveldefinition"
 	"github.com/sed-evaluacion-desempeno/api/internal/nineboxentry"
@@ -38,6 +42,8 @@ import (
 	"github.com/sed-evaluacion-desempeno/api/internal/phasetransition"
 	"github.com/sed-evaluacion-desempeno/api/internal/pillar"
 	"github.com/sed-evaluacion-desempeno/api/internal/scalecriterion"
+	"github.com/sed-evaluacion-desempeno/api/internal/sharedgoalgroup"
+	"github.com/sed-evaluacion-desempeno/api/internal/sharedgoalmember"
 )
 
 // ent aliases to avoid import conflicts in user's code.
@@ -108,10 +114,14 @@ func checkColumn(t, c string) error {
 			evaluationgoal.Table:            evaluationgoal.ValidColumn,
 			evaluationprofile.Table:         evaluationprofile.ValidColumn,
 			evaluatorscope.Table:            evaluatorscope.ValidColumn,
+			globalgoalassignment.Table:      globalgoalassignment.ValidColumn,
+			globalgoalrule.Table:            globalgoalrule.ValidColumn,
 			goal.Table:                      goal.ValidColumn,
 			goalassignment.Table:            goalassignment.ValidColumn,
 			goalcategory.Table:              goalcategory.ValidColumn,
 			goalkpilink.Table:               goalkpilink.ValidColumn,
+			goaltemplate.Table:              goaltemplate.ValidColumn,
+			goaltemplatekpilink.Table:       goaltemplatekpilink.ValidColumn,
 			kpi.Table:                       kpi.ValidColumn,
 			leveldefinition.Table:           leveldefinition.ValidColumn,
 			nineboxentry.Table:              nineboxentry.ValidColumn,
@@ -124,6 +134,8 @@ func checkColumn(t, c string) error {
 			phasetransition.Table:           phasetransition.ValidColumn,
 			pillar.Table:                    pillar.ValidColumn,
 			scalecriterion.Table:            scalecriterion.ValidColumn,
+			sharedgoalgroup.Table:           sharedgoalgroup.ValidColumn,
+			sharedgoalmember.Table:          sharedgoalmember.ValidColumn,
 		})
 	})
 	return columnCheck(t, c)

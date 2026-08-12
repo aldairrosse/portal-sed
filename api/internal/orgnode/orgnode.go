@@ -50,6 +50,8 @@ const (
 	EdgeHeadEmployee = "head_employee"
 	// EdgeKpis holds the string denoting the kpis edge name in mutations.
 	EdgeKpis = "kpis"
+	// EdgeGlobalGoalRules holds the string denoting the global_goal_rules edge name in mutations.
+	EdgeGlobalGoalRules = "global_goal_rules"
 	// Table holds the table name of the orgnode in the database.
 	Table = "org_nodes"
 	// OrganizationTable is the table that holds the organization relation/edge.
@@ -88,6 +90,13 @@ const (
 	KpisInverseTable = "kp_is"
 	// KpisColumn is the table column denoting the kpis relation/edge.
 	KpisColumn = "org_node_id"
+	// GlobalGoalRulesTable is the table that holds the global_goal_rules relation/edge.
+	GlobalGoalRulesTable = "global_goal_rules"
+	// GlobalGoalRulesInverseTable is the table name for the GlobalGoalRule entity.
+	// It exists in this package in order to avoid circular dependency with the "globalgoalrule" package.
+	GlobalGoalRulesInverseTable = "global_goal_rules"
+	// GlobalGoalRulesColumn is the table column denoting the global_goal_rules relation/edge.
+	GlobalGoalRulesColumn = "department_id"
 )
 
 // Columns holds all SQL columns for orgnode fields.
@@ -278,6 +287,20 @@ func ByKpis(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newKpisStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByGlobalGoalRulesCount orders the results by global_goal_rules count.
+func ByGlobalGoalRulesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newGlobalGoalRulesStep(), opts...)
+	}
+}
+
+// ByGlobalGoalRules orders the results by global_goal_rules terms.
+func ByGlobalGoalRules(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newGlobalGoalRulesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newOrganizationStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -318,5 +341,12 @@ func newKpisStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(KpisInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, KpisTable, KpisColumn),
+	)
+}
+func newGlobalGoalRulesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(GlobalGoalRulesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, GlobalGoalRulesTable, GlobalGoalRulesColumn),
 	)
 }

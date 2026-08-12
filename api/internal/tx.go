@@ -32,6 +32,10 @@ type Tx struct {
 	EvaluationProfile *EvaluationProfileClient
 	// EvaluatorScope is the client for interacting with the EvaluatorScope builders.
 	EvaluatorScope *EvaluatorScopeClient
+	// GlobalGoalAssignment is the client for interacting with the GlobalGoalAssignment builders.
+	GlobalGoalAssignment *GlobalGoalAssignmentClient
+	// GlobalGoalRule is the client for interacting with the GlobalGoalRule builders.
+	GlobalGoalRule *GlobalGoalRuleClient
 	// Goal is the client for interacting with the Goal builders.
 	Goal *GoalClient
 	// GoalAssignment is the client for interacting with the GoalAssignment builders.
@@ -40,6 +44,10 @@ type Tx struct {
 	GoalCategory *GoalCategoryClient
 	// GoalKpiLink is the client for interacting with the GoalKpiLink builders.
 	GoalKpiLink *GoalKpiLinkClient
+	// GoalTemplate is the client for interacting with the GoalTemplate builders.
+	GoalTemplate *GoalTemplateClient
+	// GoalTemplateKpiLink is the client for interacting with the GoalTemplateKpiLink builders.
+	GoalTemplateKpiLink *GoalTemplateKpiLinkClient
 	// KPI is the client for interacting with the KPI builders.
 	KPI *KPIClient
 	// LevelDefinition is the client for interacting with the LevelDefinition builders.
@@ -64,6 +72,10 @@ type Tx struct {
 	Pillar *PillarClient
 	// ScaleCriterion is the client for interacting with the ScaleCriterion builders.
 	ScaleCriterion *ScaleCriterionClient
+	// SharedGoalGroup is the client for interacting with the SharedGoalGroup builders.
+	SharedGoalGroup *SharedGoalGroupClient
+	// SharedGoalMember is the client for interacting with the SharedGoalMember builders.
+	SharedGoalMember *SharedGoalMemberClient
 
 	// lazily loaded.
 	client     *Client
@@ -205,10 +217,14 @@ func (tx *Tx) init() {
 	tx.EvaluationGoal = NewEvaluationGoalClient(tx.config)
 	tx.EvaluationProfile = NewEvaluationProfileClient(tx.config)
 	tx.EvaluatorScope = NewEvaluatorScopeClient(tx.config)
+	tx.GlobalGoalAssignment = NewGlobalGoalAssignmentClient(tx.config)
+	tx.GlobalGoalRule = NewGlobalGoalRuleClient(tx.config)
 	tx.Goal = NewGoalClient(tx.config)
 	tx.GoalAssignment = NewGoalAssignmentClient(tx.config)
 	tx.GoalCategory = NewGoalCategoryClient(tx.config)
 	tx.GoalKpiLink = NewGoalKpiLinkClient(tx.config)
+	tx.GoalTemplate = NewGoalTemplateClient(tx.config)
+	tx.GoalTemplateKpiLink = NewGoalTemplateKpiLinkClient(tx.config)
 	tx.KPI = NewKPIClient(tx.config)
 	tx.LevelDefinition = NewLevelDefinitionClient(tx.config)
 	tx.NineBoxEntry = NewNineBoxEntryClient(tx.config)
@@ -221,6 +237,8 @@ func (tx *Tx) init() {
 	tx.PhaseTransition = NewPhaseTransitionClient(tx.config)
 	tx.Pillar = NewPillarClient(tx.config)
 	tx.ScaleCriterion = NewScaleCriterionClient(tx.config)
+	tx.SharedGoalGroup = NewSharedGoalGroupClient(tx.config)
+	tx.SharedGoalMember = NewSharedGoalMemberClient(tx.config)
 }
 
 // txDriver wraps the given dialect.Tx with a nop dialect.Driver implementation.

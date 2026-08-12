@@ -14,6 +14,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
 	"github.com/sed-evaluacion-desempeno/api/internal/employee"
+	"github.com/sed-evaluacion-desempeno/api/internal/globalgoalrule"
 	"github.com/sed-evaluacion-desempeno/api/internal/kpi"
 	"github.com/sed-evaluacion-desempeno/api/internal/organization"
 	"github.com/sed-evaluacion-desempeno/api/internal/orgnode"
@@ -23,16 +24,17 @@ import (
 // OrgNodeQuery is the builder for querying OrgNode entities.
 type OrgNodeQuery struct {
 	config
-	ctx              *QueryContext
-	order            []orgnode.OrderOption
-	inters           []Interceptor
-	predicates       []predicate.OrgNode
-	withOrganization *OrganizationQuery
-	withParent       *OrgNodeQuery
-	withChildren     *OrgNodeQuery
-	withEmployees    *EmployeeQuery
-	withHeadEmployee *EmployeeQuery
-	withKpis         *KPIQuery
+	ctx                 *QueryContext
+	order               []orgnode.OrderOption
+	inters              []Interceptor
+	predicates          []predicate.OrgNode
+	withOrganization    *OrganizationQuery
+	withParent          *OrgNodeQuery
+	withChildren        *OrgNodeQuery
+	withEmployees       *EmployeeQuery
+	withHeadEmployee    *EmployeeQuery
+	withKpis            *KPIQuery
+	withGlobalGoalRules *GlobalGoalRuleQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -194,6 +196,28 @@ func (_q *OrgNodeQuery) QueryKpis() *KPIQuery {
 			sqlgraph.From(orgnode.Table, orgnode.FieldID, selector),
 			sqlgraph.To(kpi.Table, kpi.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, orgnode.KpisTable, orgnode.KpisColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryGlobalGoalRules chains the current query on the "global_goal_rules" edge.
+func (_q *OrgNodeQuery) QueryGlobalGoalRules() *GlobalGoalRuleQuery {
+	query := (&GlobalGoalRuleClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(orgnode.Table, orgnode.FieldID, selector),
+			sqlgraph.To(globalgoalrule.Table, globalgoalrule.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, orgnode.GlobalGoalRulesTable, orgnode.GlobalGoalRulesColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -388,17 +412,18 @@ func (_q *OrgNodeQuery) Clone() *OrgNodeQuery {
 		return nil
 	}
 	return &OrgNodeQuery{
-		config:           _q.config,
-		ctx:              _q.ctx.Clone(),
-		order:            append([]orgnode.OrderOption{}, _q.order...),
-		inters:           append([]Interceptor{}, _q.inters...),
-		predicates:       append([]predicate.OrgNode{}, _q.predicates...),
-		withOrganization: _q.withOrganization.Clone(),
-		withParent:       _q.withParent.Clone(),
-		withChildren:     _q.withChildren.Clone(),
-		withEmployees:    _q.withEmployees.Clone(),
-		withHeadEmployee: _q.withHeadEmployee.Clone(),
-		withKpis:         _q.withKpis.Clone(),
+		config:              _q.config,
+		ctx:                 _q.ctx.Clone(),
+		order:               append([]orgnode.OrderOption{}, _q.order...),
+		inters:              append([]Interceptor{}, _q.inters...),
+		predicates:          append([]predicate.OrgNode{}, _q.predicates...),
+		withOrganization:    _q.withOrganization.Clone(),
+		withParent:          _q.withParent.Clone(),
+		withChildren:        _q.withChildren.Clone(),
+		withEmployees:       _q.withEmployees.Clone(),
+		withHeadEmployee:    _q.withHeadEmployee.Clone(),
+		withKpis:            _q.withKpis.Clone(),
+		withGlobalGoalRules: _q.withGlobalGoalRules.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
@@ -468,6 +493,17 @@ func (_q *OrgNodeQuery) WithKpis(opts ...func(*KPIQuery)) *OrgNodeQuery {
 		opt(query)
 	}
 	_q.withKpis = query
+	return _q
+}
+
+// WithGlobalGoalRules tells the query-builder to eager-load the nodes that are connected to
+// the "global_goal_rules" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *OrgNodeQuery) WithGlobalGoalRules(opts ...func(*GlobalGoalRuleQuery)) *OrgNodeQuery {
+	query := (&GlobalGoalRuleClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withGlobalGoalRules = query
 	return _q
 }
 
@@ -549,13 +585,14 @@ func (_q *OrgNodeQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*OrgN
 	var (
 		nodes       = []*OrgNode{}
 		_spec       = _q.querySpec()
-		loadedTypes = [6]bool{
+		loadedTypes = [7]bool{
 			_q.withOrganization != nil,
 			_q.withParent != nil,
 			_q.withChildren != nil,
 			_q.withEmployees != nil,
 			_q.withHeadEmployee != nil,
 			_q.withKpis != nil,
+			_q.withGlobalGoalRules != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -612,6 +649,13 @@ func (_q *OrgNodeQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*OrgN
 		if err := _q.loadKpis(ctx, query, nodes,
 			func(n *OrgNode) { n.Edges.Kpis = []*KPI{} },
 			func(n *OrgNode, e *KPI) { n.Edges.Kpis = append(n.Edges.Kpis, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withGlobalGoalRules; query != nil {
+		if err := _q.loadGlobalGoalRules(ctx, query, nodes,
+			func(n *OrgNode) { n.Edges.GlobalGoalRules = []*GlobalGoalRule{} },
+			func(n *OrgNode, e *GlobalGoalRule) { n.Edges.GlobalGoalRules = append(n.Edges.GlobalGoalRules, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -802,6 +846,39 @@ func (_q *OrgNodeQuery) loadKpis(ctx context.Context, query *KPIQuery, nodes []*
 		node, ok := nodeids[*fk]
 		if !ok {
 			return fmt.Errorf(`unexpected referenced foreign-key "org_node_id" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *OrgNodeQuery) loadGlobalGoalRules(ctx context.Context, query *GlobalGoalRuleQuery, nodes []*OrgNode, init func(*OrgNode), assign func(*OrgNode, *GlobalGoalRule)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*OrgNode)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(globalgoalrule.FieldDepartmentID)
+	}
+	query.Where(predicate.GlobalGoalRule(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(orgnode.GlobalGoalRulesColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.DepartmentID
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "department_id" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "department_id" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}

@@ -65,6 +65,14 @@ const (
 	EdgeHeadedDepartment = "headed_department"
 	// EdgeActivityLogs holds the string denoting the activity_logs edge name in mutations.
 	EdgeActivityLogs = "activity_logs"
+	// EdgeGoalTemplates holds the string denoting the goal_templates edge name in mutations.
+	EdgeGoalTemplates = "goal_templates"
+	// EdgeGlobalGoalAssignments holds the string denoting the global_goal_assignments edge name in mutations.
+	EdgeGlobalGoalAssignments = "global_goal_assignments"
+	// EdgeSharedGoalGroups holds the string denoting the shared_goal_groups edge name in mutations.
+	EdgeSharedGoalGroups = "shared_goal_groups"
+	// EdgeSharedGoalMembers holds the string denoting the shared_goal_members edge name in mutations.
+	EdgeSharedGoalMembers = "shared_goal_members"
 	// Table holds the table name of the employee in the database.
 	Table = "employees"
 	// OrgNodeTable is the table that holds the org_node relation/edge.
@@ -145,6 +153,34 @@ const (
 	ActivityLogsInverseTable = "activity_logs"
 	// ActivityLogsColumn is the table column denoting the activity_logs relation/edge.
 	ActivityLogsColumn = "employee_id"
+	// GoalTemplatesTable is the table that holds the goal_templates relation/edge.
+	GoalTemplatesTable = "goal_templates"
+	// GoalTemplatesInverseTable is the table name for the GoalTemplate entity.
+	// It exists in this package in order to avoid circular dependency with the "goaltemplate" package.
+	GoalTemplatesInverseTable = "goal_templates"
+	// GoalTemplatesColumn is the table column denoting the goal_templates relation/edge.
+	GoalTemplatesColumn = "created_by"
+	// GlobalGoalAssignmentsTable is the table that holds the global_goal_assignments relation/edge.
+	GlobalGoalAssignmentsTable = "global_goal_assignments"
+	// GlobalGoalAssignmentsInverseTable is the table name for the GlobalGoalAssignment entity.
+	// It exists in this package in order to avoid circular dependency with the "globalgoalassignment" package.
+	GlobalGoalAssignmentsInverseTable = "global_goal_assignments"
+	// GlobalGoalAssignmentsColumn is the table column denoting the global_goal_assignments relation/edge.
+	GlobalGoalAssignmentsColumn = "employee_id"
+	// SharedGoalGroupsTable is the table that holds the shared_goal_groups relation/edge.
+	SharedGoalGroupsTable = "shared_goal_groups"
+	// SharedGoalGroupsInverseTable is the table name for the SharedGoalGroup entity.
+	// It exists in this package in order to avoid circular dependency with the "sharedgoalgroup" package.
+	SharedGoalGroupsInverseTable = "shared_goal_groups"
+	// SharedGoalGroupsColumn is the table column denoting the shared_goal_groups relation/edge.
+	SharedGoalGroupsColumn = "created_by"
+	// SharedGoalMembersTable is the table that holds the shared_goal_members relation/edge.
+	SharedGoalMembersTable = "shared_goal_members"
+	// SharedGoalMembersInverseTable is the table name for the SharedGoalMember entity.
+	// It exists in this package in order to avoid circular dependency with the "sharedgoalmember" package.
+	SharedGoalMembersInverseTable = "shared_goal_members"
+	// SharedGoalMembersColumn is the table column denoting the shared_goal_members relation/edge.
+	SharedGoalMembersColumn = "employee_id"
 )
 
 // Columns holds all SQL columns for employee fields.
@@ -417,6 +453,62 @@ func ByActivityLogs(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newActivityLogsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByGoalTemplatesCount orders the results by goal_templates count.
+func ByGoalTemplatesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newGoalTemplatesStep(), opts...)
+	}
+}
+
+// ByGoalTemplates orders the results by goal_templates terms.
+func ByGoalTemplates(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newGoalTemplatesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByGlobalGoalAssignmentsCount orders the results by global_goal_assignments count.
+func ByGlobalGoalAssignmentsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newGlobalGoalAssignmentsStep(), opts...)
+	}
+}
+
+// ByGlobalGoalAssignments orders the results by global_goal_assignments terms.
+func ByGlobalGoalAssignments(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newGlobalGoalAssignmentsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// BySharedGoalGroupsCount orders the results by shared_goal_groups count.
+func BySharedGoalGroupsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newSharedGoalGroupsStep(), opts...)
+	}
+}
+
+// BySharedGoalGroups orders the results by shared_goal_groups terms.
+func BySharedGoalGroups(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newSharedGoalGroupsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// BySharedGoalMembersCount orders the results by shared_goal_members count.
+func BySharedGoalMembersCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newSharedGoalMembersStep(), opts...)
+	}
+}
+
+// BySharedGoalMembers orders the results by shared_goal_members terms.
+func BySharedGoalMembers(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newSharedGoalMembersStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newOrgNodeStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -499,5 +591,33 @@ func newActivityLogsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(ActivityLogsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, ActivityLogsTable, ActivityLogsColumn),
+	)
+}
+func newGoalTemplatesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(GoalTemplatesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, GoalTemplatesTable, GoalTemplatesColumn),
+	)
+}
+func newGlobalGoalAssignmentsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(GlobalGoalAssignmentsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, GlobalGoalAssignmentsTable, GlobalGoalAssignmentsColumn),
+	)
+}
+func newSharedGoalGroupsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(SharedGoalGroupsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, SharedGoalGroupsTable, SharedGoalGroupsColumn),
+	)
+}
+func newSharedGoalMembersStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(SharedGoalMembersInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, SharedGoalMembersTable, SharedGoalMembersColumn),
 	)
 }

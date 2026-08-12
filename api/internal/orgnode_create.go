@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
 	"github.com/sed-evaluacion-desempeno/api/internal/employee"
+	"github.com/sed-evaluacion-desempeno/api/internal/globalgoalrule"
 	"github.com/sed-evaluacion-desempeno/api/internal/kpi"
 	"github.com/sed-evaluacion-desempeno/api/internal/organization"
 	"github.com/sed-evaluacion-desempeno/api/internal/orgnode"
@@ -210,6 +211,21 @@ func (_c *OrgNodeCreate) AddKpis(v ...*KPI) *OrgNodeCreate {
 		ids[i] = v[i].ID
 	}
 	return _c.AddKpiIDs(ids...)
+}
+
+// AddGlobalGoalRuleIDs adds the "global_goal_rules" edge to the GlobalGoalRule entity by IDs.
+func (_c *OrgNodeCreate) AddGlobalGoalRuleIDs(ids ...uuid.UUID) *OrgNodeCreate {
+	_c.mutation.AddGlobalGoalRuleIDs(ids...)
+	return _c
+}
+
+// AddGlobalGoalRules adds the "global_goal_rules" edges to the GlobalGoalRule entity.
+func (_c *OrgNodeCreate) AddGlobalGoalRules(v ...*GlobalGoalRule) *OrgNodeCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddGlobalGoalRuleIDs(ids...)
 }
 
 // Mutation returns the OrgNodeMutation object of the builder.
@@ -470,6 +486,22 @@ func (_c *OrgNodeCreate) createSpec() (*OrgNode, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(kpi.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.GlobalGoalRulesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   orgnode.GlobalGoalRulesTable,
+			Columns: []string{orgnode.GlobalGoalRulesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(globalgoalrule.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

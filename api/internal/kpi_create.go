@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
 	"github.com/sed-evaluacion-desempeno/api/internal/goalkpilink"
+	"github.com/sed-evaluacion-desempeno/api/internal/goaltemplatekpilink"
 	"github.com/sed-evaluacion-desempeno/api/internal/kpi"
 	"github.com/sed-evaluacion-desempeno/api/internal/orgnode"
 )
@@ -165,6 +166,21 @@ func (_c *KPICreate) AddGoalLinks(v ...*GoalKpiLink) *KPICreate {
 // SetOrgNode sets the "org_node" edge to the OrgNode entity.
 func (_c *KPICreate) SetOrgNode(v *OrgNode) *KPICreate {
 	return _c.SetOrgNodeID(v.ID)
+}
+
+// AddTemplateLinkIDs adds the "template_links" edge to the GoalTemplateKpiLink entity by IDs.
+func (_c *KPICreate) AddTemplateLinkIDs(ids ...uuid.UUID) *KPICreate {
+	_c.mutation.AddTemplateLinkIDs(ids...)
+	return _c
+}
+
+// AddTemplateLinks adds the "template_links" edges to the GoalTemplateKpiLink entity.
+func (_c *KPICreate) AddTemplateLinks(v ...*GoalTemplateKpiLink) *KPICreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddTemplateLinkIDs(ids...)
 }
 
 // Mutation returns the KPIMutation object of the builder.
@@ -350,6 +366,22 @@ func (_c *KPICreate) createSpec() (*KPI, *sqlgraph.CreateSpec) {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.OrgNodeID = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.TemplateLinksIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   kpi.TemplateLinksTable,
+			Columns: []string{kpi.TemplateLinksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(goaltemplatekpilink.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

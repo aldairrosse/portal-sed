@@ -46,12 +46,22 @@ const (
 	FieldState = "state"
 	// FieldCategoryID holds the string denoting the category_id field in the database.
 	FieldCategoryID = "category_id"
+	// FieldType holds the string denoting the type field in the database.
+	FieldType = "type"
+	// FieldGoalKind holds the string denoting the goal_kind field in the database.
+	FieldGoalKind = "goal_kind"
 	// EdgeCategory holds the string denoting the category edge name in mutations.
 	EdgeCategory = "category"
 	// EdgeKpiLinks holds the string denoting the kpi_links edge name in mutations.
 	EdgeKpiLinks = "kpi_links"
 	// EdgeEvaluationGoals holds the string denoting the evaluation_goals edge name in mutations.
 	EdgeEvaluationGoals = "evaluation_goals"
+	// EdgeGlobalAssignments holds the string denoting the global_assignments edge name in mutations.
+	EdgeGlobalAssignments = "global_assignments"
+	// EdgeGlobalRules holds the string denoting the global_rules edge name in mutations.
+	EdgeGlobalRules = "global_rules"
+	// EdgeSharedGroup holds the string denoting the shared_group edge name in mutations.
+	EdgeSharedGroup = "shared_group"
 	// Table holds the table name of the goal in the database.
 	Table = "goals"
 	// CategoryTable is the table that holds the category relation/edge.
@@ -75,6 +85,27 @@ const (
 	EvaluationGoalsInverseTable = "evaluation_goals"
 	// EvaluationGoalsColumn is the table column denoting the evaluation_goals relation/edge.
 	EvaluationGoalsColumn = "goal_id"
+	// GlobalAssignmentsTable is the table that holds the global_assignments relation/edge.
+	GlobalAssignmentsTable = "global_goal_assignments"
+	// GlobalAssignmentsInverseTable is the table name for the GlobalGoalAssignment entity.
+	// It exists in this package in order to avoid circular dependency with the "globalgoalassignment" package.
+	GlobalAssignmentsInverseTable = "global_goal_assignments"
+	// GlobalAssignmentsColumn is the table column denoting the global_assignments relation/edge.
+	GlobalAssignmentsColumn = "goal_id"
+	// GlobalRulesTable is the table that holds the global_rules relation/edge.
+	GlobalRulesTable = "global_goal_rules"
+	// GlobalRulesInverseTable is the table name for the GlobalGoalRule entity.
+	// It exists in this package in order to avoid circular dependency with the "globalgoalrule" package.
+	GlobalRulesInverseTable = "global_goal_rules"
+	// GlobalRulesColumn is the table column denoting the global_rules relation/edge.
+	GlobalRulesColumn = "goal_id"
+	// SharedGroupTable is the table that holds the shared_group relation/edge.
+	SharedGroupTable = "shared_goal_groups"
+	// SharedGroupInverseTable is the table name for the SharedGoalGroup entity.
+	// It exists in this package in order to avoid circular dependency with the "sharedgoalgroup" package.
+	SharedGroupInverseTable = "shared_goal_groups"
+	// SharedGroupColumn is the table column denoting the shared_group relation/edge.
+	SharedGroupColumn = "goal_id"
 )
 
 // Columns holds all SQL columns for goal fields.
@@ -95,6 +126,8 @@ var Columns = []string{
 	FieldBaselineValue,
 	FieldState,
 	FieldCategoryID,
+	FieldType,
+	FieldGoalKind,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -206,6 +239,56 @@ func StateValidator(s State) error {
 	}
 }
 
+// Type defines the type for the "type" enum field.
+type Type string
+
+// TypePersonal is the default value of the Type enum.
+const DefaultType = TypePersonal
+
+// Type values.
+const (
+	TypePersonal Type = "personal"
+	TypeGlobal   Type = "global"
+	TypeShared   Type = "shared"
+)
+
+func (_type Type) String() string {
+	return string(_type)
+}
+
+// TypeValidator is a validator for the "type" field enum values. It is called by the builders before save.
+func TypeValidator(_type Type) error {
+	switch _type {
+	case TypePersonal, TypeGlobal, TypeShared:
+		return nil
+	default:
+		return fmt.Errorf("goal: invalid enum value for type field: %q", _type)
+	}
+}
+
+// GoalKind defines the type for the "goal_kind" enum field.
+type GoalKind string
+
+// GoalKind values.
+const (
+	GoalKindQualitative  GoalKind = "qualitative"
+	GoalKindQuantitative GoalKind = "quantitative"
+)
+
+func (gk GoalKind) String() string {
+	return string(gk)
+}
+
+// GoalKindValidator is a validator for the "goal_kind" field enum values. It is called by the builders before save.
+func GoalKindValidator(gk GoalKind) error {
+	switch gk {
+	case GoalKindQualitative, GoalKindQuantitative:
+		return nil
+	default:
+		return fmt.Errorf("goal: invalid enum value for goal_kind field: %q", gk)
+	}
+}
+
 // OrderOption defines the ordering options for the Goal queries.
 type OrderOption func(*sql.Selector)
 
@@ -289,6 +372,16 @@ func ByCategoryID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldCategoryID, opts...).ToFunc()
 }
 
+// ByType orders the results by the type field.
+func ByType(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldType, opts...).ToFunc()
+}
+
+// ByGoalKind orders the results by the goal_kind field.
+func ByGoalKind(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldGoalKind, opts...).ToFunc()
+}
+
 // ByCategoryField orders the results by category field.
 func ByCategoryField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -323,6 +416,48 @@ func ByEvaluationGoals(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newEvaluationGoalsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByGlobalAssignmentsCount orders the results by global_assignments count.
+func ByGlobalAssignmentsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newGlobalAssignmentsStep(), opts...)
+	}
+}
+
+// ByGlobalAssignments orders the results by global_assignments terms.
+func ByGlobalAssignments(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newGlobalAssignmentsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByGlobalRulesCount orders the results by global_rules count.
+func ByGlobalRulesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newGlobalRulesStep(), opts...)
+	}
+}
+
+// ByGlobalRules orders the results by global_rules terms.
+func ByGlobalRules(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newGlobalRulesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// BySharedGroupCount orders the results by shared_group count.
+func BySharedGroupCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newSharedGroupStep(), opts...)
+	}
+}
+
+// BySharedGroup orders the results by shared_group terms.
+func BySharedGroup(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newSharedGroupStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newCategoryStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -342,5 +477,26 @@ func newEvaluationGoalsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(EvaluationGoalsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, EvaluationGoalsTable, EvaluationGoalsColumn),
+	)
+}
+func newGlobalAssignmentsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(GlobalAssignmentsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, GlobalAssignmentsTable, GlobalAssignmentsColumn),
+	)
+}
+func newGlobalRulesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(GlobalRulesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, GlobalRulesTable, GlobalRulesColumn),
+	)
+}
+func newSharedGroupStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(SharedGroupInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, SharedGroupTable, SharedGroupColumn),
 	)
 }

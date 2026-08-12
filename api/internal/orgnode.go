@@ -63,9 +63,11 @@ type OrgNodeEdges struct {
 	HeadEmployee *Employee `json:"head_employee,omitempty"`
 	// Kpis holds the value of the kpis edge.
 	Kpis []*KPI `json:"kpis,omitempty"`
+	// GlobalGoalRules holds the value of the global_goal_rules edge.
+	GlobalGoalRules []*GlobalGoalRule `json:"global_goal_rules,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [6]bool
+	loadedTypes [7]bool
 }
 
 // OrganizationOrErr returns the Organization value or an error if the edge
@@ -126,6 +128,15 @@ func (e OrgNodeEdges) KpisOrErr() ([]*KPI, error) {
 		return e.Kpis, nil
 	}
 	return nil, &NotLoadedError{edge: "kpis"}
+}
+
+// GlobalGoalRulesOrErr returns the GlobalGoalRules value or an error if the edge
+// was not loaded in eager-loading.
+func (e OrgNodeEdges) GlobalGoalRulesOrErr() ([]*GlobalGoalRule, error) {
+	if e.loadedTypes[6] {
+		return e.GlobalGoalRules, nil
+	}
+	return nil, &NotLoadedError{edge: "global_goal_rules"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -277,6 +288,11 @@ func (_m *OrgNode) QueryHeadEmployee() *EmployeeQuery {
 // QueryKpis queries the "kpis" edge of the OrgNode entity.
 func (_m *OrgNode) QueryKpis() *KPIQuery {
 	return NewOrgNodeClient(_m.config).QueryKpis(_m)
+}
+
+// QueryGlobalGoalRules queries the "global_goal_rules" edge of the OrgNode entity.
+func (_m *OrgNode) QueryGlobalGoalRules() *GlobalGoalRuleQuery {
+	return NewOrgNodeClient(_m.config).QueryGlobalGoalRules(_m)
 }
 
 // Update returns a builder for updating this OrgNode.

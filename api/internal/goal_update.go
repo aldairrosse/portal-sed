@@ -13,10 +13,13 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
 	"github.com/sed-evaluacion-desempeno/api/internal/evaluationgoal"
+	"github.com/sed-evaluacion-desempeno/api/internal/globalgoalassignment"
+	"github.com/sed-evaluacion-desempeno/api/internal/globalgoalrule"
 	"github.com/sed-evaluacion-desempeno/api/internal/goal"
 	"github.com/sed-evaluacion-desempeno/api/internal/goalcategory"
 	"github.com/sed-evaluacion-desempeno/api/internal/goalkpilink"
 	"github.com/sed-evaluacion-desempeno/api/internal/predicate"
+	"github.com/sed-evaluacion-desempeno/api/internal/sharedgoalgroup"
 )
 
 // GoalUpdate is the builder for updating Goal entities.
@@ -267,6 +270,40 @@ func (_u *GoalUpdate) SetNillableCategoryID(v *uuid.UUID) *GoalUpdate {
 	return _u
 }
 
+// SetType sets the "type" field.
+func (_u *GoalUpdate) SetType(v goal.Type) *GoalUpdate {
+	_u.mutation.SetType(v)
+	return _u
+}
+
+// SetNillableType sets the "type" field if the given value is not nil.
+func (_u *GoalUpdate) SetNillableType(v *goal.Type) *GoalUpdate {
+	if v != nil {
+		_u.SetType(*v)
+	}
+	return _u
+}
+
+// SetGoalKind sets the "goal_kind" field.
+func (_u *GoalUpdate) SetGoalKind(v goal.GoalKind) *GoalUpdate {
+	_u.mutation.SetGoalKind(v)
+	return _u
+}
+
+// SetNillableGoalKind sets the "goal_kind" field if the given value is not nil.
+func (_u *GoalUpdate) SetNillableGoalKind(v *goal.GoalKind) *GoalUpdate {
+	if v != nil {
+		_u.SetGoalKind(*v)
+	}
+	return _u
+}
+
+// ClearGoalKind clears the value of the "goal_kind" field.
+func (_u *GoalUpdate) ClearGoalKind() *GoalUpdate {
+	_u.mutation.ClearGoalKind()
+	return _u
+}
+
 // SetCategory sets the "category" edge to the GoalCategory entity.
 func (_u *GoalUpdate) SetCategory(v *GoalCategory) *GoalUpdate {
 	return _u.SetCategoryID(v.ID)
@@ -300,6 +337,51 @@ func (_u *GoalUpdate) AddEvaluationGoals(v ...*EvaluationGoal) *GoalUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.AddEvaluationGoalIDs(ids...)
+}
+
+// AddGlobalAssignmentIDs adds the "global_assignments" edge to the GlobalGoalAssignment entity by IDs.
+func (_u *GoalUpdate) AddGlobalAssignmentIDs(ids ...uuid.UUID) *GoalUpdate {
+	_u.mutation.AddGlobalAssignmentIDs(ids...)
+	return _u
+}
+
+// AddGlobalAssignments adds the "global_assignments" edges to the GlobalGoalAssignment entity.
+func (_u *GoalUpdate) AddGlobalAssignments(v ...*GlobalGoalAssignment) *GoalUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddGlobalAssignmentIDs(ids...)
+}
+
+// AddGlobalRuleIDs adds the "global_rules" edge to the GlobalGoalRule entity by IDs.
+func (_u *GoalUpdate) AddGlobalRuleIDs(ids ...uuid.UUID) *GoalUpdate {
+	_u.mutation.AddGlobalRuleIDs(ids...)
+	return _u
+}
+
+// AddGlobalRules adds the "global_rules" edges to the GlobalGoalRule entity.
+func (_u *GoalUpdate) AddGlobalRules(v ...*GlobalGoalRule) *GoalUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddGlobalRuleIDs(ids...)
+}
+
+// AddSharedGroupIDs adds the "shared_group" edge to the SharedGoalGroup entity by IDs.
+func (_u *GoalUpdate) AddSharedGroupIDs(ids ...uuid.UUID) *GoalUpdate {
+	_u.mutation.AddSharedGroupIDs(ids...)
+	return _u
+}
+
+// AddSharedGroup adds the "shared_group" edges to the SharedGoalGroup entity.
+func (_u *GoalUpdate) AddSharedGroup(v ...*SharedGoalGroup) *GoalUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddSharedGroupIDs(ids...)
 }
 
 // Mutation returns the GoalMutation object of the builder.
@@ -353,6 +435,69 @@ func (_u *GoalUpdate) RemoveEvaluationGoals(v ...*EvaluationGoal) *GoalUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveEvaluationGoalIDs(ids...)
+}
+
+// ClearGlobalAssignments clears all "global_assignments" edges to the GlobalGoalAssignment entity.
+func (_u *GoalUpdate) ClearGlobalAssignments() *GoalUpdate {
+	_u.mutation.ClearGlobalAssignments()
+	return _u
+}
+
+// RemoveGlobalAssignmentIDs removes the "global_assignments" edge to GlobalGoalAssignment entities by IDs.
+func (_u *GoalUpdate) RemoveGlobalAssignmentIDs(ids ...uuid.UUID) *GoalUpdate {
+	_u.mutation.RemoveGlobalAssignmentIDs(ids...)
+	return _u
+}
+
+// RemoveGlobalAssignments removes "global_assignments" edges to GlobalGoalAssignment entities.
+func (_u *GoalUpdate) RemoveGlobalAssignments(v ...*GlobalGoalAssignment) *GoalUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveGlobalAssignmentIDs(ids...)
+}
+
+// ClearGlobalRules clears all "global_rules" edges to the GlobalGoalRule entity.
+func (_u *GoalUpdate) ClearGlobalRules() *GoalUpdate {
+	_u.mutation.ClearGlobalRules()
+	return _u
+}
+
+// RemoveGlobalRuleIDs removes the "global_rules" edge to GlobalGoalRule entities by IDs.
+func (_u *GoalUpdate) RemoveGlobalRuleIDs(ids ...uuid.UUID) *GoalUpdate {
+	_u.mutation.RemoveGlobalRuleIDs(ids...)
+	return _u
+}
+
+// RemoveGlobalRules removes "global_rules" edges to GlobalGoalRule entities.
+func (_u *GoalUpdate) RemoveGlobalRules(v ...*GlobalGoalRule) *GoalUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveGlobalRuleIDs(ids...)
+}
+
+// ClearSharedGroup clears all "shared_group" edges to the SharedGoalGroup entity.
+func (_u *GoalUpdate) ClearSharedGroup() *GoalUpdate {
+	_u.mutation.ClearSharedGroup()
+	return _u
+}
+
+// RemoveSharedGroupIDs removes the "shared_group" edge to SharedGoalGroup entities by IDs.
+func (_u *GoalUpdate) RemoveSharedGroupIDs(ids ...uuid.UUID) *GoalUpdate {
+	_u.mutation.RemoveSharedGroupIDs(ids...)
+	return _u
+}
+
+// RemoveSharedGroup removes "shared_group" edges to SharedGoalGroup entities.
+func (_u *GoalUpdate) RemoveSharedGroup(v ...*SharedGoalGroup) *GoalUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveSharedGroupIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -426,6 +571,16 @@ func (_u *GoalUpdate) check() error {
 	if v, ok := _u.mutation.State(); ok {
 		if err := goal.StateValidator(v); err != nil {
 			return &ValidationError{Name: "state", err: fmt.Errorf(`internal: validator failed for field "Goal.state": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.GetType(); ok {
+		if err := goal.TypeValidator(v); err != nil {
+			return &ValidationError{Name: "type", err: fmt.Errorf(`internal: validator failed for field "Goal.type": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.GoalKind(); ok {
+		if err := goal.GoalKindValidator(v); err != nil {
+			return &ValidationError{Name: "goal_kind", err: fmt.Errorf(`internal: validator failed for field "Goal.goal_kind": %w`, err)}
 		}
 	}
 	if _u.mutation.CategoryCleared() && len(_u.mutation.CategoryIDs()) > 0 {
@@ -505,6 +660,15 @@ func (_u *GoalUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.State(); ok {
 		_spec.SetField(goal.FieldState, field.TypeEnum, value)
+	}
+	if value, ok := _u.mutation.GetType(); ok {
+		_spec.SetField(goal.FieldType, field.TypeEnum, value)
+	}
+	if value, ok := _u.mutation.GoalKind(); ok {
+		_spec.SetField(goal.FieldGoalKind, field.TypeEnum, value)
+	}
+	if _u.mutation.GoalKindCleared() {
+		_spec.ClearField(goal.FieldGoalKind, field.TypeEnum)
 	}
 	if _u.mutation.CategoryCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -618,6 +782,141 @@ func (_u *GoalUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(evaluationgoal.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.GlobalAssignmentsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   goal.GlobalAssignmentsTable,
+			Columns: []string{goal.GlobalAssignmentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(globalgoalassignment.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedGlobalAssignmentsIDs(); len(nodes) > 0 && !_u.mutation.GlobalAssignmentsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   goal.GlobalAssignmentsTable,
+			Columns: []string{goal.GlobalAssignmentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(globalgoalassignment.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.GlobalAssignmentsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   goal.GlobalAssignmentsTable,
+			Columns: []string{goal.GlobalAssignmentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(globalgoalassignment.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.GlobalRulesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   goal.GlobalRulesTable,
+			Columns: []string{goal.GlobalRulesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(globalgoalrule.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedGlobalRulesIDs(); len(nodes) > 0 && !_u.mutation.GlobalRulesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   goal.GlobalRulesTable,
+			Columns: []string{goal.GlobalRulesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(globalgoalrule.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.GlobalRulesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   goal.GlobalRulesTable,
+			Columns: []string{goal.GlobalRulesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(globalgoalrule.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.SharedGroupCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   goal.SharedGroupTable,
+			Columns: []string{goal.SharedGroupColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sharedgoalgroup.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedSharedGroupIDs(); len(nodes) > 0 && !_u.mutation.SharedGroupCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   goal.SharedGroupTable,
+			Columns: []string{goal.SharedGroupColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sharedgoalgroup.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.SharedGroupIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   goal.SharedGroupTable,
+			Columns: []string{goal.SharedGroupColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sharedgoalgroup.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -880,6 +1179,40 @@ func (_u *GoalUpdateOne) SetNillableCategoryID(v *uuid.UUID) *GoalUpdateOne {
 	return _u
 }
 
+// SetType sets the "type" field.
+func (_u *GoalUpdateOne) SetType(v goal.Type) *GoalUpdateOne {
+	_u.mutation.SetType(v)
+	return _u
+}
+
+// SetNillableType sets the "type" field if the given value is not nil.
+func (_u *GoalUpdateOne) SetNillableType(v *goal.Type) *GoalUpdateOne {
+	if v != nil {
+		_u.SetType(*v)
+	}
+	return _u
+}
+
+// SetGoalKind sets the "goal_kind" field.
+func (_u *GoalUpdateOne) SetGoalKind(v goal.GoalKind) *GoalUpdateOne {
+	_u.mutation.SetGoalKind(v)
+	return _u
+}
+
+// SetNillableGoalKind sets the "goal_kind" field if the given value is not nil.
+func (_u *GoalUpdateOne) SetNillableGoalKind(v *goal.GoalKind) *GoalUpdateOne {
+	if v != nil {
+		_u.SetGoalKind(*v)
+	}
+	return _u
+}
+
+// ClearGoalKind clears the value of the "goal_kind" field.
+func (_u *GoalUpdateOne) ClearGoalKind() *GoalUpdateOne {
+	_u.mutation.ClearGoalKind()
+	return _u
+}
+
 // SetCategory sets the "category" edge to the GoalCategory entity.
 func (_u *GoalUpdateOne) SetCategory(v *GoalCategory) *GoalUpdateOne {
 	return _u.SetCategoryID(v.ID)
@@ -913,6 +1246,51 @@ func (_u *GoalUpdateOne) AddEvaluationGoals(v ...*EvaluationGoal) *GoalUpdateOne
 		ids[i] = v[i].ID
 	}
 	return _u.AddEvaluationGoalIDs(ids...)
+}
+
+// AddGlobalAssignmentIDs adds the "global_assignments" edge to the GlobalGoalAssignment entity by IDs.
+func (_u *GoalUpdateOne) AddGlobalAssignmentIDs(ids ...uuid.UUID) *GoalUpdateOne {
+	_u.mutation.AddGlobalAssignmentIDs(ids...)
+	return _u
+}
+
+// AddGlobalAssignments adds the "global_assignments" edges to the GlobalGoalAssignment entity.
+func (_u *GoalUpdateOne) AddGlobalAssignments(v ...*GlobalGoalAssignment) *GoalUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddGlobalAssignmentIDs(ids...)
+}
+
+// AddGlobalRuleIDs adds the "global_rules" edge to the GlobalGoalRule entity by IDs.
+func (_u *GoalUpdateOne) AddGlobalRuleIDs(ids ...uuid.UUID) *GoalUpdateOne {
+	_u.mutation.AddGlobalRuleIDs(ids...)
+	return _u
+}
+
+// AddGlobalRules adds the "global_rules" edges to the GlobalGoalRule entity.
+func (_u *GoalUpdateOne) AddGlobalRules(v ...*GlobalGoalRule) *GoalUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddGlobalRuleIDs(ids...)
+}
+
+// AddSharedGroupIDs adds the "shared_group" edge to the SharedGoalGroup entity by IDs.
+func (_u *GoalUpdateOne) AddSharedGroupIDs(ids ...uuid.UUID) *GoalUpdateOne {
+	_u.mutation.AddSharedGroupIDs(ids...)
+	return _u
+}
+
+// AddSharedGroup adds the "shared_group" edges to the SharedGoalGroup entity.
+func (_u *GoalUpdateOne) AddSharedGroup(v ...*SharedGoalGroup) *GoalUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddSharedGroupIDs(ids...)
 }
 
 // Mutation returns the GoalMutation object of the builder.
@@ -966,6 +1344,69 @@ func (_u *GoalUpdateOne) RemoveEvaluationGoals(v ...*EvaluationGoal) *GoalUpdate
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveEvaluationGoalIDs(ids...)
+}
+
+// ClearGlobalAssignments clears all "global_assignments" edges to the GlobalGoalAssignment entity.
+func (_u *GoalUpdateOne) ClearGlobalAssignments() *GoalUpdateOne {
+	_u.mutation.ClearGlobalAssignments()
+	return _u
+}
+
+// RemoveGlobalAssignmentIDs removes the "global_assignments" edge to GlobalGoalAssignment entities by IDs.
+func (_u *GoalUpdateOne) RemoveGlobalAssignmentIDs(ids ...uuid.UUID) *GoalUpdateOne {
+	_u.mutation.RemoveGlobalAssignmentIDs(ids...)
+	return _u
+}
+
+// RemoveGlobalAssignments removes "global_assignments" edges to GlobalGoalAssignment entities.
+func (_u *GoalUpdateOne) RemoveGlobalAssignments(v ...*GlobalGoalAssignment) *GoalUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveGlobalAssignmentIDs(ids...)
+}
+
+// ClearGlobalRules clears all "global_rules" edges to the GlobalGoalRule entity.
+func (_u *GoalUpdateOne) ClearGlobalRules() *GoalUpdateOne {
+	_u.mutation.ClearGlobalRules()
+	return _u
+}
+
+// RemoveGlobalRuleIDs removes the "global_rules" edge to GlobalGoalRule entities by IDs.
+func (_u *GoalUpdateOne) RemoveGlobalRuleIDs(ids ...uuid.UUID) *GoalUpdateOne {
+	_u.mutation.RemoveGlobalRuleIDs(ids...)
+	return _u
+}
+
+// RemoveGlobalRules removes "global_rules" edges to GlobalGoalRule entities.
+func (_u *GoalUpdateOne) RemoveGlobalRules(v ...*GlobalGoalRule) *GoalUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveGlobalRuleIDs(ids...)
+}
+
+// ClearSharedGroup clears all "shared_group" edges to the SharedGoalGroup entity.
+func (_u *GoalUpdateOne) ClearSharedGroup() *GoalUpdateOne {
+	_u.mutation.ClearSharedGroup()
+	return _u
+}
+
+// RemoveSharedGroupIDs removes the "shared_group" edge to SharedGoalGroup entities by IDs.
+func (_u *GoalUpdateOne) RemoveSharedGroupIDs(ids ...uuid.UUID) *GoalUpdateOne {
+	_u.mutation.RemoveSharedGroupIDs(ids...)
+	return _u
+}
+
+// RemoveSharedGroup removes "shared_group" edges to SharedGoalGroup entities.
+func (_u *GoalUpdateOne) RemoveSharedGroup(v ...*SharedGoalGroup) *GoalUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveSharedGroupIDs(ids...)
 }
 
 // Where appends a list predicates to the GoalUpdate builder.
@@ -1052,6 +1493,16 @@ func (_u *GoalUpdateOne) check() error {
 	if v, ok := _u.mutation.State(); ok {
 		if err := goal.StateValidator(v); err != nil {
 			return &ValidationError{Name: "state", err: fmt.Errorf(`internal: validator failed for field "Goal.state": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.GetType(); ok {
+		if err := goal.TypeValidator(v); err != nil {
+			return &ValidationError{Name: "type", err: fmt.Errorf(`internal: validator failed for field "Goal.type": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.GoalKind(); ok {
+		if err := goal.GoalKindValidator(v); err != nil {
+			return &ValidationError{Name: "goal_kind", err: fmt.Errorf(`internal: validator failed for field "Goal.goal_kind": %w`, err)}
 		}
 	}
 	if _u.mutation.CategoryCleared() && len(_u.mutation.CategoryIDs()) > 0 {
@@ -1148,6 +1599,15 @@ func (_u *GoalUpdateOne) sqlSave(ctx context.Context) (_node *Goal, err error) {
 	}
 	if value, ok := _u.mutation.State(); ok {
 		_spec.SetField(goal.FieldState, field.TypeEnum, value)
+	}
+	if value, ok := _u.mutation.GetType(); ok {
+		_spec.SetField(goal.FieldType, field.TypeEnum, value)
+	}
+	if value, ok := _u.mutation.GoalKind(); ok {
+		_spec.SetField(goal.FieldGoalKind, field.TypeEnum, value)
+	}
+	if _u.mutation.GoalKindCleared() {
+		_spec.ClearField(goal.FieldGoalKind, field.TypeEnum)
 	}
 	if _u.mutation.CategoryCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -1261,6 +1721,141 @@ func (_u *GoalUpdateOne) sqlSave(ctx context.Context) (_node *Goal, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(evaluationgoal.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.GlobalAssignmentsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   goal.GlobalAssignmentsTable,
+			Columns: []string{goal.GlobalAssignmentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(globalgoalassignment.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedGlobalAssignmentsIDs(); len(nodes) > 0 && !_u.mutation.GlobalAssignmentsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   goal.GlobalAssignmentsTable,
+			Columns: []string{goal.GlobalAssignmentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(globalgoalassignment.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.GlobalAssignmentsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   goal.GlobalAssignmentsTable,
+			Columns: []string{goal.GlobalAssignmentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(globalgoalassignment.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.GlobalRulesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   goal.GlobalRulesTable,
+			Columns: []string{goal.GlobalRulesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(globalgoalrule.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedGlobalRulesIDs(); len(nodes) > 0 && !_u.mutation.GlobalRulesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   goal.GlobalRulesTable,
+			Columns: []string{goal.GlobalRulesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(globalgoalrule.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.GlobalRulesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   goal.GlobalRulesTable,
+			Columns: []string{goal.GlobalRulesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(globalgoalrule.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.SharedGroupCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   goal.SharedGroupTable,
+			Columns: []string{goal.SharedGroupColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sharedgoalgroup.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedSharedGroupIDs(); len(nodes) > 0 && !_u.mutation.SharedGroupCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   goal.SharedGroupTable,
+			Columns: []string{goal.SharedGroupColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sharedgoalgroup.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.SharedGroupIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   goal.SharedGroupTable,
+			Columns: []string{goal.SharedGroupColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sharedgoalgroup.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

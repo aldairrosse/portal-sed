@@ -527,6 +527,29 @@ func HasOrgNodeWith(preds ...predicate.OrgNode) predicate.KPI {
 	})
 }
 
+// HasTemplateLinks applies the HasEdge predicate on the "template_links" edge.
+func HasTemplateLinks() predicate.KPI {
+	return predicate.KPI(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, TemplateLinksTable, TemplateLinksColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasTemplateLinksWith applies the HasEdge predicate on the "template_links" edge with a given conditions (other predicates).
+func HasTemplateLinksWith(preds ...predicate.GoalTemplateKpiLink) predicate.KPI {
+	return predicate.KPI(func(s *sql.Selector) {
+		step := newTemplateLinksStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.KPI) predicate.KPI {
 	return predicate.KPI(sql.AndPredicates(predicates...))

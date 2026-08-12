@@ -36,6 +36,12 @@ type EvaluationProfile func(*sql.Selector)
 // EvaluatorScope is the predicate function for evaluatorscope builders.
 type EvaluatorScope func(*sql.Selector)
 
+// GlobalGoalAssignment is the predicate function for globalgoalassignment builders.
+type GlobalGoalAssignment func(*sql.Selector)
+
+// GlobalGoalRule is the predicate function for globalgoalrule builders.
+type GlobalGoalRule func(*sql.Selector)
+
 // Goal is the predicate function for goal builders.
 type Goal func(*sql.Selector)
 
@@ -47,6 +53,12 @@ type GoalCategory func(*sql.Selector)
 
 // GoalKpiLink is the predicate function for goalkpilink builders.
 type GoalKpiLink func(*sql.Selector)
+
+// GoalTemplate is the predicate function for goaltemplate builders.
+type GoalTemplate func(*sql.Selector)
+
+// GoalTemplateKpiLink is the predicate function for goaltemplatekpilink builders.
+type GoalTemplateKpiLink func(*sql.Selector)
 
 // KPI is the predicate function for kpi builders.
 type KPI func(*sql.Selector)
@@ -83,3 +95,9 @@ type Pillar func(*sql.Selector)
 
 // ScaleCriterion is the predicate function for scalecriterion builders.
 type ScaleCriterion func(*sql.Selector)
+
+// SharedGoalGroup is the predicate function for sharedgoalgroup builders.
+type SharedGoalGroup func(*sql.Selector)
+
+// SharedGoalMember is the predicate function for sharedgoalmember builders.
+type SharedGoalMember func(*sql.Selector)

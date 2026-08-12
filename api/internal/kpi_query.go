@@ -14,6 +14,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
 	"github.com/sed-evaluacion-desempeno/api/internal/goalkpilink"
+	"github.com/sed-evaluacion-desempeno/api/internal/goaltemplatekpilink"
 	"github.com/sed-evaluacion-desempeno/api/internal/kpi"
 	"github.com/sed-evaluacion-desempeno/api/internal/orgnode"
 	"github.com/sed-evaluacion-desempeno/api/internal/predicate"
@@ -22,12 +23,13 @@ import (
 // KPIQuery is the builder for querying KPI entities.
 type KPIQuery struct {
 	config
-	ctx           *QueryContext
-	order         []kpi.OrderOption
-	inters        []Interceptor
-	predicates    []predicate.KPI
-	withGoalLinks *GoalKpiLinkQuery
-	withOrgNode   *OrgNodeQuery
+	ctx               *QueryContext
+	order             []kpi.OrderOption
+	inters            []Interceptor
+	predicates        []predicate.KPI
+	withGoalLinks     *GoalKpiLinkQuery
+	withOrgNode       *OrgNodeQuery
+	withTemplateLinks *GoalTemplateKpiLinkQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -101,6 +103,28 @@ func (_q *KPIQuery) QueryOrgNode() *OrgNodeQuery {
 			sqlgraph.From(kpi.Table, kpi.FieldID, selector),
 			sqlgraph.To(orgnode.Table, orgnode.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, kpi.OrgNodeTable, kpi.OrgNodeColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryTemplateLinks chains the current query on the "template_links" edge.
+func (_q *KPIQuery) QueryTemplateLinks() *GoalTemplateKpiLinkQuery {
+	query := (&GoalTemplateKpiLinkClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(kpi.Table, kpi.FieldID, selector),
+			sqlgraph.To(goaltemplatekpilink.Table, goaltemplatekpilink.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, kpi.TemplateLinksTable, kpi.TemplateLinksColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -295,13 +319,14 @@ func (_q *KPIQuery) Clone() *KPIQuery {
 		return nil
 	}
 	return &KPIQuery{
-		config:        _q.config,
-		ctx:           _q.ctx.Clone(),
-		order:         append([]kpi.OrderOption{}, _q.order...),
-		inters:        append([]Interceptor{}, _q.inters...),
-		predicates:    append([]predicate.KPI{}, _q.predicates...),
-		withGoalLinks: _q.withGoalLinks.Clone(),
-		withOrgNode:   _q.withOrgNode.Clone(),
+		config:            _q.config,
+		ctx:               _q.ctx.Clone(),
+		order:             append([]kpi.OrderOption{}, _q.order...),
+		inters:            append([]Interceptor{}, _q.inters...),
+		predicates:        append([]predicate.KPI{}, _q.predicates...),
+		withGoalLinks:     _q.withGoalLinks.Clone(),
+		withOrgNode:       _q.withOrgNode.Clone(),
+		withTemplateLinks: _q.withTemplateLinks.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
@@ -327,6 +352,17 @@ func (_q *KPIQuery) WithOrgNode(opts ...func(*OrgNodeQuery)) *KPIQuery {
 		opt(query)
 	}
 	_q.withOrgNode = query
+	return _q
+}
+
+// WithTemplateLinks tells the query-builder to eager-load the nodes that are connected to
+// the "template_links" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *KPIQuery) WithTemplateLinks(opts ...func(*GoalTemplateKpiLinkQuery)) *KPIQuery {
+	query := (&GoalTemplateKpiLinkClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withTemplateLinks = query
 	return _q
 }
 
@@ -408,9 +444,10 @@ func (_q *KPIQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*KPI, err
 	var (
 		nodes       = []*KPI{}
 		_spec       = _q.querySpec()
-		loadedTypes = [2]bool{
+		loadedTypes = [3]bool{
 			_q.withGoalLinks != nil,
 			_q.withOrgNode != nil,
+			_q.withTemplateLinks != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -441,6 +478,13 @@ func (_q *KPIQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*KPI, err
 	if query := _q.withOrgNode; query != nil {
 		if err := _q.loadOrgNode(ctx, query, nodes, nil,
 			func(n *KPI, e *OrgNode) { n.Edges.OrgNode = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withTemplateLinks; query != nil {
+		if err := _q.loadTemplateLinks(ctx, query, nodes,
+			func(n *KPI) { n.Edges.TemplateLinks = []*GoalTemplateKpiLink{} },
+			func(n *KPI, e *GoalTemplateKpiLink) { n.Edges.TemplateLinks = append(n.Edges.TemplateLinks, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -506,6 +550,36 @@ func (_q *KPIQuery) loadOrgNode(ctx context.Context, query *OrgNodeQuery, nodes 
 		for i := range nodes {
 			assign(nodes[i], n)
 		}
+	}
+	return nil
+}
+func (_q *KPIQuery) loadTemplateLinks(ctx context.Context, query *GoalTemplateKpiLinkQuery, nodes []*KPI, init func(*KPI), assign func(*KPI, *GoalTemplateKpiLink)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*KPI)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(goaltemplatekpilink.FieldKpiID)
+	}
+	query.Where(predicate.GoalTemplateKpiLink(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(kpi.TemplateLinksColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.KpiID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "kpi_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
 	}
 	return nil
 }

@@ -18,33 +18,41 @@ import (
 	"github.com/sed-evaluacion-desempeno/api/internal/evaluation"
 	"github.com/sed-evaluacion-desempeno/api/internal/evaluationprofile"
 	"github.com/sed-evaluacion-desempeno/api/internal/evaluatorscope"
+	"github.com/sed-evaluacion-desempeno/api/internal/globalgoalassignment"
 	"github.com/sed-evaluacion-desempeno/api/internal/goalassignment"
 	"github.com/sed-evaluacion-desempeno/api/internal/goalcategory"
+	"github.com/sed-evaluacion-desempeno/api/internal/goaltemplate"
 	"github.com/sed-evaluacion-desempeno/api/internal/nineboxentry"
 	"github.com/sed-evaluacion-desempeno/api/internal/nineboxmatrix"
 	"github.com/sed-evaluacion-desempeno/api/internal/orgnode"
 	"github.com/sed-evaluacion-desempeno/api/internal/predicate"
+	"github.com/sed-evaluacion-desempeno/api/internal/sharedgoalgroup"
+	"github.com/sed-evaluacion-desempeno/api/internal/sharedgoalmember"
 )
 
 // EmployeeQuery is the builder for querying Employee entities.
 type EmployeeQuery struct {
 	config
-	ctx                  *QueryContext
-	order                []employee.OrderOption
-	inters               []Interceptor
-	predicates           []predicate.Employee
-	withOrgNode          *OrgNodeQuery
-	withManager          *EmployeeQuery
-	withDirectReports    *EmployeeQuery
-	withProfile          *EvaluationProfileQuery
-	withEvaluatorScopes  *EvaluatorScopeQuery
-	withGoalCategories   *GoalCategoryQuery
-	withGoalAssignments  *GoalAssignmentQuery
-	withEvaluations      *EvaluationQuery
-	withNineBoxMatrices  *NineBoxMatrixQuery
-	withNineBoxEntries   *NineBoxEntryQuery
-	withHeadedDepartment *OrgNodeQuery
-	withActivityLogs     *ActivityLogQuery
+	ctx                       *QueryContext
+	order                     []employee.OrderOption
+	inters                    []Interceptor
+	predicates                []predicate.Employee
+	withOrgNode               *OrgNodeQuery
+	withManager               *EmployeeQuery
+	withDirectReports         *EmployeeQuery
+	withProfile               *EvaluationProfileQuery
+	withEvaluatorScopes       *EvaluatorScopeQuery
+	withGoalCategories        *GoalCategoryQuery
+	withGoalAssignments       *GoalAssignmentQuery
+	withEvaluations           *EvaluationQuery
+	withNineBoxMatrices       *NineBoxMatrixQuery
+	withNineBoxEntries        *NineBoxEntryQuery
+	withHeadedDepartment      *OrgNodeQuery
+	withActivityLogs          *ActivityLogQuery
+	withGoalTemplates         *GoalTemplateQuery
+	withGlobalGoalAssignments *GlobalGoalAssignmentQuery
+	withSharedGoalGroups      *SharedGoalGroupQuery
+	withSharedGoalMembers     *SharedGoalMemberQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -345,6 +353,94 @@ func (_q *EmployeeQuery) QueryActivityLogs() *ActivityLogQuery {
 	return query
 }
 
+// QueryGoalTemplates chains the current query on the "goal_templates" edge.
+func (_q *EmployeeQuery) QueryGoalTemplates() *GoalTemplateQuery {
+	query := (&GoalTemplateClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(employee.Table, employee.FieldID, selector),
+			sqlgraph.To(goaltemplate.Table, goaltemplate.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, employee.GoalTemplatesTable, employee.GoalTemplatesColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryGlobalGoalAssignments chains the current query on the "global_goal_assignments" edge.
+func (_q *EmployeeQuery) QueryGlobalGoalAssignments() *GlobalGoalAssignmentQuery {
+	query := (&GlobalGoalAssignmentClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(employee.Table, employee.FieldID, selector),
+			sqlgraph.To(globalgoalassignment.Table, globalgoalassignment.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, employee.GlobalGoalAssignmentsTable, employee.GlobalGoalAssignmentsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QuerySharedGoalGroups chains the current query on the "shared_goal_groups" edge.
+func (_q *EmployeeQuery) QuerySharedGoalGroups() *SharedGoalGroupQuery {
+	query := (&SharedGoalGroupClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(employee.Table, employee.FieldID, selector),
+			sqlgraph.To(sharedgoalgroup.Table, sharedgoalgroup.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, employee.SharedGoalGroupsTable, employee.SharedGoalGroupsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QuerySharedGoalMembers chains the current query on the "shared_goal_members" edge.
+func (_q *EmployeeQuery) QuerySharedGoalMembers() *SharedGoalMemberQuery {
+	query := (&SharedGoalMemberClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(employee.Table, employee.FieldID, selector),
+			sqlgraph.To(sharedgoalmember.Table, sharedgoalmember.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, employee.SharedGoalMembersTable, employee.SharedGoalMembersColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
 // First returns the first Employee entity from the query.
 // Returns a *NotFoundError when no Employee was found.
 func (_q *EmployeeQuery) First(ctx context.Context) (*Employee, error) {
@@ -532,23 +628,27 @@ func (_q *EmployeeQuery) Clone() *EmployeeQuery {
 		return nil
 	}
 	return &EmployeeQuery{
-		config:               _q.config,
-		ctx:                  _q.ctx.Clone(),
-		order:                append([]employee.OrderOption{}, _q.order...),
-		inters:               append([]Interceptor{}, _q.inters...),
-		predicates:           append([]predicate.Employee{}, _q.predicates...),
-		withOrgNode:          _q.withOrgNode.Clone(),
-		withManager:          _q.withManager.Clone(),
-		withDirectReports:    _q.withDirectReports.Clone(),
-		withProfile:          _q.withProfile.Clone(),
-		withEvaluatorScopes:  _q.withEvaluatorScopes.Clone(),
-		withGoalCategories:   _q.withGoalCategories.Clone(),
-		withGoalAssignments:  _q.withGoalAssignments.Clone(),
-		withEvaluations:      _q.withEvaluations.Clone(),
-		withNineBoxMatrices:  _q.withNineBoxMatrices.Clone(),
-		withNineBoxEntries:   _q.withNineBoxEntries.Clone(),
-		withHeadedDepartment: _q.withHeadedDepartment.Clone(),
-		withActivityLogs:     _q.withActivityLogs.Clone(),
+		config:                    _q.config,
+		ctx:                       _q.ctx.Clone(),
+		order:                     append([]employee.OrderOption{}, _q.order...),
+		inters:                    append([]Interceptor{}, _q.inters...),
+		predicates:                append([]predicate.Employee{}, _q.predicates...),
+		withOrgNode:               _q.withOrgNode.Clone(),
+		withManager:               _q.withManager.Clone(),
+		withDirectReports:         _q.withDirectReports.Clone(),
+		withProfile:               _q.withProfile.Clone(),
+		withEvaluatorScopes:       _q.withEvaluatorScopes.Clone(),
+		withGoalCategories:        _q.withGoalCategories.Clone(),
+		withGoalAssignments:       _q.withGoalAssignments.Clone(),
+		withEvaluations:           _q.withEvaluations.Clone(),
+		withNineBoxMatrices:       _q.withNineBoxMatrices.Clone(),
+		withNineBoxEntries:        _q.withNineBoxEntries.Clone(),
+		withHeadedDepartment:      _q.withHeadedDepartment.Clone(),
+		withActivityLogs:          _q.withActivityLogs.Clone(),
+		withGoalTemplates:         _q.withGoalTemplates.Clone(),
+		withGlobalGoalAssignments: _q.withGlobalGoalAssignments.Clone(),
+		withSharedGoalGroups:      _q.withSharedGoalGroups.Clone(),
+		withSharedGoalMembers:     _q.withSharedGoalMembers.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
@@ -687,6 +787,50 @@ func (_q *EmployeeQuery) WithActivityLogs(opts ...func(*ActivityLogQuery)) *Empl
 	return _q
 }
 
+// WithGoalTemplates tells the query-builder to eager-load the nodes that are connected to
+// the "goal_templates" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *EmployeeQuery) WithGoalTemplates(opts ...func(*GoalTemplateQuery)) *EmployeeQuery {
+	query := (&GoalTemplateClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withGoalTemplates = query
+	return _q
+}
+
+// WithGlobalGoalAssignments tells the query-builder to eager-load the nodes that are connected to
+// the "global_goal_assignments" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *EmployeeQuery) WithGlobalGoalAssignments(opts ...func(*GlobalGoalAssignmentQuery)) *EmployeeQuery {
+	query := (&GlobalGoalAssignmentClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withGlobalGoalAssignments = query
+	return _q
+}
+
+// WithSharedGoalGroups tells the query-builder to eager-load the nodes that are connected to
+// the "shared_goal_groups" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *EmployeeQuery) WithSharedGoalGroups(opts ...func(*SharedGoalGroupQuery)) *EmployeeQuery {
+	query := (&SharedGoalGroupClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withSharedGoalGroups = query
+	return _q
+}
+
+// WithSharedGoalMembers tells the query-builder to eager-load the nodes that are connected to
+// the "shared_goal_members" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *EmployeeQuery) WithSharedGoalMembers(opts ...func(*SharedGoalMemberQuery)) *EmployeeQuery {
+	query := (&SharedGoalMemberClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withSharedGoalMembers = query
+	return _q
+}
+
 // GroupBy is used to group vertices by one or more fields/columns.
 // It is often used with aggregate functions, like: count, max, mean, min, sum.
 //
@@ -765,7 +909,7 @@ func (_q *EmployeeQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Emp
 	var (
 		nodes       = []*Employee{}
 		_spec       = _q.querySpec()
-		loadedTypes = [12]bool{
+		loadedTypes = [16]bool{
 			_q.withOrgNode != nil,
 			_q.withManager != nil,
 			_q.withDirectReports != nil,
@@ -778,6 +922,10 @@ func (_q *EmployeeQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Emp
 			_q.withNineBoxEntries != nil,
 			_q.withHeadedDepartment != nil,
 			_q.withActivityLogs != nil,
+			_q.withGoalTemplates != nil,
+			_q.withGlobalGoalAssignments != nil,
+			_q.withSharedGoalGroups != nil,
+			_q.withSharedGoalMembers != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -876,6 +1024,38 @@ func (_q *EmployeeQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Emp
 		if err := _q.loadActivityLogs(ctx, query, nodes,
 			func(n *Employee) { n.Edges.ActivityLogs = []*ActivityLog{} },
 			func(n *Employee, e *ActivityLog) { n.Edges.ActivityLogs = append(n.Edges.ActivityLogs, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withGoalTemplates; query != nil {
+		if err := _q.loadGoalTemplates(ctx, query, nodes,
+			func(n *Employee) { n.Edges.GoalTemplates = []*GoalTemplate{} },
+			func(n *Employee, e *GoalTemplate) { n.Edges.GoalTemplates = append(n.Edges.GoalTemplates, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withGlobalGoalAssignments; query != nil {
+		if err := _q.loadGlobalGoalAssignments(ctx, query, nodes,
+			func(n *Employee) { n.Edges.GlobalGoalAssignments = []*GlobalGoalAssignment{} },
+			func(n *Employee, e *GlobalGoalAssignment) {
+				n.Edges.GlobalGoalAssignments = append(n.Edges.GlobalGoalAssignments, e)
+			}); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withSharedGoalGroups; query != nil {
+		if err := _q.loadSharedGoalGroups(ctx, query, nodes,
+			func(n *Employee) { n.Edges.SharedGoalGroups = []*SharedGoalGroup{} },
+			func(n *Employee, e *SharedGoalGroup) { n.Edges.SharedGoalGroups = append(n.Edges.SharedGoalGroups, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withSharedGoalMembers; query != nil {
+		if err := _q.loadSharedGoalMembers(ctx, query, nodes,
+			func(n *Employee) { n.Edges.SharedGoalMembers = []*SharedGoalMember{} },
+			func(n *Employee, e *SharedGoalMember) {
+				n.Edges.SharedGoalMembers = append(n.Edges.SharedGoalMembers, e)
+			}); err != nil {
 			return nil, err
 		}
 	}
@@ -1233,6 +1413,126 @@ func (_q *EmployeeQuery) loadActivityLogs(ctx context.Context, query *ActivityLo
 	}
 	query.Where(predicate.ActivityLog(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(employee.ActivityLogsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.EmployeeID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "employee_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *EmployeeQuery) loadGoalTemplates(ctx context.Context, query *GoalTemplateQuery, nodes []*Employee, init func(*Employee), assign func(*Employee, *GoalTemplate)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*Employee)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(goaltemplate.FieldCreatedBy)
+	}
+	query.Where(predicate.GoalTemplate(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(employee.GoalTemplatesColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.CreatedBy
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "created_by" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *EmployeeQuery) loadGlobalGoalAssignments(ctx context.Context, query *GlobalGoalAssignmentQuery, nodes []*Employee, init func(*Employee), assign func(*Employee, *GlobalGoalAssignment)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*Employee)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(globalgoalassignment.FieldEmployeeID)
+	}
+	query.Where(predicate.GlobalGoalAssignment(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(employee.GlobalGoalAssignmentsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.EmployeeID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "employee_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *EmployeeQuery) loadSharedGoalGroups(ctx context.Context, query *SharedGoalGroupQuery, nodes []*Employee, init func(*Employee), assign func(*Employee, *SharedGoalGroup)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*Employee)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(sharedgoalgroup.FieldCreatedBy)
+	}
+	query.Where(predicate.SharedGoalGroup(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(employee.SharedGoalGroupsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.CreatedBy
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "created_by" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *EmployeeQuery) loadSharedGoalMembers(ctx context.Context, query *SharedGoalMemberQuery, nodes []*Employee, init func(*Employee), assign func(*Employee, *SharedGoalMember)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*Employee)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(sharedgoalmember.FieldEmployeeID)
+	}
+	query.Where(predicate.SharedGoalMember(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(employee.SharedGoalMembersColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

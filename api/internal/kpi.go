@@ -49,9 +49,11 @@ type KPIEdges struct {
 	GoalLinks []*GoalKpiLink `json:"goal_links,omitempty"`
 	// OrgNode holds the value of the org_node edge.
 	OrgNode *OrgNode `json:"org_node,omitempty"`
+	// TemplateLinks holds the value of the template_links edge.
+	TemplateLinks []*GoalTemplateKpiLink `json:"template_links,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
+	loadedTypes [3]bool
 }
 
 // GoalLinksOrErr returns the GoalLinks value or an error if the edge
@@ -72,6 +74,15 @@ func (e KPIEdges) OrgNodeOrErr() (*OrgNode, error) {
 		return nil, &NotFoundError{label: orgnode.Label}
 	}
 	return nil, &NotLoadedError{edge: "org_node"}
+}
+
+// TemplateLinksOrErr returns the TemplateLinks value or an error if the edge
+// was not loaded in eager-loading.
+func (e KPIEdges) TemplateLinksOrErr() ([]*GoalTemplateKpiLink, error) {
+	if e.loadedTypes[2] {
+		return e.TemplateLinks, nil
+	}
+	return nil, &NotLoadedError{edge: "template_links"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -188,6 +199,11 @@ func (_m *KPI) QueryGoalLinks() *GoalKpiLinkQuery {
 // QueryOrgNode queries the "org_node" edge of the KPI entity.
 func (_m *KPI) QueryOrgNode() *OrgNodeQuery {
 	return NewKPIClient(_m.config).QueryOrgNode(_m)
+}
+
+// QueryTemplateLinks queries the "template_links" edge of the KPI entity.
+func (_m *KPI) QueryTemplateLinks() *GoalTemplateKpiLinkQuery {
+	return NewKPIClient(_m.config).QueryTemplateLinks(_m)
 }
 
 // Update returns a builder for updating this KPI.

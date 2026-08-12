@@ -26,10 +26,14 @@ import (
 	"github.com/sed-evaluacion-desempeno/api/internal/evaluationgoal"
 	"github.com/sed-evaluacion-desempeno/api/internal/evaluationprofile"
 	"github.com/sed-evaluacion-desempeno/api/internal/evaluatorscope"
+	"github.com/sed-evaluacion-desempeno/api/internal/globalgoalassignment"
+	"github.com/sed-evaluacion-desempeno/api/internal/globalgoalrule"
 	"github.com/sed-evaluacion-desempeno/api/internal/goal"
 	"github.com/sed-evaluacion-desempeno/api/internal/goalassignment"
 	"github.com/sed-evaluacion-desempeno/api/internal/goalcategory"
 	"github.com/sed-evaluacion-desempeno/api/internal/goalkpilink"
+	"github.com/sed-evaluacion-desempeno/api/internal/goaltemplate"
+	"github.com/sed-evaluacion-desempeno/api/internal/goaltemplatekpilink"
 	"github.com/sed-evaluacion-desempeno/api/internal/kpi"
 	"github.com/sed-evaluacion-desempeno/api/internal/leveldefinition"
 	"github.com/sed-evaluacion-desempeno/api/internal/nineboxentry"
@@ -42,6 +46,8 @@ import (
 	"github.com/sed-evaluacion-desempeno/api/internal/phasetransition"
 	"github.com/sed-evaluacion-desempeno/api/internal/pillar"
 	"github.com/sed-evaluacion-desempeno/api/internal/scalecriterion"
+	"github.com/sed-evaluacion-desempeno/api/internal/sharedgoalgroup"
+	"github.com/sed-evaluacion-desempeno/api/internal/sharedgoalmember"
 )
 
 // Client is the client that holds all ent builders.
@@ -69,6 +75,10 @@ type Client struct {
 	EvaluationProfile *EvaluationProfileClient
 	// EvaluatorScope is the client for interacting with the EvaluatorScope builders.
 	EvaluatorScope *EvaluatorScopeClient
+	// GlobalGoalAssignment is the client for interacting with the GlobalGoalAssignment builders.
+	GlobalGoalAssignment *GlobalGoalAssignmentClient
+	// GlobalGoalRule is the client for interacting with the GlobalGoalRule builders.
+	GlobalGoalRule *GlobalGoalRuleClient
 	// Goal is the client for interacting with the Goal builders.
 	Goal *GoalClient
 	// GoalAssignment is the client for interacting with the GoalAssignment builders.
@@ -77,6 +87,10 @@ type Client struct {
 	GoalCategory *GoalCategoryClient
 	// GoalKpiLink is the client for interacting with the GoalKpiLink builders.
 	GoalKpiLink *GoalKpiLinkClient
+	// GoalTemplate is the client for interacting with the GoalTemplate builders.
+	GoalTemplate *GoalTemplateClient
+	// GoalTemplateKpiLink is the client for interacting with the GoalTemplateKpiLink builders.
+	GoalTemplateKpiLink *GoalTemplateKpiLinkClient
 	// KPI is the client for interacting with the KPI builders.
 	KPI *KPIClient
 	// LevelDefinition is the client for interacting with the LevelDefinition builders.
@@ -101,6 +115,10 @@ type Client struct {
 	Pillar *PillarClient
 	// ScaleCriterion is the client for interacting with the ScaleCriterion builders.
 	ScaleCriterion *ScaleCriterionClient
+	// SharedGoalGroup is the client for interacting with the SharedGoalGroup builders.
+	SharedGoalGroup *SharedGoalGroupClient
+	// SharedGoalMember is the client for interacting with the SharedGoalMember builders.
+	SharedGoalMember *SharedGoalMemberClient
 }
 
 // NewClient creates a new client configured with the given options.
@@ -122,10 +140,14 @@ func (c *Client) init() {
 	c.EvaluationGoal = NewEvaluationGoalClient(c.config)
 	c.EvaluationProfile = NewEvaluationProfileClient(c.config)
 	c.EvaluatorScope = NewEvaluatorScopeClient(c.config)
+	c.GlobalGoalAssignment = NewGlobalGoalAssignmentClient(c.config)
+	c.GlobalGoalRule = NewGlobalGoalRuleClient(c.config)
 	c.Goal = NewGoalClient(c.config)
 	c.GoalAssignment = NewGoalAssignmentClient(c.config)
 	c.GoalCategory = NewGoalCategoryClient(c.config)
 	c.GoalKpiLink = NewGoalKpiLinkClient(c.config)
+	c.GoalTemplate = NewGoalTemplateClient(c.config)
+	c.GoalTemplateKpiLink = NewGoalTemplateKpiLinkClient(c.config)
 	c.KPI = NewKPIClient(c.config)
 	c.LevelDefinition = NewLevelDefinitionClient(c.config)
 	c.NineBoxEntry = NewNineBoxEntryClient(c.config)
@@ -138,6 +160,8 @@ func (c *Client) init() {
 	c.PhaseTransition = NewPhaseTransitionClient(c.config)
 	c.Pillar = NewPillarClient(c.config)
 	c.ScaleCriterion = NewScaleCriterionClient(c.config)
+	c.SharedGoalGroup = NewSharedGoalGroupClient(c.config)
+	c.SharedGoalMember = NewSharedGoalMemberClient(c.config)
 }
 
 type (
@@ -240,10 +264,14 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		EvaluationGoal:            NewEvaluationGoalClient(cfg),
 		EvaluationProfile:         NewEvaluationProfileClient(cfg),
 		EvaluatorScope:            NewEvaluatorScopeClient(cfg),
+		GlobalGoalAssignment:      NewGlobalGoalAssignmentClient(cfg),
+		GlobalGoalRule:            NewGlobalGoalRuleClient(cfg),
 		Goal:                      NewGoalClient(cfg),
 		GoalAssignment:            NewGoalAssignmentClient(cfg),
 		GoalCategory:              NewGoalCategoryClient(cfg),
 		GoalKpiLink:               NewGoalKpiLinkClient(cfg),
+		GoalTemplate:              NewGoalTemplateClient(cfg),
+		GoalTemplateKpiLink:       NewGoalTemplateKpiLinkClient(cfg),
 		KPI:                       NewKPIClient(cfg),
 		LevelDefinition:           NewLevelDefinitionClient(cfg),
 		NineBoxEntry:              NewNineBoxEntryClient(cfg),
@@ -256,6 +284,8 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		PhaseTransition:           NewPhaseTransitionClient(cfg),
 		Pillar:                    NewPillarClient(cfg),
 		ScaleCriterion:            NewScaleCriterionClient(cfg),
+		SharedGoalGroup:           NewSharedGoalGroupClient(cfg),
+		SharedGoalMember:          NewSharedGoalMemberClient(cfg),
 	}, nil
 }
 
@@ -285,10 +315,14 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		EvaluationGoal:            NewEvaluationGoalClient(cfg),
 		EvaluationProfile:         NewEvaluationProfileClient(cfg),
 		EvaluatorScope:            NewEvaluatorScopeClient(cfg),
+		GlobalGoalAssignment:      NewGlobalGoalAssignmentClient(cfg),
+		GlobalGoalRule:            NewGlobalGoalRuleClient(cfg),
 		Goal:                      NewGoalClient(cfg),
 		GoalAssignment:            NewGoalAssignmentClient(cfg),
 		GoalCategory:              NewGoalCategoryClient(cfg),
 		GoalKpiLink:               NewGoalKpiLinkClient(cfg),
+		GoalTemplate:              NewGoalTemplateClient(cfg),
+		GoalTemplateKpiLink:       NewGoalTemplateKpiLinkClient(cfg),
 		KPI:                       NewKPIClient(cfg),
 		LevelDefinition:           NewLevelDefinitionClient(cfg),
 		NineBoxEntry:              NewNineBoxEntryClient(cfg),
@@ -301,6 +335,8 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		PhaseTransition:           NewPhaseTransitionClient(cfg),
 		Pillar:                    NewPillarClient(cfg),
 		ScaleCriterion:            NewScaleCriterionClient(cfg),
+		SharedGoalGroup:           NewSharedGoalGroupClient(cfg),
+		SharedGoalMember:          NewSharedGoalMemberClient(cfg),
 	}, nil
 }
 
@@ -332,10 +368,12 @@ func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
 		c.ActivityLog, c.Competency, c.CompetencyAcceptanceLevel, c.Cycle, c.Employee,
 		c.Evaluation, c.EvaluationCompetency, c.EvaluationGoal, c.EvaluationProfile,
-		c.EvaluatorScope, c.Goal, c.GoalAssignment, c.GoalCategory, c.GoalKpiLink,
-		c.KPI, c.LevelDefinition, c.NineBoxEntry, c.NineBoxMatrix, c.NineBoxQuadrant,
-		c.NineBoxScale, c.OrgNode, c.Organization, c.PhaseDefinition,
-		c.PhaseTransition, c.Pillar, c.ScaleCriterion,
+		c.EvaluatorScope, c.GlobalGoalAssignment, c.GlobalGoalRule, c.Goal,
+		c.GoalAssignment, c.GoalCategory, c.GoalKpiLink, c.GoalTemplate,
+		c.GoalTemplateKpiLink, c.KPI, c.LevelDefinition, c.NineBoxEntry,
+		c.NineBoxMatrix, c.NineBoxQuadrant, c.NineBoxScale, c.OrgNode, c.Organization,
+		c.PhaseDefinition, c.PhaseTransition, c.Pillar, c.ScaleCriterion,
+		c.SharedGoalGroup, c.SharedGoalMember,
 	} {
 		n.Use(hooks...)
 	}
@@ -347,10 +385,12 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
 		c.ActivityLog, c.Competency, c.CompetencyAcceptanceLevel, c.Cycle, c.Employee,
 		c.Evaluation, c.EvaluationCompetency, c.EvaluationGoal, c.EvaluationProfile,
-		c.EvaluatorScope, c.Goal, c.GoalAssignment, c.GoalCategory, c.GoalKpiLink,
-		c.KPI, c.LevelDefinition, c.NineBoxEntry, c.NineBoxMatrix, c.NineBoxQuadrant,
-		c.NineBoxScale, c.OrgNode, c.Organization, c.PhaseDefinition,
-		c.PhaseTransition, c.Pillar, c.ScaleCriterion,
+		c.EvaluatorScope, c.GlobalGoalAssignment, c.GlobalGoalRule, c.Goal,
+		c.GoalAssignment, c.GoalCategory, c.GoalKpiLink, c.GoalTemplate,
+		c.GoalTemplateKpiLink, c.KPI, c.LevelDefinition, c.NineBoxEntry,
+		c.NineBoxMatrix, c.NineBoxQuadrant, c.NineBoxScale, c.OrgNode, c.Organization,
+		c.PhaseDefinition, c.PhaseTransition, c.Pillar, c.ScaleCriterion,
+		c.SharedGoalGroup, c.SharedGoalMember,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -379,6 +419,10 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.EvaluationProfile.mutate(ctx, m)
 	case *EvaluatorScopeMutation:
 		return c.EvaluatorScope.mutate(ctx, m)
+	case *GlobalGoalAssignmentMutation:
+		return c.GlobalGoalAssignment.mutate(ctx, m)
+	case *GlobalGoalRuleMutation:
+		return c.GlobalGoalRule.mutate(ctx, m)
 	case *GoalMutation:
 		return c.Goal.mutate(ctx, m)
 	case *GoalAssignmentMutation:
@@ -387,6 +431,10 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.GoalCategory.mutate(ctx, m)
 	case *GoalKpiLinkMutation:
 		return c.GoalKpiLink.mutate(ctx, m)
+	case *GoalTemplateMutation:
+		return c.GoalTemplate.mutate(ctx, m)
+	case *GoalTemplateKpiLinkMutation:
+		return c.GoalTemplateKpiLink.mutate(ctx, m)
 	case *KPIMutation:
 		return c.KPI.mutate(ctx, m)
 	case *LevelDefinitionMutation:
@@ -411,6 +459,10 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Pillar.mutate(ctx, m)
 	case *ScaleCriterionMutation:
 		return c.ScaleCriterion.mutate(ctx, m)
+	case *SharedGoalGroupMutation:
+		return c.SharedGoalGroup.mutate(ctx, m)
+	case *SharedGoalMemberMutation:
+		return c.SharedGoalMember.mutate(ctx, m)
 	default:
 		return nil, fmt.Errorf("internal: unknown mutation type %T", m)
 	}
@@ -1472,6 +1524,70 @@ func (c *EmployeeClient) QueryActivityLogs(_m *Employee) *ActivityLogQuery {
 	return query
 }
 
+// QueryGoalTemplates queries the goal_templates edge of a Employee.
+func (c *EmployeeClient) QueryGoalTemplates(_m *Employee) *GoalTemplateQuery {
+	query := (&GoalTemplateClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(employee.Table, employee.FieldID, id),
+			sqlgraph.To(goaltemplate.Table, goaltemplate.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, employee.GoalTemplatesTable, employee.GoalTemplatesColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryGlobalGoalAssignments queries the global_goal_assignments edge of a Employee.
+func (c *EmployeeClient) QueryGlobalGoalAssignments(_m *Employee) *GlobalGoalAssignmentQuery {
+	query := (&GlobalGoalAssignmentClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(employee.Table, employee.FieldID, id),
+			sqlgraph.To(globalgoalassignment.Table, globalgoalassignment.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, employee.GlobalGoalAssignmentsTable, employee.GlobalGoalAssignmentsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QuerySharedGoalGroups queries the shared_goal_groups edge of a Employee.
+func (c *EmployeeClient) QuerySharedGoalGroups(_m *Employee) *SharedGoalGroupQuery {
+	query := (&SharedGoalGroupClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(employee.Table, employee.FieldID, id),
+			sqlgraph.To(sharedgoalgroup.Table, sharedgoalgroup.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, employee.SharedGoalGroupsTable, employee.SharedGoalGroupsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QuerySharedGoalMembers queries the shared_goal_members edge of a Employee.
+func (c *EmployeeClient) QuerySharedGoalMembers(_m *Employee) *SharedGoalMemberQuery {
+	query := (&SharedGoalMemberClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(employee.Table, employee.FieldID, id),
+			sqlgraph.To(sharedgoalmember.Table, sharedgoalmember.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, employee.SharedGoalMembersTable, employee.SharedGoalMembersColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *EmployeeClient) Hooks() []Hook {
 	return c.hooks.Employee
@@ -2386,6 +2502,336 @@ func (c *EvaluatorScopeClient) mutate(ctx context.Context, m *EvaluatorScopeMuta
 	}
 }
 
+// GlobalGoalAssignmentClient is a client for the GlobalGoalAssignment schema.
+type GlobalGoalAssignmentClient struct {
+	config
+}
+
+// NewGlobalGoalAssignmentClient returns a client for the GlobalGoalAssignment from the given config.
+func NewGlobalGoalAssignmentClient(c config) *GlobalGoalAssignmentClient {
+	return &GlobalGoalAssignmentClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `globalgoalassignment.Hooks(f(g(h())))`.
+func (c *GlobalGoalAssignmentClient) Use(hooks ...Hook) {
+	c.hooks.GlobalGoalAssignment = append(c.hooks.GlobalGoalAssignment, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `globalgoalassignment.Intercept(f(g(h())))`.
+func (c *GlobalGoalAssignmentClient) Intercept(interceptors ...Interceptor) {
+	c.inters.GlobalGoalAssignment = append(c.inters.GlobalGoalAssignment, interceptors...)
+}
+
+// Create returns a builder for creating a GlobalGoalAssignment entity.
+func (c *GlobalGoalAssignmentClient) Create() *GlobalGoalAssignmentCreate {
+	mutation := newGlobalGoalAssignmentMutation(c.config, OpCreate)
+	return &GlobalGoalAssignmentCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of GlobalGoalAssignment entities.
+func (c *GlobalGoalAssignmentClient) CreateBulk(builders ...*GlobalGoalAssignmentCreate) *GlobalGoalAssignmentCreateBulk {
+	return &GlobalGoalAssignmentCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *GlobalGoalAssignmentClient) MapCreateBulk(slice any, setFunc func(*GlobalGoalAssignmentCreate, int)) *GlobalGoalAssignmentCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &GlobalGoalAssignmentCreateBulk{err: fmt.Errorf("calling to GlobalGoalAssignmentClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*GlobalGoalAssignmentCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &GlobalGoalAssignmentCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for GlobalGoalAssignment.
+func (c *GlobalGoalAssignmentClient) Update() *GlobalGoalAssignmentUpdate {
+	mutation := newGlobalGoalAssignmentMutation(c.config, OpUpdate)
+	return &GlobalGoalAssignmentUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *GlobalGoalAssignmentClient) UpdateOne(_m *GlobalGoalAssignment) *GlobalGoalAssignmentUpdateOne {
+	mutation := newGlobalGoalAssignmentMutation(c.config, OpUpdateOne, withGlobalGoalAssignment(_m))
+	return &GlobalGoalAssignmentUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *GlobalGoalAssignmentClient) UpdateOneID(id uuid.UUID) *GlobalGoalAssignmentUpdateOne {
+	mutation := newGlobalGoalAssignmentMutation(c.config, OpUpdateOne, withGlobalGoalAssignmentID(id))
+	return &GlobalGoalAssignmentUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for GlobalGoalAssignment.
+func (c *GlobalGoalAssignmentClient) Delete() *GlobalGoalAssignmentDelete {
+	mutation := newGlobalGoalAssignmentMutation(c.config, OpDelete)
+	return &GlobalGoalAssignmentDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *GlobalGoalAssignmentClient) DeleteOne(_m *GlobalGoalAssignment) *GlobalGoalAssignmentDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *GlobalGoalAssignmentClient) DeleteOneID(id uuid.UUID) *GlobalGoalAssignmentDeleteOne {
+	builder := c.Delete().Where(globalgoalassignment.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &GlobalGoalAssignmentDeleteOne{builder}
+}
+
+// Query returns a query builder for GlobalGoalAssignment.
+func (c *GlobalGoalAssignmentClient) Query() *GlobalGoalAssignmentQuery {
+	return &GlobalGoalAssignmentQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeGlobalGoalAssignment},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a GlobalGoalAssignment entity by its id.
+func (c *GlobalGoalAssignmentClient) Get(ctx context.Context, id uuid.UUID) (*GlobalGoalAssignment, error) {
+	return c.Query().Where(globalgoalassignment.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *GlobalGoalAssignmentClient) GetX(ctx context.Context, id uuid.UUID) *GlobalGoalAssignment {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryGoal queries the goal edge of a GlobalGoalAssignment.
+func (c *GlobalGoalAssignmentClient) QueryGoal(_m *GlobalGoalAssignment) *GoalQuery {
+	query := (&GoalClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(globalgoalassignment.Table, globalgoalassignment.FieldID, id),
+			sqlgraph.To(goal.Table, goal.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, globalgoalassignment.GoalTable, globalgoalassignment.GoalColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryEmployee queries the employee edge of a GlobalGoalAssignment.
+func (c *GlobalGoalAssignmentClient) QueryEmployee(_m *GlobalGoalAssignment) *EmployeeQuery {
+	query := (&EmployeeClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(globalgoalassignment.Table, globalgoalassignment.FieldID, id),
+			sqlgraph.To(employee.Table, employee.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, globalgoalassignment.EmployeeTable, globalgoalassignment.EmployeeColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *GlobalGoalAssignmentClient) Hooks() []Hook {
+	return c.hooks.GlobalGoalAssignment
+}
+
+// Interceptors returns the client interceptors.
+func (c *GlobalGoalAssignmentClient) Interceptors() []Interceptor {
+	return c.inters.GlobalGoalAssignment
+}
+
+func (c *GlobalGoalAssignmentClient) mutate(ctx context.Context, m *GlobalGoalAssignmentMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&GlobalGoalAssignmentCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&GlobalGoalAssignmentUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&GlobalGoalAssignmentUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&GlobalGoalAssignmentDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("internal: unknown GlobalGoalAssignment mutation op: %q", m.Op())
+	}
+}
+
+// GlobalGoalRuleClient is a client for the GlobalGoalRule schema.
+type GlobalGoalRuleClient struct {
+	config
+}
+
+// NewGlobalGoalRuleClient returns a client for the GlobalGoalRule from the given config.
+func NewGlobalGoalRuleClient(c config) *GlobalGoalRuleClient {
+	return &GlobalGoalRuleClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `globalgoalrule.Hooks(f(g(h())))`.
+func (c *GlobalGoalRuleClient) Use(hooks ...Hook) {
+	c.hooks.GlobalGoalRule = append(c.hooks.GlobalGoalRule, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `globalgoalrule.Intercept(f(g(h())))`.
+func (c *GlobalGoalRuleClient) Intercept(interceptors ...Interceptor) {
+	c.inters.GlobalGoalRule = append(c.inters.GlobalGoalRule, interceptors...)
+}
+
+// Create returns a builder for creating a GlobalGoalRule entity.
+func (c *GlobalGoalRuleClient) Create() *GlobalGoalRuleCreate {
+	mutation := newGlobalGoalRuleMutation(c.config, OpCreate)
+	return &GlobalGoalRuleCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of GlobalGoalRule entities.
+func (c *GlobalGoalRuleClient) CreateBulk(builders ...*GlobalGoalRuleCreate) *GlobalGoalRuleCreateBulk {
+	return &GlobalGoalRuleCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *GlobalGoalRuleClient) MapCreateBulk(slice any, setFunc func(*GlobalGoalRuleCreate, int)) *GlobalGoalRuleCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &GlobalGoalRuleCreateBulk{err: fmt.Errorf("calling to GlobalGoalRuleClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*GlobalGoalRuleCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &GlobalGoalRuleCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for GlobalGoalRule.
+func (c *GlobalGoalRuleClient) Update() *GlobalGoalRuleUpdate {
+	mutation := newGlobalGoalRuleMutation(c.config, OpUpdate)
+	return &GlobalGoalRuleUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *GlobalGoalRuleClient) UpdateOne(_m *GlobalGoalRule) *GlobalGoalRuleUpdateOne {
+	mutation := newGlobalGoalRuleMutation(c.config, OpUpdateOne, withGlobalGoalRule(_m))
+	return &GlobalGoalRuleUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *GlobalGoalRuleClient) UpdateOneID(id uuid.UUID) *GlobalGoalRuleUpdateOne {
+	mutation := newGlobalGoalRuleMutation(c.config, OpUpdateOne, withGlobalGoalRuleID(id))
+	return &GlobalGoalRuleUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for GlobalGoalRule.
+func (c *GlobalGoalRuleClient) Delete() *GlobalGoalRuleDelete {
+	mutation := newGlobalGoalRuleMutation(c.config, OpDelete)
+	return &GlobalGoalRuleDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *GlobalGoalRuleClient) DeleteOne(_m *GlobalGoalRule) *GlobalGoalRuleDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *GlobalGoalRuleClient) DeleteOneID(id uuid.UUID) *GlobalGoalRuleDeleteOne {
+	builder := c.Delete().Where(globalgoalrule.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &GlobalGoalRuleDeleteOne{builder}
+}
+
+// Query returns a query builder for GlobalGoalRule.
+func (c *GlobalGoalRuleClient) Query() *GlobalGoalRuleQuery {
+	return &GlobalGoalRuleQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeGlobalGoalRule},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a GlobalGoalRule entity by its id.
+func (c *GlobalGoalRuleClient) Get(ctx context.Context, id uuid.UUID) (*GlobalGoalRule, error) {
+	return c.Query().Where(globalgoalrule.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *GlobalGoalRuleClient) GetX(ctx context.Context, id uuid.UUID) *GlobalGoalRule {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryGoal queries the goal edge of a GlobalGoalRule.
+func (c *GlobalGoalRuleClient) QueryGoal(_m *GlobalGoalRule) *GoalQuery {
+	query := (&GoalClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(globalgoalrule.Table, globalgoalrule.FieldID, id),
+			sqlgraph.To(goal.Table, goal.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, globalgoalrule.GoalTable, globalgoalrule.GoalColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryDepartment queries the department edge of a GlobalGoalRule.
+func (c *GlobalGoalRuleClient) QueryDepartment(_m *GlobalGoalRule) *OrgNodeQuery {
+	query := (&OrgNodeClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(globalgoalrule.Table, globalgoalrule.FieldID, id),
+			sqlgraph.To(orgnode.Table, orgnode.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, globalgoalrule.DepartmentTable, globalgoalrule.DepartmentColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *GlobalGoalRuleClient) Hooks() []Hook {
+	return c.hooks.GlobalGoalRule
+}
+
+// Interceptors returns the client interceptors.
+func (c *GlobalGoalRuleClient) Interceptors() []Interceptor {
+	return c.inters.GlobalGoalRule
+}
+
+func (c *GlobalGoalRuleClient) mutate(ctx context.Context, m *GlobalGoalRuleMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&GlobalGoalRuleCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&GlobalGoalRuleUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&GlobalGoalRuleUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&GlobalGoalRuleDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("internal: unknown GlobalGoalRule mutation op: %q", m.Op())
+	}
+}
+
 // GoalClient is a client for the Goal schema.
 type GoalClient struct {
 	config
@@ -2535,6 +2981,54 @@ func (c *GoalClient) QueryEvaluationGoals(_m *Goal) *EvaluationGoalQuery {
 			sqlgraph.From(goal.Table, goal.FieldID, id),
 			sqlgraph.To(evaluationgoal.Table, evaluationgoal.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, goal.EvaluationGoalsTable, goal.EvaluationGoalsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryGlobalAssignments queries the global_assignments edge of a Goal.
+func (c *GoalClient) QueryGlobalAssignments(_m *Goal) *GlobalGoalAssignmentQuery {
+	query := (&GlobalGoalAssignmentClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(goal.Table, goal.FieldID, id),
+			sqlgraph.To(globalgoalassignment.Table, globalgoalassignment.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, goal.GlobalAssignmentsTable, goal.GlobalAssignmentsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryGlobalRules queries the global_rules edge of a Goal.
+func (c *GoalClient) QueryGlobalRules(_m *Goal) *GlobalGoalRuleQuery {
+	query := (&GlobalGoalRuleClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(goal.Table, goal.FieldID, id),
+			sqlgraph.To(globalgoalrule.Table, globalgoalrule.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, goal.GlobalRulesTable, goal.GlobalRulesColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QuerySharedGroup queries the shared_group edge of a Goal.
+func (c *GoalClient) QuerySharedGroup(_m *Goal) *SharedGoalGroupQuery {
+	query := (&SharedGoalGroupClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(goal.Table, goal.FieldID, id),
+			sqlgraph.To(sharedgoalgroup.Table, sharedgoalgroup.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, goal.SharedGroupTable, goal.SharedGroupColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
@@ -3078,6 +3572,336 @@ func (c *GoalKpiLinkClient) mutate(ctx context.Context, m *GoalKpiLinkMutation) 
 	}
 }
 
+// GoalTemplateClient is a client for the GoalTemplate schema.
+type GoalTemplateClient struct {
+	config
+}
+
+// NewGoalTemplateClient returns a client for the GoalTemplate from the given config.
+func NewGoalTemplateClient(c config) *GoalTemplateClient {
+	return &GoalTemplateClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `goaltemplate.Hooks(f(g(h())))`.
+func (c *GoalTemplateClient) Use(hooks ...Hook) {
+	c.hooks.GoalTemplate = append(c.hooks.GoalTemplate, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `goaltemplate.Intercept(f(g(h())))`.
+func (c *GoalTemplateClient) Intercept(interceptors ...Interceptor) {
+	c.inters.GoalTemplate = append(c.inters.GoalTemplate, interceptors...)
+}
+
+// Create returns a builder for creating a GoalTemplate entity.
+func (c *GoalTemplateClient) Create() *GoalTemplateCreate {
+	mutation := newGoalTemplateMutation(c.config, OpCreate)
+	return &GoalTemplateCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of GoalTemplate entities.
+func (c *GoalTemplateClient) CreateBulk(builders ...*GoalTemplateCreate) *GoalTemplateCreateBulk {
+	return &GoalTemplateCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *GoalTemplateClient) MapCreateBulk(slice any, setFunc func(*GoalTemplateCreate, int)) *GoalTemplateCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &GoalTemplateCreateBulk{err: fmt.Errorf("calling to GoalTemplateClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*GoalTemplateCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &GoalTemplateCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for GoalTemplate.
+func (c *GoalTemplateClient) Update() *GoalTemplateUpdate {
+	mutation := newGoalTemplateMutation(c.config, OpUpdate)
+	return &GoalTemplateUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *GoalTemplateClient) UpdateOne(_m *GoalTemplate) *GoalTemplateUpdateOne {
+	mutation := newGoalTemplateMutation(c.config, OpUpdateOne, withGoalTemplate(_m))
+	return &GoalTemplateUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *GoalTemplateClient) UpdateOneID(id uuid.UUID) *GoalTemplateUpdateOne {
+	mutation := newGoalTemplateMutation(c.config, OpUpdateOne, withGoalTemplateID(id))
+	return &GoalTemplateUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for GoalTemplate.
+func (c *GoalTemplateClient) Delete() *GoalTemplateDelete {
+	mutation := newGoalTemplateMutation(c.config, OpDelete)
+	return &GoalTemplateDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *GoalTemplateClient) DeleteOne(_m *GoalTemplate) *GoalTemplateDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *GoalTemplateClient) DeleteOneID(id uuid.UUID) *GoalTemplateDeleteOne {
+	builder := c.Delete().Where(goaltemplate.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &GoalTemplateDeleteOne{builder}
+}
+
+// Query returns a query builder for GoalTemplate.
+func (c *GoalTemplateClient) Query() *GoalTemplateQuery {
+	return &GoalTemplateQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeGoalTemplate},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a GoalTemplate entity by its id.
+func (c *GoalTemplateClient) Get(ctx context.Context, id uuid.UUID) (*GoalTemplate, error) {
+	return c.Query().Where(goaltemplate.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *GoalTemplateClient) GetX(ctx context.Context, id uuid.UUID) *GoalTemplate {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryCreator queries the creator edge of a GoalTemplate.
+func (c *GoalTemplateClient) QueryCreator(_m *GoalTemplate) *EmployeeQuery {
+	query := (&EmployeeClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(goaltemplate.Table, goaltemplate.FieldID, id),
+			sqlgraph.To(employee.Table, employee.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, goaltemplate.CreatorTable, goaltemplate.CreatorColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryKpiLinks queries the kpi_links edge of a GoalTemplate.
+func (c *GoalTemplateClient) QueryKpiLinks(_m *GoalTemplate) *GoalTemplateKpiLinkQuery {
+	query := (&GoalTemplateKpiLinkClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(goaltemplate.Table, goaltemplate.FieldID, id),
+			sqlgraph.To(goaltemplatekpilink.Table, goaltemplatekpilink.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, goaltemplate.KpiLinksTable, goaltemplate.KpiLinksColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *GoalTemplateClient) Hooks() []Hook {
+	return c.hooks.GoalTemplate
+}
+
+// Interceptors returns the client interceptors.
+func (c *GoalTemplateClient) Interceptors() []Interceptor {
+	return c.inters.GoalTemplate
+}
+
+func (c *GoalTemplateClient) mutate(ctx context.Context, m *GoalTemplateMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&GoalTemplateCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&GoalTemplateUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&GoalTemplateUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&GoalTemplateDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("internal: unknown GoalTemplate mutation op: %q", m.Op())
+	}
+}
+
+// GoalTemplateKpiLinkClient is a client for the GoalTemplateKpiLink schema.
+type GoalTemplateKpiLinkClient struct {
+	config
+}
+
+// NewGoalTemplateKpiLinkClient returns a client for the GoalTemplateKpiLink from the given config.
+func NewGoalTemplateKpiLinkClient(c config) *GoalTemplateKpiLinkClient {
+	return &GoalTemplateKpiLinkClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `goaltemplatekpilink.Hooks(f(g(h())))`.
+func (c *GoalTemplateKpiLinkClient) Use(hooks ...Hook) {
+	c.hooks.GoalTemplateKpiLink = append(c.hooks.GoalTemplateKpiLink, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `goaltemplatekpilink.Intercept(f(g(h())))`.
+func (c *GoalTemplateKpiLinkClient) Intercept(interceptors ...Interceptor) {
+	c.inters.GoalTemplateKpiLink = append(c.inters.GoalTemplateKpiLink, interceptors...)
+}
+
+// Create returns a builder for creating a GoalTemplateKpiLink entity.
+func (c *GoalTemplateKpiLinkClient) Create() *GoalTemplateKpiLinkCreate {
+	mutation := newGoalTemplateKpiLinkMutation(c.config, OpCreate)
+	return &GoalTemplateKpiLinkCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of GoalTemplateKpiLink entities.
+func (c *GoalTemplateKpiLinkClient) CreateBulk(builders ...*GoalTemplateKpiLinkCreate) *GoalTemplateKpiLinkCreateBulk {
+	return &GoalTemplateKpiLinkCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *GoalTemplateKpiLinkClient) MapCreateBulk(slice any, setFunc func(*GoalTemplateKpiLinkCreate, int)) *GoalTemplateKpiLinkCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &GoalTemplateKpiLinkCreateBulk{err: fmt.Errorf("calling to GoalTemplateKpiLinkClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*GoalTemplateKpiLinkCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &GoalTemplateKpiLinkCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for GoalTemplateKpiLink.
+func (c *GoalTemplateKpiLinkClient) Update() *GoalTemplateKpiLinkUpdate {
+	mutation := newGoalTemplateKpiLinkMutation(c.config, OpUpdate)
+	return &GoalTemplateKpiLinkUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *GoalTemplateKpiLinkClient) UpdateOne(_m *GoalTemplateKpiLink) *GoalTemplateKpiLinkUpdateOne {
+	mutation := newGoalTemplateKpiLinkMutation(c.config, OpUpdateOne, withGoalTemplateKpiLink(_m))
+	return &GoalTemplateKpiLinkUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *GoalTemplateKpiLinkClient) UpdateOneID(id uuid.UUID) *GoalTemplateKpiLinkUpdateOne {
+	mutation := newGoalTemplateKpiLinkMutation(c.config, OpUpdateOne, withGoalTemplateKpiLinkID(id))
+	return &GoalTemplateKpiLinkUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for GoalTemplateKpiLink.
+func (c *GoalTemplateKpiLinkClient) Delete() *GoalTemplateKpiLinkDelete {
+	mutation := newGoalTemplateKpiLinkMutation(c.config, OpDelete)
+	return &GoalTemplateKpiLinkDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *GoalTemplateKpiLinkClient) DeleteOne(_m *GoalTemplateKpiLink) *GoalTemplateKpiLinkDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *GoalTemplateKpiLinkClient) DeleteOneID(id uuid.UUID) *GoalTemplateKpiLinkDeleteOne {
+	builder := c.Delete().Where(goaltemplatekpilink.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &GoalTemplateKpiLinkDeleteOne{builder}
+}
+
+// Query returns a query builder for GoalTemplateKpiLink.
+func (c *GoalTemplateKpiLinkClient) Query() *GoalTemplateKpiLinkQuery {
+	return &GoalTemplateKpiLinkQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeGoalTemplateKpiLink},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a GoalTemplateKpiLink entity by its id.
+func (c *GoalTemplateKpiLinkClient) Get(ctx context.Context, id uuid.UUID) (*GoalTemplateKpiLink, error) {
+	return c.Query().Where(goaltemplatekpilink.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *GoalTemplateKpiLinkClient) GetX(ctx context.Context, id uuid.UUID) *GoalTemplateKpiLink {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryTemplate queries the template edge of a GoalTemplateKpiLink.
+func (c *GoalTemplateKpiLinkClient) QueryTemplate(_m *GoalTemplateKpiLink) *GoalTemplateQuery {
+	query := (&GoalTemplateClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(goaltemplatekpilink.Table, goaltemplatekpilink.FieldID, id),
+			sqlgraph.To(goaltemplate.Table, goaltemplate.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, goaltemplatekpilink.TemplateTable, goaltemplatekpilink.TemplateColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryKpi queries the kpi edge of a GoalTemplateKpiLink.
+func (c *GoalTemplateKpiLinkClient) QueryKpi(_m *GoalTemplateKpiLink) *KPIQuery {
+	query := (&KPIClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(goaltemplatekpilink.Table, goaltemplatekpilink.FieldID, id),
+			sqlgraph.To(kpi.Table, kpi.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, goaltemplatekpilink.KpiTable, goaltemplatekpilink.KpiColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *GoalTemplateKpiLinkClient) Hooks() []Hook {
+	return c.hooks.GoalTemplateKpiLink
+}
+
+// Interceptors returns the client interceptors.
+func (c *GoalTemplateKpiLinkClient) Interceptors() []Interceptor {
+	return c.inters.GoalTemplateKpiLink
+}
+
+func (c *GoalTemplateKpiLinkClient) mutate(ctx context.Context, m *GoalTemplateKpiLinkMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&GoalTemplateKpiLinkCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&GoalTemplateKpiLinkUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&GoalTemplateKpiLinkUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&GoalTemplateKpiLinkDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("internal: unknown GoalTemplateKpiLink mutation op: %q", m.Op())
+	}
+}
+
 // KPIClient is a client for the KPI schema.
 type KPIClient struct {
 	config
@@ -3211,6 +4035,22 @@ func (c *KPIClient) QueryOrgNode(_m *KPI) *OrgNodeQuery {
 			sqlgraph.From(kpi.Table, kpi.FieldID, id),
 			sqlgraph.To(orgnode.Table, orgnode.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, kpi.OrgNodeTable, kpi.OrgNodeColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryTemplateLinks queries the template_links edge of a KPI.
+func (c *KPIClient) QueryTemplateLinks(_m *KPI) *GoalTemplateKpiLinkQuery {
+	query := (&GoalTemplateKpiLinkClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(kpi.Table, kpi.FieldID, id),
+			sqlgraph.To(goaltemplatekpilink.Table, goaltemplatekpilink.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, kpi.TemplateLinksTable, kpi.TemplateLinksColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
@@ -4208,6 +5048,22 @@ func (c *OrgNodeClient) QueryKpis(_m *OrgNode) *KPIQuery {
 	return query
 }
 
+// QueryGlobalGoalRules queries the global_goal_rules edge of a OrgNode.
+func (c *OrgNodeClient) QueryGlobalGoalRules(_m *OrgNode) *GlobalGoalRuleQuery {
+	query := (&GlobalGoalRuleClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(orgnode.Table, orgnode.FieldID, id),
+			sqlgraph.To(globalgoalrule.Table, globalgoalrule.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, orgnode.GlobalGoalRulesTable, orgnode.GlobalGoalRulesColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *OrgNodeClient) Hooks() []Hook {
 	return c.hooks.OrgNode
@@ -5122,20 +5978,370 @@ func (c *ScaleCriterionClient) mutate(ctx context.Context, m *ScaleCriterionMuta
 	}
 }
 
+// SharedGoalGroupClient is a client for the SharedGoalGroup schema.
+type SharedGoalGroupClient struct {
+	config
+}
+
+// NewSharedGoalGroupClient returns a client for the SharedGoalGroup from the given config.
+func NewSharedGoalGroupClient(c config) *SharedGoalGroupClient {
+	return &SharedGoalGroupClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `sharedgoalgroup.Hooks(f(g(h())))`.
+func (c *SharedGoalGroupClient) Use(hooks ...Hook) {
+	c.hooks.SharedGoalGroup = append(c.hooks.SharedGoalGroup, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `sharedgoalgroup.Intercept(f(g(h())))`.
+func (c *SharedGoalGroupClient) Intercept(interceptors ...Interceptor) {
+	c.inters.SharedGoalGroup = append(c.inters.SharedGoalGroup, interceptors...)
+}
+
+// Create returns a builder for creating a SharedGoalGroup entity.
+func (c *SharedGoalGroupClient) Create() *SharedGoalGroupCreate {
+	mutation := newSharedGoalGroupMutation(c.config, OpCreate)
+	return &SharedGoalGroupCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of SharedGoalGroup entities.
+func (c *SharedGoalGroupClient) CreateBulk(builders ...*SharedGoalGroupCreate) *SharedGoalGroupCreateBulk {
+	return &SharedGoalGroupCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *SharedGoalGroupClient) MapCreateBulk(slice any, setFunc func(*SharedGoalGroupCreate, int)) *SharedGoalGroupCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &SharedGoalGroupCreateBulk{err: fmt.Errorf("calling to SharedGoalGroupClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*SharedGoalGroupCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &SharedGoalGroupCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for SharedGoalGroup.
+func (c *SharedGoalGroupClient) Update() *SharedGoalGroupUpdate {
+	mutation := newSharedGoalGroupMutation(c.config, OpUpdate)
+	return &SharedGoalGroupUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *SharedGoalGroupClient) UpdateOne(_m *SharedGoalGroup) *SharedGoalGroupUpdateOne {
+	mutation := newSharedGoalGroupMutation(c.config, OpUpdateOne, withSharedGoalGroup(_m))
+	return &SharedGoalGroupUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *SharedGoalGroupClient) UpdateOneID(id uuid.UUID) *SharedGoalGroupUpdateOne {
+	mutation := newSharedGoalGroupMutation(c.config, OpUpdateOne, withSharedGoalGroupID(id))
+	return &SharedGoalGroupUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for SharedGoalGroup.
+func (c *SharedGoalGroupClient) Delete() *SharedGoalGroupDelete {
+	mutation := newSharedGoalGroupMutation(c.config, OpDelete)
+	return &SharedGoalGroupDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *SharedGoalGroupClient) DeleteOne(_m *SharedGoalGroup) *SharedGoalGroupDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *SharedGoalGroupClient) DeleteOneID(id uuid.UUID) *SharedGoalGroupDeleteOne {
+	builder := c.Delete().Where(sharedgoalgroup.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &SharedGoalGroupDeleteOne{builder}
+}
+
+// Query returns a query builder for SharedGoalGroup.
+func (c *SharedGoalGroupClient) Query() *SharedGoalGroupQuery {
+	return &SharedGoalGroupQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeSharedGoalGroup},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a SharedGoalGroup entity by its id.
+func (c *SharedGoalGroupClient) Get(ctx context.Context, id uuid.UUID) (*SharedGoalGroup, error) {
+	return c.Query().Where(sharedgoalgroup.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *SharedGoalGroupClient) GetX(ctx context.Context, id uuid.UUID) *SharedGoalGroup {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryGoal queries the goal edge of a SharedGoalGroup.
+func (c *SharedGoalGroupClient) QueryGoal(_m *SharedGoalGroup) *GoalQuery {
+	query := (&GoalClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(sharedgoalgroup.Table, sharedgoalgroup.FieldID, id),
+			sqlgraph.To(goal.Table, goal.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, sharedgoalgroup.GoalTable, sharedgoalgroup.GoalColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryCreator queries the creator edge of a SharedGoalGroup.
+func (c *SharedGoalGroupClient) QueryCreator(_m *SharedGoalGroup) *EmployeeQuery {
+	query := (&EmployeeClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(sharedgoalgroup.Table, sharedgoalgroup.FieldID, id),
+			sqlgraph.To(employee.Table, employee.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, sharedgoalgroup.CreatorTable, sharedgoalgroup.CreatorColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryMembers queries the members edge of a SharedGoalGroup.
+func (c *SharedGoalGroupClient) QueryMembers(_m *SharedGoalGroup) *SharedGoalMemberQuery {
+	query := (&SharedGoalMemberClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(sharedgoalgroup.Table, sharedgoalgroup.FieldID, id),
+			sqlgraph.To(sharedgoalmember.Table, sharedgoalmember.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, sharedgoalgroup.MembersTable, sharedgoalgroup.MembersColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *SharedGoalGroupClient) Hooks() []Hook {
+	return c.hooks.SharedGoalGroup
+}
+
+// Interceptors returns the client interceptors.
+func (c *SharedGoalGroupClient) Interceptors() []Interceptor {
+	return c.inters.SharedGoalGroup
+}
+
+func (c *SharedGoalGroupClient) mutate(ctx context.Context, m *SharedGoalGroupMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&SharedGoalGroupCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&SharedGoalGroupUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&SharedGoalGroupUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&SharedGoalGroupDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("internal: unknown SharedGoalGroup mutation op: %q", m.Op())
+	}
+}
+
+// SharedGoalMemberClient is a client for the SharedGoalMember schema.
+type SharedGoalMemberClient struct {
+	config
+}
+
+// NewSharedGoalMemberClient returns a client for the SharedGoalMember from the given config.
+func NewSharedGoalMemberClient(c config) *SharedGoalMemberClient {
+	return &SharedGoalMemberClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `sharedgoalmember.Hooks(f(g(h())))`.
+func (c *SharedGoalMemberClient) Use(hooks ...Hook) {
+	c.hooks.SharedGoalMember = append(c.hooks.SharedGoalMember, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `sharedgoalmember.Intercept(f(g(h())))`.
+func (c *SharedGoalMemberClient) Intercept(interceptors ...Interceptor) {
+	c.inters.SharedGoalMember = append(c.inters.SharedGoalMember, interceptors...)
+}
+
+// Create returns a builder for creating a SharedGoalMember entity.
+func (c *SharedGoalMemberClient) Create() *SharedGoalMemberCreate {
+	mutation := newSharedGoalMemberMutation(c.config, OpCreate)
+	return &SharedGoalMemberCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of SharedGoalMember entities.
+func (c *SharedGoalMemberClient) CreateBulk(builders ...*SharedGoalMemberCreate) *SharedGoalMemberCreateBulk {
+	return &SharedGoalMemberCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *SharedGoalMemberClient) MapCreateBulk(slice any, setFunc func(*SharedGoalMemberCreate, int)) *SharedGoalMemberCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &SharedGoalMemberCreateBulk{err: fmt.Errorf("calling to SharedGoalMemberClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*SharedGoalMemberCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &SharedGoalMemberCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for SharedGoalMember.
+func (c *SharedGoalMemberClient) Update() *SharedGoalMemberUpdate {
+	mutation := newSharedGoalMemberMutation(c.config, OpUpdate)
+	return &SharedGoalMemberUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *SharedGoalMemberClient) UpdateOne(_m *SharedGoalMember) *SharedGoalMemberUpdateOne {
+	mutation := newSharedGoalMemberMutation(c.config, OpUpdateOne, withSharedGoalMember(_m))
+	return &SharedGoalMemberUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *SharedGoalMemberClient) UpdateOneID(id uuid.UUID) *SharedGoalMemberUpdateOne {
+	mutation := newSharedGoalMemberMutation(c.config, OpUpdateOne, withSharedGoalMemberID(id))
+	return &SharedGoalMemberUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for SharedGoalMember.
+func (c *SharedGoalMemberClient) Delete() *SharedGoalMemberDelete {
+	mutation := newSharedGoalMemberMutation(c.config, OpDelete)
+	return &SharedGoalMemberDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *SharedGoalMemberClient) DeleteOne(_m *SharedGoalMember) *SharedGoalMemberDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *SharedGoalMemberClient) DeleteOneID(id uuid.UUID) *SharedGoalMemberDeleteOne {
+	builder := c.Delete().Where(sharedgoalmember.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &SharedGoalMemberDeleteOne{builder}
+}
+
+// Query returns a query builder for SharedGoalMember.
+func (c *SharedGoalMemberClient) Query() *SharedGoalMemberQuery {
+	return &SharedGoalMemberQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeSharedGoalMember},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a SharedGoalMember entity by its id.
+func (c *SharedGoalMemberClient) Get(ctx context.Context, id uuid.UUID) (*SharedGoalMember, error) {
+	return c.Query().Where(sharedgoalmember.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *SharedGoalMemberClient) GetX(ctx context.Context, id uuid.UUID) *SharedGoalMember {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryGroup queries the group edge of a SharedGoalMember.
+func (c *SharedGoalMemberClient) QueryGroup(_m *SharedGoalMember) *SharedGoalGroupQuery {
+	query := (&SharedGoalGroupClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(sharedgoalmember.Table, sharedgoalmember.FieldID, id),
+			sqlgraph.To(sharedgoalgroup.Table, sharedgoalgroup.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, sharedgoalmember.GroupTable, sharedgoalmember.GroupColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryEmployee queries the employee edge of a SharedGoalMember.
+func (c *SharedGoalMemberClient) QueryEmployee(_m *SharedGoalMember) *EmployeeQuery {
+	query := (&EmployeeClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(sharedgoalmember.Table, sharedgoalmember.FieldID, id),
+			sqlgraph.To(employee.Table, employee.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, sharedgoalmember.EmployeeTable, sharedgoalmember.EmployeeColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *SharedGoalMemberClient) Hooks() []Hook {
+	return c.hooks.SharedGoalMember
+}
+
+// Interceptors returns the client interceptors.
+func (c *SharedGoalMemberClient) Interceptors() []Interceptor {
+	return c.inters.SharedGoalMember
+}
+
+func (c *SharedGoalMemberClient) mutate(ctx context.Context, m *SharedGoalMemberMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&SharedGoalMemberCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&SharedGoalMemberUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&SharedGoalMemberUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&SharedGoalMemberDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("internal: unknown SharedGoalMember mutation op: %q", m.Op())
+	}
+}
+
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
 		ActivityLog, Competency, CompetencyAcceptanceLevel, Cycle, Employee, Evaluation,
-		EvaluationCompetency, EvaluationGoal, EvaluationProfile, EvaluatorScope, Goal,
-		GoalAssignment, GoalCategory, GoalKpiLink, KPI, LevelDefinition, NineBoxEntry,
-		NineBoxMatrix, NineBoxQuadrant, NineBoxScale, OrgNode, Organization,
-		PhaseDefinition, PhaseTransition, Pillar, ScaleCriterion []ent.Hook
+		EvaluationCompetency, EvaluationGoal, EvaluationProfile, EvaluatorScope,
+		GlobalGoalAssignment, GlobalGoalRule, Goal, GoalAssignment, GoalCategory,
+		GoalKpiLink, GoalTemplate, GoalTemplateKpiLink, KPI, LevelDefinition,
+		NineBoxEntry, NineBoxMatrix, NineBoxQuadrant, NineBoxScale, OrgNode,
+		Organization, PhaseDefinition, PhaseTransition, Pillar, ScaleCriterion,
+		SharedGoalGroup, SharedGoalMember []ent.Hook
 	}
 	inters struct {
 		ActivityLog, Competency, CompetencyAcceptanceLevel, Cycle, Employee, Evaluation,
-		EvaluationCompetency, EvaluationGoal, EvaluationProfile, EvaluatorScope, Goal,
-		GoalAssignment, GoalCategory, GoalKpiLink, KPI, LevelDefinition, NineBoxEntry,
-		NineBoxMatrix, NineBoxQuadrant, NineBoxScale, OrgNode, Organization,
-		PhaseDefinition, PhaseTransition, Pillar, ScaleCriterion []ent.Interceptor
+		EvaluationCompetency, EvaluationGoal, EvaluationProfile, EvaluatorScope,
+		GlobalGoalAssignment, GlobalGoalRule, Goal, GoalAssignment, GoalCategory,
+		GoalKpiLink, GoalTemplate, GoalTemplateKpiLink, KPI, LevelDefinition,
+		NineBoxEntry, NineBoxMatrix, NineBoxQuadrant, NineBoxScale, OrgNode,
+		Organization, PhaseDefinition, PhaseTransition, Pillar, ScaleCriterion,
+		SharedGoalGroup, SharedGoalMember []ent.Interceptor
 	}
 )

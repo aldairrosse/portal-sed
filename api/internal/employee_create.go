@@ -16,11 +16,15 @@ import (
 	"github.com/sed-evaluacion-desempeno/api/internal/evaluation"
 	"github.com/sed-evaluacion-desempeno/api/internal/evaluationprofile"
 	"github.com/sed-evaluacion-desempeno/api/internal/evaluatorscope"
+	"github.com/sed-evaluacion-desempeno/api/internal/globalgoalassignment"
 	"github.com/sed-evaluacion-desempeno/api/internal/goalassignment"
 	"github.com/sed-evaluacion-desempeno/api/internal/goalcategory"
+	"github.com/sed-evaluacion-desempeno/api/internal/goaltemplate"
 	"github.com/sed-evaluacion-desempeno/api/internal/nineboxentry"
 	"github.com/sed-evaluacion-desempeno/api/internal/nineboxmatrix"
 	"github.com/sed-evaluacion-desempeno/api/internal/orgnode"
+	"github.com/sed-evaluacion-desempeno/api/internal/sharedgoalgroup"
+	"github.com/sed-evaluacion-desempeno/api/internal/sharedgoalmember"
 )
 
 // EmployeeCreate is the builder for creating a Employee entity.
@@ -310,6 +314,66 @@ func (_c *EmployeeCreate) AddActivityLogs(v ...*ActivityLog) *EmployeeCreate {
 		ids[i] = v[i].ID
 	}
 	return _c.AddActivityLogIDs(ids...)
+}
+
+// AddGoalTemplateIDs adds the "goal_templates" edge to the GoalTemplate entity by IDs.
+func (_c *EmployeeCreate) AddGoalTemplateIDs(ids ...uuid.UUID) *EmployeeCreate {
+	_c.mutation.AddGoalTemplateIDs(ids...)
+	return _c
+}
+
+// AddGoalTemplates adds the "goal_templates" edges to the GoalTemplate entity.
+func (_c *EmployeeCreate) AddGoalTemplates(v ...*GoalTemplate) *EmployeeCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddGoalTemplateIDs(ids...)
+}
+
+// AddGlobalGoalAssignmentIDs adds the "global_goal_assignments" edge to the GlobalGoalAssignment entity by IDs.
+func (_c *EmployeeCreate) AddGlobalGoalAssignmentIDs(ids ...uuid.UUID) *EmployeeCreate {
+	_c.mutation.AddGlobalGoalAssignmentIDs(ids...)
+	return _c
+}
+
+// AddGlobalGoalAssignments adds the "global_goal_assignments" edges to the GlobalGoalAssignment entity.
+func (_c *EmployeeCreate) AddGlobalGoalAssignments(v ...*GlobalGoalAssignment) *EmployeeCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddGlobalGoalAssignmentIDs(ids...)
+}
+
+// AddSharedGoalGroupIDs adds the "shared_goal_groups" edge to the SharedGoalGroup entity by IDs.
+func (_c *EmployeeCreate) AddSharedGoalGroupIDs(ids ...uuid.UUID) *EmployeeCreate {
+	_c.mutation.AddSharedGoalGroupIDs(ids...)
+	return _c
+}
+
+// AddSharedGoalGroups adds the "shared_goal_groups" edges to the SharedGoalGroup entity.
+func (_c *EmployeeCreate) AddSharedGoalGroups(v ...*SharedGoalGroup) *EmployeeCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddSharedGoalGroupIDs(ids...)
+}
+
+// AddSharedGoalMemberIDs adds the "shared_goal_members" edge to the SharedGoalMember entity by IDs.
+func (_c *EmployeeCreate) AddSharedGoalMemberIDs(ids ...uuid.UUID) *EmployeeCreate {
+	_c.mutation.AddSharedGoalMemberIDs(ids...)
+	return _c
+}
+
+// AddSharedGoalMembers adds the "shared_goal_members" edges to the SharedGoalMember entity.
+func (_c *EmployeeCreate) AddSharedGoalMembers(v ...*SharedGoalMember) *EmployeeCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddSharedGoalMemberIDs(ids...)
 }
 
 // Mutation returns the EmployeeMutation object of the builder.
@@ -694,6 +758,70 @@ func (_c *EmployeeCreate) createSpec() (*Employee, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(activitylog.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.GoalTemplatesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   employee.GoalTemplatesTable,
+			Columns: []string{employee.GoalTemplatesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(goaltemplate.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.GlobalGoalAssignmentsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   employee.GlobalGoalAssignmentsTable,
+			Columns: []string{employee.GlobalGoalAssignmentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(globalgoalassignment.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.SharedGoalGroupsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   employee.SharedGoalGroupsTable,
+			Columns: []string{employee.SharedGoalGroupsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sharedgoalgroup.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.SharedGoalMembersIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   employee.SharedGoalMembersTable,
+			Columns: []string{employee.SharedGoalMembersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sharedgoalmember.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

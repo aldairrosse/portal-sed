@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/sed-evaluacion-desempeno/api/internal"
 	"github.com/sed-evaluacion-desempeno/api/internal/goal"
+	"github.com/sed-evaluacion-desempeno/api/internal/sharedgoalgroup"
 	"github.com/sed-evaluacion-desempeno/api/internal/sharedgoalmember"
 	pkgerrors "github.com/sed-evaluacion-desempeno/api/internal/pkg/errors"
 )
@@ -92,13 +93,17 @@ func (r *SharedGoalRepo) CreateSharedGoal(ctx context.Context, createdBy uuid.UU
 
 	// Create members
 	for _, m := range members {
-		_, err := r.client.SharedGoalMember.Create().
+		create := r.client.SharedGoalMember.Create().
 			SetGroupID(grp.ID).
 			SetEmployeeID(m.EmployeeID).
 			SetWeight(m.Weight).
-			SetTargetValue(m.TargetValue).
-			SetBaselineValue(m.BaselineValue).
-			Save(ctx)
+			SetTargetValue(m.TargetValue)
+		
+		if m.BaselineValue != nil {
+			create = create.SetBaselineValue(*m.BaselineValue)
+		}
+		
+		_, err := create.Save(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -140,16 +145,17 @@ func (r *SharedGoalRepo) GetSharedGoal(ctx context.Context, goalID uuid.UUID) (*
 		Members:     make([]*SharedMemberRow, 0),
 	}
 
-	if g.Edges.SharedGroup != nil {
+	if len(g.Edges.SharedGroup) > 0 {
+		grp := g.Edges.SharedGroup[0]
 		row.Group = &SharedGroupRow{
-			ID:          g.Edges.SharedGroup.ID,
-			GoalID:      g.Edges.SharedGroup.GoalID,
-			CreatedBy:   g.Edges.SharedGroup.CreatedBy,
-			Name:        g.Edges.SharedGroup.Name,
-			Description: g.Edges.SharedGroup.Description,
+			ID:          grp.ID,
+			GoalID:      grp.GoalID,
+			CreatedBy:   grp.CreatedBy,
+			Name:        grp.Name,
+			Description: grp.Description,
 		}
 
-		for _, m := range g.Edges.SharedGroup.Edges.Members {
+		for _, m := range grp.Edges.Members {
 			row.Members = append(row.Members, &SharedMemberRow{
 				ID:            m.ID,
 				GroupID:       m.GroupID,
@@ -244,13 +250,17 @@ func (r *SharedGoalRepo) AddMember(ctx context.Context, goalID, employeeID uuid.
 		return nil, err
 	}
 
-	m, err := r.client.SharedGoalMember.Create().
+	create := r.client.SharedGoalMember.Create().
 		SetGroupID(grp.ID).
 		SetEmployeeID(employeeID).
 		SetWeight(weight).
-		SetTargetValue(targetValue).
-		SetBaselineValue(baselineValue).
-		Save(ctx)
+		SetTargetValue(targetValue)
+	
+	if baselineValue != nil {
+		create = create.SetBaselineValue(*baselineValue)
+	}
+	
+	m, err := create.Save(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -274,11 +284,12 @@ func (r *SharedGoalRepo) RemoveMember(ctx context.Context, goalID, employeeID uu
 		return err
 	}
 
-	return r.client.SharedGoalMember.Delete().
+	_, err = r.client.SharedGoalMember.Delete().
 		Where(
 			sharedgoalmember.GroupID(grp.ID),
 			sharedgoalmember.EmployeeID(employeeID),
 		).Exec(ctx)
+	return err
 }
 
 // UpdateProgress updates the progress for a specific member.

@@ -17,12 +17,16 @@ import (
 	"github.com/sed-evaluacion-desempeno/api/internal/evaluation"
 	"github.com/sed-evaluacion-desempeno/api/internal/evaluationprofile"
 	"github.com/sed-evaluacion-desempeno/api/internal/evaluatorscope"
+	"github.com/sed-evaluacion-desempeno/api/internal/globalgoalassignment"
 	"github.com/sed-evaluacion-desempeno/api/internal/goalassignment"
 	"github.com/sed-evaluacion-desempeno/api/internal/goalcategory"
+	"github.com/sed-evaluacion-desempeno/api/internal/goaltemplate"
 	"github.com/sed-evaluacion-desempeno/api/internal/nineboxentry"
 	"github.com/sed-evaluacion-desempeno/api/internal/nineboxmatrix"
 	"github.com/sed-evaluacion-desempeno/api/internal/orgnode"
 	"github.com/sed-evaluacion-desempeno/api/internal/predicate"
+	"github.com/sed-evaluacion-desempeno/api/internal/sharedgoalgroup"
+	"github.com/sed-evaluacion-desempeno/api/internal/sharedgoalmember"
 )
 
 // EmployeeUpdate is the builder for updating Employee entities.
@@ -360,6 +364,66 @@ func (_u *EmployeeUpdate) AddActivityLogs(v ...*ActivityLog) *EmployeeUpdate {
 	return _u.AddActivityLogIDs(ids...)
 }
 
+// AddGoalTemplateIDs adds the "goal_templates" edge to the GoalTemplate entity by IDs.
+func (_u *EmployeeUpdate) AddGoalTemplateIDs(ids ...uuid.UUID) *EmployeeUpdate {
+	_u.mutation.AddGoalTemplateIDs(ids...)
+	return _u
+}
+
+// AddGoalTemplates adds the "goal_templates" edges to the GoalTemplate entity.
+func (_u *EmployeeUpdate) AddGoalTemplates(v ...*GoalTemplate) *EmployeeUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddGoalTemplateIDs(ids...)
+}
+
+// AddGlobalGoalAssignmentIDs adds the "global_goal_assignments" edge to the GlobalGoalAssignment entity by IDs.
+func (_u *EmployeeUpdate) AddGlobalGoalAssignmentIDs(ids ...uuid.UUID) *EmployeeUpdate {
+	_u.mutation.AddGlobalGoalAssignmentIDs(ids...)
+	return _u
+}
+
+// AddGlobalGoalAssignments adds the "global_goal_assignments" edges to the GlobalGoalAssignment entity.
+func (_u *EmployeeUpdate) AddGlobalGoalAssignments(v ...*GlobalGoalAssignment) *EmployeeUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddGlobalGoalAssignmentIDs(ids...)
+}
+
+// AddSharedGoalGroupIDs adds the "shared_goal_groups" edge to the SharedGoalGroup entity by IDs.
+func (_u *EmployeeUpdate) AddSharedGoalGroupIDs(ids ...uuid.UUID) *EmployeeUpdate {
+	_u.mutation.AddSharedGoalGroupIDs(ids...)
+	return _u
+}
+
+// AddSharedGoalGroups adds the "shared_goal_groups" edges to the SharedGoalGroup entity.
+func (_u *EmployeeUpdate) AddSharedGoalGroups(v ...*SharedGoalGroup) *EmployeeUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddSharedGoalGroupIDs(ids...)
+}
+
+// AddSharedGoalMemberIDs adds the "shared_goal_members" edge to the SharedGoalMember entity by IDs.
+func (_u *EmployeeUpdate) AddSharedGoalMemberIDs(ids ...uuid.UUID) *EmployeeUpdate {
+	_u.mutation.AddSharedGoalMemberIDs(ids...)
+	return _u
+}
+
+// AddSharedGoalMembers adds the "shared_goal_members" edges to the SharedGoalMember entity.
+func (_u *EmployeeUpdate) AddSharedGoalMembers(v ...*SharedGoalMember) *EmployeeUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddSharedGoalMemberIDs(ids...)
+}
+
 // Mutation returns the EmployeeMutation object of the builder.
 func (_u *EmployeeUpdate) Mutation() *EmployeeMutation {
 	return _u.mutation
@@ -570,6 +634,90 @@ func (_u *EmployeeUpdate) RemoveActivityLogs(v ...*ActivityLog) *EmployeeUpdate 
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveActivityLogIDs(ids...)
+}
+
+// ClearGoalTemplates clears all "goal_templates" edges to the GoalTemplate entity.
+func (_u *EmployeeUpdate) ClearGoalTemplates() *EmployeeUpdate {
+	_u.mutation.ClearGoalTemplates()
+	return _u
+}
+
+// RemoveGoalTemplateIDs removes the "goal_templates" edge to GoalTemplate entities by IDs.
+func (_u *EmployeeUpdate) RemoveGoalTemplateIDs(ids ...uuid.UUID) *EmployeeUpdate {
+	_u.mutation.RemoveGoalTemplateIDs(ids...)
+	return _u
+}
+
+// RemoveGoalTemplates removes "goal_templates" edges to GoalTemplate entities.
+func (_u *EmployeeUpdate) RemoveGoalTemplates(v ...*GoalTemplate) *EmployeeUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveGoalTemplateIDs(ids...)
+}
+
+// ClearGlobalGoalAssignments clears all "global_goal_assignments" edges to the GlobalGoalAssignment entity.
+func (_u *EmployeeUpdate) ClearGlobalGoalAssignments() *EmployeeUpdate {
+	_u.mutation.ClearGlobalGoalAssignments()
+	return _u
+}
+
+// RemoveGlobalGoalAssignmentIDs removes the "global_goal_assignments" edge to GlobalGoalAssignment entities by IDs.
+func (_u *EmployeeUpdate) RemoveGlobalGoalAssignmentIDs(ids ...uuid.UUID) *EmployeeUpdate {
+	_u.mutation.RemoveGlobalGoalAssignmentIDs(ids...)
+	return _u
+}
+
+// RemoveGlobalGoalAssignments removes "global_goal_assignments" edges to GlobalGoalAssignment entities.
+func (_u *EmployeeUpdate) RemoveGlobalGoalAssignments(v ...*GlobalGoalAssignment) *EmployeeUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveGlobalGoalAssignmentIDs(ids...)
+}
+
+// ClearSharedGoalGroups clears all "shared_goal_groups" edges to the SharedGoalGroup entity.
+func (_u *EmployeeUpdate) ClearSharedGoalGroups() *EmployeeUpdate {
+	_u.mutation.ClearSharedGoalGroups()
+	return _u
+}
+
+// RemoveSharedGoalGroupIDs removes the "shared_goal_groups" edge to SharedGoalGroup entities by IDs.
+func (_u *EmployeeUpdate) RemoveSharedGoalGroupIDs(ids ...uuid.UUID) *EmployeeUpdate {
+	_u.mutation.RemoveSharedGoalGroupIDs(ids...)
+	return _u
+}
+
+// RemoveSharedGoalGroups removes "shared_goal_groups" edges to SharedGoalGroup entities.
+func (_u *EmployeeUpdate) RemoveSharedGoalGroups(v ...*SharedGoalGroup) *EmployeeUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveSharedGoalGroupIDs(ids...)
+}
+
+// ClearSharedGoalMembers clears all "shared_goal_members" edges to the SharedGoalMember entity.
+func (_u *EmployeeUpdate) ClearSharedGoalMembers() *EmployeeUpdate {
+	_u.mutation.ClearSharedGoalMembers()
+	return _u
+}
+
+// RemoveSharedGoalMemberIDs removes the "shared_goal_members" edge to SharedGoalMember entities by IDs.
+func (_u *EmployeeUpdate) RemoveSharedGoalMemberIDs(ids ...uuid.UUID) *EmployeeUpdate {
+	_u.mutation.RemoveSharedGoalMemberIDs(ids...)
+	return _u
+}
+
+// RemoveSharedGoalMembers removes "shared_goal_members" edges to SharedGoalMember entities.
+func (_u *EmployeeUpdate) RemoveSharedGoalMembers(v ...*SharedGoalMember) *EmployeeUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveSharedGoalMemberIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -1178,6 +1326,186 @@ func (_u *EmployeeUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if _u.mutation.GoalTemplatesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   employee.GoalTemplatesTable,
+			Columns: []string{employee.GoalTemplatesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(goaltemplate.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedGoalTemplatesIDs(); len(nodes) > 0 && !_u.mutation.GoalTemplatesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   employee.GoalTemplatesTable,
+			Columns: []string{employee.GoalTemplatesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(goaltemplate.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.GoalTemplatesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   employee.GoalTemplatesTable,
+			Columns: []string{employee.GoalTemplatesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(goaltemplate.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.GlobalGoalAssignmentsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   employee.GlobalGoalAssignmentsTable,
+			Columns: []string{employee.GlobalGoalAssignmentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(globalgoalassignment.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedGlobalGoalAssignmentsIDs(); len(nodes) > 0 && !_u.mutation.GlobalGoalAssignmentsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   employee.GlobalGoalAssignmentsTable,
+			Columns: []string{employee.GlobalGoalAssignmentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(globalgoalassignment.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.GlobalGoalAssignmentsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   employee.GlobalGoalAssignmentsTable,
+			Columns: []string{employee.GlobalGoalAssignmentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(globalgoalassignment.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.SharedGoalGroupsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   employee.SharedGoalGroupsTable,
+			Columns: []string{employee.SharedGoalGroupsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sharedgoalgroup.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedSharedGoalGroupsIDs(); len(nodes) > 0 && !_u.mutation.SharedGoalGroupsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   employee.SharedGoalGroupsTable,
+			Columns: []string{employee.SharedGoalGroupsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sharedgoalgroup.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.SharedGoalGroupsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   employee.SharedGoalGroupsTable,
+			Columns: []string{employee.SharedGoalGroupsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sharedgoalgroup.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.SharedGoalMembersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   employee.SharedGoalMembersTable,
+			Columns: []string{employee.SharedGoalMembersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sharedgoalmember.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedSharedGoalMembersIDs(); len(nodes) > 0 && !_u.mutation.SharedGoalMembersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   employee.SharedGoalMembersTable,
+			Columns: []string{employee.SharedGoalMembersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sharedgoalmember.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.SharedGoalMembersIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   employee.SharedGoalMembersTable,
+			Columns: []string{employee.SharedGoalMembersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sharedgoalmember.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{employee.Label}
@@ -1520,6 +1848,66 @@ func (_u *EmployeeUpdateOne) AddActivityLogs(v ...*ActivityLog) *EmployeeUpdateO
 	return _u.AddActivityLogIDs(ids...)
 }
 
+// AddGoalTemplateIDs adds the "goal_templates" edge to the GoalTemplate entity by IDs.
+func (_u *EmployeeUpdateOne) AddGoalTemplateIDs(ids ...uuid.UUID) *EmployeeUpdateOne {
+	_u.mutation.AddGoalTemplateIDs(ids...)
+	return _u
+}
+
+// AddGoalTemplates adds the "goal_templates" edges to the GoalTemplate entity.
+func (_u *EmployeeUpdateOne) AddGoalTemplates(v ...*GoalTemplate) *EmployeeUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddGoalTemplateIDs(ids...)
+}
+
+// AddGlobalGoalAssignmentIDs adds the "global_goal_assignments" edge to the GlobalGoalAssignment entity by IDs.
+func (_u *EmployeeUpdateOne) AddGlobalGoalAssignmentIDs(ids ...uuid.UUID) *EmployeeUpdateOne {
+	_u.mutation.AddGlobalGoalAssignmentIDs(ids...)
+	return _u
+}
+
+// AddGlobalGoalAssignments adds the "global_goal_assignments" edges to the GlobalGoalAssignment entity.
+func (_u *EmployeeUpdateOne) AddGlobalGoalAssignments(v ...*GlobalGoalAssignment) *EmployeeUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddGlobalGoalAssignmentIDs(ids...)
+}
+
+// AddSharedGoalGroupIDs adds the "shared_goal_groups" edge to the SharedGoalGroup entity by IDs.
+func (_u *EmployeeUpdateOne) AddSharedGoalGroupIDs(ids ...uuid.UUID) *EmployeeUpdateOne {
+	_u.mutation.AddSharedGoalGroupIDs(ids...)
+	return _u
+}
+
+// AddSharedGoalGroups adds the "shared_goal_groups" edges to the SharedGoalGroup entity.
+func (_u *EmployeeUpdateOne) AddSharedGoalGroups(v ...*SharedGoalGroup) *EmployeeUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddSharedGoalGroupIDs(ids...)
+}
+
+// AddSharedGoalMemberIDs adds the "shared_goal_members" edge to the SharedGoalMember entity by IDs.
+func (_u *EmployeeUpdateOne) AddSharedGoalMemberIDs(ids ...uuid.UUID) *EmployeeUpdateOne {
+	_u.mutation.AddSharedGoalMemberIDs(ids...)
+	return _u
+}
+
+// AddSharedGoalMembers adds the "shared_goal_members" edges to the SharedGoalMember entity.
+func (_u *EmployeeUpdateOne) AddSharedGoalMembers(v ...*SharedGoalMember) *EmployeeUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddSharedGoalMemberIDs(ids...)
+}
+
 // Mutation returns the EmployeeMutation object of the builder.
 func (_u *EmployeeUpdateOne) Mutation() *EmployeeMutation {
 	return _u.mutation
@@ -1730,6 +2118,90 @@ func (_u *EmployeeUpdateOne) RemoveActivityLogs(v ...*ActivityLog) *EmployeeUpda
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveActivityLogIDs(ids...)
+}
+
+// ClearGoalTemplates clears all "goal_templates" edges to the GoalTemplate entity.
+func (_u *EmployeeUpdateOne) ClearGoalTemplates() *EmployeeUpdateOne {
+	_u.mutation.ClearGoalTemplates()
+	return _u
+}
+
+// RemoveGoalTemplateIDs removes the "goal_templates" edge to GoalTemplate entities by IDs.
+func (_u *EmployeeUpdateOne) RemoveGoalTemplateIDs(ids ...uuid.UUID) *EmployeeUpdateOne {
+	_u.mutation.RemoveGoalTemplateIDs(ids...)
+	return _u
+}
+
+// RemoveGoalTemplates removes "goal_templates" edges to GoalTemplate entities.
+func (_u *EmployeeUpdateOne) RemoveGoalTemplates(v ...*GoalTemplate) *EmployeeUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveGoalTemplateIDs(ids...)
+}
+
+// ClearGlobalGoalAssignments clears all "global_goal_assignments" edges to the GlobalGoalAssignment entity.
+func (_u *EmployeeUpdateOne) ClearGlobalGoalAssignments() *EmployeeUpdateOne {
+	_u.mutation.ClearGlobalGoalAssignments()
+	return _u
+}
+
+// RemoveGlobalGoalAssignmentIDs removes the "global_goal_assignments" edge to GlobalGoalAssignment entities by IDs.
+func (_u *EmployeeUpdateOne) RemoveGlobalGoalAssignmentIDs(ids ...uuid.UUID) *EmployeeUpdateOne {
+	_u.mutation.RemoveGlobalGoalAssignmentIDs(ids...)
+	return _u
+}
+
+// RemoveGlobalGoalAssignments removes "global_goal_assignments" edges to GlobalGoalAssignment entities.
+func (_u *EmployeeUpdateOne) RemoveGlobalGoalAssignments(v ...*GlobalGoalAssignment) *EmployeeUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveGlobalGoalAssignmentIDs(ids...)
+}
+
+// ClearSharedGoalGroups clears all "shared_goal_groups" edges to the SharedGoalGroup entity.
+func (_u *EmployeeUpdateOne) ClearSharedGoalGroups() *EmployeeUpdateOne {
+	_u.mutation.ClearSharedGoalGroups()
+	return _u
+}
+
+// RemoveSharedGoalGroupIDs removes the "shared_goal_groups" edge to SharedGoalGroup entities by IDs.
+func (_u *EmployeeUpdateOne) RemoveSharedGoalGroupIDs(ids ...uuid.UUID) *EmployeeUpdateOne {
+	_u.mutation.RemoveSharedGoalGroupIDs(ids...)
+	return _u
+}
+
+// RemoveSharedGoalGroups removes "shared_goal_groups" edges to SharedGoalGroup entities.
+func (_u *EmployeeUpdateOne) RemoveSharedGoalGroups(v ...*SharedGoalGroup) *EmployeeUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveSharedGoalGroupIDs(ids...)
+}
+
+// ClearSharedGoalMembers clears all "shared_goal_members" edges to the SharedGoalMember entity.
+func (_u *EmployeeUpdateOne) ClearSharedGoalMembers() *EmployeeUpdateOne {
+	_u.mutation.ClearSharedGoalMembers()
+	return _u
+}
+
+// RemoveSharedGoalMemberIDs removes the "shared_goal_members" edge to SharedGoalMember entities by IDs.
+func (_u *EmployeeUpdateOne) RemoveSharedGoalMemberIDs(ids ...uuid.UUID) *EmployeeUpdateOne {
+	_u.mutation.RemoveSharedGoalMemberIDs(ids...)
+	return _u
+}
+
+// RemoveSharedGoalMembers removes "shared_goal_members" edges to SharedGoalMember entities.
+func (_u *EmployeeUpdateOne) RemoveSharedGoalMembers(v ...*SharedGoalMember) *EmployeeUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveSharedGoalMemberIDs(ids...)
 }
 
 // Where appends a list predicates to the EmployeeUpdate builder.
@@ -2361,6 +2833,186 @@ func (_u *EmployeeUpdateOne) sqlSave(ctx context.Context) (_node *Employee, err 
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(activitylog.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.GoalTemplatesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   employee.GoalTemplatesTable,
+			Columns: []string{employee.GoalTemplatesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(goaltemplate.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedGoalTemplatesIDs(); len(nodes) > 0 && !_u.mutation.GoalTemplatesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   employee.GoalTemplatesTable,
+			Columns: []string{employee.GoalTemplatesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(goaltemplate.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.GoalTemplatesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   employee.GoalTemplatesTable,
+			Columns: []string{employee.GoalTemplatesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(goaltemplate.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.GlobalGoalAssignmentsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   employee.GlobalGoalAssignmentsTable,
+			Columns: []string{employee.GlobalGoalAssignmentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(globalgoalassignment.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedGlobalGoalAssignmentsIDs(); len(nodes) > 0 && !_u.mutation.GlobalGoalAssignmentsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   employee.GlobalGoalAssignmentsTable,
+			Columns: []string{employee.GlobalGoalAssignmentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(globalgoalassignment.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.GlobalGoalAssignmentsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   employee.GlobalGoalAssignmentsTable,
+			Columns: []string{employee.GlobalGoalAssignmentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(globalgoalassignment.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.SharedGoalGroupsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   employee.SharedGoalGroupsTable,
+			Columns: []string{employee.SharedGoalGroupsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sharedgoalgroup.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedSharedGoalGroupsIDs(); len(nodes) > 0 && !_u.mutation.SharedGoalGroupsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   employee.SharedGoalGroupsTable,
+			Columns: []string{employee.SharedGoalGroupsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sharedgoalgroup.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.SharedGoalGroupsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   employee.SharedGoalGroupsTable,
+			Columns: []string{employee.SharedGoalGroupsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sharedgoalgroup.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.SharedGoalMembersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   employee.SharedGoalMembersTable,
+			Columns: []string{employee.SharedGoalMembersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sharedgoalmember.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedSharedGoalMembersIDs(); len(nodes) > 0 && !_u.mutation.SharedGoalMembersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   employee.SharedGoalMembersTable,
+			Columns: []string{employee.SharedGoalMembersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sharedgoalmember.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.SharedGoalMembersIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   employee.SharedGoalMembersTable,
+			Columns: []string{employee.SharedGoalMembersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sharedgoalmember.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

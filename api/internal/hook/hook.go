@@ -129,6 +129,30 @@ func (f EvaluatorScopeFunc) Mutate(ctx context.Context, m internal.Mutation) (in
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *internal.EvaluatorScopeMutation", m)
 }
 
+// The GlobalGoalAssignmentFunc type is an adapter to allow the use of ordinary
+// function as GlobalGoalAssignment mutator.
+type GlobalGoalAssignmentFunc func(context.Context, *internal.GlobalGoalAssignmentMutation) (internal.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f GlobalGoalAssignmentFunc) Mutate(ctx context.Context, m internal.Mutation) (internal.Value, error) {
+	if mv, ok := m.(*internal.GlobalGoalAssignmentMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *internal.GlobalGoalAssignmentMutation", m)
+}
+
+// The GlobalGoalRuleFunc type is an adapter to allow the use of ordinary
+// function as GlobalGoalRule mutator.
+type GlobalGoalRuleFunc func(context.Context, *internal.GlobalGoalRuleMutation) (internal.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f GlobalGoalRuleFunc) Mutate(ctx context.Context, m internal.Mutation) (internal.Value, error) {
+	if mv, ok := m.(*internal.GlobalGoalRuleMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *internal.GlobalGoalRuleMutation", m)
+}
+
 // The GoalFunc type is an adapter to allow the use of ordinary
 // function as Goal mutator.
 type GoalFunc func(context.Context, *internal.GoalMutation) (internal.Value, error)
@@ -175,6 +199,30 @@ func (f GoalKpiLinkFunc) Mutate(ctx context.Context, m internal.Mutation) (inter
 		return f(ctx, mv)
 	}
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *internal.GoalKpiLinkMutation", m)
+}
+
+// The GoalTemplateFunc type is an adapter to allow the use of ordinary
+// function as GoalTemplate mutator.
+type GoalTemplateFunc func(context.Context, *internal.GoalTemplateMutation) (internal.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f GoalTemplateFunc) Mutate(ctx context.Context, m internal.Mutation) (internal.Value, error) {
+	if mv, ok := m.(*internal.GoalTemplateMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *internal.GoalTemplateMutation", m)
+}
+
+// The GoalTemplateKpiLinkFunc type is an adapter to allow the use of ordinary
+// function as GoalTemplateKpiLink mutator.
+type GoalTemplateKpiLinkFunc func(context.Context, *internal.GoalTemplateKpiLinkMutation) (internal.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f GoalTemplateKpiLinkFunc) Mutate(ctx context.Context, m internal.Mutation) (internal.Value, error) {
+	if mv, ok := m.(*internal.GoalTemplateKpiLinkMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *internal.GoalTemplateKpiLinkMutation", m)
 }
 
 // The KPIFunc type is an adapter to allow the use of ordinary
@@ -319,6 +367,30 @@ func (f ScaleCriterionFunc) Mutate(ctx context.Context, m internal.Mutation) (in
 		return f(ctx, mv)
 	}
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *internal.ScaleCriterionMutation", m)
+}
+
+// The SharedGoalGroupFunc type is an adapter to allow the use of ordinary
+// function as SharedGoalGroup mutator.
+type SharedGoalGroupFunc func(context.Context, *internal.SharedGoalGroupMutation) (internal.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f SharedGoalGroupFunc) Mutate(ctx context.Context, m internal.Mutation) (internal.Value, error) {
+	if mv, ok := m.(*internal.SharedGoalGroupMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *internal.SharedGoalGroupMutation", m)
+}
+
+// The SharedGoalMemberFunc type is an adapter to allow the use of ordinary
+// function as SharedGoalMember mutator.
+type SharedGoalMemberFunc func(context.Context, *internal.SharedGoalMemberMutation) (internal.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f SharedGoalMemberFunc) Mutate(ctx context.Context, m internal.Mutation) (internal.Value, error) {
+	if mv, ok := m.(*internal.SharedGoalMemberMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *internal.SharedGoalMemberMutation", m)
 }
 
 // Condition is a hook condition function.

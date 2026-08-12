@@ -78,9 +78,17 @@ type EmployeeEdges struct {
 	HeadedDepartment []*OrgNode `json:"headed_department,omitempty"`
 	// ActivityLogs holds the value of the activity_logs edge.
 	ActivityLogs []*ActivityLog `json:"activity_logs,omitempty"`
+	// GoalTemplates holds the value of the goal_templates edge.
+	GoalTemplates []*GoalTemplate `json:"goal_templates,omitempty"`
+	// GlobalGoalAssignments holds the value of the global_goal_assignments edge.
+	GlobalGoalAssignments []*GlobalGoalAssignment `json:"global_goal_assignments,omitempty"`
+	// SharedGoalGroups holds the value of the shared_goal_groups edge.
+	SharedGoalGroups []*SharedGoalGroup `json:"shared_goal_groups,omitempty"`
+	// SharedGoalMembers holds the value of the shared_goal_members edge.
+	SharedGoalMembers []*SharedGoalMember `json:"shared_goal_members,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [12]bool
+	loadedTypes [16]bool
 }
 
 // OrgNodeOrErr returns the OrgNode value or an error if the edge
@@ -195,6 +203,42 @@ func (e EmployeeEdges) ActivityLogsOrErr() ([]*ActivityLog, error) {
 		return e.ActivityLogs, nil
 	}
 	return nil, &NotLoadedError{edge: "activity_logs"}
+}
+
+// GoalTemplatesOrErr returns the GoalTemplates value or an error if the edge
+// was not loaded in eager-loading.
+func (e EmployeeEdges) GoalTemplatesOrErr() ([]*GoalTemplate, error) {
+	if e.loadedTypes[12] {
+		return e.GoalTemplates, nil
+	}
+	return nil, &NotLoadedError{edge: "goal_templates"}
+}
+
+// GlobalGoalAssignmentsOrErr returns the GlobalGoalAssignments value or an error if the edge
+// was not loaded in eager-loading.
+func (e EmployeeEdges) GlobalGoalAssignmentsOrErr() ([]*GlobalGoalAssignment, error) {
+	if e.loadedTypes[13] {
+		return e.GlobalGoalAssignments, nil
+	}
+	return nil, &NotLoadedError{edge: "global_goal_assignments"}
+}
+
+// SharedGoalGroupsOrErr returns the SharedGoalGroups value or an error if the edge
+// was not loaded in eager-loading.
+func (e EmployeeEdges) SharedGoalGroupsOrErr() ([]*SharedGoalGroup, error) {
+	if e.loadedTypes[14] {
+		return e.SharedGoalGroups, nil
+	}
+	return nil, &NotLoadedError{edge: "shared_goal_groups"}
+}
+
+// SharedGoalMembersOrErr returns the SharedGoalMembers value or an error if the edge
+// was not loaded in eager-loading.
+func (e EmployeeEdges) SharedGoalMembersOrErr() ([]*SharedGoalMember, error) {
+	if e.loadedTypes[15] {
+		return e.SharedGoalMembers, nil
+	}
+	return nil, &NotLoadedError{edge: "shared_goal_members"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -383,6 +427,26 @@ func (_m *Employee) QueryHeadedDepartment() *OrgNodeQuery {
 // QueryActivityLogs queries the "activity_logs" edge of the Employee entity.
 func (_m *Employee) QueryActivityLogs() *ActivityLogQuery {
 	return NewEmployeeClient(_m.config).QueryActivityLogs(_m)
+}
+
+// QueryGoalTemplates queries the "goal_templates" edge of the Employee entity.
+func (_m *Employee) QueryGoalTemplates() *GoalTemplateQuery {
+	return NewEmployeeClient(_m.config).QueryGoalTemplates(_m)
+}
+
+// QueryGlobalGoalAssignments queries the "global_goal_assignments" edge of the Employee entity.
+func (_m *Employee) QueryGlobalGoalAssignments() *GlobalGoalAssignmentQuery {
+	return NewEmployeeClient(_m.config).QueryGlobalGoalAssignments(_m)
+}
+
+// QuerySharedGoalGroups queries the "shared_goal_groups" edge of the Employee entity.
+func (_m *Employee) QuerySharedGoalGroups() *SharedGoalGroupQuery {
+	return NewEmployeeClient(_m.config).QuerySharedGoalGroups(_m)
+}
+
+// QuerySharedGoalMembers queries the "shared_goal_members" edge of the Employee entity.
+func (_m *Employee) QuerySharedGoalMembers() *SharedGoalMemberQuery {
+	return NewEmployeeClient(_m.config).QuerySharedGoalMembers(_m)
 }
 
 // Update returns a builder for updating this Employee.

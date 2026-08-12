@@ -38,6 +38,8 @@ const (
 	EdgeGoalLinks = "goal_links"
 	// EdgeOrgNode holds the string denoting the org_node edge name in mutations.
 	EdgeOrgNode = "org_node"
+	// EdgeTemplateLinks holds the string denoting the template_links edge name in mutations.
+	EdgeTemplateLinks = "template_links"
 	// Table holds the table name of the kpi in the database.
 	Table = "kp_is"
 	// GoalLinksTable is the table that holds the goal_links relation/edge.
@@ -54,6 +56,13 @@ const (
 	OrgNodeInverseTable = "org_nodes"
 	// OrgNodeColumn is the table column denoting the org_node relation/edge.
 	OrgNodeColumn = "org_node_id"
+	// TemplateLinksTable is the table that holds the template_links relation/edge.
+	TemplateLinksTable = "goal_template_kpi_links"
+	// TemplateLinksInverseTable is the table name for the GoalTemplateKpiLink entity.
+	// It exists in this package in order to avoid circular dependency with the "goaltemplatekpilink" package.
+	TemplateLinksInverseTable = "goal_template_kpi_links"
+	// TemplateLinksColumn is the table column denoting the template_links relation/edge.
+	TemplateLinksColumn = "kpi_id"
 )
 
 // Columns holds all SQL columns for kpi fields.
@@ -217,6 +226,20 @@ func ByOrgNodeField(field string, opts ...sql.OrderTermOption) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newOrgNodeStep(), sql.OrderByField(field, opts...))
 	}
 }
+
+// ByTemplateLinksCount orders the results by template_links count.
+func ByTemplateLinksCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newTemplateLinksStep(), opts...)
+	}
+}
+
+// ByTemplateLinks orders the results by template_links terms.
+func ByTemplateLinks(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newTemplateLinksStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newGoalLinksStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -229,5 +252,12 @@ func newOrgNodeStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(OrgNodeInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2O, true, OrgNodeTable, OrgNodeColumn),
+	)
+}
+func newTemplateLinksStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(TemplateLinksInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, TemplateLinksTable, TemplateLinksColumn),
 	)
 }

@@ -38,47 +38,63 @@ func (h *SharedGoalHandler) RegisterRoutes(r chi.Router) {
 func (h *SharedGoalHandler) Create(w http.ResponseWriter, r *http.Request) {
 	var req servicegoal.CreateSharedGoalRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		errors.WriteError(w, http.StatusBadRequest, "Invalid request body", err)
+		writeError(w, errors.NewDomainError(errors.InvalidRequest, "Invalid request body", err))
 		return
 	}
 
 	goal, err := h.service.CreateSharedGoal(r.Context(), req)
 	if err != nil {
-		errors.WriteError(w, http.StatusInternalServerError, "Failed to create shared goal", err)
+		writeError(w, err)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(goal)
+	writeJSON(w, http.StatusCreated, goal)
 }
 
 // List handles GET /api/v1/goals/shared
 func (h *SharedGoalHandler) List(w http.ResponseWriter, r *http.Request) {
 	viewType := r.URL.Query().Get("view")
-
-	var goals []*servicegoal.SharedGoalRow
+	
+	var goals []interface{}
 	var err error
 
 	switch viewType {
 	case "creator":
-		goals, err = h.service.ListSharedGoalsAsCreator(r.Context())
+		creatorGoals, err := h.service.ListSharedGoalsAsCreator(r.Context())
+		if err != nil {
+			writeError(w, err)
+			return
+		}
+		for _, g := range creatorGoals {
+			goals = append(goals, g)
+		}
 	case "member":
-		goals, err = h.service.ListSharedGoalsAsMember(r.Context())
+		memberGoals, err := h.service.ListSharedGoalsAsMember(r.Context())
+		if err != nil {
+			writeError(w, err)
+			return
+		}
+		for _, g := range memberGoals {
+			goals = append(goals, g)
+		}
 	default:
 		// List both
 		creatorGoals, _ := h.service.ListSharedGoalsAsCreator(r.Context())
 		memberGoals, _ := h.service.ListSharedGoalsAsMember(r.Context())
-		goals = append(creatorGoals, memberGoals...)
+		for _, g := range creatorGoals {
+			goals = append(goals, g)
+		}
+		for _, g := range memberGoals {
+			goals = append(goals, g)
+		}
 	}
 
 	if err != nil {
-		errors.WriteError(w, http.StatusInternalServerError, "Failed to list shared goals", err)
+		writeError(w, err)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(goals)
+	writeJSON(w, http.StatusOK, goals)
 }
 
 // Get handles GET /api/v1/goals/shared/{goalID}
@@ -86,18 +102,17 @@ func (h *SharedGoalHandler) Get(w http.ResponseWriter, r *http.Request) {
 	goalIDStr := chi.URLParam(r, "goalID")
 	goalID, err := uuid.Parse(goalIDStr)
 	if err != nil {
-		errors.WriteError(w, http.StatusBadRequest, "Invalid goal ID", err)
+		writeError(w, errors.NewDomainError(errors.InvalidRequest, "Invalid goal ID", err))
 		return
 	}
 
 	goal, err := h.service.GetSharedGoal(r.Context(), goalID)
 	if err != nil {
-		errors.WriteError(w, http.StatusNotFound, "Shared goal not found", err)
+		writeError(w, err)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(goal)
+	writeJSON(w, http.StatusOK, goal)
 }
 
 // Update handles PUT /api/v1/goals/shared/{goalID}
@@ -105,28 +120,27 @@ func (h *SharedGoalHandler) Update(w http.ResponseWriter, r *http.Request) {
 	goalIDStr := chi.URLParam(r, "goalID")
 	goalID, err := uuid.Parse(goalIDStr)
 	if err != nil {
-		errors.WriteError(w, http.StatusBadRequest, "Invalid goal ID", err)
+		writeError(w, errors.NewDomainError(errors.InvalidRequest, "Invalid goal ID", err))
 		return
 	}
 
 	var req servicegoal.UpdateSharedGoalRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		errors.WriteError(w, http.StatusBadRequest, "Invalid request body", err)
+		writeError(w, errors.NewDomainError(errors.InvalidRequest, "Invalid request body", err))
 		return
 	}
 
 	goal, err := h.service.UpdateSharedGoal(r.Context(), goalID, req)
 	if err != nil {
 		if err == servicegoal.ErrNotCreator {
-			errors.WriteError(w, http.StatusForbidden, "Only the creator can modify this shared goal", err)
+			writeError(w, errors.NewDomainError(errors.InvalidRequest, "Only the creator can modify this shared goal", err))
 			return
 		}
-		errors.WriteError(w, http.StatusInternalServerError, "Failed to update shared goal", err)
+		writeError(w, err)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(goal)
+	writeJSON(w, http.StatusOK, goal)
 }
 
 // Delete handles DELETE /api/v1/goals/shared/{goalID}
@@ -134,16 +148,16 @@ func (h *SharedGoalHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	goalIDStr := chi.URLParam(r, "goalID")
 	goalID, err := uuid.Parse(goalIDStr)
 	if err != nil {
-		errors.WriteError(w, http.StatusBadRequest, "Invalid goal ID", err)
+		writeError(w, errors.NewDomainError(errors.InvalidRequest, "Invalid goal ID", err))
 		return
 	}
 
 	if err := h.service.DeleteSharedGoal(r.Context(), goalID); err != nil {
 		if err == servicegoal.ErrNotCreator {
-			errors.WriteError(w, http.StatusForbidden, "Only the creator can delete this shared goal", err)
+			writeError(w, errors.NewDomainError(errors.InvalidRequest, "Only the creator can delete this shared goal", err))
 			return
 		}
-		errors.WriteError(w, http.StatusInternalServerError, "Failed to delete shared goal", err)
+		writeError(w, err)
 		return
 	}
 
@@ -155,29 +169,27 @@ func (h *SharedGoalHandler) AddMember(w http.ResponseWriter, r *http.Request) {
 	goalIDStr := chi.URLParam(r, "goalID")
 	goalID, err := uuid.Parse(goalIDStr)
 	if err != nil {
-		errors.WriteError(w, http.StatusBadRequest, "Invalid goal ID", err)
+		writeError(w, errors.NewDomainError(errors.InvalidRequest, "Invalid goal ID", err))
 		return
 	}
 
 	var req servicegoal.AddMemberRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		errors.WriteError(w, http.StatusBadRequest, "Invalid request body", err)
+		writeError(w, errors.NewDomainError(errors.InvalidRequest, "Invalid request body", err))
 		return
 	}
 
 	member, err := h.service.AddMember(r.Context(), goalID, req)
 	if err != nil {
 		if err == servicegoal.ErrNotCreator {
-			errors.WriteError(w, http.StatusForbidden, "Only the creator can add members", err)
+			writeError(w, errors.NewDomainError(errors.InvalidRequest, "Only the creator can add members", err))
 			return
 		}
-		errors.WriteError(w, http.StatusInternalServerError, "Failed to add member", err)
+		writeError(w, err)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(member)
+	writeJSON(w, http.StatusCreated, member)
 }
 
 // RemoveMember handles DELETE /api/v1/goals/shared/{goalID}/members/{employeeID}
@@ -185,23 +197,23 @@ func (h *SharedGoalHandler) RemoveMember(w http.ResponseWriter, r *http.Request)
 	goalIDStr := chi.URLParam(r, "goalID")
 	goalID, err := uuid.Parse(goalIDStr)
 	if err != nil {
-		errors.WriteError(w, http.StatusBadRequest, "Invalid goal ID", err)
+		writeError(w, errors.NewDomainError(errors.InvalidRequest, "Invalid goal ID", err))
 		return
 	}
 
 	employeeIDStr := chi.URLParam(r, "employeeID")
 	employeeID, err := uuid.Parse(employeeIDStr)
 	if err != nil {
-		errors.WriteError(w, http.StatusBadRequest, "Invalid employee ID", err)
+		writeError(w, errors.NewDomainError(errors.InvalidRequest, "Invalid employee ID", err))
 		return
 	}
 
 	if err := h.service.RemoveMember(r.Context(), goalID, employeeID); err != nil {
 		if err == servicegoal.ErrNotCreator {
-			errors.WriteError(w, http.StatusForbidden, "Only the creator can remove members", err)
+			writeError(w, errors.NewDomainError(errors.InvalidRequest, "Only the creator can remove members", err))
 			return
 		}
-		errors.WriteError(w, http.StatusInternalServerError, "Failed to remove member", err)
+		writeError(w, err)
 		return
 	}
 
@@ -213,34 +225,33 @@ func (h *SharedGoalHandler) UpdateProgress(w http.ResponseWriter, r *http.Reques
 	goalIDStr := chi.URLParam(r, "goalID")
 	goalID, err := uuid.Parse(goalIDStr)
 	if err != nil {
-		errors.WriteError(w, http.StatusBadRequest, "Invalid goal ID", err)
+		writeError(w, errors.NewDomainError(errors.InvalidRequest, "Invalid goal ID", err))
 		return
 	}
 
 	employeeIDStr := chi.URLParam(r, "employeeID")
 	employeeID, err := uuid.Parse(employeeIDStr)
 	if err != nil {
-		errors.WriteError(w, http.StatusBadRequest, "Invalid employee ID", err)
+		writeError(w, errors.NewDomainError(errors.InvalidRequest, "Invalid employee ID", err))
 		return
 	}
 
 	var req servicegoal.UpdateProgressRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		errors.WriteError(w, http.StatusBadRequest, "Invalid request body", err)
+		writeError(w, errors.NewDomainError(errors.InvalidRequest, "Invalid request body", err))
 		return
 	}
 
 	if err := h.service.UpdateProgress(r.Context(), goalID, employeeID, req); err != nil {
 		if err == servicegoal.ErrNotCreator {
-			errors.WriteError(w, http.StatusForbidden, "Only the creator can update progress", err)
+			writeError(w, errors.NewDomainError(errors.InvalidRequest, "Only the creator can update progress", err))
 			return
 		}
-		errors.WriteError(w, http.StatusInternalServerError, "Failed to update progress", err)
+		writeError(w, err)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{
+	writeJSON(w, http.StatusOK, map[string]string{
 		"status": "updated",
 	})
 }

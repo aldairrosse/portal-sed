@@ -12,9 +12,12 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
 	"github.com/sed-evaluacion-desempeno/api/internal/evaluationgoal"
+	"github.com/sed-evaluacion-desempeno/api/internal/globalgoalassignment"
+	"github.com/sed-evaluacion-desempeno/api/internal/globalgoalrule"
 	"github.com/sed-evaluacion-desempeno/api/internal/goal"
 	"github.com/sed-evaluacion-desempeno/api/internal/goalcategory"
 	"github.com/sed-evaluacion-desempeno/api/internal/goalkpilink"
+	"github.com/sed-evaluacion-desempeno/api/internal/sharedgoalgroup"
 )
 
 // GoalCreate is the builder for creating a Goal entity.
@@ -170,6 +173,34 @@ func (_c *GoalCreate) SetCategoryID(v uuid.UUID) *GoalCreate {
 	return _c
 }
 
+// SetType sets the "type" field.
+func (_c *GoalCreate) SetType(v goal.Type) *GoalCreate {
+	_c.mutation.SetType(v)
+	return _c
+}
+
+// SetNillableType sets the "type" field if the given value is not nil.
+func (_c *GoalCreate) SetNillableType(v *goal.Type) *GoalCreate {
+	if v != nil {
+		_c.SetType(*v)
+	}
+	return _c
+}
+
+// SetGoalKind sets the "goal_kind" field.
+func (_c *GoalCreate) SetGoalKind(v goal.GoalKind) *GoalCreate {
+	_c.mutation.SetGoalKind(v)
+	return _c
+}
+
+// SetNillableGoalKind sets the "goal_kind" field if the given value is not nil.
+func (_c *GoalCreate) SetNillableGoalKind(v *goal.GoalKind) *GoalCreate {
+	if v != nil {
+		_c.SetGoalKind(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *GoalCreate) SetID(v uuid.UUID) *GoalCreate {
 	_c.mutation.SetID(v)
@@ -217,6 +248,51 @@ func (_c *GoalCreate) AddEvaluationGoals(v ...*EvaluationGoal) *GoalCreate {
 		ids[i] = v[i].ID
 	}
 	return _c.AddEvaluationGoalIDs(ids...)
+}
+
+// AddGlobalAssignmentIDs adds the "global_assignments" edge to the GlobalGoalAssignment entity by IDs.
+func (_c *GoalCreate) AddGlobalAssignmentIDs(ids ...uuid.UUID) *GoalCreate {
+	_c.mutation.AddGlobalAssignmentIDs(ids...)
+	return _c
+}
+
+// AddGlobalAssignments adds the "global_assignments" edges to the GlobalGoalAssignment entity.
+func (_c *GoalCreate) AddGlobalAssignments(v ...*GlobalGoalAssignment) *GoalCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddGlobalAssignmentIDs(ids...)
+}
+
+// AddGlobalRuleIDs adds the "global_rules" edge to the GlobalGoalRule entity by IDs.
+func (_c *GoalCreate) AddGlobalRuleIDs(ids ...uuid.UUID) *GoalCreate {
+	_c.mutation.AddGlobalRuleIDs(ids...)
+	return _c
+}
+
+// AddGlobalRules adds the "global_rules" edges to the GlobalGoalRule entity.
+func (_c *GoalCreate) AddGlobalRules(v ...*GlobalGoalRule) *GoalCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddGlobalRuleIDs(ids...)
+}
+
+// AddSharedGroupIDs adds the "shared_group" edge to the SharedGoalGroup entity by IDs.
+func (_c *GoalCreate) AddSharedGroupIDs(ids ...uuid.UUID) *GoalCreate {
+	_c.mutation.AddSharedGroupIDs(ids...)
+	return _c
+}
+
+// AddSharedGroup adds the "shared_group" edges to the SharedGoalGroup entity.
+func (_c *GoalCreate) AddSharedGroup(v ...*SharedGoalGroup) *GoalCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddSharedGroupIDs(ids...)
 }
 
 // Mutation returns the GoalMutation object of the builder.
@@ -273,6 +349,10 @@ func (_c *GoalCreate) defaults() {
 	if _, ok := _c.mutation.Direction(); !ok {
 		v := goal.DefaultDirection
 		_c.mutation.SetDirection(v)
+	}
+	if _, ok := _c.mutation.GetType(); !ok {
+		v := goal.DefaultType
+		_c.mutation.SetType(v)
 	}
 	if _, ok := _c.mutation.ID(); !ok {
 		v := goal.DefaultID()
@@ -355,6 +435,19 @@ func (_c *GoalCreate) check() error {
 	}
 	if _, ok := _c.mutation.CategoryID(); !ok {
 		return &ValidationError{Name: "category_id", err: errors.New(`internal: missing required field "Goal.category_id"`)}
+	}
+	if _, ok := _c.mutation.GetType(); !ok {
+		return &ValidationError{Name: "type", err: errors.New(`internal: missing required field "Goal.type"`)}
+	}
+	if v, ok := _c.mutation.GetType(); ok {
+		if err := goal.TypeValidator(v); err != nil {
+			return &ValidationError{Name: "type", err: fmt.Errorf(`internal: validator failed for field "Goal.type": %w`, err)}
+		}
+	}
+	if v, ok := _c.mutation.GoalKind(); ok {
+		if err := goal.GoalKindValidator(v); err != nil {
+			return &ValidationError{Name: "goal_kind", err: fmt.Errorf(`internal: validator failed for field "Goal.goal_kind": %w`, err)}
+		}
 	}
 	if len(_c.mutation.CategoryIDs()) == 0 {
 		return &ValidationError{Name: "category", err: errors.New(`internal: missing required edge "Goal.category"`)}
@@ -450,6 +543,14 @@ func (_c *GoalCreate) createSpec() (*Goal, *sqlgraph.CreateSpec) {
 		_spec.SetField(goal.FieldState, field.TypeEnum, value)
 		_node.State = value
 	}
+	if value, ok := _c.mutation.GetType(); ok {
+		_spec.SetField(goal.FieldType, field.TypeEnum, value)
+		_node.Type = value
+	}
+	if value, ok := _c.mutation.GoalKind(); ok {
+		_spec.SetField(goal.FieldGoalKind, field.TypeEnum, value)
+		_node.GoalKind = &value
+	}
 	if nodes := _c.mutation.CategoryIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -492,6 +593,54 @@ func (_c *GoalCreate) createSpec() (*Goal, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(evaluationgoal.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.GlobalAssignmentsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   goal.GlobalAssignmentsTable,
+			Columns: []string{goal.GlobalAssignmentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(globalgoalassignment.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.GlobalRulesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   goal.GlobalRulesTable,
+			Columns: []string{goal.GlobalRulesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(globalgoalrule.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.SharedGroupIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   goal.SharedGroupTable,
+			Columns: []string{goal.SharedGroupColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sharedgoalgroup.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

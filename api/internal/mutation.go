@@ -22,10 +22,14 @@ import (
 	"github.com/sed-evaluacion-desempeno/api/internal/evaluationgoal"
 	"github.com/sed-evaluacion-desempeno/api/internal/evaluationprofile"
 	"github.com/sed-evaluacion-desempeno/api/internal/evaluatorscope"
+	"github.com/sed-evaluacion-desempeno/api/internal/globalgoalassignment"
+	"github.com/sed-evaluacion-desempeno/api/internal/globalgoalrule"
 	"github.com/sed-evaluacion-desempeno/api/internal/goal"
 	"github.com/sed-evaluacion-desempeno/api/internal/goalassignment"
 	"github.com/sed-evaluacion-desempeno/api/internal/goalcategory"
 	"github.com/sed-evaluacion-desempeno/api/internal/goalkpilink"
+	"github.com/sed-evaluacion-desempeno/api/internal/goaltemplate"
+	"github.com/sed-evaluacion-desempeno/api/internal/goaltemplatekpilink"
 	"github.com/sed-evaluacion-desempeno/api/internal/kpi"
 	"github.com/sed-evaluacion-desempeno/api/internal/leveldefinition"
 	"github.com/sed-evaluacion-desempeno/api/internal/nineboxentry"
@@ -39,6 +43,8 @@ import (
 	"github.com/sed-evaluacion-desempeno/api/internal/pillar"
 	"github.com/sed-evaluacion-desempeno/api/internal/predicate"
 	"github.com/sed-evaluacion-desempeno/api/internal/scalecriterion"
+	"github.com/sed-evaluacion-desempeno/api/internal/sharedgoalgroup"
+	"github.com/sed-evaluacion-desempeno/api/internal/sharedgoalmember"
 )
 
 const (
@@ -60,10 +66,14 @@ const (
 	TypeEvaluationGoal            = "EvaluationGoal"
 	TypeEvaluationProfile         = "EvaluationProfile"
 	TypeEvaluatorScope            = "EvaluatorScope"
+	TypeGlobalGoalAssignment      = "GlobalGoalAssignment"
+	TypeGlobalGoalRule            = "GlobalGoalRule"
 	TypeGoal                      = "Goal"
 	TypeGoalAssignment            = "GoalAssignment"
 	TypeGoalCategory              = "GoalCategory"
 	TypeGoalKpiLink               = "GoalKpiLink"
+	TypeGoalTemplate              = "GoalTemplate"
+	TypeGoalTemplateKpiLink       = "GoalTemplateKpiLink"
 	TypeKPI                       = "KPI"
 	TypeLevelDefinition           = "LevelDefinition"
 	TypeNineBoxEntry              = "NineBoxEntry"
@@ -76,6 +86,8 @@ const (
 	TypePhaseTransition           = "PhaseTransition"
 	TypePillar                    = "Pillar"
 	TypeScaleCriterion            = "ScaleCriterion"
+	TypeSharedGoalGroup           = "SharedGoalGroup"
+	TypeSharedGoalMember          = "SharedGoalMember"
 )
 
 // ActivityLogMutation represents an operation that mutates the ActivityLog nodes in the graph.
@@ -3836,56 +3848,68 @@ func (m *CycleMutation) ResetEdge(name string) error {
 // EmployeeMutation represents an operation that mutates the Employee nodes in the graph.
 type EmployeeMutation struct {
 	config
-	op                       Op
-	typ                      string
-	id                       *uuid.UUID
-	created_at               *time.Time
-	updated_at               *time.Time
-	created_by               *uuid.UUID
-	updated_by               *uuid.UUID
-	first_name               *string
-	last_name                *string
-	employee_number          *string
-	email                    *string
-	is_active                *bool
-	job_title                *string
-	clearedFields            map[string]struct{}
-	org_node                 *uuid.UUID
-	clearedorg_node          bool
-	manager                  *uuid.UUID
-	clearedmanager           bool
-	direct_reports           map[uuid.UUID]struct{}
-	removeddirect_reports    map[uuid.UUID]struct{}
-	cleareddirect_reports    bool
-	profile                  *uuid.UUID
-	clearedprofile           bool
-	evaluator_scopes         map[uuid.UUID]struct{}
-	removedevaluator_scopes  map[uuid.UUID]struct{}
-	clearedevaluator_scopes  bool
-	goal_categories          map[uuid.UUID]struct{}
-	removedgoal_categories   map[uuid.UUID]struct{}
-	clearedgoal_categories   bool
-	goal_assignments         map[uuid.UUID]struct{}
-	removedgoal_assignments  map[uuid.UUID]struct{}
-	clearedgoal_assignments  bool
-	evaluations              map[uuid.UUID]struct{}
-	removedevaluations       map[uuid.UUID]struct{}
-	clearedevaluations       bool
-	nine_box_matrices        map[uuid.UUID]struct{}
-	removednine_box_matrices map[uuid.UUID]struct{}
-	clearednine_box_matrices bool
-	nine_box_entries         map[uuid.UUID]struct{}
-	removednine_box_entries  map[uuid.UUID]struct{}
-	clearednine_box_entries  bool
-	headed_department        map[uuid.UUID]struct{}
-	removedheaded_department map[uuid.UUID]struct{}
-	clearedheaded_department bool
-	activity_logs            map[uuid.UUID]struct{}
-	removedactivity_logs     map[uuid.UUID]struct{}
-	clearedactivity_logs     bool
-	done                     bool
-	oldValue                 func(context.Context) (*Employee, error)
-	predicates               []predicate.Employee
+	op                             Op
+	typ                            string
+	id                             *uuid.UUID
+	created_at                     *time.Time
+	updated_at                     *time.Time
+	created_by                     *uuid.UUID
+	updated_by                     *uuid.UUID
+	first_name                     *string
+	last_name                      *string
+	employee_number                *string
+	email                          *string
+	is_active                      *bool
+	job_title                      *string
+	clearedFields                  map[string]struct{}
+	org_node                       *uuid.UUID
+	clearedorg_node                bool
+	manager                        *uuid.UUID
+	clearedmanager                 bool
+	direct_reports                 map[uuid.UUID]struct{}
+	removeddirect_reports          map[uuid.UUID]struct{}
+	cleareddirect_reports          bool
+	profile                        *uuid.UUID
+	clearedprofile                 bool
+	evaluator_scopes               map[uuid.UUID]struct{}
+	removedevaluator_scopes        map[uuid.UUID]struct{}
+	clearedevaluator_scopes        bool
+	goal_categories                map[uuid.UUID]struct{}
+	removedgoal_categories         map[uuid.UUID]struct{}
+	clearedgoal_categories         bool
+	goal_assignments               map[uuid.UUID]struct{}
+	removedgoal_assignments        map[uuid.UUID]struct{}
+	clearedgoal_assignments        bool
+	evaluations                    map[uuid.UUID]struct{}
+	removedevaluations             map[uuid.UUID]struct{}
+	clearedevaluations             bool
+	nine_box_matrices              map[uuid.UUID]struct{}
+	removednine_box_matrices       map[uuid.UUID]struct{}
+	clearednine_box_matrices       bool
+	nine_box_entries               map[uuid.UUID]struct{}
+	removednine_box_entries        map[uuid.UUID]struct{}
+	clearednine_box_entries        bool
+	headed_department              map[uuid.UUID]struct{}
+	removedheaded_department       map[uuid.UUID]struct{}
+	clearedheaded_department       bool
+	activity_logs                  map[uuid.UUID]struct{}
+	removedactivity_logs           map[uuid.UUID]struct{}
+	clearedactivity_logs           bool
+	goal_templates                 map[uuid.UUID]struct{}
+	removedgoal_templates          map[uuid.UUID]struct{}
+	clearedgoal_templates          bool
+	global_goal_assignments        map[uuid.UUID]struct{}
+	removedglobal_goal_assignments map[uuid.UUID]struct{}
+	clearedglobal_goal_assignments bool
+	shared_goal_groups             map[uuid.UUID]struct{}
+	removedshared_goal_groups      map[uuid.UUID]struct{}
+	clearedshared_goal_groups      bool
+	shared_goal_members            map[uuid.UUID]struct{}
+	removedshared_goal_members     map[uuid.UUID]struct{}
+	clearedshared_goal_members     bool
+	done                           bool
+	oldValue                       func(context.Context) (*Employee, error)
+	predicates                     []predicate.Employee
 }
 
 var _ ent.Mutation = (*EmployeeMutation)(nil)
@@ -5053,6 +5077,222 @@ func (m *EmployeeMutation) ResetActivityLogs() {
 	m.removedactivity_logs = nil
 }
 
+// AddGoalTemplateIDs adds the "goal_templates" edge to the GoalTemplate entity by ids.
+func (m *EmployeeMutation) AddGoalTemplateIDs(ids ...uuid.UUID) {
+	if m.goal_templates == nil {
+		m.goal_templates = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.goal_templates[ids[i]] = struct{}{}
+	}
+}
+
+// ClearGoalTemplates clears the "goal_templates" edge to the GoalTemplate entity.
+func (m *EmployeeMutation) ClearGoalTemplates() {
+	m.clearedgoal_templates = true
+}
+
+// GoalTemplatesCleared reports if the "goal_templates" edge to the GoalTemplate entity was cleared.
+func (m *EmployeeMutation) GoalTemplatesCleared() bool {
+	return m.clearedgoal_templates
+}
+
+// RemoveGoalTemplateIDs removes the "goal_templates" edge to the GoalTemplate entity by IDs.
+func (m *EmployeeMutation) RemoveGoalTemplateIDs(ids ...uuid.UUID) {
+	if m.removedgoal_templates == nil {
+		m.removedgoal_templates = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.goal_templates, ids[i])
+		m.removedgoal_templates[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedGoalTemplates returns the removed IDs of the "goal_templates" edge to the GoalTemplate entity.
+func (m *EmployeeMutation) RemovedGoalTemplatesIDs() (ids []uuid.UUID) {
+	for id := range m.removedgoal_templates {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// GoalTemplatesIDs returns the "goal_templates" edge IDs in the mutation.
+func (m *EmployeeMutation) GoalTemplatesIDs() (ids []uuid.UUID) {
+	for id := range m.goal_templates {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetGoalTemplates resets all changes to the "goal_templates" edge.
+func (m *EmployeeMutation) ResetGoalTemplates() {
+	m.goal_templates = nil
+	m.clearedgoal_templates = false
+	m.removedgoal_templates = nil
+}
+
+// AddGlobalGoalAssignmentIDs adds the "global_goal_assignments" edge to the GlobalGoalAssignment entity by ids.
+func (m *EmployeeMutation) AddGlobalGoalAssignmentIDs(ids ...uuid.UUID) {
+	if m.global_goal_assignments == nil {
+		m.global_goal_assignments = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.global_goal_assignments[ids[i]] = struct{}{}
+	}
+}
+
+// ClearGlobalGoalAssignments clears the "global_goal_assignments" edge to the GlobalGoalAssignment entity.
+func (m *EmployeeMutation) ClearGlobalGoalAssignments() {
+	m.clearedglobal_goal_assignments = true
+}
+
+// GlobalGoalAssignmentsCleared reports if the "global_goal_assignments" edge to the GlobalGoalAssignment entity was cleared.
+func (m *EmployeeMutation) GlobalGoalAssignmentsCleared() bool {
+	return m.clearedglobal_goal_assignments
+}
+
+// RemoveGlobalGoalAssignmentIDs removes the "global_goal_assignments" edge to the GlobalGoalAssignment entity by IDs.
+func (m *EmployeeMutation) RemoveGlobalGoalAssignmentIDs(ids ...uuid.UUID) {
+	if m.removedglobal_goal_assignments == nil {
+		m.removedglobal_goal_assignments = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.global_goal_assignments, ids[i])
+		m.removedglobal_goal_assignments[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedGlobalGoalAssignments returns the removed IDs of the "global_goal_assignments" edge to the GlobalGoalAssignment entity.
+func (m *EmployeeMutation) RemovedGlobalGoalAssignmentsIDs() (ids []uuid.UUID) {
+	for id := range m.removedglobal_goal_assignments {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// GlobalGoalAssignmentsIDs returns the "global_goal_assignments" edge IDs in the mutation.
+func (m *EmployeeMutation) GlobalGoalAssignmentsIDs() (ids []uuid.UUID) {
+	for id := range m.global_goal_assignments {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetGlobalGoalAssignments resets all changes to the "global_goal_assignments" edge.
+func (m *EmployeeMutation) ResetGlobalGoalAssignments() {
+	m.global_goal_assignments = nil
+	m.clearedglobal_goal_assignments = false
+	m.removedglobal_goal_assignments = nil
+}
+
+// AddSharedGoalGroupIDs adds the "shared_goal_groups" edge to the SharedGoalGroup entity by ids.
+func (m *EmployeeMutation) AddSharedGoalGroupIDs(ids ...uuid.UUID) {
+	if m.shared_goal_groups == nil {
+		m.shared_goal_groups = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.shared_goal_groups[ids[i]] = struct{}{}
+	}
+}
+
+// ClearSharedGoalGroups clears the "shared_goal_groups" edge to the SharedGoalGroup entity.
+func (m *EmployeeMutation) ClearSharedGoalGroups() {
+	m.clearedshared_goal_groups = true
+}
+
+// SharedGoalGroupsCleared reports if the "shared_goal_groups" edge to the SharedGoalGroup entity was cleared.
+func (m *EmployeeMutation) SharedGoalGroupsCleared() bool {
+	return m.clearedshared_goal_groups
+}
+
+// RemoveSharedGoalGroupIDs removes the "shared_goal_groups" edge to the SharedGoalGroup entity by IDs.
+func (m *EmployeeMutation) RemoveSharedGoalGroupIDs(ids ...uuid.UUID) {
+	if m.removedshared_goal_groups == nil {
+		m.removedshared_goal_groups = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.shared_goal_groups, ids[i])
+		m.removedshared_goal_groups[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedSharedGoalGroups returns the removed IDs of the "shared_goal_groups" edge to the SharedGoalGroup entity.
+func (m *EmployeeMutation) RemovedSharedGoalGroupsIDs() (ids []uuid.UUID) {
+	for id := range m.removedshared_goal_groups {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// SharedGoalGroupsIDs returns the "shared_goal_groups" edge IDs in the mutation.
+func (m *EmployeeMutation) SharedGoalGroupsIDs() (ids []uuid.UUID) {
+	for id := range m.shared_goal_groups {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetSharedGoalGroups resets all changes to the "shared_goal_groups" edge.
+func (m *EmployeeMutation) ResetSharedGoalGroups() {
+	m.shared_goal_groups = nil
+	m.clearedshared_goal_groups = false
+	m.removedshared_goal_groups = nil
+}
+
+// AddSharedGoalMemberIDs adds the "shared_goal_members" edge to the SharedGoalMember entity by ids.
+func (m *EmployeeMutation) AddSharedGoalMemberIDs(ids ...uuid.UUID) {
+	if m.shared_goal_members == nil {
+		m.shared_goal_members = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.shared_goal_members[ids[i]] = struct{}{}
+	}
+}
+
+// ClearSharedGoalMembers clears the "shared_goal_members" edge to the SharedGoalMember entity.
+func (m *EmployeeMutation) ClearSharedGoalMembers() {
+	m.clearedshared_goal_members = true
+}
+
+// SharedGoalMembersCleared reports if the "shared_goal_members" edge to the SharedGoalMember entity was cleared.
+func (m *EmployeeMutation) SharedGoalMembersCleared() bool {
+	return m.clearedshared_goal_members
+}
+
+// RemoveSharedGoalMemberIDs removes the "shared_goal_members" edge to the SharedGoalMember entity by IDs.
+func (m *EmployeeMutation) RemoveSharedGoalMemberIDs(ids ...uuid.UUID) {
+	if m.removedshared_goal_members == nil {
+		m.removedshared_goal_members = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.shared_goal_members, ids[i])
+		m.removedshared_goal_members[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedSharedGoalMembers returns the removed IDs of the "shared_goal_members" edge to the SharedGoalMember entity.
+func (m *EmployeeMutation) RemovedSharedGoalMembersIDs() (ids []uuid.UUID) {
+	for id := range m.removedshared_goal_members {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// SharedGoalMembersIDs returns the "shared_goal_members" edge IDs in the mutation.
+func (m *EmployeeMutation) SharedGoalMembersIDs() (ids []uuid.UUID) {
+	for id := range m.shared_goal_members {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetSharedGoalMembers resets all changes to the "shared_goal_members" edge.
+func (m *EmployeeMutation) ResetSharedGoalMembers() {
+	m.shared_goal_members = nil
+	m.clearedshared_goal_members = false
+	m.removedshared_goal_members = nil
+}
+
 // Where appends a list predicates to the EmployeeMutation builder.
 func (m *EmployeeMutation) Where(ps ...predicate.Employee) {
 	m.predicates = append(m.predicates, ps...)
@@ -5405,7 +5645,7 @@ func (m *EmployeeMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *EmployeeMutation) AddedEdges() []string {
-	edges := make([]string, 0, 12)
+	edges := make([]string, 0, 16)
 	if m.org_node != nil {
 		edges = append(edges, employee.EdgeOrgNode)
 	}
@@ -5441,6 +5681,18 @@ func (m *EmployeeMutation) AddedEdges() []string {
 	}
 	if m.activity_logs != nil {
 		edges = append(edges, employee.EdgeActivityLogs)
+	}
+	if m.goal_templates != nil {
+		edges = append(edges, employee.EdgeGoalTemplates)
+	}
+	if m.global_goal_assignments != nil {
+		edges = append(edges, employee.EdgeGlobalGoalAssignments)
+	}
+	if m.shared_goal_groups != nil {
+		edges = append(edges, employee.EdgeSharedGoalGroups)
+	}
+	if m.shared_goal_members != nil {
+		edges = append(edges, employee.EdgeSharedGoalMembers)
 	}
 	return edges
 }
@@ -5515,13 +5767,37 @@ func (m *EmployeeMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case employee.EdgeGoalTemplates:
+		ids := make([]ent.Value, 0, len(m.goal_templates))
+		for id := range m.goal_templates {
+			ids = append(ids, id)
+		}
+		return ids
+	case employee.EdgeGlobalGoalAssignments:
+		ids := make([]ent.Value, 0, len(m.global_goal_assignments))
+		for id := range m.global_goal_assignments {
+			ids = append(ids, id)
+		}
+		return ids
+	case employee.EdgeSharedGoalGroups:
+		ids := make([]ent.Value, 0, len(m.shared_goal_groups))
+		for id := range m.shared_goal_groups {
+			ids = append(ids, id)
+		}
+		return ids
+	case employee.EdgeSharedGoalMembers:
+		ids := make([]ent.Value, 0, len(m.shared_goal_members))
+		for id := range m.shared_goal_members {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *EmployeeMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 12)
+	edges := make([]string, 0, 16)
 	if m.removeddirect_reports != nil {
 		edges = append(edges, employee.EdgeDirectReports)
 	}
@@ -5548,6 +5824,18 @@ func (m *EmployeeMutation) RemovedEdges() []string {
 	}
 	if m.removedactivity_logs != nil {
 		edges = append(edges, employee.EdgeActivityLogs)
+	}
+	if m.removedgoal_templates != nil {
+		edges = append(edges, employee.EdgeGoalTemplates)
+	}
+	if m.removedglobal_goal_assignments != nil {
+		edges = append(edges, employee.EdgeGlobalGoalAssignments)
+	}
+	if m.removedshared_goal_groups != nil {
+		edges = append(edges, employee.EdgeSharedGoalGroups)
+	}
+	if m.removedshared_goal_members != nil {
+		edges = append(edges, employee.EdgeSharedGoalMembers)
 	}
 	return edges
 }
@@ -5610,13 +5898,37 @@ func (m *EmployeeMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case employee.EdgeGoalTemplates:
+		ids := make([]ent.Value, 0, len(m.removedgoal_templates))
+		for id := range m.removedgoal_templates {
+			ids = append(ids, id)
+		}
+		return ids
+	case employee.EdgeGlobalGoalAssignments:
+		ids := make([]ent.Value, 0, len(m.removedglobal_goal_assignments))
+		for id := range m.removedglobal_goal_assignments {
+			ids = append(ids, id)
+		}
+		return ids
+	case employee.EdgeSharedGoalGroups:
+		ids := make([]ent.Value, 0, len(m.removedshared_goal_groups))
+		for id := range m.removedshared_goal_groups {
+			ids = append(ids, id)
+		}
+		return ids
+	case employee.EdgeSharedGoalMembers:
+		ids := make([]ent.Value, 0, len(m.removedshared_goal_members))
+		for id := range m.removedshared_goal_members {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *EmployeeMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 12)
+	edges := make([]string, 0, 16)
 	if m.clearedorg_node {
 		edges = append(edges, employee.EdgeOrgNode)
 	}
@@ -5653,6 +5965,18 @@ func (m *EmployeeMutation) ClearedEdges() []string {
 	if m.clearedactivity_logs {
 		edges = append(edges, employee.EdgeActivityLogs)
 	}
+	if m.clearedgoal_templates {
+		edges = append(edges, employee.EdgeGoalTemplates)
+	}
+	if m.clearedglobal_goal_assignments {
+		edges = append(edges, employee.EdgeGlobalGoalAssignments)
+	}
+	if m.clearedshared_goal_groups {
+		edges = append(edges, employee.EdgeSharedGoalGroups)
+	}
+	if m.clearedshared_goal_members {
+		edges = append(edges, employee.EdgeSharedGoalMembers)
+	}
 	return edges
 }
 
@@ -5684,6 +6008,14 @@ func (m *EmployeeMutation) EdgeCleared(name string) bool {
 		return m.clearedheaded_department
 	case employee.EdgeActivityLogs:
 		return m.clearedactivity_logs
+	case employee.EdgeGoalTemplates:
+		return m.clearedgoal_templates
+	case employee.EdgeGlobalGoalAssignments:
+		return m.clearedglobal_goal_assignments
+	case employee.EdgeSharedGoalGroups:
+		return m.clearedshared_goal_groups
+	case employee.EdgeSharedGoalMembers:
+		return m.clearedshared_goal_members
 	}
 	return false
 }
@@ -5744,6 +6076,18 @@ func (m *EmployeeMutation) ResetEdge(name string) error {
 		return nil
 	case employee.EdgeActivityLogs:
 		m.ResetActivityLogs()
+		return nil
+	case employee.EdgeGoalTemplates:
+		m.ResetGoalTemplates()
+		return nil
+	case employee.EdgeGlobalGoalAssignments:
+		m.ResetGlobalGoalAssignments()
+		return nil
+	case employee.EdgeSharedGoalGroups:
+		m.ResetSharedGoalGroups()
+		return nil
+	case employee.EdgeSharedGoalMembers:
+		m.ResetSharedGoalMembers()
 		return nil
 	}
 	return fmt.Errorf("unknown Employee edge %s", name)
@@ -10016,43 +10360,1802 @@ func (m *EvaluatorScopeMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown EvaluatorScope edge %s", name)
 }
 
+// GlobalGoalAssignmentMutation represents an operation that mutates the GlobalGoalAssignment nodes in the graph.
+type GlobalGoalAssignmentMutation struct {
+	config
+	op                Op
+	typ               string
+	id                *uuid.UUID
+	created_at        *time.Time
+	updated_at        *time.Time
+	weight            *float64
+	addweight         *float64
+	target_value      *float64
+	addtarget_value   *float64
+	baseline_value    *float64
+	addbaseline_value *float64
+	clearedFields     map[string]struct{}
+	goal              *uuid.UUID
+	clearedgoal       bool
+	employee          *uuid.UUID
+	clearedemployee   bool
+	done              bool
+	oldValue          func(context.Context) (*GlobalGoalAssignment, error)
+	predicates        []predicate.GlobalGoalAssignment
+}
+
+var _ ent.Mutation = (*GlobalGoalAssignmentMutation)(nil)
+
+// globalgoalassignmentOption allows management of the mutation configuration using functional options.
+type globalgoalassignmentOption func(*GlobalGoalAssignmentMutation)
+
+// newGlobalGoalAssignmentMutation creates new mutation for the GlobalGoalAssignment entity.
+func newGlobalGoalAssignmentMutation(c config, op Op, opts ...globalgoalassignmentOption) *GlobalGoalAssignmentMutation {
+	m := &GlobalGoalAssignmentMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeGlobalGoalAssignment,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withGlobalGoalAssignmentID sets the ID field of the mutation.
+func withGlobalGoalAssignmentID(id uuid.UUID) globalgoalassignmentOption {
+	return func(m *GlobalGoalAssignmentMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *GlobalGoalAssignment
+		)
+		m.oldValue = func(ctx context.Context) (*GlobalGoalAssignment, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().GlobalGoalAssignment.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withGlobalGoalAssignment sets the old GlobalGoalAssignment of the mutation.
+func withGlobalGoalAssignment(node *GlobalGoalAssignment) globalgoalassignmentOption {
+	return func(m *GlobalGoalAssignmentMutation) {
+		m.oldValue = func(context.Context) (*GlobalGoalAssignment, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m GlobalGoalAssignmentMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m GlobalGoalAssignmentMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("internal: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of GlobalGoalAssignment entities.
+func (m *GlobalGoalAssignmentMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *GlobalGoalAssignmentMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *GlobalGoalAssignmentMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().GlobalGoalAssignment.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *GlobalGoalAssignmentMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *GlobalGoalAssignmentMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the GlobalGoalAssignment entity.
+// If the GlobalGoalAssignment object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GlobalGoalAssignmentMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *GlobalGoalAssignmentMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *GlobalGoalAssignmentMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *GlobalGoalAssignmentMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the GlobalGoalAssignment entity.
+// If the GlobalGoalAssignment object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GlobalGoalAssignmentMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *GlobalGoalAssignmentMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetGoalID sets the "goal_id" field.
+func (m *GlobalGoalAssignmentMutation) SetGoalID(u uuid.UUID) {
+	m.goal = &u
+}
+
+// GoalID returns the value of the "goal_id" field in the mutation.
+func (m *GlobalGoalAssignmentMutation) GoalID() (r uuid.UUID, exists bool) {
+	v := m.goal
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldGoalID returns the old "goal_id" field's value of the GlobalGoalAssignment entity.
+// If the GlobalGoalAssignment object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GlobalGoalAssignmentMutation) OldGoalID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldGoalID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldGoalID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldGoalID: %w", err)
+	}
+	return oldValue.GoalID, nil
+}
+
+// ResetGoalID resets all changes to the "goal_id" field.
+func (m *GlobalGoalAssignmentMutation) ResetGoalID() {
+	m.goal = nil
+}
+
+// SetEmployeeID sets the "employee_id" field.
+func (m *GlobalGoalAssignmentMutation) SetEmployeeID(u uuid.UUID) {
+	m.employee = &u
+}
+
+// EmployeeID returns the value of the "employee_id" field in the mutation.
+func (m *GlobalGoalAssignmentMutation) EmployeeID() (r uuid.UUID, exists bool) {
+	v := m.employee
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEmployeeID returns the old "employee_id" field's value of the GlobalGoalAssignment entity.
+// If the GlobalGoalAssignment object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GlobalGoalAssignmentMutation) OldEmployeeID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEmployeeID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEmployeeID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEmployeeID: %w", err)
+	}
+	return oldValue.EmployeeID, nil
+}
+
+// ResetEmployeeID resets all changes to the "employee_id" field.
+func (m *GlobalGoalAssignmentMutation) ResetEmployeeID() {
+	m.employee = nil
+}
+
+// SetWeight sets the "weight" field.
+func (m *GlobalGoalAssignmentMutation) SetWeight(f float64) {
+	m.weight = &f
+	m.addweight = nil
+}
+
+// Weight returns the value of the "weight" field in the mutation.
+func (m *GlobalGoalAssignmentMutation) Weight() (r float64, exists bool) {
+	v := m.weight
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWeight returns the old "weight" field's value of the GlobalGoalAssignment entity.
+// If the GlobalGoalAssignment object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GlobalGoalAssignmentMutation) OldWeight(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldWeight is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldWeight requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWeight: %w", err)
+	}
+	return oldValue.Weight, nil
+}
+
+// AddWeight adds f to the "weight" field.
+func (m *GlobalGoalAssignmentMutation) AddWeight(f float64) {
+	if m.addweight != nil {
+		*m.addweight += f
+	} else {
+		m.addweight = &f
+	}
+}
+
+// AddedWeight returns the value that was added to the "weight" field in this mutation.
+func (m *GlobalGoalAssignmentMutation) AddedWeight() (r float64, exists bool) {
+	v := m.addweight
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetWeight resets all changes to the "weight" field.
+func (m *GlobalGoalAssignmentMutation) ResetWeight() {
+	m.weight = nil
+	m.addweight = nil
+}
+
+// SetTargetValue sets the "target_value" field.
+func (m *GlobalGoalAssignmentMutation) SetTargetValue(f float64) {
+	m.target_value = &f
+	m.addtarget_value = nil
+}
+
+// TargetValue returns the value of the "target_value" field in the mutation.
+func (m *GlobalGoalAssignmentMutation) TargetValue() (r float64, exists bool) {
+	v := m.target_value
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTargetValue returns the old "target_value" field's value of the GlobalGoalAssignment entity.
+// If the GlobalGoalAssignment object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GlobalGoalAssignmentMutation) OldTargetValue(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTargetValue is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTargetValue requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTargetValue: %w", err)
+	}
+	return oldValue.TargetValue, nil
+}
+
+// AddTargetValue adds f to the "target_value" field.
+func (m *GlobalGoalAssignmentMutation) AddTargetValue(f float64) {
+	if m.addtarget_value != nil {
+		*m.addtarget_value += f
+	} else {
+		m.addtarget_value = &f
+	}
+}
+
+// AddedTargetValue returns the value that was added to the "target_value" field in this mutation.
+func (m *GlobalGoalAssignmentMutation) AddedTargetValue() (r float64, exists bool) {
+	v := m.addtarget_value
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetTargetValue resets all changes to the "target_value" field.
+func (m *GlobalGoalAssignmentMutation) ResetTargetValue() {
+	m.target_value = nil
+	m.addtarget_value = nil
+}
+
+// SetBaselineValue sets the "baseline_value" field.
+func (m *GlobalGoalAssignmentMutation) SetBaselineValue(f float64) {
+	m.baseline_value = &f
+	m.addbaseline_value = nil
+}
+
+// BaselineValue returns the value of the "baseline_value" field in the mutation.
+func (m *GlobalGoalAssignmentMutation) BaselineValue() (r float64, exists bool) {
+	v := m.baseline_value
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldBaselineValue returns the old "baseline_value" field's value of the GlobalGoalAssignment entity.
+// If the GlobalGoalAssignment object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GlobalGoalAssignmentMutation) OldBaselineValue(ctx context.Context) (v *float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldBaselineValue is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldBaselineValue requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldBaselineValue: %w", err)
+	}
+	return oldValue.BaselineValue, nil
+}
+
+// AddBaselineValue adds f to the "baseline_value" field.
+func (m *GlobalGoalAssignmentMutation) AddBaselineValue(f float64) {
+	if m.addbaseline_value != nil {
+		*m.addbaseline_value += f
+	} else {
+		m.addbaseline_value = &f
+	}
+}
+
+// AddedBaselineValue returns the value that was added to the "baseline_value" field in this mutation.
+func (m *GlobalGoalAssignmentMutation) AddedBaselineValue() (r float64, exists bool) {
+	v := m.addbaseline_value
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearBaselineValue clears the value of the "baseline_value" field.
+func (m *GlobalGoalAssignmentMutation) ClearBaselineValue() {
+	m.baseline_value = nil
+	m.addbaseline_value = nil
+	m.clearedFields[globalgoalassignment.FieldBaselineValue] = struct{}{}
+}
+
+// BaselineValueCleared returns if the "baseline_value" field was cleared in this mutation.
+func (m *GlobalGoalAssignmentMutation) BaselineValueCleared() bool {
+	_, ok := m.clearedFields[globalgoalassignment.FieldBaselineValue]
+	return ok
+}
+
+// ResetBaselineValue resets all changes to the "baseline_value" field.
+func (m *GlobalGoalAssignmentMutation) ResetBaselineValue() {
+	m.baseline_value = nil
+	m.addbaseline_value = nil
+	delete(m.clearedFields, globalgoalassignment.FieldBaselineValue)
+}
+
+// ClearGoal clears the "goal" edge to the Goal entity.
+func (m *GlobalGoalAssignmentMutation) ClearGoal() {
+	m.clearedgoal = true
+	m.clearedFields[globalgoalassignment.FieldGoalID] = struct{}{}
+}
+
+// GoalCleared reports if the "goal" edge to the Goal entity was cleared.
+func (m *GlobalGoalAssignmentMutation) GoalCleared() bool {
+	return m.clearedgoal
+}
+
+// GoalIDs returns the "goal" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// GoalID instead. It exists only for internal usage by the builders.
+func (m *GlobalGoalAssignmentMutation) GoalIDs() (ids []uuid.UUID) {
+	if id := m.goal; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetGoal resets all changes to the "goal" edge.
+func (m *GlobalGoalAssignmentMutation) ResetGoal() {
+	m.goal = nil
+	m.clearedgoal = false
+}
+
+// ClearEmployee clears the "employee" edge to the Employee entity.
+func (m *GlobalGoalAssignmentMutation) ClearEmployee() {
+	m.clearedemployee = true
+	m.clearedFields[globalgoalassignment.FieldEmployeeID] = struct{}{}
+}
+
+// EmployeeCleared reports if the "employee" edge to the Employee entity was cleared.
+func (m *GlobalGoalAssignmentMutation) EmployeeCleared() bool {
+	return m.clearedemployee
+}
+
+// EmployeeIDs returns the "employee" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// EmployeeID instead. It exists only for internal usage by the builders.
+func (m *GlobalGoalAssignmentMutation) EmployeeIDs() (ids []uuid.UUID) {
+	if id := m.employee; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetEmployee resets all changes to the "employee" edge.
+func (m *GlobalGoalAssignmentMutation) ResetEmployee() {
+	m.employee = nil
+	m.clearedemployee = false
+}
+
+// Where appends a list predicates to the GlobalGoalAssignmentMutation builder.
+func (m *GlobalGoalAssignmentMutation) Where(ps ...predicate.GlobalGoalAssignment) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the GlobalGoalAssignmentMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *GlobalGoalAssignmentMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.GlobalGoalAssignment, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *GlobalGoalAssignmentMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *GlobalGoalAssignmentMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (GlobalGoalAssignment).
+func (m *GlobalGoalAssignmentMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *GlobalGoalAssignmentMutation) Fields() []string {
+	fields := make([]string, 0, 7)
+	if m.created_at != nil {
+		fields = append(fields, globalgoalassignment.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, globalgoalassignment.FieldUpdatedAt)
+	}
+	if m.goal != nil {
+		fields = append(fields, globalgoalassignment.FieldGoalID)
+	}
+	if m.employee != nil {
+		fields = append(fields, globalgoalassignment.FieldEmployeeID)
+	}
+	if m.weight != nil {
+		fields = append(fields, globalgoalassignment.FieldWeight)
+	}
+	if m.target_value != nil {
+		fields = append(fields, globalgoalassignment.FieldTargetValue)
+	}
+	if m.baseline_value != nil {
+		fields = append(fields, globalgoalassignment.FieldBaselineValue)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *GlobalGoalAssignmentMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case globalgoalassignment.FieldCreatedAt:
+		return m.CreatedAt()
+	case globalgoalassignment.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case globalgoalassignment.FieldGoalID:
+		return m.GoalID()
+	case globalgoalassignment.FieldEmployeeID:
+		return m.EmployeeID()
+	case globalgoalassignment.FieldWeight:
+		return m.Weight()
+	case globalgoalassignment.FieldTargetValue:
+		return m.TargetValue()
+	case globalgoalassignment.FieldBaselineValue:
+		return m.BaselineValue()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *GlobalGoalAssignmentMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case globalgoalassignment.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case globalgoalassignment.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case globalgoalassignment.FieldGoalID:
+		return m.OldGoalID(ctx)
+	case globalgoalassignment.FieldEmployeeID:
+		return m.OldEmployeeID(ctx)
+	case globalgoalassignment.FieldWeight:
+		return m.OldWeight(ctx)
+	case globalgoalassignment.FieldTargetValue:
+		return m.OldTargetValue(ctx)
+	case globalgoalassignment.FieldBaselineValue:
+		return m.OldBaselineValue(ctx)
+	}
+	return nil, fmt.Errorf("unknown GlobalGoalAssignment field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *GlobalGoalAssignmentMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case globalgoalassignment.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case globalgoalassignment.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case globalgoalassignment.FieldGoalID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetGoalID(v)
+		return nil
+	case globalgoalassignment.FieldEmployeeID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEmployeeID(v)
+		return nil
+	case globalgoalassignment.FieldWeight:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWeight(v)
+		return nil
+	case globalgoalassignment.FieldTargetValue:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTargetValue(v)
+		return nil
+	case globalgoalassignment.FieldBaselineValue:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetBaselineValue(v)
+		return nil
+	}
+	return fmt.Errorf("unknown GlobalGoalAssignment field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *GlobalGoalAssignmentMutation) AddedFields() []string {
+	var fields []string
+	if m.addweight != nil {
+		fields = append(fields, globalgoalassignment.FieldWeight)
+	}
+	if m.addtarget_value != nil {
+		fields = append(fields, globalgoalassignment.FieldTargetValue)
+	}
+	if m.addbaseline_value != nil {
+		fields = append(fields, globalgoalassignment.FieldBaselineValue)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *GlobalGoalAssignmentMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case globalgoalassignment.FieldWeight:
+		return m.AddedWeight()
+	case globalgoalassignment.FieldTargetValue:
+		return m.AddedTargetValue()
+	case globalgoalassignment.FieldBaselineValue:
+		return m.AddedBaselineValue()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *GlobalGoalAssignmentMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case globalgoalassignment.FieldWeight:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddWeight(v)
+		return nil
+	case globalgoalassignment.FieldTargetValue:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddTargetValue(v)
+		return nil
+	case globalgoalassignment.FieldBaselineValue:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddBaselineValue(v)
+		return nil
+	}
+	return fmt.Errorf("unknown GlobalGoalAssignment numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *GlobalGoalAssignmentMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(globalgoalassignment.FieldBaselineValue) {
+		fields = append(fields, globalgoalassignment.FieldBaselineValue)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *GlobalGoalAssignmentMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *GlobalGoalAssignmentMutation) ClearField(name string) error {
+	switch name {
+	case globalgoalassignment.FieldBaselineValue:
+		m.ClearBaselineValue()
+		return nil
+	}
+	return fmt.Errorf("unknown GlobalGoalAssignment nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *GlobalGoalAssignmentMutation) ResetField(name string) error {
+	switch name {
+	case globalgoalassignment.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case globalgoalassignment.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case globalgoalassignment.FieldGoalID:
+		m.ResetGoalID()
+		return nil
+	case globalgoalassignment.FieldEmployeeID:
+		m.ResetEmployeeID()
+		return nil
+	case globalgoalassignment.FieldWeight:
+		m.ResetWeight()
+		return nil
+	case globalgoalassignment.FieldTargetValue:
+		m.ResetTargetValue()
+		return nil
+	case globalgoalassignment.FieldBaselineValue:
+		m.ResetBaselineValue()
+		return nil
+	}
+	return fmt.Errorf("unknown GlobalGoalAssignment field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *GlobalGoalAssignmentMutation) AddedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.goal != nil {
+		edges = append(edges, globalgoalassignment.EdgeGoal)
+	}
+	if m.employee != nil {
+		edges = append(edges, globalgoalassignment.EdgeEmployee)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *GlobalGoalAssignmentMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case globalgoalassignment.EdgeGoal:
+		if id := m.goal; id != nil {
+			return []ent.Value{*id}
+		}
+	case globalgoalassignment.EdgeEmployee:
+		if id := m.employee; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *GlobalGoalAssignmentMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 2)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *GlobalGoalAssignmentMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *GlobalGoalAssignmentMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.clearedgoal {
+		edges = append(edges, globalgoalassignment.EdgeGoal)
+	}
+	if m.clearedemployee {
+		edges = append(edges, globalgoalassignment.EdgeEmployee)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *GlobalGoalAssignmentMutation) EdgeCleared(name string) bool {
+	switch name {
+	case globalgoalassignment.EdgeGoal:
+		return m.clearedgoal
+	case globalgoalassignment.EdgeEmployee:
+		return m.clearedemployee
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *GlobalGoalAssignmentMutation) ClearEdge(name string) error {
+	switch name {
+	case globalgoalassignment.EdgeGoal:
+		m.ClearGoal()
+		return nil
+	case globalgoalassignment.EdgeEmployee:
+		m.ClearEmployee()
+		return nil
+	}
+	return fmt.Errorf("unknown GlobalGoalAssignment unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *GlobalGoalAssignmentMutation) ResetEdge(name string) error {
+	switch name {
+	case globalgoalassignment.EdgeGoal:
+		m.ResetGoal()
+		return nil
+	case globalgoalassignment.EdgeEmployee:
+		m.ResetEmployee()
+		return nil
+	}
+	return fmt.Errorf("unknown GlobalGoalAssignment edge %s", name)
+}
+
+// GlobalGoalRuleMutation represents an operation that mutates the GlobalGoalRule nodes in the graph.
+type GlobalGoalRuleMutation struct {
+	config
+	op                    Op
+	typ                   string
+	id                    *uuid.UUID
+	created_at            *time.Time
+	updated_at            *time.Time
+	rule_type             *globalgoalrule.RuleType
+	min_direct_reports    *int
+	addmin_direct_reports *int
+	default_weight        *float64
+	adddefault_weight     *float64
+	clearedFields         map[string]struct{}
+	goal                  *uuid.UUID
+	clearedgoal           bool
+	department            *uuid.UUID
+	cleareddepartment     bool
+	done                  bool
+	oldValue              func(context.Context) (*GlobalGoalRule, error)
+	predicates            []predicate.GlobalGoalRule
+}
+
+var _ ent.Mutation = (*GlobalGoalRuleMutation)(nil)
+
+// globalgoalruleOption allows management of the mutation configuration using functional options.
+type globalgoalruleOption func(*GlobalGoalRuleMutation)
+
+// newGlobalGoalRuleMutation creates new mutation for the GlobalGoalRule entity.
+func newGlobalGoalRuleMutation(c config, op Op, opts ...globalgoalruleOption) *GlobalGoalRuleMutation {
+	m := &GlobalGoalRuleMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeGlobalGoalRule,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withGlobalGoalRuleID sets the ID field of the mutation.
+func withGlobalGoalRuleID(id uuid.UUID) globalgoalruleOption {
+	return func(m *GlobalGoalRuleMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *GlobalGoalRule
+		)
+		m.oldValue = func(ctx context.Context) (*GlobalGoalRule, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().GlobalGoalRule.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withGlobalGoalRule sets the old GlobalGoalRule of the mutation.
+func withGlobalGoalRule(node *GlobalGoalRule) globalgoalruleOption {
+	return func(m *GlobalGoalRuleMutation) {
+		m.oldValue = func(context.Context) (*GlobalGoalRule, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m GlobalGoalRuleMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m GlobalGoalRuleMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("internal: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of GlobalGoalRule entities.
+func (m *GlobalGoalRuleMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *GlobalGoalRuleMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *GlobalGoalRuleMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().GlobalGoalRule.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *GlobalGoalRuleMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *GlobalGoalRuleMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the GlobalGoalRule entity.
+// If the GlobalGoalRule object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GlobalGoalRuleMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *GlobalGoalRuleMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *GlobalGoalRuleMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *GlobalGoalRuleMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the GlobalGoalRule entity.
+// If the GlobalGoalRule object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GlobalGoalRuleMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *GlobalGoalRuleMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetGoalID sets the "goal_id" field.
+func (m *GlobalGoalRuleMutation) SetGoalID(u uuid.UUID) {
+	m.goal = &u
+}
+
+// GoalID returns the value of the "goal_id" field in the mutation.
+func (m *GlobalGoalRuleMutation) GoalID() (r uuid.UUID, exists bool) {
+	v := m.goal
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldGoalID returns the old "goal_id" field's value of the GlobalGoalRule entity.
+// If the GlobalGoalRule object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GlobalGoalRuleMutation) OldGoalID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldGoalID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldGoalID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldGoalID: %w", err)
+	}
+	return oldValue.GoalID, nil
+}
+
+// ResetGoalID resets all changes to the "goal_id" field.
+func (m *GlobalGoalRuleMutation) ResetGoalID() {
+	m.goal = nil
+}
+
+// SetRuleType sets the "rule_type" field.
+func (m *GlobalGoalRuleMutation) SetRuleType(gt globalgoalrule.RuleType) {
+	m.rule_type = &gt
+}
+
+// RuleType returns the value of the "rule_type" field in the mutation.
+func (m *GlobalGoalRuleMutation) RuleType() (r globalgoalrule.RuleType, exists bool) {
+	v := m.rule_type
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRuleType returns the old "rule_type" field's value of the GlobalGoalRule entity.
+// If the GlobalGoalRule object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GlobalGoalRuleMutation) OldRuleType(ctx context.Context) (v globalgoalrule.RuleType, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRuleType is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRuleType requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRuleType: %w", err)
+	}
+	return oldValue.RuleType, nil
+}
+
+// ResetRuleType resets all changes to the "rule_type" field.
+func (m *GlobalGoalRuleMutation) ResetRuleType() {
+	m.rule_type = nil
+}
+
+// SetDepartmentID sets the "department_id" field.
+func (m *GlobalGoalRuleMutation) SetDepartmentID(u uuid.UUID) {
+	m.department = &u
+}
+
+// DepartmentID returns the value of the "department_id" field in the mutation.
+func (m *GlobalGoalRuleMutation) DepartmentID() (r uuid.UUID, exists bool) {
+	v := m.department
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDepartmentID returns the old "department_id" field's value of the GlobalGoalRule entity.
+// If the GlobalGoalRule object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GlobalGoalRuleMutation) OldDepartmentID(ctx context.Context) (v *uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDepartmentID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDepartmentID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDepartmentID: %w", err)
+	}
+	return oldValue.DepartmentID, nil
+}
+
+// ClearDepartmentID clears the value of the "department_id" field.
+func (m *GlobalGoalRuleMutation) ClearDepartmentID() {
+	m.department = nil
+	m.clearedFields[globalgoalrule.FieldDepartmentID] = struct{}{}
+}
+
+// DepartmentIDCleared returns if the "department_id" field was cleared in this mutation.
+func (m *GlobalGoalRuleMutation) DepartmentIDCleared() bool {
+	_, ok := m.clearedFields[globalgoalrule.FieldDepartmentID]
+	return ok
+}
+
+// ResetDepartmentID resets all changes to the "department_id" field.
+func (m *GlobalGoalRuleMutation) ResetDepartmentID() {
+	m.department = nil
+	delete(m.clearedFields, globalgoalrule.FieldDepartmentID)
+}
+
+// SetMinDirectReports sets the "min_direct_reports" field.
+func (m *GlobalGoalRuleMutation) SetMinDirectReports(i int) {
+	m.min_direct_reports = &i
+	m.addmin_direct_reports = nil
+}
+
+// MinDirectReports returns the value of the "min_direct_reports" field in the mutation.
+func (m *GlobalGoalRuleMutation) MinDirectReports() (r int, exists bool) {
+	v := m.min_direct_reports
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMinDirectReports returns the old "min_direct_reports" field's value of the GlobalGoalRule entity.
+// If the GlobalGoalRule object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GlobalGoalRuleMutation) OldMinDirectReports(ctx context.Context) (v *int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMinDirectReports is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMinDirectReports requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMinDirectReports: %w", err)
+	}
+	return oldValue.MinDirectReports, nil
+}
+
+// AddMinDirectReports adds i to the "min_direct_reports" field.
+func (m *GlobalGoalRuleMutation) AddMinDirectReports(i int) {
+	if m.addmin_direct_reports != nil {
+		*m.addmin_direct_reports += i
+	} else {
+		m.addmin_direct_reports = &i
+	}
+}
+
+// AddedMinDirectReports returns the value that was added to the "min_direct_reports" field in this mutation.
+func (m *GlobalGoalRuleMutation) AddedMinDirectReports() (r int, exists bool) {
+	v := m.addmin_direct_reports
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearMinDirectReports clears the value of the "min_direct_reports" field.
+func (m *GlobalGoalRuleMutation) ClearMinDirectReports() {
+	m.min_direct_reports = nil
+	m.addmin_direct_reports = nil
+	m.clearedFields[globalgoalrule.FieldMinDirectReports] = struct{}{}
+}
+
+// MinDirectReportsCleared returns if the "min_direct_reports" field was cleared in this mutation.
+func (m *GlobalGoalRuleMutation) MinDirectReportsCleared() bool {
+	_, ok := m.clearedFields[globalgoalrule.FieldMinDirectReports]
+	return ok
+}
+
+// ResetMinDirectReports resets all changes to the "min_direct_reports" field.
+func (m *GlobalGoalRuleMutation) ResetMinDirectReports() {
+	m.min_direct_reports = nil
+	m.addmin_direct_reports = nil
+	delete(m.clearedFields, globalgoalrule.FieldMinDirectReports)
+}
+
+// SetDefaultWeight sets the "default_weight" field.
+func (m *GlobalGoalRuleMutation) SetDefaultWeight(f float64) {
+	m.default_weight = &f
+	m.adddefault_weight = nil
+}
+
+// DefaultWeight returns the value of the "default_weight" field in the mutation.
+func (m *GlobalGoalRuleMutation) DefaultWeight() (r float64, exists bool) {
+	v := m.default_weight
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDefaultWeight returns the old "default_weight" field's value of the GlobalGoalRule entity.
+// If the GlobalGoalRule object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GlobalGoalRuleMutation) OldDefaultWeight(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDefaultWeight is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDefaultWeight requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDefaultWeight: %w", err)
+	}
+	return oldValue.DefaultWeight, nil
+}
+
+// AddDefaultWeight adds f to the "default_weight" field.
+func (m *GlobalGoalRuleMutation) AddDefaultWeight(f float64) {
+	if m.adddefault_weight != nil {
+		*m.adddefault_weight += f
+	} else {
+		m.adddefault_weight = &f
+	}
+}
+
+// AddedDefaultWeight returns the value that was added to the "default_weight" field in this mutation.
+func (m *GlobalGoalRuleMutation) AddedDefaultWeight() (r float64, exists bool) {
+	v := m.adddefault_weight
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetDefaultWeight resets all changes to the "default_weight" field.
+func (m *GlobalGoalRuleMutation) ResetDefaultWeight() {
+	m.default_weight = nil
+	m.adddefault_weight = nil
+}
+
+// ClearGoal clears the "goal" edge to the Goal entity.
+func (m *GlobalGoalRuleMutation) ClearGoal() {
+	m.clearedgoal = true
+	m.clearedFields[globalgoalrule.FieldGoalID] = struct{}{}
+}
+
+// GoalCleared reports if the "goal" edge to the Goal entity was cleared.
+func (m *GlobalGoalRuleMutation) GoalCleared() bool {
+	return m.clearedgoal
+}
+
+// GoalIDs returns the "goal" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// GoalID instead. It exists only for internal usage by the builders.
+func (m *GlobalGoalRuleMutation) GoalIDs() (ids []uuid.UUID) {
+	if id := m.goal; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetGoal resets all changes to the "goal" edge.
+func (m *GlobalGoalRuleMutation) ResetGoal() {
+	m.goal = nil
+	m.clearedgoal = false
+}
+
+// ClearDepartment clears the "department" edge to the OrgNode entity.
+func (m *GlobalGoalRuleMutation) ClearDepartment() {
+	m.cleareddepartment = true
+	m.clearedFields[globalgoalrule.FieldDepartmentID] = struct{}{}
+}
+
+// DepartmentCleared reports if the "department" edge to the OrgNode entity was cleared.
+func (m *GlobalGoalRuleMutation) DepartmentCleared() bool {
+	return m.DepartmentIDCleared() || m.cleareddepartment
+}
+
+// DepartmentIDs returns the "department" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// DepartmentID instead. It exists only for internal usage by the builders.
+func (m *GlobalGoalRuleMutation) DepartmentIDs() (ids []uuid.UUID) {
+	if id := m.department; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetDepartment resets all changes to the "department" edge.
+func (m *GlobalGoalRuleMutation) ResetDepartment() {
+	m.department = nil
+	m.cleareddepartment = false
+}
+
+// Where appends a list predicates to the GlobalGoalRuleMutation builder.
+func (m *GlobalGoalRuleMutation) Where(ps ...predicate.GlobalGoalRule) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the GlobalGoalRuleMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *GlobalGoalRuleMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.GlobalGoalRule, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *GlobalGoalRuleMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *GlobalGoalRuleMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (GlobalGoalRule).
+func (m *GlobalGoalRuleMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *GlobalGoalRuleMutation) Fields() []string {
+	fields := make([]string, 0, 7)
+	if m.created_at != nil {
+		fields = append(fields, globalgoalrule.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, globalgoalrule.FieldUpdatedAt)
+	}
+	if m.goal != nil {
+		fields = append(fields, globalgoalrule.FieldGoalID)
+	}
+	if m.rule_type != nil {
+		fields = append(fields, globalgoalrule.FieldRuleType)
+	}
+	if m.department != nil {
+		fields = append(fields, globalgoalrule.FieldDepartmentID)
+	}
+	if m.min_direct_reports != nil {
+		fields = append(fields, globalgoalrule.FieldMinDirectReports)
+	}
+	if m.default_weight != nil {
+		fields = append(fields, globalgoalrule.FieldDefaultWeight)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *GlobalGoalRuleMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case globalgoalrule.FieldCreatedAt:
+		return m.CreatedAt()
+	case globalgoalrule.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case globalgoalrule.FieldGoalID:
+		return m.GoalID()
+	case globalgoalrule.FieldRuleType:
+		return m.RuleType()
+	case globalgoalrule.FieldDepartmentID:
+		return m.DepartmentID()
+	case globalgoalrule.FieldMinDirectReports:
+		return m.MinDirectReports()
+	case globalgoalrule.FieldDefaultWeight:
+		return m.DefaultWeight()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *GlobalGoalRuleMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case globalgoalrule.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case globalgoalrule.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case globalgoalrule.FieldGoalID:
+		return m.OldGoalID(ctx)
+	case globalgoalrule.FieldRuleType:
+		return m.OldRuleType(ctx)
+	case globalgoalrule.FieldDepartmentID:
+		return m.OldDepartmentID(ctx)
+	case globalgoalrule.FieldMinDirectReports:
+		return m.OldMinDirectReports(ctx)
+	case globalgoalrule.FieldDefaultWeight:
+		return m.OldDefaultWeight(ctx)
+	}
+	return nil, fmt.Errorf("unknown GlobalGoalRule field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *GlobalGoalRuleMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case globalgoalrule.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case globalgoalrule.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case globalgoalrule.FieldGoalID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetGoalID(v)
+		return nil
+	case globalgoalrule.FieldRuleType:
+		v, ok := value.(globalgoalrule.RuleType)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRuleType(v)
+		return nil
+	case globalgoalrule.FieldDepartmentID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDepartmentID(v)
+		return nil
+	case globalgoalrule.FieldMinDirectReports:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMinDirectReports(v)
+		return nil
+	case globalgoalrule.FieldDefaultWeight:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDefaultWeight(v)
+		return nil
+	}
+	return fmt.Errorf("unknown GlobalGoalRule field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *GlobalGoalRuleMutation) AddedFields() []string {
+	var fields []string
+	if m.addmin_direct_reports != nil {
+		fields = append(fields, globalgoalrule.FieldMinDirectReports)
+	}
+	if m.adddefault_weight != nil {
+		fields = append(fields, globalgoalrule.FieldDefaultWeight)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *GlobalGoalRuleMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case globalgoalrule.FieldMinDirectReports:
+		return m.AddedMinDirectReports()
+	case globalgoalrule.FieldDefaultWeight:
+		return m.AddedDefaultWeight()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *GlobalGoalRuleMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case globalgoalrule.FieldMinDirectReports:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddMinDirectReports(v)
+		return nil
+	case globalgoalrule.FieldDefaultWeight:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddDefaultWeight(v)
+		return nil
+	}
+	return fmt.Errorf("unknown GlobalGoalRule numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *GlobalGoalRuleMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(globalgoalrule.FieldDepartmentID) {
+		fields = append(fields, globalgoalrule.FieldDepartmentID)
+	}
+	if m.FieldCleared(globalgoalrule.FieldMinDirectReports) {
+		fields = append(fields, globalgoalrule.FieldMinDirectReports)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *GlobalGoalRuleMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *GlobalGoalRuleMutation) ClearField(name string) error {
+	switch name {
+	case globalgoalrule.FieldDepartmentID:
+		m.ClearDepartmentID()
+		return nil
+	case globalgoalrule.FieldMinDirectReports:
+		m.ClearMinDirectReports()
+		return nil
+	}
+	return fmt.Errorf("unknown GlobalGoalRule nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *GlobalGoalRuleMutation) ResetField(name string) error {
+	switch name {
+	case globalgoalrule.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case globalgoalrule.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case globalgoalrule.FieldGoalID:
+		m.ResetGoalID()
+		return nil
+	case globalgoalrule.FieldRuleType:
+		m.ResetRuleType()
+		return nil
+	case globalgoalrule.FieldDepartmentID:
+		m.ResetDepartmentID()
+		return nil
+	case globalgoalrule.FieldMinDirectReports:
+		m.ResetMinDirectReports()
+		return nil
+	case globalgoalrule.FieldDefaultWeight:
+		m.ResetDefaultWeight()
+		return nil
+	}
+	return fmt.Errorf("unknown GlobalGoalRule field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *GlobalGoalRuleMutation) AddedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.goal != nil {
+		edges = append(edges, globalgoalrule.EdgeGoal)
+	}
+	if m.department != nil {
+		edges = append(edges, globalgoalrule.EdgeDepartment)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *GlobalGoalRuleMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case globalgoalrule.EdgeGoal:
+		if id := m.goal; id != nil {
+			return []ent.Value{*id}
+		}
+	case globalgoalrule.EdgeDepartment:
+		if id := m.department; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *GlobalGoalRuleMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 2)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *GlobalGoalRuleMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *GlobalGoalRuleMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.clearedgoal {
+		edges = append(edges, globalgoalrule.EdgeGoal)
+	}
+	if m.cleareddepartment {
+		edges = append(edges, globalgoalrule.EdgeDepartment)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *GlobalGoalRuleMutation) EdgeCleared(name string) bool {
+	switch name {
+	case globalgoalrule.EdgeGoal:
+		return m.clearedgoal
+	case globalgoalrule.EdgeDepartment:
+		return m.cleareddepartment
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *GlobalGoalRuleMutation) ClearEdge(name string) error {
+	switch name {
+	case globalgoalrule.EdgeGoal:
+		m.ClearGoal()
+		return nil
+	case globalgoalrule.EdgeDepartment:
+		m.ClearDepartment()
+		return nil
+	}
+	return fmt.Errorf("unknown GlobalGoalRule unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *GlobalGoalRuleMutation) ResetEdge(name string) error {
+	switch name {
+	case globalgoalrule.EdgeGoal:
+		m.ResetGoal()
+		return nil
+	case globalgoalrule.EdgeDepartment:
+		m.ResetDepartment()
+		return nil
+	}
+	return fmt.Errorf("unknown GlobalGoalRule edge %s", name)
+}
+
 // GoalMutation represents an operation that mutates the Goal nodes in the graph.
 type GoalMutation struct {
 	config
-	op                      Op
-	typ                     string
-	id                      *uuid.UUID
-	created_at              *time.Time
-	updated_at              *time.Time
-	created_by              *uuid.UUID
-	updated_by              *uuid.UUID
-	version                 *int
-	addversion              *int
-	name                    *string
-	description             *string
-	unit                    *goal.Unit
-	weight                  *float64
-	addweight               *float64
-	target_value            *float64
-	addtarget_value         *float64
-	current_value           *float64
-	addcurrent_value        *float64
-	direction               *goal.Direction
-	baseline_value          *float64
-	addbaseline_value       *float64
-	state                   *goal.State
-	clearedFields           map[string]struct{}
-	category                *uuid.UUID
-	clearedcategory         bool
-	kpi_links               map[int]struct{}
-	removedkpi_links        map[int]struct{}
-	clearedkpi_links        bool
-	evaluation_goals        map[uuid.UUID]struct{}
-	removedevaluation_goals map[uuid.UUID]struct{}
-	clearedevaluation_goals bool
-	done                    bool
-	oldValue                func(context.Context) (*Goal, error)
-	predicates              []predicate.Goal
+	op                        Op
+	typ                       string
+	id                        *uuid.UUID
+	created_at                *time.Time
+	updated_at                *time.Time
+	created_by                *uuid.UUID
+	updated_by                *uuid.UUID
+	version                   *int
+	addversion                *int
+	name                      *string
+	description               *string
+	unit                      *goal.Unit
+	weight                    *float64
+	addweight                 *float64
+	target_value              *float64
+	addtarget_value           *float64
+	current_value             *float64
+	addcurrent_value          *float64
+	direction                 *goal.Direction
+	baseline_value            *float64
+	addbaseline_value         *float64
+	state                     *goal.State
+	_type                     *goal.Type
+	goal_kind                 *goal.GoalKind
+	clearedFields             map[string]struct{}
+	category                  *uuid.UUID
+	clearedcategory           bool
+	kpi_links                 map[int]struct{}
+	removedkpi_links          map[int]struct{}
+	clearedkpi_links          bool
+	evaluation_goals          map[uuid.UUID]struct{}
+	removedevaluation_goals   map[uuid.UUID]struct{}
+	clearedevaluation_goals   bool
+	global_assignments        map[uuid.UUID]struct{}
+	removedglobal_assignments map[uuid.UUID]struct{}
+	clearedglobal_assignments bool
+	global_rules              map[uuid.UUID]struct{}
+	removedglobal_rules       map[uuid.UUID]struct{}
+	clearedglobal_rules       bool
+	shared_group              map[uuid.UUID]struct{}
+	removedshared_group       map[uuid.UUID]struct{}
+	clearedshared_group       bool
+	done                      bool
+	oldValue                  func(context.Context) (*Goal, error)
+	predicates                []predicate.Goal
 }
 
 var _ ent.Mutation = (*GoalMutation)(nil)
@@ -10826,6 +12929,91 @@ func (m *GoalMutation) ResetCategoryID() {
 	m.category = nil
 }
 
+// SetType sets the "type" field.
+func (m *GoalMutation) SetType(_go goal.Type) {
+	m._type = &_go
+}
+
+// GetType returns the value of the "type" field in the mutation.
+func (m *GoalMutation) GetType() (r goal.Type, exists bool) {
+	v := m._type
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldType returns the old "type" field's value of the Goal entity.
+// If the Goal object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GoalMutation) OldType(ctx context.Context) (v goal.Type, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldType is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldType requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldType: %w", err)
+	}
+	return oldValue.Type, nil
+}
+
+// ResetType resets all changes to the "type" field.
+func (m *GoalMutation) ResetType() {
+	m._type = nil
+}
+
+// SetGoalKind sets the "goal_kind" field.
+func (m *GoalMutation) SetGoalKind(gk goal.GoalKind) {
+	m.goal_kind = &gk
+}
+
+// GoalKind returns the value of the "goal_kind" field in the mutation.
+func (m *GoalMutation) GoalKind() (r goal.GoalKind, exists bool) {
+	v := m.goal_kind
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldGoalKind returns the old "goal_kind" field's value of the Goal entity.
+// If the Goal object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GoalMutation) OldGoalKind(ctx context.Context) (v *goal.GoalKind, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldGoalKind is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldGoalKind requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldGoalKind: %w", err)
+	}
+	return oldValue.GoalKind, nil
+}
+
+// ClearGoalKind clears the value of the "goal_kind" field.
+func (m *GoalMutation) ClearGoalKind() {
+	m.goal_kind = nil
+	m.clearedFields[goal.FieldGoalKind] = struct{}{}
+}
+
+// GoalKindCleared returns if the "goal_kind" field was cleared in this mutation.
+func (m *GoalMutation) GoalKindCleared() bool {
+	_, ok := m.clearedFields[goal.FieldGoalKind]
+	return ok
+}
+
+// ResetGoalKind resets all changes to the "goal_kind" field.
+func (m *GoalMutation) ResetGoalKind() {
+	m.goal_kind = nil
+	delete(m.clearedFields, goal.FieldGoalKind)
+}
+
 // ClearCategory clears the "category" edge to the GoalCategory entity.
 func (m *GoalMutation) ClearCategory() {
 	m.clearedcategory = true
@@ -10961,6 +13149,168 @@ func (m *GoalMutation) ResetEvaluationGoals() {
 	m.removedevaluation_goals = nil
 }
 
+// AddGlobalAssignmentIDs adds the "global_assignments" edge to the GlobalGoalAssignment entity by ids.
+func (m *GoalMutation) AddGlobalAssignmentIDs(ids ...uuid.UUID) {
+	if m.global_assignments == nil {
+		m.global_assignments = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.global_assignments[ids[i]] = struct{}{}
+	}
+}
+
+// ClearGlobalAssignments clears the "global_assignments" edge to the GlobalGoalAssignment entity.
+func (m *GoalMutation) ClearGlobalAssignments() {
+	m.clearedglobal_assignments = true
+}
+
+// GlobalAssignmentsCleared reports if the "global_assignments" edge to the GlobalGoalAssignment entity was cleared.
+func (m *GoalMutation) GlobalAssignmentsCleared() bool {
+	return m.clearedglobal_assignments
+}
+
+// RemoveGlobalAssignmentIDs removes the "global_assignments" edge to the GlobalGoalAssignment entity by IDs.
+func (m *GoalMutation) RemoveGlobalAssignmentIDs(ids ...uuid.UUID) {
+	if m.removedglobal_assignments == nil {
+		m.removedglobal_assignments = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.global_assignments, ids[i])
+		m.removedglobal_assignments[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedGlobalAssignments returns the removed IDs of the "global_assignments" edge to the GlobalGoalAssignment entity.
+func (m *GoalMutation) RemovedGlobalAssignmentsIDs() (ids []uuid.UUID) {
+	for id := range m.removedglobal_assignments {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// GlobalAssignmentsIDs returns the "global_assignments" edge IDs in the mutation.
+func (m *GoalMutation) GlobalAssignmentsIDs() (ids []uuid.UUID) {
+	for id := range m.global_assignments {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetGlobalAssignments resets all changes to the "global_assignments" edge.
+func (m *GoalMutation) ResetGlobalAssignments() {
+	m.global_assignments = nil
+	m.clearedglobal_assignments = false
+	m.removedglobal_assignments = nil
+}
+
+// AddGlobalRuleIDs adds the "global_rules" edge to the GlobalGoalRule entity by ids.
+func (m *GoalMutation) AddGlobalRuleIDs(ids ...uuid.UUID) {
+	if m.global_rules == nil {
+		m.global_rules = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.global_rules[ids[i]] = struct{}{}
+	}
+}
+
+// ClearGlobalRules clears the "global_rules" edge to the GlobalGoalRule entity.
+func (m *GoalMutation) ClearGlobalRules() {
+	m.clearedglobal_rules = true
+}
+
+// GlobalRulesCleared reports if the "global_rules" edge to the GlobalGoalRule entity was cleared.
+func (m *GoalMutation) GlobalRulesCleared() bool {
+	return m.clearedglobal_rules
+}
+
+// RemoveGlobalRuleIDs removes the "global_rules" edge to the GlobalGoalRule entity by IDs.
+func (m *GoalMutation) RemoveGlobalRuleIDs(ids ...uuid.UUID) {
+	if m.removedglobal_rules == nil {
+		m.removedglobal_rules = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.global_rules, ids[i])
+		m.removedglobal_rules[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedGlobalRules returns the removed IDs of the "global_rules" edge to the GlobalGoalRule entity.
+func (m *GoalMutation) RemovedGlobalRulesIDs() (ids []uuid.UUID) {
+	for id := range m.removedglobal_rules {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// GlobalRulesIDs returns the "global_rules" edge IDs in the mutation.
+func (m *GoalMutation) GlobalRulesIDs() (ids []uuid.UUID) {
+	for id := range m.global_rules {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetGlobalRules resets all changes to the "global_rules" edge.
+func (m *GoalMutation) ResetGlobalRules() {
+	m.global_rules = nil
+	m.clearedglobal_rules = false
+	m.removedglobal_rules = nil
+}
+
+// AddSharedGroupIDs adds the "shared_group" edge to the SharedGoalGroup entity by ids.
+func (m *GoalMutation) AddSharedGroupIDs(ids ...uuid.UUID) {
+	if m.shared_group == nil {
+		m.shared_group = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.shared_group[ids[i]] = struct{}{}
+	}
+}
+
+// ClearSharedGroup clears the "shared_group" edge to the SharedGoalGroup entity.
+func (m *GoalMutation) ClearSharedGroup() {
+	m.clearedshared_group = true
+}
+
+// SharedGroupCleared reports if the "shared_group" edge to the SharedGoalGroup entity was cleared.
+func (m *GoalMutation) SharedGroupCleared() bool {
+	return m.clearedshared_group
+}
+
+// RemoveSharedGroupIDs removes the "shared_group" edge to the SharedGoalGroup entity by IDs.
+func (m *GoalMutation) RemoveSharedGroupIDs(ids ...uuid.UUID) {
+	if m.removedshared_group == nil {
+		m.removedshared_group = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.shared_group, ids[i])
+		m.removedshared_group[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedSharedGroup returns the removed IDs of the "shared_group" edge to the SharedGoalGroup entity.
+func (m *GoalMutation) RemovedSharedGroupIDs() (ids []uuid.UUID) {
+	for id := range m.removedshared_group {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// SharedGroupIDs returns the "shared_group" edge IDs in the mutation.
+func (m *GoalMutation) SharedGroupIDs() (ids []uuid.UUID) {
+	for id := range m.shared_group {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetSharedGroup resets all changes to the "shared_group" edge.
+func (m *GoalMutation) ResetSharedGroup() {
+	m.shared_group = nil
+	m.clearedshared_group = false
+	m.removedshared_group = nil
+}
+
 // Where appends a list predicates to the GoalMutation builder.
 func (m *GoalMutation) Where(ps ...predicate.Goal) {
 	m.predicates = append(m.predicates, ps...)
@@ -10995,7 +13345,7 @@ func (m *GoalMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *GoalMutation) Fields() []string {
-	fields := make([]string, 0, 15)
+	fields := make([]string, 0, 17)
 	if m.created_at != nil {
 		fields = append(fields, goal.FieldCreatedAt)
 	}
@@ -11041,6 +13391,12 @@ func (m *GoalMutation) Fields() []string {
 	if m.category != nil {
 		fields = append(fields, goal.FieldCategoryID)
 	}
+	if m._type != nil {
+		fields = append(fields, goal.FieldType)
+	}
+	if m.goal_kind != nil {
+		fields = append(fields, goal.FieldGoalKind)
+	}
 	return fields
 }
 
@@ -11079,6 +13435,10 @@ func (m *GoalMutation) Field(name string) (ent.Value, bool) {
 		return m.State()
 	case goal.FieldCategoryID:
 		return m.CategoryID()
+	case goal.FieldType:
+		return m.GetType()
+	case goal.FieldGoalKind:
+		return m.GoalKind()
 	}
 	return nil, false
 }
@@ -11118,6 +13478,10 @@ func (m *GoalMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldState(ctx)
 	case goal.FieldCategoryID:
 		return m.OldCategoryID(ctx)
+	case goal.FieldType:
+		return m.OldType(ctx)
+	case goal.FieldGoalKind:
+		return m.OldGoalKind(ctx)
 	}
 	return nil, fmt.Errorf("unknown Goal field %s", name)
 }
@@ -11232,6 +13596,20 @@ func (m *GoalMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetCategoryID(v)
 		return nil
+	case goal.FieldType:
+		v, ok := value.(goal.Type)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetType(v)
+		return nil
+	case goal.FieldGoalKind:
+		v, ok := value.(goal.GoalKind)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetGoalKind(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Goal field %s", name)
 }
@@ -11331,6 +13709,9 @@ func (m *GoalMutation) ClearedFields() []string {
 	if m.FieldCleared(goal.FieldBaselineValue) {
 		fields = append(fields, goal.FieldBaselineValue)
 	}
+	if m.FieldCleared(goal.FieldGoalKind) {
+		fields = append(fields, goal.FieldGoalKind)
+	}
 	return fields
 }
 
@@ -11350,6 +13731,9 @@ func (m *GoalMutation) ClearField(name string) error {
 		return nil
 	case goal.FieldBaselineValue:
 		m.ClearBaselineValue()
+		return nil
+	case goal.FieldGoalKind:
+		m.ClearGoalKind()
 		return nil
 	}
 	return fmt.Errorf("unknown Goal nullable field %s", name)
@@ -11404,13 +13788,19 @@ func (m *GoalMutation) ResetField(name string) error {
 	case goal.FieldCategoryID:
 		m.ResetCategoryID()
 		return nil
+	case goal.FieldType:
+		m.ResetType()
+		return nil
+	case goal.FieldGoalKind:
+		m.ResetGoalKind()
+		return nil
 	}
 	return fmt.Errorf("unknown Goal field %s", name)
 }
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *GoalMutation) AddedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 6)
 	if m.category != nil {
 		edges = append(edges, goal.EdgeCategory)
 	}
@@ -11419,6 +13809,15 @@ func (m *GoalMutation) AddedEdges() []string {
 	}
 	if m.evaluation_goals != nil {
 		edges = append(edges, goal.EdgeEvaluationGoals)
+	}
+	if m.global_assignments != nil {
+		edges = append(edges, goal.EdgeGlobalAssignments)
+	}
+	if m.global_rules != nil {
+		edges = append(edges, goal.EdgeGlobalRules)
+	}
+	if m.shared_group != nil {
+		edges = append(edges, goal.EdgeSharedGroup)
 	}
 	return edges
 }
@@ -11443,18 +13842,45 @@ func (m *GoalMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case goal.EdgeGlobalAssignments:
+		ids := make([]ent.Value, 0, len(m.global_assignments))
+		for id := range m.global_assignments {
+			ids = append(ids, id)
+		}
+		return ids
+	case goal.EdgeGlobalRules:
+		ids := make([]ent.Value, 0, len(m.global_rules))
+		for id := range m.global_rules {
+			ids = append(ids, id)
+		}
+		return ids
+	case goal.EdgeSharedGroup:
+		ids := make([]ent.Value, 0, len(m.shared_group))
+		for id := range m.shared_group {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *GoalMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 6)
 	if m.removedkpi_links != nil {
 		edges = append(edges, goal.EdgeKpiLinks)
 	}
 	if m.removedevaluation_goals != nil {
 		edges = append(edges, goal.EdgeEvaluationGoals)
+	}
+	if m.removedglobal_assignments != nil {
+		edges = append(edges, goal.EdgeGlobalAssignments)
+	}
+	if m.removedglobal_rules != nil {
+		edges = append(edges, goal.EdgeGlobalRules)
+	}
+	if m.removedshared_group != nil {
+		edges = append(edges, goal.EdgeSharedGroup)
 	}
 	return edges
 }
@@ -11475,13 +13901,31 @@ func (m *GoalMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case goal.EdgeGlobalAssignments:
+		ids := make([]ent.Value, 0, len(m.removedglobal_assignments))
+		for id := range m.removedglobal_assignments {
+			ids = append(ids, id)
+		}
+		return ids
+	case goal.EdgeGlobalRules:
+		ids := make([]ent.Value, 0, len(m.removedglobal_rules))
+		for id := range m.removedglobal_rules {
+			ids = append(ids, id)
+		}
+		return ids
+	case goal.EdgeSharedGroup:
+		ids := make([]ent.Value, 0, len(m.removedshared_group))
+		for id := range m.removedshared_group {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *GoalMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 6)
 	if m.clearedcategory {
 		edges = append(edges, goal.EdgeCategory)
 	}
@@ -11490,6 +13934,15 @@ func (m *GoalMutation) ClearedEdges() []string {
 	}
 	if m.clearedevaluation_goals {
 		edges = append(edges, goal.EdgeEvaluationGoals)
+	}
+	if m.clearedglobal_assignments {
+		edges = append(edges, goal.EdgeGlobalAssignments)
+	}
+	if m.clearedglobal_rules {
+		edges = append(edges, goal.EdgeGlobalRules)
+	}
+	if m.clearedshared_group {
+		edges = append(edges, goal.EdgeSharedGroup)
 	}
 	return edges
 }
@@ -11504,6 +13957,12 @@ func (m *GoalMutation) EdgeCleared(name string) bool {
 		return m.clearedkpi_links
 	case goal.EdgeEvaluationGoals:
 		return m.clearedevaluation_goals
+	case goal.EdgeGlobalAssignments:
+		return m.clearedglobal_assignments
+	case goal.EdgeGlobalRules:
+		return m.clearedglobal_rules
+	case goal.EdgeSharedGroup:
+		return m.clearedshared_group
 	}
 	return false
 }
@@ -11531,6 +13990,15 @@ func (m *GoalMutation) ResetEdge(name string) error {
 		return nil
 	case goal.EdgeEvaluationGoals:
 		m.ResetEvaluationGoals()
+		return nil
+	case goal.EdgeGlobalAssignments:
+		m.ResetGlobalAssignments()
+		return nil
+	case goal.EdgeGlobalRules:
+		m.ResetGlobalRules()
+		return nil
+	case goal.EdgeSharedGroup:
+		m.ResetSharedGroup()
 		return nil
 	}
 	return fmt.Errorf("unknown Goal edge %s", name)
@@ -13690,31 +16158,1710 @@ func (m *GoalKpiLinkMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown GoalKpiLink edge %s", name)
 }
 
+// GoalTemplateMutation represents an operation that mutates the GoalTemplate nodes in the graph.
+type GoalTemplateMutation struct {
+	config
+	op               Op
+	typ              string
+	id               *uuid.UUID
+	created_at       *time.Time
+	updated_at       *time.Time
+	updated_by       *uuid.UUID
+	name             *string
+	description      *string
+	unit             *goaltemplate.Unit
+	direction        *goaltemplate.Direction
+	target_value     *float64
+	addtarget_value  *float64
+	goal_kind        *goaltemplate.GoalKind
+	is_public        *bool
+	clearedFields    map[string]struct{}
+	creator          *uuid.UUID
+	clearedcreator   bool
+	kpi_links        map[uuid.UUID]struct{}
+	removedkpi_links map[uuid.UUID]struct{}
+	clearedkpi_links bool
+	done             bool
+	oldValue         func(context.Context) (*GoalTemplate, error)
+	predicates       []predicate.GoalTemplate
+}
+
+var _ ent.Mutation = (*GoalTemplateMutation)(nil)
+
+// goaltemplateOption allows management of the mutation configuration using functional options.
+type goaltemplateOption func(*GoalTemplateMutation)
+
+// newGoalTemplateMutation creates new mutation for the GoalTemplate entity.
+func newGoalTemplateMutation(c config, op Op, opts ...goaltemplateOption) *GoalTemplateMutation {
+	m := &GoalTemplateMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeGoalTemplate,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withGoalTemplateID sets the ID field of the mutation.
+func withGoalTemplateID(id uuid.UUID) goaltemplateOption {
+	return func(m *GoalTemplateMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *GoalTemplate
+		)
+		m.oldValue = func(ctx context.Context) (*GoalTemplate, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().GoalTemplate.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withGoalTemplate sets the old GoalTemplate of the mutation.
+func withGoalTemplate(node *GoalTemplate) goaltemplateOption {
+	return func(m *GoalTemplateMutation) {
+		m.oldValue = func(context.Context) (*GoalTemplate, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m GoalTemplateMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m GoalTemplateMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("internal: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of GoalTemplate entities.
+func (m *GoalTemplateMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *GoalTemplateMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *GoalTemplateMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().GoalTemplate.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *GoalTemplateMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *GoalTemplateMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the GoalTemplate entity.
+// If the GoalTemplate object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GoalTemplateMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *GoalTemplateMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *GoalTemplateMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *GoalTemplateMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the GoalTemplate entity.
+// If the GoalTemplate object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GoalTemplateMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *GoalTemplateMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetCreatedBy sets the "created_by" field.
+func (m *GoalTemplateMutation) SetCreatedBy(u uuid.UUID) {
+	m.creator = &u
+}
+
+// CreatedBy returns the value of the "created_by" field in the mutation.
+func (m *GoalTemplateMutation) CreatedBy() (r uuid.UUID, exists bool) {
+	v := m.creator
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedBy returns the old "created_by" field's value of the GoalTemplate entity.
+// If the GoalTemplate object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GoalTemplateMutation) OldCreatedBy(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedBy is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedBy requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedBy: %w", err)
+	}
+	return oldValue.CreatedBy, nil
+}
+
+// ResetCreatedBy resets all changes to the "created_by" field.
+func (m *GoalTemplateMutation) ResetCreatedBy() {
+	m.creator = nil
+}
+
+// SetUpdatedBy sets the "updated_by" field.
+func (m *GoalTemplateMutation) SetUpdatedBy(u uuid.UUID) {
+	m.updated_by = &u
+}
+
+// UpdatedBy returns the value of the "updated_by" field in the mutation.
+func (m *GoalTemplateMutation) UpdatedBy() (r uuid.UUID, exists bool) {
+	v := m.updated_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedBy returns the old "updated_by" field's value of the GoalTemplate entity.
+// If the GoalTemplate object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GoalTemplateMutation) OldUpdatedBy(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedBy is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedBy requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedBy: %w", err)
+	}
+	return oldValue.UpdatedBy, nil
+}
+
+// ResetUpdatedBy resets all changes to the "updated_by" field.
+func (m *GoalTemplateMutation) ResetUpdatedBy() {
+	m.updated_by = nil
+}
+
+// SetName sets the "name" field.
+func (m *GoalTemplateMutation) SetName(s string) {
+	m.name = &s
+}
+
+// Name returns the value of the "name" field in the mutation.
+func (m *GoalTemplateMutation) Name() (r string, exists bool) {
+	v := m.name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldName returns the old "name" field's value of the GoalTemplate entity.
+// If the GoalTemplate object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GoalTemplateMutation) OldName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldName: %w", err)
+	}
+	return oldValue.Name, nil
+}
+
+// ResetName resets all changes to the "name" field.
+func (m *GoalTemplateMutation) ResetName() {
+	m.name = nil
+}
+
+// SetDescription sets the "description" field.
+func (m *GoalTemplateMutation) SetDescription(s string) {
+	m.description = &s
+}
+
+// Description returns the value of the "description" field in the mutation.
+func (m *GoalTemplateMutation) Description() (r string, exists bool) {
+	v := m.description
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDescription returns the old "description" field's value of the GoalTemplate entity.
+// If the GoalTemplate object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GoalTemplateMutation) OldDescription(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDescription is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDescription requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDescription: %w", err)
+	}
+	return oldValue.Description, nil
+}
+
+// ClearDescription clears the value of the "description" field.
+func (m *GoalTemplateMutation) ClearDescription() {
+	m.description = nil
+	m.clearedFields[goaltemplate.FieldDescription] = struct{}{}
+}
+
+// DescriptionCleared returns if the "description" field was cleared in this mutation.
+func (m *GoalTemplateMutation) DescriptionCleared() bool {
+	_, ok := m.clearedFields[goaltemplate.FieldDescription]
+	return ok
+}
+
+// ResetDescription resets all changes to the "description" field.
+func (m *GoalTemplateMutation) ResetDescription() {
+	m.description = nil
+	delete(m.clearedFields, goaltemplate.FieldDescription)
+}
+
+// SetUnit sets the "unit" field.
+func (m *GoalTemplateMutation) SetUnit(_go goaltemplate.Unit) {
+	m.unit = &_go
+}
+
+// Unit returns the value of the "unit" field in the mutation.
+func (m *GoalTemplateMutation) Unit() (r goaltemplate.Unit, exists bool) {
+	v := m.unit
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUnit returns the old "unit" field's value of the GoalTemplate entity.
+// If the GoalTemplate object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GoalTemplateMutation) OldUnit(ctx context.Context) (v goaltemplate.Unit, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUnit is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUnit requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUnit: %w", err)
+	}
+	return oldValue.Unit, nil
+}
+
+// ResetUnit resets all changes to the "unit" field.
+func (m *GoalTemplateMutation) ResetUnit() {
+	m.unit = nil
+}
+
+// SetDirection sets the "direction" field.
+func (m *GoalTemplateMutation) SetDirection(_go goaltemplate.Direction) {
+	m.direction = &_go
+}
+
+// Direction returns the value of the "direction" field in the mutation.
+func (m *GoalTemplateMutation) Direction() (r goaltemplate.Direction, exists bool) {
+	v := m.direction
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDirection returns the old "direction" field's value of the GoalTemplate entity.
+// If the GoalTemplate object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GoalTemplateMutation) OldDirection(ctx context.Context) (v goaltemplate.Direction, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDirection is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDirection requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDirection: %w", err)
+	}
+	return oldValue.Direction, nil
+}
+
+// ResetDirection resets all changes to the "direction" field.
+func (m *GoalTemplateMutation) ResetDirection() {
+	m.direction = nil
+}
+
+// SetTargetValue sets the "target_value" field.
+func (m *GoalTemplateMutation) SetTargetValue(f float64) {
+	m.target_value = &f
+	m.addtarget_value = nil
+}
+
+// TargetValue returns the value of the "target_value" field in the mutation.
+func (m *GoalTemplateMutation) TargetValue() (r float64, exists bool) {
+	v := m.target_value
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTargetValue returns the old "target_value" field's value of the GoalTemplate entity.
+// If the GoalTemplate object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GoalTemplateMutation) OldTargetValue(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTargetValue is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTargetValue requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTargetValue: %w", err)
+	}
+	return oldValue.TargetValue, nil
+}
+
+// AddTargetValue adds f to the "target_value" field.
+func (m *GoalTemplateMutation) AddTargetValue(f float64) {
+	if m.addtarget_value != nil {
+		*m.addtarget_value += f
+	} else {
+		m.addtarget_value = &f
+	}
+}
+
+// AddedTargetValue returns the value that was added to the "target_value" field in this mutation.
+func (m *GoalTemplateMutation) AddedTargetValue() (r float64, exists bool) {
+	v := m.addtarget_value
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetTargetValue resets all changes to the "target_value" field.
+func (m *GoalTemplateMutation) ResetTargetValue() {
+	m.target_value = nil
+	m.addtarget_value = nil
+}
+
+// SetGoalKind sets the "goal_kind" field.
+func (m *GoalTemplateMutation) SetGoalKind(gk goaltemplate.GoalKind) {
+	m.goal_kind = &gk
+}
+
+// GoalKind returns the value of the "goal_kind" field in the mutation.
+func (m *GoalTemplateMutation) GoalKind() (r goaltemplate.GoalKind, exists bool) {
+	v := m.goal_kind
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldGoalKind returns the old "goal_kind" field's value of the GoalTemplate entity.
+// If the GoalTemplate object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GoalTemplateMutation) OldGoalKind(ctx context.Context) (v goaltemplate.GoalKind, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldGoalKind is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldGoalKind requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldGoalKind: %w", err)
+	}
+	return oldValue.GoalKind, nil
+}
+
+// ResetGoalKind resets all changes to the "goal_kind" field.
+func (m *GoalTemplateMutation) ResetGoalKind() {
+	m.goal_kind = nil
+}
+
+// SetIsPublic sets the "is_public" field.
+func (m *GoalTemplateMutation) SetIsPublic(b bool) {
+	m.is_public = &b
+}
+
+// IsPublic returns the value of the "is_public" field in the mutation.
+func (m *GoalTemplateMutation) IsPublic() (r bool, exists bool) {
+	v := m.is_public
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldIsPublic returns the old "is_public" field's value of the GoalTemplate entity.
+// If the GoalTemplate object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GoalTemplateMutation) OldIsPublic(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldIsPublic is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldIsPublic requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldIsPublic: %w", err)
+	}
+	return oldValue.IsPublic, nil
+}
+
+// ResetIsPublic resets all changes to the "is_public" field.
+func (m *GoalTemplateMutation) ResetIsPublic() {
+	m.is_public = nil
+}
+
+// SetCreatorID sets the "creator" edge to the Employee entity by id.
+func (m *GoalTemplateMutation) SetCreatorID(id uuid.UUID) {
+	m.creator = &id
+}
+
+// ClearCreator clears the "creator" edge to the Employee entity.
+func (m *GoalTemplateMutation) ClearCreator() {
+	m.clearedcreator = true
+	m.clearedFields[goaltemplate.FieldCreatedBy] = struct{}{}
+}
+
+// CreatorCleared reports if the "creator" edge to the Employee entity was cleared.
+func (m *GoalTemplateMutation) CreatorCleared() bool {
+	return m.clearedcreator
+}
+
+// CreatorID returns the "creator" edge ID in the mutation.
+func (m *GoalTemplateMutation) CreatorID() (id uuid.UUID, exists bool) {
+	if m.creator != nil {
+		return *m.creator, true
+	}
+	return
+}
+
+// CreatorIDs returns the "creator" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// CreatorID instead. It exists only for internal usage by the builders.
+func (m *GoalTemplateMutation) CreatorIDs() (ids []uuid.UUID) {
+	if id := m.creator; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetCreator resets all changes to the "creator" edge.
+func (m *GoalTemplateMutation) ResetCreator() {
+	m.creator = nil
+	m.clearedcreator = false
+}
+
+// AddKpiLinkIDs adds the "kpi_links" edge to the GoalTemplateKpiLink entity by ids.
+func (m *GoalTemplateMutation) AddKpiLinkIDs(ids ...uuid.UUID) {
+	if m.kpi_links == nil {
+		m.kpi_links = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.kpi_links[ids[i]] = struct{}{}
+	}
+}
+
+// ClearKpiLinks clears the "kpi_links" edge to the GoalTemplateKpiLink entity.
+func (m *GoalTemplateMutation) ClearKpiLinks() {
+	m.clearedkpi_links = true
+}
+
+// KpiLinksCleared reports if the "kpi_links" edge to the GoalTemplateKpiLink entity was cleared.
+func (m *GoalTemplateMutation) KpiLinksCleared() bool {
+	return m.clearedkpi_links
+}
+
+// RemoveKpiLinkIDs removes the "kpi_links" edge to the GoalTemplateKpiLink entity by IDs.
+func (m *GoalTemplateMutation) RemoveKpiLinkIDs(ids ...uuid.UUID) {
+	if m.removedkpi_links == nil {
+		m.removedkpi_links = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.kpi_links, ids[i])
+		m.removedkpi_links[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedKpiLinks returns the removed IDs of the "kpi_links" edge to the GoalTemplateKpiLink entity.
+func (m *GoalTemplateMutation) RemovedKpiLinksIDs() (ids []uuid.UUID) {
+	for id := range m.removedkpi_links {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// KpiLinksIDs returns the "kpi_links" edge IDs in the mutation.
+func (m *GoalTemplateMutation) KpiLinksIDs() (ids []uuid.UUID) {
+	for id := range m.kpi_links {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetKpiLinks resets all changes to the "kpi_links" edge.
+func (m *GoalTemplateMutation) ResetKpiLinks() {
+	m.kpi_links = nil
+	m.clearedkpi_links = false
+	m.removedkpi_links = nil
+}
+
+// Where appends a list predicates to the GoalTemplateMutation builder.
+func (m *GoalTemplateMutation) Where(ps ...predicate.GoalTemplate) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the GoalTemplateMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *GoalTemplateMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.GoalTemplate, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *GoalTemplateMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *GoalTemplateMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (GoalTemplate).
+func (m *GoalTemplateMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *GoalTemplateMutation) Fields() []string {
+	fields := make([]string, 0, 11)
+	if m.created_at != nil {
+		fields = append(fields, goaltemplate.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, goaltemplate.FieldUpdatedAt)
+	}
+	if m.creator != nil {
+		fields = append(fields, goaltemplate.FieldCreatedBy)
+	}
+	if m.updated_by != nil {
+		fields = append(fields, goaltemplate.FieldUpdatedBy)
+	}
+	if m.name != nil {
+		fields = append(fields, goaltemplate.FieldName)
+	}
+	if m.description != nil {
+		fields = append(fields, goaltemplate.FieldDescription)
+	}
+	if m.unit != nil {
+		fields = append(fields, goaltemplate.FieldUnit)
+	}
+	if m.direction != nil {
+		fields = append(fields, goaltemplate.FieldDirection)
+	}
+	if m.target_value != nil {
+		fields = append(fields, goaltemplate.FieldTargetValue)
+	}
+	if m.goal_kind != nil {
+		fields = append(fields, goaltemplate.FieldGoalKind)
+	}
+	if m.is_public != nil {
+		fields = append(fields, goaltemplate.FieldIsPublic)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *GoalTemplateMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case goaltemplate.FieldCreatedAt:
+		return m.CreatedAt()
+	case goaltemplate.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case goaltemplate.FieldCreatedBy:
+		return m.CreatedBy()
+	case goaltemplate.FieldUpdatedBy:
+		return m.UpdatedBy()
+	case goaltemplate.FieldName:
+		return m.Name()
+	case goaltemplate.FieldDescription:
+		return m.Description()
+	case goaltemplate.FieldUnit:
+		return m.Unit()
+	case goaltemplate.FieldDirection:
+		return m.Direction()
+	case goaltemplate.FieldTargetValue:
+		return m.TargetValue()
+	case goaltemplate.FieldGoalKind:
+		return m.GoalKind()
+	case goaltemplate.FieldIsPublic:
+		return m.IsPublic()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *GoalTemplateMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case goaltemplate.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case goaltemplate.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case goaltemplate.FieldCreatedBy:
+		return m.OldCreatedBy(ctx)
+	case goaltemplate.FieldUpdatedBy:
+		return m.OldUpdatedBy(ctx)
+	case goaltemplate.FieldName:
+		return m.OldName(ctx)
+	case goaltemplate.FieldDescription:
+		return m.OldDescription(ctx)
+	case goaltemplate.FieldUnit:
+		return m.OldUnit(ctx)
+	case goaltemplate.FieldDirection:
+		return m.OldDirection(ctx)
+	case goaltemplate.FieldTargetValue:
+		return m.OldTargetValue(ctx)
+	case goaltemplate.FieldGoalKind:
+		return m.OldGoalKind(ctx)
+	case goaltemplate.FieldIsPublic:
+		return m.OldIsPublic(ctx)
+	}
+	return nil, fmt.Errorf("unknown GoalTemplate field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *GoalTemplateMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case goaltemplate.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case goaltemplate.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case goaltemplate.FieldCreatedBy:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedBy(v)
+		return nil
+	case goaltemplate.FieldUpdatedBy:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedBy(v)
+		return nil
+	case goaltemplate.FieldName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetName(v)
+		return nil
+	case goaltemplate.FieldDescription:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDescription(v)
+		return nil
+	case goaltemplate.FieldUnit:
+		v, ok := value.(goaltemplate.Unit)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUnit(v)
+		return nil
+	case goaltemplate.FieldDirection:
+		v, ok := value.(goaltemplate.Direction)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDirection(v)
+		return nil
+	case goaltemplate.FieldTargetValue:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTargetValue(v)
+		return nil
+	case goaltemplate.FieldGoalKind:
+		v, ok := value.(goaltemplate.GoalKind)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetGoalKind(v)
+		return nil
+	case goaltemplate.FieldIsPublic:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetIsPublic(v)
+		return nil
+	}
+	return fmt.Errorf("unknown GoalTemplate field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *GoalTemplateMutation) AddedFields() []string {
+	var fields []string
+	if m.addtarget_value != nil {
+		fields = append(fields, goaltemplate.FieldTargetValue)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *GoalTemplateMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case goaltemplate.FieldTargetValue:
+		return m.AddedTargetValue()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *GoalTemplateMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case goaltemplate.FieldTargetValue:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddTargetValue(v)
+		return nil
+	}
+	return fmt.Errorf("unknown GoalTemplate numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *GoalTemplateMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(goaltemplate.FieldDescription) {
+		fields = append(fields, goaltemplate.FieldDescription)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *GoalTemplateMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *GoalTemplateMutation) ClearField(name string) error {
+	switch name {
+	case goaltemplate.FieldDescription:
+		m.ClearDescription()
+		return nil
+	}
+	return fmt.Errorf("unknown GoalTemplate nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *GoalTemplateMutation) ResetField(name string) error {
+	switch name {
+	case goaltemplate.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case goaltemplate.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case goaltemplate.FieldCreatedBy:
+		m.ResetCreatedBy()
+		return nil
+	case goaltemplate.FieldUpdatedBy:
+		m.ResetUpdatedBy()
+		return nil
+	case goaltemplate.FieldName:
+		m.ResetName()
+		return nil
+	case goaltemplate.FieldDescription:
+		m.ResetDescription()
+		return nil
+	case goaltemplate.FieldUnit:
+		m.ResetUnit()
+		return nil
+	case goaltemplate.FieldDirection:
+		m.ResetDirection()
+		return nil
+	case goaltemplate.FieldTargetValue:
+		m.ResetTargetValue()
+		return nil
+	case goaltemplate.FieldGoalKind:
+		m.ResetGoalKind()
+		return nil
+	case goaltemplate.FieldIsPublic:
+		m.ResetIsPublic()
+		return nil
+	}
+	return fmt.Errorf("unknown GoalTemplate field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *GoalTemplateMutation) AddedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.creator != nil {
+		edges = append(edges, goaltemplate.EdgeCreator)
+	}
+	if m.kpi_links != nil {
+		edges = append(edges, goaltemplate.EdgeKpiLinks)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *GoalTemplateMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case goaltemplate.EdgeCreator:
+		if id := m.creator; id != nil {
+			return []ent.Value{*id}
+		}
+	case goaltemplate.EdgeKpiLinks:
+		ids := make([]ent.Value, 0, len(m.kpi_links))
+		for id := range m.kpi_links {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *GoalTemplateMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.removedkpi_links != nil {
+		edges = append(edges, goaltemplate.EdgeKpiLinks)
+	}
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *GoalTemplateMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case goaltemplate.EdgeKpiLinks:
+		ids := make([]ent.Value, 0, len(m.removedkpi_links))
+		for id := range m.removedkpi_links {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *GoalTemplateMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.clearedcreator {
+		edges = append(edges, goaltemplate.EdgeCreator)
+	}
+	if m.clearedkpi_links {
+		edges = append(edges, goaltemplate.EdgeKpiLinks)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *GoalTemplateMutation) EdgeCleared(name string) bool {
+	switch name {
+	case goaltemplate.EdgeCreator:
+		return m.clearedcreator
+	case goaltemplate.EdgeKpiLinks:
+		return m.clearedkpi_links
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *GoalTemplateMutation) ClearEdge(name string) error {
+	switch name {
+	case goaltemplate.EdgeCreator:
+		m.ClearCreator()
+		return nil
+	}
+	return fmt.Errorf("unknown GoalTemplate unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *GoalTemplateMutation) ResetEdge(name string) error {
+	switch name {
+	case goaltemplate.EdgeCreator:
+		m.ResetCreator()
+		return nil
+	case goaltemplate.EdgeKpiLinks:
+		m.ResetKpiLinks()
+		return nil
+	}
+	return fmt.Errorf("unknown GoalTemplate edge %s", name)
+}
+
+// GoalTemplateKpiLinkMutation represents an operation that mutates the GoalTemplateKpiLink nodes in the graph.
+type GoalTemplateKpiLinkMutation struct {
+	config
+	op              Op
+	typ             string
+	id              *uuid.UUID
+	created_at      *time.Time
+	updated_at      *time.Time
+	clearedFields   map[string]struct{}
+	template        *uuid.UUID
+	clearedtemplate bool
+	kpi             *uuid.UUID
+	clearedkpi      bool
+	done            bool
+	oldValue        func(context.Context) (*GoalTemplateKpiLink, error)
+	predicates      []predicate.GoalTemplateKpiLink
+}
+
+var _ ent.Mutation = (*GoalTemplateKpiLinkMutation)(nil)
+
+// goaltemplatekpilinkOption allows management of the mutation configuration using functional options.
+type goaltemplatekpilinkOption func(*GoalTemplateKpiLinkMutation)
+
+// newGoalTemplateKpiLinkMutation creates new mutation for the GoalTemplateKpiLink entity.
+func newGoalTemplateKpiLinkMutation(c config, op Op, opts ...goaltemplatekpilinkOption) *GoalTemplateKpiLinkMutation {
+	m := &GoalTemplateKpiLinkMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeGoalTemplateKpiLink,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withGoalTemplateKpiLinkID sets the ID field of the mutation.
+func withGoalTemplateKpiLinkID(id uuid.UUID) goaltemplatekpilinkOption {
+	return func(m *GoalTemplateKpiLinkMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *GoalTemplateKpiLink
+		)
+		m.oldValue = func(ctx context.Context) (*GoalTemplateKpiLink, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().GoalTemplateKpiLink.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withGoalTemplateKpiLink sets the old GoalTemplateKpiLink of the mutation.
+func withGoalTemplateKpiLink(node *GoalTemplateKpiLink) goaltemplatekpilinkOption {
+	return func(m *GoalTemplateKpiLinkMutation) {
+		m.oldValue = func(context.Context) (*GoalTemplateKpiLink, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m GoalTemplateKpiLinkMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m GoalTemplateKpiLinkMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("internal: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of GoalTemplateKpiLink entities.
+func (m *GoalTemplateKpiLinkMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *GoalTemplateKpiLinkMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *GoalTemplateKpiLinkMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().GoalTemplateKpiLink.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *GoalTemplateKpiLinkMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *GoalTemplateKpiLinkMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the GoalTemplateKpiLink entity.
+// If the GoalTemplateKpiLink object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GoalTemplateKpiLinkMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *GoalTemplateKpiLinkMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *GoalTemplateKpiLinkMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *GoalTemplateKpiLinkMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the GoalTemplateKpiLink entity.
+// If the GoalTemplateKpiLink object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GoalTemplateKpiLinkMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *GoalTemplateKpiLinkMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetTemplateID sets the "template_id" field.
+func (m *GoalTemplateKpiLinkMutation) SetTemplateID(u uuid.UUID) {
+	m.template = &u
+}
+
+// TemplateID returns the value of the "template_id" field in the mutation.
+func (m *GoalTemplateKpiLinkMutation) TemplateID() (r uuid.UUID, exists bool) {
+	v := m.template
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTemplateID returns the old "template_id" field's value of the GoalTemplateKpiLink entity.
+// If the GoalTemplateKpiLink object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GoalTemplateKpiLinkMutation) OldTemplateID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTemplateID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTemplateID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTemplateID: %w", err)
+	}
+	return oldValue.TemplateID, nil
+}
+
+// ResetTemplateID resets all changes to the "template_id" field.
+func (m *GoalTemplateKpiLinkMutation) ResetTemplateID() {
+	m.template = nil
+}
+
+// SetKpiID sets the "kpi_id" field.
+func (m *GoalTemplateKpiLinkMutation) SetKpiID(u uuid.UUID) {
+	m.kpi = &u
+}
+
+// KpiID returns the value of the "kpi_id" field in the mutation.
+func (m *GoalTemplateKpiLinkMutation) KpiID() (r uuid.UUID, exists bool) {
+	v := m.kpi
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldKpiID returns the old "kpi_id" field's value of the GoalTemplateKpiLink entity.
+// If the GoalTemplateKpiLink object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GoalTemplateKpiLinkMutation) OldKpiID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldKpiID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldKpiID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldKpiID: %w", err)
+	}
+	return oldValue.KpiID, nil
+}
+
+// ResetKpiID resets all changes to the "kpi_id" field.
+func (m *GoalTemplateKpiLinkMutation) ResetKpiID() {
+	m.kpi = nil
+}
+
+// ClearTemplate clears the "template" edge to the GoalTemplate entity.
+func (m *GoalTemplateKpiLinkMutation) ClearTemplate() {
+	m.clearedtemplate = true
+	m.clearedFields[goaltemplatekpilink.FieldTemplateID] = struct{}{}
+}
+
+// TemplateCleared reports if the "template" edge to the GoalTemplate entity was cleared.
+func (m *GoalTemplateKpiLinkMutation) TemplateCleared() bool {
+	return m.clearedtemplate
+}
+
+// TemplateIDs returns the "template" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// TemplateID instead. It exists only for internal usage by the builders.
+func (m *GoalTemplateKpiLinkMutation) TemplateIDs() (ids []uuid.UUID) {
+	if id := m.template; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetTemplate resets all changes to the "template" edge.
+func (m *GoalTemplateKpiLinkMutation) ResetTemplate() {
+	m.template = nil
+	m.clearedtemplate = false
+}
+
+// ClearKpi clears the "kpi" edge to the KPI entity.
+func (m *GoalTemplateKpiLinkMutation) ClearKpi() {
+	m.clearedkpi = true
+	m.clearedFields[goaltemplatekpilink.FieldKpiID] = struct{}{}
+}
+
+// KpiCleared reports if the "kpi" edge to the KPI entity was cleared.
+func (m *GoalTemplateKpiLinkMutation) KpiCleared() bool {
+	return m.clearedkpi
+}
+
+// KpiIDs returns the "kpi" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// KpiID instead. It exists only for internal usage by the builders.
+func (m *GoalTemplateKpiLinkMutation) KpiIDs() (ids []uuid.UUID) {
+	if id := m.kpi; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetKpi resets all changes to the "kpi" edge.
+func (m *GoalTemplateKpiLinkMutation) ResetKpi() {
+	m.kpi = nil
+	m.clearedkpi = false
+}
+
+// Where appends a list predicates to the GoalTemplateKpiLinkMutation builder.
+func (m *GoalTemplateKpiLinkMutation) Where(ps ...predicate.GoalTemplateKpiLink) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the GoalTemplateKpiLinkMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *GoalTemplateKpiLinkMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.GoalTemplateKpiLink, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *GoalTemplateKpiLinkMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *GoalTemplateKpiLinkMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (GoalTemplateKpiLink).
+func (m *GoalTemplateKpiLinkMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *GoalTemplateKpiLinkMutation) Fields() []string {
+	fields := make([]string, 0, 4)
+	if m.created_at != nil {
+		fields = append(fields, goaltemplatekpilink.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, goaltemplatekpilink.FieldUpdatedAt)
+	}
+	if m.template != nil {
+		fields = append(fields, goaltemplatekpilink.FieldTemplateID)
+	}
+	if m.kpi != nil {
+		fields = append(fields, goaltemplatekpilink.FieldKpiID)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *GoalTemplateKpiLinkMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case goaltemplatekpilink.FieldCreatedAt:
+		return m.CreatedAt()
+	case goaltemplatekpilink.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case goaltemplatekpilink.FieldTemplateID:
+		return m.TemplateID()
+	case goaltemplatekpilink.FieldKpiID:
+		return m.KpiID()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *GoalTemplateKpiLinkMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case goaltemplatekpilink.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case goaltemplatekpilink.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case goaltemplatekpilink.FieldTemplateID:
+		return m.OldTemplateID(ctx)
+	case goaltemplatekpilink.FieldKpiID:
+		return m.OldKpiID(ctx)
+	}
+	return nil, fmt.Errorf("unknown GoalTemplateKpiLink field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *GoalTemplateKpiLinkMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case goaltemplatekpilink.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case goaltemplatekpilink.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case goaltemplatekpilink.FieldTemplateID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTemplateID(v)
+		return nil
+	case goaltemplatekpilink.FieldKpiID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetKpiID(v)
+		return nil
+	}
+	return fmt.Errorf("unknown GoalTemplateKpiLink field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *GoalTemplateKpiLinkMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *GoalTemplateKpiLinkMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *GoalTemplateKpiLinkMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown GoalTemplateKpiLink numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *GoalTemplateKpiLinkMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *GoalTemplateKpiLinkMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *GoalTemplateKpiLinkMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown GoalTemplateKpiLink nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *GoalTemplateKpiLinkMutation) ResetField(name string) error {
+	switch name {
+	case goaltemplatekpilink.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case goaltemplatekpilink.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case goaltemplatekpilink.FieldTemplateID:
+		m.ResetTemplateID()
+		return nil
+	case goaltemplatekpilink.FieldKpiID:
+		m.ResetKpiID()
+		return nil
+	}
+	return fmt.Errorf("unknown GoalTemplateKpiLink field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *GoalTemplateKpiLinkMutation) AddedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.template != nil {
+		edges = append(edges, goaltemplatekpilink.EdgeTemplate)
+	}
+	if m.kpi != nil {
+		edges = append(edges, goaltemplatekpilink.EdgeKpi)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *GoalTemplateKpiLinkMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case goaltemplatekpilink.EdgeTemplate:
+		if id := m.template; id != nil {
+			return []ent.Value{*id}
+		}
+	case goaltemplatekpilink.EdgeKpi:
+		if id := m.kpi; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *GoalTemplateKpiLinkMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 2)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *GoalTemplateKpiLinkMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *GoalTemplateKpiLinkMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.clearedtemplate {
+		edges = append(edges, goaltemplatekpilink.EdgeTemplate)
+	}
+	if m.clearedkpi {
+		edges = append(edges, goaltemplatekpilink.EdgeKpi)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *GoalTemplateKpiLinkMutation) EdgeCleared(name string) bool {
+	switch name {
+	case goaltemplatekpilink.EdgeTemplate:
+		return m.clearedtemplate
+	case goaltemplatekpilink.EdgeKpi:
+		return m.clearedkpi
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *GoalTemplateKpiLinkMutation) ClearEdge(name string) error {
+	switch name {
+	case goaltemplatekpilink.EdgeTemplate:
+		m.ClearTemplate()
+		return nil
+	case goaltemplatekpilink.EdgeKpi:
+		m.ClearKpi()
+		return nil
+	}
+	return fmt.Errorf("unknown GoalTemplateKpiLink unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *GoalTemplateKpiLinkMutation) ResetEdge(name string) error {
+	switch name {
+	case goaltemplatekpilink.EdgeTemplate:
+		m.ResetTemplate()
+		return nil
+	case goaltemplatekpilink.EdgeKpi:
+		m.ResetKpi()
+		return nil
+	}
+	return fmt.Errorf("unknown GoalTemplateKpiLink edge %s", name)
+}
+
 // KPIMutation represents an operation that mutates the KPI nodes in the graph.
 type KPIMutation struct {
 	config
-	op                Op
-	typ               string
-	id                *uuid.UUID
-	created_at        *time.Time
-	updated_at        *time.Time
-	name              *string
-	unit              *kpi.Unit
-	description       *string
-	direction         *kpi.Direction
-	current_value     *float64
-	addcurrent_value  *float64
-	target_value      *float64
-	addtarget_value   *float64
-	clearedFields     map[string]struct{}
-	goal_links        map[int]struct{}
-	removedgoal_links map[int]struct{}
-	clearedgoal_links bool
-	org_node          *uuid.UUID
-	clearedorg_node   bool
-	done              bool
-	oldValue          func(context.Context) (*KPI, error)
-	predicates        []predicate.KPI
+	op                    Op
+	typ                   string
+	id                    *uuid.UUID
+	created_at            *time.Time
+	updated_at            *time.Time
+	name                  *string
+	unit                  *kpi.Unit
+	description           *string
+	direction             *kpi.Direction
+	current_value         *float64
+	addcurrent_value      *float64
+	target_value          *float64
+	addtarget_value       *float64
+	clearedFields         map[string]struct{}
+	goal_links            map[int]struct{}
+	removedgoal_links     map[int]struct{}
+	clearedgoal_links     bool
+	org_node              *uuid.UUID
+	clearedorg_node       bool
+	template_links        map[uuid.UUID]struct{}
+	removedtemplate_links map[uuid.UUID]struct{}
+	clearedtemplate_links bool
+	done                  bool
+	oldValue              func(context.Context) (*KPI, error)
+	predicates            []predicate.KPI
 }
 
 var _ ent.Mutation = (*KPIMutation)(nil)
@@ -14320,6 +18467,60 @@ func (m *KPIMutation) ResetOrgNode() {
 	m.clearedorg_node = false
 }
 
+// AddTemplateLinkIDs adds the "template_links" edge to the GoalTemplateKpiLink entity by ids.
+func (m *KPIMutation) AddTemplateLinkIDs(ids ...uuid.UUID) {
+	if m.template_links == nil {
+		m.template_links = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.template_links[ids[i]] = struct{}{}
+	}
+}
+
+// ClearTemplateLinks clears the "template_links" edge to the GoalTemplateKpiLink entity.
+func (m *KPIMutation) ClearTemplateLinks() {
+	m.clearedtemplate_links = true
+}
+
+// TemplateLinksCleared reports if the "template_links" edge to the GoalTemplateKpiLink entity was cleared.
+func (m *KPIMutation) TemplateLinksCleared() bool {
+	return m.clearedtemplate_links
+}
+
+// RemoveTemplateLinkIDs removes the "template_links" edge to the GoalTemplateKpiLink entity by IDs.
+func (m *KPIMutation) RemoveTemplateLinkIDs(ids ...uuid.UUID) {
+	if m.removedtemplate_links == nil {
+		m.removedtemplate_links = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.template_links, ids[i])
+		m.removedtemplate_links[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedTemplateLinks returns the removed IDs of the "template_links" edge to the GoalTemplateKpiLink entity.
+func (m *KPIMutation) RemovedTemplateLinksIDs() (ids []uuid.UUID) {
+	for id := range m.removedtemplate_links {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// TemplateLinksIDs returns the "template_links" edge IDs in the mutation.
+func (m *KPIMutation) TemplateLinksIDs() (ids []uuid.UUID) {
+	for id := range m.template_links {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetTemplateLinks resets all changes to the "template_links" edge.
+func (m *KPIMutation) ResetTemplateLinks() {
+	m.template_links = nil
+	m.clearedtemplate_links = false
+	m.removedtemplate_links = nil
+}
+
 // Where appends a list predicates to the KPIMutation builder.
 func (m *KPIMutation) Where(ps ...predicate.KPI) {
 	m.predicates = append(m.predicates, ps...)
@@ -14643,12 +18844,15 @@ func (m *KPIMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *KPIMutation) AddedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.goal_links != nil {
 		edges = append(edges, kpi.EdgeGoalLinks)
 	}
 	if m.org_node != nil {
 		edges = append(edges, kpi.EdgeOrgNode)
+	}
+	if m.template_links != nil {
+		edges = append(edges, kpi.EdgeTemplateLinks)
 	}
 	return edges
 }
@@ -14667,15 +18871,24 @@ func (m *KPIMutation) AddedIDs(name string) []ent.Value {
 		if id := m.org_node; id != nil {
 			return []ent.Value{*id}
 		}
+	case kpi.EdgeTemplateLinks:
+		ids := make([]ent.Value, 0, len(m.template_links))
+		for id := range m.template_links {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *KPIMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.removedgoal_links != nil {
 		edges = append(edges, kpi.EdgeGoalLinks)
+	}
+	if m.removedtemplate_links != nil {
+		edges = append(edges, kpi.EdgeTemplateLinks)
 	}
 	return edges
 }
@@ -14690,18 +18903,27 @@ func (m *KPIMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case kpi.EdgeTemplateLinks:
+		ids := make([]ent.Value, 0, len(m.removedtemplate_links))
+		for id := range m.removedtemplate_links {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *KPIMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.clearedgoal_links {
 		edges = append(edges, kpi.EdgeGoalLinks)
 	}
 	if m.clearedorg_node {
 		edges = append(edges, kpi.EdgeOrgNode)
+	}
+	if m.clearedtemplate_links {
+		edges = append(edges, kpi.EdgeTemplateLinks)
 	}
 	return edges
 }
@@ -14714,6 +18936,8 @@ func (m *KPIMutation) EdgeCleared(name string) bool {
 		return m.clearedgoal_links
 	case kpi.EdgeOrgNode:
 		return m.clearedorg_node
+	case kpi.EdgeTemplateLinks:
+		return m.clearedtemplate_links
 	}
 	return false
 }
@@ -14738,6 +18962,9 @@ func (m *KPIMutation) ResetEdge(name string) error {
 		return nil
 	case kpi.EdgeOrgNode:
 		m.ResetOrgNode()
+		return nil
+	case kpi.EdgeTemplateLinks:
+		m.ResetTemplateLinks()
 		return nil
 	}
 	return fmt.Errorf("unknown KPI edge %s", name)
@@ -18488,37 +22715,40 @@ func (m *NineBoxScaleMutation) ResetEdge(name string) error {
 // OrgNodeMutation represents an operation that mutates the OrgNode nodes in the graph.
 type OrgNodeMutation struct {
 	config
-	op                   Op
-	typ                  string
-	id                   *uuid.UUID
-	created_at           *time.Time
-	updated_at           *time.Time
-	version              *int
-	addversion           *int
-	name                 *string
-	_type                *orgnode.Type
-	code                 *string
-	metadata             *map[string]interface{}
-	_path                *string
-	clearedFields        map[string]struct{}
-	organization         *uuid.UUID
-	clearedorganization  bool
-	parent               *uuid.UUID
-	clearedparent        bool
-	children             map[uuid.UUID]struct{}
-	removedchildren      map[uuid.UUID]struct{}
-	clearedchildren      bool
-	employees            map[uuid.UUID]struct{}
-	removedemployees     map[uuid.UUID]struct{}
-	clearedemployees     bool
-	head_employee        *uuid.UUID
-	clearedhead_employee bool
-	kpis                 map[uuid.UUID]struct{}
-	removedkpis          map[uuid.UUID]struct{}
-	clearedkpis          bool
-	done                 bool
-	oldValue             func(context.Context) (*OrgNode, error)
-	predicates           []predicate.OrgNode
+	op                       Op
+	typ                      string
+	id                       *uuid.UUID
+	created_at               *time.Time
+	updated_at               *time.Time
+	version                  *int
+	addversion               *int
+	name                     *string
+	_type                    *orgnode.Type
+	code                     *string
+	metadata                 *map[string]interface{}
+	_path                    *string
+	clearedFields            map[string]struct{}
+	organization             *uuid.UUID
+	clearedorganization      bool
+	parent                   *uuid.UUID
+	clearedparent            bool
+	children                 map[uuid.UUID]struct{}
+	removedchildren          map[uuid.UUID]struct{}
+	clearedchildren          bool
+	employees                map[uuid.UUID]struct{}
+	removedemployees         map[uuid.UUID]struct{}
+	clearedemployees         bool
+	head_employee            *uuid.UUID
+	clearedhead_employee     bool
+	kpis                     map[uuid.UUID]struct{}
+	removedkpis              map[uuid.UUID]struct{}
+	clearedkpis              bool
+	global_goal_rules        map[uuid.UUID]struct{}
+	removedglobal_goal_rules map[uuid.UUID]struct{}
+	clearedglobal_goal_rules bool
+	done                     bool
+	oldValue                 func(context.Context) (*OrgNode, error)
+	predicates               []predicate.OrgNode
 }
 
 var _ ent.Mutation = (*OrgNodeMutation)(nil)
@@ -19336,6 +23566,60 @@ func (m *OrgNodeMutation) ResetKpis() {
 	m.removedkpis = nil
 }
 
+// AddGlobalGoalRuleIDs adds the "global_goal_rules" edge to the GlobalGoalRule entity by ids.
+func (m *OrgNodeMutation) AddGlobalGoalRuleIDs(ids ...uuid.UUID) {
+	if m.global_goal_rules == nil {
+		m.global_goal_rules = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.global_goal_rules[ids[i]] = struct{}{}
+	}
+}
+
+// ClearGlobalGoalRules clears the "global_goal_rules" edge to the GlobalGoalRule entity.
+func (m *OrgNodeMutation) ClearGlobalGoalRules() {
+	m.clearedglobal_goal_rules = true
+}
+
+// GlobalGoalRulesCleared reports if the "global_goal_rules" edge to the GlobalGoalRule entity was cleared.
+func (m *OrgNodeMutation) GlobalGoalRulesCleared() bool {
+	return m.clearedglobal_goal_rules
+}
+
+// RemoveGlobalGoalRuleIDs removes the "global_goal_rules" edge to the GlobalGoalRule entity by IDs.
+func (m *OrgNodeMutation) RemoveGlobalGoalRuleIDs(ids ...uuid.UUID) {
+	if m.removedglobal_goal_rules == nil {
+		m.removedglobal_goal_rules = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.global_goal_rules, ids[i])
+		m.removedglobal_goal_rules[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedGlobalGoalRules returns the removed IDs of the "global_goal_rules" edge to the GlobalGoalRule entity.
+func (m *OrgNodeMutation) RemovedGlobalGoalRulesIDs() (ids []uuid.UUID) {
+	for id := range m.removedglobal_goal_rules {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// GlobalGoalRulesIDs returns the "global_goal_rules" edge IDs in the mutation.
+func (m *OrgNodeMutation) GlobalGoalRulesIDs() (ids []uuid.UUID) {
+	for id := range m.global_goal_rules {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetGlobalGoalRules resets all changes to the "global_goal_rules" edge.
+func (m *OrgNodeMutation) ResetGlobalGoalRules() {
+	m.global_goal_rules = nil
+	m.clearedglobal_goal_rules = false
+	m.removedglobal_goal_rules = nil
+}
+
 // Where appends a list predicates to the OrgNodeMutation builder.
 func (m *OrgNodeMutation) Where(ps ...predicate.OrgNode) {
 	m.predicates = append(m.predicates, ps...)
@@ -19681,7 +23965,7 @@ func (m *OrgNodeMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *OrgNodeMutation) AddedEdges() []string {
-	edges := make([]string, 0, 6)
+	edges := make([]string, 0, 7)
 	if m.organization != nil {
 		edges = append(edges, orgnode.EdgeOrganization)
 	}
@@ -19699,6 +23983,9 @@ func (m *OrgNodeMutation) AddedEdges() []string {
 	}
 	if m.kpis != nil {
 		edges = append(edges, orgnode.EdgeKpis)
+	}
+	if m.global_goal_rules != nil {
+		edges = append(edges, orgnode.EdgeGlobalGoalRules)
 	}
 	return edges
 }
@@ -19737,13 +24024,19 @@ func (m *OrgNodeMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case orgnode.EdgeGlobalGoalRules:
+		ids := make([]ent.Value, 0, len(m.global_goal_rules))
+		for id := range m.global_goal_rules {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *OrgNodeMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 6)
+	edges := make([]string, 0, 7)
 	if m.removedchildren != nil {
 		edges = append(edges, orgnode.EdgeChildren)
 	}
@@ -19752,6 +24045,9 @@ func (m *OrgNodeMutation) RemovedEdges() []string {
 	}
 	if m.removedkpis != nil {
 		edges = append(edges, orgnode.EdgeKpis)
+	}
+	if m.removedglobal_goal_rules != nil {
+		edges = append(edges, orgnode.EdgeGlobalGoalRules)
 	}
 	return edges
 }
@@ -19778,13 +24074,19 @@ func (m *OrgNodeMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case orgnode.EdgeGlobalGoalRules:
+		ids := make([]ent.Value, 0, len(m.removedglobal_goal_rules))
+		for id := range m.removedglobal_goal_rules {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *OrgNodeMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 6)
+	edges := make([]string, 0, 7)
 	if m.clearedorganization {
 		edges = append(edges, orgnode.EdgeOrganization)
 	}
@@ -19802,6 +24104,9 @@ func (m *OrgNodeMutation) ClearedEdges() []string {
 	}
 	if m.clearedkpis {
 		edges = append(edges, orgnode.EdgeKpis)
+	}
+	if m.clearedglobal_goal_rules {
+		edges = append(edges, orgnode.EdgeGlobalGoalRules)
 	}
 	return edges
 }
@@ -19822,6 +24127,8 @@ func (m *OrgNodeMutation) EdgeCleared(name string) bool {
 		return m.clearedhead_employee
 	case orgnode.EdgeKpis:
 		return m.clearedkpis
+	case orgnode.EdgeGlobalGoalRules:
+		return m.clearedglobal_goal_rules
 	}
 	return false
 }
@@ -19864,6 +24171,9 @@ func (m *OrgNodeMutation) ResetEdge(name string) error {
 		return nil
 	case orgnode.EdgeKpis:
 		m.ResetKpis()
+		return nil
+	case orgnode.EdgeGlobalGoalRules:
+		m.ResetGlobalGoalRules()
 		return nil
 	}
 	return fmt.Errorf("unknown OrgNode edge %s", name)
@@ -24477,4 +28787,1761 @@ func (m *ScaleCriterionMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown ScaleCriterion edge %s", name)
+}
+
+// SharedGoalGroupMutation represents an operation that mutates the SharedGoalGroup nodes in the graph.
+type SharedGoalGroupMutation struct {
+	config
+	op             Op
+	typ            string
+	id             *uuid.UUID
+	created_at     *time.Time
+	updated_at     *time.Time
+	updated_by     *uuid.UUID
+	name           *string
+	description    *string
+	clearedFields  map[string]struct{}
+	goal           *uuid.UUID
+	clearedgoal    bool
+	creator        *uuid.UUID
+	clearedcreator bool
+	members        map[uuid.UUID]struct{}
+	removedmembers map[uuid.UUID]struct{}
+	clearedmembers bool
+	done           bool
+	oldValue       func(context.Context) (*SharedGoalGroup, error)
+	predicates     []predicate.SharedGoalGroup
+}
+
+var _ ent.Mutation = (*SharedGoalGroupMutation)(nil)
+
+// sharedgoalgroupOption allows management of the mutation configuration using functional options.
+type sharedgoalgroupOption func(*SharedGoalGroupMutation)
+
+// newSharedGoalGroupMutation creates new mutation for the SharedGoalGroup entity.
+func newSharedGoalGroupMutation(c config, op Op, opts ...sharedgoalgroupOption) *SharedGoalGroupMutation {
+	m := &SharedGoalGroupMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeSharedGoalGroup,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withSharedGoalGroupID sets the ID field of the mutation.
+func withSharedGoalGroupID(id uuid.UUID) sharedgoalgroupOption {
+	return func(m *SharedGoalGroupMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *SharedGoalGroup
+		)
+		m.oldValue = func(ctx context.Context) (*SharedGoalGroup, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().SharedGoalGroup.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withSharedGoalGroup sets the old SharedGoalGroup of the mutation.
+func withSharedGoalGroup(node *SharedGoalGroup) sharedgoalgroupOption {
+	return func(m *SharedGoalGroupMutation) {
+		m.oldValue = func(context.Context) (*SharedGoalGroup, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m SharedGoalGroupMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m SharedGoalGroupMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("internal: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of SharedGoalGroup entities.
+func (m *SharedGoalGroupMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *SharedGoalGroupMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *SharedGoalGroupMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().SharedGoalGroup.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *SharedGoalGroupMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *SharedGoalGroupMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the SharedGoalGroup entity.
+// If the SharedGoalGroup object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SharedGoalGroupMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *SharedGoalGroupMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *SharedGoalGroupMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *SharedGoalGroupMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the SharedGoalGroup entity.
+// If the SharedGoalGroup object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SharedGoalGroupMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *SharedGoalGroupMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetCreatedBy sets the "created_by" field.
+func (m *SharedGoalGroupMutation) SetCreatedBy(u uuid.UUID) {
+	m.creator = &u
+}
+
+// CreatedBy returns the value of the "created_by" field in the mutation.
+func (m *SharedGoalGroupMutation) CreatedBy() (r uuid.UUID, exists bool) {
+	v := m.creator
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedBy returns the old "created_by" field's value of the SharedGoalGroup entity.
+// If the SharedGoalGroup object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SharedGoalGroupMutation) OldCreatedBy(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedBy is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedBy requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedBy: %w", err)
+	}
+	return oldValue.CreatedBy, nil
+}
+
+// ResetCreatedBy resets all changes to the "created_by" field.
+func (m *SharedGoalGroupMutation) ResetCreatedBy() {
+	m.creator = nil
+}
+
+// SetUpdatedBy sets the "updated_by" field.
+func (m *SharedGoalGroupMutation) SetUpdatedBy(u uuid.UUID) {
+	m.updated_by = &u
+}
+
+// UpdatedBy returns the value of the "updated_by" field in the mutation.
+func (m *SharedGoalGroupMutation) UpdatedBy() (r uuid.UUID, exists bool) {
+	v := m.updated_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedBy returns the old "updated_by" field's value of the SharedGoalGroup entity.
+// If the SharedGoalGroup object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SharedGoalGroupMutation) OldUpdatedBy(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedBy is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedBy requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedBy: %w", err)
+	}
+	return oldValue.UpdatedBy, nil
+}
+
+// ResetUpdatedBy resets all changes to the "updated_by" field.
+func (m *SharedGoalGroupMutation) ResetUpdatedBy() {
+	m.updated_by = nil
+}
+
+// SetGoalID sets the "goal_id" field.
+func (m *SharedGoalGroupMutation) SetGoalID(u uuid.UUID) {
+	m.goal = &u
+}
+
+// GoalID returns the value of the "goal_id" field in the mutation.
+func (m *SharedGoalGroupMutation) GoalID() (r uuid.UUID, exists bool) {
+	v := m.goal
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldGoalID returns the old "goal_id" field's value of the SharedGoalGroup entity.
+// If the SharedGoalGroup object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SharedGoalGroupMutation) OldGoalID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldGoalID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldGoalID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldGoalID: %w", err)
+	}
+	return oldValue.GoalID, nil
+}
+
+// ResetGoalID resets all changes to the "goal_id" field.
+func (m *SharedGoalGroupMutation) ResetGoalID() {
+	m.goal = nil
+}
+
+// SetName sets the "name" field.
+func (m *SharedGoalGroupMutation) SetName(s string) {
+	m.name = &s
+}
+
+// Name returns the value of the "name" field in the mutation.
+func (m *SharedGoalGroupMutation) Name() (r string, exists bool) {
+	v := m.name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldName returns the old "name" field's value of the SharedGoalGroup entity.
+// If the SharedGoalGroup object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SharedGoalGroupMutation) OldName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldName: %w", err)
+	}
+	return oldValue.Name, nil
+}
+
+// ResetName resets all changes to the "name" field.
+func (m *SharedGoalGroupMutation) ResetName() {
+	m.name = nil
+}
+
+// SetDescription sets the "description" field.
+func (m *SharedGoalGroupMutation) SetDescription(s string) {
+	m.description = &s
+}
+
+// Description returns the value of the "description" field in the mutation.
+func (m *SharedGoalGroupMutation) Description() (r string, exists bool) {
+	v := m.description
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDescription returns the old "description" field's value of the SharedGoalGroup entity.
+// If the SharedGoalGroup object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SharedGoalGroupMutation) OldDescription(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDescription is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDescription requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDescription: %w", err)
+	}
+	return oldValue.Description, nil
+}
+
+// ClearDescription clears the value of the "description" field.
+func (m *SharedGoalGroupMutation) ClearDescription() {
+	m.description = nil
+	m.clearedFields[sharedgoalgroup.FieldDescription] = struct{}{}
+}
+
+// DescriptionCleared returns if the "description" field was cleared in this mutation.
+func (m *SharedGoalGroupMutation) DescriptionCleared() bool {
+	_, ok := m.clearedFields[sharedgoalgroup.FieldDescription]
+	return ok
+}
+
+// ResetDescription resets all changes to the "description" field.
+func (m *SharedGoalGroupMutation) ResetDescription() {
+	m.description = nil
+	delete(m.clearedFields, sharedgoalgroup.FieldDescription)
+}
+
+// ClearGoal clears the "goal" edge to the Goal entity.
+func (m *SharedGoalGroupMutation) ClearGoal() {
+	m.clearedgoal = true
+	m.clearedFields[sharedgoalgroup.FieldGoalID] = struct{}{}
+}
+
+// GoalCleared reports if the "goal" edge to the Goal entity was cleared.
+func (m *SharedGoalGroupMutation) GoalCleared() bool {
+	return m.clearedgoal
+}
+
+// GoalIDs returns the "goal" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// GoalID instead. It exists only for internal usage by the builders.
+func (m *SharedGoalGroupMutation) GoalIDs() (ids []uuid.UUID) {
+	if id := m.goal; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetGoal resets all changes to the "goal" edge.
+func (m *SharedGoalGroupMutation) ResetGoal() {
+	m.goal = nil
+	m.clearedgoal = false
+}
+
+// SetCreatorID sets the "creator" edge to the Employee entity by id.
+func (m *SharedGoalGroupMutation) SetCreatorID(id uuid.UUID) {
+	m.creator = &id
+}
+
+// ClearCreator clears the "creator" edge to the Employee entity.
+func (m *SharedGoalGroupMutation) ClearCreator() {
+	m.clearedcreator = true
+	m.clearedFields[sharedgoalgroup.FieldCreatedBy] = struct{}{}
+}
+
+// CreatorCleared reports if the "creator" edge to the Employee entity was cleared.
+func (m *SharedGoalGroupMutation) CreatorCleared() bool {
+	return m.clearedcreator
+}
+
+// CreatorID returns the "creator" edge ID in the mutation.
+func (m *SharedGoalGroupMutation) CreatorID() (id uuid.UUID, exists bool) {
+	if m.creator != nil {
+		return *m.creator, true
+	}
+	return
+}
+
+// CreatorIDs returns the "creator" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// CreatorID instead. It exists only for internal usage by the builders.
+func (m *SharedGoalGroupMutation) CreatorIDs() (ids []uuid.UUID) {
+	if id := m.creator; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetCreator resets all changes to the "creator" edge.
+func (m *SharedGoalGroupMutation) ResetCreator() {
+	m.creator = nil
+	m.clearedcreator = false
+}
+
+// AddMemberIDs adds the "members" edge to the SharedGoalMember entity by ids.
+func (m *SharedGoalGroupMutation) AddMemberIDs(ids ...uuid.UUID) {
+	if m.members == nil {
+		m.members = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.members[ids[i]] = struct{}{}
+	}
+}
+
+// ClearMembers clears the "members" edge to the SharedGoalMember entity.
+func (m *SharedGoalGroupMutation) ClearMembers() {
+	m.clearedmembers = true
+}
+
+// MembersCleared reports if the "members" edge to the SharedGoalMember entity was cleared.
+func (m *SharedGoalGroupMutation) MembersCleared() bool {
+	return m.clearedmembers
+}
+
+// RemoveMemberIDs removes the "members" edge to the SharedGoalMember entity by IDs.
+func (m *SharedGoalGroupMutation) RemoveMemberIDs(ids ...uuid.UUID) {
+	if m.removedmembers == nil {
+		m.removedmembers = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.members, ids[i])
+		m.removedmembers[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedMembers returns the removed IDs of the "members" edge to the SharedGoalMember entity.
+func (m *SharedGoalGroupMutation) RemovedMembersIDs() (ids []uuid.UUID) {
+	for id := range m.removedmembers {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// MembersIDs returns the "members" edge IDs in the mutation.
+func (m *SharedGoalGroupMutation) MembersIDs() (ids []uuid.UUID) {
+	for id := range m.members {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetMembers resets all changes to the "members" edge.
+func (m *SharedGoalGroupMutation) ResetMembers() {
+	m.members = nil
+	m.clearedmembers = false
+	m.removedmembers = nil
+}
+
+// Where appends a list predicates to the SharedGoalGroupMutation builder.
+func (m *SharedGoalGroupMutation) Where(ps ...predicate.SharedGoalGroup) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the SharedGoalGroupMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *SharedGoalGroupMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.SharedGoalGroup, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *SharedGoalGroupMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *SharedGoalGroupMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (SharedGoalGroup).
+func (m *SharedGoalGroupMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *SharedGoalGroupMutation) Fields() []string {
+	fields := make([]string, 0, 7)
+	if m.created_at != nil {
+		fields = append(fields, sharedgoalgroup.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, sharedgoalgroup.FieldUpdatedAt)
+	}
+	if m.creator != nil {
+		fields = append(fields, sharedgoalgroup.FieldCreatedBy)
+	}
+	if m.updated_by != nil {
+		fields = append(fields, sharedgoalgroup.FieldUpdatedBy)
+	}
+	if m.goal != nil {
+		fields = append(fields, sharedgoalgroup.FieldGoalID)
+	}
+	if m.name != nil {
+		fields = append(fields, sharedgoalgroup.FieldName)
+	}
+	if m.description != nil {
+		fields = append(fields, sharedgoalgroup.FieldDescription)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *SharedGoalGroupMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case sharedgoalgroup.FieldCreatedAt:
+		return m.CreatedAt()
+	case sharedgoalgroup.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case sharedgoalgroup.FieldCreatedBy:
+		return m.CreatedBy()
+	case sharedgoalgroup.FieldUpdatedBy:
+		return m.UpdatedBy()
+	case sharedgoalgroup.FieldGoalID:
+		return m.GoalID()
+	case sharedgoalgroup.FieldName:
+		return m.Name()
+	case sharedgoalgroup.FieldDescription:
+		return m.Description()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *SharedGoalGroupMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case sharedgoalgroup.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case sharedgoalgroup.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case sharedgoalgroup.FieldCreatedBy:
+		return m.OldCreatedBy(ctx)
+	case sharedgoalgroup.FieldUpdatedBy:
+		return m.OldUpdatedBy(ctx)
+	case sharedgoalgroup.FieldGoalID:
+		return m.OldGoalID(ctx)
+	case sharedgoalgroup.FieldName:
+		return m.OldName(ctx)
+	case sharedgoalgroup.FieldDescription:
+		return m.OldDescription(ctx)
+	}
+	return nil, fmt.Errorf("unknown SharedGoalGroup field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *SharedGoalGroupMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case sharedgoalgroup.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case sharedgoalgroup.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case sharedgoalgroup.FieldCreatedBy:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedBy(v)
+		return nil
+	case sharedgoalgroup.FieldUpdatedBy:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedBy(v)
+		return nil
+	case sharedgoalgroup.FieldGoalID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetGoalID(v)
+		return nil
+	case sharedgoalgroup.FieldName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetName(v)
+		return nil
+	case sharedgoalgroup.FieldDescription:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDescription(v)
+		return nil
+	}
+	return fmt.Errorf("unknown SharedGoalGroup field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *SharedGoalGroupMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *SharedGoalGroupMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *SharedGoalGroupMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown SharedGoalGroup numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *SharedGoalGroupMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(sharedgoalgroup.FieldDescription) {
+		fields = append(fields, sharedgoalgroup.FieldDescription)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *SharedGoalGroupMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *SharedGoalGroupMutation) ClearField(name string) error {
+	switch name {
+	case sharedgoalgroup.FieldDescription:
+		m.ClearDescription()
+		return nil
+	}
+	return fmt.Errorf("unknown SharedGoalGroup nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *SharedGoalGroupMutation) ResetField(name string) error {
+	switch name {
+	case sharedgoalgroup.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case sharedgoalgroup.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case sharedgoalgroup.FieldCreatedBy:
+		m.ResetCreatedBy()
+		return nil
+	case sharedgoalgroup.FieldUpdatedBy:
+		m.ResetUpdatedBy()
+		return nil
+	case sharedgoalgroup.FieldGoalID:
+		m.ResetGoalID()
+		return nil
+	case sharedgoalgroup.FieldName:
+		m.ResetName()
+		return nil
+	case sharedgoalgroup.FieldDescription:
+		m.ResetDescription()
+		return nil
+	}
+	return fmt.Errorf("unknown SharedGoalGroup field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *SharedGoalGroupMutation) AddedEdges() []string {
+	edges := make([]string, 0, 3)
+	if m.goal != nil {
+		edges = append(edges, sharedgoalgroup.EdgeGoal)
+	}
+	if m.creator != nil {
+		edges = append(edges, sharedgoalgroup.EdgeCreator)
+	}
+	if m.members != nil {
+		edges = append(edges, sharedgoalgroup.EdgeMembers)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *SharedGoalGroupMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case sharedgoalgroup.EdgeGoal:
+		if id := m.goal; id != nil {
+			return []ent.Value{*id}
+		}
+	case sharedgoalgroup.EdgeCreator:
+		if id := m.creator; id != nil {
+			return []ent.Value{*id}
+		}
+	case sharedgoalgroup.EdgeMembers:
+		ids := make([]ent.Value, 0, len(m.members))
+		for id := range m.members {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *SharedGoalGroupMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 3)
+	if m.removedmembers != nil {
+		edges = append(edges, sharedgoalgroup.EdgeMembers)
+	}
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *SharedGoalGroupMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case sharedgoalgroup.EdgeMembers:
+		ids := make([]ent.Value, 0, len(m.removedmembers))
+		for id := range m.removedmembers {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *SharedGoalGroupMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 3)
+	if m.clearedgoal {
+		edges = append(edges, sharedgoalgroup.EdgeGoal)
+	}
+	if m.clearedcreator {
+		edges = append(edges, sharedgoalgroup.EdgeCreator)
+	}
+	if m.clearedmembers {
+		edges = append(edges, sharedgoalgroup.EdgeMembers)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *SharedGoalGroupMutation) EdgeCleared(name string) bool {
+	switch name {
+	case sharedgoalgroup.EdgeGoal:
+		return m.clearedgoal
+	case sharedgoalgroup.EdgeCreator:
+		return m.clearedcreator
+	case sharedgoalgroup.EdgeMembers:
+		return m.clearedmembers
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *SharedGoalGroupMutation) ClearEdge(name string) error {
+	switch name {
+	case sharedgoalgroup.EdgeGoal:
+		m.ClearGoal()
+		return nil
+	case sharedgoalgroup.EdgeCreator:
+		m.ClearCreator()
+		return nil
+	}
+	return fmt.Errorf("unknown SharedGoalGroup unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *SharedGoalGroupMutation) ResetEdge(name string) error {
+	switch name {
+	case sharedgoalgroup.EdgeGoal:
+		m.ResetGoal()
+		return nil
+	case sharedgoalgroup.EdgeCreator:
+		m.ResetCreator()
+		return nil
+	case sharedgoalgroup.EdgeMembers:
+		m.ResetMembers()
+		return nil
+	}
+	return fmt.Errorf("unknown SharedGoalGroup edge %s", name)
+}
+
+// SharedGoalMemberMutation represents an operation that mutates the SharedGoalMember nodes in the graph.
+type SharedGoalMemberMutation struct {
+	config
+	op                Op
+	typ               string
+	id                *uuid.UUID
+	created_at        *time.Time
+	updated_at        *time.Time
+	weight            *float64
+	addweight         *float64
+	target_value      *float64
+	addtarget_value   *float64
+	baseline_value    *float64
+	addbaseline_value *float64
+	clearedFields     map[string]struct{}
+	group             *uuid.UUID
+	clearedgroup      bool
+	employee          *uuid.UUID
+	clearedemployee   bool
+	done              bool
+	oldValue          func(context.Context) (*SharedGoalMember, error)
+	predicates        []predicate.SharedGoalMember
+}
+
+var _ ent.Mutation = (*SharedGoalMemberMutation)(nil)
+
+// sharedgoalmemberOption allows management of the mutation configuration using functional options.
+type sharedgoalmemberOption func(*SharedGoalMemberMutation)
+
+// newSharedGoalMemberMutation creates new mutation for the SharedGoalMember entity.
+func newSharedGoalMemberMutation(c config, op Op, opts ...sharedgoalmemberOption) *SharedGoalMemberMutation {
+	m := &SharedGoalMemberMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeSharedGoalMember,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withSharedGoalMemberID sets the ID field of the mutation.
+func withSharedGoalMemberID(id uuid.UUID) sharedgoalmemberOption {
+	return func(m *SharedGoalMemberMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *SharedGoalMember
+		)
+		m.oldValue = func(ctx context.Context) (*SharedGoalMember, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().SharedGoalMember.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withSharedGoalMember sets the old SharedGoalMember of the mutation.
+func withSharedGoalMember(node *SharedGoalMember) sharedgoalmemberOption {
+	return func(m *SharedGoalMemberMutation) {
+		m.oldValue = func(context.Context) (*SharedGoalMember, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m SharedGoalMemberMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m SharedGoalMemberMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("internal: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of SharedGoalMember entities.
+func (m *SharedGoalMemberMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *SharedGoalMemberMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *SharedGoalMemberMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().SharedGoalMember.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *SharedGoalMemberMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *SharedGoalMemberMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the SharedGoalMember entity.
+// If the SharedGoalMember object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SharedGoalMemberMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *SharedGoalMemberMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *SharedGoalMemberMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *SharedGoalMemberMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the SharedGoalMember entity.
+// If the SharedGoalMember object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SharedGoalMemberMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *SharedGoalMemberMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetGroupID sets the "group_id" field.
+func (m *SharedGoalMemberMutation) SetGroupID(u uuid.UUID) {
+	m.group = &u
+}
+
+// GroupID returns the value of the "group_id" field in the mutation.
+func (m *SharedGoalMemberMutation) GroupID() (r uuid.UUID, exists bool) {
+	v := m.group
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldGroupID returns the old "group_id" field's value of the SharedGoalMember entity.
+// If the SharedGoalMember object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SharedGoalMemberMutation) OldGroupID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldGroupID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldGroupID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldGroupID: %w", err)
+	}
+	return oldValue.GroupID, nil
+}
+
+// ResetGroupID resets all changes to the "group_id" field.
+func (m *SharedGoalMemberMutation) ResetGroupID() {
+	m.group = nil
+}
+
+// SetEmployeeID sets the "employee_id" field.
+func (m *SharedGoalMemberMutation) SetEmployeeID(u uuid.UUID) {
+	m.employee = &u
+}
+
+// EmployeeID returns the value of the "employee_id" field in the mutation.
+func (m *SharedGoalMemberMutation) EmployeeID() (r uuid.UUID, exists bool) {
+	v := m.employee
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEmployeeID returns the old "employee_id" field's value of the SharedGoalMember entity.
+// If the SharedGoalMember object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SharedGoalMemberMutation) OldEmployeeID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEmployeeID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEmployeeID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEmployeeID: %w", err)
+	}
+	return oldValue.EmployeeID, nil
+}
+
+// ResetEmployeeID resets all changes to the "employee_id" field.
+func (m *SharedGoalMemberMutation) ResetEmployeeID() {
+	m.employee = nil
+}
+
+// SetWeight sets the "weight" field.
+func (m *SharedGoalMemberMutation) SetWeight(f float64) {
+	m.weight = &f
+	m.addweight = nil
+}
+
+// Weight returns the value of the "weight" field in the mutation.
+func (m *SharedGoalMemberMutation) Weight() (r float64, exists bool) {
+	v := m.weight
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWeight returns the old "weight" field's value of the SharedGoalMember entity.
+// If the SharedGoalMember object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SharedGoalMemberMutation) OldWeight(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldWeight is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldWeight requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWeight: %w", err)
+	}
+	return oldValue.Weight, nil
+}
+
+// AddWeight adds f to the "weight" field.
+func (m *SharedGoalMemberMutation) AddWeight(f float64) {
+	if m.addweight != nil {
+		*m.addweight += f
+	} else {
+		m.addweight = &f
+	}
+}
+
+// AddedWeight returns the value that was added to the "weight" field in this mutation.
+func (m *SharedGoalMemberMutation) AddedWeight() (r float64, exists bool) {
+	v := m.addweight
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetWeight resets all changes to the "weight" field.
+func (m *SharedGoalMemberMutation) ResetWeight() {
+	m.weight = nil
+	m.addweight = nil
+}
+
+// SetTargetValue sets the "target_value" field.
+func (m *SharedGoalMemberMutation) SetTargetValue(f float64) {
+	m.target_value = &f
+	m.addtarget_value = nil
+}
+
+// TargetValue returns the value of the "target_value" field in the mutation.
+func (m *SharedGoalMemberMutation) TargetValue() (r float64, exists bool) {
+	v := m.target_value
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTargetValue returns the old "target_value" field's value of the SharedGoalMember entity.
+// If the SharedGoalMember object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SharedGoalMemberMutation) OldTargetValue(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTargetValue is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTargetValue requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTargetValue: %w", err)
+	}
+	return oldValue.TargetValue, nil
+}
+
+// AddTargetValue adds f to the "target_value" field.
+func (m *SharedGoalMemberMutation) AddTargetValue(f float64) {
+	if m.addtarget_value != nil {
+		*m.addtarget_value += f
+	} else {
+		m.addtarget_value = &f
+	}
+}
+
+// AddedTargetValue returns the value that was added to the "target_value" field in this mutation.
+func (m *SharedGoalMemberMutation) AddedTargetValue() (r float64, exists bool) {
+	v := m.addtarget_value
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetTargetValue resets all changes to the "target_value" field.
+func (m *SharedGoalMemberMutation) ResetTargetValue() {
+	m.target_value = nil
+	m.addtarget_value = nil
+}
+
+// SetBaselineValue sets the "baseline_value" field.
+func (m *SharedGoalMemberMutation) SetBaselineValue(f float64) {
+	m.baseline_value = &f
+	m.addbaseline_value = nil
+}
+
+// BaselineValue returns the value of the "baseline_value" field in the mutation.
+func (m *SharedGoalMemberMutation) BaselineValue() (r float64, exists bool) {
+	v := m.baseline_value
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldBaselineValue returns the old "baseline_value" field's value of the SharedGoalMember entity.
+// If the SharedGoalMember object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SharedGoalMemberMutation) OldBaselineValue(ctx context.Context) (v *float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldBaselineValue is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldBaselineValue requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldBaselineValue: %w", err)
+	}
+	return oldValue.BaselineValue, nil
+}
+
+// AddBaselineValue adds f to the "baseline_value" field.
+func (m *SharedGoalMemberMutation) AddBaselineValue(f float64) {
+	if m.addbaseline_value != nil {
+		*m.addbaseline_value += f
+	} else {
+		m.addbaseline_value = &f
+	}
+}
+
+// AddedBaselineValue returns the value that was added to the "baseline_value" field in this mutation.
+func (m *SharedGoalMemberMutation) AddedBaselineValue() (r float64, exists bool) {
+	v := m.addbaseline_value
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearBaselineValue clears the value of the "baseline_value" field.
+func (m *SharedGoalMemberMutation) ClearBaselineValue() {
+	m.baseline_value = nil
+	m.addbaseline_value = nil
+	m.clearedFields[sharedgoalmember.FieldBaselineValue] = struct{}{}
+}
+
+// BaselineValueCleared returns if the "baseline_value" field was cleared in this mutation.
+func (m *SharedGoalMemberMutation) BaselineValueCleared() bool {
+	_, ok := m.clearedFields[sharedgoalmember.FieldBaselineValue]
+	return ok
+}
+
+// ResetBaselineValue resets all changes to the "baseline_value" field.
+func (m *SharedGoalMemberMutation) ResetBaselineValue() {
+	m.baseline_value = nil
+	m.addbaseline_value = nil
+	delete(m.clearedFields, sharedgoalmember.FieldBaselineValue)
+}
+
+// ClearGroup clears the "group" edge to the SharedGoalGroup entity.
+func (m *SharedGoalMemberMutation) ClearGroup() {
+	m.clearedgroup = true
+	m.clearedFields[sharedgoalmember.FieldGroupID] = struct{}{}
+}
+
+// GroupCleared reports if the "group" edge to the SharedGoalGroup entity was cleared.
+func (m *SharedGoalMemberMutation) GroupCleared() bool {
+	return m.clearedgroup
+}
+
+// GroupIDs returns the "group" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// GroupID instead. It exists only for internal usage by the builders.
+func (m *SharedGoalMemberMutation) GroupIDs() (ids []uuid.UUID) {
+	if id := m.group; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetGroup resets all changes to the "group" edge.
+func (m *SharedGoalMemberMutation) ResetGroup() {
+	m.group = nil
+	m.clearedgroup = false
+}
+
+// ClearEmployee clears the "employee" edge to the Employee entity.
+func (m *SharedGoalMemberMutation) ClearEmployee() {
+	m.clearedemployee = true
+	m.clearedFields[sharedgoalmember.FieldEmployeeID] = struct{}{}
+}
+
+// EmployeeCleared reports if the "employee" edge to the Employee entity was cleared.
+func (m *SharedGoalMemberMutation) EmployeeCleared() bool {
+	return m.clearedemployee
+}
+
+// EmployeeIDs returns the "employee" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// EmployeeID instead. It exists only for internal usage by the builders.
+func (m *SharedGoalMemberMutation) EmployeeIDs() (ids []uuid.UUID) {
+	if id := m.employee; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetEmployee resets all changes to the "employee" edge.
+func (m *SharedGoalMemberMutation) ResetEmployee() {
+	m.employee = nil
+	m.clearedemployee = false
+}
+
+// Where appends a list predicates to the SharedGoalMemberMutation builder.
+func (m *SharedGoalMemberMutation) Where(ps ...predicate.SharedGoalMember) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the SharedGoalMemberMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *SharedGoalMemberMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.SharedGoalMember, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *SharedGoalMemberMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *SharedGoalMemberMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (SharedGoalMember).
+func (m *SharedGoalMemberMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *SharedGoalMemberMutation) Fields() []string {
+	fields := make([]string, 0, 7)
+	if m.created_at != nil {
+		fields = append(fields, sharedgoalmember.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, sharedgoalmember.FieldUpdatedAt)
+	}
+	if m.group != nil {
+		fields = append(fields, sharedgoalmember.FieldGroupID)
+	}
+	if m.employee != nil {
+		fields = append(fields, sharedgoalmember.FieldEmployeeID)
+	}
+	if m.weight != nil {
+		fields = append(fields, sharedgoalmember.FieldWeight)
+	}
+	if m.target_value != nil {
+		fields = append(fields, sharedgoalmember.FieldTargetValue)
+	}
+	if m.baseline_value != nil {
+		fields = append(fields, sharedgoalmember.FieldBaselineValue)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *SharedGoalMemberMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case sharedgoalmember.FieldCreatedAt:
+		return m.CreatedAt()
+	case sharedgoalmember.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case sharedgoalmember.FieldGroupID:
+		return m.GroupID()
+	case sharedgoalmember.FieldEmployeeID:
+		return m.EmployeeID()
+	case sharedgoalmember.FieldWeight:
+		return m.Weight()
+	case sharedgoalmember.FieldTargetValue:
+		return m.TargetValue()
+	case sharedgoalmember.FieldBaselineValue:
+		return m.BaselineValue()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *SharedGoalMemberMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case sharedgoalmember.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case sharedgoalmember.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case sharedgoalmember.FieldGroupID:
+		return m.OldGroupID(ctx)
+	case sharedgoalmember.FieldEmployeeID:
+		return m.OldEmployeeID(ctx)
+	case sharedgoalmember.FieldWeight:
+		return m.OldWeight(ctx)
+	case sharedgoalmember.FieldTargetValue:
+		return m.OldTargetValue(ctx)
+	case sharedgoalmember.FieldBaselineValue:
+		return m.OldBaselineValue(ctx)
+	}
+	return nil, fmt.Errorf("unknown SharedGoalMember field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *SharedGoalMemberMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case sharedgoalmember.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case sharedgoalmember.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case sharedgoalmember.FieldGroupID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetGroupID(v)
+		return nil
+	case sharedgoalmember.FieldEmployeeID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEmployeeID(v)
+		return nil
+	case sharedgoalmember.FieldWeight:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWeight(v)
+		return nil
+	case sharedgoalmember.FieldTargetValue:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTargetValue(v)
+		return nil
+	case sharedgoalmember.FieldBaselineValue:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetBaselineValue(v)
+		return nil
+	}
+	return fmt.Errorf("unknown SharedGoalMember field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *SharedGoalMemberMutation) AddedFields() []string {
+	var fields []string
+	if m.addweight != nil {
+		fields = append(fields, sharedgoalmember.FieldWeight)
+	}
+	if m.addtarget_value != nil {
+		fields = append(fields, sharedgoalmember.FieldTargetValue)
+	}
+	if m.addbaseline_value != nil {
+		fields = append(fields, sharedgoalmember.FieldBaselineValue)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *SharedGoalMemberMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case sharedgoalmember.FieldWeight:
+		return m.AddedWeight()
+	case sharedgoalmember.FieldTargetValue:
+		return m.AddedTargetValue()
+	case sharedgoalmember.FieldBaselineValue:
+		return m.AddedBaselineValue()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *SharedGoalMemberMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case sharedgoalmember.FieldWeight:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddWeight(v)
+		return nil
+	case sharedgoalmember.FieldTargetValue:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddTargetValue(v)
+		return nil
+	case sharedgoalmember.FieldBaselineValue:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddBaselineValue(v)
+		return nil
+	}
+	return fmt.Errorf("unknown SharedGoalMember numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *SharedGoalMemberMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(sharedgoalmember.FieldBaselineValue) {
+		fields = append(fields, sharedgoalmember.FieldBaselineValue)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *SharedGoalMemberMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *SharedGoalMemberMutation) ClearField(name string) error {
+	switch name {
+	case sharedgoalmember.FieldBaselineValue:
+		m.ClearBaselineValue()
+		return nil
+	}
+	return fmt.Errorf("unknown SharedGoalMember nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *SharedGoalMemberMutation) ResetField(name string) error {
+	switch name {
+	case sharedgoalmember.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case sharedgoalmember.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case sharedgoalmember.FieldGroupID:
+		m.ResetGroupID()
+		return nil
+	case sharedgoalmember.FieldEmployeeID:
+		m.ResetEmployeeID()
+		return nil
+	case sharedgoalmember.FieldWeight:
+		m.ResetWeight()
+		return nil
+	case sharedgoalmember.FieldTargetValue:
+		m.ResetTargetValue()
+		return nil
+	case sharedgoalmember.FieldBaselineValue:
+		m.ResetBaselineValue()
+		return nil
+	}
+	return fmt.Errorf("unknown SharedGoalMember field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *SharedGoalMemberMutation) AddedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.group != nil {
+		edges = append(edges, sharedgoalmember.EdgeGroup)
+	}
+	if m.employee != nil {
+		edges = append(edges, sharedgoalmember.EdgeEmployee)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *SharedGoalMemberMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case sharedgoalmember.EdgeGroup:
+		if id := m.group; id != nil {
+			return []ent.Value{*id}
+		}
+	case sharedgoalmember.EdgeEmployee:
+		if id := m.employee; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *SharedGoalMemberMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 2)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *SharedGoalMemberMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *SharedGoalMemberMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.clearedgroup {
+		edges = append(edges, sharedgoalmember.EdgeGroup)
+	}
+	if m.clearedemployee {
+		edges = append(edges, sharedgoalmember.EdgeEmployee)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *SharedGoalMemberMutation) EdgeCleared(name string) bool {
+	switch name {
+	case sharedgoalmember.EdgeGroup:
+		return m.clearedgroup
+	case sharedgoalmember.EdgeEmployee:
+		return m.clearedemployee
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *SharedGoalMemberMutation) ClearEdge(name string) error {
+	switch name {
+	case sharedgoalmember.EdgeGroup:
+		m.ClearGroup()
+		return nil
+	case sharedgoalmember.EdgeEmployee:
+		m.ClearEmployee()
+		return nil
+	}
+	return fmt.Errorf("unknown SharedGoalMember unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *SharedGoalMemberMutation) ResetEdge(name string) error {
+	switch name {
+	case sharedgoalmember.EdgeGroup:
+		m.ResetGroup()
+		return nil
+	case sharedgoalmember.EdgeEmployee:
+		m.ResetEmployee()
+		return nil
+	}
+	return fmt.Errorf("unknown SharedGoalMember edge %s", name)
 }

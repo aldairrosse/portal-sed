@@ -16,10 +16,14 @@ import (
 	"github.com/sed-evaluacion-desempeno/api/internal/evaluationgoal"
 	"github.com/sed-evaluacion-desempeno/api/internal/evaluationprofile"
 	"github.com/sed-evaluacion-desempeno/api/internal/evaluatorscope"
+	"github.com/sed-evaluacion-desempeno/api/internal/globalgoalassignment"
+	"github.com/sed-evaluacion-desempeno/api/internal/globalgoalrule"
 	"github.com/sed-evaluacion-desempeno/api/internal/goal"
 	"github.com/sed-evaluacion-desempeno/api/internal/goalassignment"
 	"github.com/sed-evaluacion-desempeno/api/internal/goalcategory"
 	"github.com/sed-evaluacion-desempeno/api/internal/goalkpilink"
+	"github.com/sed-evaluacion-desempeno/api/internal/goaltemplate"
+	"github.com/sed-evaluacion-desempeno/api/internal/goaltemplatekpilink"
 	"github.com/sed-evaluacion-desempeno/api/internal/kpi"
 	"github.com/sed-evaluacion-desempeno/api/internal/leveldefinition"
 	"github.com/sed-evaluacion-desempeno/api/internal/nineboxentry"
@@ -33,6 +37,8 @@ import (
 	"github.com/sed-evaluacion-desempeno/api/internal/pillar"
 	"github.com/sed-evaluacion-desempeno/api/internal/scalecriterion"
 	"github.com/sed-evaluacion-desempeno/api/internal/schema"
+	"github.com/sed-evaluacion-desempeno/api/internal/sharedgoalgroup"
+	"github.com/sed-evaluacion-desempeno/api/internal/sharedgoalmember"
 )
 
 // The init function reads all schema descriptors with runtime code
@@ -284,6 +290,56 @@ func init() {
 	evaluatorscopeDescID := evaluatorscopeFields[0].Descriptor()
 	// evaluatorscope.DefaultID holds the default value on creation for the id field.
 	evaluatorscope.DefaultID = evaluatorscopeDescID.Default.(func() uuid.UUID)
+	globalgoalassignmentMixin := schema.GlobalGoalAssignment{}.Mixin()
+	globalgoalassignmentMixinFields0 := globalgoalassignmentMixin[0].Fields()
+	_ = globalgoalassignmentMixinFields0
+	globalgoalassignmentFields := schema.GlobalGoalAssignment{}.Fields()
+	_ = globalgoalassignmentFields
+	// globalgoalassignmentDescCreatedAt is the schema descriptor for created_at field.
+	globalgoalassignmentDescCreatedAt := globalgoalassignmentMixinFields0[0].Descriptor()
+	// globalgoalassignment.DefaultCreatedAt holds the default value on creation for the created_at field.
+	globalgoalassignment.DefaultCreatedAt = globalgoalassignmentDescCreatedAt.Default.(func() time.Time)
+	// globalgoalassignmentDescUpdatedAt is the schema descriptor for updated_at field.
+	globalgoalassignmentDescUpdatedAt := globalgoalassignmentMixinFields0[1].Descriptor()
+	// globalgoalassignment.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	globalgoalassignment.DefaultUpdatedAt = globalgoalassignmentDescUpdatedAt.Default.(func() time.Time)
+	// globalgoalassignment.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	globalgoalassignment.UpdateDefaultUpdatedAt = globalgoalassignmentDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// globalgoalassignmentDescWeight is the schema descriptor for weight field.
+	globalgoalassignmentDescWeight := globalgoalassignmentFields[3].Descriptor()
+	// globalgoalassignment.WeightValidator is a validator for the "weight" field. It is called by the builders before save.
+	globalgoalassignment.WeightValidator = globalgoalassignmentDescWeight.Validators[0].(func(float64) error)
+	// globalgoalassignmentDescTargetValue is the schema descriptor for target_value field.
+	globalgoalassignmentDescTargetValue := globalgoalassignmentFields[4].Descriptor()
+	// globalgoalassignment.TargetValueValidator is a validator for the "target_value" field. It is called by the builders before save.
+	globalgoalassignment.TargetValueValidator = globalgoalassignmentDescTargetValue.Validators[0].(func(float64) error)
+	// globalgoalassignmentDescID is the schema descriptor for id field.
+	globalgoalassignmentDescID := globalgoalassignmentFields[0].Descriptor()
+	// globalgoalassignment.DefaultID holds the default value on creation for the id field.
+	globalgoalassignment.DefaultID = globalgoalassignmentDescID.Default.(func() uuid.UUID)
+	globalgoalruleMixin := schema.GlobalGoalRule{}.Mixin()
+	globalgoalruleMixinFields0 := globalgoalruleMixin[0].Fields()
+	_ = globalgoalruleMixinFields0
+	globalgoalruleFields := schema.GlobalGoalRule{}.Fields()
+	_ = globalgoalruleFields
+	// globalgoalruleDescCreatedAt is the schema descriptor for created_at field.
+	globalgoalruleDescCreatedAt := globalgoalruleMixinFields0[0].Descriptor()
+	// globalgoalrule.DefaultCreatedAt holds the default value on creation for the created_at field.
+	globalgoalrule.DefaultCreatedAt = globalgoalruleDescCreatedAt.Default.(func() time.Time)
+	// globalgoalruleDescUpdatedAt is the schema descriptor for updated_at field.
+	globalgoalruleDescUpdatedAt := globalgoalruleMixinFields0[1].Descriptor()
+	// globalgoalrule.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	globalgoalrule.DefaultUpdatedAt = globalgoalruleDescUpdatedAt.Default.(func() time.Time)
+	// globalgoalrule.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	globalgoalrule.UpdateDefaultUpdatedAt = globalgoalruleDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// globalgoalruleDescDefaultWeight is the schema descriptor for default_weight field.
+	globalgoalruleDescDefaultWeight := globalgoalruleFields[5].Descriptor()
+	// globalgoalrule.DefaultWeightValidator is a validator for the "default_weight" field. It is called by the builders before save.
+	globalgoalrule.DefaultWeightValidator = globalgoalruleDescDefaultWeight.Validators[0].(func(float64) error)
+	// globalgoalruleDescID is the schema descriptor for id field.
+	globalgoalruleDescID := globalgoalruleFields[0].Descriptor()
+	// globalgoalrule.DefaultID holds the default value on creation for the id field.
+	globalgoalrule.DefaultID = globalgoalruleDescID.Default.(func() uuid.UUID)
 	goalMixin := schema.Goal{}.Mixin()
 	goalMixinFields0 := goalMixin[0].Fields()
 	_ = goalMixinFields0
@@ -379,6 +435,56 @@ func init() {
 	goalkpilinkDescCreatedAt := goalkpilinkFields[2].Descriptor()
 	// goalkpilink.DefaultCreatedAt holds the default value on creation for the created_at field.
 	goalkpilink.DefaultCreatedAt = goalkpilinkDescCreatedAt.Default.(func() time.Time)
+	goaltemplateMixin := schema.GoalTemplate{}.Mixin()
+	goaltemplateMixinFields0 := goaltemplateMixin[0].Fields()
+	_ = goaltemplateMixinFields0
+	goaltemplateFields := schema.GoalTemplate{}.Fields()
+	_ = goaltemplateFields
+	// goaltemplateDescCreatedAt is the schema descriptor for created_at field.
+	goaltemplateDescCreatedAt := goaltemplateMixinFields0[0].Descriptor()
+	// goaltemplate.DefaultCreatedAt holds the default value on creation for the created_at field.
+	goaltemplate.DefaultCreatedAt = goaltemplateDescCreatedAt.Default.(func() time.Time)
+	// goaltemplateDescUpdatedAt is the schema descriptor for updated_at field.
+	goaltemplateDescUpdatedAt := goaltemplateMixinFields0[1].Descriptor()
+	// goaltemplate.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	goaltemplate.DefaultUpdatedAt = goaltemplateDescUpdatedAt.Default.(func() time.Time)
+	// goaltemplate.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	goaltemplate.UpdateDefaultUpdatedAt = goaltemplateDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// goaltemplateDescName is the schema descriptor for name field.
+	goaltemplateDescName := goaltemplateFields[1].Descriptor()
+	// goaltemplate.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	goaltemplate.NameValidator = goaltemplateDescName.Validators[0].(func(string) error)
+	// goaltemplateDescTargetValue is the schema descriptor for target_value field.
+	goaltemplateDescTargetValue := goaltemplateFields[5].Descriptor()
+	// goaltemplate.TargetValueValidator is a validator for the "target_value" field. It is called by the builders before save.
+	goaltemplate.TargetValueValidator = goaltemplateDescTargetValue.Validators[0].(func(float64) error)
+	// goaltemplateDescIsPublic is the schema descriptor for is_public field.
+	goaltemplateDescIsPublic := goaltemplateFields[7].Descriptor()
+	// goaltemplate.DefaultIsPublic holds the default value on creation for the is_public field.
+	goaltemplate.DefaultIsPublic = goaltemplateDescIsPublic.Default.(bool)
+	// goaltemplateDescID is the schema descriptor for id field.
+	goaltemplateDescID := goaltemplateFields[0].Descriptor()
+	// goaltemplate.DefaultID holds the default value on creation for the id field.
+	goaltemplate.DefaultID = goaltemplateDescID.Default.(func() uuid.UUID)
+	goaltemplatekpilinkMixin := schema.GoalTemplateKpiLink{}.Mixin()
+	goaltemplatekpilinkMixinFields0 := goaltemplatekpilinkMixin[0].Fields()
+	_ = goaltemplatekpilinkMixinFields0
+	goaltemplatekpilinkFields := schema.GoalTemplateKpiLink{}.Fields()
+	_ = goaltemplatekpilinkFields
+	// goaltemplatekpilinkDescCreatedAt is the schema descriptor for created_at field.
+	goaltemplatekpilinkDescCreatedAt := goaltemplatekpilinkMixinFields0[0].Descriptor()
+	// goaltemplatekpilink.DefaultCreatedAt holds the default value on creation for the created_at field.
+	goaltemplatekpilink.DefaultCreatedAt = goaltemplatekpilinkDescCreatedAt.Default.(func() time.Time)
+	// goaltemplatekpilinkDescUpdatedAt is the schema descriptor for updated_at field.
+	goaltemplatekpilinkDescUpdatedAt := goaltemplatekpilinkMixinFields0[1].Descriptor()
+	// goaltemplatekpilink.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	goaltemplatekpilink.DefaultUpdatedAt = goaltemplatekpilinkDescUpdatedAt.Default.(func() time.Time)
+	// goaltemplatekpilink.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	goaltemplatekpilink.UpdateDefaultUpdatedAt = goaltemplatekpilinkDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// goaltemplatekpilinkDescID is the schema descriptor for id field.
+	goaltemplatekpilinkDescID := goaltemplatekpilinkFields[0].Descriptor()
+	// goaltemplatekpilink.DefaultID holds the default value on creation for the id field.
+	goaltemplatekpilink.DefaultID = goaltemplatekpilinkDescID.Default.(func() uuid.UUID)
 	kpiMixin := schema.KPI{}.Mixin()
 	kpiMixinFields0 := kpiMixin[0].Fields()
 	_ = kpiMixinFields0
@@ -671,4 +777,54 @@ func init() {
 	scalecriterionDescID := scalecriterionFields[0].Descriptor()
 	// scalecriterion.DefaultID holds the default value on creation for the id field.
 	scalecriterion.DefaultID = scalecriterionDescID.Default.(func() uuid.UUID)
+	sharedgoalgroupMixin := schema.SharedGoalGroup{}.Mixin()
+	sharedgoalgroupMixinFields0 := sharedgoalgroupMixin[0].Fields()
+	_ = sharedgoalgroupMixinFields0
+	sharedgoalgroupFields := schema.SharedGoalGroup{}.Fields()
+	_ = sharedgoalgroupFields
+	// sharedgoalgroupDescCreatedAt is the schema descriptor for created_at field.
+	sharedgoalgroupDescCreatedAt := sharedgoalgroupMixinFields0[0].Descriptor()
+	// sharedgoalgroup.DefaultCreatedAt holds the default value on creation for the created_at field.
+	sharedgoalgroup.DefaultCreatedAt = sharedgoalgroupDescCreatedAt.Default.(func() time.Time)
+	// sharedgoalgroupDescUpdatedAt is the schema descriptor for updated_at field.
+	sharedgoalgroupDescUpdatedAt := sharedgoalgroupMixinFields0[1].Descriptor()
+	// sharedgoalgroup.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	sharedgoalgroup.DefaultUpdatedAt = sharedgoalgroupDescUpdatedAt.Default.(func() time.Time)
+	// sharedgoalgroup.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	sharedgoalgroup.UpdateDefaultUpdatedAt = sharedgoalgroupDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// sharedgoalgroupDescName is the schema descriptor for name field.
+	sharedgoalgroupDescName := sharedgoalgroupFields[2].Descriptor()
+	// sharedgoalgroup.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	sharedgoalgroup.NameValidator = sharedgoalgroupDescName.Validators[0].(func(string) error)
+	// sharedgoalgroupDescID is the schema descriptor for id field.
+	sharedgoalgroupDescID := sharedgoalgroupFields[0].Descriptor()
+	// sharedgoalgroup.DefaultID holds the default value on creation for the id field.
+	sharedgoalgroup.DefaultID = sharedgoalgroupDescID.Default.(func() uuid.UUID)
+	sharedgoalmemberMixin := schema.SharedGoalMember{}.Mixin()
+	sharedgoalmemberMixinFields0 := sharedgoalmemberMixin[0].Fields()
+	_ = sharedgoalmemberMixinFields0
+	sharedgoalmemberFields := schema.SharedGoalMember{}.Fields()
+	_ = sharedgoalmemberFields
+	// sharedgoalmemberDescCreatedAt is the schema descriptor for created_at field.
+	sharedgoalmemberDescCreatedAt := sharedgoalmemberMixinFields0[0].Descriptor()
+	// sharedgoalmember.DefaultCreatedAt holds the default value on creation for the created_at field.
+	sharedgoalmember.DefaultCreatedAt = sharedgoalmemberDescCreatedAt.Default.(func() time.Time)
+	// sharedgoalmemberDescUpdatedAt is the schema descriptor for updated_at field.
+	sharedgoalmemberDescUpdatedAt := sharedgoalmemberMixinFields0[1].Descriptor()
+	// sharedgoalmember.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	sharedgoalmember.DefaultUpdatedAt = sharedgoalmemberDescUpdatedAt.Default.(func() time.Time)
+	// sharedgoalmember.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	sharedgoalmember.UpdateDefaultUpdatedAt = sharedgoalmemberDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// sharedgoalmemberDescWeight is the schema descriptor for weight field.
+	sharedgoalmemberDescWeight := sharedgoalmemberFields[3].Descriptor()
+	// sharedgoalmember.WeightValidator is a validator for the "weight" field. It is called by the builders before save.
+	sharedgoalmember.WeightValidator = sharedgoalmemberDescWeight.Validators[0].(func(float64) error)
+	// sharedgoalmemberDescTargetValue is the schema descriptor for target_value field.
+	sharedgoalmemberDescTargetValue := sharedgoalmemberFields[4].Descriptor()
+	// sharedgoalmember.TargetValueValidator is a validator for the "target_value" field. It is called by the builders before save.
+	sharedgoalmember.TargetValueValidator = sharedgoalmemberDescTargetValue.Validators[0].(func(float64) error)
+	// sharedgoalmemberDescID is the schema descriptor for id field.
+	sharedgoalmemberDescID := sharedgoalmemberFields[0].Descriptor()
+	// sharedgoalmember.DefaultID holds the default value on creation for the id field.
+	sharedgoalmember.DefaultID = sharedgoalmemberDescID.Default.(func() uuid.UUID)
 }

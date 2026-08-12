@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
 	"github.com/sed-evaluacion-desempeno/api/internal/goalkpilink"
+	"github.com/sed-evaluacion-desempeno/api/internal/goaltemplatekpilink"
 	"github.com/sed-evaluacion-desempeno/api/internal/kpi"
 	"github.com/sed-evaluacion-desempeno/api/internal/orgnode"
 	"github.com/sed-evaluacion-desempeno/api/internal/predicate"
@@ -193,6 +194,21 @@ func (_u *KPIUpdate) SetOrgNode(v *OrgNode) *KPIUpdate {
 	return _u.SetOrgNodeID(v.ID)
 }
 
+// AddTemplateLinkIDs adds the "template_links" edge to the GoalTemplateKpiLink entity by IDs.
+func (_u *KPIUpdate) AddTemplateLinkIDs(ids ...uuid.UUID) *KPIUpdate {
+	_u.mutation.AddTemplateLinkIDs(ids...)
+	return _u
+}
+
+// AddTemplateLinks adds the "template_links" edges to the GoalTemplateKpiLink entity.
+func (_u *KPIUpdate) AddTemplateLinks(v ...*GoalTemplateKpiLink) *KPIUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddTemplateLinkIDs(ids...)
+}
+
 // Mutation returns the KPIMutation object of the builder.
 func (_u *KPIUpdate) Mutation() *KPIMutation {
 	return _u.mutation
@@ -223,6 +239,27 @@ func (_u *KPIUpdate) RemoveGoalLinks(v ...*GoalKpiLink) *KPIUpdate {
 func (_u *KPIUpdate) ClearOrgNode() *KPIUpdate {
 	_u.mutation.ClearOrgNode()
 	return _u
+}
+
+// ClearTemplateLinks clears all "template_links" edges to the GoalTemplateKpiLink entity.
+func (_u *KPIUpdate) ClearTemplateLinks() *KPIUpdate {
+	_u.mutation.ClearTemplateLinks()
+	return _u
+}
+
+// RemoveTemplateLinkIDs removes the "template_links" edge to GoalTemplateKpiLink entities by IDs.
+func (_u *KPIUpdate) RemoveTemplateLinkIDs(ids ...uuid.UUID) *KPIUpdate {
+	_u.mutation.RemoveTemplateLinkIDs(ids...)
+	return _u
+}
+
+// RemoveTemplateLinks removes "template_links" edges to GoalTemplateKpiLink entities.
+func (_u *KPIUpdate) RemoveTemplateLinks(v ...*GoalTemplateKpiLink) *KPIUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveTemplateLinkIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -396,6 +433,51 @@ func (_u *KPIUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(orgnode.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.TemplateLinksCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   kpi.TemplateLinksTable,
+			Columns: []string{kpi.TemplateLinksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(goaltemplatekpilink.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedTemplateLinksIDs(); len(nodes) > 0 && !_u.mutation.TemplateLinksCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   kpi.TemplateLinksTable,
+			Columns: []string{kpi.TemplateLinksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(goaltemplatekpilink.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.TemplateLinksIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   kpi.TemplateLinksTable,
+			Columns: []string{kpi.TemplateLinksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(goaltemplatekpilink.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -585,6 +667,21 @@ func (_u *KPIUpdateOne) SetOrgNode(v *OrgNode) *KPIUpdateOne {
 	return _u.SetOrgNodeID(v.ID)
 }
 
+// AddTemplateLinkIDs adds the "template_links" edge to the GoalTemplateKpiLink entity by IDs.
+func (_u *KPIUpdateOne) AddTemplateLinkIDs(ids ...uuid.UUID) *KPIUpdateOne {
+	_u.mutation.AddTemplateLinkIDs(ids...)
+	return _u
+}
+
+// AddTemplateLinks adds the "template_links" edges to the GoalTemplateKpiLink entity.
+func (_u *KPIUpdateOne) AddTemplateLinks(v ...*GoalTemplateKpiLink) *KPIUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddTemplateLinkIDs(ids...)
+}
+
 // Mutation returns the KPIMutation object of the builder.
 func (_u *KPIUpdateOne) Mutation() *KPIMutation {
 	return _u.mutation
@@ -615,6 +712,27 @@ func (_u *KPIUpdateOne) RemoveGoalLinks(v ...*GoalKpiLink) *KPIUpdateOne {
 func (_u *KPIUpdateOne) ClearOrgNode() *KPIUpdateOne {
 	_u.mutation.ClearOrgNode()
 	return _u
+}
+
+// ClearTemplateLinks clears all "template_links" edges to the GoalTemplateKpiLink entity.
+func (_u *KPIUpdateOne) ClearTemplateLinks() *KPIUpdateOne {
+	_u.mutation.ClearTemplateLinks()
+	return _u
+}
+
+// RemoveTemplateLinkIDs removes the "template_links" edge to GoalTemplateKpiLink entities by IDs.
+func (_u *KPIUpdateOne) RemoveTemplateLinkIDs(ids ...uuid.UUID) *KPIUpdateOne {
+	_u.mutation.RemoveTemplateLinkIDs(ids...)
+	return _u
+}
+
+// RemoveTemplateLinks removes "template_links" edges to GoalTemplateKpiLink entities.
+func (_u *KPIUpdateOne) RemoveTemplateLinks(v ...*GoalTemplateKpiLink) *KPIUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveTemplateLinkIDs(ids...)
 }
 
 // Where appends a list predicates to the KPIUpdate builder.
@@ -818,6 +936,51 @@ func (_u *KPIUpdateOne) sqlSave(ctx context.Context) (_node *KPI, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(orgnode.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.TemplateLinksCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   kpi.TemplateLinksTable,
+			Columns: []string{kpi.TemplateLinksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(goaltemplatekpilink.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedTemplateLinksIDs(); len(nodes) > 0 && !_u.mutation.TemplateLinksCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   kpi.TemplateLinksTable,
+			Columns: []string{kpi.TemplateLinksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(goaltemplatekpilink.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.TemplateLinksIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   kpi.TemplateLinksTable,
+			Columns: []string{kpi.TemplateLinksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(goaltemplatekpilink.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

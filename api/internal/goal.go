@@ -49,6 +49,10 @@ type Goal struct {
 	State goal.State `json:"state,omitempty"`
 	// CategoryID holds the value of the "category_id" field.
 	CategoryID uuid.UUID `json:"category_id,omitempty"`
+	// Type holds the value of the "type" field.
+	Type goal.Type `json:"type,omitempty"`
+	// GoalKind holds the value of the "goal_kind" field.
+	GoalKind *goal.GoalKind `json:"goal_kind,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the GoalQuery when eager-loading is set.
 	Edges        GoalEdges `json:"edges"`
@@ -63,9 +67,15 @@ type GoalEdges struct {
 	KpiLinks []*GoalKpiLink `json:"kpi_links,omitempty"`
 	// EvaluationGoals holds the value of the evaluation_goals edge.
 	EvaluationGoals []*EvaluationGoal `json:"evaluation_goals,omitempty"`
+	// GlobalAssignments holds the value of the global_assignments edge.
+	GlobalAssignments []*GlobalGoalAssignment `json:"global_assignments,omitempty"`
+	// GlobalRules holds the value of the global_rules edge.
+	GlobalRules []*GlobalGoalRule `json:"global_rules,omitempty"`
+	// SharedGroup holds the value of the shared_group edge.
+	SharedGroup []*SharedGoalGroup `json:"shared_group,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [3]bool
+	loadedTypes [6]bool
 }
 
 // CategoryOrErr returns the Category value or an error if the edge
@@ -97,6 +107,33 @@ func (e GoalEdges) EvaluationGoalsOrErr() ([]*EvaluationGoal, error) {
 	return nil, &NotLoadedError{edge: "evaluation_goals"}
 }
 
+// GlobalAssignmentsOrErr returns the GlobalAssignments value or an error if the edge
+// was not loaded in eager-loading.
+func (e GoalEdges) GlobalAssignmentsOrErr() ([]*GlobalGoalAssignment, error) {
+	if e.loadedTypes[3] {
+		return e.GlobalAssignments, nil
+	}
+	return nil, &NotLoadedError{edge: "global_assignments"}
+}
+
+// GlobalRulesOrErr returns the GlobalRules value or an error if the edge
+// was not loaded in eager-loading.
+func (e GoalEdges) GlobalRulesOrErr() ([]*GlobalGoalRule, error) {
+	if e.loadedTypes[4] {
+		return e.GlobalRules, nil
+	}
+	return nil, &NotLoadedError{edge: "global_rules"}
+}
+
+// SharedGroupOrErr returns the SharedGroup value or an error if the edge
+// was not loaded in eager-loading.
+func (e GoalEdges) SharedGroupOrErr() ([]*SharedGoalGroup, error) {
+	if e.loadedTypes[5] {
+		return e.SharedGroup, nil
+	}
+	return nil, &NotLoadedError{edge: "shared_group"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*Goal) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
@@ -106,7 +143,7 @@ func (*Goal) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullFloat64)
 		case goal.FieldVersion:
 			values[i] = new(sql.NullInt64)
-		case goal.FieldName, goal.FieldDescription, goal.FieldUnit, goal.FieldDirection, goal.FieldState:
+		case goal.FieldName, goal.FieldDescription, goal.FieldUnit, goal.FieldDirection, goal.FieldState, goal.FieldType, goal.FieldGoalKind:
 			values[i] = new(sql.NullString)
 		case goal.FieldCreatedAt, goal.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -224,6 +261,19 @@ func (_m *Goal) assignValues(columns []string, values []any) error {
 			} else if value != nil {
 				_m.CategoryID = *value
 			}
+		case goal.FieldType:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field type", values[i])
+			} else if value.Valid {
+				_m.Type = goal.Type(value.String)
+			}
+		case goal.FieldGoalKind:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field goal_kind", values[i])
+			} else if value.Valid {
+				_m.GoalKind = new(goal.GoalKind)
+				*_m.GoalKind = goal.GoalKind(value.String)
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -250,6 +300,21 @@ func (_m *Goal) QueryKpiLinks() *GoalKpiLinkQuery {
 // QueryEvaluationGoals queries the "evaluation_goals" edge of the Goal entity.
 func (_m *Goal) QueryEvaluationGoals() *EvaluationGoalQuery {
 	return NewGoalClient(_m.config).QueryEvaluationGoals(_m)
+}
+
+// QueryGlobalAssignments queries the "global_assignments" edge of the Goal entity.
+func (_m *Goal) QueryGlobalAssignments() *GlobalGoalAssignmentQuery {
+	return NewGoalClient(_m.config).QueryGlobalAssignments(_m)
+}
+
+// QueryGlobalRules queries the "global_rules" edge of the Goal entity.
+func (_m *Goal) QueryGlobalRules() *GlobalGoalRuleQuery {
+	return NewGoalClient(_m.config).QueryGlobalRules(_m)
+}
+
+// QuerySharedGroup queries the "shared_group" edge of the Goal entity.
+func (_m *Goal) QuerySharedGroup() *SharedGoalGroupQuery {
+	return NewGoalClient(_m.config).QuerySharedGroup(_m)
 }
 
 // Update returns a builder for updating this Goal.
@@ -321,6 +386,14 @@ func (_m *Goal) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("category_id=")
 	builder.WriteString(fmt.Sprintf("%v", _m.CategoryID))
+	builder.WriteString(", ")
+	builder.WriteString("type=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Type))
+	builder.WriteString(", ")
+	if v := _m.GoalKind; v != nil {
+		builder.WriteString("goal_kind=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
 	builder.WriteByte(')')
 	return builder.String()
 }

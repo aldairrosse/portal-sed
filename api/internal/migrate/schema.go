@@ -307,6 +307,68 @@ var (
 			},
 		},
 	}
+	// GlobalGoalAssignmentsColumns holds the columns for the "global_goal_assignments" table.
+	GlobalGoalAssignmentsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "weight", Type: field.TypeFloat64},
+		{Name: "target_value", Type: field.TypeFloat64},
+		{Name: "baseline_value", Type: field.TypeFloat64, Nullable: true},
+		{Name: "employee_id", Type: field.TypeUUID},
+		{Name: "goal_id", Type: field.TypeUUID},
+	}
+	// GlobalGoalAssignmentsTable holds the schema information for the "global_goal_assignments" table.
+	GlobalGoalAssignmentsTable = &schema.Table{
+		Name:       "global_goal_assignments",
+		Columns:    GlobalGoalAssignmentsColumns,
+		PrimaryKey: []*schema.Column{GlobalGoalAssignmentsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "global_goal_assignments_employees_global_goal_assignments",
+				Columns:    []*schema.Column{GlobalGoalAssignmentsColumns[6]},
+				RefColumns: []*schema.Column{EmployeesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+			{
+				Symbol:     "global_goal_assignments_goals_global_assignments",
+				Columns:    []*schema.Column{GlobalGoalAssignmentsColumns[7]},
+				RefColumns: []*schema.Column{GoalsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+	}
+	// GlobalGoalRulesColumns holds the columns for the "global_goal_rules" table.
+	GlobalGoalRulesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "rule_type", Type: field.TypeEnum, Enums: []string{"department", "min_direct_reports"}},
+		{Name: "min_direct_reports", Type: field.TypeInt, Nullable: true},
+		{Name: "default_weight", Type: field.TypeFloat64},
+		{Name: "goal_id", Type: field.TypeUUID},
+		{Name: "department_id", Type: field.TypeUUID, Nullable: true},
+	}
+	// GlobalGoalRulesTable holds the schema information for the "global_goal_rules" table.
+	GlobalGoalRulesTable = &schema.Table{
+		Name:       "global_goal_rules",
+		Columns:    GlobalGoalRulesColumns,
+		PrimaryKey: []*schema.Column{GlobalGoalRulesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "global_goal_rules_goals_global_rules",
+				Columns:    []*schema.Column{GlobalGoalRulesColumns[6]},
+				RefColumns: []*schema.Column{GoalsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+			{
+				Symbol:     "global_goal_rules_org_nodes_global_goal_rules",
+				Columns:    []*schema.Column{GlobalGoalRulesColumns[7]},
+				RefColumns: []*schema.Column{OrgNodesColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
+	}
 	// GoalsColumns holds the columns for the "goals" table.
 	GoalsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
@@ -324,6 +386,8 @@ var (
 		{Name: "direction", Type: field.TypeEnum, Enums: []string{"ascendente", "descendente"}, Default: "ascendente"},
 		{Name: "baseline_value", Type: field.TypeFloat64, Nullable: true},
 		{Name: "state", Type: field.TypeEnum, Enums: []string{"borrador", "fijada", "en_seguimiento", "evaluada", "cerrada"}, SchemaType: map[string]string{"postgres": "goal_state"}},
+		{Name: "type", Type: field.TypeEnum, Enums: []string{"personal", "global", "shared"}, Default: "personal", SchemaType: map[string]string{"postgres": "goal_type"}},
+		{Name: "goal_kind", Type: field.TypeEnum, Nullable: true, Enums: []string{"qualitative", "quantitative"}},
 		{Name: "category_id", Type: field.TypeUUID},
 	}
 	// GoalsTable holds the schema information for the "goals" table.
@@ -334,7 +398,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "goals_goal_categories_goals",
-				Columns:    []*schema.Column{GoalsColumns[15]},
+				Columns:    []*schema.Column{GoalsColumns[17]},
 				RefColumns: []*schema.Column{GoalCategoriesColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
@@ -425,6 +489,63 @@ var (
 				Columns:    []*schema.Column{GoalKpiLinksColumns[3]},
 				RefColumns: []*schema.Column{KpIsColumns[0]},
 				OnDelete:   schema.Cascade,
+			},
+		},
+	}
+	// GoalTemplatesColumns holds the columns for the "goal_templates" table.
+	GoalTemplatesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "updated_by", Type: field.TypeUUID},
+		{Name: "name", Type: field.TypeString},
+		{Name: "description", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "unit", Type: field.TypeEnum, Enums: []string{"porcentaje", "moneda", "numero"}},
+		{Name: "direction", Type: field.TypeEnum, Enums: []string{"ascendente", "descendente"}, Default: "ascendente"},
+		{Name: "target_value", Type: field.TypeFloat64},
+		{Name: "goal_kind", Type: field.TypeEnum, Enums: []string{"qualitative", "quantitative"}},
+		{Name: "is_public", Type: field.TypeBool, Default: false},
+		{Name: "created_by", Type: field.TypeUUID},
+	}
+	// GoalTemplatesTable holds the schema information for the "goal_templates" table.
+	GoalTemplatesTable = &schema.Table{
+		Name:       "goal_templates",
+		Columns:    GoalTemplatesColumns,
+		PrimaryKey: []*schema.Column{GoalTemplatesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "goal_templates_employees_goal_templates",
+				Columns:    []*schema.Column{GoalTemplatesColumns[11]},
+				RefColumns: []*schema.Column{EmployeesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+	}
+	// GoalTemplateKpiLinksColumns holds the columns for the "goal_template_kpi_links" table.
+	GoalTemplateKpiLinksColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "template_id", Type: field.TypeUUID},
+		{Name: "kpi_id", Type: field.TypeUUID},
+	}
+	// GoalTemplateKpiLinksTable holds the schema information for the "goal_template_kpi_links" table.
+	GoalTemplateKpiLinksTable = &schema.Table{
+		Name:       "goal_template_kpi_links",
+		Columns:    GoalTemplateKpiLinksColumns,
+		PrimaryKey: []*schema.Column{GoalTemplateKpiLinksColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "goal_template_kpi_links_goal_templates_kpi_links",
+				Columns:    []*schema.Column{GoalTemplateKpiLinksColumns[3]},
+				RefColumns: []*schema.Column{GoalTemplatesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+			{
+				Symbol:     "goal_template_kpi_links_kp_is_template_links",
+				Columns:    []*schema.Column{GoalTemplateKpiLinksColumns[4]},
+				RefColumns: []*schema.Column{KpIsColumns[0]},
+				OnDelete:   schema.NoAction,
 			},
 		},
 	}
@@ -737,6 +858,68 @@ var (
 			},
 		},
 	}
+	// SharedGoalGroupsColumns holds the columns for the "shared_goal_groups" table.
+	SharedGoalGroupsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "updated_by", Type: field.TypeUUID},
+		{Name: "name", Type: field.TypeString},
+		{Name: "description", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "created_by", Type: field.TypeUUID},
+		{Name: "goal_id", Type: field.TypeUUID},
+	}
+	// SharedGoalGroupsTable holds the schema information for the "shared_goal_groups" table.
+	SharedGoalGroupsTable = &schema.Table{
+		Name:       "shared_goal_groups",
+		Columns:    SharedGoalGroupsColumns,
+		PrimaryKey: []*schema.Column{SharedGoalGroupsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "shared_goal_groups_employees_shared_goal_groups",
+				Columns:    []*schema.Column{SharedGoalGroupsColumns[6]},
+				RefColumns: []*schema.Column{EmployeesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+			{
+				Symbol:     "shared_goal_groups_goals_shared_group",
+				Columns:    []*schema.Column{SharedGoalGroupsColumns[7]},
+				RefColumns: []*schema.Column{GoalsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+	}
+	// SharedGoalMembersColumns holds the columns for the "shared_goal_members" table.
+	SharedGoalMembersColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "weight", Type: field.TypeFloat64},
+		{Name: "target_value", Type: field.TypeFloat64},
+		{Name: "baseline_value", Type: field.TypeFloat64, Nullable: true},
+		{Name: "employee_id", Type: field.TypeUUID},
+		{Name: "group_id", Type: field.TypeUUID},
+	}
+	// SharedGoalMembersTable holds the schema information for the "shared_goal_members" table.
+	SharedGoalMembersTable = &schema.Table{
+		Name:       "shared_goal_members",
+		Columns:    SharedGoalMembersColumns,
+		PrimaryKey: []*schema.Column{SharedGoalMembersColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "shared_goal_members_employees_shared_goal_members",
+				Columns:    []*schema.Column{SharedGoalMembersColumns[6]},
+				RefColumns: []*schema.Column{EmployeesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+			{
+				Symbol:     "shared_goal_members_shared_goal_groups_members",
+				Columns:    []*schema.Column{SharedGoalMembersColumns[7]},
+				RefColumns: []*schema.Column{SharedGoalGroupsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
 		ActivityLogsTable,
@@ -749,10 +932,14 @@ var (
 		EvaluationGoalsTable,
 		EvaluationProfilesTable,
 		EvaluatorScopesTable,
+		GlobalGoalAssignmentsTable,
+		GlobalGoalRulesTable,
 		GoalsTable,
 		GoalAssignmentsTable,
 		GoalCategoriesTable,
 		GoalKpiLinksTable,
+		GoalTemplatesTable,
+		GoalTemplateKpiLinksTable,
 		KpIsTable,
 		LevelDefinitionsTable,
 		NineBoxEntriesTable,
@@ -765,6 +952,8 @@ var (
 		PhaseTransitionsTable,
 		PillarsTable,
 		ScaleCriterionsTable,
+		SharedGoalGroupsTable,
+		SharedGoalMembersTable,
 	}
 )
 
@@ -789,6 +978,10 @@ func init() {
 	EvaluationGoalsTable.ForeignKeys[1].RefTable = GoalsTable
 	EvaluatorScopesTable.ForeignKeys[0].RefTable = CyclesTable
 	EvaluatorScopesTable.ForeignKeys[1].RefTable = EmployeesTable
+	GlobalGoalAssignmentsTable.ForeignKeys[0].RefTable = EmployeesTable
+	GlobalGoalAssignmentsTable.ForeignKeys[1].RefTable = GoalsTable
+	GlobalGoalRulesTable.ForeignKeys[0].RefTable = GoalsTable
+	GlobalGoalRulesTable.ForeignKeys[1].RefTable = OrgNodesTable
 	GoalsTable.ForeignKeys[0].RefTable = GoalCategoriesTable
 	GoalAssignmentsTable.ForeignKeys[0].RefTable = CyclesTable
 	GoalAssignmentsTable.ForeignKeys[1].RefTable = EmployeesTable
@@ -796,6 +989,9 @@ func init() {
 	GoalCategoriesTable.ForeignKeys[1].RefTable = PillarsTable
 	GoalKpiLinksTable.ForeignKeys[0].RefTable = GoalsTable
 	GoalKpiLinksTable.ForeignKeys[1].RefTable = KpIsTable
+	GoalTemplatesTable.ForeignKeys[0].RefTable = EmployeesTable
+	GoalTemplateKpiLinksTable.ForeignKeys[0].RefTable = GoalTemplatesTable
+	GoalTemplateKpiLinksTable.ForeignKeys[1].RefTable = KpIsTable
 	KpIsTable.ForeignKeys[0].RefTable = OrgNodesTable
 	NineBoxEntriesTable.ForeignKeys[0].RefTable = EmployeesTable
 	NineBoxEntriesTable.ForeignKeys[1].RefTable = NineBoxMatrixesTable
@@ -811,4 +1007,8 @@ func init() {
 	PhaseTransitionsTable.ForeignKeys[2].RefTable = PhaseDefinitionsTable
 	ScaleCriterionsTable.ForeignKeys[0].RefTable = CompetenciesTable
 	ScaleCriterionsTable.ForeignKeys[1].RefTable = PillarsTable
+	SharedGoalGroupsTable.ForeignKeys[0].RefTable = EmployeesTable
+	SharedGoalGroupsTable.ForeignKeys[1].RefTable = GoalsTable
+	SharedGoalMembersTable.ForeignKeys[0].RefTable = EmployeesTable
+	SharedGoalMembersTable.ForeignKeys[1].RefTable = SharedGoalGroupsTable
 }

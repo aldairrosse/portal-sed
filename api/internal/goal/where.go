@@ -706,6 +706,56 @@ func CategoryIDNotIn(vs ...uuid.UUID) predicate.Goal {
 	return predicate.Goal(sql.FieldNotIn(FieldCategoryID, vs...))
 }
 
+// TypeEQ applies the EQ predicate on the "type" field.
+func TypeEQ(v Type) predicate.Goal {
+	return predicate.Goal(sql.FieldEQ(FieldType, v))
+}
+
+// TypeNEQ applies the NEQ predicate on the "type" field.
+func TypeNEQ(v Type) predicate.Goal {
+	return predicate.Goal(sql.FieldNEQ(FieldType, v))
+}
+
+// TypeIn applies the In predicate on the "type" field.
+func TypeIn(vs ...Type) predicate.Goal {
+	return predicate.Goal(sql.FieldIn(FieldType, vs...))
+}
+
+// TypeNotIn applies the NotIn predicate on the "type" field.
+func TypeNotIn(vs ...Type) predicate.Goal {
+	return predicate.Goal(sql.FieldNotIn(FieldType, vs...))
+}
+
+// GoalKindEQ applies the EQ predicate on the "goal_kind" field.
+func GoalKindEQ(v GoalKind) predicate.Goal {
+	return predicate.Goal(sql.FieldEQ(FieldGoalKind, v))
+}
+
+// GoalKindNEQ applies the NEQ predicate on the "goal_kind" field.
+func GoalKindNEQ(v GoalKind) predicate.Goal {
+	return predicate.Goal(sql.FieldNEQ(FieldGoalKind, v))
+}
+
+// GoalKindIn applies the In predicate on the "goal_kind" field.
+func GoalKindIn(vs ...GoalKind) predicate.Goal {
+	return predicate.Goal(sql.FieldIn(FieldGoalKind, vs...))
+}
+
+// GoalKindNotIn applies the NotIn predicate on the "goal_kind" field.
+func GoalKindNotIn(vs ...GoalKind) predicate.Goal {
+	return predicate.Goal(sql.FieldNotIn(FieldGoalKind, vs...))
+}
+
+// GoalKindIsNil applies the IsNil predicate on the "goal_kind" field.
+func GoalKindIsNil() predicate.Goal {
+	return predicate.Goal(sql.FieldIsNull(FieldGoalKind))
+}
+
+// GoalKindNotNil applies the NotNil predicate on the "goal_kind" field.
+func GoalKindNotNil() predicate.Goal {
+	return predicate.Goal(sql.FieldNotNull(FieldGoalKind))
+}
+
 // HasCategory applies the HasEdge predicate on the "category" edge.
 func HasCategory() predicate.Goal {
 	return predicate.Goal(func(s *sql.Selector) {
@@ -767,6 +817,75 @@ func HasEvaluationGoals() predicate.Goal {
 func HasEvaluationGoalsWith(preds ...predicate.EvaluationGoal) predicate.Goal {
 	return predicate.Goal(func(s *sql.Selector) {
 		step := newEvaluationGoalsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasGlobalAssignments applies the HasEdge predicate on the "global_assignments" edge.
+func HasGlobalAssignments() predicate.Goal {
+	return predicate.Goal(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, GlobalAssignmentsTable, GlobalAssignmentsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasGlobalAssignmentsWith applies the HasEdge predicate on the "global_assignments" edge with a given conditions (other predicates).
+func HasGlobalAssignmentsWith(preds ...predicate.GlobalGoalAssignment) predicate.Goal {
+	return predicate.Goal(func(s *sql.Selector) {
+		step := newGlobalAssignmentsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasGlobalRules applies the HasEdge predicate on the "global_rules" edge.
+func HasGlobalRules() predicate.Goal {
+	return predicate.Goal(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, GlobalRulesTable, GlobalRulesColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasGlobalRulesWith applies the HasEdge predicate on the "global_rules" edge with a given conditions (other predicates).
+func HasGlobalRulesWith(preds ...predicate.GlobalGoalRule) predicate.Goal {
+	return predicate.Goal(func(s *sql.Selector) {
+		step := newGlobalRulesStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasSharedGroup applies the HasEdge predicate on the "shared_group" edge.
+func HasSharedGroup() predicate.Goal {
+	return predicate.Goal(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, SharedGroupTable, SharedGroupColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasSharedGroupWith applies the HasEdge predicate on the "shared_group" edge with a given conditions (other predicates).
+func HasSharedGroupWith(preds ...predicate.SharedGoalGroup) predicate.Goal {
+	return predicate.Goal(func(s *sql.Selector) {
+		step := newSharedGroupStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

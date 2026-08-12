@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
 	"github.com/sed-evaluacion-desempeno/api/internal/employee"
+	"github.com/sed-evaluacion-desempeno/api/internal/globalgoalrule"
 	"github.com/sed-evaluacion-desempeno/api/internal/kpi"
 	"github.com/sed-evaluacion-desempeno/api/internal/organization"
 	"github.com/sed-evaluacion-desempeno/api/internal/orgnode"
@@ -247,6 +248,21 @@ func (_u *OrgNodeUpdate) AddKpis(v ...*KPI) *OrgNodeUpdate {
 	return _u.AddKpiIDs(ids...)
 }
 
+// AddGlobalGoalRuleIDs adds the "global_goal_rules" edge to the GlobalGoalRule entity by IDs.
+func (_u *OrgNodeUpdate) AddGlobalGoalRuleIDs(ids ...uuid.UUID) *OrgNodeUpdate {
+	_u.mutation.AddGlobalGoalRuleIDs(ids...)
+	return _u
+}
+
+// AddGlobalGoalRules adds the "global_goal_rules" edges to the GlobalGoalRule entity.
+func (_u *OrgNodeUpdate) AddGlobalGoalRules(v ...*GlobalGoalRule) *OrgNodeUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddGlobalGoalRuleIDs(ids...)
+}
+
 // Mutation returns the OrgNodeMutation object of the builder.
 func (_u *OrgNodeUpdate) Mutation() *OrgNodeMutation {
 	return _u.mutation
@@ -331,6 +347,27 @@ func (_u *OrgNodeUpdate) RemoveKpis(v ...*KPI) *OrgNodeUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveKpiIDs(ids...)
+}
+
+// ClearGlobalGoalRules clears all "global_goal_rules" edges to the GlobalGoalRule entity.
+func (_u *OrgNodeUpdate) ClearGlobalGoalRules() *OrgNodeUpdate {
+	_u.mutation.ClearGlobalGoalRules()
+	return _u
+}
+
+// RemoveGlobalGoalRuleIDs removes the "global_goal_rules" edge to GlobalGoalRule entities by IDs.
+func (_u *OrgNodeUpdate) RemoveGlobalGoalRuleIDs(ids ...uuid.UUID) *OrgNodeUpdate {
+	_u.mutation.RemoveGlobalGoalRuleIDs(ids...)
+	return _u
+}
+
+// RemoveGlobalGoalRules removes "global_goal_rules" edges to GlobalGoalRule entities.
+func (_u *OrgNodeUpdate) RemoveGlobalGoalRules(v ...*GlobalGoalRule) *OrgNodeUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveGlobalGoalRuleIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -661,6 +698,51 @@ func (_u *OrgNodeUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if _u.mutation.GlobalGoalRulesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   orgnode.GlobalGoalRulesTable,
+			Columns: []string{orgnode.GlobalGoalRulesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(globalgoalrule.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedGlobalGoalRulesIDs(); len(nodes) > 0 && !_u.mutation.GlobalGoalRulesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   orgnode.GlobalGoalRulesTable,
+			Columns: []string{orgnode.GlobalGoalRulesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(globalgoalrule.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.GlobalGoalRulesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   orgnode.GlobalGoalRulesTable,
+			Columns: []string{orgnode.GlobalGoalRulesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(globalgoalrule.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{orgnode.Label}
@@ -896,6 +978,21 @@ func (_u *OrgNodeUpdateOne) AddKpis(v ...*KPI) *OrgNodeUpdateOne {
 	return _u.AddKpiIDs(ids...)
 }
 
+// AddGlobalGoalRuleIDs adds the "global_goal_rules" edge to the GlobalGoalRule entity by IDs.
+func (_u *OrgNodeUpdateOne) AddGlobalGoalRuleIDs(ids ...uuid.UUID) *OrgNodeUpdateOne {
+	_u.mutation.AddGlobalGoalRuleIDs(ids...)
+	return _u
+}
+
+// AddGlobalGoalRules adds the "global_goal_rules" edges to the GlobalGoalRule entity.
+func (_u *OrgNodeUpdateOne) AddGlobalGoalRules(v ...*GlobalGoalRule) *OrgNodeUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddGlobalGoalRuleIDs(ids...)
+}
+
 // Mutation returns the OrgNodeMutation object of the builder.
 func (_u *OrgNodeUpdateOne) Mutation() *OrgNodeMutation {
 	return _u.mutation
@@ -980,6 +1077,27 @@ func (_u *OrgNodeUpdateOne) RemoveKpis(v ...*KPI) *OrgNodeUpdateOne {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveKpiIDs(ids...)
+}
+
+// ClearGlobalGoalRules clears all "global_goal_rules" edges to the GlobalGoalRule entity.
+func (_u *OrgNodeUpdateOne) ClearGlobalGoalRules() *OrgNodeUpdateOne {
+	_u.mutation.ClearGlobalGoalRules()
+	return _u
+}
+
+// RemoveGlobalGoalRuleIDs removes the "global_goal_rules" edge to GlobalGoalRule entities by IDs.
+func (_u *OrgNodeUpdateOne) RemoveGlobalGoalRuleIDs(ids ...uuid.UUID) *OrgNodeUpdateOne {
+	_u.mutation.RemoveGlobalGoalRuleIDs(ids...)
+	return _u
+}
+
+// RemoveGlobalGoalRules removes "global_goal_rules" edges to GlobalGoalRule entities.
+func (_u *OrgNodeUpdateOne) RemoveGlobalGoalRules(v ...*GlobalGoalRule) *OrgNodeUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveGlobalGoalRuleIDs(ids...)
 }
 
 // Where appends a list predicates to the OrgNodeUpdate builder.
@@ -1333,6 +1451,51 @@ func (_u *OrgNodeUpdateOne) sqlSave(ctx context.Context) (_node *OrgNode, err er
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(kpi.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.GlobalGoalRulesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   orgnode.GlobalGoalRulesTable,
+			Columns: []string{orgnode.GlobalGoalRulesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(globalgoalrule.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedGlobalGoalRulesIDs(); len(nodes) > 0 && !_u.mutation.GlobalGoalRulesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   orgnode.GlobalGoalRulesTable,
+			Columns: []string{orgnode.GlobalGoalRulesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(globalgoalrule.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.GlobalGoalRulesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   orgnode.GlobalGoalRulesTable,
+			Columns: []string{orgnode.GlobalGoalRulesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(globalgoalrule.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
