@@ -22,6 +22,18 @@ export const MENU_ITEMS: MenuItem[] = [
 		profiles: ['colaborador', 'jefe', 'vendedor', 'gerente-tienda', 'divisional', 'regional', 'director', 'rh']
 	},
 	{
+		label: 'Objetivos globales',
+		href: '/objetivos/globales',
+		icon: 'Target',
+		profiles: ['rh']
+	},
+	{
+		label: 'Metas compartidas',
+		href: '/objetivos/compartidas',
+		icon: 'Users',
+		profiles: ['jefe', 'gerente-tienda', 'divisional', 'regional', 'director']
+	},
+	{
 		label: 'Mi evaluación',
 		href: '/mi-evaluacion',
 		icon: 'ClipboardCheck',
