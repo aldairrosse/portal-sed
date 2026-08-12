@@ -283,9 +283,6 @@
                     </button>
                 </div>
             </div>
-            {#if employeeOptions.length === 0}
-                <p class="text-xs text-base-content/60">No hay empleados disponibles.</p>
-            {/if}
             {#if assignments.length > 0}
                 <div class="space-y-2">
                     {#each assignments as a, i (a.employeeId)}
