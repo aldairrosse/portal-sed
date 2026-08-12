@@ -233,6 +233,8 @@ func main() {
 	assignRepo := repogoal.NewAssignmentRepo(client, db)
 	proposalRepo := repogoal.NewGoalProposalRepo(db)
 	weightQ := repogoal.NewWeightQueries(db)
+	globalGoalRepo := repogoal.NewGlobalGoalRepo(client, db)
+	sharedGoalRepo := repogoal.NewSharedGoalRepo(client, db)
 
 	// Cycle
 	cycleRepo := repocycle.NewCycleRepo(client, db)
@@ -301,6 +303,8 @@ func main() {
 	weightSvc := goalsvc.NewWeightValidationService(catRepo, goalRepo)
 	batchSvc := goalsvc.NewBatchService(goalRepo, catRepo, kpiRepo, linkRepo, weightQ, phaseCheck)
 	proposalSvc := goalsvc.NewGoalProposalService(proposalRepo, goalRepo, catRepo, linkRepo, weightQ, phaseCheck, db)
+	globalGoalSvc := goalsvc.NewGlobalGoalService(globalGoalRepo)
+	sharedGoalSvc := goalsvc.NewSharedGoalService(sharedGoalRepo)
 
 	// Cycle services
 	cycleSvc := cyclesvc.NewService(cycleRepo, phaseRepo, client)
@@ -343,6 +347,8 @@ func main() {
 	evalH := evalhandler.NewEvaluationHandler(evalSvc, nineBoxSvc, dashboardSvc, activitySvc)
 	orgH := orghandler.NewOrgHandler(orgTreeSvc, orgNodeSvc, employeeSvc, evaluateeSvc, metricsSvc)
 	commentChangeH := commentchangehandler.NewHandler(db, notifypkg.NoopSender{})
+	globalGoalH := goalhandler.NewGlobalGoalHandler(globalGoalSvc)
+	sharedGoalH := goalhandler.NewSharedGoalHandler(sharedGoalSvc)
 
 	// -----------------------------------------------------------------------
 	// Router
@@ -376,6 +382,8 @@ func main() {
 	evalhandler.RegisterRoutes(apiV1, evalH, authSvc)
 	orghandler.RegisterRoutes(apiV1, orgH, authSvc)
 	goalhandler.RegisterRoutes(apiV1, goalH, authSvc)
+	globalGoalH.RegisterRoutes(apiV1)
+	sharedGoalH.RegisterRoutes(apiV1)
 	commentchangehandler.RegisterRoutes(apiV1, commentChangeH, authSvc)
 	activityhandler.RegisterActivityRoutes(apiV1, activityH, authSvc)
 	r.Mount("/api/v1", apiV1)
