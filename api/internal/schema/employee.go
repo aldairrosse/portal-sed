@@ -76,6 +76,10 @@ func (Employee) Edges() []ent.Edge {
 		edge.From("headed_department", OrgNode.Type).
 			Ref("head_employee"),
 		edge.To("activity_logs", ActivityLog.Type),
+		edge.To("goal_templates", GoalTemplate.Type),
+		edge.To("global_goal_assignments", GlobalGoalAssignment.Type),
+		edge.To("shared_goal_groups", SharedGoalGroup.Type),
+		edge.To("shared_goal_members", SharedGoalMember.Type),
 	}
 }
 

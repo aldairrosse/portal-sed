@@ -54,6 +54,16 @@ func (Goal) Fields() []ent.Field {
 				dialect.Postgres: "goal_state",
 			}),
 		field.UUID("category_id", uuid.UUID{}),
+		field.Enum("type").
+			Values("personal", "global", "shared").
+			Default("personal").
+			SchemaType(map[string]string{
+				dialect.Postgres: "goal_type",
+			}),
+		field.Enum("goal_kind").
+			Values("qualitative", "quantitative").
+			Optional().
+			Nillable(),
 	}
 }
 
@@ -69,6 +79,9 @@ func (Goal) Edges() []ent.Edge {
 				OnDelete: entsql.Cascade,
 			}),
 		edge.To("evaluation_goals", EvaluationGoal.Type),
+		edge.To("global_assignments", GlobalGoalAssignment.Type),
+		edge.To("global_rules", GlobalGoalRule.Type),
+		edge.To("shared_group", SharedGoalGroup.Type),
 	}
 }
 

@@ -62,6 +62,7 @@ func (KPI) Edges() []ent.Edge {
 			Ref("kpis").
 			Unique().
 			Field("org_node_id"),
+		edge.To("template_links", GoalTemplateKpiLink.Type),
 	}
 }
 
