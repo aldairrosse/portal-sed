@@ -145,10 +145,10 @@
 	ontoggle={handleToggle}
 >
 	{#if searchable}
-		<li class="mb-1 sticky top-0 bg-base-100">
+		<li class="mb-1 sticky top-0 z-10 bg-base-100 border-b border-base-300 pb-1.5">
 			<input
 				type="search"
-				class="input input-bordered input-xs w-full"
+				class="input input-bordered input-xs w-full bg-base-100"
 				placeholder="Buscar…"
 				bind:value={query}
 				onkeydown={(e) => e.stopPropagation()}
