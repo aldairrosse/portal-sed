@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
+	"github.com/sed-evaluacion-desempeno/api/internal/evaluationprofile"
 	"github.com/sed-evaluacion-desempeno/api/internal/globalgoalrule"
 	"github.com/sed-evaluacion-desempeno/api/internal/goal"
 	"github.com/sed-evaluacion-desempeno/api/internal/orgnode"
@@ -27,6 +28,7 @@ type GlobalGoalRuleQuery struct {
 	predicates     []predicate.GlobalGoalRule
 	withGoal       *GoalQuery
 	withDepartment *OrgNodeQuery
+	withProfile    *EvaluationProfileQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -100,6 +102,28 @@ func (_q *GlobalGoalRuleQuery) QueryDepartment() *OrgNodeQuery {
 			sqlgraph.From(globalgoalrule.Table, globalgoalrule.FieldID, selector),
 			sqlgraph.To(orgnode.Table, orgnode.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, globalgoalrule.DepartmentTable, globalgoalrule.DepartmentColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryProfile chains the current query on the "profile" edge.
+func (_q *GlobalGoalRuleQuery) QueryProfile() *EvaluationProfileQuery {
+	query := (&EvaluationProfileClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(globalgoalrule.Table, globalgoalrule.FieldID, selector),
+			sqlgraph.To(evaluationprofile.Table, evaluationprofile.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, globalgoalrule.ProfileTable, globalgoalrule.ProfileColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -301,6 +325,7 @@ func (_q *GlobalGoalRuleQuery) Clone() *GlobalGoalRuleQuery {
 		predicates:     append([]predicate.GlobalGoalRule{}, _q.predicates...),
 		withGoal:       _q.withGoal.Clone(),
 		withDepartment: _q.withDepartment.Clone(),
+		withProfile:    _q.withProfile.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
@@ -326,6 +351,17 @@ func (_q *GlobalGoalRuleQuery) WithDepartment(opts ...func(*OrgNodeQuery)) *Glob
 		opt(query)
 	}
 	_q.withDepartment = query
+	return _q
+}
+
+// WithProfile tells the query-builder to eager-load the nodes that are connected to
+// the "profile" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *GlobalGoalRuleQuery) WithProfile(opts ...func(*EvaluationProfileQuery)) *GlobalGoalRuleQuery {
+	query := (&EvaluationProfileClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withProfile = query
 	return _q
 }
 
@@ -407,9 +443,10 @@ func (_q *GlobalGoalRuleQuery) sqlAll(ctx context.Context, hooks ...queryHook) (
 	var (
 		nodes       = []*GlobalGoalRule{}
 		_spec       = _q.querySpec()
-		loadedTypes = [2]bool{
+		loadedTypes = [3]bool{
 			_q.withGoal != nil,
 			_q.withDepartment != nil,
+			_q.withProfile != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -439,6 +476,12 @@ func (_q *GlobalGoalRuleQuery) sqlAll(ctx context.Context, hooks ...queryHook) (
 	if query := _q.withDepartment; query != nil {
 		if err := _q.loadDepartment(ctx, query, nodes, nil,
 			func(n *GlobalGoalRule, e *OrgNode) { n.Edges.Department = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withProfile; query != nil {
+		if err := _q.loadProfile(ctx, query, nodes, nil,
+			func(n *GlobalGoalRule, e *EvaluationProfile) { n.Edges.Profile = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -506,6 +549,38 @@ func (_q *GlobalGoalRuleQuery) loadDepartment(ctx context.Context, query *OrgNod
 	}
 	return nil
 }
+func (_q *GlobalGoalRuleQuery) loadProfile(ctx context.Context, query *EvaluationProfileQuery, nodes []*GlobalGoalRule, init func(*GlobalGoalRule), assign func(*GlobalGoalRule, *EvaluationProfile)) error {
+	ids := make([]uuid.UUID, 0, len(nodes))
+	nodeids := make(map[uuid.UUID][]*GlobalGoalRule)
+	for i := range nodes {
+		if nodes[i].ProfileID == nil {
+			continue
+		}
+		fk := *nodes[i].ProfileID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(evaluationprofile.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "profile_id" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
 
 func (_q *GlobalGoalRuleQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := _q.querySpec()
@@ -537,6 +612,9 @@ func (_q *GlobalGoalRuleQuery) querySpec() *sqlgraph.QuerySpec {
 		}
 		if _q.withDepartment != nil {
 			_spec.Node.AddColumnOnce(globalgoalrule.FieldDepartmentID)
+		}
+		if _q.withProfile != nil {
+			_spec.Node.AddColumnOnce(globalgoalrule.FieldProfileID)
 		}
 	}
 	if ps := _q.predicates; len(ps) > 0 {

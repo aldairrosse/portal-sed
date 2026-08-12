@@ -76,6 +76,11 @@ func DepartmentID(v uuid.UUID) predicate.GlobalGoalRule {
 	return predicate.GlobalGoalRule(sql.FieldEQ(FieldDepartmentID, v))
 }
 
+// ProfileID applies equality check predicate on the "profile_id" field. It's identical to ProfileIDEQ.
+func ProfileID(v uuid.UUID) predicate.GlobalGoalRule {
+	return predicate.GlobalGoalRule(sql.FieldEQ(FieldProfileID, v))
+}
+
 // MinDirectReports applies equality check predicate on the "min_direct_reports" field. It's identical to MinDirectReportsEQ.
 func MinDirectReports(v int) predicate.GlobalGoalRule {
 	return predicate.GlobalGoalRule(sql.FieldEQ(FieldMinDirectReports, v))
@@ -236,6 +241,36 @@ func DepartmentIDNotNil() predicate.GlobalGoalRule {
 	return predicate.GlobalGoalRule(sql.FieldNotNull(FieldDepartmentID))
 }
 
+// ProfileIDEQ applies the EQ predicate on the "profile_id" field.
+func ProfileIDEQ(v uuid.UUID) predicate.GlobalGoalRule {
+	return predicate.GlobalGoalRule(sql.FieldEQ(FieldProfileID, v))
+}
+
+// ProfileIDNEQ applies the NEQ predicate on the "profile_id" field.
+func ProfileIDNEQ(v uuid.UUID) predicate.GlobalGoalRule {
+	return predicate.GlobalGoalRule(sql.FieldNEQ(FieldProfileID, v))
+}
+
+// ProfileIDIn applies the In predicate on the "profile_id" field.
+func ProfileIDIn(vs ...uuid.UUID) predicate.GlobalGoalRule {
+	return predicate.GlobalGoalRule(sql.FieldIn(FieldProfileID, vs...))
+}
+
+// ProfileIDNotIn applies the NotIn predicate on the "profile_id" field.
+func ProfileIDNotIn(vs ...uuid.UUID) predicate.GlobalGoalRule {
+	return predicate.GlobalGoalRule(sql.FieldNotIn(FieldProfileID, vs...))
+}
+
+// ProfileIDIsNil applies the IsNil predicate on the "profile_id" field.
+func ProfileIDIsNil() predicate.GlobalGoalRule {
+	return predicate.GlobalGoalRule(sql.FieldIsNull(FieldProfileID))
+}
+
+// ProfileIDNotNil applies the NotNil predicate on the "profile_id" field.
+func ProfileIDNotNil() predicate.GlobalGoalRule {
+	return predicate.GlobalGoalRule(sql.FieldNotNull(FieldProfileID))
+}
+
 // MinDirectReportsEQ applies the EQ predicate on the "min_direct_reports" field.
 func MinDirectReportsEQ(v int) predicate.GlobalGoalRule {
 	return predicate.GlobalGoalRule(sql.FieldEQ(FieldMinDirectReports, v))
@@ -364,6 +399,29 @@ func HasDepartment() predicate.GlobalGoalRule {
 func HasDepartmentWith(preds ...predicate.OrgNode) predicate.GlobalGoalRule {
 	return predicate.GlobalGoalRule(func(s *sql.Selector) {
 		step := newDepartmentStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasProfile applies the HasEdge predicate on the "profile" edge.
+func HasProfile() predicate.GlobalGoalRule {
+	return predicate.GlobalGoalRule(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, ProfileTable, ProfileColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasProfileWith applies the HasEdge predicate on the "profile" edge with a given conditions (other predicates).
+func HasProfileWith(preds ...predicate.EvaluationProfile) predicate.GlobalGoalRule {
+	return predicate.GlobalGoalRule(func(s *sql.Selector) {
+		step := newProfileStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

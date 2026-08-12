@@ -333,7 +333,7 @@ func init() {
 	// globalgoalrule.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	globalgoalrule.UpdateDefaultUpdatedAt = globalgoalruleDescUpdatedAt.UpdateDefault.(func() time.Time)
 	// globalgoalruleDescDefaultWeight is the schema descriptor for default_weight field.
-	globalgoalruleDescDefaultWeight := globalgoalruleFields[5].Descriptor()
+	globalgoalruleDescDefaultWeight := globalgoalruleFields[6].Descriptor()
 	// globalgoalrule.DefaultWeightValidator is a validator for the "default_weight" field. It is called by the builders before save.
 	globalgoalrule.DefaultWeightValidator = globalgoalruleDescDefaultWeight.Validators[0].(func(float64) error)
 	// globalgoalruleDescID is the schema descriptor for id field.

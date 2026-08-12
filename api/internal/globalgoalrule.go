@@ -10,6 +10,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/google/uuid"
+	"github.com/sed-evaluacion-desempeno/api/internal/evaluationprofile"
 	"github.com/sed-evaluacion-desempeno/api/internal/globalgoalrule"
 	"github.com/sed-evaluacion-desempeno/api/internal/goal"
 	"github.com/sed-evaluacion-desempeno/api/internal/orgnode"
@@ -30,6 +31,8 @@ type GlobalGoalRule struct {
 	RuleType globalgoalrule.RuleType `json:"rule_type,omitempty"`
 	// DepartmentID holds the value of the "department_id" field.
 	DepartmentID *uuid.UUID `json:"department_id,omitempty"`
+	// ProfileID holds the value of the "profile_id" field.
+	ProfileID *uuid.UUID `json:"profile_id,omitempty"`
 	// MinDirectReports holds the value of the "min_direct_reports" field.
 	MinDirectReports *int `json:"min_direct_reports,omitempty"`
 	// DefaultWeight holds the value of the "default_weight" field.
@@ -46,9 +49,11 @@ type GlobalGoalRuleEdges struct {
 	Goal *Goal `json:"goal,omitempty"`
 	// Department holds the value of the department edge.
 	Department *OrgNode `json:"department,omitempty"`
+	// Profile holds the value of the profile edge.
+	Profile *EvaluationProfile `json:"profile,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
+	loadedTypes [3]bool
 }
 
 // GoalOrErr returns the Goal value or an error if the edge
@@ -73,12 +78,23 @@ func (e GlobalGoalRuleEdges) DepartmentOrErr() (*OrgNode, error) {
 	return nil, &NotLoadedError{edge: "department"}
 }
 
+// ProfileOrErr returns the Profile value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e GlobalGoalRuleEdges) ProfileOrErr() (*EvaluationProfile, error) {
+	if e.Profile != nil {
+		return e.Profile, nil
+	} else if e.loadedTypes[2] {
+		return nil, &NotFoundError{label: evaluationprofile.Label}
+	}
+	return nil, &NotLoadedError{edge: "profile"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*GlobalGoalRule) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case globalgoalrule.FieldDepartmentID:
+		case globalgoalrule.FieldDepartmentID, globalgoalrule.FieldProfileID:
 			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		case globalgoalrule.FieldDefaultWeight:
 			values[i] = new(sql.NullFloat64)
@@ -142,6 +158,13 @@ func (_m *GlobalGoalRule) assignValues(columns []string, values []any) error {
 				_m.DepartmentID = new(uuid.UUID)
 				*_m.DepartmentID = *value.S.(*uuid.UUID)
 			}
+		case globalgoalrule.FieldProfileID:
+			if value, ok := values[i].(*sql.NullScanner); !ok {
+				return fmt.Errorf("unexpected type %T for field profile_id", values[i])
+			} else if value.Valid {
+				_m.ProfileID = new(uuid.UUID)
+				*_m.ProfileID = *value.S.(*uuid.UUID)
+			}
 		case globalgoalrule.FieldMinDirectReports:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field min_direct_reports", values[i])
@@ -176,6 +199,11 @@ func (_m *GlobalGoalRule) QueryGoal() *GoalQuery {
 // QueryDepartment queries the "department" edge of the GlobalGoalRule entity.
 func (_m *GlobalGoalRule) QueryDepartment() *OrgNodeQuery {
 	return NewGlobalGoalRuleClient(_m.config).QueryDepartment(_m)
+}
+
+// QueryProfile queries the "profile" edge of the GlobalGoalRule entity.
+func (_m *GlobalGoalRule) QueryProfile() *EvaluationProfileQuery {
+	return NewGlobalGoalRuleClient(_m.config).QueryProfile(_m)
 }
 
 // Update returns a builder for updating this GlobalGoalRule.
@@ -215,6 +243,11 @@ func (_m *GlobalGoalRule) String() string {
 	builder.WriteString(", ")
 	if v := _m.DepartmentID; v != nil {
 		builder.WriteString("department_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.ProfileID; v != nil {
+		builder.WriteString("profile_id=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
 	builder.WriteString(", ")

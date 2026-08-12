@@ -23,6 +23,8 @@ const (
 	EdgeAcceptanceLevels = "acceptance_levels"
 	// EdgeEvaluationCompetencies holds the string denoting the evaluation_competencies edge name in mutations.
 	EdgeEvaluationCompetencies = "evaluation_competencies"
+	// EdgeGlobalGoalRules holds the string denoting the global_goal_rules edge name in mutations.
+	EdgeGlobalGoalRules = "global_goal_rules"
 	// Table holds the table name of the evaluationprofile in the database.
 	Table = "evaluation_profiles"
 	// EmployeesTable is the table that holds the employees relation/edge.
@@ -46,6 +48,13 @@ const (
 	EvaluationCompetenciesInverseTable = "evaluation_competencies"
 	// EvaluationCompetenciesColumn is the table column denoting the evaluation_competencies relation/edge.
 	EvaluationCompetenciesColumn = "profile_id"
+	// GlobalGoalRulesTable is the table that holds the global_goal_rules relation/edge.
+	GlobalGoalRulesTable = "global_goal_rules"
+	// GlobalGoalRulesInverseTable is the table name for the GlobalGoalRule entity.
+	// It exists in this package in order to avoid circular dependency with the "globalgoalrule" package.
+	GlobalGoalRulesInverseTable = "global_goal_rules"
+	// GlobalGoalRulesColumn is the table column denoting the global_goal_rules relation/edge.
+	GlobalGoalRulesColumn = "profile_id"
 )
 
 // Columns holds all SQL columns for evaluationprofile fields.
@@ -131,6 +140,20 @@ func ByEvaluationCompetencies(term sql.OrderTerm, terms ...sql.OrderTerm) OrderO
 		sqlgraph.OrderByNeighborTerms(s, newEvaluationCompetenciesStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByGlobalGoalRulesCount orders the results by global_goal_rules count.
+func ByGlobalGoalRulesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newGlobalGoalRulesStep(), opts...)
+	}
+}
+
+// ByGlobalGoalRules orders the results by global_goal_rules terms.
+func ByGlobalGoalRules(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newGlobalGoalRulesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newEmployeesStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -150,5 +173,12 @@ func newEvaluationCompetenciesStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(EvaluationCompetenciesInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, EvaluationCompetenciesTable, EvaluationCompetenciesColumn),
+	)
+}
+func newGlobalGoalRulesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(GlobalGoalRulesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, GlobalGoalRulesTable, GlobalGoalRulesColumn),
 	)
 }

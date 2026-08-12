@@ -14,6 +14,7 @@ import (
 	"github.com/sed-evaluacion-desempeno/api/internal/employee"
 	"github.com/sed-evaluacion-desempeno/api/internal/evaluationcompetency"
 	"github.com/sed-evaluacion-desempeno/api/internal/evaluationprofile"
+	"github.com/sed-evaluacion-desempeno/api/internal/globalgoalrule"
 )
 
 // EvaluationProfileCreate is the builder for creating a EvaluationProfile entity.
@@ -100,6 +101,21 @@ func (_c *EvaluationProfileCreate) AddEvaluationCompetencies(v ...*EvaluationCom
 		ids[i] = v[i].ID
 	}
 	return _c.AddEvaluationCompetencyIDs(ids...)
+}
+
+// AddGlobalGoalRuleIDs adds the "global_goal_rules" edge to the GlobalGoalRule entity by IDs.
+func (_c *EvaluationProfileCreate) AddGlobalGoalRuleIDs(ids ...uuid.UUID) *EvaluationProfileCreate {
+	_c.mutation.AddGlobalGoalRuleIDs(ids...)
+	return _c
+}
+
+// AddGlobalGoalRules adds the "global_goal_rules" edges to the GlobalGoalRule entity.
+func (_c *EvaluationProfileCreate) AddGlobalGoalRules(v ...*GlobalGoalRule) *EvaluationProfileCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddGlobalGoalRuleIDs(ids...)
 }
 
 // Mutation returns the EvaluationProfileMutation object of the builder.
@@ -237,6 +253,22 @@ func (_c *EvaluationProfileCreate) createSpec() (*EvaluationProfile, *sqlgraph.C
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(evaluationcompetency.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.GlobalGoalRulesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   evaluationprofile.GlobalGoalRulesTable,
+			Columns: []string{evaluationprofile.GlobalGoalRulesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(globalgoalrule.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

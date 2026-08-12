@@ -8968,6 +8968,9 @@ type EvaluationProfileMutation struct {
 	evaluation_competencies        map[uuid.UUID]struct{}
 	removedevaluation_competencies map[uuid.UUID]struct{}
 	clearedevaluation_competencies bool
+	global_goal_rules              map[uuid.UUID]struct{}
+	removedglobal_goal_rules       map[uuid.UUID]struct{}
+	clearedglobal_goal_rules       bool
 	done                           bool
 	oldValue                       func(context.Context) (*EvaluationProfile, error)
 	predicates                     []predicate.EvaluationProfile
@@ -9324,6 +9327,60 @@ func (m *EvaluationProfileMutation) ResetEvaluationCompetencies() {
 	m.removedevaluation_competencies = nil
 }
 
+// AddGlobalGoalRuleIDs adds the "global_goal_rules" edge to the GlobalGoalRule entity by ids.
+func (m *EvaluationProfileMutation) AddGlobalGoalRuleIDs(ids ...uuid.UUID) {
+	if m.global_goal_rules == nil {
+		m.global_goal_rules = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.global_goal_rules[ids[i]] = struct{}{}
+	}
+}
+
+// ClearGlobalGoalRules clears the "global_goal_rules" edge to the GlobalGoalRule entity.
+func (m *EvaluationProfileMutation) ClearGlobalGoalRules() {
+	m.clearedglobal_goal_rules = true
+}
+
+// GlobalGoalRulesCleared reports if the "global_goal_rules" edge to the GlobalGoalRule entity was cleared.
+func (m *EvaluationProfileMutation) GlobalGoalRulesCleared() bool {
+	return m.clearedglobal_goal_rules
+}
+
+// RemoveGlobalGoalRuleIDs removes the "global_goal_rules" edge to the GlobalGoalRule entity by IDs.
+func (m *EvaluationProfileMutation) RemoveGlobalGoalRuleIDs(ids ...uuid.UUID) {
+	if m.removedglobal_goal_rules == nil {
+		m.removedglobal_goal_rules = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.global_goal_rules, ids[i])
+		m.removedglobal_goal_rules[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedGlobalGoalRules returns the removed IDs of the "global_goal_rules" edge to the GlobalGoalRule entity.
+func (m *EvaluationProfileMutation) RemovedGlobalGoalRulesIDs() (ids []uuid.UUID) {
+	for id := range m.removedglobal_goal_rules {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// GlobalGoalRulesIDs returns the "global_goal_rules" edge IDs in the mutation.
+func (m *EvaluationProfileMutation) GlobalGoalRulesIDs() (ids []uuid.UUID) {
+	for id := range m.global_goal_rules {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetGlobalGoalRules resets all changes to the "global_goal_rules" edge.
+func (m *EvaluationProfileMutation) ResetGlobalGoalRules() {
+	m.global_goal_rules = nil
+	m.clearedglobal_goal_rules = false
+	m.removedglobal_goal_rules = nil
+}
+
 // Where appends a list predicates to the EvaluationProfileMutation builder.
 func (m *EvaluationProfileMutation) Where(ps ...predicate.EvaluationProfile) {
 	m.predicates = append(m.predicates, ps...)
@@ -9483,7 +9540,7 @@ func (m *EvaluationProfileMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *EvaluationProfileMutation) AddedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.employees != nil {
 		edges = append(edges, evaluationprofile.EdgeEmployees)
 	}
@@ -9492,6 +9549,9 @@ func (m *EvaluationProfileMutation) AddedEdges() []string {
 	}
 	if m.evaluation_competencies != nil {
 		edges = append(edges, evaluationprofile.EdgeEvaluationCompetencies)
+	}
+	if m.global_goal_rules != nil {
+		edges = append(edges, evaluationprofile.EdgeGlobalGoalRules)
 	}
 	return edges
 }
@@ -9518,13 +9578,19 @@ func (m *EvaluationProfileMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case evaluationprofile.EdgeGlobalGoalRules:
+		ids := make([]ent.Value, 0, len(m.global_goal_rules))
+		for id := range m.global_goal_rules {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *EvaluationProfileMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.removedemployees != nil {
 		edges = append(edges, evaluationprofile.EdgeEmployees)
 	}
@@ -9533,6 +9599,9 @@ func (m *EvaluationProfileMutation) RemovedEdges() []string {
 	}
 	if m.removedevaluation_competencies != nil {
 		edges = append(edges, evaluationprofile.EdgeEvaluationCompetencies)
+	}
+	if m.removedglobal_goal_rules != nil {
+		edges = append(edges, evaluationprofile.EdgeGlobalGoalRules)
 	}
 	return edges
 }
@@ -9559,13 +9628,19 @@ func (m *EvaluationProfileMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case evaluationprofile.EdgeGlobalGoalRules:
+		ids := make([]ent.Value, 0, len(m.removedglobal_goal_rules))
+		for id := range m.removedglobal_goal_rules {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *EvaluationProfileMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.clearedemployees {
 		edges = append(edges, evaluationprofile.EdgeEmployees)
 	}
@@ -9574,6 +9649,9 @@ func (m *EvaluationProfileMutation) ClearedEdges() []string {
 	}
 	if m.clearedevaluation_competencies {
 		edges = append(edges, evaluationprofile.EdgeEvaluationCompetencies)
+	}
+	if m.clearedglobal_goal_rules {
+		edges = append(edges, evaluationprofile.EdgeGlobalGoalRules)
 	}
 	return edges
 }
@@ -9588,6 +9666,8 @@ func (m *EvaluationProfileMutation) EdgeCleared(name string) bool {
 		return m.clearedacceptance_levels
 	case evaluationprofile.EdgeEvaluationCompetencies:
 		return m.clearedevaluation_competencies
+	case evaluationprofile.EdgeGlobalGoalRules:
+		return m.clearedglobal_goal_rules
 	}
 	return false
 }
@@ -9612,6 +9692,9 @@ func (m *EvaluationProfileMutation) ResetEdge(name string) error {
 		return nil
 	case evaluationprofile.EdgeEvaluationCompetencies:
 		m.ResetEvaluationCompetencies()
+		return nil
+	case evaluationprofile.EdgeGlobalGoalRules:
+		m.ResetGlobalGoalRules()
 		return nil
 	}
 	return fmt.Errorf("unknown EvaluationProfile edge %s", name)
@@ -11259,6 +11342,8 @@ type GlobalGoalRuleMutation struct {
 	clearedgoal           bool
 	department            *uuid.UUID
 	cleareddepartment     bool
+	profile               *uuid.UUID
+	clearedprofile        bool
 	done                  bool
 	oldValue              func(context.Context) (*GlobalGoalRule, error)
 	predicates            []predicate.GlobalGoalRule
@@ -11561,6 +11646,55 @@ func (m *GlobalGoalRuleMutation) ResetDepartmentID() {
 	delete(m.clearedFields, globalgoalrule.FieldDepartmentID)
 }
 
+// SetProfileID sets the "profile_id" field.
+func (m *GlobalGoalRuleMutation) SetProfileID(u uuid.UUID) {
+	m.profile = &u
+}
+
+// ProfileID returns the value of the "profile_id" field in the mutation.
+func (m *GlobalGoalRuleMutation) ProfileID() (r uuid.UUID, exists bool) {
+	v := m.profile
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldProfileID returns the old "profile_id" field's value of the GlobalGoalRule entity.
+// If the GlobalGoalRule object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GlobalGoalRuleMutation) OldProfileID(ctx context.Context) (v *uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldProfileID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldProfileID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldProfileID: %w", err)
+	}
+	return oldValue.ProfileID, nil
+}
+
+// ClearProfileID clears the value of the "profile_id" field.
+func (m *GlobalGoalRuleMutation) ClearProfileID() {
+	m.profile = nil
+	m.clearedFields[globalgoalrule.FieldProfileID] = struct{}{}
+}
+
+// ProfileIDCleared returns if the "profile_id" field was cleared in this mutation.
+func (m *GlobalGoalRuleMutation) ProfileIDCleared() bool {
+	_, ok := m.clearedFields[globalgoalrule.FieldProfileID]
+	return ok
+}
+
+// ResetProfileID resets all changes to the "profile_id" field.
+func (m *GlobalGoalRuleMutation) ResetProfileID() {
+	m.profile = nil
+	delete(m.clearedFields, globalgoalrule.FieldProfileID)
+}
+
 // SetMinDirectReports sets the "min_direct_reports" field.
 func (m *GlobalGoalRuleMutation) SetMinDirectReports(i int) {
 	m.min_direct_reports = &i
@@ -11741,6 +11875,33 @@ func (m *GlobalGoalRuleMutation) ResetDepartment() {
 	m.cleareddepartment = false
 }
 
+// ClearProfile clears the "profile" edge to the EvaluationProfile entity.
+func (m *GlobalGoalRuleMutation) ClearProfile() {
+	m.clearedprofile = true
+	m.clearedFields[globalgoalrule.FieldProfileID] = struct{}{}
+}
+
+// ProfileCleared reports if the "profile" edge to the EvaluationProfile entity was cleared.
+func (m *GlobalGoalRuleMutation) ProfileCleared() bool {
+	return m.ProfileIDCleared() || m.clearedprofile
+}
+
+// ProfileIDs returns the "profile" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ProfileID instead. It exists only for internal usage by the builders.
+func (m *GlobalGoalRuleMutation) ProfileIDs() (ids []uuid.UUID) {
+	if id := m.profile; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetProfile resets all changes to the "profile" edge.
+func (m *GlobalGoalRuleMutation) ResetProfile() {
+	m.profile = nil
+	m.clearedprofile = false
+}
+
 // Where appends a list predicates to the GlobalGoalRuleMutation builder.
 func (m *GlobalGoalRuleMutation) Where(ps ...predicate.GlobalGoalRule) {
 	m.predicates = append(m.predicates, ps...)
@@ -11775,7 +11936,7 @@ func (m *GlobalGoalRuleMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *GlobalGoalRuleMutation) Fields() []string {
-	fields := make([]string, 0, 7)
+	fields := make([]string, 0, 8)
 	if m.created_at != nil {
 		fields = append(fields, globalgoalrule.FieldCreatedAt)
 	}
@@ -11790,6 +11951,9 @@ func (m *GlobalGoalRuleMutation) Fields() []string {
 	}
 	if m.department != nil {
 		fields = append(fields, globalgoalrule.FieldDepartmentID)
+	}
+	if m.profile != nil {
+		fields = append(fields, globalgoalrule.FieldProfileID)
 	}
 	if m.min_direct_reports != nil {
 		fields = append(fields, globalgoalrule.FieldMinDirectReports)
@@ -11815,6 +11979,8 @@ func (m *GlobalGoalRuleMutation) Field(name string) (ent.Value, bool) {
 		return m.RuleType()
 	case globalgoalrule.FieldDepartmentID:
 		return m.DepartmentID()
+	case globalgoalrule.FieldProfileID:
+		return m.ProfileID()
 	case globalgoalrule.FieldMinDirectReports:
 		return m.MinDirectReports()
 	case globalgoalrule.FieldDefaultWeight:
@@ -11838,6 +12004,8 @@ func (m *GlobalGoalRuleMutation) OldField(ctx context.Context, name string) (ent
 		return m.OldRuleType(ctx)
 	case globalgoalrule.FieldDepartmentID:
 		return m.OldDepartmentID(ctx)
+	case globalgoalrule.FieldProfileID:
+		return m.OldProfileID(ctx)
 	case globalgoalrule.FieldMinDirectReports:
 		return m.OldMinDirectReports(ctx)
 	case globalgoalrule.FieldDefaultWeight:
@@ -11885,6 +12053,13 @@ func (m *GlobalGoalRuleMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetDepartmentID(v)
+		return nil
+	case globalgoalrule.FieldProfileID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetProfileID(v)
 		return nil
 	case globalgoalrule.FieldMinDirectReports:
 		v, ok := value.(int)
@@ -11960,6 +12135,9 @@ func (m *GlobalGoalRuleMutation) ClearedFields() []string {
 	if m.FieldCleared(globalgoalrule.FieldDepartmentID) {
 		fields = append(fields, globalgoalrule.FieldDepartmentID)
 	}
+	if m.FieldCleared(globalgoalrule.FieldProfileID) {
+		fields = append(fields, globalgoalrule.FieldProfileID)
+	}
 	if m.FieldCleared(globalgoalrule.FieldMinDirectReports) {
 		fields = append(fields, globalgoalrule.FieldMinDirectReports)
 	}
@@ -11979,6 +12157,9 @@ func (m *GlobalGoalRuleMutation) ClearField(name string) error {
 	switch name {
 	case globalgoalrule.FieldDepartmentID:
 		m.ClearDepartmentID()
+		return nil
+	case globalgoalrule.FieldProfileID:
+		m.ClearProfileID()
 		return nil
 	case globalgoalrule.FieldMinDirectReports:
 		m.ClearMinDirectReports()
@@ -12006,6 +12187,9 @@ func (m *GlobalGoalRuleMutation) ResetField(name string) error {
 	case globalgoalrule.FieldDepartmentID:
 		m.ResetDepartmentID()
 		return nil
+	case globalgoalrule.FieldProfileID:
+		m.ResetProfileID()
+		return nil
 	case globalgoalrule.FieldMinDirectReports:
 		m.ResetMinDirectReports()
 		return nil
@@ -12018,12 +12202,15 @@ func (m *GlobalGoalRuleMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *GlobalGoalRuleMutation) AddedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.goal != nil {
 		edges = append(edges, globalgoalrule.EdgeGoal)
 	}
 	if m.department != nil {
 		edges = append(edges, globalgoalrule.EdgeDepartment)
+	}
+	if m.profile != nil {
+		edges = append(edges, globalgoalrule.EdgeProfile)
 	}
 	return edges
 }
@@ -12040,13 +12227,17 @@ func (m *GlobalGoalRuleMutation) AddedIDs(name string) []ent.Value {
 		if id := m.department; id != nil {
 			return []ent.Value{*id}
 		}
+	case globalgoalrule.EdgeProfile:
+		if id := m.profile; id != nil {
+			return []ent.Value{*id}
+		}
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *GlobalGoalRuleMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	return edges
 }
 
@@ -12058,12 +12249,15 @@ func (m *GlobalGoalRuleMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *GlobalGoalRuleMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.clearedgoal {
 		edges = append(edges, globalgoalrule.EdgeGoal)
 	}
 	if m.cleareddepartment {
 		edges = append(edges, globalgoalrule.EdgeDepartment)
+	}
+	if m.clearedprofile {
+		edges = append(edges, globalgoalrule.EdgeProfile)
 	}
 	return edges
 }
@@ -12076,6 +12270,8 @@ func (m *GlobalGoalRuleMutation) EdgeCleared(name string) bool {
 		return m.clearedgoal
 	case globalgoalrule.EdgeDepartment:
 		return m.cleareddepartment
+	case globalgoalrule.EdgeProfile:
+		return m.clearedprofile
 	}
 	return false
 }
@@ -12090,6 +12286,9 @@ func (m *GlobalGoalRuleMutation) ClearEdge(name string) error {
 	case globalgoalrule.EdgeDepartment:
 		m.ClearDepartment()
 		return nil
+	case globalgoalrule.EdgeProfile:
+		m.ClearProfile()
+		return nil
 	}
 	return fmt.Errorf("unknown GlobalGoalRule unique edge %s", name)
 }
@@ -12103,6 +12302,9 @@ func (m *GlobalGoalRuleMutation) ResetEdge(name string) error {
 		return nil
 	case globalgoalrule.EdgeDepartment:
 		m.ResetDepartment()
+		return nil
+	case globalgoalrule.EdgeProfile:
+		m.ResetProfile()
 		return nil
 	}
 	return fmt.Errorf("unknown GlobalGoalRule edge %s", name)

@@ -2312,6 +2312,22 @@ func (c *EvaluationProfileClient) QueryEvaluationCompetencies(_m *EvaluationProf
 	return query
 }
 
+// QueryGlobalGoalRules queries the global_goal_rules edge of a EvaluationProfile.
+func (c *EvaluationProfileClient) QueryGlobalGoalRules(_m *EvaluationProfile) *GlobalGoalRuleQuery {
+	query := (&GlobalGoalRuleClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(evaluationprofile.Table, evaluationprofile.FieldID, id),
+			sqlgraph.To(globalgoalrule.Table, globalgoalrule.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, evaluationprofile.GlobalGoalRulesTable, evaluationprofile.GlobalGoalRulesColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *EvaluationProfileClient) Hooks() []Hook {
 	return c.hooks.EvaluationProfile
@@ -2800,6 +2816,22 @@ func (c *GlobalGoalRuleClient) QueryDepartment(_m *GlobalGoalRule) *OrgNodeQuery
 			sqlgraph.From(globalgoalrule.Table, globalgoalrule.FieldID, id),
 			sqlgraph.To(orgnode.Table, orgnode.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, globalgoalrule.DepartmentTable, globalgoalrule.DepartmentColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryProfile queries the profile edge of a GlobalGoalRule.
+func (c *GlobalGoalRuleClient) QueryProfile(_m *GlobalGoalRule) *EvaluationProfileQuery {
+	query := (&EvaluationProfileClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(globalgoalrule.Table, globalgoalrule.FieldID, id),
+			sqlgraph.To(evaluationprofile.Table, evaluationprofile.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, globalgoalrule.ProfileTable, globalgoalrule.ProfileColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil

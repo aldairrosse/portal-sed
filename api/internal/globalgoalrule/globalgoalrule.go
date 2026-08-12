@@ -26,6 +26,8 @@ const (
 	FieldRuleType = "rule_type"
 	// FieldDepartmentID holds the string denoting the department_id field in the database.
 	FieldDepartmentID = "department_id"
+	// FieldProfileID holds the string denoting the profile_id field in the database.
+	FieldProfileID = "profile_id"
 	// FieldMinDirectReports holds the string denoting the min_direct_reports field in the database.
 	FieldMinDirectReports = "min_direct_reports"
 	// FieldDefaultWeight holds the string denoting the default_weight field in the database.
@@ -34,6 +36,8 @@ const (
 	EdgeGoal = "goal"
 	// EdgeDepartment holds the string denoting the department edge name in mutations.
 	EdgeDepartment = "department"
+	// EdgeProfile holds the string denoting the profile edge name in mutations.
+	EdgeProfile = "profile"
 	// Table holds the table name of the globalgoalrule in the database.
 	Table = "global_goal_rules"
 	// GoalTable is the table that holds the goal relation/edge.
@@ -50,6 +54,13 @@ const (
 	DepartmentInverseTable = "org_nodes"
 	// DepartmentColumn is the table column denoting the department relation/edge.
 	DepartmentColumn = "department_id"
+	// ProfileTable is the table that holds the profile relation/edge.
+	ProfileTable = "global_goal_rules"
+	// ProfileInverseTable is the table name for the EvaluationProfile entity.
+	// It exists in this package in order to avoid circular dependency with the "evaluationprofile" package.
+	ProfileInverseTable = "evaluation_profiles"
+	// ProfileColumn is the table column denoting the profile relation/edge.
+	ProfileColumn = "profile_id"
 )
 
 // Columns holds all SQL columns for globalgoalrule fields.
@@ -60,6 +71,7 @@ var Columns = []string{
 	FieldGoalID,
 	FieldRuleType,
 	FieldDepartmentID,
+	FieldProfileID,
 	FieldMinDirectReports,
 	FieldDefaultWeight,
 }
@@ -94,6 +106,7 @@ type RuleType string
 const (
 	RuleTypeDepartment       RuleType = "department"
 	RuleTypeMinDirectReports RuleType = "min_direct_reports"
+	RuleTypeRole             RuleType = "role"
 )
 
 func (rt RuleType) String() string {
@@ -103,7 +116,7 @@ func (rt RuleType) String() string {
 // RuleTypeValidator is a validator for the "rule_type" field enum values. It is called by the builders before save.
 func RuleTypeValidator(rt RuleType) error {
 	switch rt {
-	case RuleTypeDepartment, RuleTypeMinDirectReports:
+	case RuleTypeDepartment, RuleTypeMinDirectReports, RuleTypeRole:
 		return nil
 	default:
 		return fmt.Errorf("globalgoalrule: invalid enum value for rule_type field: %q", rt)
@@ -143,6 +156,11 @@ func ByDepartmentID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldDepartmentID, opts...).ToFunc()
 }
 
+// ByProfileID orders the results by the profile_id field.
+func ByProfileID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldProfileID, opts...).ToFunc()
+}
+
 // ByMinDirectReports orders the results by the min_direct_reports field.
 func ByMinDirectReports(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldMinDirectReports, opts...).ToFunc()
@@ -166,6 +184,13 @@ func ByDepartmentField(field string, opts ...sql.OrderTermOption) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newDepartmentStep(), sql.OrderByField(field, opts...))
 	}
 }
+
+// ByProfileField orders the results by profile field.
+func ByProfileField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newProfileStep(), sql.OrderByField(field, opts...))
+	}
+}
 func newGoalStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -178,5 +203,12 @@ func newDepartmentStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(DepartmentInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2O, true, DepartmentTable, DepartmentColumn),
+	)
+}
+func newProfileStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ProfileInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, ProfileTable, ProfileColumn),
 	)
 }

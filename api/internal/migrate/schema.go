@@ -343,9 +343,10 @@ var (
 		{Name: "id", Type: field.TypeUUID},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
-		{Name: "rule_type", Type: field.TypeEnum, Enums: []string{"department", "min_direct_reports"}},
+		{Name: "rule_type", Type: field.TypeEnum, Enums: []string{"department", "min_direct_reports", "role"}},
 		{Name: "min_direct_reports", Type: field.TypeInt, Nullable: true},
 		{Name: "default_weight", Type: field.TypeFloat64},
+		{Name: "profile_id", Type: field.TypeUUID, Nullable: true},
 		{Name: "goal_id", Type: field.TypeUUID},
 		{Name: "department_id", Type: field.TypeUUID, Nullable: true},
 	}
@@ -356,14 +357,20 @@ var (
 		PrimaryKey: []*schema.Column{GlobalGoalRulesColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{
 			{
-				Symbol:     "global_goal_rules_goals_global_rules",
+				Symbol:     "global_goal_rules_evaluation_profiles_global_goal_rules",
 				Columns:    []*schema.Column{GlobalGoalRulesColumns[6]},
+				RefColumns: []*schema.Column{EvaluationProfilesColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
+				Symbol:     "global_goal_rules_goals_global_rules",
+				Columns:    []*schema.Column{GlobalGoalRulesColumns[7]},
 				RefColumns: []*schema.Column{GoalsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "global_goal_rules_org_nodes_global_goal_rules",
-				Columns:    []*schema.Column{GlobalGoalRulesColumns[7]},
+				Columns:    []*schema.Column{GlobalGoalRulesColumns[8]},
 				RefColumns: []*schema.Column{OrgNodesColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
@@ -980,8 +987,9 @@ func init() {
 	EvaluatorScopesTable.ForeignKeys[1].RefTable = EmployeesTable
 	GlobalGoalAssignmentsTable.ForeignKeys[0].RefTable = EmployeesTable
 	GlobalGoalAssignmentsTable.ForeignKeys[1].RefTable = GoalsTable
-	GlobalGoalRulesTable.ForeignKeys[0].RefTable = GoalsTable
-	GlobalGoalRulesTable.ForeignKeys[1].RefTable = OrgNodesTable
+	GlobalGoalRulesTable.ForeignKeys[0].RefTable = EvaluationProfilesTable
+	GlobalGoalRulesTable.ForeignKeys[1].RefTable = GoalsTable
+	GlobalGoalRulesTable.ForeignKeys[2].RefTable = OrgNodesTable
 	GoalsTable.ForeignKeys[0].RefTable = GoalCategoriesTable
 	GoalAssignmentsTable.ForeignKeys[0].RefTable = CyclesTable
 	GoalAssignmentsTable.ForeignKeys[1].RefTable = EmployeesTable

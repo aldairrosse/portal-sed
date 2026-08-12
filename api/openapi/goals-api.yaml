@@ -1326,6 +1326,39 @@ components:
           format: uuid
 
     # ============================================================================
+    # Global Goal Rule Schemas
+    # Global goals endpoints are served by the API but not yet documented here;
+    # this schema documents the mass-assignment rule object used by those endpoints.
+    # ============================================================================
+    GlobalRule:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        goal_id:
+          type: string
+          format: uuid
+        rule_type:
+          type: string
+          enum: [department, min_direct_reports, role]
+        department_id:
+          type: string
+          format: uuid
+          nullable: true
+        min_direct_reports:
+          type: integer
+          nullable: true
+        profile_id:
+          type: string
+          format: uuid
+          nullable: true
+        default_weight:
+          type: number
+          minimum: 0
+          maximum: 100
+
+    # ============================================================================
     # Assignment Schemas
     # ============================================================================
     AssignmentResponse:

@@ -34,6 +34,7 @@ export interface GlobalRule {
   rule_type: string;
   department_id?: string;
   min_direct_reports?: number;
+  profile_id?: string;
   default_weight: number;
 }
 
@@ -60,6 +61,7 @@ export interface CreateRuleRequest {
   rule_type: string;
   department_id?: string;
   min_direct_reports?: number;
+  profile_id?: string;
   default_weight: number;
 }
 

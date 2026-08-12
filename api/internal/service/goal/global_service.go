@@ -40,9 +40,10 @@ type CreateAssignmentRequest struct {
 
 // CreateRuleRequest is the request body for creating a rule.
 type CreateRuleRequest struct {
-	RuleType         string     `json:"rule_type" validate:"required,oneof=department min_direct_reports"`
+	RuleType         string     `json:"rule_type" validate:"required,oneof=department min_direct_reports role"`
 	DepartmentID     *uuid.UUID `json:"department_id,omitempty"`
 	MinDirectReports *int       `json:"min_direct_reports,omitempty"`
+	ProfileID        *uuid.UUID `json:"profile_id,omitempty"`
 	DefaultWeight    float64    `json:"default_weight" validate:"required,min=0,max=100"`
 }
 
@@ -90,6 +91,7 @@ func (s *globalGoalService) CreateGlobalGoal(ctx context.Context, req CreateGlob
 			RuleType:         r.RuleType,
 			DepartmentID:     r.DepartmentID,
 			MinDirectReports: r.MinDirectReports,
+			ProfileID:        r.ProfileID,
 			DefaultWeight:    r.DefaultWeight,
 		})
 	}

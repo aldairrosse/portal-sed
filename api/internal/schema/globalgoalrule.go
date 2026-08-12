@@ -26,8 +26,11 @@ func (GlobalGoalRule) Fields() []ent.Field {
 			StorageKey("id"),
 		field.UUID("goal_id", uuid.UUID{}),
 		field.Enum("rule_type").
-			Values("department", "min_direct_reports"),
+			Values("department", "min_direct_reports", "role"),
 		field.UUID("department_id", uuid.UUID{}).
+			Optional().
+			Nillable(),
+		field.UUID("profile_id", uuid.UUID{}).
 			Optional().
 			Nillable(),
 		field.Int("min_direct_reports").
@@ -49,6 +52,10 @@ func (GlobalGoalRule) Edges() []ent.Edge {
 			Ref("global_goal_rules").
 			Unique().
 			Field("department_id"),
+		edge.From("profile", EvaluationProfile.Type).
+			Ref("global_goal_rules").
+			Unique().
+			Field("profile_id"),
 	}
 }
 

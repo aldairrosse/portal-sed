@@ -4,6 +4,8 @@
     import { createGlobalGoal, updateGlobalGoal, type CreateGlobalGoalRequest } from '$lib/api/globalGoals';
     import { load, getRoot, getNodeById, getScopeIds } from '$lib/stores/orgHierarchyStore.svelte';
     import { loadFirstPage, search, loadMore, getEmployeeOptions, hasMoreEmployees, isLoadingMore } from '$lib/stores/employeePickerStore.svelte';
+    import { getProfiles, load as loadCompetencyData } from '$lib/stores/competencyStore.svelte';
+    import { PROFILE_LABELS } from '$lib/types/evaluation';
     import type { OrgNode } from '$lib/types/org-hierarchy';
 
     interface Props {
@@ -33,6 +35,7 @@
     const RULE_TYPE_OPTIONS = [
         { value: 'department', label: 'Por departamento' },
         { value: 'min_direct_reports', label: 'Mínimo de reportes directos' },
+        { value: 'role', label: 'Por rol' },
     ];
 
     const root = $derived(getRoot());
@@ -46,6 +49,10 @@
             .map(n => ({ value: n.id, label: n.name }))
     );
 
+    const profileOptions = $derived(
+        getProfiles().map(p => ({ value: p.id, label: PROFILE_LABELS[p.name] ?? p.name }))
+    );
+
     interface AssignmentRow {
         employeeId: string;
         employeeName: string;
@@ -54,9 +61,10 @@
     }
 
     interface RuleRow {
-        ruleType: 'department' | 'min_direct_reports';
+        ruleType: 'department' | 'min_direct_reports' | 'role';
         departmentId: string;
         minDirectReports: number;
+        profileId: string;
         defaultWeight: number;
     }
 
@@ -96,6 +104,9 @@
             error = '';
             saving = false;
             load();
+            if (getProfiles().length === 0) {
+                loadCompetencyData();
+            }
             if (!goalId && !pickerInitialized) {
                 pickerInitialized = true;
                 loadFirstPage();
@@ -115,7 +126,16 @@
     }
 
     function addRule() {
-        rules = [...rules, { ruleType: 'department', departmentId: departmentOptions[0]?.value ?? '', minDirectReports: 0, defaultWeight: 0 }];
+        const used = rules.map(r => r.ruleType);
+        const firstFree = RULE_TYPE_OPTIONS.find(o => !used.includes(o.value as 'department' | 'min_direct_reports' | 'role'))?.value as 'department' | 'min_direct_reports' | 'role' ?? 'department';
+        rules = [...rules, { ruleType: firstFree, departmentId: departmentOptions[0]?.value ?? '', minDirectReports: 0, profileId: '', defaultWeight: 0 }];
+    }
+
+    function ruleTypeOptionsFor(index: number) {
+        const usedByOthers = rules
+            .map((r, i) => (i === index ? null : r.ruleType))
+            .filter((t): t is 'department' | 'min_direct_reports' | 'role' => t !== null);
+        return RULE_TYPE_OPTIONS.filter(o => !usedByOthers.includes(o.value as 'department' | 'min_direct_reports' | 'role'));
     }
 
     function removeRule(index: number) {
@@ -123,8 +143,8 @@
     }
 
     function changeRuleType(index: number, value: string) {
-        const ruleType = value === 'min_direct_reports' ? 'min_direct_reports' : 'department';
-        rules = rules.map((r, i) => i === index ? { ...r, ruleType, departmentId: '', minDirectReports: 0 } : r);
+        const ruleType = value === 'min_direct_reports' ? 'min_direct_reports' : value === 'role' ? 'role' : 'department';
+        rules = rules.map((r, i) => i === index ? { ...r, ruleType, departmentId: '', minDirectReports: 0, profileId: '' } : r);
     }
 
     function validate(): string {
@@ -139,8 +159,10 @@
         for (const r of rules) {
             if (!(r.defaultWeight >= 0 && r.defaultWeight <= 100)) return 'Ponderación por defecto inválida (0-100)';
             if (r.ruleType === 'department' && !r.departmentId) return 'Selecciona un departamento';
+            if (r.ruleType === 'role' && !r.profileId) return 'Selecciona un perfil';
             if (r.ruleType === 'min_direct_reports' && !(r.minDirectReports > 0)) return 'El mínimo de reportes directos debe ser mayor a 0';
         }
+        if (new Set(rules.map(r => r.ruleType)).size !== rules.length) return 'No pueden repetirse reglas del mismo tipo';
         return '';
     }
 
@@ -179,7 +201,7 @@
                     rules: rules.length > 0
                         ? rules.map(r => ({
                             rule_type: r.ruleType,
-                            ...(r.ruleType === 'department' ? { department_id: r.departmentId } : { min_direct_reports: r.minDirectReports }),
+                            ...(r.ruleType === 'department' ? { department_id: r.departmentId } : r.ruleType === 'role' ? { profile_id: r.profileId } : { min_direct_reports: r.minDirectReports }),
                             default_weight: r.defaultWeight,
                         }))
                         : undefined,
@@ -317,7 +339,7 @@
         <div class="border border-base-300 rounded-lg p-3 mb-3">
             <div class="flex items-center justify-between mb-2">
                 <span class="label-text text-xs font-semibold">Reglas de asignación (opcional)</span>
-                <button class="btn btn-outline btn-sm" onclick={addRule} type="button">
+                <button class="btn btn-outline btn-sm" onclick={addRule} type="button" disabled={rules.length >= RULE_TYPE_OPTIONS.length}>
                     <Plus class="w-4 h-4" /> Agregar regla
                 </button>
             </div>
@@ -334,7 +356,7 @@
                     {#each rules as r, i (i)}
                         <div class="flex items-center gap-2">
                             <CustomSelect
-                                options={RULE_TYPE_OPTIONS}
+                                options={ruleTypeOptionsFor(i)}
                                 value={r.ruleType}
                                 onChange={(v) => changeRuleType(i, v)}
                                 ariaLabel="Tipo de regla"
@@ -345,6 +367,13 @@
                                     value={r.departmentId}
                                     onChange={(v) => { r.departmentId = v; }}
                                     ariaLabel="Departamento"
+                                />
+                            {:else if r.ruleType === 'role'}
+                                <CustomSelect
+                                    options={profileOptions}
+                                    value={r.profileId}
+                                    onChange={(v) => { r.profileId = v; }}
+                                    ariaLabel="Perfil"
                                 />
                             {:else}
                                 <div class="form-control w-32">

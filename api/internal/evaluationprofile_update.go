@@ -15,6 +15,7 @@ import (
 	"github.com/sed-evaluacion-desempeno/api/internal/employee"
 	"github.com/sed-evaluacion-desempeno/api/internal/evaluationcompetency"
 	"github.com/sed-evaluacion-desempeno/api/internal/evaluationprofile"
+	"github.com/sed-evaluacion-desempeno/api/internal/globalgoalrule"
 	"github.com/sed-evaluacion-desempeno/api/internal/predicate"
 )
 
@@ -110,6 +111,21 @@ func (_u *EvaluationProfileUpdate) AddEvaluationCompetencies(v ...*EvaluationCom
 	return _u.AddEvaluationCompetencyIDs(ids...)
 }
 
+// AddGlobalGoalRuleIDs adds the "global_goal_rules" edge to the GlobalGoalRule entity by IDs.
+func (_u *EvaluationProfileUpdate) AddGlobalGoalRuleIDs(ids ...uuid.UUID) *EvaluationProfileUpdate {
+	_u.mutation.AddGlobalGoalRuleIDs(ids...)
+	return _u
+}
+
+// AddGlobalGoalRules adds the "global_goal_rules" edges to the GlobalGoalRule entity.
+func (_u *EvaluationProfileUpdate) AddGlobalGoalRules(v ...*GlobalGoalRule) *EvaluationProfileUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddGlobalGoalRuleIDs(ids...)
+}
+
 // Mutation returns the EvaluationProfileMutation object of the builder.
 func (_u *EvaluationProfileUpdate) Mutation() *EvaluationProfileMutation {
 	return _u.mutation
@@ -176,6 +192,27 @@ func (_u *EvaluationProfileUpdate) RemoveEvaluationCompetencies(v ...*Evaluation
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveEvaluationCompetencyIDs(ids...)
+}
+
+// ClearGlobalGoalRules clears all "global_goal_rules" edges to the GlobalGoalRule entity.
+func (_u *EvaluationProfileUpdate) ClearGlobalGoalRules() *EvaluationProfileUpdate {
+	_u.mutation.ClearGlobalGoalRules()
+	return _u
+}
+
+// RemoveGlobalGoalRuleIDs removes the "global_goal_rules" edge to GlobalGoalRule entities by IDs.
+func (_u *EvaluationProfileUpdate) RemoveGlobalGoalRuleIDs(ids ...uuid.UUID) *EvaluationProfileUpdate {
+	_u.mutation.RemoveGlobalGoalRuleIDs(ids...)
+	return _u
+}
+
+// RemoveGlobalGoalRules removes "global_goal_rules" edges to GlobalGoalRule entities.
+func (_u *EvaluationProfileUpdate) RemoveGlobalGoalRules(v ...*GlobalGoalRule) *EvaluationProfileUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveGlobalGoalRuleIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -371,6 +408,51 @@ func (_u *EvaluationProfileUpdate) sqlSave(ctx context.Context) (_node int, err 
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if _u.mutation.GlobalGoalRulesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   evaluationprofile.GlobalGoalRulesTable,
+			Columns: []string{evaluationprofile.GlobalGoalRulesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(globalgoalrule.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedGlobalGoalRulesIDs(); len(nodes) > 0 && !_u.mutation.GlobalGoalRulesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   evaluationprofile.GlobalGoalRulesTable,
+			Columns: []string{evaluationprofile.GlobalGoalRulesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(globalgoalrule.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.GlobalGoalRulesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   evaluationprofile.GlobalGoalRulesTable,
+			Columns: []string{evaluationprofile.GlobalGoalRulesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(globalgoalrule.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{evaluationprofile.Label}
@@ -470,6 +552,21 @@ func (_u *EvaluationProfileUpdateOne) AddEvaluationCompetencies(v ...*Evaluation
 	return _u.AddEvaluationCompetencyIDs(ids...)
 }
 
+// AddGlobalGoalRuleIDs adds the "global_goal_rules" edge to the GlobalGoalRule entity by IDs.
+func (_u *EvaluationProfileUpdateOne) AddGlobalGoalRuleIDs(ids ...uuid.UUID) *EvaluationProfileUpdateOne {
+	_u.mutation.AddGlobalGoalRuleIDs(ids...)
+	return _u
+}
+
+// AddGlobalGoalRules adds the "global_goal_rules" edges to the GlobalGoalRule entity.
+func (_u *EvaluationProfileUpdateOne) AddGlobalGoalRules(v ...*GlobalGoalRule) *EvaluationProfileUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddGlobalGoalRuleIDs(ids...)
+}
+
 // Mutation returns the EvaluationProfileMutation object of the builder.
 func (_u *EvaluationProfileUpdateOne) Mutation() *EvaluationProfileMutation {
 	return _u.mutation
@@ -536,6 +633,27 @@ func (_u *EvaluationProfileUpdateOne) RemoveEvaluationCompetencies(v ...*Evaluat
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveEvaluationCompetencyIDs(ids...)
+}
+
+// ClearGlobalGoalRules clears all "global_goal_rules" edges to the GlobalGoalRule entity.
+func (_u *EvaluationProfileUpdateOne) ClearGlobalGoalRules() *EvaluationProfileUpdateOne {
+	_u.mutation.ClearGlobalGoalRules()
+	return _u
+}
+
+// RemoveGlobalGoalRuleIDs removes the "global_goal_rules" edge to GlobalGoalRule entities by IDs.
+func (_u *EvaluationProfileUpdateOne) RemoveGlobalGoalRuleIDs(ids ...uuid.UUID) *EvaluationProfileUpdateOne {
+	_u.mutation.RemoveGlobalGoalRuleIDs(ids...)
+	return _u
+}
+
+// RemoveGlobalGoalRules removes "global_goal_rules" edges to GlobalGoalRule entities.
+func (_u *EvaluationProfileUpdateOne) RemoveGlobalGoalRules(v ...*GlobalGoalRule) *EvaluationProfileUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveGlobalGoalRuleIDs(ids...)
 }
 
 // Where appends a list predicates to the EvaluationProfileUpdate builder.
@@ -754,6 +872,51 @@ func (_u *EvaluationProfileUpdateOne) sqlSave(ctx context.Context) (_node *Evalu
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(evaluationcompetency.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.GlobalGoalRulesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   evaluationprofile.GlobalGoalRulesTable,
+			Columns: []string{evaluationprofile.GlobalGoalRulesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(globalgoalrule.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedGlobalGoalRulesIDs(); len(nodes) > 0 && !_u.mutation.GlobalGoalRulesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   evaluationprofile.GlobalGoalRulesTable,
+			Columns: []string{evaluationprofile.GlobalGoalRulesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(globalgoalrule.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.GlobalGoalRulesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   evaluationprofile.GlobalGoalRulesTable,
+			Columns: []string{evaluationprofile.GlobalGoalRulesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(globalgoalrule.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

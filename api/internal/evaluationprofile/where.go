@@ -273,6 +273,29 @@ func HasEvaluationCompetenciesWith(preds ...predicate.EvaluationCompetency) pred
 	})
 }
 
+// HasGlobalGoalRules applies the HasEdge predicate on the "global_goal_rules" edge.
+func HasGlobalGoalRules() predicate.EvaluationProfile {
+	return predicate.EvaluationProfile(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, GlobalGoalRulesTable, GlobalGoalRulesColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasGlobalGoalRulesWith applies the HasEdge predicate on the "global_goal_rules" edge with a given conditions (other predicates).
+func HasGlobalGoalRulesWith(preds ...predicate.GlobalGoalRule) predicate.EvaluationProfile {
+	return predicate.EvaluationProfile(func(s *sql.Selector) {
+		step := newGlobalGoalRulesStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.EvaluationProfile) predicate.EvaluationProfile {
 	return predicate.EvaluationProfile(sql.AndPredicates(predicates...))

@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
+	"github.com/sed-evaluacion-desempeno/api/internal/evaluationprofile"
 	"github.com/sed-evaluacion-desempeno/api/internal/globalgoalrule"
 	"github.com/sed-evaluacion-desempeno/api/internal/goal"
 	"github.com/sed-evaluacion-desempeno/api/internal/orgnode"
@@ -77,6 +78,20 @@ func (_c *GlobalGoalRuleCreate) SetNillableDepartmentID(v *uuid.UUID) *GlobalGoa
 	return _c
 }
 
+// SetProfileID sets the "profile_id" field.
+func (_c *GlobalGoalRuleCreate) SetProfileID(v uuid.UUID) *GlobalGoalRuleCreate {
+	_c.mutation.SetProfileID(v)
+	return _c
+}
+
+// SetNillableProfileID sets the "profile_id" field if the given value is not nil.
+func (_c *GlobalGoalRuleCreate) SetNillableProfileID(v *uuid.UUID) *GlobalGoalRuleCreate {
+	if v != nil {
+		_c.SetProfileID(*v)
+	}
+	return _c
+}
+
 // SetMinDirectReports sets the "min_direct_reports" field.
 func (_c *GlobalGoalRuleCreate) SetMinDirectReports(v int) *GlobalGoalRuleCreate {
 	_c.mutation.SetMinDirectReports(v)
@@ -119,6 +134,11 @@ func (_c *GlobalGoalRuleCreate) SetGoal(v *Goal) *GlobalGoalRuleCreate {
 // SetDepartment sets the "department" edge to the OrgNode entity.
 func (_c *GlobalGoalRuleCreate) SetDepartment(v *OrgNode) *GlobalGoalRuleCreate {
 	return _c.SetDepartmentID(v.ID)
+}
+
+// SetProfile sets the "profile" edge to the EvaluationProfile entity.
+func (_c *GlobalGoalRuleCreate) SetProfile(v *EvaluationProfile) *GlobalGoalRuleCreate {
+	return _c.SetProfileID(v.ID)
 }
 
 // Mutation returns the GlobalGoalRuleMutation object of the builder.
@@ -287,6 +307,23 @@ func (_c *GlobalGoalRuleCreate) createSpec() (*GlobalGoalRule, *sqlgraph.CreateS
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.DepartmentID = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.ProfileIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   globalgoalrule.ProfileTable,
+			Columns: []string{globalgoalrule.ProfileColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(evaluationprofile.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.ProfileID = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
+	"github.com/sed-evaluacion-desempeno/api/internal/evaluationprofile"
 	"github.com/sed-evaluacion-desempeno/api/internal/globalgoalrule"
 	"github.com/sed-evaluacion-desempeno/api/internal/goal"
 	"github.com/sed-evaluacion-desempeno/api/internal/orgnode"
@@ -85,6 +86,26 @@ func (_u *GlobalGoalRuleUpdate) ClearDepartmentID() *GlobalGoalRuleUpdate {
 	return _u
 }
 
+// SetProfileID sets the "profile_id" field.
+func (_u *GlobalGoalRuleUpdate) SetProfileID(v uuid.UUID) *GlobalGoalRuleUpdate {
+	_u.mutation.SetProfileID(v)
+	return _u
+}
+
+// SetNillableProfileID sets the "profile_id" field if the given value is not nil.
+func (_u *GlobalGoalRuleUpdate) SetNillableProfileID(v *uuid.UUID) *GlobalGoalRuleUpdate {
+	if v != nil {
+		_u.SetProfileID(*v)
+	}
+	return _u
+}
+
+// ClearProfileID clears the value of the "profile_id" field.
+func (_u *GlobalGoalRuleUpdate) ClearProfileID() *GlobalGoalRuleUpdate {
+	_u.mutation.ClearProfileID()
+	return _u
+}
+
 // SetMinDirectReports sets the "min_direct_reports" field.
 func (_u *GlobalGoalRuleUpdate) SetMinDirectReports(v int) *GlobalGoalRuleUpdate {
 	_u.mutation.ResetMinDirectReports()
@@ -143,6 +164,11 @@ func (_u *GlobalGoalRuleUpdate) SetDepartment(v *OrgNode) *GlobalGoalRuleUpdate 
 	return _u.SetDepartmentID(v.ID)
 }
 
+// SetProfile sets the "profile" edge to the EvaluationProfile entity.
+func (_u *GlobalGoalRuleUpdate) SetProfile(v *EvaluationProfile) *GlobalGoalRuleUpdate {
+	return _u.SetProfileID(v.ID)
+}
+
 // Mutation returns the GlobalGoalRuleMutation object of the builder.
 func (_u *GlobalGoalRuleUpdate) Mutation() *GlobalGoalRuleMutation {
 	return _u.mutation
@@ -157,6 +183,12 @@ func (_u *GlobalGoalRuleUpdate) ClearGoal() *GlobalGoalRuleUpdate {
 // ClearDepartment clears the "department" edge to the OrgNode entity.
 func (_u *GlobalGoalRuleUpdate) ClearDepartment() *GlobalGoalRuleUpdate {
 	_u.mutation.ClearDepartment()
+	return _u
+}
+
+// ClearProfile clears the "profile" edge to the EvaluationProfile entity.
+func (_u *GlobalGoalRuleUpdate) ClearProfile() *GlobalGoalRuleUpdate {
+	_u.mutation.ClearProfile()
 	return _u
 }
 
@@ -305,6 +337,35 @@ func (_u *GlobalGoalRuleUpdate) sqlSave(ctx context.Context) (_node int, err err
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if _u.mutation.ProfileCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   globalgoalrule.ProfileTable,
+			Columns: []string{globalgoalrule.ProfileColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(evaluationprofile.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ProfileIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   globalgoalrule.ProfileTable,
+			Columns: []string{globalgoalrule.ProfileColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(evaluationprofile.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{globalgoalrule.Label}
@@ -379,6 +440,26 @@ func (_u *GlobalGoalRuleUpdateOne) ClearDepartmentID() *GlobalGoalRuleUpdateOne 
 	return _u
 }
 
+// SetProfileID sets the "profile_id" field.
+func (_u *GlobalGoalRuleUpdateOne) SetProfileID(v uuid.UUID) *GlobalGoalRuleUpdateOne {
+	_u.mutation.SetProfileID(v)
+	return _u
+}
+
+// SetNillableProfileID sets the "profile_id" field if the given value is not nil.
+func (_u *GlobalGoalRuleUpdateOne) SetNillableProfileID(v *uuid.UUID) *GlobalGoalRuleUpdateOne {
+	if v != nil {
+		_u.SetProfileID(*v)
+	}
+	return _u
+}
+
+// ClearProfileID clears the value of the "profile_id" field.
+func (_u *GlobalGoalRuleUpdateOne) ClearProfileID() *GlobalGoalRuleUpdateOne {
+	_u.mutation.ClearProfileID()
+	return _u
+}
+
 // SetMinDirectReports sets the "min_direct_reports" field.
 func (_u *GlobalGoalRuleUpdateOne) SetMinDirectReports(v int) *GlobalGoalRuleUpdateOne {
 	_u.mutation.ResetMinDirectReports()
@@ -437,6 +518,11 @@ func (_u *GlobalGoalRuleUpdateOne) SetDepartment(v *OrgNode) *GlobalGoalRuleUpda
 	return _u.SetDepartmentID(v.ID)
 }
 
+// SetProfile sets the "profile" edge to the EvaluationProfile entity.
+func (_u *GlobalGoalRuleUpdateOne) SetProfile(v *EvaluationProfile) *GlobalGoalRuleUpdateOne {
+	return _u.SetProfileID(v.ID)
+}
+
 // Mutation returns the GlobalGoalRuleMutation object of the builder.
 func (_u *GlobalGoalRuleUpdateOne) Mutation() *GlobalGoalRuleMutation {
 	return _u.mutation
@@ -451,6 +537,12 @@ func (_u *GlobalGoalRuleUpdateOne) ClearGoal() *GlobalGoalRuleUpdateOne {
 // ClearDepartment clears the "department" edge to the OrgNode entity.
 func (_u *GlobalGoalRuleUpdateOne) ClearDepartment() *GlobalGoalRuleUpdateOne {
 	_u.mutation.ClearDepartment()
+	return _u
+}
+
+// ClearProfile clears the "profile" edge to the EvaluationProfile entity.
+func (_u *GlobalGoalRuleUpdateOne) ClearProfile() *GlobalGoalRuleUpdateOne {
+	_u.mutation.ClearProfile()
 	return _u
 }
 
@@ -622,6 +714,35 @@ func (_u *GlobalGoalRuleUpdateOne) sqlSave(ctx context.Context) (_node *GlobalGo
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(orgnode.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ProfileCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   globalgoalrule.ProfileTable,
+			Columns: []string{globalgoalrule.ProfileColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(evaluationprofile.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ProfileIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   globalgoalrule.ProfileTable,
+			Columns: []string{globalgoalrule.ProfileColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(evaluationprofile.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

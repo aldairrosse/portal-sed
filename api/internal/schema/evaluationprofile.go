@@ -30,5 +30,6 @@ func (EvaluationProfile) Edges() []ent.Edge {
 		edge.To("employees", Employee.Type),
 		edge.To("acceptance_levels", CompetencyAcceptanceLevel.Type),
 		edge.To("evaluation_competencies", EvaluationCompetency.Type),
+		edge.To("global_goal_rules", GlobalGoalRule.Type),
 	}
 }

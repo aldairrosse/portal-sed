@@ -49,6 +49,7 @@ type GlobalRuleRow struct {
 	RuleType         string     `json:"rule_type"`
 	DepartmentID     *uuid.UUID `json:"department_id,omitempty"`
 	MinDirectReports *int       `json:"min_direct_reports,omitempty"`
+	ProfileID        *uuid.UUID `json:"profile_id,omitempty"`
 	DefaultWeight    float64    `json:"default_weight"`
 }
 
@@ -112,6 +113,9 @@ func (r *GlobalGoalRepo) CreateGlobalGoal(ctx context.Context, cycleID, createdB
 		}
 		if rule.MinDirectReports != nil {
 			create = create.SetMinDirectReports(*rule.MinDirectReports)
+		}
+		if rule.ProfileID != nil {
+			create = create.SetProfileID(*rule.ProfileID)
 		}
 
 		_, err = create.Save(ctx)
@@ -181,6 +185,9 @@ func (r *GlobalGoalRepo) GetGlobalGoal(ctx context.Context, goalID uuid.UUID) (*
 		}
 		if rule.MinDirectReports != nil {
 			ruleRow.MinDirectReports = rule.MinDirectReports
+		}
+		if rule.ProfileID != nil {
+			ruleRow.ProfileID = rule.ProfileID
 		}
 		row.Rules = append(row.Rules, ruleRow)
 	}
@@ -269,6 +276,17 @@ func (r *GlobalGoalRepo) ExecuteRules(ctx context.Context, goalID uuid.UUID) (in
 			// Query employees in the department
 			employees, err = r.client.Employee.Query().
 				Where(employee.OrgNodeID(*rule.DepartmentID)).
+				All(ctx)
+		case globalgoalrule.RuleTypeRole:
+			if rule.ProfileID == nil {
+				continue
+			}
+			// Query active employees with the matching evaluation profile
+			employees, err = r.client.Employee.Query().
+				Where(
+					employee.ProfileID(*rule.ProfileID),
+					employee.IsActive(true),
+				).
 				All(ctx)
 		case globalgoalrule.RuleTypeMinDirectReports:
 			if rule.MinDirectReports == nil {

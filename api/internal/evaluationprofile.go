@@ -35,9 +35,11 @@ type EvaluationProfileEdges struct {
 	AcceptanceLevels []*CompetencyAcceptanceLevel `json:"acceptance_levels,omitempty"`
 	// EvaluationCompetencies holds the value of the evaluation_competencies edge.
 	EvaluationCompetencies []*EvaluationCompetency `json:"evaluation_competencies,omitempty"`
+	// GlobalGoalRules holds the value of the global_goal_rules edge.
+	GlobalGoalRules []*GlobalGoalRule `json:"global_goal_rules,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [3]bool
+	loadedTypes [4]bool
 }
 
 // EmployeesOrErr returns the Employees value or an error if the edge
@@ -65,6 +67,15 @@ func (e EvaluationProfileEdges) EvaluationCompetenciesOrErr() ([]*EvaluationComp
 		return e.EvaluationCompetencies, nil
 	}
 	return nil, &NotLoadedError{edge: "evaluation_competencies"}
+}
+
+// GlobalGoalRulesOrErr returns the GlobalGoalRules value or an error if the edge
+// was not loaded in eager-loading.
+func (e EvaluationProfileEdges) GlobalGoalRulesOrErr() ([]*GlobalGoalRule, error) {
+	if e.loadedTypes[3] {
+		return e.GlobalGoalRules, nil
+	}
+	return nil, &NotLoadedError{edge: "global_goal_rules"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -135,6 +146,11 @@ func (_m *EvaluationProfile) QueryAcceptanceLevels() *CompetencyAcceptanceLevelQ
 // QueryEvaluationCompetencies queries the "evaluation_competencies" edge of the EvaluationProfile entity.
 func (_m *EvaluationProfile) QueryEvaluationCompetencies() *EvaluationCompetencyQuery {
 	return NewEvaluationProfileClient(_m.config).QueryEvaluationCompetencies(_m)
+}
+
+// QueryGlobalGoalRules queries the "global_goal_rules" edge of the EvaluationProfile entity.
+func (_m *EvaluationProfile) QueryGlobalGoalRules() *GlobalGoalRuleQuery {
+	return NewEvaluationProfileClient(_m.config).QueryGlobalGoalRules(_m)
 }
 
 // Update returns a builder for updating this EvaluationProfile.
