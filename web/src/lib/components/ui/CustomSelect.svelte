@@ -29,8 +29,15 @@
 	const anchorName = `--custom-select-anchor-${uid}`;
 
 	let open = $state(false);
+	let query = $state('');
 	let triggerEl: HTMLButtonElement | undefined = $state();
 	let menuEl: HTMLUListElement | undefined = $state();
+
+	const filteredOptions = $derived(
+		query.trim() === ''
+			? options
+			: options.filter((o) => o.label.toLowerCase().includes(query.trim().toLowerCase()))
+	);
 
 	const selectedLabel = $derived(
 		options.find((o) => o.value === value)?.label ?? placeholder
@@ -49,7 +56,10 @@
 
 	function handleToggle(e: ToggleEvent) {
 		open = e.newState === 'open';
-		if (!open) return;
+		if (e.newState === 'close') {
+			query = '';
+			return;
+		}
 		requestAnimationFrame(() => {
 			const selected = menuEl?.querySelector<HTMLButtonElement>(
 				'[aria-selected="true"] button'
@@ -112,7 +122,7 @@
 	aria-expanded={open}
 	aria-controls={popoverId}
 	aria-label={ariaLabel}
-	class="input input-bordered input-sm w-48 text-left flex items-center justify-between gap-2 cursor-pointer h-8 min-h-0 text-xs truncate flex-shrink-0 {className}"
+	class="input input-bordered input-sm w-64 text-left flex items-center justify-between gap-2 cursor-pointer h-8 min-h-0 text-xs truncate flex-shrink-0 {className}"
 >
 	<span class="truncate">{selectedLabel}</span>
 	<span class="flex-shrink-0 transition-transform" class:rotate-180={open}>
@@ -130,7 +140,17 @@
 	aria-label={ariaLabel}
 	ontoggle={handleToggle}
 >
-	{#each options as option (option.value)}
+	<li class="mb-1 sticky top-0 bg-base-100">
+		<input
+			type="search"
+			class="input input-bordered input-xs w-full"
+			placeholder="Buscar…"
+			bind:value={query}
+			onkeydown={(e) => e.stopPropagation()}
+			aria-label="Buscar opción"
+		/>
+	</li>
+	{#each filteredOptions as option (option.value)}
 		<li role="option" aria-selected={option.value === value} data-value={option.value} class="last:mb-0 mb-1">
 			<button
 				type="button"
@@ -142,4 +162,7 @@
 			</button>
 		</li>
 	{/each}
+	{#if filteredOptions.length === 0}
+		<li class="px-2 py-1 text-xs text-base-content/50">Sin resultados</li>
+	{/if}
 </ul>
