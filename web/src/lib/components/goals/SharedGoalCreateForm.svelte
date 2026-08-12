@@ -230,6 +230,14 @@
         {#if !goalId}
         <div class="form-control">
             <span class="label"><span class="label-text text-xs">Miembros del grupo</span></span>
+            {#if members.length > 0}
+                <div class="flex items-center gap-2 px-1 mb-1">
+                    <span class="w-4"></span>
+                    <span class="label-text text-xs flex-1">Nombre</span>
+                    <span class="label-text text-xs w-20">Peso %</span>
+                    <span class="label-text text-xs w-24">Objetivo</span>
+                </div>
+            {/if}
             {#if members.length === 0}
                 <p class="text-sm text-base-content/60">No se encontró tu equipo.</p>
             {:else}
@@ -248,7 +256,7 @@
                                     value={memberForm[member.id].weight}
                                     oninput={(e) => setMemberWeight(member.id, Number(e.currentTarget.value))} />
                                 <input type="number" class="input input-bordered input-xs w-24"
-                                    placeholder="Target" min={0} step={0.01}
+                                    placeholder="Objetivo" min={0} step={0.01}
                                     value={memberForm[member.id].target_value}
                                     oninput={(e) => setMemberTarget(member.id, Number(e.currentTarget.value))} />
                             {/if}

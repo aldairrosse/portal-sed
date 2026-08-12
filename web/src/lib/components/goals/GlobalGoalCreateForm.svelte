@@ -283,6 +283,12 @@
                     </button>
                 </div>
             </div>
+            <div class="flex items-center gap-2 px-1 mb-1">
+                <span class="label-text text-xs flex-1">Nombre</span>
+                <span class="label-text text-xs w-24">Peso %</span>
+                <span class="label-text text-xs w-28">Objetivo</span>
+                <span class="w-7"></span>
+            </div>
             {#if assignments.length > 0}
                 <div class="space-y-2">
                     {#each assignments as a, i (a.employeeId)}
@@ -316,6 +322,14 @@
                 </button>
             </div>
             {#if rules.length > 0}
+            <div class="flex items-center gap-2 px-1 mb-1">
+                <span class="label-text text-xs flex-1">Tipo</span>
+                <span class="label-text text-xs flex-1">Detalle</span>
+                <span class="label-text text-xs w-36">Peso %</span>
+                <span class="w-7"></span>
+            </div>
+            {/if}
+            {#if rules.length > 0}
                 <div class="space-y-2">
                     {#each rules as r, i (i)}
                         <div class="flex items-center gap-2">
@@ -339,7 +353,7 @@
                                         aria-label="Mínimo de reportes directos" placeholder="Min. reportes" />
                                 </div>
                             {/if}
-                            <div class="form-control w-24">
+                            <div class="form-control w-36">
                                 <input type="number" class="input input-bordered input-sm w-full"
                                     bind:value={r.defaultWeight} min={0} max={100} step={0.1}
                                     aria-label="Ponderación por defecto" placeholder="Peso %" />
