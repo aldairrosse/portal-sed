@@ -95,11 +95,14 @@ type GoalStateUpsert struct {
 
 // EntryUpsert is a repository-level DTO for upserting a nine-box entry.
 type EntryUpsert struct {
-	EvaluateeID      uuid.UUID
-	PerformanceTier  int // 1–3 (was PerformanceScore 1–9)
-	PotentialTier    int // 1–3 (was PotentialScore 1–9)
-	Quadrant         int
-	Comments         string
+	EvaluateeID         uuid.UUID
+	PerformanceTier     int // 1–3 (was PerformanceScore 1–9)
+	PotentialTier       int // 1–3 (was PotentialScore 1–9)
+	Quadrant            int
+	Comments            string
+	GoalProgressPercent *float64
+	SelfRating          *float64
+	HrRating            *float64
 }
 
 // EvaluationRow is a full representation of an evaluation including version.

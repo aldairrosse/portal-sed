@@ -276,7 +276,7 @@ func (m *mockNineBoxRepo) GetManagerMapping(ctx context.Context, ids []uuid.UUID
 	return result, nil
 }
 
-func (m *mockNineBoxRepo) UpsertEntry(ctx context.Context, tx *sql.Tx, matrixID uuid.UUID, evaluateeID uuid.UUID, perf, pot int, quadrant int, comments string) (*internal.NineBoxEntry, error) {
+func (m *mockNineBoxRepo) UpsertEntry(ctx context.Context, tx *sql.Tx, matrixID uuid.UUID, evaluateeID uuid.UUID, perf, pot int, quadrant int, comments string, goalProgress, selfRating, hrRating *float64) (*internal.NineBoxEntry, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if m.upsertErr != nil {
@@ -331,7 +331,7 @@ func (m *mockNineBoxRepo) GetMatrixByPhase(ctx context.Context, cycleID, evaluat
 	return m.matrix, nil
 }
 
-func (m *mockNineBoxRepo) UpsertEntryByTiers(ctx context.Context, tx *sql.Tx, matrixID uuid.UUID, evaluateeID uuid.UUID, perfTier, potTier, quadrant int, comments string) (*internal.NineBoxEntry, error) {
+func (m *mockNineBoxRepo) UpsertEntryByTiers(ctx context.Context, tx *sql.Tx, matrixID uuid.UUID, evaluateeID uuid.UUID, perfTier, potTier, quadrant int, comments string, goalProgress, selfRating, hrRating *float64) (*internal.NineBoxEntry, error) {
 	m.recordCall("UpsertEntryByTiers")
 	m.mu.Lock()
 	defer m.mu.Unlock()

@@ -31,6 +31,7 @@ type BoxService interface {
 	CreateMatrix(ctx context.Context, cycleID, evaluatorID uuid.UUID) (*dto.NineBoxMatrixResponse, error)
 	GetMatrix(ctx context.Context, matrixID uuid.UUID) (*dto.NineBoxMatrixResponse, error)
 	GetMatrixEntriesFiltered(ctx context.Context, matrixID uuid.UUID, quadrant *int) ([]dto.NineBoxEntryDTO, error)
+	CanViewMatrix(ctx context.Context, viewerID uuid.UUID, viewerRole auth.Role, matrixID uuid.UUID) (bool, error)
 	RecomputeMatrix(ctx context.Context, cycleID, phaseID uuid.UUID) error
 	UpdateQuadrantByNumber(ctx context.Context, quadrantNumber int, input dto.NineBoxQuadrantUpdateInput) (*dto.NineBoxQuadrantDTO, error)
 	GetScales(ctx context.Context) ([]dto.NineBoxScaleDTO, error)

@@ -622,16 +622,32 @@ func (h *EvaluationHandler) CreateMatrix(w http.ResponseWriter, r *http.Request)
 }
 
 // GetMatrix handles GET /api/v1/nine-box/matrices/{matrixId}
-// TODO(auth:C7): Restrict to evaluator owner, rh roles.
-// TODO(auth:C7): Enforce scope — if result.EvaluatorID is outside the viewer's
-// org scope and !auth.RoleSeesAll(viewerRole), return pkgerrors.ErrForbidden.
-// Org-scope resolution is not yet available in this handler; wire it once the
-// org-hierarchy service is injectable here.
 func (h *EvaluationHandler) GetMatrix(w http.ResponseWriter, r *http.Request) {
 	matrixID, err := uuid.Parse(chi.URLParam(r, "matrixId"))
 	if err != nil {
 		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
 			"matrixId must be a valid UUID v4", err))
+		return
+	}
+
+	viewerID, ok := auth.GetEmployeeID(r.Context())
+	if !ok {
+		writeError(w, pkgerrors.ErrForbidden)
+		return
+	}
+	viewerRole, ok := auth.GetRole(r.Context())
+	if !ok {
+		writeError(w, pkgerrors.ErrForbidden)
+		return
+	}
+
+	canView, err := h.nineBoxSvc.CanViewMatrix(r.Context(), viewerID, viewerRole, matrixID)
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+	if !canView {
+		writeError(w, pkgerrors.ErrForbidden)
 		return
 	}
 
@@ -646,10 +662,6 @@ func (h *EvaluationHandler) GetMatrix(w http.ResponseWriter, r *http.Request) {
 
 // ListMatrixEntries handles GET /api/v1/nine-box/matrices/{matrixId}/entries
 // Supports optional filter: quadrant (1-9).
-// TODO(auth:C7): Restrict to evaluator owner, rh roles.
-// TODO(auth:C7): Enforce scope — if the matrix's evaluator is outside the viewer's
-// org scope and !auth.RoleSeesAll(viewerRole), return pkgerrors.ErrForbidden.
-// Org-scope resolution is not yet available in this handler.
 func (h *EvaluationHandler) ListMatrixEntries(w http.ResponseWriter, r *http.Request) {
 	matrixID, err := uuid.Parse(chi.URLParam(r, "matrixId"))
 	if err != nil {
@@ -667,6 +679,27 @@ func (h *EvaluationHandler) ListMatrixEntries(w http.ResponseWriter, r *http.Req
 			return
 		}
 		quadrant = &qv
+	}
+
+	viewerID, ok := auth.GetEmployeeID(r.Context())
+	if !ok {
+		writeError(w, pkgerrors.ErrForbidden)
+		return
+	}
+	viewerRole, ok := auth.GetRole(r.Context())
+	if !ok {
+		writeError(w, pkgerrors.ErrForbidden)
+		return
+	}
+
+	canView, err := h.nineBoxSvc.CanViewMatrix(r.Context(), viewerID, viewerRole, matrixID)
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+	if !canView {
+		writeError(w, pkgerrors.ErrForbidden)
+		return
 	}
 
 	entries, err := h.nineBoxSvc.GetMatrixEntriesFiltered(r.Context(), matrixID, quadrant)

@@ -238,7 +238,7 @@ func (r *NineBoxRepo) GetManagerMapping(ctx context.Context, ids []uuid.UUID) (m
 
 // UpsertEntry creates or updates a single entry within a transaction.
 // Deprecated: Use UpsertEntryByTiers instead.
-func (r *NineBoxRepo) UpsertEntry(ctx context.Context, tx *sql.Tx, matrixID uuid.UUID, evaluateeID uuid.UUID, perf, pot int, quadrant int, comments string) (*internal.NineBoxEntry, error) {
+func (r *NineBoxRepo) UpsertEntry(ctx context.Context, tx *sql.Tx, matrixID uuid.UUID, evaluateeID uuid.UUID, perf, pot int, quadrant int, comments string, goalProgress, selfRating, hrRating *float64) (*internal.NineBoxEntry, error) {
 	now := time.Now()
 	entryID := uuid.New()
 
@@ -256,22 +256,36 @@ func (r *NineBoxRepo) UpsertEntry(ctx context.Context, tx *sql.Tx, matrixID uuid
 	// the recompute job has no actor. To audit the actor, pass the viewerID down
 	// from the service and use it here instead of uuid.Nil.
 	var entry internal.NineBoxEntry
+	var goalProgressNull, selfRatingNull, hrRatingNull sql.NullFloat64
+	if goalProgress != nil {
+		goalProgressNull = sql.NullFloat64{Float64: *goalProgress, Valid: true}
+	}
+	if selfRating != nil {
+		selfRatingNull = sql.NullFloat64{Float64: *selfRating, Valid: true}
+	}
+	if hrRating != nil {
+		hrRatingNull = sql.NullFloat64{Float64: *hrRating, Valid: true}
+	}
 	err = tx.QueryRowContext(ctx,
-		`INSERT INTO nine_box_entries (id, created_at, updated_at, created_by, updated_by, matrix_id, evaluatee_id, performance_tier, potential_tier, quadrant, comments)
-		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+		`INSERT INTO nine_box_entries (id, created_at, updated_at, created_by, updated_by, matrix_id, evaluatee_id, performance_tier, potential_tier, quadrant, comments, goal_progress_percent, self_rating, hr_rating)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
 		 ON CONFLICT (matrix_id, evaluatee_id) DO UPDATE
 		 SET performance_tier = EXCLUDED.performance_tier,
 		     potential_tier = EXCLUDED.potential_tier,
 		     quadrant = EXCLUDED.quadrant,
 		     comments = EXCLUDED.comments,
+		     goal_progress_percent = EXCLUDED.goal_progress_percent,
+		     self_rating = EXCLUDED.self_rating,
+		     hr_rating = EXCLUDED.hr_rating,
 		     updated_at = EXCLUDED.updated_at,
 		     updated_by = EXCLUDED.updated_by
-		 RETURNING id, created_at, updated_at, created_by, updated_by, version, performance_tier, potential_tier, quadrant, comments, matrix_id, evaluatee_id`,
-		entryID, now, now, uuid.Nil, uuid.Nil, matrixID, evaluateeID, perf, pot, quadrant, comments,
+		 RETURNING id, created_at, updated_at, created_by, updated_by, version, performance_tier, potential_tier, quadrant, comments, goal_progress_percent, self_rating, hr_rating, matrix_id, evaluatee_id`,
+		entryID, now, now, uuid.Nil, uuid.Nil, matrixID, evaluateeID, perf, pot, quadrant, comments, goalProgressNull, selfRatingNull, hrRatingNull,
 	).Scan(
 		&entry.ID, &entry.CreatedAt, &entry.UpdatedAt, &entry.CreatedBy, &entry.UpdatedBy,
 		&entry.Version, &entry.PerformanceTier, &entry.PotentialTier, &entry.Quadrant,
-		&entry.Comments, &entry.MatrixID, &entry.EvaluateeID,
+		&entry.Comments, &entry.GoalProgressPercent, &entry.SelfRating, &entry.HrRating,
+		&entry.MatrixID, &entry.EvaluateeID,
 	)
 	if err != nil {
 		return nil, err
@@ -292,8 +306,8 @@ func (r *NineBoxRepo) UpsertEntry(ctx context.Context, tx *sql.Tx, matrixID uuid
 }
 
 // UpsertEntryByTiers creates or updates a single entry using tier values (1–3).
-func (r *NineBoxRepo) UpsertEntryByTiers(ctx context.Context, tx *sql.Tx, matrixID uuid.UUID, evaluateeID uuid.UUID, perfTier, potTier, quadrant int, comments string) (*internal.NineBoxEntry, error) {
-	return r.UpsertEntry(ctx, tx, matrixID, evaluateeID, perfTier, potTier, quadrant, comments)
+func (r *NineBoxRepo) UpsertEntryByTiers(ctx context.Context, tx *sql.Tx, matrixID uuid.UUID, evaluateeID uuid.UUID, perfTier, potTier, quadrant int, comments string, goalProgress, selfRating, hrRating *float64) (*internal.NineBoxEntry, error) {
+	return r.UpsertEntry(ctx, tx, matrixID, evaluateeID, perfTier, potTier, quadrant, comments, goalProgress, selfRating, hrRating)
 }
 
 // UpdateEntry updates an existing entry with optimistic lock.
@@ -366,18 +380,33 @@ func (r *NineBoxRepo) BatchUpsertEntries(ctx context.Context, tx *sql.Tx, matrix
 
 	for _, it := range items {
 		entryID := uuid.New()
+		goalProgressNull := sql.NullFloat64{Valid: it.GoalProgressPercent != nil}
+		if it.GoalProgressPercent != nil {
+			goalProgressNull.Float64 = *it.GoalProgressPercent
+		}
+		selfRatingNull := sql.NullFloat64{Valid: it.SelfRating != nil}
+		if it.SelfRating != nil {
+			selfRatingNull.Float64 = *it.SelfRating
+		}
+		hrRatingNull := sql.NullFloat64{Valid: it.HrRating != nil}
+		if it.HrRating != nil {
+			hrRatingNull.Float64 = *it.HrRating
+		}
 		err := tx.QueryRowContext(ctx,
-			`INSERT INTO nine_box_entries (id, created_at, updated_at, created_by, updated_by, matrix_id, evaluatee_id, performance_tier, potential_tier, quadrant, comments)
-			 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+			`INSERT INTO nine_box_entries (id, created_at, updated_at, created_by, updated_by, matrix_id, evaluatee_id, performance_tier, potential_tier, quadrant, comments, goal_progress_percent, self_rating, hr_rating)
+			 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
 			 ON CONFLICT (matrix_id, evaluatee_id) DO UPDATE
 			 SET performance_tier = EXCLUDED.performance_tier,
 			     potential_tier = EXCLUDED.potential_tier,
 			     quadrant = EXCLUDED.quadrant,
 			     comments = EXCLUDED.comments,
+			     goal_progress_percent = EXCLUDED.goal_progress_percent,
+			     self_rating = EXCLUDED.self_rating,
+			     hr_rating = EXCLUDED.hr_rating,
 			     updated_at = EXCLUDED.updated_at,
 			     updated_by = EXCLUDED.updated_by
 			 RETURNING id`,
-			entryID, now, now, uuid.Nil, uuid.Nil, matrixID, it.EvaluateeID, it.PerformanceTier, it.PotentialTier, it.Quadrant, it.Comments,
+			entryID, now, now, uuid.Nil, uuid.Nil, matrixID, it.EvaluateeID, it.PerformanceTier, it.PotentialTier, it.Quadrant, it.Comments, goalProgressNull, selfRatingNull, hrRatingNull,
 		).Scan(&entryID)
 		if err != nil {
 			return nil, err
@@ -396,7 +425,7 @@ func (r *NineBoxRepo) BatchUpsertEntries(ctx context.Context, tx *sql.Tx, matrix
 
 	// Re-fetch all entries for this matrix within the same transaction.
 	rows, err := tx.QueryContext(ctx,
-		`SELECT id, created_at, updated_at, created_by, updated_by, version, performance_tier, potential_tier, quadrant, comments, matrix_id, evaluatee_id
+		`SELECT id, created_at, updated_at, created_by, updated_by, version, performance_tier, potential_tier, quadrant, comments, goal_progress_percent, self_rating, hr_rating, matrix_id, evaluatee_id
 		 FROM nine_box_entries WHERE matrix_id = $1`,
 		matrixID,
 	)
@@ -408,7 +437,7 @@ func (r *NineBoxRepo) BatchUpsertEntries(ctx context.Context, tx *sql.Tx, matrix
 	var results []*internal.NineBoxEntry
 	for rows.Next() {
 		var e internal.NineBoxEntry
-		if err := rows.Scan(&e.ID, &e.CreatedAt, &e.UpdatedAt, &e.CreatedBy, &e.UpdatedBy, &e.Version, &e.PerformanceTier, &e.PotentialTier, &e.Quadrant, &e.Comments, &e.MatrixID, &e.EvaluateeID); err != nil {
+		if err := rows.Scan(&e.ID, &e.CreatedAt, &e.UpdatedAt, &e.CreatedBy, &e.UpdatedBy, &e.Version, &e.PerformanceTier, &e.PotentialTier, &e.Quadrant, &e.Comments, &e.GoalProgressPercent, &e.SelfRating, &e.HrRating, &e.MatrixID, &e.EvaluateeID); err != nil {
 			return nil, err
 		}
 		results = append(results, &e)

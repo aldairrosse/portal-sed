@@ -38,6 +38,12 @@ type NineBoxEntry struct {
 	Quadrant int `json:"quadrant,omitempty"`
 	// Comments holds the value of the "comments" field.
 	Comments string `json:"comments,omitempty"`
+	// GoalProgressPercent holds the value of the "goal_progress_percent" field.
+	GoalProgressPercent *float64 `json:"goal_progress_percent,omitempty"`
+	// SelfRating holds the value of the "self_rating" field.
+	SelfRating *float64 `json:"self_rating,omitempty"`
+	// HrRating holds the value of the "hr_rating" field.
+	HrRating *float64 `json:"hr_rating,omitempty"`
 	// MatrixID holds the value of the "matrix_id" field.
 	MatrixID uuid.UUID `json:"matrix_id,omitempty"`
 	// EvaluateeID holds the value of the "evaluatee_id" field.
@@ -86,6 +92,8 @@ func (*NineBoxEntry) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case nineboxentry.FieldGoalProgressPercent, nineboxentry.FieldSelfRating, nineboxentry.FieldHrRating:
+			values[i] = new(sql.NullFloat64)
 		case nineboxentry.FieldVersion, nineboxentry.FieldPerformanceTier, nineboxentry.FieldPotentialTier, nineboxentry.FieldQuadrant:
 			values[i] = new(sql.NullInt64)
 		case nineboxentry.FieldComments:
@@ -168,6 +176,27 @@ func (_m *NineBoxEntry) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field comments", values[i])
 			} else if value.Valid {
 				_m.Comments = value.String
+			}
+		case nineboxentry.FieldGoalProgressPercent:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field goal_progress_percent", values[i])
+			} else if value.Valid {
+				_m.GoalProgressPercent = new(float64)
+				*_m.GoalProgressPercent = value.Float64
+			}
+		case nineboxentry.FieldSelfRating:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field self_rating", values[i])
+			} else if value.Valid {
+				_m.SelfRating = new(float64)
+				*_m.SelfRating = value.Float64
+			}
+		case nineboxentry.FieldHrRating:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field hr_rating", values[i])
+			} else if value.Valid {
+				_m.HrRating = new(float64)
+				*_m.HrRating = value.Float64
 			}
 		case nineboxentry.FieldMatrixID:
 			if value, ok := values[i].(*uuid.UUID); !ok {
@@ -253,6 +282,21 @@ func (_m *NineBoxEntry) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("comments=")
 	builder.WriteString(_m.Comments)
+	builder.WriteString(", ")
+	if v := _m.GoalProgressPercent; v != nil {
+		builder.WriteString("goal_progress_percent=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.SelfRating; v != nil {
+		builder.WriteString("self_rating=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.HrRating; v != nil {
+		builder.WriteString("hr_rating=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
 	builder.WriteString(", ")
 	builder.WriteString("matrix_id=")
 	builder.WriteString(fmt.Sprintf("%v", _m.MatrixID))

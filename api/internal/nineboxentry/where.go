@@ -101,6 +101,21 @@ func Comments(v string) predicate.NineBoxEntry {
 	return predicate.NineBoxEntry(sql.FieldEQ(FieldComments, v))
 }
 
+// GoalProgressPercent applies equality check predicate on the "goal_progress_percent" field. It's identical to GoalProgressPercentEQ.
+func GoalProgressPercent(v float64) predicate.NineBoxEntry {
+	return predicate.NineBoxEntry(sql.FieldEQ(FieldGoalProgressPercent, v))
+}
+
+// SelfRating applies equality check predicate on the "self_rating" field. It's identical to SelfRatingEQ.
+func SelfRating(v float64) predicate.NineBoxEntry {
+	return predicate.NineBoxEntry(sql.FieldEQ(FieldSelfRating, v))
+}
+
+// HrRating applies equality check predicate on the "hr_rating" field. It's identical to HrRatingEQ.
+func HrRating(v float64) predicate.NineBoxEntry {
+	return predicate.NineBoxEntry(sql.FieldEQ(FieldHrRating, v))
+}
+
 // MatrixID applies equality check predicate on the "matrix_id" field. It's identical to MatrixIDEQ.
 func MatrixID(v uuid.UUID) predicate.NineBoxEntry {
 	return predicate.NineBoxEntry(sql.FieldEQ(FieldMatrixID, v))
@@ -504,6 +519,156 @@ func CommentsEqualFold(v string) predicate.NineBoxEntry {
 // CommentsContainsFold applies the ContainsFold predicate on the "comments" field.
 func CommentsContainsFold(v string) predicate.NineBoxEntry {
 	return predicate.NineBoxEntry(sql.FieldContainsFold(FieldComments, v))
+}
+
+// GoalProgressPercentEQ applies the EQ predicate on the "goal_progress_percent" field.
+func GoalProgressPercentEQ(v float64) predicate.NineBoxEntry {
+	return predicate.NineBoxEntry(sql.FieldEQ(FieldGoalProgressPercent, v))
+}
+
+// GoalProgressPercentNEQ applies the NEQ predicate on the "goal_progress_percent" field.
+func GoalProgressPercentNEQ(v float64) predicate.NineBoxEntry {
+	return predicate.NineBoxEntry(sql.FieldNEQ(FieldGoalProgressPercent, v))
+}
+
+// GoalProgressPercentIn applies the In predicate on the "goal_progress_percent" field.
+func GoalProgressPercentIn(vs ...float64) predicate.NineBoxEntry {
+	return predicate.NineBoxEntry(sql.FieldIn(FieldGoalProgressPercent, vs...))
+}
+
+// GoalProgressPercentNotIn applies the NotIn predicate on the "goal_progress_percent" field.
+func GoalProgressPercentNotIn(vs ...float64) predicate.NineBoxEntry {
+	return predicate.NineBoxEntry(sql.FieldNotIn(FieldGoalProgressPercent, vs...))
+}
+
+// GoalProgressPercentGT applies the GT predicate on the "goal_progress_percent" field.
+func GoalProgressPercentGT(v float64) predicate.NineBoxEntry {
+	return predicate.NineBoxEntry(sql.FieldGT(FieldGoalProgressPercent, v))
+}
+
+// GoalProgressPercentGTE applies the GTE predicate on the "goal_progress_percent" field.
+func GoalProgressPercentGTE(v float64) predicate.NineBoxEntry {
+	return predicate.NineBoxEntry(sql.FieldGTE(FieldGoalProgressPercent, v))
+}
+
+// GoalProgressPercentLT applies the LT predicate on the "goal_progress_percent" field.
+func GoalProgressPercentLT(v float64) predicate.NineBoxEntry {
+	return predicate.NineBoxEntry(sql.FieldLT(FieldGoalProgressPercent, v))
+}
+
+// GoalProgressPercentLTE applies the LTE predicate on the "goal_progress_percent" field.
+func GoalProgressPercentLTE(v float64) predicate.NineBoxEntry {
+	return predicate.NineBoxEntry(sql.FieldLTE(FieldGoalProgressPercent, v))
+}
+
+// GoalProgressPercentIsNil applies the IsNil predicate on the "goal_progress_percent" field.
+func GoalProgressPercentIsNil() predicate.NineBoxEntry {
+	return predicate.NineBoxEntry(sql.FieldIsNull(FieldGoalProgressPercent))
+}
+
+// GoalProgressPercentNotNil applies the NotNil predicate on the "goal_progress_percent" field.
+func GoalProgressPercentNotNil() predicate.NineBoxEntry {
+	return predicate.NineBoxEntry(sql.FieldNotNull(FieldGoalProgressPercent))
+}
+
+// SelfRatingEQ applies the EQ predicate on the "self_rating" field.
+func SelfRatingEQ(v float64) predicate.NineBoxEntry {
+	return predicate.NineBoxEntry(sql.FieldEQ(FieldSelfRating, v))
+}
+
+// SelfRatingNEQ applies the NEQ predicate on the "self_rating" field.
+func SelfRatingNEQ(v float64) predicate.NineBoxEntry {
+	return predicate.NineBoxEntry(sql.FieldNEQ(FieldSelfRating, v))
+}
+
+// SelfRatingIn applies the In predicate on the "self_rating" field.
+func SelfRatingIn(vs ...float64) predicate.NineBoxEntry {
+	return predicate.NineBoxEntry(sql.FieldIn(FieldSelfRating, vs...))
+}
+
+// SelfRatingNotIn applies the NotIn predicate on the "self_rating" field.
+func SelfRatingNotIn(vs ...float64) predicate.NineBoxEntry {
+	return predicate.NineBoxEntry(sql.FieldNotIn(FieldSelfRating, vs...))
+}
+
+// SelfRatingGT applies the GT predicate on the "self_rating" field.
+func SelfRatingGT(v float64) predicate.NineBoxEntry {
+	return predicate.NineBoxEntry(sql.FieldGT(FieldSelfRating, v))
+}
+
+// SelfRatingGTE applies the GTE predicate on the "self_rating" field.
+func SelfRatingGTE(v float64) predicate.NineBoxEntry {
+	return predicate.NineBoxEntry(sql.FieldGTE(FieldSelfRating, v))
+}
+
+// SelfRatingLT applies the LT predicate on the "self_rating" field.
+func SelfRatingLT(v float64) predicate.NineBoxEntry {
+	return predicate.NineBoxEntry(sql.FieldLT(FieldSelfRating, v))
+}
+
+// SelfRatingLTE applies the LTE predicate on the "self_rating" field.
+func SelfRatingLTE(v float64) predicate.NineBoxEntry {
+	return predicate.NineBoxEntry(sql.FieldLTE(FieldSelfRating, v))
+}
+
+// SelfRatingIsNil applies the IsNil predicate on the "self_rating" field.
+func SelfRatingIsNil() predicate.NineBoxEntry {
+	return predicate.NineBoxEntry(sql.FieldIsNull(FieldSelfRating))
+}
+
+// SelfRatingNotNil applies the NotNil predicate on the "self_rating" field.
+func SelfRatingNotNil() predicate.NineBoxEntry {
+	return predicate.NineBoxEntry(sql.FieldNotNull(FieldSelfRating))
+}
+
+// HrRatingEQ applies the EQ predicate on the "hr_rating" field.
+func HrRatingEQ(v float64) predicate.NineBoxEntry {
+	return predicate.NineBoxEntry(sql.FieldEQ(FieldHrRating, v))
+}
+
+// HrRatingNEQ applies the NEQ predicate on the "hr_rating" field.
+func HrRatingNEQ(v float64) predicate.NineBoxEntry {
+	return predicate.NineBoxEntry(sql.FieldNEQ(FieldHrRating, v))
+}
+
+// HrRatingIn applies the In predicate on the "hr_rating" field.
+func HrRatingIn(vs ...float64) predicate.NineBoxEntry {
+	return predicate.NineBoxEntry(sql.FieldIn(FieldHrRating, vs...))
+}
+
+// HrRatingNotIn applies the NotIn predicate on the "hr_rating" field.
+func HrRatingNotIn(vs ...float64) predicate.NineBoxEntry {
+	return predicate.NineBoxEntry(sql.FieldNotIn(FieldHrRating, vs...))
+}
+
+// HrRatingGT applies the GT predicate on the "hr_rating" field.
+func HrRatingGT(v float64) predicate.NineBoxEntry {
+	return predicate.NineBoxEntry(sql.FieldGT(FieldHrRating, v))
+}
+
+// HrRatingGTE applies the GTE predicate on the "hr_rating" field.
+func HrRatingGTE(v float64) predicate.NineBoxEntry {
+	return predicate.NineBoxEntry(sql.FieldGTE(FieldHrRating, v))
+}
+
+// HrRatingLT applies the LT predicate on the "hr_rating" field.
+func HrRatingLT(v float64) predicate.NineBoxEntry {
+	return predicate.NineBoxEntry(sql.FieldLT(FieldHrRating, v))
+}
+
+// HrRatingLTE applies the LTE predicate on the "hr_rating" field.
+func HrRatingLTE(v float64) predicate.NineBoxEntry {
+	return predicate.NineBoxEntry(sql.FieldLTE(FieldHrRating, v))
+}
+
+// HrRatingIsNil applies the IsNil predicate on the "hr_rating" field.
+func HrRatingIsNil() predicate.NineBoxEntry {
+	return predicate.NineBoxEntry(sql.FieldIsNull(FieldHrRating))
+}
+
+// HrRatingNotNil applies the NotNil predicate on the "hr_rating" field.
+func HrRatingNotNil() predicate.NineBoxEntry {
+	return predicate.NineBoxEntry(sql.FieldNotNull(FieldHrRating))
 }
 
 // MatrixIDEQ applies the EQ predicate on the "matrix_id" field.

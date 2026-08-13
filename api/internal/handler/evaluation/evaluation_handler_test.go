@@ -135,6 +135,8 @@ type mockBoxService struct {
 	scalesErr          error
 	quadrantsResp      []dto.NineBoxQuadrantDTO
 	quadrantsErr       error
+	canView            bool
+	canViewErr         error
 	mu                 sync.Mutex
 	callCount          map[string]int
 }
@@ -171,6 +173,11 @@ func (m *mockBoxService) GetMatrix(ctx context.Context, matrixID uuid.UUID) (*dt
 func (m *mockBoxService) GetMatrixEntriesFiltered(ctx context.Context, matrixID uuid.UUID, quadrant *int) ([]dto.NineBoxEntryDTO, error) {
 	m.recordCall("GetMatrixEntriesFiltered")
 	return m.entriesResp, m.entriesErr
+}
+
+func (m *mockBoxService) CanViewMatrix(ctx context.Context, viewerID uuid.UUID, viewerRole auth.Role, matrixID uuid.UUID) (bool, error) {
+	m.recordCall("CanViewMatrix")
+	return m.canView, m.canViewErr
 }
 
 func (m *mockBoxService) RecomputeMatrix(ctx context.Context, cycleID, phaseID uuid.UUID) error {
@@ -232,6 +239,21 @@ func doRequest(t *testing.T, r chi.Router, method, path string, body []byte, que
 		req.URL.RawQuery = query
 	}
 	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+	return rec
+}
+
+// doRequestAs dispatches the request authenticated as the given role, injecting
+// a session with a fresh employee ID so auth.GetEmployeeID/GetRole succeed.
+func doRequestAs(t *testing.T, r chi.Router, method, path string, body []byte, query string, role auth.Role) *httptest.ResponseRecorder {
+	req := httptest.NewRequest(method, path, bytes.NewReader(body))
+	if query != "" {
+		req.URL.RawQuery = query
+	}
+	req.Header.Set("Content-Type", "application/json")
+	session := &auth.Session{ID: uuid.New(), EmployeeID: uuid.New()}
+	req = req.WithContext(auth.WithSession(req.Context(), session, role, uuid.Nil))
 	rec := httptest.NewRecorder()
 	r.ServeHTTP(rec, req)
 	return rec
@@ -377,12 +399,44 @@ func TestGetNineBoxMatrix_Success(t *testing.T) {
 			ID:      matrixID,
 			Entries: []dto.NineBoxEntryDTO{},
 		},
+		canView: true,
+	}
+	h, r := setupHandler(t, nil, mockBox, nil)
+	r.Get("/nine-box/matrices/{matrixId}", h.GetMatrix)
+
+	rec := doRequestAs(t, r, http.MethodGet, "/nine-box/matrices/"+matrixID.String(), nil, "", auth.RoleRH)
+	assert.Equal(t, http.StatusOK, rec.Code)
+}
+
+func TestGetMatrix_NoAuth_Forbidden(t *testing.T) {
+	matrixID := uuid.New()
+	mockBox := &mockBoxService{
+		getResp: &dto.NineBoxMatrixResponse{
+			ID:      matrixID,
+			Entries: []dto.NineBoxEntryDTO{},
+		},
 	}
 	h, r := setupHandler(t, nil, mockBox, nil)
 	r.Get("/nine-box/matrices/{matrixId}", h.GetMatrix)
 
 	rec := doRequest(t, r, http.MethodGet, "/nine-box/matrices/"+matrixID.String(), nil, "")
-	assert.Equal(t, http.StatusOK, rec.Code)
+	assert.Equal(t, http.StatusForbidden, rec.Code)
+}
+
+func TestGetMatrix_CanViewFalse_Forbidden(t *testing.T) {
+	matrixID := uuid.New()
+	mockBox := &mockBoxService{
+		getResp: &dto.NineBoxMatrixResponse{
+			ID:      matrixID,
+			Entries: []dto.NineBoxEntryDTO{},
+		},
+		canView: false,
+	}
+	h, r := setupHandler(t, nil, mockBox, nil)
+	r.Get("/nine-box/matrices/{matrixId}", h.GetMatrix)
+
+	rec := doRequestAs(t, r, http.MethodGet, "/nine-box/matrices/"+matrixID.String(), nil, "", auth.RoleRH)
+	assert.Equal(t, http.StatusForbidden, rec.Code)
 }
 
 func TestListMatrixEntries_Success(t *testing.T) {
@@ -392,11 +446,12 @@ func TestListMatrixEntries_Success(t *testing.T) {
 		entriesResp: []dto.NineBoxEntryDTO{
 			{ID: entryID, EvaluateeID: uuid.New(), Quadrant: 5, PerformanceTier: 2, PotentialTier: 2},
 		},
+		canView: true,
 	}
 	h, r := setupHandler(t, nil, mockBox, nil)
 	r.Get("/nine-box/matrices/{matrixId}/entries", h.ListMatrixEntries)
 
-	rec := doRequest(t, r, http.MethodGet, "/nine-box/matrices/"+matrixID.String()+"/entries", nil, "")
+	rec := doRequestAs(t, r, http.MethodGet, "/nine-box/matrices/"+matrixID.String()+"/entries", nil, "", auth.RoleRH)
 	assert.Equal(t, http.StatusOK, rec.Code)
 	var resp []dto.NineBoxEntryDTO
 	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &resp))
@@ -410,11 +465,12 @@ func TestListMatrixEntries_ByQuadrant(t *testing.T) {
 		entriesResp: []dto.NineBoxEntryDTO{
 			{ID: uuid.New(), EvaluateeID: uuid.New(), Quadrant: 5, PerformanceTier: 2, PotentialTier: 2},
 		},
+		canView: true,
 	}
 	h, r := setupHandler(t, nil, mockBox, nil)
 	r.Get("/nine-box/matrices/{matrixId}/entries", h.ListMatrixEntries)
 
-	rec := doRequest(t, r, http.MethodGet, "/nine-box/matrices/"+matrixID.String()+"/entries", nil, "quadrant=5")
+	rec := doRequestAs(t, r, http.MethodGet, "/nine-box/matrices/"+matrixID.String()+"/entries", nil, "quadrant=5", auth.RoleRH)
 	assert.Equal(t, http.StatusOK, rec.Code)
 	assert.Equal(t, 1, mockBox.callCount["GetMatrixEntriesFiltered"])
 }

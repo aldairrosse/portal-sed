@@ -169,6 +169,87 @@ func (_u *NineBoxEntryUpdate) ClearComments() *NineBoxEntryUpdate {
 	return _u
 }
 
+// SetGoalProgressPercent sets the "goal_progress_percent" field.
+func (_u *NineBoxEntryUpdate) SetGoalProgressPercent(v float64) *NineBoxEntryUpdate {
+	_u.mutation.ResetGoalProgressPercent()
+	_u.mutation.SetGoalProgressPercent(v)
+	return _u
+}
+
+// SetNillableGoalProgressPercent sets the "goal_progress_percent" field if the given value is not nil.
+func (_u *NineBoxEntryUpdate) SetNillableGoalProgressPercent(v *float64) *NineBoxEntryUpdate {
+	if v != nil {
+		_u.SetGoalProgressPercent(*v)
+	}
+	return _u
+}
+
+// AddGoalProgressPercent adds value to the "goal_progress_percent" field.
+func (_u *NineBoxEntryUpdate) AddGoalProgressPercent(v float64) *NineBoxEntryUpdate {
+	_u.mutation.AddGoalProgressPercent(v)
+	return _u
+}
+
+// ClearGoalProgressPercent clears the value of the "goal_progress_percent" field.
+func (_u *NineBoxEntryUpdate) ClearGoalProgressPercent() *NineBoxEntryUpdate {
+	_u.mutation.ClearGoalProgressPercent()
+	return _u
+}
+
+// SetSelfRating sets the "self_rating" field.
+func (_u *NineBoxEntryUpdate) SetSelfRating(v float64) *NineBoxEntryUpdate {
+	_u.mutation.ResetSelfRating()
+	_u.mutation.SetSelfRating(v)
+	return _u
+}
+
+// SetNillableSelfRating sets the "self_rating" field if the given value is not nil.
+func (_u *NineBoxEntryUpdate) SetNillableSelfRating(v *float64) *NineBoxEntryUpdate {
+	if v != nil {
+		_u.SetSelfRating(*v)
+	}
+	return _u
+}
+
+// AddSelfRating adds value to the "self_rating" field.
+func (_u *NineBoxEntryUpdate) AddSelfRating(v float64) *NineBoxEntryUpdate {
+	_u.mutation.AddSelfRating(v)
+	return _u
+}
+
+// ClearSelfRating clears the value of the "self_rating" field.
+func (_u *NineBoxEntryUpdate) ClearSelfRating() *NineBoxEntryUpdate {
+	_u.mutation.ClearSelfRating()
+	return _u
+}
+
+// SetHrRating sets the "hr_rating" field.
+func (_u *NineBoxEntryUpdate) SetHrRating(v float64) *NineBoxEntryUpdate {
+	_u.mutation.ResetHrRating()
+	_u.mutation.SetHrRating(v)
+	return _u
+}
+
+// SetNillableHrRating sets the "hr_rating" field if the given value is not nil.
+func (_u *NineBoxEntryUpdate) SetNillableHrRating(v *float64) *NineBoxEntryUpdate {
+	if v != nil {
+		_u.SetHrRating(*v)
+	}
+	return _u
+}
+
+// AddHrRating adds value to the "hr_rating" field.
+func (_u *NineBoxEntryUpdate) AddHrRating(v float64) *NineBoxEntryUpdate {
+	_u.mutation.AddHrRating(v)
+	return _u
+}
+
+// ClearHrRating clears the value of the "hr_rating" field.
+func (_u *NineBoxEntryUpdate) ClearHrRating() *NineBoxEntryUpdate {
+	_u.mutation.ClearHrRating()
+	return _u
+}
+
 // SetMatrixID sets the "matrix_id" field.
 func (_u *NineBoxEntryUpdate) SetMatrixID(v uuid.UUID) *NineBoxEntryUpdate {
 	_u.mutation.SetMatrixID(v)
@@ -341,6 +422,33 @@ func (_u *NineBoxEntryUpdate) sqlSave(ctx context.Context) (_node int, err error
 	}
 	if _u.mutation.CommentsCleared() {
 		_spec.ClearField(nineboxentry.FieldComments, field.TypeString)
+	}
+	if value, ok := _u.mutation.GoalProgressPercent(); ok {
+		_spec.SetField(nineboxentry.FieldGoalProgressPercent, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedGoalProgressPercent(); ok {
+		_spec.AddField(nineboxentry.FieldGoalProgressPercent, field.TypeFloat64, value)
+	}
+	if _u.mutation.GoalProgressPercentCleared() {
+		_spec.ClearField(nineboxentry.FieldGoalProgressPercent, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.SelfRating(); ok {
+		_spec.SetField(nineboxentry.FieldSelfRating, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedSelfRating(); ok {
+		_spec.AddField(nineboxentry.FieldSelfRating, field.TypeFloat64, value)
+	}
+	if _u.mutation.SelfRatingCleared() {
+		_spec.ClearField(nineboxentry.FieldSelfRating, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.HrRating(); ok {
+		_spec.SetField(nineboxentry.FieldHrRating, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedHrRating(); ok {
+		_spec.AddField(nineboxentry.FieldHrRating, field.TypeFloat64, value)
+	}
+	if _u.mutation.HrRatingCleared() {
+		_spec.ClearField(nineboxentry.FieldHrRating, field.TypeFloat64)
 	}
 	if _u.mutation.MatrixCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -558,6 +666,87 @@ func (_u *NineBoxEntryUpdateOne) ClearComments() *NineBoxEntryUpdateOne {
 	return _u
 }
 
+// SetGoalProgressPercent sets the "goal_progress_percent" field.
+func (_u *NineBoxEntryUpdateOne) SetGoalProgressPercent(v float64) *NineBoxEntryUpdateOne {
+	_u.mutation.ResetGoalProgressPercent()
+	_u.mutation.SetGoalProgressPercent(v)
+	return _u
+}
+
+// SetNillableGoalProgressPercent sets the "goal_progress_percent" field if the given value is not nil.
+func (_u *NineBoxEntryUpdateOne) SetNillableGoalProgressPercent(v *float64) *NineBoxEntryUpdateOne {
+	if v != nil {
+		_u.SetGoalProgressPercent(*v)
+	}
+	return _u
+}
+
+// AddGoalProgressPercent adds value to the "goal_progress_percent" field.
+func (_u *NineBoxEntryUpdateOne) AddGoalProgressPercent(v float64) *NineBoxEntryUpdateOne {
+	_u.mutation.AddGoalProgressPercent(v)
+	return _u
+}
+
+// ClearGoalProgressPercent clears the value of the "goal_progress_percent" field.
+func (_u *NineBoxEntryUpdateOne) ClearGoalProgressPercent() *NineBoxEntryUpdateOne {
+	_u.mutation.ClearGoalProgressPercent()
+	return _u
+}
+
+// SetSelfRating sets the "self_rating" field.
+func (_u *NineBoxEntryUpdateOne) SetSelfRating(v float64) *NineBoxEntryUpdateOne {
+	_u.mutation.ResetSelfRating()
+	_u.mutation.SetSelfRating(v)
+	return _u
+}
+
+// SetNillableSelfRating sets the "self_rating" field if the given value is not nil.
+func (_u *NineBoxEntryUpdateOne) SetNillableSelfRating(v *float64) *NineBoxEntryUpdateOne {
+	if v != nil {
+		_u.SetSelfRating(*v)
+	}
+	return _u
+}
+
+// AddSelfRating adds value to the "self_rating" field.
+func (_u *NineBoxEntryUpdateOne) AddSelfRating(v float64) *NineBoxEntryUpdateOne {
+	_u.mutation.AddSelfRating(v)
+	return _u
+}
+
+// ClearSelfRating clears the value of the "self_rating" field.
+func (_u *NineBoxEntryUpdateOne) ClearSelfRating() *NineBoxEntryUpdateOne {
+	_u.mutation.ClearSelfRating()
+	return _u
+}
+
+// SetHrRating sets the "hr_rating" field.
+func (_u *NineBoxEntryUpdateOne) SetHrRating(v float64) *NineBoxEntryUpdateOne {
+	_u.mutation.ResetHrRating()
+	_u.mutation.SetHrRating(v)
+	return _u
+}
+
+// SetNillableHrRating sets the "hr_rating" field if the given value is not nil.
+func (_u *NineBoxEntryUpdateOne) SetNillableHrRating(v *float64) *NineBoxEntryUpdateOne {
+	if v != nil {
+		_u.SetHrRating(*v)
+	}
+	return _u
+}
+
+// AddHrRating adds value to the "hr_rating" field.
+func (_u *NineBoxEntryUpdateOne) AddHrRating(v float64) *NineBoxEntryUpdateOne {
+	_u.mutation.AddHrRating(v)
+	return _u
+}
+
+// ClearHrRating clears the value of the "hr_rating" field.
+func (_u *NineBoxEntryUpdateOne) ClearHrRating() *NineBoxEntryUpdateOne {
+	_u.mutation.ClearHrRating()
+	return _u
+}
+
 // SetMatrixID sets the "matrix_id" field.
 func (_u *NineBoxEntryUpdateOne) SetMatrixID(v uuid.UUID) *NineBoxEntryUpdateOne {
 	_u.mutation.SetMatrixID(v)
@@ -760,6 +949,33 @@ func (_u *NineBoxEntryUpdateOne) sqlSave(ctx context.Context) (_node *NineBoxEnt
 	}
 	if _u.mutation.CommentsCleared() {
 		_spec.ClearField(nineboxentry.FieldComments, field.TypeString)
+	}
+	if value, ok := _u.mutation.GoalProgressPercent(); ok {
+		_spec.SetField(nineboxentry.FieldGoalProgressPercent, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedGoalProgressPercent(); ok {
+		_spec.AddField(nineboxentry.FieldGoalProgressPercent, field.TypeFloat64, value)
+	}
+	if _u.mutation.GoalProgressPercentCleared() {
+		_spec.ClearField(nineboxentry.FieldGoalProgressPercent, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.SelfRating(); ok {
+		_spec.SetField(nineboxentry.FieldSelfRating, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedSelfRating(); ok {
+		_spec.AddField(nineboxentry.FieldSelfRating, field.TypeFloat64, value)
+	}
+	if _u.mutation.SelfRatingCleared() {
+		_spec.ClearField(nineboxentry.FieldSelfRating, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.HrRating(); ok {
+		_spec.SetField(nineboxentry.FieldHrRating, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedHrRating(); ok {
+		_spec.AddField(nineboxentry.FieldHrRating, field.TypeFloat64, value)
+	}
+	if _u.mutation.HrRatingCleared() {
+		_spec.ClearField(nineboxentry.FieldHrRating, field.TypeFloat64)
 	}
 	if _u.mutation.MatrixCleared() {
 		edge := &sqlgraph.EdgeSpec{

@@ -33,6 +33,12 @@ const (
 	FieldQuadrant = "quadrant"
 	// FieldComments holds the string denoting the comments field in the database.
 	FieldComments = "comments"
+	// FieldGoalProgressPercent holds the string denoting the goal_progress_percent field in the database.
+	FieldGoalProgressPercent = "goal_progress_percent"
+	// FieldSelfRating holds the string denoting the self_rating field in the database.
+	FieldSelfRating = "self_rating"
+	// FieldHrRating holds the string denoting the hr_rating field in the database.
+	FieldHrRating = "hr_rating"
 	// FieldMatrixID holds the string denoting the matrix_id field in the database.
 	FieldMatrixID = "matrix_id"
 	// FieldEvaluateeID holds the string denoting the evaluatee_id field in the database.
@@ -71,6 +77,9 @@ var Columns = []string{
 	FieldPotentialTier,
 	FieldQuadrant,
 	FieldComments,
+	FieldGoalProgressPercent,
+	FieldSelfRating,
+	FieldHrRating,
 	FieldMatrixID,
 	FieldEvaluateeID,
 }
@@ -157,6 +166,21 @@ func ByQuadrant(opts ...sql.OrderTermOption) OrderOption {
 // ByComments orders the results by the comments field.
 func ByComments(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldComments, opts...).ToFunc()
+}
+
+// ByGoalProgressPercent orders the results by the goal_progress_percent field.
+func ByGoalProgressPercent(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldGoalProgressPercent, opts...).ToFunc()
+}
+
+// BySelfRating orders the results by the self_rating field.
+func BySelfRating(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSelfRating, opts...).ToFunc()
+}
+
+// ByHrRating orders the results by the hr_rating field.
+func ByHrRating(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldHrRating, opts...).ToFunc()
 }
 
 // ByMatrixID orders the results by the matrix_id field.

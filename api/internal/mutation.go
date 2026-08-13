@@ -19808,30 +19808,36 @@ func (m *LevelDefinitionMutation) ResetEdge(name string) error {
 // NineBoxEntryMutation represents an operation that mutates the NineBoxEntry nodes in the graph.
 type NineBoxEntryMutation struct {
 	config
-	op                  Op
-	typ                 string
-	id                  *uuid.UUID
-	created_at          *time.Time
-	updated_at          *time.Time
-	created_by          *uuid.UUID
-	updated_by          *uuid.UUID
-	version             *int
-	addversion          *int
-	performance_tier    *int
-	addperformance_tier *int
-	potential_tier      *int
-	addpotential_tier   *int
-	quadrant            *int
-	addquadrant         *int
-	comments            *string
-	clearedFields       map[string]struct{}
-	matrix              *uuid.UUID
-	clearedmatrix       bool
-	evaluatee           *uuid.UUID
-	clearedevaluatee    bool
-	done                bool
-	oldValue            func(context.Context) (*NineBoxEntry, error)
-	predicates          []predicate.NineBoxEntry
+	op                       Op
+	typ                      string
+	id                       *uuid.UUID
+	created_at               *time.Time
+	updated_at               *time.Time
+	created_by               *uuid.UUID
+	updated_by               *uuid.UUID
+	version                  *int
+	addversion               *int
+	performance_tier         *int
+	addperformance_tier      *int
+	potential_tier           *int
+	addpotential_tier        *int
+	quadrant                 *int
+	addquadrant              *int
+	comments                 *string
+	goal_progress_percent    *float64
+	addgoal_progress_percent *float64
+	self_rating              *float64
+	addself_rating           *float64
+	hr_rating                *float64
+	addhr_rating             *float64
+	clearedFields            map[string]struct{}
+	matrix                   *uuid.UUID
+	clearedmatrix            bool
+	evaluatee                *uuid.UUID
+	clearedevaluatee         bool
+	done                     bool
+	oldValue                 func(context.Context) (*NineBoxEntry, error)
+	predicates               []predicate.NineBoxEntry
 }
 
 var _ ent.Mutation = (*NineBoxEntryMutation)(nil)
@@ -20355,6 +20361,216 @@ func (m *NineBoxEntryMutation) ResetComments() {
 	delete(m.clearedFields, nineboxentry.FieldComments)
 }
 
+// SetGoalProgressPercent sets the "goal_progress_percent" field.
+func (m *NineBoxEntryMutation) SetGoalProgressPercent(f float64) {
+	m.goal_progress_percent = &f
+	m.addgoal_progress_percent = nil
+}
+
+// GoalProgressPercent returns the value of the "goal_progress_percent" field in the mutation.
+func (m *NineBoxEntryMutation) GoalProgressPercent() (r float64, exists bool) {
+	v := m.goal_progress_percent
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldGoalProgressPercent returns the old "goal_progress_percent" field's value of the NineBoxEntry entity.
+// If the NineBoxEntry object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NineBoxEntryMutation) OldGoalProgressPercent(ctx context.Context) (v *float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldGoalProgressPercent is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldGoalProgressPercent requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldGoalProgressPercent: %w", err)
+	}
+	return oldValue.GoalProgressPercent, nil
+}
+
+// AddGoalProgressPercent adds f to the "goal_progress_percent" field.
+func (m *NineBoxEntryMutation) AddGoalProgressPercent(f float64) {
+	if m.addgoal_progress_percent != nil {
+		*m.addgoal_progress_percent += f
+	} else {
+		m.addgoal_progress_percent = &f
+	}
+}
+
+// AddedGoalProgressPercent returns the value that was added to the "goal_progress_percent" field in this mutation.
+func (m *NineBoxEntryMutation) AddedGoalProgressPercent() (r float64, exists bool) {
+	v := m.addgoal_progress_percent
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearGoalProgressPercent clears the value of the "goal_progress_percent" field.
+func (m *NineBoxEntryMutation) ClearGoalProgressPercent() {
+	m.goal_progress_percent = nil
+	m.addgoal_progress_percent = nil
+	m.clearedFields[nineboxentry.FieldGoalProgressPercent] = struct{}{}
+}
+
+// GoalProgressPercentCleared returns if the "goal_progress_percent" field was cleared in this mutation.
+func (m *NineBoxEntryMutation) GoalProgressPercentCleared() bool {
+	_, ok := m.clearedFields[nineboxentry.FieldGoalProgressPercent]
+	return ok
+}
+
+// ResetGoalProgressPercent resets all changes to the "goal_progress_percent" field.
+func (m *NineBoxEntryMutation) ResetGoalProgressPercent() {
+	m.goal_progress_percent = nil
+	m.addgoal_progress_percent = nil
+	delete(m.clearedFields, nineboxentry.FieldGoalProgressPercent)
+}
+
+// SetSelfRating sets the "self_rating" field.
+func (m *NineBoxEntryMutation) SetSelfRating(f float64) {
+	m.self_rating = &f
+	m.addself_rating = nil
+}
+
+// SelfRating returns the value of the "self_rating" field in the mutation.
+func (m *NineBoxEntryMutation) SelfRating() (r float64, exists bool) {
+	v := m.self_rating
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSelfRating returns the old "self_rating" field's value of the NineBoxEntry entity.
+// If the NineBoxEntry object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NineBoxEntryMutation) OldSelfRating(ctx context.Context) (v *float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSelfRating is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSelfRating requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSelfRating: %w", err)
+	}
+	return oldValue.SelfRating, nil
+}
+
+// AddSelfRating adds f to the "self_rating" field.
+func (m *NineBoxEntryMutation) AddSelfRating(f float64) {
+	if m.addself_rating != nil {
+		*m.addself_rating += f
+	} else {
+		m.addself_rating = &f
+	}
+}
+
+// AddedSelfRating returns the value that was added to the "self_rating" field in this mutation.
+func (m *NineBoxEntryMutation) AddedSelfRating() (r float64, exists bool) {
+	v := m.addself_rating
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearSelfRating clears the value of the "self_rating" field.
+func (m *NineBoxEntryMutation) ClearSelfRating() {
+	m.self_rating = nil
+	m.addself_rating = nil
+	m.clearedFields[nineboxentry.FieldSelfRating] = struct{}{}
+}
+
+// SelfRatingCleared returns if the "self_rating" field was cleared in this mutation.
+func (m *NineBoxEntryMutation) SelfRatingCleared() bool {
+	_, ok := m.clearedFields[nineboxentry.FieldSelfRating]
+	return ok
+}
+
+// ResetSelfRating resets all changes to the "self_rating" field.
+func (m *NineBoxEntryMutation) ResetSelfRating() {
+	m.self_rating = nil
+	m.addself_rating = nil
+	delete(m.clearedFields, nineboxentry.FieldSelfRating)
+}
+
+// SetHrRating sets the "hr_rating" field.
+func (m *NineBoxEntryMutation) SetHrRating(f float64) {
+	m.hr_rating = &f
+	m.addhr_rating = nil
+}
+
+// HrRating returns the value of the "hr_rating" field in the mutation.
+func (m *NineBoxEntryMutation) HrRating() (r float64, exists bool) {
+	v := m.hr_rating
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldHrRating returns the old "hr_rating" field's value of the NineBoxEntry entity.
+// If the NineBoxEntry object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NineBoxEntryMutation) OldHrRating(ctx context.Context) (v *float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldHrRating is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldHrRating requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldHrRating: %w", err)
+	}
+	return oldValue.HrRating, nil
+}
+
+// AddHrRating adds f to the "hr_rating" field.
+func (m *NineBoxEntryMutation) AddHrRating(f float64) {
+	if m.addhr_rating != nil {
+		*m.addhr_rating += f
+	} else {
+		m.addhr_rating = &f
+	}
+}
+
+// AddedHrRating returns the value that was added to the "hr_rating" field in this mutation.
+func (m *NineBoxEntryMutation) AddedHrRating() (r float64, exists bool) {
+	v := m.addhr_rating
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearHrRating clears the value of the "hr_rating" field.
+func (m *NineBoxEntryMutation) ClearHrRating() {
+	m.hr_rating = nil
+	m.addhr_rating = nil
+	m.clearedFields[nineboxentry.FieldHrRating] = struct{}{}
+}
+
+// HrRatingCleared returns if the "hr_rating" field was cleared in this mutation.
+func (m *NineBoxEntryMutation) HrRatingCleared() bool {
+	_, ok := m.clearedFields[nineboxentry.FieldHrRating]
+	return ok
+}
+
+// ResetHrRating resets all changes to the "hr_rating" field.
+func (m *NineBoxEntryMutation) ResetHrRating() {
+	m.hr_rating = nil
+	m.addhr_rating = nil
+	delete(m.clearedFields, nineboxentry.FieldHrRating)
+}
+
 // SetMatrixID sets the "matrix_id" field.
 func (m *NineBoxEntryMutation) SetMatrixID(u uuid.UUID) {
 	m.matrix = &u
@@ -20515,7 +20731,7 @@ func (m *NineBoxEntryMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *NineBoxEntryMutation) Fields() []string {
-	fields := make([]string, 0, 11)
+	fields := make([]string, 0, 14)
 	if m.created_at != nil {
 		fields = append(fields, nineboxentry.FieldCreatedAt)
 	}
@@ -20542,6 +20758,15 @@ func (m *NineBoxEntryMutation) Fields() []string {
 	}
 	if m.comments != nil {
 		fields = append(fields, nineboxentry.FieldComments)
+	}
+	if m.goal_progress_percent != nil {
+		fields = append(fields, nineboxentry.FieldGoalProgressPercent)
+	}
+	if m.self_rating != nil {
+		fields = append(fields, nineboxentry.FieldSelfRating)
+	}
+	if m.hr_rating != nil {
+		fields = append(fields, nineboxentry.FieldHrRating)
 	}
 	if m.matrix != nil {
 		fields = append(fields, nineboxentry.FieldMatrixID)
@@ -20575,6 +20800,12 @@ func (m *NineBoxEntryMutation) Field(name string) (ent.Value, bool) {
 		return m.Quadrant()
 	case nineboxentry.FieldComments:
 		return m.Comments()
+	case nineboxentry.FieldGoalProgressPercent:
+		return m.GoalProgressPercent()
+	case nineboxentry.FieldSelfRating:
+		return m.SelfRating()
+	case nineboxentry.FieldHrRating:
+		return m.HrRating()
 	case nineboxentry.FieldMatrixID:
 		return m.MatrixID()
 	case nineboxentry.FieldEvaluateeID:
@@ -20606,6 +20837,12 @@ func (m *NineBoxEntryMutation) OldField(ctx context.Context, name string) (ent.V
 		return m.OldQuadrant(ctx)
 	case nineboxentry.FieldComments:
 		return m.OldComments(ctx)
+	case nineboxentry.FieldGoalProgressPercent:
+		return m.OldGoalProgressPercent(ctx)
+	case nineboxentry.FieldSelfRating:
+		return m.OldSelfRating(ctx)
+	case nineboxentry.FieldHrRating:
+		return m.OldHrRating(ctx)
 	case nineboxentry.FieldMatrixID:
 		return m.OldMatrixID(ctx)
 	case nineboxentry.FieldEvaluateeID:
@@ -20682,6 +20919,27 @@ func (m *NineBoxEntryMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetComments(v)
 		return nil
+	case nineboxentry.FieldGoalProgressPercent:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetGoalProgressPercent(v)
+		return nil
+	case nineboxentry.FieldSelfRating:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSelfRating(v)
+		return nil
+	case nineboxentry.FieldHrRating:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetHrRating(v)
+		return nil
 	case nineboxentry.FieldMatrixID:
 		v, ok := value.(uuid.UUID)
 		if !ok {
@@ -20716,6 +20974,15 @@ func (m *NineBoxEntryMutation) AddedFields() []string {
 	if m.addquadrant != nil {
 		fields = append(fields, nineboxentry.FieldQuadrant)
 	}
+	if m.addgoal_progress_percent != nil {
+		fields = append(fields, nineboxentry.FieldGoalProgressPercent)
+	}
+	if m.addself_rating != nil {
+		fields = append(fields, nineboxentry.FieldSelfRating)
+	}
+	if m.addhr_rating != nil {
+		fields = append(fields, nineboxentry.FieldHrRating)
+	}
 	return fields
 }
 
@@ -20732,6 +20999,12 @@ func (m *NineBoxEntryMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedPotentialTier()
 	case nineboxentry.FieldQuadrant:
 		return m.AddedQuadrant()
+	case nineboxentry.FieldGoalProgressPercent:
+		return m.AddedGoalProgressPercent()
+	case nineboxentry.FieldSelfRating:
+		return m.AddedSelfRating()
+	case nineboxentry.FieldHrRating:
+		return m.AddedHrRating()
 	}
 	return nil, false
 }
@@ -20769,6 +21042,27 @@ func (m *NineBoxEntryMutation) AddField(name string, value ent.Value) error {
 		}
 		m.AddQuadrant(v)
 		return nil
+	case nineboxentry.FieldGoalProgressPercent:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddGoalProgressPercent(v)
+		return nil
+	case nineboxentry.FieldSelfRating:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSelfRating(v)
+		return nil
+	case nineboxentry.FieldHrRating:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddHrRating(v)
+		return nil
 	}
 	return fmt.Errorf("unknown NineBoxEntry numeric field %s", name)
 }
@@ -20779,6 +21073,15 @@ func (m *NineBoxEntryMutation) ClearedFields() []string {
 	var fields []string
 	if m.FieldCleared(nineboxentry.FieldComments) {
 		fields = append(fields, nineboxentry.FieldComments)
+	}
+	if m.FieldCleared(nineboxentry.FieldGoalProgressPercent) {
+		fields = append(fields, nineboxentry.FieldGoalProgressPercent)
+	}
+	if m.FieldCleared(nineboxentry.FieldSelfRating) {
+		fields = append(fields, nineboxentry.FieldSelfRating)
+	}
+	if m.FieldCleared(nineboxentry.FieldHrRating) {
+		fields = append(fields, nineboxentry.FieldHrRating)
 	}
 	return fields
 }
@@ -20796,6 +21099,15 @@ func (m *NineBoxEntryMutation) ClearField(name string) error {
 	switch name {
 	case nineboxentry.FieldComments:
 		m.ClearComments()
+		return nil
+	case nineboxentry.FieldGoalProgressPercent:
+		m.ClearGoalProgressPercent()
+		return nil
+	case nineboxentry.FieldSelfRating:
+		m.ClearSelfRating()
+		return nil
+	case nineboxentry.FieldHrRating:
+		m.ClearHrRating()
 		return nil
 	}
 	return fmt.Errorf("unknown NineBoxEntry nullable field %s", name)
@@ -20831,6 +21143,15 @@ func (m *NineBoxEntryMutation) ResetField(name string) error {
 		return nil
 	case nineboxentry.FieldComments:
 		m.ResetComments()
+		return nil
+	case nineboxentry.FieldGoalProgressPercent:
+		m.ResetGoalProgressPercent()
+		return nil
+	case nineboxentry.FieldSelfRating:
+		m.ResetSelfRating()
+		return nil
+	case nineboxentry.FieldHrRating:
+		m.ResetHrRating()
 		return nil
 	case nineboxentry.FieldMatrixID:
 		m.ResetMatrixID()

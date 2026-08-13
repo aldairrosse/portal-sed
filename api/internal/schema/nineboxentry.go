@@ -33,6 +33,15 @@ func (NineBoxEntry) Fields() []ent.Field {
 			Range(1, 9),
 		field.Text("comments").
 			Optional(),
+		field.Float("goal_progress_percent").
+			Optional().
+			Nillable(),
+		field.Float("self_rating").
+			Optional().
+			Nillable(),
+		field.Float("hr_rating").
+			Optional().
+			Nillable(),
 		field.UUID("matrix_id", uuid.UUID{}),
 		field.UUID("evaluatee_id", uuid.UUID{}),
 	}

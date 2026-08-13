@@ -204,7 +204,7 @@ func (s *NineBoxService) RecomputeMatrix(ctx context.Context, cycleID, phaseID u
 			q := quadrant.ComputeQuadrantFromTiers(perfTier, potTier)
 
 			// 4. Upsert entry
-			_, err = s.nineBoxRepo.UpsertEntryByTiers(ctx, tx, matrix.ID, evaluateeID, perfTier, potTier, q, "")
+			_, err = s.nineBoxRepo.UpsertEntryByTiers(ctx, tx, matrix.ID, evaluateeID, perfTier, potTier, q, "", &avgProgress, selfRating, hrRating)
 			if err != nil {
 				return err
 			}
@@ -349,6 +349,24 @@ func (s *NineBoxService) scopeToViewer(ctx context.Context, viewerID uuid.UUID, 
 	return filtered, nil
 }
 
+// CanViewMatrix reports whether the viewer may see the matrix identified by
+// matrixID: always true for global roles (RH, DirectorGeneral), otherwise true
+// only when the matrix evaluator falls within the viewer's org scope.
+func (s *NineBoxService) CanViewMatrix(ctx context.Context, viewerID uuid.UUID, viewerRole auth.Role, matrixID uuid.UUID) (bool, error) {
+	m, err := s.nineBoxRepo.GetMatrixByID(ctx, matrixID)
+	if err != nil {
+		return false, err
+	}
+	if auth.RoleSeesAll(viewerRole) {
+		return true, nil
+	}
+	scoped, err := s.scopeToViewer(ctx, viewerID, []uuid.UUID{m.EvaluatorID})
+	if err != nil {
+		return false, err
+	}
+	return len(scoped) == 1, nil
+}
+
 // deriveMatrix computes tiers for each evaluatee, upserts the matrix entries,
 // bumps the matrix freshness, and returns the matrix response enriched with the
 // raw computation insums.
@@ -391,7 +409,7 @@ func (s *NineBoxService) deriveMatrix(ctx context.Context, cycleID, evaluatorID,
 		)
 		q := quadrant.ComputeQuadrantFromTiers(perfTier, potTier)
 
-		entry, err := s.nineBoxRepo.UpsertEntryByTiers(ctx, tx, matrix.ID, evaluateeID, perfTier, potTier, q, "")
+		entry, err := s.nineBoxRepo.UpsertEntryByTiers(ctx, tx, matrix.ID, evaluateeID, perfTier, potTier, q, "", &avgProgress, selfRating, hrRating)
 		if err != nil {
 			return dto.NineBoxMatrixResponse{}, err
 		}
@@ -418,7 +436,8 @@ func (s *NineBoxService) deriveMatrix(ctx context.Context, cycleID, evaluatorID,
 }
 
 // matrixResponse maps a matrix and its entries to a response DTO, enriching
-// entries with raw inputs when available (nil/empty on TTL reuse).
+// entries with raw inputs from the derivation map or, on TTL reuse, from the
+// persisted entry fields.
 func (s *NineBoxService) matrixResponse(ctx context.Context, matrix *internal.NineBoxMatrix, entries []*internal.NineBoxEntry, rawByEval map[uuid.UUID]rawEntryInputs) dto.NineBoxMatrixResponse {
 	resp := dto.NineBoxMatrixResponse{
 		ID: matrix.ID, CycleID: matrix.CycleID, EvaluatorID: matrix.EvaluatorID,
@@ -438,6 +457,14 @@ func (s *NineBoxService) matrixResponse(ctx context.Context, matrix *internal.Ni
 			d.GoalProgressPercent = raw.goalProgress
 			d.SelfRating = raw.selfRating
 			d.HrRating = raw.hrRating
+			d.Weights = &dto.NineBoxWeightsDTO{Self: quadrant.DefaultWeightSelf, HR: quadrant.DefaultWeightRH}
+		} else if e != nil && (e.GoalProgressPercent != nil || e.SelfRating != nil || e.HrRating != nil) {
+			// TTL-hit: map raw inputs from the persisted entry instead of nil.
+			if e.GoalProgressPercent != nil {
+				d.GoalProgressPercent = *e.GoalProgressPercent
+			}
+			d.SelfRating = e.SelfRating
+			d.HrRating = e.HrRating
 			d.Weights = &dto.NineBoxWeightsDTO{Self: quadrant.DefaultWeightSelf, HR: quadrant.DefaultWeightRH}
 		}
 		resp.Entries = append(resp.Entries, d)
@@ -505,7 +532,7 @@ func (s *NineBoxService) UpsertEntry(ctx context.Context, matrixID uuid.UUID, re
 		comments = *req.Comments
 	}
 	entry, err := s.nineBoxRepo.UpsertEntry(ctx, tx, matrixID, req.EvaluateeID,
-		req.PerformanceScore, req.PotentialScore, q, comments)
+		req.PerformanceScore, req.PotentialScore, q, comments, nil, nil, nil)
 	if err != nil {
 		return nil, err
 	}

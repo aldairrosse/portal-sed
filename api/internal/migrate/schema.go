@@ -610,6 +610,9 @@ var (
 		{Name: "potential_tier", Type: field.TypeInt},
 		{Name: "quadrant", Type: field.TypeInt},
 		{Name: "comments", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "goal_progress_percent", Type: field.TypeFloat64, Nullable: true},
+		{Name: "self_rating", Type: field.TypeFloat64, Nullable: true},
+		{Name: "hr_rating", Type: field.TypeFloat64, Nullable: true},
 		{Name: "evaluatee_id", Type: field.TypeUUID},
 		{Name: "matrix_id", Type: field.TypeUUID},
 	}
@@ -621,13 +624,13 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "nine_box_entries_employees_nine_box_entries",
-				Columns:    []*schema.Column{NineBoxEntriesColumns[10]},
+				Columns:    []*schema.Column{NineBoxEntriesColumns[13]},
 				RefColumns: []*schema.Column{EmployeesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "nine_box_entries_nine_box_matrixes_entries",
-				Columns:    []*schema.Column{NineBoxEntriesColumns[11]},
+				Columns:    []*schema.Column{NineBoxEntriesColumns[14]},
 				RefColumns: []*schema.Column{NineBoxMatrixesColumns[0]},
 				OnDelete:   schema.Cascade,
 			},

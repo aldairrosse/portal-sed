@@ -109,6 +109,48 @@ func (_c *NineBoxEntryCreate) SetNillableComments(v *string) *NineBoxEntryCreate
 	return _c
 }
 
+// SetGoalProgressPercent sets the "goal_progress_percent" field.
+func (_c *NineBoxEntryCreate) SetGoalProgressPercent(v float64) *NineBoxEntryCreate {
+	_c.mutation.SetGoalProgressPercent(v)
+	return _c
+}
+
+// SetNillableGoalProgressPercent sets the "goal_progress_percent" field if the given value is not nil.
+func (_c *NineBoxEntryCreate) SetNillableGoalProgressPercent(v *float64) *NineBoxEntryCreate {
+	if v != nil {
+		_c.SetGoalProgressPercent(*v)
+	}
+	return _c
+}
+
+// SetSelfRating sets the "self_rating" field.
+func (_c *NineBoxEntryCreate) SetSelfRating(v float64) *NineBoxEntryCreate {
+	_c.mutation.SetSelfRating(v)
+	return _c
+}
+
+// SetNillableSelfRating sets the "self_rating" field if the given value is not nil.
+func (_c *NineBoxEntryCreate) SetNillableSelfRating(v *float64) *NineBoxEntryCreate {
+	if v != nil {
+		_c.SetSelfRating(*v)
+	}
+	return _c
+}
+
+// SetHrRating sets the "hr_rating" field.
+func (_c *NineBoxEntryCreate) SetHrRating(v float64) *NineBoxEntryCreate {
+	_c.mutation.SetHrRating(v)
+	return _c
+}
+
+// SetNillableHrRating sets the "hr_rating" field if the given value is not nil.
+func (_c *NineBoxEntryCreate) SetNillableHrRating(v *float64) *NineBoxEntryCreate {
+	if v != nil {
+		_c.SetHrRating(*v)
+	}
+	return _c
+}
+
 // SetMatrixID sets the "matrix_id" field.
 func (_c *NineBoxEntryCreate) SetMatrixID(v uuid.UUID) *NineBoxEntryCreate {
 	_c.mutation.SetMatrixID(v)
@@ -326,6 +368,18 @@ func (_c *NineBoxEntryCreate) createSpec() (*NineBoxEntry, *sqlgraph.CreateSpec)
 	if value, ok := _c.mutation.Comments(); ok {
 		_spec.SetField(nineboxentry.FieldComments, field.TypeString, value)
 		_node.Comments = value
+	}
+	if value, ok := _c.mutation.GoalProgressPercent(); ok {
+		_spec.SetField(nineboxentry.FieldGoalProgressPercent, field.TypeFloat64, value)
+		_node.GoalProgressPercent = &value
+	}
+	if value, ok := _c.mutation.SelfRating(); ok {
+		_spec.SetField(nineboxentry.FieldSelfRating, field.TypeFloat64, value)
+		_node.SelfRating = &value
+	}
+	if value, ok := _c.mutation.HrRating(); ok {
+		_spec.SetField(nineboxentry.FieldHrRating, field.TypeFloat64, value)
+		_node.HrRating = &value
 	}
 	if nodes := _c.mutation.MatrixIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

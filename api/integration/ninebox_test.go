@@ -484,3 +484,64 @@ func TestNineBoxMatrices_TTLCache(t *testing.T) {
 	srv.Router.ServeHTTP(w, req)
 	require.Equal(t, http.StatusOK, w.Code, "recompute should return 200: %s", w.Body.String())
 }
+
+// TestNineBoxMatrices_DirectAccessOutOfScope403 (REQ-NBM-003) verifies that
+// direct access by matrix id (GET matrix + GET entries) returns 403 when the
+// viewer has no scope over the matrix's evaluator, while RH (RoleSeesAll)
+// reads the same matrix directly with 200.
+func TestNineBoxMatrices_DirectAccessOutOfScope403(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test in short mode")
+	}
+
+	srv := setupTestServer(t)
+	defer srv.Clean()
+
+	cycleID := seed.SeedID("cycle-2026")
+	avancePhaseID := seed.SeedID("phase-def-avance")
+	jefeID := seed.SeedID("emp-jefe")
+
+	// Recompute as RH so a matrix for evaluator emp-jefe (root node, out of
+	// emp-dg-01's child1 subtree) exists.
+	req := httptest.NewRequest(http.MethodPost,
+		fmt.Sprintf("/api/v1/nine-box/recompute/%s/%s", cycleID.String(), avancePhaseID.String()),
+		nil)
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+srv.TokenRH)
+	w := httptest.NewRecorder()
+	srv.Router.ServeHTTP(w, req)
+	require.Equal(t, http.StatusOK, w.Code, "recompute should return 200: %s", w.Body.String())
+
+	// Capture the matrix ID of the evaluator outside emp-dg-01's scope.
+	var matrixID string
+	err := srv.DB.QueryRowContext(ctx,
+		`SELECT id FROM nine_box_matrixes
+		 WHERE cycle_id = $1 AND evaluator_id = $2 AND phase_id = $3
+		 LIMIT 1`,
+		cycleID, jefeID, avancePhaseID,
+	).Scan(&matrixID)
+	require.NoError(t, err, "recompute should create a matrix for evaluator emp-jefe")
+	require.NotEmpty(t, matrixID)
+
+	// Direct access out of scope → 403 for the scoped colaborador (emp-dg-01).
+	for _, path := range []string{
+		fmt.Sprintf("/api/v1/nine-box/matrices/%s", matrixID),
+		fmt.Sprintf("/api/v1/nine-box/matrices/%s/entries", matrixID),
+	} {
+		r := httptest.NewRequest(http.MethodGet, path, nil)
+		r.Header.Set("Authorization", "Bearer "+srv.Token)
+		rec := httptest.NewRecorder()
+		srv.Router.ServeHTTP(rec, r)
+		assert.Equal(t, http.StatusForbidden, rec.Code,
+			"scoped colaborador should get 403 on %s: %s", path, rec.Body.String())
+	}
+
+	// RH (RoleSeesAll) reads the same matrix directly → 200.
+	rhReq := httptest.NewRequest(http.MethodGet,
+		fmt.Sprintf("/api/v1/nine-box/matrices/%s", matrixID), nil)
+	rhReq.Header.Set("Authorization", "Bearer "+srv.TokenRH)
+	rhRec := httptest.NewRecorder()
+	srv.Router.ServeHTTP(rhRec, rhReq)
+	assert.Equal(t, http.StatusOK, rhRec.Code,
+		"RH should read the matrix directly: %s", rhRec.Body.String())
+}
