@@ -36,6 +36,7 @@ export interface GlobalRule {
   min_direct_reports?: number;
   profile_id?: string;
   default_weight: number;
+  default_target?: number;
 }
 
 export interface CreateGlobalGoalRequest {
@@ -63,6 +64,7 @@ export interface CreateRuleRequest {
   min_direct_reports?: number;
   profile_id?: string;
   default_weight: number;
+  default_target?: number;
 }
 
 export interface UpdateGlobalGoalRequest {

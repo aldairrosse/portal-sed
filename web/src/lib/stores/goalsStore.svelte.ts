@@ -9,7 +9,10 @@ import type {
 	GoalProposal,
 	GoalUnit,
 	KpiUnit,
-	CyclePhase
+	CyclePhase,
+	InstitutionalGoal,
+	GoalKind,
+	GoalSource
 } from '$lib/types/goal';
 import type { EvaluationProfile } from '$lib/types/evaluation';
 
@@ -25,6 +28,7 @@ import { SvelteDate, SvelteMap } from 'svelte/reactivity';
 interface StoreData {
 	categories: GoalCategory[];
 	goals: Goal[];
+	institutionalGoals: InstitutionalGoal[];
 	kpis: KPI[];
 	goalKpiLinks: GoalKpiLink[];
 	assignments: EmployeeAssignment[];
@@ -127,6 +131,7 @@ function normalizeApiData(
 			direction?: string;
 			baseline_value?: number;
 			pending_proposal?: Record<string, unknown>;
+			goal_kind?: string;
 			kpis?: Array<{
 				id?: string;
 				name?: string;
@@ -155,6 +160,8 @@ function normalizeApiData(
 		cycle_id?: string;
 		categories?: Array<unknown>;
 		created_at?: string;
+		global_goals?: Array<Record<string, unknown>>;
+		shared_goals?: Array<Record<string, unknown>>;
 	} | null,
 	profileId?: string
 ): StoreData {
@@ -162,6 +169,7 @@ function normalizeApiData(
 	const goals: Goal[] = [];
 	const goalKpiLinks: GoalKpiLink[] = [];
 	const assignedGoalIds: string[] = [];
+	const institutionalGoals: InstitutionalGoal[] = [];
 
 	// 1. Build full KPI catalog from the /kpis endpoint
 	const kpisMap = new SvelteMap<string, KPI>();
@@ -178,6 +186,26 @@ function normalizeApiData(
 			maxValue: undefined
 		};
 		kpisMap.set(kpi.id, kpi);
+	}
+
+	for (const [source, items] of [['global', apiAssignment?.global_goals ?? []], ['shared', apiAssignment?.shared_goals ?? []]] as const) {
+		for (const raw of items) {
+			institutionalGoals.push({
+				id: (raw.id as string) ?? crypto.randomUUID(),
+				name: (raw.name as string) ?? '',
+				description: (raw.description as string) ?? '',
+				unit: (raw.unit as GoalUnit) ?? 'numero',
+				direction: (raw.direction as 'ascendente' | 'descendente') ?? 'ascendente',
+				goalKind: raw.goal_kind as GoalKind | undefined,
+				weight: (raw.weight as number) ?? 0,
+				targetValue: raw.target_value as number | undefined,
+				baselineValue: raw.baseline_value as number | undefined,
+				currentValue: raw.current_value as number | undefined,
+				progressPercent: raw.progress_percent as number | undefined,
+				state: raw.state as string | undefined,
+				source: source as GoalSource
+			});
+		}
 	}
 
 	// 2. Flatten categories → categories + goals + KPI links
@@ -201,6 +229,11 @@ function normalizeApiData(
 				weight: ag.weight ?? 0,
 				unit: (ag.unit as GoalUnit) ?? 'numero',
 				direction: (ag.direction as 'ascendente' | 'descendente') ?? 'ascendente',
+				goalKind: ag.goal_kind === 'quantitative'
+					? 'quantitative'
+					: ag.goal_kind === 'qualitative' || !ag.kpis?.length
+						? 'qualitative'
+						: 'quantitative',
 				targetValue: ag.target_value ?? 0,
 				baselineValue: ag.baseline_value,
 				progress: ag.current_value,
@@ -249,8 +282,9 @@ function normalizeApiData(
 	}
 
 	return {
-		categories: cats,
-		goals,
+			categories: cats,
+			goals,
+			institutionalGoals,
 		kpis: [...kpisMap.values()],
 		goalKpiLinks,
 		assignments,
@@ -324,6 +358,8 @@ async function _doLoad(empIdOverride?: string): Promise<void> {
 					cycle_id?: string;
 					categories?: Array<unknown>;
 					created_at?: string;
+					global_goals?: Array<Record<string, unknown>>;
+					shared_goals?: Array<Record<string, unknown>>;
 			  }
 			| null
 			| undefined) ?? null;
@@ -451,6 +487,10 @@ export function getGoals(): Goal[] {
 	return storeState.data?.goals ?? [];
 }
 
+export function getInstitutionalGoals(): InstitutionalGoal[] {
+	return storeState.data?.institutionalGoals ?? [];
+}
+
 export function getKpis(): KPI[] {
 	return storeState.data?.kpis ?? [];
 }
@@ -516,6 +556,12 @@ export function getWeightedScore(): number {
 		}, 0);
 
 		total += (cat.weight / 100) * catGoalSum;
+	}
+
+	for (const goal of storeState.data?.institutionalGoals ?? []) {
+		if (goal.progressPercent !== undefined) {
+			total += (goal.weight / 100) * goal.progressPercent;
+		}
 	}
 
 	return total;
@@ -603,7 +649,8 @@ export function getAssignmentByEmployee(employeeId: string): EmployeeAssignment 
  * Sum of all category weights equals 100 ± ε.
  */
 function doCategoryWeightsSumTo100(): boolean {
-	const sum = (storeState.data?.categories ?? []).reduce((acc, c) => acc + c.weight, 0);
+	const sum = (storeState.data?.categories ?? []).reduce((acc, c) => acc + c.weight, 0)
+		+ (storeState.data?.institutionalGoals ?? []).reduce((acc, g) => acc + g.weight, 0);
 	return Math.abs(sum - 100) <= EPSILON;
 }
 
@@ -857,7 +904,7 @@ export async function updateLinkWeight(goalId: string, kpiId: string, weight: nu
 
 // ─── Mutations: Assignments ───────────────────────────────────────────────────
 
-export async function addAssignment(assignment: EmployeeAssignment): Promise<void> {
+export async function addAssignment(_assignment: EmployeeAssignment): Promise<void> {
 	const empId = getEmployeeId();
 	const activeCycle = getActiveCycle();
 	if (!activeCycle?.id) throw new Error('No hay un ciclo activo para asignar');

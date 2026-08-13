@@ -4,6 +4,8 @@ import type { EvaluationProfile } from './evaluation';
 
 export type GoalUnit = 'porcentaje' | 'moneda' | 'numero' | 'binario';
 export type KpiUnit = GoalUnit;
+export type GoalKind = 'qualitative' | 'quantitative';
+export type GoalSource = 'global' | 'shared';
 
 // ─── Cycle Phase ──────────────────────────────────────────────────────────────
 
@@ -45,6 +47,7 @@ export interface Goal {
 	weight: number;
 	unit: GoalUnit;
 	direction: 'ascendente' | 'descendente';
+	goalKind?: GoalKind;
 	targetValue: number;
 	baselineValue?: number;
 	progressPercent?: number;
@@ -53,6 +56,22 @@ export interface Goal {
 	comments?: GoalComment[];
 	pendingProposal?: GoalProposal;
 	version: number;
+}
+
+export interface InstitutionalGoal {
+	id: string;
+	name: string;
+	description: string;
+	unit: GoalUnit;
+	direction: 'ascendente' | 'descendente';
+	goalKind?: GoalKind;
+	weight: number;
+	targetValue?: number;
+	baselineValue?: number;
+	currentValue?: number;
+	progressPercent?: number;
+	state?: string;
+	source: GoalSource;
 }
 
 // ─── GoalComment ──────────────────────────────────────────────────────────────

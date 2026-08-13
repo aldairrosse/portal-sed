@@ -14,11 +14,13 @@
         GoalCategory,
         GoalUnit,
         EmployeeAssignment,
+        InstitutionalGoal,
     } from "$lib/types/goal";
     import type { ChangeRequest } from "$lib/types/goal";
     import {
         getCategories,
         getGoals,
+        getInstitutionalGoals,
         getKpis,
         getGoalsByCategory,
         getKpisForGoal,
@@ -308,11 +310,18 @@
 
     const categories = $derived(getCategories());
     const goals = $derived(getGoals());
+    const institutionalGoals = $derived(getInstitutionalGoals());
     const allKpis = $derived(getKpis());
     const globalSum = $derived(
-        categories.reduce((sum, c) => sum + c.weight, 0),
+        categories.reduce((sum, c) => sum + c.weight, 0) +
+        institutionalGoals.reduce((sum, g) => sum + g.weight, 0),
     );
     const valid = $derived(isAssignmentValid());
+
+    function institutionalProgress(goal: InstitutionalGoal): number {
+        return Math.min(100, Math.max(0, goal.progressPercent ?? 0));
+    }
+
 
     // ─── Request change modal state ─────────────────────────────────────────
 
@@ -742,21 +751,20 @@
                     : "Distribución global de metas"}
             </p>
             {#if phase === "medio-anio"}
-                {@const allGoals = goals}
-                {@const withProgress = allGoals.filter(
-                    (g) => g.progress !== undefined,
-                )}
+                {@const withProgress = [
+                    ...goals.filter((g) => g.progress !== undefined).map((g) =>
+                        g.unit === "porcentaje"
+                            ? (g.progress ?? 0)
+                            : ((g.progress ?? 0) / (g.targetValue || 1)) * 100,
+                    ),
+                    ...institutionalGoals
+                        .filter((g) => g.progressPercent !== undefined)
+                        .map((g) => g.progressPercent ?? 0),
+                ]}
                 {@const avgProgress =
                     withProgress.length > 0
-                        ? withProgress.reduce((acc, g) => {
-                              const pct =
-                                  g.unit === "porcentaje"
-                                      ? (g.progress ?? 0)
-                                      : ((g.progress ?? 0) /
-                                            (g.targetValue || 1)) *
-                                        100;
-                              return acc + Math.min(pct, 100);
-                          }, 0) / withProgress.length
+                        ? withProgress.reduce((acc, pct) => acc + Math.min(pct, 100), 0) /
+                          withProgress.length
                         : 0}
                 <ProgressIndicator
                     value={avgProgress}
@@ -766,7 +774,7 @@
             {:else}
                 <WeightIndicator
                     current={globalSum}
-                    label="Suma total de categorías"
+                    label="Suma total de categorías e institucionales"
                 />
                 {#if !valid}
                     <p class="text-xs text-warning mt-1">
@@ -825,47 +833,121 @@
             {/if}
         </div>
 
-        <!-- Category cards -->
-        {#if categories.length > 0}
-            <div class="space-y-4 min-w-0">
+        <details class="collapse collapse-arrow bg-base-100 border border-base-300 rounded-lg" open>
+            <summary class="collapse-title font-semibold">Metas cualitativas</summary>
+            <div class="collapse-content space-y-3">
+                {#each institutionalGoals.filter((g) => g.goalKind === "qualitative") as goal (goal.id)}
+                    <div class="rounded-lg border border-base-300 p-4">
+                        <div class="flex items-start justify-between gap-3">
+                            <div>
+                                <h3 class="font-semibold">{goal.name}</h3>
+                                <p class="text-sm text-base-content/60">{goal.description}</p>
+                            </div>
+                            <span class="badge badge-outline">{goal.source === "global" ? "Global" : "Compartida"}</span>
+                        </div>
+                    </div>
+                {:else}
+                    <p class="text-sm text-base-content/50">No hay metas cualitativas institucionales.</p>
+                {/each}
+
                 {#each categories as cat (cat.id)}
-                    {@const catGoals = getGoalsByCategory(cat.id)}
-                    <CategoryCard
-                        category={cat}
-                        goals={catGoals}
-                        {getKpisForGoal}
-                        onSaveCategory={handleSaveCategory}
-                        onDeleteCategory={handleDeleteCategory}
-                        onSaveGoal={handleSaveGoal}
-                        onDeleteGoal={handleDeleteGoal}
-                        {mode}
-                        pillars={pillarOptions}
-                        onRequestChangeCategory={handleRequestChangeCategory}
-                        onSaveProposal={handleSaveProposal}
-                        onAcceptProposal={handleAcceptProposal}
-                        onRejectProposal={handleRejectProposal}
-                        {phase}
-                        canDelete={permissions.canDelete}
-                        canAddGoal={permissions.canDelete}
-                        canEditCategory={permissions.canEditWeight}
-                        canEditProgress={permissions.canEditProgress}
-                        canComment={permissions.canComment}
-                        {allKpis}
-                        bind:isAnyInlineEditing
-                        onUpdateProgress={handleUpdateProgress}
-                        onOpenComments={openComments}
-                        onOpenCategoryComments={openCategoryComments}
-                    />
+                    {@const catGoals = getGoalsByCategory(cat.id).filter((g) => g.goalKind !== "quantitative")}
+                    {#if catGoals.length > 0 || getGoalsByCategory(cat.id).length === 0}
+                        <CategoryCard
+                            category={cat}
+                            goals={catGoals}
+                            {getKpisForGoal}
+                            onSaveCategory={handleSaveCategory}
+                            onDeleteCategory={handleDeleteCategory}
+                            onSaveGoal={handleSaveGoal}
+                            onDeleteGoal={handleDeleteGoal}
+                            {mode}
+                            pillars={pillarOptions}
+                            onRequestChangeCategory={handleRequestChangeCategory}
+                            onSaveProposal={handleSaveProposal}
+                            onAcceptProposal={handleAcceptProposal}
+                            onRejectProposal={handleRejectProposal}
+                            {phase}
+                            canDelete={permissions.canDelete}
+                            canAddGoal={permissions.canDelete}
+                            canEditCategory={permissions.canEditWeight}
+                            canEditProgress={permissions.canEditProgress}
+                            canComment={permissions.canComment}
+                            {allKpis}
+                            bind:isAnyInlineEditing
+                            onUpdateProgress={handleUpdateProgress}
+                            onOpenComments={openComments}
+                            onOpenCategoryComments={openCategoryComments}
+                        />
+                    {/if}
                 {/each}
             </div>
-        {:else if !creatingCategory && mode === "editor" && phase !== "medio-anio" && phase !== "fin-anio"}
-            <EmptyState
-                title="Sin categorías"
-                message="No hay categorías registradas. Cree la primera categoría para comenzar."
-                actionLabel="Nueva categoría"
-                onaction={startCreateCategory}
-            />
-        {/if}
+        </details>
+
+        <details class="collapse collapse-arrow bg-base-100 border border-base-300 rounded-lg" open>
+            <summary class="collapse-title font-semibold">Metas cuantitativas</summary>
+            <div class="collapse-content space-y-4">
+                {#each institutionalGoals.filter((g) => g.goalKind === "quantitative") as goal (goal.id)}
+                    <div class="rounded-lg border border-base-300 p-4">
+                        <div class="flex items-start justify-between gap-3">
+                            <div>
+                                <h3 class="font-semibold">{goal.name}</h3>
+                                <p class="text-sm text-base-content/60">{goal.description}</p>
+                            </div>
+                            <span class="badge badge-outline">{goal.source === "global" ? "Global" : "Compartida"} · {goal.weight}%</span>
+                        </div>
+                        <div class="mt-3 flex items-center justify-between text-xs text-base-content/60">
+                            <span>Avance: {institutionalProgress(goal).toFixed(1)}%</span>
+                            {#if goal.targetValue !== undefined}<span>Objetivo: {goal.targetValue}</span>{/if}
+                        </div>
+                    </div>
+                {/each}
+
+                <!-- Existing personal quantitative goals -->
+                {#if categories.length > 0}
+                    <div class="space-y-4 min-w-0">
+                        {#each categories as cat (cat.id)}
+                            {@const catGoals = getGoalsByCategory(cat.id).filter((g) => g.goalKind === "quantitative")}
+                            {#if catGoals.length > 0}
+                                <CategoryCard
+                                    category={cat}
+                                    goals={catGoals}
+                                    {getKpisForGoal}
+                                    onSaveCategory={handleSaveCategory}
+                                    onDeleteCategory={handleDeleteCategory}
+                                    onSaveGoal={handleSaveGoal}
+                                    onDeleteGoal={handleDeleteGoal}
+                                    {mode}
+                                    pillars={pillarOptions}
+                                    onRequestChangeCategory={handleRequestChangeCategory}
+                                    onSaveProposal={handleSaveProposal}
+                                    onAcceptProposal={handleAcceptProposal}
+                                    onRejectProposal={handleRejectProposal}
+                                    {phase}
+                                    canDelete={permissions.canDelete}
+                                    canAddGoal={permissions.canDelete}
+                                    canEditCategory={permissions.canEditWeight}
+                                    canEditProgress={permissions.canEditProgress}
+                                    canComment={permissions.canComment}
+                                    {allKpis}
+                                    bind:isAnyInlineEditing
+                                    onUpdateProgress={handleUpdateProgress}
+                                    onOpenComments={openComments}
+                                    onOpenCategoryComments={openCategoryComments}
+                                />
+                            {/if}
+                        {/each}
+                    </div>
+                {:else if !creatingCategory && mode === "editor" && phase !== "medio-anio" && phase !== "fin-anio"}
+                    <EmptyState
+                        title="Sin categorías"
+                        message="No hay categorías registradas. Cree la primera categoría para comenzar."
+                        actionLabel="Nueva categoría"
+                        onaction={startCreateCategory}
+                    />
+                {/if}
+            </div>
+        </details>
 
         <!-- Nueva categoría inline form -->
         {#if mode === "editor" && phase !== "medio-anio" && phase !== "fin-anio"}
