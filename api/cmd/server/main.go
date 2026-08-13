@@ -19,8 +19,8 @@ import (
 	chimw "github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
 	"github.com/google/uuid"
-	"github.com/joho/godotenv"
 	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/joho/godotenv"
 
 	"github.com/sed-evaluacion-desempeno/api/internal"
 	"github.com/sed-evaluacion-desempeno/api/internal/auth"
@@ -29,18 +29,18 @@ import (
 
 	// Repositories
 	repoactivity "github.com/sed-evaluacion-desempeno/api/internal/repository/activity"
-	repogoal "github.com/sed-evaluacion-desempeno/api/internal/repository/goal"
-	repocycle "github.com/sed-evaluacion-desempeno/api/internal/repository/cycle"
 	repocompetency "github.com/sed-evaluacion-desempeno/api/internal/repository/competency"
+	repocycle "github.com/sed-evaluacion-desempeno/api/internal/repository/cycle"
 	repoeval "github.com/sed-evaluacion-desempeno/api/internal/repository/evaluation"
+	repogoal "github.com/sed-evaluacion-desempeno/api/internal/repository/goal"
 	repoorganization "github.com/sed-evaluacion-desempeno/api/internal/repository/org"
 
 	// Services
 	activitysvc "github.com/sed-evaluacion-desempeno/api/internal/service/activity"
-	goalsvc "github.com/sed-evaluacion-desempeno/api/internal/service/goal"
-	cyclesvc "github.com/sed-evaluacion-desempeno/api/internal/service/cycle"
 	compsvc "github.com/sed-evaluacion-desempeno/api/internal/service/competency"
+	cyclesvc "github.com/sed-evaluacion-desempeno/api/internal/service/cycle"
 	evalsvc "github.com/sed-evaluacion-desempeno/api/internal/service/evaluation"
+	goalsvc "github.com/sed-evaluacion-desempeno/api/internal/service/goal"
 	notifypkg "github.com/sed-evaluacion-desempeno/api/internal/service/notify"
 	orgsvc "github.com/sed-evaluacion-desempeno/api/internal/service/org"
 
@@ -48,10 +48,10 @@ import (
 	activityhandler "github.com/sed-evaluacion-desempeno/api/internal/handler/activity"
 	authhandler "github.com/sed-evaluacion-desempeno/api/internal/handler/auth"
 	commentchangehandler "github.com/sed-evaluacion-desempeno/api/internal/handler/commentchange"
-	goalhandler "github.com/sed-evaluacion-desempeno/api/internal/handler/goal"
-	cyclehandler "github.com/sed-evaluacion-desempeno/api/internal/handler/cycle"
 	comphandler "github.com/sed-evaluacion-desempeno/api/internal/handler/competency"
+	cyclehandler "github.com/sed-evaluacion-desempeno/api/internal/handler/cycle"
 	evalhandler "github.com/sed-evaluacion-desempeno/api/internal/handler/evaluation"
+	goalhandler "github.com/sed-evaluacion-desempeno/api/internal/handler/goal"
 	orghandler "github.com/sed-evaluacion-desempeno/api/internal/handler/org"
 
 	// Middleware
@@ -219,7 +219,7 @@ func main() {
 		log.Printf("[server] warn: failed to recreate idx_org_nodes_path: %v", err)
 	}
 
-	// Seeder — seed.Run handles its own guards 
+	// Seeder — seed.Run handles its own guards
 	if err := seed.Run(bgCtx, client); err != nil {
 		log.Printf("[seed] error: %v", err)
 	}
@@ -388,8 +388,14 @@ func main() {
 	apiV1.Group(func(r chi.Router) {
 		r.Use(middleware.RequireAuth(authSvc))
 		r.Use(middleware.RequireLoA2())
-		globalGoalH.RegisterRoutes(r)
-		sharedGoalH.RegisterRoutes(r)
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.RequirePermission(auth.PermGoalGlobal))
+			globalGoalH.RegisterRoutes(r)
+		})
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.RequirePermission(auth.PermGoalShared))
+			sharedGoalH.RegisterRoutes(r)
+		})
 	})
 	commentchangehandler.RegisterRoutes(apiV1, commentChangeH, authSvc)
 	activityhandler.RegisterActivityRoutes(apiV1, activityH, authSvc)

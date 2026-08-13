@@ -27,6 +27,8 @@ const (
 	PermGoalUpdate   Permission = "goal:update"
 	PermGoalDelete   Permission = "goal:delete"
 	PermGoalProgress Permission = "goal:progress"
+	PermGoalGlobal   Permission = "goal:global"
+	PermGoalShared   Permission = "goal:shared"
 
 	// Competency permissions
 	PermCompetencyRead   Permission = "competency:read"
@@ -61,6 +63,7 @@ var RolePermissions = map[Role][]Permission{
 	},
 	RoleJefe: {
 		PermGoalCreate, PermGoalRead, PermGoalUpdate, PermGoalDelete, PermGoalProgress,
+		PermGoalShared,
 		PermCompetencyRead,
 		PermEval9x9, PermEvalRead,
 		PermCycleRead, PermOrgRead,
@@ -91,13 +94,14 @@ var RolePermissions = map[Role][]Permission{
 	},
 	RoleDirector: {
 		PermGoalCreate, PermGoalRead, PermGoalUpdate, PermGoalDelete, PermGoalProgress,
+		PermGoalShared,
 		PermCompetencyRead,
 		PermEval9x9, PermEvalRead,
 		PermCycleRead, PermCycleTransition,
 		PermOrgRead, PermOrgWrite,
 	},
 	RoleDirectorGeneral: {
-		PermGoalRead,
+		PermGoalRead, PermGoalShared,
 		PermCompetencyRead,
 		PermEvalRead,
 		PermCycleRead, PermCycleTransition,
@@ -106,6 +110,7 @@ var RolePermissions = map[Role][]Permission{
 	},
 	RoleRH: {
 		PermGoalCreate, PermGoalRead, PermGoalUpdate, PermGoalDelete, PermGoalProgress,
+		PermGoalGlobal,
 		PermCompetencyRead, PermCompetencyWrite, PermCompetencyDelete,
 		PermEvalSelf, PermEvalRH, PermEval9x9, PermEvalRead,
 		PermCycleRead, PermCycleTransition,
