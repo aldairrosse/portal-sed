@@ -8,7 +8,7 @@
     import { listSharedGoals, deleteSharedGoal, updateSharedGoal, type SharedGoal, type UpdateSharedGoalRequest } from '$lib/api/sharedGoals';
 
     const profile = $derived(getProfile());
-    const allowedProfiles = ['jefe', 'gerente-tienda', 'divisional', 'regional', 'director'];
+    const allowedProfiles = ['jefe', 'director', 'director-general'];
 
     let goals = $state<SharedGoal[]>([]);
     let loading = $state(true);

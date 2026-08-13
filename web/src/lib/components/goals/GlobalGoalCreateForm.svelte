@@ -66,6 +66,7 @@
         minDirectReports: number;
         profileId: string;
         defaultWeight: number;
+        defaultTarget: number;
     }
 
     let name = $state('');
@@ -128,7 +129,7 @@
     function addRule() {
         const used = rules.map(r => r.ruleType);
         const firstFree = RULE_TYPE_OPTIONS.find(o => !used.includes(o.value as 'department' | 'min_direct_reports' | 'role'))?.value as 'department' | 'min_direct_reports' | 'role' ?? 'department';
-        rules = [...rules, { ruleType: firstFree, departmentId: departmentOptions[0]?.value ?? '', minDirectReports: 0, profileId: '', defaultWeight: 0 }];
+        rules = [...rules, { ruleType: firstFree, departmentId: departmentOptions[0]?.value ?? '', minDirectReports: 0, profileId: '', defaultWeight: 0, defaultTarget: 100 }];
     }
 
     function ruleTypeOptionsFor(index: number) {
@@ -203,6 +204,7 @@
                             rule_type: r.ruleType,
                             ...(r.ruleType === 'department' ? { department_id: r.departmentId } : r.ruleType === 'role' ? { profile_id: r.profileId } : { min_direct_reports: r.minDirectReports }),
                             default_weight: r.defaultWeight,
+                            default_target: r.defaultTarget ?? 100,
                         }))
                         : undefined,
                 };
@@ -347,6 +349,7 @@
             <div class="flex items-center gap-2 px-1 mb-1">
                 <span class="label-text text-xs flex-1">Tipo</span>
                 <span class="label-text text-xs flex-1">Detalle</span>
+                <span class="label-text text-xs w-28">Objetivo</span>
                 <span class="label-text text-xs w-36">Peso %</span>
                 <span class="w-7"></span>
             </div>
@@ -382,6 +385,11 @@
                                         aria-label="Mínimo de reportes directos" placeholder="Min. reportes" />
                                 </div>
                             {/if}
+                            <div class="form-control w-28">
+                                <input type="number" class="input input-bordered input-sm w-full"
+                                    bind:value={r.defaultTarget} min={0} step={0.01}
+                                    aria-label="Objetivo por defecto" placeholder="Objetivo" />
+                            </div>
                             <div class="form-control w-36">
                                 <input type="number" class="input input-bordered input-sm w-full"
                                     bind:value={r.defaultWeight} min={0} max={100} step={0.1}
