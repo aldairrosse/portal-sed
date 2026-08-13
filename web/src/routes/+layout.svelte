@@ -7,8 +7,12 @@
 	import '../app.css';
 	import AppShell from '$lib/components/AppShell.svelte';
 	import ToastContainer from '$lib/components/ui/ToastContainer.svelte';
+	import { initTheme } from '$lib/stores/theme';
 
 	let { children } = $props();
+
+	// Restore persisted theme before first render (default light; no dark flash)
+	initTheme();
 
 	// Minimum loader display time (ms) — prevents flash on fast sessions
 	const MIN_LOADER_MS = 300;
