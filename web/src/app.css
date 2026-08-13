@@ -12,13 +12,17 @@
 	color-scheme: light;
 
 	/* SED palette — hex */
-	--color-base-100: #f8fafc;
+	--color-base-100: #F6F8FC;
 	--color-base-200: #eef2f7;
 	--color-base-300: #e2e8f0;
 	--color-base-content: #334155;
 
-	--color-primary: #101C82;
+	--color-primary: #2E63E8;
 	--color-primary-content: #ffffff;
+
+	/* Sidebar */
+	--color-sidebar: #0B2455;
+	--color-sidebar-content: #ffffff;
 
 	--color-secondary: #4a90a4;
 	--color-secondary-content: #ffffff;
@@ -72,6 +76,10 @@
 	--color-primary: #3b82f6;
 	--color-primary-content: #ffffff;
 
+	/* Sidebar */
+	--color-sidebar: #0b1222;
+	--color-sidebar-content: #e2e8f0;
+
 	--color-secondary: #5eead4;
 	--color-secondary-content: #0f172a;
 
@@ -115,7 +123,7 @@
 }
 
 html {
-	font-family: 'Inter', system-ui, -apple-system, sans-serif;
+	font-family: 'Geist', system-ui, -apple-system, sans-serif;
 }
 
 body {
@@ -243,10 +251,8 @@ body {
 .logo-theme-light { display: block; }
 .logo-theme-dark { display: none; }
 
-@media (prefers-color-scheme: dark) {
-	.logo-theme-light { display: none; }
-	.logo-theme-dark { display: block; }
-}
+[data-theme="sed"] .logo-theme-light { display: block; }
+[data-theme="sed"] .logo-theme-dark { display: none; }
 
 [data-theme="dark"] .logo-theme-light,
 [data-theme="night"] .logo-theme-light,

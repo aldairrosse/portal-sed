@@ -1,6 +1,5 @@
 <script lang="ts">
     import { page } from "$app/stores";
-    import logoBlack from "$lib/assets/logo_black.png";
     import logoWhite from "$lib/assets/logo_white.png";
     import { getVisibleMenuItems } from "$lib/nav/menuConfig";
     import { getProfile } from "$lib/stores/devContext.svelte";
@@ -35,7 +34,6 @@
 
     const user = $derived(session.user);
     const userName = $derived(user?.name ?? '');
-    const userInitial = $derived(userName.charAt(0).toUpperCase());
 
     const iconMap: Record<string, typeof Home> = {
         Home,
@@ -61,49 +59,41 @@
     }
 </script>
 
-<aside class="bg-base-100 h-full min-h-screen w-64 flex flex-col">
-    <!-- Logo / Brand -->
-    <div class="px-5 pt-5 pb-4">
+<aside class="text-(--color-sidebar-content) bg-(--color-sidebar) h-full min-h-screen w-64 flex flex-col overflow-y-auto">
+    <!-- Logo / Brand (sidebar bg is always dark → white logo) -->
+    <div class="mt-8 px-8 pt-5 pb-4">
         <div class="flex items-center gap-2.5">
-            <img src={logoBlack} alt="SED" class="logo-theme-light h-6 w-auto max-w-full object-contain" />
-            <img src={logoWhite} alt="SED" class="logo-theme-dark h-6 w-auto max-w-full object-contain" />
+            <img src={logoWhite} alt="SED" class="h-6 w-auto max-w-full object-contain" />
         </div>
     </div>
 
     <!-- Profile badge -->
-    <div class="px-3 mb-4">
+    <div class="mb-4">
         <a
-            class="px-3 py-2 rounded-lg flex items-center gap-3 hover:bg-base-200 transition-colors"
+            class="py-2 px-8 rounded-0 block hover:bg-white/10 transition-colors"
             href="/perfil"
             onclick={handleNav}
         >
-            <div
-                class="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0"
-            >
-                <span class="text-primary-content font-bold text-sm"
-                    >{userInitial}</span
-                >
-            </div>
             <div class="min-w-0">
-                <p class="text-xs text-base-content/60 truncate">{user?.jobTitle}</p>
                 <p class="text-xs font-medium truncate">{userName}</p>
+                <p class="text-xs text-(--color-sidebar-content)/70 truncate">{user?.jobTitle}</p>
             </div>
         </a>
     </div>
 
     <!-- Navigation -->
-    <nav class="flex-1 px-3" aria-label="Navegación principal">
+    <nav class="flex-1" aria-label="Navegación principal">
         <ul class="flex flex-col gap-0.5">
             {#each visibleItems as item (item.href)}
                 {@const isActive = $page.url.pathname === item.href}
                 {@const Icon = getIcon(item.icon)}
-                <li>
+                <li class="w-full">
                     <a
                         href={item.href}
-                        class="flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-colors
+                        class="flex w-full items-center gap-3 px-8 py-2.5 text-sm font-medium transition-colors
 							{isActive
-                            ? 'bg-primary/10 text-primary'
-                            : 'text-base-content/60 hover:bg-base-200 hover:text-base-content'}"
+                            ? 'bg-primary/50 text-white'
+                            : 'text-(--color-sidebar-content)/60 hover:bg-white/10 hover:text-(--color-sidebar-content)'}"
                         onclick={handleNav}
                         aria-current={isActive ? "page" : undefined}
                     >
@@ -119,9 +109,9 @@
     </nav>
 
     <!-- Logout -->
-    <div class="px-3 mb-1">
+    <div class="mb-1">
         <button
-            class="flex w-full items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-colors text-base-content/60 hover:bg-base-200 hover:text-error disabled:opacity-60 disabled:hover:bg-transparent disabled:hover:text-base-content/60"
+            class="flex w-full items-center gap-3 px-8 py-2.5 text-sm font-medium transition-colors text-(--color-sidebar-content)/60 hover:bg-white/10 hover:text-error disabled:opacity-60 disabled:hover:bg-transparent disabled:hover:text-(--color-sidebar-content)/60 cursor-pointer"
             onclick={logout}
             disabled={session.loggingOut}
             aria-busy={session.loggingOut}
@@ -137,8 +127,8 @@
     </div>
 
     <!-- Footer -->
-    <div class="px-5 py-4">
-        <p class="text-[11px] text-base-content/30 text-center">
+    <div class="px-8 py-4">
+        <p class="text-[11px] text-(--color-sidebar-content)/30 text-center">
             Portal SED {year} v{version}
         </p>
     </div>
