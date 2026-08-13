@@ -75,6 +75,7 @@ func (r *SharedGoalRepo) CreateSharedGoal(ctx context.Context, createdBy uuid.UU
 		SetState(goal.StateBorrador).
 		SetCategoryID(uuid.Nil). // Shared goals don't belong to a category
 		SetCreatedBy(createdBy).
+		SetUpdatedBy(createdBy).
 		Save(ctx)
 	if err != nil {
 		return nil, err
@@ -84,6 +85,7 @@ func (r *SharedGoalRepo) CreateSharedGoal(ctx context.Context, createdBy uuid.UU
 	grp, err := r.client.SharedGoalGroup.Create().
 		SetGoalID(g.ID).
 		SetCreatedBy(createdBy).
+		SetUpdatedBy(createdBy).
 		SetName(groupName).
 		SetDescription(groupDescription).
 		Save(ctx)

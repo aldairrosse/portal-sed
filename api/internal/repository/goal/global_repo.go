@@ -78,6 +78,7 @@ func (r *GlobalGoalRepo) CreateGlobalGoal(ctx context.Context, cycleID, createdB
 		SetState(goal.StateBorrador).
 		SetCategoryID(uuid.Nil). // Global goals don't belong to a category
 		SetCreatedBy(createdBy).
+		SetUpdatedBy(createdBy).
 		Save(ctx)
 	if err != nil {
 		return nil, err
