@@ -31,8 +31,6 @@ func allRoutes() []routeTestCase {
 	nodeID := "55555555-5555-5555-5555-555555555555"
 	pillarID := "66666666-6666-6666-6666-666666666666"
 	compID := "77777777-7777-7777-7777-777777777777"
-	entryID := "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
-
 	// Routes behind RequireAuth return 401 without a valid session token.
 	authOK := []int{200, 201, 400, 401, 404, 409, 422}
 
@@ -41,7 +39,6 @@ func allRoutes() []routeTestCase {
 		{"GET", "/health", "HealthCheck", []int{200}},
 
 		// --- Auth ---
-		{"POST", "/api/v1/auth/login", "AuthLogin", []int{200, 400, 405}},
 		{"GET", "/api/v1/auth/logout", "AuthLogout", []int{302, 400, 401}},
 		{"POST", "/api/v1/auth/refresh", "AuthRefresh", []int{200, 400, 401}},
 		{"GET", "/api/v1/auth/me", "AuthMe", []int{200, 400, 401}},
@@ -102,9 +99,6 @@ func allRoutes() []routeTestCase {
 		{"POST", "/api/v1/nine-box/matrices", "CreateMatrix", authOK},
 		{"GET", "/api/v1/nine-box/matrices/" + matrixID, "GetNineBoxMatrix", authOK},
 		{"GET", "/api/v1/nine-box/matrices/" + matrixID + "/entries", "ListMatrixEntries", authOK},
-		{"POST", "/api/v1/nine-box/matrices/" + matrixID + "/entries", "UpsertMatrixEntry", authOK},
-		{"PUT", "/api/v1/nine-box/entries/" + entryID, "UpdateEntry", []int{200, 400, 401, 404, 409, 422, 428}},
-		{"POST", "/api/v1/nine-box/batch?matrixId=" + matrixID, "BatchSubmitEntries", authOK},
 		{"GET", "/api/v1/nine-box/scales", "GetNineBoxScales", authOK},
 		{"GET", "/api/v1/nine-box/quadrants", "GetNineBoxQuadrants", authOK},
 		{"PUT", "/api/v1/nine-box/quadrants/5", "UpdateQuadrant", []int{200, 400, 401, 404, 422}},

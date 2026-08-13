@@ -35,6 +35,7 @@ func TestPatchKPIValue_HappyPath(t *testing.T) {
 		fmt.Sprintf("/api/v1/kpis/%s/value", kpiID.String()),
 		bytes.NewReader(payload))
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+srv.Token)
 	w := httptest.NewRecorder()
 	srv.Router.ServeHTTP(w, req)
 
@@ -52,7 +53,7 @@ func TestPatchKPIValue_HappyPath(t *testing.T) {
 	// Verify persisted in DB
 	var dbValue float64
 	err = srv.DB.QueryRowContext(ctx,
-		`SELECT COALESCE(current_value, 0) FROM kpis WHERE id = $1`, kpiID,
+		`SELECT COALESCE(current_value, 0) FROM kp_is WHERE id = $1`, kpiID,
 	).Scan(&dbValue)
 	require.NoError(t, err)
 	assert.Equal(t, newValue, dbValue, "current_value should be persisted in DB")
@@ -73,6 +74,7 @@ func TestPatchKPIValue_KPINotFound(t *testing.T) {
 		fmt.Sprintf("/api/v1/kpis/%s/value", fakeID.String()),
 		bytes.NewReader(payload))
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+srv.Token)
 	w := httptest.NewRecorder()
 	srv.Router.ServeHTTP(w, req)
 
@@ -99,6 +101,7 @@ func TestPatchKPIValue_NegativeValue(t *testing.T) {
 		fmt.Sprintf("/api/v1/kpis/%s/value", kpiID.String()),
 		bytes.NewReader(payload))
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+srv.Token)
 	w := httptest.NewRecorder()
 	srv.Router.ServeHTTP(w, req)
 
@@ -128,6 +131,7 @@ func TestGetEmployeeScore_ReturnsScore(t *testing.T) {
 		fmt.Sprintf("/api/v1/employees/%s/score", empID.String()),
 		nil)
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+srv.Token)
 	w := httptest.NewRecorder()
 	srv.Router.ServeHTTP(w, req)
 
@@ -159,6 +163,7 @@ func TestGetEmployeeScore_NoData(t *testing.T) {
 		fmt.Sprintf("/api/v1/employees/%s/score", empID.String()),
 		nil)
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+srv.Token)
 	w := httptest.NewRecorder()
 	srv.Router.ServeHTTP(w, req)
 
@@ -203,6 +208,7 @@ func TestCreateDescendenteGoal_Success(t *testing.T) {
 		fmt.Sprintf("/api/v1/employees/%s/categories/%s/goals", empID.String(), catID.String()),
 		bytes.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+srv.Token)
 	w := httptest.NewRecorder()
 	srv.Router.ServeHTTP(w, req)
 
@@ -259,6 +265,7 @@ func TestCreateDescendenteGoal_MissingBaseline(t *testing.T) {
 		fmt.Sprintf("/api/v1/employees/%s/categories/%s/goals", empID.String(), catID.String()),
 		bytes.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+srv.Token)
 	w := httptest.NewRecorder()
 	srv.Router.ServeHTTP(w, req)
 
@@ -305,6 +312,7 @@ func TestUpdateGoal_BlocksDirectionChangeInAvance(t *testing.T) {
 		fmt.Sprintf("/api/v1/employees/%s/categories/%s/goals", empID.String(), catID.String()),
 		bytes.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+srv1.Token)
 	w := httptest.NewRecorder()
 	srv1.Router.ServeHTTP(w, req)
 	require.Equal(t, http.StatusCreated, w.Code, "goal creation should succeed in asignacion")
@@ -335,6 +343,7 @@ func TestUpdateGoal_BlocksDirectionChangeInAvance(t *testing.T) {
 		fmt.Sprintf("/api/v1/goals/%s", goalID),
 		bytes.NewReader(body2))
 	req2.Header.Set("Content-Type", "application/json")
+	req2.Header.Set("Authorization", "Bearer "+srv2.Token)
 	w2 := httptest.NewRecorder()
 	srv2.Router.ServeHTTP(w2, req2)
 
@@ -377,6 +386,7 @@ func TestUpdateGoal_BlocksBaselineChangeInAvance(t *testing.T) {
 		fmt.Sprintf("/api/v1/employees/%s/categories/%s/goals", empID.String(), catID.String()),
 		bytes.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+srv1.Token)
 	w := httptest.NewRecorder()
 	srv1.Router.ServeHTTP(w, req)
 	require.Equal(t, http.StatusCreated, w.Code, "goal creation should succeed")
@@ -407,6 +417,7 @@ func TestUpdateGoal_BlocksBaselineChangeInAvance(t *testing.T) {
 		fmt.Sprintf("/api/v1/goals/%s", goalID),
 		bytes.NewReader(body2))
 	req2.Header.Set("Content-Type", "application/json")
+	req2.Header.Set("Authorization", "Bearer "+srv2.Token)
 	w2 := httptest.NewRecorder()
 	srv2.Router.ServeHTTP(w2, req2)
 

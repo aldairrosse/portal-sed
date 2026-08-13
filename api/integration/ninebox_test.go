@@ -38,6 +38,7 @@ func TestRecomputeMatrix_SeedDataTiers(t *testing.T) {
 		fmt.Sprintf("/api/v1/nine-box/recompute/%s/%s", cycleID.String(), avancePhaseID.String()),
 		body)
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+srv.TokenRH)
 	w := httptest.NewRecorder()
 	srv.Router.ServeHTTP(w, req)
 
@@ -102,6 +103,7 @@ func TestUpdateQuadrant_PersistsChanges(t *testing.T) {
 		"/api/v1/nine-box/quadrants/5",
 		bytes.NewReader(payload))
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+srv.TokenRH)
 	w := httptest.NewRecorder()
 	srv.Router.ServeHTTP(w, req)
 
@@ -193,6 +195,7 @@ func TestMatrixByPhase_TwoPerEvaluator(t *testing.T) {
 		fmt.Sprintf("/api/v1/nine-box/matrices?cycle_id=%s&evaluator_id=%s", cycleID.String(), evaluatorID.String()),
 		nil)
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+srv.Token)
 	w := httptest.NewRecorder()
 	srv.Router.ServeHTTP(w, req)
 
