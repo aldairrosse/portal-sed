@@ -11337,6 +11337,8 @@ type GlobalGoalRuleMutation struct {
 	addmin_direct_reports *int
 	default_weight        *float64
 	adddefault_weight     *float64
+	default_target        *float64
+	adddefault_target     *float64
 	clearedFields         map[string]struct{}
 	goal                  *uuid.UUID
 	clearedgoal           bool
@@ -11821,6 +11823,62 @@ func (m *GlobalGoalRuleMutation) ResetDefaultWeight() {
 	m.adddefault_weight = nil
 }
 
+// SetDefaultTarget sets the "default_target" field.
+func (m *GlobalGoalRuleMutation) SetDefaultTarget(f float64) {
+	m.default_target = &f
+	m.adddefault_target = nil
+}
+
+// DefaultTarget returns the value of the "default_target" field in the mutation.
+func (m *GlobalGoalRuleMutation) DefaultTarget() (r float64, exists bool) {
+	v := m.default_target
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDefaultTarget returns the old "default_target" field's value of the GlobalGoalRule entity.
+// If the GlobalGoalRule object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GlobalGoalRuleMutation) OldDefaultTarget(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDefaultTarget is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDefaultTarget requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDefaultTarget: %w", err)
+	}
+	return oldValue.DefaultTarget, nil
+}
+
+// AddDefaultTarget adds f to the "default_target" field.
+func (m *GlobalGoalRuleMutation) AddDefaultTarget(f float64) {
+	if m.adddefault_target != nil {
+		*m.adddefault_target += f
+	} else {
+		m.adddefault_target = &f
+	}
+}
+
+// AddedDefaultTarget returns the value that was added to the "default_target" field in this mutation.
+func (m *GlobalGoalRuleMutation) AddedDefaultTarget() (r float64, exists bool) {
+	v := m.adddefault_target
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetDefaultTarget resets all changes to the "default_target" field.
+func (m *GlobalGoalRuleMutation) ResetDefaultTarget() {
+	m.default_target = nil
+	m.adddefault_target = nil
+}
+
 // ClearGoal clears the "goal" edge to the Goal entity.
 func (m *GlobalGoalRuleMutation) ClearGoal() {
 	m.clearedgoal = true
@@ -11936,7 +11994,7 @@ func (m *GlobalGoalRuleMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *GlobalGoalRuleMutation) Fields() []string {
-	fields := make([]string, 0, 8)
+	fields := make([]string, 0, 9)
 	if m.created_at != nil {
 		fields = append(fields, globalgoalrule.FieldCreatedAt)
 	}
@@ -11960,6 +12018,9 @@ func (m *GlobalGoalRuleMutation) Fields() []string {
 	}
 	if m.default_weight != nil {
 		fields = append(fields, globalgoalrule.FieldDefaultWeight)
+	}
+	if m.default_target != nil {
+		fields = append(fields, globalgoalrule.FieldDefaultTarget)
 	}
 	return fields
 }
@@ -11985,6 +12046,8 @@ func (m *GlobalGoalRuleMutation) Field(name string) (ent.Value, bool) {
 		return m.MinDirectReports()
 	case globalgoalrule.FieldDefaultWeight:
 		return m.DefaultWeight()
+	case globalgoalrule.FieldDefaultTarget:
+		return m.DefaultTarget()
 	}
 	return nil, false
 }
@@ -12010,6 +12073,8 @@ func (m *GlobalGoalRuleMutation) OldField(ctx context.Context, name string) (ent
 		return m.OldMinDirectReports(ctx)
 	case globalgoalrule.FieldDefaultWeight:
 		return m.OldDefaultWeight(ctx)
+	case globalgoalrule.FieldDefaultTarget:
+		return m.OldDefaultTarget(ctx)
 	}
 	return nil, fmt.Errorf("unknown GlobalGoalRule field %s", name)
 }
@@ -12075,6 +12140,13 @@ func (m *GlobalGoalRuleMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetDefaultWeight(v)
 		return nil
+	case globalgoalrule.FieldDefaultTarget:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDefaultTarget(v)
+		return nil
 	}
 	return fmt.Errorf("unknown GlobalGoalRule field %s", name)
 }
@@ -12089,6 +12161,9 @@ func (m *GlobalGoalRuleMutation) AddedFields() []string {
 	if m.adddefault_weight != nil {
 		fields = append(fields, globalgoalrule.FieldDefaultWeight)
 	}
+	if m.adddefault_target != nil {
+		fields = append(fields, globalgoalrule.FieldDefaultTarget)
+	}
 	return fields
 }
 
@@ -12101,6 +12176,8 @@ func (m *GlobalGoalRuleMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedMinDirectReports()
 	case globalgoalrule.FieldDefaultWeight:
 		return m.AddedDefaultWeight()
+	case globalgoalrule.FieldDefaultTarget:
+		return m.AddedDefaultTarget()
 	}
 	return nil, false
 }
@@ -12123,6 +12200,13 @@ func (m *GlobalGoalRuleMutation) AddField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddDefaultWeight(v)
+		return nil
+	case globalgoalrule.FieldDefaultTarget:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddDefaultTarget(v)
 		return nil
 	}
 	return fmt.Errorf("unknown GlobalGoalRule numeric field %s", name)
@@ -12195,6 +12279,9 @@ func (m *GlobalGoalRuleMutation) ResetField(name string) error {
 		return nil
 	case globalgoalrule.FieldDefaultWeight:
 		m.ResetDefaultWeight()
+		return nil
+	case globalgoalrule.FieldDefaultTarget:
+		m.ResetDefaultTarget()
 		return nil
 	}
 	return fmt.Errorf("unknown GlobalGoalRule field %s", name)

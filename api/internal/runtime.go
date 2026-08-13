@@ -336,6 +336,12 @@ func init() {
 	globalgoalruleDescDefaultWeight := globalgoalruleFields[6].Descriptor()
 	// globalgoalrule.DefaultWeightValidator is a validator for the "default_weight" field. It is called by the builders before save.
 	globalgoalrule.DefaultWeightValidator = globalgoalruleDescDefaultWeight.Validators[0].(func(float64) error)
+	// globalgoalruleDescDefaultTarget is the schema descriptor for default_target field.
+	globalgoalruleDescDefaultTarget := globalgoalruleFields[7].Descriptor()
+	// globalgoalrule.DefaultDefaultTarget holds the default value on creation for the default_target field.
+	globalgoalrule.DefaultDefaultTarget = globalgoalruleDescDefaultTarget.Default.(float64)
+	// globalgoalrule.DefaultTargetValidator is a validator for the "default_target" field. It is called by the builders before save.
+	globalgoalrule.DefaultTargetValidator = globalgoalruleDescDefaultTarget.Validators[0].(func(float64) error)
 	// globalgoalruleDescID is the schema descriptor for id field.
 	globalgoalruleDescID := globalgoalruleFields[0].Descriptor()
 	// globalgoalrule.DefaultID holds the default value on creation for the id field.

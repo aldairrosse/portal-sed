@@ -91,6 +91,11 @@ func DefaultWeight(v float64) predicate.GlobalGoalRule {
 	return predicate.GlobalGoalRule(sql.FieldEQ(FieldDefaultWeight, v))
 }
 
+// DefaultTarget applies equality check predicate on the "default_target" field. It's identical to DefaultTargetEQ.
+func DefaultTarget(v float64) predicate.GlobalGoalRule {
+	return predicate.GlobalGoalRule(sql.FieldEQ(FieldDefaultTarget, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.GlobalGoalRule {
 	return predicate.GlobalGoalRule(sql.FieldEQ(FieldCreatedAt, v))
@@ -359,6 +364,46 @@ func DefaultWeightLT(v float64) predicate.GlobalGoalRule {
 // DefaultWeightLTE applies the LTE predicate on the "default_weight" field.
 func DefaultWeightLTE(v float64) predicate.GlobalGoalRule {
 	return predicate.GlobalGoalRule(sql.FieldLTE(FieldDefaultWeight, v))
+}
+
+// DefaultTargetEQ applies the EQ predicate on the "default_target" field.
+func DefaultTargetEQ(v float64) predicate.GlobalGoalRule {
+	return predicate.GlobalGoalRule(sql.FieldEQ(FieldDefaultTarget, v))
+}
+
+// DefaultTargetNEQ applies the NEQ predicate on the "default_target" field.
+func DefaultTargetNEQ(v float64) predicate.GlobalGoalRule {
+	return predicate.GlobalGoalRule(sql.FieldNEQ(FieldDefaultTarget, v))
+}
+
+// DefaultTargetIn applies the In predicate on the "default_target" field.
+func DefaultTargetIn(vs ...float64) predicate.GlobalGoalRule {
+	return predicate.GlobalGoalRule(sql.FieldIn(FieldDefaultTarget, vs...))
+}
+
+// DefaultTargetNotIn applies the NotIn predicate on the "default_target" field.
+func DefaultTargetNotIn(vs ...float64) predicate.GlobalGoalRule {
+	return predicate.GlobalGoalRule(sql.FieldNotIn(FieldDefaultTarget, vs...))
+}
+
+// DefaultTargetGT applies the GT predicate on the "default_target" field.
+func DefaultTargetGT(v float64) predicate.GlobalGoalRule {
+	return predicate.GlobalGoalRule(sql.FieldGT(FieldDefaultTarget, v))
+}
+
+// DefaultTargetGTE applies the GTE predicate on the "default_target" field.
+func DefaultTargetGTE(v float64) predicate.GlobalGoalRule {
+	return predicate.GlobalGoalRule(sql.FieldGTE(FieldDefaultTarget, v))
+}
+
+// DefaultTargetLT applies the LT predicate on the "default_target" field.
+func DefaultTargetLT(v float64) predicate.GlobalGoalRule {
+	return predicate.GlobalGoalRule(sql.FieldLT(FieldDefaultTarget, v))
+}
+
+// DefaultTargetLTE applies the LTE predicate on the "default_target" field.
+func DefaultTargetLTE(v float64) predicate.GlobalGoalRule {
+	return predicate.GlobalGoalRule(sql.FieldLTE(FieldDefaultTarget, v))
 }
 
 // HasGoal applies the HasEdge predicate on the "goal" edge.

@@ -38,6 +38,9 @@ func (GlobalGoalRule) Fields() []ent.Field {
 			Nillable(),
 		field.Float("default_weight").
 			Range(0, 100),
+		field.Float("default_target").
+			Default(100).
+			Positive(),
 	}
 }
 

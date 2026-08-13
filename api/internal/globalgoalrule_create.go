@@ -112,6 +112,20 @@ func (_c *GlobalGoalRuleCreate) SetDefaultWeight(v float64) *GlobalGoalRuleCreat
 	return _c
 }
 
+// SetDefaultTarget sets the "default_target" field.
+func (_c *GlobalGoalRuleCreate) SetDefaultTarget(v float64) *GlobalGoalRuleCreate {
+	_c.mutation.SetDefaultTarget(v)
+	return _c
+}
+
+// SetNillableDefaultTarget sets the "default_target" field if the given value is not nil.
+func (_c *GlobalGoalRuleCreate) SetNillableDefaultTarget(v *float64) *GlobalGoalRuleCreate {
+	if v != nil {
+		_c.SetDefaultTarget(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *GlobalGoalRuleCreate) SetID(v uuid.UUID) *GlobalGoalRuleCreate {
 	_c.mutation.SetID(v)
@@ -184,6 +198,10 @@ func (_c *GlobalGoalRuleCreate) defaults() {
 		v := globalgoalrule.DefaultUpdatedAt()
 		_c.mutation.SetUpdatedAt(v)
 	}
+	if _, ok := _c.mutation.DefaultTarget(); !ok {
+		v := globalgoalrule.DefaultDefaultTarget
+		_c.mutation.SetDefaultTarget(v)
+	}
 	if _, ok := _c.mutation.ID(); !ok {
 		v := globalgoalrule.DefaultID()
 		_c.mutation.SetID(v)
@@ -215,6 +233,14 @@ func (_c *GlobalGoalRuleCreate) check() error {
 	if v, ok := _c.mutation.DefaultWeight(); ok {
 		if err := globalgoalrule.DefaultWeightValidator(v); err != nil {
 			return &ValidationError{Name: "default_weight", err: fmt.Errorf(`internal: validator failed for field "GlobalGoalRule.default_weight": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.DefaultTarget(); !ok {
+		return &ValidationError{Name: "default_target", err: errors.New(`internal: missing required field "GlobalGoalRule.default_target"`)}
+	}
+	if v, ok := _c.mutation.DefaultTarget(); ok {
+		if err := globalgoalrule.DefaultTargetValidator(v); err != nil {
+			return &ValidationError{Name: "default_target", err: fmt.Errorf(`internal: validator failed for field "GlobalGoalRule.default_target": %w`, err)}
 		}
 	}
 	if len(_c.mutation.GoalIDs()) == 0 {
@@ -274,6 +300,10 @@ func (_c *GlobalGoalRuleCreate) createSpec() (*GlobalGoalRule, *sqlgraph.CreateS
 	if value, ok := _c.mutation.DefaultWeight(); ok {
 		_spec.SetField(globalgoalrule.FieldDefaultWeight, field.TypeFloat64, value)
 		_node.DefaultWeight = value
+	}
+	if value, ok := _c.mutation.DefaultTarget(); ok {
+		_spec.SetField(globalgoalrule.FieldDefaultTarget, field.TypeFloat64, value)
+		_node.DefaultTarget = value
 	}
 	if nodes := _c.mutation.GoalIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

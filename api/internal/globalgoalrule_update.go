@@ -154,6 +154,27 @@ func (_u *GlobalGoalRuleUpdate) AddDefaultWeight(v float64) *GlobalGoalRuleUpdat
 	return _u
 }
 
+// SetDefaultTarget sets the "default_target" field.
+func (_u *GlobalGoalRuleUpdate) SetDefaultTarget(v float64) *GlobalGoalRuleUpdate {
+	_u.mutation.ResetDefaultTarget()
+	_u.mutation.SetDefaultTarget(v)
+	return _u
+}
+
+// SetNillableDefaultTarget sets the "default_target" field if the given value is not nil.
+func (_u *GlobalGoalRuleUpdate) SetNillableDefaultTarget(v *float64) *GlobalGoalRuleUpdate {
+	if v != nil {
+		_u.SetDefaultTarget(*v)
+	}
+	return _u
+}
+
+// AddDefaultTarget adds value to the "default_target" field.
+func (_u *GlobalGoalRuleUpdate) AddDefaultTarget(v float64) *GlobalGoalRuleUpdate {
+	_u.mutation.AddDefaultTarget(v)
+	return _u
+}
+
 // SetGoal sets the "goal" edge to the Goal entity.
 func (_u *GlobalGoalRuleUpdate) SetGoal(v *Goal) *GlobalGoalRuleUpdate {
 	return _u.SetGoalID(v.ID)
@@ -240,6 +261,11 @@ func (_u *GlobalGoalRuleUpdate) check() error {
 			return &ValidationError{Name: "default_weight", err: fmt.Errorf(`internal: validator failed for field "GlobalGoalRule.default_weight": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.DefaultTarget(); ok {
+		if err := globalgoalrule.DefaultTargetValidator(v); err != nil {
+			return &ValidationError{Name: "default_target", err: fmt.Errorf(`internal: validator failed for field "GlobalGoalRule.default_target": %w`, err)}
+		}
+	}
 	if _u.mutation.GoalCleared() && len(_u.mutation.GoalIDs()) > 0 {
 		return errors.New(`internal: clearing a required unique edge "GlobalGoalRule.goal"`)
 	}
@@ -278,6 +304,12 @@ func (_u *GlobalGoalRuleUpdate) sqlSave(ctx context.Context) (_node int, err err
 	}
 	if value, ok := _u.mutation.AddedDefaultWeight(); ok {
 		_spec.AddField(globalgoalrule.FieldDefaultWeight, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.DefaultTarget(); ok {
+		_spec.SetField(globalgoalrule.FieldDefaultTarget, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedDefaultTarget(); ok {
+		_spec.AddField(globalgoalrule.FieldDefaultTarget, field.TypeFloat64, value)
 	}
 	if _u.mutation.GoalCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -508,6 +540,27 @@ func (_u *GlobalGoalRuleUpdateOne) AddDefaultWeight(v float64) *GlobalGoalRuleUp
 	return _u
 }
 
+// SetDefaultTarget sets the "default_target" field.
+func (_u *GlobalGoalRuleUpdateOne) SetDefaultTarget(v float64) *GlobalGoalRuleUpdateOne {
+	_u.mutation.ResetDefaultTarget()
+	_u.mutation.SetDefaultTarget(v)
+	return _u
+}
+
+// SetNillableDefaultTarget sets the "default_target" field if the given value is not nil.
+func (_u *GlobalGoalRuleUpdateOne) SetNillableDefaultTarget(v *float64) *GlobalGoalRuleUpdateOne {
+	if v != nil {
+		_u.SetDefaultTarget(*v)
+	}
+	return _u
+}
+
+// AddDefaultTarget adds value to the "default_target" field.
+func (_u *GlobalGoalRuleUpdateOne) AddDefaultTarget(v float64) *GlobalGoalRuleUpdateOne {
+	_u.mutation.AddDefaultTarget(v)
+	return _u
+}
+
 // SetGoal sets the "goal" edge to the Goal entity.
 func (_u *GlobalGoalRuleUpdateOne) SetGoal(v *Goal) *GlobalGoalRuleUpdateOne {
 	return _u.SetGoalID(v.ID)
@@ -607,6 +660,11 @@ func (_u *GlobalGoalRuleUpdateOne) check() error {
 			return &ValidationError{Name: "default_weight", err: fmt.Errorf(`internal: validator failed for field "GlobalGoalRule.default_weight": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.DefaultTarget(); ok {
+		if err := globalgoalrule.DefaultTargetValidator(v); err != nil {
+			return &ValidationError{Name: "default_target", err: fmt.Errorf(`internal: validator failed for field "GlobalGoalRule.default_target": %w`, err)}
+		}
+	}
 	if _u.mutation.GoalCleared() && len(_u.mutation.GoalIDs()) > 0 {
 		return errors.New(`internal: clearing a required unique edge "GlobalGoalRule.goal"`)
 	}
@@ -662,6 +720,12 @@ func (_u *GlobalGoalRuleUpdateOne) sqlSave(ctx context.Context) (_node *GlobalGo
 	}
 	if value, ok := _u.mutation.AddedDefaultWeight(); ok {
 		_spec.AddField(globalgoalrule.FieldDefaultWeight, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.DefaultTarget(); ok {
+		_spec.SetField(globalgoalrule.FieldDefaultTarget, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedDefaultTarget(); ok {
+		_spec.AddField(globalgoalrule.FieldDefaultTarget, field.TypeFloat64, value)
 	}
 	if _u.mutation.GoalCleared() {
 		edge := &sqlgraph.EdgeSpec{

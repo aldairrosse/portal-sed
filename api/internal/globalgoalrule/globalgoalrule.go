@@ -32,6 +32,8 @@ const (
 	FieldMinDirectReports = "min_direct_reports"
 	// FieldDefaultWeight holds the string denoting the default_weight field in the database.
 	FieldDefaultWeight = "default_weight"
+	// FieldDefaultTarget holds the string denoting the default_target field in the database.
+	FieldDefaultTarget = "default_target"
 	// EdgeGoal holds the string denoting the goal edge name in mutations.
 	EdgeGoal = "goal"
 	// EdgeDepartment holds the string denoting the department edge name in mutations.
@@ -74,6 +76,7 @@ var Columns = []string{
 	FieldProfileID,
 	FieldMinDirectReports,
 	FieldDefaultWeight,
+	FieldDefaultTarget,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -95,6 +98,10 @@ var (
 	UpdateDefaultUpdatedAt func() time.Time
 	// DefaultWeightValidator is a validator for the "default_weight" field. It is called by the builders before save.
 	DefaultWeightValidator func(float64) error
+	// DefaultDefaultTarget holds the default value on creation for the "default_target" field.
+	DefaultDefaultTarget float64
+	// DefaultTargetValidator is a validator for the "default_target" field. It is called by the builders before save.
+	DefaultTargetValidator func(float64) error
 	// DefaultID holds the default value on creation for the "id" field.
 	DefaultID func() uuid.UUID
 )
@@ -169,6 +176,11 @@ func ByMinDirectReports(opts ...sql.OrderTermOption) OrderOption {
 // ByDefaultWeight orders the results by the default_weight field.
 func ByDefaultWeight(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldDefaultWeight, opts...).ToFunc()
+}
+
+// ByDefaultTarget orders the results by the default_target field.
+func ByDefaultTarget(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDefaultTarget, opts...).ToFunc()
 }
 
 // ByGoalField orders the results by goal field.

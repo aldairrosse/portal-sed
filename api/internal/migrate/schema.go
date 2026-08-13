@@ -346,6 +346,7 @@ var (
 		{Name: "rule_type", Type: field.TypeEnum, Enums: []string{"department", "min_direct_reports", "role"}},
 		{Name: "min_direct_reports", Type: field.TypeInt, Nullable: true},
 		{Name: "default_weight", Type: field.TypeFloat64},
+		{Name: "default_target", Type: field.TypeFloat64, Default: 100},
 		{Name: "profile_id", Type: field.TypeUUID, Nullable: true},
 		{Name: "goal_id", Type: field.TypeUUID},
 		{Name: "department_id", Type: field.TypeUUID, Nullable: true},
@@ -358,19 +359,19 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "global_goal_rules_evaluation_profiles_global_goal_rules",
-				Columns:    []*schema.Column{GlobalGoalRulesColumns[6]},
+				Columns:    []*schema.Column{GlobalGoalRulesColumns[7]},
 				RefColumns: []*schema.Column{EvaluationProfilesColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "global_goal_rules_goals_global_rules",
-				Columns:    []*schema.Column{GlobalGoalRulesColumns[7]},
+				Columns:    []*schema.Column{GlobalGoalRulesColumns[8]},
 				RefColumns: []*schema.Column{GoalsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "global_goal_rules_org_nodes_global_goal_rules",
-				Columns:    []*schema.Column{GlobalGoalRulesColumns[8]},
+				Columns:    []*schema.Column{GlobalGoalRulesColumns[9]},
 				RefColumns: []*schema.Column{OrgNodesColumns[0]},
 				OnDelete:   schema.SetNull,
 			},

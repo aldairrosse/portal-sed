@@ -37,6 +37,8 @@ type GlobalGoalRule struct {
 	MinDirectReports *int `json:"min_direct_reports,omitempty"`
 	// DefaultWeight holds the value of the "default_weight" field.
 	DefaultWeight float64 `json:"default_weight,omitempty"`
+	// DefaultTarget holds the value of the "default_target" field.
+	DefaultTarget float64 `json:"default_target,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the GlobalGoalRuleQuery when eager-loading is set.
 	Edges        GlobalGoalRuleEdges `json:"edges"`
@@ -96,7 +98,7 @@ func (*GlobalGoalRule) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case globalgoalrule.FieldDepartmentID, globalgoalrule.FieldProfileID:
 			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
-		case globalgoalrule.FieldDefaultWeight:
+		case globalgoalrule.FieldDefaultWeight, globalgoalrule.FieldDefaultTarget:
 			values[i] = new(sql.NullFloat64)
 		case globalgoalrule.FieldMinDirectReports:
 			values[i] = new(sql.NullInt64)
@@ -178,6 +180,12 @@ func (_m *GlobalGoalRule) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.DefaultWeight = value.Float64
 			}
+		case globalgoalrule.FieldDefaultTarget:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field default_target", values[i])
+			} else if value.Valid {
+				_m.DefaultTarget = value.Float64
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -258,6 +266,9 @@ func (_m *GlobalGoalRule) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("default_weight=")
 	builder.WriteString(fmt.Sprintf("%v", _m.DefaultWeight))
+	builder.WriteString(", ")
+	builder.WriteString("default_target=")
+	builder.WriteString(fmt.Sprintf("%v", _m.DefaultTarget))
 	builder.WriteByte(')')
 	return builder.String()
 }
