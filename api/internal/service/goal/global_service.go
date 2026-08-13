@@ -47,6 +47,7 @@ type CreateRuleRequest struct {
 	MinDirectReports *int       `json:"min_direct_reports,omitempty"`
 	ProfileID        *uuid.UUID `json:"profile_id,omitempty"`
 	DefaultWeight    float64    `json:"default_weight" validate:"required,min=0,max=100"`
+	DefaultTarget    float64    `json:"default_target" validate:"omitempty,gt=0"`
 }
 
 // UpdateGlobalGoalRequest is the request body for updating a global goal.
@@ -92,12 +93,17 @@ func (s *globalGoalService) CreateGlobalGoal(ctx context.Context, req CreateGlob
 	// Convert rules
 	rules := make([]*repogoal.GlobalRuleRow, 0, len(req.Rules))
 	for _, r := range req.Rules {
+		defaultTarget := r.DefaultTarget
+		if defaultTarget == 0 {
+			defaultTarget = 100
+		}
 		rules = append(rules, &repogoal.GlobalRuleRow{
 			RuleType:         r.RuleType,
 			DepartmentID:     r.DepartmentID,
 			MinDirectReports: r.MinDirectReports,
 			ProfileID:        r.ProfileID,
 			DefaultWeight:    r.DefaultWeight,
+			DefaultTarget:    defaultTarget,
 		})
 	}
 
