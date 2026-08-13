@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/sed-evaluacion-desempeno/api/internal"
+	"github.com/sed-evaluacion-desempeno/api/internal/evaluationcompetency"
 	"github.com/sed-evaluacion-desempeno/api/internal/nineboxentry"
 	"github.com/sed-evaluacion-desempeno/api/internal/nineboxmatrix"
 	pkgerrors "github.com/sed-evaluacion-desempeno/api/internal/pkg/errors"
@@ -251,18 +252,27 @@ func (r *NineBoxRepo) UpsertEntry(ctx context.Context, tx *sql.Tx, matrixID uuid
 	}
 
 	// Upsert with raw SQL (tier-based columns)
+	// ponytail: created_by/updated_by are NOT NULL (AuditMixin); use uuid.Nil since
+	// the recompute job has no actor. To audit the actor, pass the viewerID down
+	// from the service and use it here instead of uuid.Nil.
+	var entry internal.NineBoxEntry
 	err = tx.QueryRowContext(ctx,
-		`INSERT INTO nine_box_entries (id, created_at, updated_at, matrix_id, evaluatee_id, performance_tier, potential_tier, quadrant, comments)
-		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+		`INSERT INTO nine_box_entries (id, created_at, updated_at, created_by, updated_by, matrix_id, evaluatee_id, performance_tier, potential_tier, quadrant, comments)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 		 ON CONFLICT (matrix_id, evaluatee_id) DO UPDATE
 		 SET performance_tier = EXCLUDED.performance_tier,
 		     potential_tier = EXCLUDED.potential_tier,
 		     quadrant = EXCLUDED.quadrant,
 		     comments = EXCLUDED.comments,
-		     updated_at = EXCLUDED.updated_at
-		 RETURNING id`,
-		entryID, now, now, matrixID, evaluateeID, perf, pot, quadrant, comments,
-	).Scan(&entryID)
+		     updated_at = EXCLUDED.updated_at,
+		     updated_by = EXCLUDED.updated_by
+		 RETURNING id, created_at, updated_at, created_by, updated_by, version, performance_tier, potential_tier, quadrant, comments, matrix_id, evaluatee_id`,
+		entryID, now, now, uuid.Nil, uuid.Nil, matrixID, evaluateeID, perf, pot, quadrant, comments,
+	).Scan(
+		&entry.ID, &entry.CreatedAt, &entry.UpdatedAt, &entry.CreatedBy, &entry.UpdatedBy,
+		&entry.Version, &entry.PerformanceTier, &entry.PotentialTier, &entry.Quadrant,
+		&entry.Comments, &entry.MatrixID, &entry.EvaluateeID,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -272,14 +282,13 @@ func (r *NineBoxRepo) UpsertEntry(ctx context.Context, tx *sql.Tx, matrixID uuid
 		`INSERT INTO ninebox_entry_versions (entry_id, version, updated_at)
 		 VALUES ($1, 0, $2)
 		 ON CONFLICT (entry_id) DO UPDATE SET version = ninebox_entry_versions.version + 1, updated_at = $2`,
-		entryID, now,
+		entry.ID, now,
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	// Fetch the persisted entry
-	return r.getEntryByID(ctx, entryID)
+	return &entry, nil
 }
 
 // UpsertEntryByTiers creates or updates a single entry using tier values (1–3).
@@ -310,11 +319,17 @@ func (r *NineBoxRepo) UpdateEntry(ctx context.Context, tx *sql.Tx, entryID uuid.
 	}
 
 	// Update entry (tier-based columns)
-	_, err = tx.ExecContext(ctx,
+	var entry internal.NineBoxEntry
+	err = tx.QueryRowContext(ctx,
 		`UPDATE nine_box_entries
 		 SET performance_tier = $1, potential_tier = $2, quadrant = $3, comments = $4, updated_at = $5
-		 WHERE id = $6`,
+		 WHERE id = $6
+		 RETURNING id, created_at, updated_at, created_by, updated_by, version, performance_tier, potential_tier, quadrant, comments, matrix_id, evaluatee_id`,
 		perf, pot, quadrant, comments, now, entryID,
+	).Scan(
+		&entry.ID, &entry.CreatedAt, &entry.UpdatedAt, &entry.CreatedBy, &entry.UpdatedBy,
+		&entry.Version, &entry.PerformanceTier, &entry.PotentialTier, &entry.Quadrant,
+		&entry.Comments, &entry.MatrixID, &entry.EvaluateeID,
 	)
 	if err != nil {
 		return nil, err
@@ -329,7 +344,7 @@ func (r *NineBoxRepo) UpdateEntry(ctx context.Context, tx *sql.Tx, entryID uuid.
 		return nil, err
 	}
 
-	return r.getEntryByID(ctx, entryID)
+	return &entry, nil
 }
 
 // BatchUpsertEntries atomically upserts multiple entries within a transaction.
@@ -352,16 +367,17 @@ func (r *NineBoxRepo) BatchUpsertEntries(ctx context.Context, tx *sql.Tx, matrix
 	for _, it := range items {
 		entryID := uuid.New()
 		err := tx.QueryRowContext(ctx,
-			`INSERT INTO nine_box_entries (id, created_at, updated_at, matrix_id, evaluatee_id, performance_tier, potential_tier, quadrant, comments)
-			 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+			`INSERT INTO nine_box_entries (id, created_at, updated_at, created_by, updated_by, matrix_id, evaluatee_id, performance_tier, potential_tier, quadrant, comments)
+			 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 			 ON CONFLICT (matrix_id, evaluatee_id) DO UPDATE
 			 SET performance_tier = EXCLUDED.performance_tier,
 			     potential_tier = EXCLUDED.potential_tier,
 			     quadrant = EXCLUDED.quadrant,
 			     comments = EXCLUDED.comments,
-			     updated_at = EXCLUDED.updated_at
+			     updated_at = EXCLUDED.updated_at,
+			     updated_by = EXCLUDED.updated_by
 			 RETURNING id`,
-			entryID, now, now, matrixID, it.EvaluateeID, it.PerformanceTier, it.PotentialTier, it.Quadrant, it.Comments,
+			entryID, now, now, uuid.Nil, uuid.Nil, matrixID, it.EvaluateeID, it.PerformanceTier, it.PotentialTier, it.Quadrant, it.Comments,
 		).Scan(&entryID)
 		if err != nil {
 			return nil, err
@@ -378,8 +394,32 @@ func (r *NineBoxRepo) BatchUpsertEntries(ctx context.Context, tx *sql.Tx, matrix
 		}
 	}
 
-	// Re-fetch all entries for this matrix
-	return r.GetMatrixEntries(ctx, matrixID)
+	// Re-fetch all entries for this matrix within the same transaction.
+	rows, err := tx.QueryContext(ctx,
+		`SELECT id, created_at, updated_at, created_by, updated_by, version, performance_tier, potential_tier, quadrant, comments, matrix_id, evaluatee_id
+		 FROM nine_box_entries WHERE matrix_id = $1`,
+		matrixID,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var results []*internal.NineBoxEntry
+	for rows.Next() {
+		var e internal.NineBoxEntry
+		if err := rows.Scan(&e.ID, &e.CreatedAt, &e.UpdatedAt, &e.CreatedBy, &e.UpdatedBy, &e.Version, &e.PerformanceTier, &e.PotentialTier, &e.Quadrant, &e.Comments, &e.MatrixID, &e.EvaluateeID); err != nil {
+			return nil, err
+		}
+		results = append(results, &e)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	if results == nil {
+		return []*internal.NineBoxEntry{}, nil
+	}
+	return results, nil
 }
 
 // LockEntryForSelect locks an existing entry for update.
@@ -472,24 +512,15 @@ func (r *NineBoxRepo) GetGoalProgressByEmployee(ctx context.Context, employeeID,
 // GetCompetencyRatingsByEmployee returns the average competency rating for an employee's evaluation in a cycle.
 // Returns self and HR ratings separately (or nil if not available).
 func (r *NineBoxRepo) GetCompetencyRatingsByEmployee(ctx context.Context, employeeID, cycleID uuid.UUID) (selfRating, hrRating *float64, err error) {
-	// Get the evaluation for this employee in this cycle
-	var evalID uuid.UUID
-	var selfCompleted, rhCompleted *time.Time
-	err = r.db.QueryRowContext(ctx,
-		`SELECT id, self_evaluation_completed_at, rh_evaluation_completed_at FROM evaluations WHERE employee_id = $1 AND cycle_id = $2`,
-		employeeID, cycleID,
-	).Scan(&evalID, &selfCompleted, &rhCompleted)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, nil, nil // no evaluation → no ratings
-		}
-		return nil, nil, err
-	}
-
-	// Get all competency ratings for this evaluation
+	// Single query: competency rows joined to their evaluation, split by source.
+	// ponytail: one query per employee; could batch across employees later (would change signature).
 	rows, err := r.db.QueryContext(ctx,
-		`SELECT rating, created_at FROM evaluation_competencies WHERE evaluation_id = $1 ORDER BY created_at`,
-		evalID,
+		`SELECT ec.rating, ec.source, ec.created_at, e.self_evaluation_completed_at, e.rh_evaluation_completed_at
+		 FROM evaluation_competencies ec
+		 JOIN evaluations e ON e.id = ec.evaluation_id
+		 WHERE e.employee_id = $1 AND e.cycle_id = $2
+		 ORDER BY ec.created_at`,
+		employeeID, cycleID,
 	)
 	if err != nil {
 		return nil, nil, err
@@ -501,32 +532,41 @@ func (r *NineBoxRepo) GetCompetencyRatingsByEmployee(ctx context.Context, employ
 
 	for rows.Next() {
 		var rating int
+		var source sql.NullString
 		var createdAt time.Time
-		if err := rows.Scan(&rating, &createdAt); err != nil {
+		var selfCompleted, rhCompleted sql.NullTime
+		if err := rows.Scan(&rating, &source, &createdAt, &selfCompleted, &rhCompleted); err != nil {
 			return nil, nil, err
 		}
 
-		// Heuristic: ratings created after self_evaluation_completed_at are self evaluations
-		// ratings created after rh_evaluation_completed_at are RH evaluations
-		// If only one is completed, all ratings go to that bucket
-		// If neither is completed, all ratings are treated as a single pool (returned as hrRating)
-		if selfCompleted != nil && createdAt.After(*selfCompleted) && (rhCompleted == nil || createdAt.Before(*rhCompleted)) {
+		switch {
+		case source.Valid && source.String == string(evaluationcompetency.SourceSelf):
 			selfSum += float64(rating)
 			selfCount++
-		} else if rhCompleted != nil && createdAt.After(*rhCompleted) {
+		case source.Valid && source.String == string(evaluationcompetency.SourceRh):
 			hrSum += float64(rating)
 			hrCount++
-		} else if rhCompleted != nil && selfCompleted != nil && createdAt.After(*selfCompleted) {
-			// After self but before RH → treat as self
-			selfSum += float64(rating)
-			selfCount++
-		} else if rhCompleted != nil {
-			hrSum += float64(rating)
-			hrCount++
-		} else {
-			// Default: treat as HR ratings
-			hrSum += float64(rating)
-			hrCount++
+		default:
+			// Fallback heuristic for NULL source (tolerant of rows written before backfill).
+			// Heuristic: ratings created after self_evaluation_completed_at are self evaluations
+			// ratings created after rh_evaluation_completed_at are RH evaluations
+			// If only one is completed, all ratings go to that bucket
+			// If neither is completed, all ratings are treated as a single pool (returned as hrRating)
+			if selfCompleted.Valid && createdAt.After(selfCompleted.Time) && (!rhCompleted.Valid || createdAt.Before(rhCompleted.Time)) {
+				selfSum += float64(rating)
+				selfCount++
+			} else if rhCompleted.Valid && createdAt.After(rhCompleted.Time) {
+				hrSum += float64(rating)
+				hrCount++
+			} else if rhCompleted.Valid && selfCompleted.Valid && createdAt.After(selfCompleted.Time) {
+				// After self but before RH → treat as self
+				selfSum += float64(rating)
+				selfCount++
+			} else {
+				// Default: treat as HR ratings
+				hrSum += float64(rating)
+				hrCount++
+			}
 		}
 	}
 
@@ -546,16 +586,3 @@ func (r *NineBoxRepo) GetCompetencyRatingsByEmployee(ctx context.Context, employ
 	return selfRating, hrRating, nil
 }
 
-// getEntryByID fetches a single entry by ID.
-func (r *NineBoxRepo) getEntryByID(ctx context.Context, entryID uuid.UUID) (*internal.NineBoxEntry, error) {
-	entry, err := r.client.NineBoxEntry.Query().
-		Where(nineboxentry.ID(entryID)).
-		Only(ctx)
-	if err != nil {
-		if internal.IsNotFound(err) {
-			return nil, ErrEntryNotFound
-		}
-		return nil, err
-	}
-	return entry, nil
-}

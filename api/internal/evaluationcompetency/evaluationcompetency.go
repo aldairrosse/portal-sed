@@ -3,6 +3,7 @@
 package evaluationcompetency
 
 import (
+	"fmt"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
@@ -23,6 +24,8 @@ const (
 	FieldRating = "rating"
 	// FieldComments holds the string denoting the comments field in the database.
 	FieldComments = "comments"
+	// FieldSource holds the string denoting the source field in the database.
+	FieldSource = "source"
 	// FieldEvaluationID holds the string denoting the evaluation_id field in the database.
 	FieldEvaluationID = "evaluation_id"
 	// FieldCompetencyID holds the string denoting the competency_id field in the database.
@@ -67,6 +70,7 @@ var Columns = []string{
 	FieldUpdatedAt,
 	FieldRating,
 	FieldComments,
+	FieldSource,
 	FieldEvaluationID,
 	FieldCompetencyID,
 	FieldProfileID,
@@ -95,6 +99,32 @@ var (
 	DefaultID func() uuid.UUID
 )
 
+// Source defines the type for the "source" enum field.
+type Source string
+
+// SourceRh is the default value of the Source enum.
+const DefaultSource = SourceRh
+
+// Source values.
+const (
+	SourceSelf Source = "self"
+	SourceRh   Source = "rh"
+)
+
+func (s Source) String() string {
+	return string(s)
+}
+
+// SourceValidator is a validator for the "source" field enum values. It is called by the builders before save.
+func SourceValidator(s Source) error {
+	switch s {
+	case SourceSelf, SourceRh:
+		return nil
+	default:
+		return fmt.Errorf("evaluationcompetency: invalid enum value for source field: %q", s)
+	}
+}
+
 // OrderOption defines the ordering options for the EvaluationCompetency queries.
 type OrderOption func(*sql.Selector)
 
@@ -121,6 +151,11 @@ func ByRating(opts ...sql.OrderTermOption) OrderOption {
 // ByComments orders the results by the comments field.
 func ByComments(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldComments, opts...).ToFunc()
+}
+
+// BySource orders the results by the source field.
+func BySource(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSource, opts...).ToFunc()
 }
 
 // ByEvaluationID orders the results by the evaluation_id field.

@@ -325,7 +325,7 @@ func main() {
 	idemCache := newInMemoryIdempotencyCache()
 
 	evalSvc := evalsvc.NewEvaluationService(evalRepo, compRatingRepo, goalRatingRepo, cycleCheck, idemCache, employeeRepo, orgNodeRepo)
-	nineBoxSvc := evalsvc.NewNineBoxService(nineBoxRepo, catalogEvalRepo, db)
+	nineBoxSvc := evalsvc.NewNineBoxService(nineBoxRepo, catalogEvalRepo, db, cycleRepo, orgNodeRepo, employeeRepo)
 	dashboardSvc := evalsvc.NewDashboardService(evalRepo)
 
 	// Org services

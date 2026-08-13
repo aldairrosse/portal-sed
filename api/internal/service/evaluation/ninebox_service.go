@@ -4,28 +4,41 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/sed-evaluacion-desempeno/api/internal"
+	"github.com/sed-evaluacion-desempeno/api/internal/auth"
 	dto "github.com/sed-evaluacion-desempeno/api/internal/dto/evaluation"
 	pkgerrors "github.com/sed-evaluacion-desempeno/api/internal/pkg/errors"
 	"github.com/sed-evaluacion-desempeno/api/internal/pkg/quadrant"
+	cyclerepo "github.com/sed-evaluacion-desempeno/api/internal/repository/cycle"
 	repo "github.com/sed-evaluacion-desempeno/api/internal/repository/evaluation"
+	orgrepo "github.com/sed-evaluacion-desempeno/api/internal/repository/org"
 )
+
+// matrixViewTTL is the freshness window for a persisted matrix before it is re-derived.
+const matrixViewTTL = time.Hour
 
 // NineBoxService handles 9×9 matrix operations and quadrant computation.
 type NineBoxService struct {
-	nineBoxRepo NineBoxRepo
-	catalogRepo CatalogRepo
-	db          DB
+	nineBoxRepo  NineBoxRepo
+	catalogRepo  CatalogRepo
+	db           DB
+	cycleRepo    *cyclerepo.CycleRepo
+	orgNodeRepo  *orgrepo.OrgNodeRepo
+	employeeRepo *orgrepo.EmployeeRepo
 }
 
 // NewNineBoxService creates a new NineBoxService.
-func NewNineBoxService(nineBoxRepo NineBoxRepo, catalogRepo CatalogRepo, db DB) *NineBoxService {
+func NewNineBoxService(nineBoxRepo NineBoxRepo, catalogRepo CatalogRepo, db DB, cycleRepo *cyclerepo.CycleRepo, orgNodeRepo *orgrepo.OrgNodeRepo, employeeRepo *orgrepo.EmployeeRepo) *NineBoxService {
 	return &NineBoxService{
-		nineBoxRepo: nineBoxRepo,
-		catalogRepo: catalogRepo,
-		db:          db,
+		nineBoxRepo:  nineBoxRepo,
+		catalogRepo:  catalogRepo,
+		db:           db,
+		cycleRepo:    cycleRepo,
+		orgNodeRepo:  orgNodeRepo,
+		employeeRepo: employeeRepo,
 	}
 }
 
@@ -204,6 +217,240 @@ func (s *NineBoxService) RecomputeMatrix(ctx context.Context, cycleID, phaseID u
 	tx = nil
 
 	return nil
+}
+
+// rawEntryInputs carries the raw computation insums for a single evaluatee,
+// used to enrich the DTO with goal progress and self/RH ratings.
+type rawEntryInputs struct {
+	goalProgress float64
+	selfRating   *float64
+	hrRating     *float64
+}
+
+// ComputeMatrixView returns the computed 9×9 matrices for a cycle and phase,
+// scoped to the viewer's role, with a 1-hour TTL cache.
+//
+// The method:
+//  1. Resolves the phase (defaults to the cycle's current phase when phaseID is nil).
+//  2. Scopes evaluatees: all goal assignees (RoleSeesAll) or the viewer's org descendants.
+//  3. Groups evaluatees by manager (evaluator), mirroring RecomputeMatrix.
+//  4. Per evaluator, reuses a fresh (<1h) persisted matrix or re-derives and upserts it.
+func (s *NineBoxService) ComputeMatrixView(ctx context.Context, cycleID uuid.UUID, phaseID *uuid.UUID, viewerID uuid.UUID, viewerRole auth.Role) ([]dto.NineBoxMatrixResponse, error) {
+	phase, err := s.resolvePhase(ctx, cycleID, phaseID)
+	if err != nil {
+		return nil, err
+	}
+
+	employeeIDs, err := s.nineBoxRepo.GetGoalAssigneesByCycle(ctx, cycleID)
+	if err != nil {
+		return nil, err
+	}
+	if !auth.RoleSeesAll(viewerRole) {
+		employeeIDs, err = s.scopeToViewer(ctx, viewerID, employeeIDs)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if len(employeeIDs) == 0 {
+		return []dto.NineBoxMatrixResponse{}, nil
+	}
+
+	managerMapping, err := s.nineBoxRepo.GetManagerMapping(ctx, employeeIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	evaluatorGroups := make(map[uuid.UUID][]uuid.UUID)
+	for _, empID := range employeeIDs {
+		if managerID, ok := managerMapping[empID]; ok {
+			evaluatorGroups[managerID] = append(evaluatorGroups[managerID], empID)
+		}
+	}
+	if len(evaluatorGroups) == 0 {
+		return []dto.NineBoxMatrixResponse{}, nil
+	}
+
+	results := make([]dto.NineBoxMatrixResponse, 0, len(evaluatorGroups))
+	for evaluatorID, evaluatees := range evaluatorGroups {
+		matrix, err := s.nineBoxRepo.GetMatrixByPhase(ctx, cycleID, evaluatorID, phase)
+		if err != nil && err != repo.ErrMatrixNotFound {
+			return nil, err
+		}
+		if matrix != nil && time.Since(matrix.UpdatedAt) < matrixViewTTL {
+			results = append(results, s.matrixResponse(ctx, matrix, matrix.Edges.Entries, nil))
+			continue
+		}
+
+		resp, err := s.deriveMatrix(ctx, cycleID, evaluatorID, phase, evaluatees, matrix)
+		if err != nil {
+			return nil, err
+		}
+		results = append(results, resp)
+	}
+
+	return results, nil
+}
+
+// resolvePhase returns the requested phase ID, or resolves the cycle's current
+// phase when phaseID is nil.
+func (s *NineBoxService) resolvePhase(ctx context.Context, cycleID uuid.UUID, phaseID *uuid.UUID) (uuid.UUID, error) {
+	if phaseID != nil && *phaseID != uuid.Nil {
+		return *phaseID, nil
+	}
+	phase, err := s.cycleRepo.GetCurrentPhaseID(ctx, cycleID)
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("resolve current phase for cycle %s: %w", cycleID, err)
+	}
+	return phase, nil
+}
+
+// scopeToViewer restricts the given employee IDs to those within the viewer's
+// org-node subtree.
+func (s *NineBoxService) scopeToViewer(ctx context.Context, viewerID uuid.UUID, employeeIDs []uuid.UUID) ([]uuid.UUID, error) {
+	if len(employeeIDs) == 0 {
+		return employeeIDs, nil
+	}
+
+	emp, err := s.employeeRepo.GetByID(ctx, viewerID)
+	if err != nil {
+		return nil, err
+	}
+	node, err := s.orgNodeRepo.GetByID(ctx, emp.OrgNodeID)
+	if err != nil {
+		return nil, err
+	}
+	descendants, err := s.orgNodeRepo.GetDescendants(ctx, node.Path)
+	if err != nil {
+		return nil, err
+	}
+	if len(descendants) == 0 {
+		return []uuid.UUID{}, nil
+	}
+
+	nodeIDs := make([]uuid.UUID, len(descendants))
+	for i, n := range descendants {
+		nodeIDs[i] = n.ID
+	}
+	rows, err := s.employeeRepo.ListByOrgNodeIDs(ctx, nodeIDs, true)
+	if err != nil {
+		return nil, err
+	}
+
+	allowed := make(map[uuid.UUID]struct{}, len(rows))
+	for _, r := range rows {
+		allowed[r.ID] = struct{}{}
+	}
+	filtered := make([]uuid.UUID, 0, len(employeeIDs))
+	for _, id := range employeeIDs {
+		if _, ok := allowed[id]; ok {
+			filtered = append(filtered, id)
+		}
+	}
+	return filtered, nil
+}
+
+// deriveMatrix computes tiers for each evaluatee, upserts the matrix entries,
+// bumps the matrix freshness, and returns the matrix response enriched with the
+// raw computation insums.
+func (s *NineBoxService) deriveMatrix(ctx context.Context, cycleID, evaluatorID, phaseID uuid.UUID, evaluatees []uuid.UUID, matrix *internal.NineBoxMatrix) (dto.NineBoxMatrixResponse, error) {
+	if matrix == nil {
+		m, err := s.nineBoxRepo.CreateMatrixWithPhase(ctx, cycleID, evaluatorID, phaseID)
+		if err != nil {
+			return dto.NineBoxMatrixResponse{}, err
+		}
+		matrix = m
+	}
+
+	tx, err := s.db.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
+	if err != nil {
+		return dto.NineBoxMatrixResponse{}, err
+	}
+	defer func() {
+		if tx != nil {
+			_ = tx.Rollback()
+		}
+	}()
+
+	entries := make([]*internal.NineBoxEntry, 0, len(evaluatees))
+	rawByEval := make(map[uuid.UUID]rawEntryInputs, len(evaluatees))
+
+	for _, evaluateeID := range evaluatees {
+		avgProgress, err := s.nineBoxRepo.GetGoalProgressByEmployee(ctx, evaluateeID, cycleID)
+		if err != nil {
+			return dto.NineBoxMatrixResponse{}, err
+		}
+		perfTier := quadrant.ComputePerformanceTier(avgProgress)
+
+		selfRating, hrRating, err := s.nineBoxRepo.GetCompetencyRatingsByEmployee(ctx, evaluateeID, cycleID)
+		if err != nil {
+			return dto.NineBoxMatrixResponse{}, err
+		}
+		potTier := quadrant.ComputeWeightedPotentialTier(
+			ratingOrZero(selfRating), ratingOrZero(hrRating),
+			quadrant.DefaultWeightSelf, quadrant.DefaultWeightRH,
+		)
+		q := quadrant.ComputeQuadrantFromTiers(perfTier, potTier)
+
+		entry, err := s.nineBoxRepo.UpsertEntryByTiers(ctx, tx, matrix.ID, evaluateeID, perfTier, potTier, q, "")
+		if err != nil {
+			return dto.NineBoxMatrixResponse{}, err
+		}
+
+		entries = append(entries, entry)
+		rawByEval[evaluateeID] = rawEntryInputs{
+			goalProgress: avgProgress,
+			selfRating:   selfRating,
+			hrRating:     hrRating,
+		}
+	}
+
+	// Bump matrix freshness so the TTL reflects the last derivation.
+	if _, err := tx.ExecContext(ctx, `UPDATE nine_box_matrixes SET updated_at = NOW() WHERE id = $1`, matrix.ID); err != nil {
+		return dto.NineBoxMatrixResponse{}, err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return dto.NineBoxMatrixResponse{}, err
+	}
+	tx = nil
+
+	return s.matrixResponse(ctx, matrix, entries, rawByEval), nil
+}
+
+// matrixResponse maps a matrix and its entries to a response DTO, enriching
+// entries with raw inputs when available (nil/empty on TTL reuse).
+func (s *NineBoxService) matrixResponse(ctx context.Context, matrix *internal.NineBoxMatrix, entries []*internal.NineBoxEntry, rawByEval map[uuid.UUID]rawEntryInputs) dto.NineBoxMatrixResponse {
+	resp := dto.NineBoxMatrixResponse{
+		ID: matrix.ID, CycleID: matrix.CycleID, EvaluatorID: matrix.EvaluatorID,
+		PhaseID: matrix.PhaseID, CreatedAt: matrix.CreatedAt, UpdatedAt: matrix.UpdatedAt,
+	}
+	if matrix.Edges.Phase != nil {
+		resp.PhaseLabel = matrix.Edges.Phase.Label
+	}
+	if entries == nil {
+		entries = []*internal.NineBoxEntry{}
+	}
+	infoMap := s.loadEmployeeInfoMap(ctx, entries)
+	resp.Entries = make([]dto.NineBoxEntryDTO, 0, len(entries))
+	for _, e := range entries {
+		d := s.toEntryDTO(ctx, e, infoMap)
+		if raw, ok := rawByEval[e.EvaluateeID]; ok {
+			d.GoalProgressPercent = raw.goalProgress
+			d.SelfRating = raw.selfRating
+			d.HrRating = raw.hrRating
+			d.Weights = &dto.NineBoxWeightsDTO{Self: quadrant.DefaultWeightSelf, HR: quadrant.DefaultWeightRH}
+		}
+		resp.Entries = append(resp.Entries, d)
+	}
+	return resp
+}
+
+// ratingOrZero dereferences a rating pointer, defaulting to 0 when nil.
+func ratingOrZero(r *float64) float64 {
+	if r == nil {
+		return 0
+	}
+	return *r
 }
 
 // GetMatrixEntriesFiltered returns matrix entries, optionally filtered by quadrant.

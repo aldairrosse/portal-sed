@@ -166,17 +166,27 @@ type NineBoxMatrixResponse struct {
 
 // NineBoxEntryDTO is the response DTO for a matrix entry (tier-based).
 type NineBoxEntryDTO struct {
-	ID              uuid.UUID `json:"id"`
-	EvaluateeID     uuid.UUID `json:"evaluateeId"`
-	EmployeeName    string    `json:"employeeName"`
-	ProfileID       uuid.UUID `json:"profileId"`
-	PerformanceTier int       `json:"performanceTier"` // was performanceScore
-	PotentialTier   int       `json:"potentialTier"`   // was potentialScore
-	Quadrant        int       `json:"quadrant"`
-	QuadrantLabel   string    `json:"quadrantLabel"`
-	QuadrantColor   string    `json:"quadrantColor"` // now uses colorHex from quadrant
-	Comments        string    `json:"comments,omitempty"`
-	Version         int       `json:"version"`
+	ID                  uuid.UUID         `json:"id"`
+	EvaluateeID         uuid.UUID         `json:"evaluateeId"`
+	EmployeeName        string            `json:"employeeName"`
+	ProfileID           uuid.UUID         `json:"profileId"`
+	PerformanceTier     int               `json:"performanceTier"` // was performanceScore
+	PotentialTier       int               `json:"potentialTier"`   // was potentialScore
+	Quadrant            int               `json:"quadrant"`
+	QuadrantLabel       string            `json:"quadrantLabel"`
+	QuadrantColor       string            `json:"quadrantColor"` // now uses colorHex from quadrant
+	Comments            string            `json:"comments,omitempty"`
+	Version             int               `json:"version"`
+	GoalProgressPercent float64           `json:"goalProgressPercent,omitempty"`
+	SelfRating          *float64          `json:"selfRating,omitempty"`
+	HrRating            *float64          `json:"hrRating,omitempty"`
+	Weights             *NineBoxWeightsDTO `json:"weights,omitempty"`
+}
+
+// NineBoxWeightsDTO carries the self/RH weights used in the weighted potential tier.
+type NineBoxWeightsDTO struct {
+	Self float64 `json:"self"`
+	HR   float64 `json:"hr"`
 }
 
 // NineBoxEntryInput is the request DTO for creating/updating a matrix entry (legacy, preserved for migration).

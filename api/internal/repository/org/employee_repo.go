@@ -248,6 +248,7 @@ func (r *EmployeeRepo) GetDetailByID(ctx context.Context, empID uuid.UUID) (*Emp
 	detail := &EmployeeDetailRow{}
 	var managerID sql.NullString
 	var managerName sql.NullString
+	var jobTitle sql.NullString
 
 	err := r.db.QueryRowContext(ctx,
 		`SELECT e.id, e.created_at, e.updated_at, e.first_name, e.last_name, e.email,
@@ -265,7 +266,7 @@ func (r *EmployeeRepo) GetDetailByID(ctx context.Context, empID uuid.UUID) (*Emp
 		&detail.ID, &detail.CreatedAt, &detail.UpdatedAt,
 		&detail.FirstName, &detail.LastName, &detail.Email,
 		&detail.EmployeeNumber, &detail.IsActive,
-		&detail.OrgNodeID, &managerID, &detail.ProfileID, &detail.JobTitle,
+		&detail.OrgNodeID, &managerID, &detail.ProfileID, &jobTitle,
 		&detail.OrgNodeName, &detail.OrgNodePath, &managerName,
 		&detail.ProfileName,
 	)
@@ -283,6 +284,7 @@ func (r *EmployeeRepo) GetDetailByID(ctx context.Context, empID uuid.UUID) (*Emp
 	if managerName.Valid {
 		detail.ManagerName = managerName.String
 	}
+	detail.JobTitle = jobTitle.String
 
 	return detail, nil
 }
@@ -505,11 +507,12 @@ func (r *EmployeeRepo) UpdateProfileAndDepartment(ctx context.Context, empID, pr
 func scanEmployeeRow(row *sql.Row) (*EmployeeRow, error) {
 	e := &EmployeeRow{}
 	var managerID sql.NullString
+	var jobTitle sql.NullString
 	err := row.Scan(
 		&e.ID, &e.CreatedAt, &e.UpdatedAt,
 		&e.FirstName, &e.LastName, &e.Email,
 		&e.EmployeeNumber, &e.IsActive,
-		&e.OrgNodeID, &managerID, &e.ProfileID, &e.JobTitle,
+		&e.OrgNodeID, &managerID, &e.ProfileID, &jobTitle,
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -521,6 +524,7 @@ func scanEmployeeRow(row *sql.Row) (*EmployeeRow, error) {
 		mid, _ := uuid.Parse(managerID.String)
 		e.ManagerID = &mid
 	}
+	e.JobTitle = jobTitle.String
 	return e, nil
 }
 
@@ -535,11 +539,12 @@ func scanEmployeeRows(db *sql.DB, ctx context.Context, query string, args ...int
 	for rows.Next() {
 		e := &EmployeeRow{}
 		var managerID sql.NullString
+		var jobTitle sql.NullString
 		err := rows.Scan(
 			&e.ID, &e.CreatedAt, &e.UpdatedAt,
 			&e.FirstName, &e.LastName, &e.Email,
 			&e.EmployeeNumber, &e.IsActive,
-			&e.OrgNodeID, &managerID, &e.ProfileID, &e.JobTitle,
+			&e.OrgNodeID, &managerID, &e.ProfileID, &jobTitle,
 		)
 		if err != nil {
 			return nil, err
@@ -548,6 +553,7 @@ func scanEmployeeRows(db *sql.DB, ctx context.Context, query string, args ...int
 			mid, _ := uuid.Parse(managerID.String)
 			e.ManagerID = &mid
 		}
+		e.JobTitle = jobTitle.String
 		results = append(results, e)
 	}
 	return results, rows.Err()
@@ -564,11 +570,12 @@ func scanEmployeeRowsWithProfile(db *sql.DB, ctx context.Context, query string, 
 	for rows.Next() {
 		e := &EmployeeRow{}
 		var managerID sql.NullString
+		var jobTitle sql.NullString
 		err := rows.Scan(
 			&e.ID, &e.CreatedAt, &e.UpdatedAt,
 			&e.FirstName, &e.LastName, &e.Email,
 			&e.EmployeeNumber, &e.IsActive,
-			&e.OrgNodeID, &managerID, &e.ProfileID, &e.ProfileName, &e.ProfileDescription, &e.JobTitle,
+			&e.OrgNodeID, &managerID, &e.ProfileID, &e.ProfileName, &e.ProfileDescription, &jobTitle,
 		)
 		if err != nil {
 			return nil, err
@@ -577,6 +584,7 @@ func scanEmployeeRowsWithProfile(db *sql.DB, ctx context.Context, query string, 
 			mid, _ := uuid.Parse(managerID.String)
 			e.ManagerID = &mid
 		}
+		e.JobTitle = jobTitle.String
 		results = append(results, e)
 	}
 	return results, rows.Err()

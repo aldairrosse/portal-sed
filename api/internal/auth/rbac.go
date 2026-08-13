@@ -142,6 +142,12 @@ func HasAnyPermission(role Role, perms ...Permission) bool {
 	return false
 }
 
+// RoleSeesAll reports whether the role has global visibility over all employees
+// (as opposed to team-scoped visibility).
+func RoleSeesAll(role Role) bool {
+	return role == RoleRH || role == RoleDirectorGeneral
+}
+
 // ProfileNameToRole maps an evaluation profile name to a Role constant.
 // Returns RoleColaborador as fallback for unknown profiles.
 func ProfileNameToRole(name string) Role {

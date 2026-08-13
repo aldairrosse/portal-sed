@@ -545,10 +545,12 @@ func (h *EvaluationHandler) GetEvaluationSummary(w http.ResponseWriter, r *http.
 // --- Nine-Box Endpoints ---
 
 // ListMatrices handles GET /api/v1/nine-box/matrices
-// Supports optional filters: cycle_id, phase_id, evaluator_id
-// TODO(auth:C7): Restrict to evaluator, rh roles.
+// Returns the 9×9 matrix view for the authenticated viewer, scoped by role
+// (via ComputeMatrixView). Supports optional filters: cycle_id, phase_id.
+// phase_id is optional; when empty the service resolves the cycle's current phase.
+// evaluator_id is no longer accepted: scoping is derived from the viewer's role.
 func (h *EvaluationHandler) ListMatrices(w http.ResponseWriter, r *http.Request) {
-	var cycleID, evaluatorID, phaseID uuid.UUID
+	var cycleID uuid.UUID
 
 	if c := r.URL.Query().Get("cycle_id"); c != "" {
 		var err error
@@ -560,27 +562,29 @@ func (h *EvaluationHandler) ListMatrices(w http.ResponseWriter, r *http.Request)
 		}
 	}
 
+	var phaseID *uuid.UUID
 	if p := r.URL.Query().Get("phase_id"); p != "" {
-		var err error
-		phaseID, err = uuid.Parse(p)
+		parsed, err := uuid.Parse(p)
 		if err != nil {
 			writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
 				"phase_id must be a valid UUID v4", err))
 			return
 		}
+		phaseID = &parsed
 	}
 
-	if e := r.URL.Query().Get("evaluator_id"); e != "" {
-		var err error
-		evaluatorID, err = uuid.Parse(e)
-		if err != nil {
-			writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
-				"evaluator_id must be a valid UUID v4", err))
-			return
-		}
+	viewerID, ok := auth.GetEmployeeID(r.Context())
+	if !ok {
+		writeError(w, pkgerrors.ErrForbidden)
+		return
+	}
+	viewerRole, ok := auth.GetRole(r.Context())
+	if !ok {
+		writeError(w, pkgerrors.ErrForbidden)
+		return
 	}
 
-	result, err := h.nineBoxSvc.ListMatrices(r.Context(), cycleID, evaluatorID, phaseID)
+	result, err := h.nineBoxSvc.ComputeMatrixView(r.Context(), cycleID, phaseID, viewerID, viewerRole)
 	if err != nil {
 		writeError(w, err)
 		return
@@ -619,6 +623,10 @@ func (h *EvaluationHandler) CreateMatrix(w http.ResponseWriter, r *http.Request)
 
 // GetMatrix handles GET /api/v1/nine-box/matrices/{matrixId}
 // TODO(auth:C7): Restrict to evaluator owner, rh roles.
+// TODO(auth:C7): Enforce scope — if result.EvaluatorID is outside the viewer's
+// org scope and !auth.RoleSeesAll(viewerRole), return pkgerrors.ErrForbidden.
+// Org-scope resolution is not yet available in this handler; wire it once the
+// org-hierarchy service is injectable here.
 func (h *EvaluationHandler) GetMatrix(w http.ResponseWriter, r *http.Request) {
 	matrixID, err := uuid.Parse(chi.URLParam(r, "matrixId"))
 	if err != nil {
@@ -639,6 +647,9 @@ func (h *EvaluationHandler) GetMatrix(w http.ResponseWriter, r *http.Request) {
 // ListMatrixEntries handles GET /api/v1/nine-box/matrices/{matrixId}/entries
 // Supports optional filter: quadrant (1-9).
 // TODO(auth:C7): Restrict to evaluator owner, rh roles.
+// TODO(auth:C7): Enforce scope — if the matrix's evaluator is outside the viewer's
+// org scope and !auth.RoleSeesAll(viewerRole), return pkgerrors.ErrForbidden.
+// Org-scope resolution is not yet available in this handler.
 func (h *EvaluationHandler) ListMatrixEntries(w http.ResponseWriter, r *http.Request) {
 	matrixID, err := uuid.Parse(chi.URLParam(r, "matrixId"))
 	if err != nil {

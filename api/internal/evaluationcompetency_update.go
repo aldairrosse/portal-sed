@@ -79,6 +79,20 @@ func (_u *EvaluationCompetencyUpdate) ClearComments() *EvaluationCompetencyUpdat
 	return _u
 }
 
+// SetSource sets the "source" field.
+func (_u *EvaluationCompetencyUpdate) SetSource(v evaluationcompetency.Source) *EvaluationCompetencyUpdate {
+	_u.mutation.SetSource(v)
+	return _u
+}
+
+// SetNillableSource sets the "source" field if the given value is not nil.
+func (_u *EvaluationCompetencyUpdate) SetNillableSource(v *evaluationcompetency.Source) *EvaluationCompetencyUpdate {
+	if v != nil {
+		_u.SetSource(*v)
+	}
+	return _u
+}
+
 // SetEvaluationID sets the "evaluation_id" field.
 func (_u *EvaluationCompetencyUpdate) SetEvaluationID(v uuid.UUID) *EvaluationCompetencyUpdate {
 	_u.mutation.SetEvaluationID(v)
@@ -202,6 +216,11 @@ func (_u *EvaluationCompetencyUpdate) check() error {
 			return &ValidationError{Name: "rating", err: fmt.Errorf(`internal: validator failed for field "EvaluationCompetency.rating": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.Source(); ok {
+		if err := evaluationcompetency.SourceValidator(v); err != nil {
+			return &ValidationError{Name: "source", err: fmt.Errorf(`internal: validator failed for field "EvaluationCompetency.source": %w`, err)}
+		}
+	}
 	if _u.mutation.EvaluationCleared() && len(_u.mutation.EvaluationIDs()) > 0 {
 		return errors.New(`internal: clearing a required unique edge "EvaluationCompetency.evaluation"`)
 	}
@@ -240,6 +259,9 @@ func (_u *EvaluationCompetencyUpdate) sqlSave(ctx context.Context) (_node int, e
 	}
 	if _u.mutation.CommentsCleared() {
 		_spec.ClearField(evaluationcompetency.FieldComments, field.TypeString)
+	}
+	if value, ok := _u.mutation.Source(); ok {
+		_spec.SetField(evaluationcompetency.FieldSource, field.TypeEnum, value)
 	}
 	if _u.mutation.EvaluationCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -395,6 +417,20 @@ func (_u *EvaluationCompetencyUpdateOne) ClearComments() *EvaluationCompetencyUp
 	return _u
 }
 
+// SetSource sets the "source" field.
+func (_u *EvaluationCompetencyUpdateOne) SetSource(v evaluationcompetency.Source) *EvaluationCompetencyUpdateOne {
+	_u.mutation.SetSource(v)
+	return _u
+}
+
+// SetNillableSource sets the "source" field if the given value is not nil.
+func (_u *EvaluationCompetencyUpdateOne) SetNillableSource(v *evaluationcompetency.Source) *EvaluationCompetencyUpdateOne {
+	if v != nil {
+		_u.SetSource(*v)
+	}
+	return _u
+}
+
 // SetEvaluationID sets the "evaluation_id" field.
 func (_u *EvaluationCompetencyUpdateOne) SetEvaluationID(v uuid.UUID) *EvaluationCompetencyUpdateOne {
 	_u.mutation.SetEvaluationID(v)
@@ -531,6 +567,11 @@ func (_u *EvaluationCompetencyUpdateOne) check() error {
 			return &ValidationError{Name: "rating", err: fmt.Errorf(`internal: validator failed for field "EvaluationCompetency.rating": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.Source(); ok {
+		if err := evaluationcompetency.SourceValidator(v); err != nil {
+			return &ValidationError{Name: "source", err: fmt.Errorf(`internal: validator failed for field "EvaluationCompetency.source": %w`, err)}
+		}
+	}
 	if _u.mutation.EvaluationCleared() && len(_u.mutation.EvaluationIDs()) > 0 {
 		return errors.New(`internal: clearing a required unique edge "EvaluationCompetency.evaluation"`)
 	}
@@ -586,6 +627,9 @@ func (_u *EvaluationCompetencyUpdateOne) sqlSave(ctx context.Context) (_node *Ev
 	}
 	if _u.mutation.CommentsCleared() {
 		_spec.ClearField(evaluationcompetency.FieldComments, field.TypeString)
+	}
+	if value, ok := _u.mutation.Source(); ok {
+		_spec.SetField(evaluationcompetency.FieldSource, field.TypeEnum, value)
 	}
 	if _u.mutation.EvaluationCleared() {
 		edge := &sqlgraph.EdgeSpec{

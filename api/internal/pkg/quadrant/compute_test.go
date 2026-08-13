@@ -242,6 +242,14 @@ func TestComputePotentialTier_EdgeCases(t *testing.T) {
 	}
 }
 
+// --- NEW: ComputeWeightedPotentialTier ---
+
+func TestComputeWeightedPotentialTier_RHWeighted(t *testing.T) {
+	// 5*0.2 + 3*0.8 = 1.0 + 2.4 = 3.4 → tier 2 (≤ 3.66)
+	got := quadrant.ComputeWeightedPotentialTier(5, 3, 0.2, 0.8)
+	assert.Equal(t, 2, got, "weighted avg 3.4 → tier 2")
+}
+
 // --- NEW: ComputeQuadrantFromTiers ---
 
 func TestComputeQuadrantFromTiers_All9Combinations(t *testing.T) {

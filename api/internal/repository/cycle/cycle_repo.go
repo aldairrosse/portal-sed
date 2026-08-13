@@ -183,6 +183,26 @@ func (r *CycleRepo) GetCycle(ctx context.Context, id uuid.UUID) (*CycleRow, erro
 	return row, nil
 }
 
+// GetCurrentPhaseID resolves the phase definition ID for a cycle's current
+// phase by joining cycles with phase_definitions on the phase enum.
+// Returns sql.ErrNoRows if the cycle has no phase definition matching its
+// current_phase.
+func (r *CycleRepo) GetCurrentPhaseID(ctx context.Context, cycleID uuid.UUID) (uuid.UUID, error) {
+	var phaseID uuid.UUID
+	err := r.db.QueryRowContext(ctx,
+		`SELECT pd.id
+		 FROM phase_definitions pd
+		 JOIN cycles c ON c.id = pd.cycle_id AND c.current_phase = pd.phase
+		 WHERE c.id = $1
+		 LIMIT 1`,
+		cycleID,
+	).Scan(&phaseID)
+	if err != nil {
+		return uuid.Nil, err
+	}
+	return phaseID, nil
+}
+
 // ListCycles returns cycles for an org, ordered by updated_at DESC, id DESC,
 // with cursor-based pagination. Uses raw SQL for full ordering control.
 func (r *CycleRepo) ListCycles(ctx context.Context, orgID uuid.UUID, year *int, phase *cycle.CurrentPhase, cursorID *uuid.UUID, cursorUpdatedAt *time.Time, limit int) ([]*CycleRow, error) {

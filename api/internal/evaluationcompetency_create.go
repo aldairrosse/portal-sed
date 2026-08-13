@@ -72,6 +72,20 @@ func (_c *EvaluationCompetencyCreate) SetNillableComments(v *string) *Evaluation
 	return _c
 }
 
+// SetSource sets the "source" field.
+func (_c *EvaluationCompetencyCreate) SetSource(v evaluationcompetency.Source) *EvaluationCompetencyCreate {
+	_c.mutation.SetSource(v)
+	return _c
+}
+
+// SetNillableSource sets the "source" field if the given value is not nil.
+func (_c *EvaluationCompetencyCreate) SetNillableSource(v *evaluationcompetency.Source) *EvaluationCompetencyCreate {
+	if v != nil {
+		_c.SetSource(*v)
+	}
+	return _c
+}
+
 // SetEvaluationID sets the "evaluation_id" field.
 func (_c *EvaluationCompetencyCreate) SetEvaluationID(v uuid.UUID) *EvaluationCompetencyCreate {
 	_c.mutation.SetEvaluationID(v)
@@ -162,6 +176,10 @@ func (_c *EvaluationCompetencyCreate) defaults() {
 		v := evaluationcompetency.DefaultUpdatedAt()
 		_c.mutation.SetUpdatedAt(v)
 	}
+	if _, ok := _c.mutation.Source(); !ok {
+		v := evaluationcompetency.DefaultSource
+		_c.mutation.SetSource(v)
+	}
 	if _, ok := _c.mutation.ID(); !ok {
 		v := evaluationcompetency.DefaultID()
 		_c.mutation.SetID(v)
@@ -182,6 +200,14 @@ func (_c *EvaluationCompetencyCreate) check() error {
 	if v, ok := _c.mutation.Rating(); ok {
 		if err := evaluationcompetency.RatingValidator(v); err != nil {
 			return &ValidationError{Name: "rating", err: fmt.Errorf(`internal: validator failed for field "EvaluationCompetency.rating": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.Source(); !ok {
+		return &ValidationError{Name: "source", err: errors.New(`internal: missing required field "EvaluationCompetency.source"`)}
+	}
+	if v, ok := _c.mutation.Source(); ok {
+		if err := evaluationcompetency.SourceValidator(v); err != nil {
+			return &ValidationError{Name: "source", err: fmt.Errorf(`internal: validator failed for field "EvaluationCompetency.source": %w`, err)}
 		}
 	}
 	if _, ok := _c.mutation.EvaluationID(); !ok {
@@ -252,6 +278,10 @@ func (_c *EvaluationCompetencyCreate) createSpec() (*EvaluationCompetency, *sqlg
 	if value, ok := _c.mutation.Comments(); ok {
 		_spec.SetField(evaluationcompetency.FieldComments, field.TypeString, value)
 		_node.Comments = value
+	}
+	if value, ok := _c.mutation.Source(); ok {
+		_spec.SetField(evaluationcompetency.FieldSource, field.TypeEnum, value)
+		_node.Source = value
 	}
 	if nodes := _c.mutation.EvaluationIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

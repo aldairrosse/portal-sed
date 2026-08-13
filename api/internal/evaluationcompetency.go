@@ -29,6 +29,8 @@ type EvaluationCompetency struct {
 	Rating int `json:"rating,omitempty"`
 	// Comments holds the value of the "comments" field.
 	Comments string `json:"comments,omitempty"`
+	// Source holds the value of the "source" field.
+	Source evaluationcompetency.Source `json:"source,omitempty"`
 	// EvaluationID holds the value of the "evaluation_id" field.
 	EvaluationID uuid.UUID `json:"evaluation_id,omitempty"`
 	// CompetencyID holds the value of the "competency_id" field.
@@ -94,7 +96,7 @@ func (*EvaluationCompetency) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case evaluationcompetency.FieldRating:
 			values[i] = new(sql.NullInt64)
-		case evaluationcompetency.FieldComments:
+		case evaluationcompetency.FieldComments, evaluationcompetency.FieldSource:
 			values[i] = new(sql.NullString)
 		case evaluationcompetency.FieldCreatedAt, evaluationcompetency.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -144,6 +146,12 @@ func (_m *EvaluationCompetency) assignValues(columns []string, values []any) err
 				return fmt.Errorf("unexpected type %T for field comments", values[i])
 			} else if value.Valid {
 				_m.Comments = value.String
+			}
+		case evaluationcompetency.FieldSource:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field source", values[i])
+			} else if value.Valid {
+				_m.Source = evaluationcompetency.Source(value.String)
 			}
 		case evaluationcompetency.FieldEvaluationID:
 			if value, ok := values[i].(*uuid.UUID); !ok {
@@ -225,6 +233,9 @@ func (_m *EvaluationCompetency) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("comments=")
 	builder.WriteString(_m.Comments)
+	builder.WriteString(", ")
+	builder.WriteString("source=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Source))
 	builder.WriteString(", ")
 	builder.WriteString("evaluation_id=")
 	builder.WriteString(fmt.Sprintf("%v", _m.EvaluationID))

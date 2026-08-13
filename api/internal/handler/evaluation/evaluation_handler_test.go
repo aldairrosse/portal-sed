@@ -12,6 +12,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
+	"github.com/sed-evaluacion-desempeno/api/internal/auth"
 	dto "github.com/sed-evaluacion-desempeno/api/internal/dto/evaluation"
 	pkgerrors "github.com/sed-evaluacion-desempeno/api/internal/pkg/errors"
 	repo "github.com/sed-evaluacion-desempeno/api/internal/repository/evaluation"
@@ -149,6 +150,11 @@ func (m *mockBoxService) recordCall(name string) {
 
 func (m *mockBoxService) ListMatrices(ctx context.Context, cycleID, evaluatorID, phaseID uuid.UUID) ([]dto.NineBoxMatrixResponse, error) {
 	m.recordCall("ListMatrices")
+	return m.listResp, m.listErr
+}
+
+func (m *mockBoxService) ComputeMatrixView(ctx context.Context, cycleID uuid.UUID, phaseID *uuid.UUID, viewerID uuid.UUID, viewerRole auth.Role) ([]dto.NineBoxMatrixResponse, error) {
+	m.recordCall("ComputeMatrixView")
 	return m.listResp, m.listErr
 }
 

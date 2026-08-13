@@ -205,6 +205,7 @@ var (
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "rating", Type: field.TypeInt},
 		{Name: "comments", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "source", Type: field.TypeEnum, Enums: []string{"self", "rh"}, Default: "rh"},
 		{Name: "competency_id", Type: field.TypeUUID},
 		{Name: "evaluation_id", Type: field.TypeUUID},
 		{Name: "profile_id", Type: field.TypeUUID},
@@ -217,19 +218,19 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "evaluation_competencies_competencies_evaluation_competencies",
-				Columns:    []*schema.Column{EvaluationCompetenciesColumns[5]},
+				Columns:    []*schema.Column{EvaluationCompetenciesColumns[6]},
 				RefColumns: []*schema.Column{CompetenciesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "evaluation_competencies_evaluations_competency_ratings",
-				Columns:    []*schema.Column{EvaluationCompetenciesColumns[6]},
+				Columns:    []*schema.Column{EvaluationCompetenciesColumns[7]},
 				RefColumns: []*schema.Column{EvaluationsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "evaluation_competencies_evaluation_profiles_evaluation_competencies",
-				Columns:    []*schema.Column{EvaluationCompetenciesColumns[7]},
+				Columns:    []*schema.Column{EvaluationCompetenciesColumns[8]},
 				RefColumns: []*schema.Column{EvaluationProfilesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},

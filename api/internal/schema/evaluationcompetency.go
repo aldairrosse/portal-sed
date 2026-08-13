@@ -28,6 +28,9 @@ func (EvaluationCompetency) Fields() []ent.Field {
 			Range(1, 5),
 		field.Text("comments").
 			Optional(),
+		field.Enum("source").
+			Values("self", "rh").
+			Default("rh"),
 		field.UUID("evaluation_id", uuid.UUID{}),
 		field.UUID("competency_id", uuid.UUID{}),
 		field.UUID("profile_id", uuid.UUID{}),

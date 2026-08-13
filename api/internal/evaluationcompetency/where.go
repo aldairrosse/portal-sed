@@ -286,6 +286,26 @@ func CommentsContainsFold(v string) predicate.EvaluationCompetency {
 	return predicate.EvaluationCompetency(sql.FieldContainsFold(FieldComments, v))
 }
 
+// SourceEQ applies the EQ predicate on the "source" field.
+func SourceEQ(v Source) predicate.EvaluationCompetency {
+	return predicate.EvaluationCompetency(sql.FieldEQ(FieldSource, v))
+}
+
+// SourceNEQ applies the NEQ predicate on the "source" field.
+func SourceNEQ(v Source) predicate.EvaluationCompetency {
+	return predicate.EvaluationCompetency(sql.FieldNEQ(FieldSource, v))
+}
+
+// SourceIn applies the In predicate on the "source" field.
+func SourceIn(vs ...Source) predicate.EvaluationCompetency {
+	return predicate.EvaluationCompetency(sql.FieldIn(FieldSource, vs...))
+}
+
+// SourceNotIn applies the NotIn predicate on the "source" field.
+func SourceNotIn(vs ...Source) predicate.EvaluationCompetency {
+	return predicate.EvaluationCompetency(sql.FieldNotIn(FieldSource, vs...))
+}
+
 // EvaluationIDEQ applies the EQ predicate on the "evaluation_id" field.
 func EvaluationIDEQ(v uuid.UUID) predicate.EvaluationCompetency {
 	return predicate.EvaluationCompetency(sql.FieldEQ(FieldEvaluationID, v))

@@ -13,6 +13,15 @@
 // This numbering MUST match the seed data in the NineBoxQuadrant catalog table.
 package quadrant
 
+// Default weight constants for the weighted potential tier computation.
+//
+// These are business-tunable: the final client can adjust them to favor RH
+// ratings (higher DefaultWeightRH) or self ratings (higher DefaultWeightSelf).
+const (
+	DefaultWeightRH   = 0.8
+	DefaultWeightSelf = 0.2
+)
+
 // ComputePerformanceTier maps average goal progress (0–100) to a tier 1–3.
 //
 //	< 34%   → 1 (low)
@@ -55,8 +64,27 @@ func ComputePotentialTier(selfRating, hrRating *float64) int {
 		count++
 	}
 
-	avg := sum / count
+	return potentialTier(sum / count)
+}
 
+// ComputeWeightedPotentialTier maps self and RH competency ratings (scale 1–5)
+// to a tier 1–3 using a weighted average:
+//
+//	weightedAvg = selfRating*weightSelf + rhRating*weightRH
+//
+// It applies the same tier thresholds as ComputePotentialTier. The weights
+// allow business to favor RH (or self) ratings; use the DefaultWeight*
+// constants for the configured default split.
+func ComputeWeightedPotentialTier(selfRating, rhRating, weightSelf, weightRH float64) int {
+	return potentialTier(selfRating*weightSelf + rhRating*weightRH)
+}
+
+// potentialTier maps a rating average (1–5) to a tier 1–3.
+//
+//	1.00–2.33 → 1 (low)
+//	2.34–3.66 → 2 (medium)
+//	3.67–5.00 → 3 (high)
+func potentialTier(avg float64) int {
 	switch {
 	case avg <= 2.33:
 		return 1

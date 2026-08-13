@@ -712,7 +712,7 @@ func TestNineBoxService_UpsertEntry_QuadrantComputed(t *testing.T) {
 	mock.ExpectBegin()
 	mock.ExpectCommit()
 
-	nineBoxSvc := svc.NewNineBoxService(mockNineBox, mockCatalog, &mockDB{db: db})
+	nineBoxSvc := svc.NewNineBoxService(mockNineBox, mockCatalog, &mockDB{db: db}, nil, nil, nil)
 
 	req := dto.NineBoxEntryInput{
 		EvaluateeID:      evaluateeID,
@@ -751,7 +751,7 @@ func TestNineBoxService_BatchSubmit_Atomic(t *testing.T) {
 	mock.ExpectBegin()
 	mock.ExpectCommit()
 
-	nineBoxSvc := svc.NewNineBoxService(mockNineBox, mockCatalog, &mockDB{db: db})
+	nineBoxSvc := svc.NewNineBoxService(mockNineBox, mockCatalog, &mockDB{db: db}, nil, nil, nil)
 
 	req := dto.NineBoxBatchRequest{
 		Entries: []dto.NineBoxEntryInput{
@@ -796,7 +796,7 @@ func TestNineBoxService_GetMatrix_EnrichesEmployeeInfo(t *testing.T) {
 		},
 	}
 
-	nineBoxSvc := svc.NewNineBoxService(mockNineBox, mockCatalog, nil)
+	nineBoxSvc := svc.NewNineBoxService(mockNineBox, mockCatalog, nil, nil, nil, nil)
 
 	resp, err := nineBoxSvc.GetMatrix(context.Background(), matrixID)
 	require.NoError(t, err)
@@ -827,7 +827,7 @@ func TestNineBoxService_GetMatrix_OrpantEntry(t *testing.T) {
 		quadrants: []*internal.NineBoxQuadrant{{Quadrant: 5, Label: "Star", Color: "#00FF00"}},
 	}
 
-	nineBoxSvc := svc.NewNineBoxService(mockNineBox, mockCatalog, nil)
+	nineBoxSvc := svc.NewNineBoxService(mockNineBox, mockCatalog, nil, nil, nil, nil)
 
 	resp, err := nineBoxSvc.GetMatrix(context.Background(), matrixID)
 	require.NoError(t, err)
@@ -850,7 +850,7 @@ func TestNineBoxService_GetMatrixEntriesFiltered_ByQuadrant(t *testing.T) {
 	}
 	mockCatalog := &mockCatalogRepo{}
 
-	nineBoxSvc := svc.NewNineBoxService(mockNineBox, mockCatalog, nil)
+	nineBoxSvc := svc.NewNineBoxService(mockNineBox, mockCatalog, nil, nil, nil, nil)
 
 	q := 5
 	resp, err := nineBoxSvc.GetMatrixEntriesFiltered(context.Background(), matrixID, &q)
@@ -873,7 +873,7 @@ func TestNineBoxService_GetMatrixEntriesFiltered_NoFilter(t *testing.T) {
 	}
 	mockCatalog := &mockCatalogRepo{}
 
-	nineBoxSvc := svc.NewNineBoxService(mockNineBox, mockCatalog, nil)
+	nineBoxSvc := svc.NewNineBoxService(mockNineBox, mockCatalog, nil, nil, nil, nil)
 
 	resp, err := nineBoxSvc.GetMatrixEntriesFiltered(context.Background(), matrixID, nil)
 	require.NoError(t, err)
@@ -912,7 +912,7 @@ func TestNineBoxService_RecomputeMatrix_GroupsByManager(t *testing.T) {
 	mock.ExpectBegin()
 	mock.ExpectCommit()
 
-	nineBoxSvc := svc.NewNineBoxService(mockNineBox, mockCatalog, &mockDB{db: db})
+	nineBoxSvc := svc.NewNineBoxService(mockNineBox, mockCatalog, &mockDB{db: db}, nil, nil, nil)
 
 	err = nineBoxSvc.RecomputeMatrix(context.Background(), cycleID, phaseID)
 	require.NoError(t, err)
@@ -940,7 +940,7 @@ func TestNineBoxService_RecomputeMatrix_SkipsRootEmployee(t *testing.T) {
 
 	mock.ExpectBegin()
 
-	nineBoxSvc := svc.NewNineBoxService(mockNineBox, mockCatalog, &mockDB{db: db})
+	nineBoxSvc := svc.NewNineBoxService(mockNineBox, mockCatalog, &mockDB{db: db}, nil, nil, nil)
 
 	err = nineBoxSvc.RecomputeMatrix(context.Background(), cycleID, phaseID)
 	require.NoError(t, err)

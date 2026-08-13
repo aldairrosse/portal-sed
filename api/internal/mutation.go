@@ -7321,6 +7321,7 @@ type EvaluationCompetencyMutation struct {
 	rating            *int
 	addrating         *int
 	comments          *string
+	source            *evaluationcompetency.Source
 	clearedFields     map[string]struct{}
 	evaluation        *uuid.UUID
 	clearedevaluation bool
@@ -7614,6 +7615,42 @@ func (m *EvaluationCompetencyMutation) ResetComments() {
 	delete(m.clearedFields, evaluationcompetency.FieldComments)
 }
 
+// SetSource sets the "source" field.
+func (m *EvaluationCompetencyMutation) SetSource(e evaluationcompetency.Source) {
+	m.source = &e
+}
+
+// Source returns the value of the "source" field in the mutation.
+func (m *EvaluationCompetencyMutation) Source() (r evaluationcompetency.Source, exists bool) {
+	v := m.source
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSource returns the old "source" field's value of the EvaluationCompetency entity.
+// If the EvaluationCompetency object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EvaluationCompetencyMutation) OldSource(ctx context.Context) (v evaluationcompetency.Source, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSource is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSource requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSource: %w", err)
+	}
+	return oldValue.Source, nil
+}
+
+// ResetSource resets all changes to the "source" field.
+func (m *EvaluationCompetencyMutation) ResetSource() {
+	m.source = nil
+}
+
 // SetEvaluationID sets the "evaluation_id" field.
 func (m *EvaluationCompetencyMutation) SetEvaluationID(u uuid.UUID) {
 	m.evaluation = &u
@@ -7837,7 +7874,7 @@ func (m *EvaluationCompetencyMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *EvaluationCompetencyMutation) Fields() []string {
-	fields := make([]string, 0, 7)
+	fields := make([]string, 0, 8)
 	if m.created_at != nil {
 		fields = append(fields, evaluationcompetency.FieldCreatedAt)
 	}
@@ -7849,6 +7886,9 @@ func (m *EvaluationCompetencyMutation) Fields() []string {
 	}
 	if m.comments != nil {
 		fields = append(fields, evaluationcompetency.FieldComments)
+	}
+	if m.source != nil {
+		fields = append(fields, evaluationcompetency.FieldSource)
 	}
 	if m.evaluation != nil {
 		fields = append(fields, evaluationcompetency.FieldEvaluationID)
@@ -7875,6 +7915,8 @@ func (m *EvaluationCompetencyMutation) Field(name string) (ent.Value, bool) {
 		return m.Rating()
 	case evaluationcompetency.FieldComments:
 		return m.Comments()
+	case evaluationcompetency.FieldSource:
+		return m.Source()
 	case evaluationcompetency.FieldEvaluationID:
 		return m.EvaluationID()
 	case evaluationcompetency.FieldCompetencyID:
@@ -7898,6 +7940,8 @@ func (m *EvaluationCompetencyMutation) OldField(ctx context.Context, name string
 		return m.OldRating(ctx)
 	case evaluationcompetency.FieldComments:
 		return m.OldComments(ctx)
+	case evaluationcompetency.FieldSource:
+		return m.OldSource(ctx)
 	case evaluationcompetency.FieldEvaluationID:
 		return m.OldEvaluationID(ctx)
 	case evaluationcompetency.FieldCompetencyID:
@@ -7940,6 +7984,13 @@ func (m *EvaluationCompetencyMutation) SetField(name string, value ent.Value) er
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetComments(v)
+		return nil
+	case evaluationcompetency.FieldSource:
+		v, ok := value.(evaluationcompetency.Source)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSource(v)
 		return nil
 	case evaluationcompetency.FieldEvaluationID:
 		v, ok := value.(uuid.UUID)
@@ -8046,6 +8097,9 @@ func (m *EvaluationCompetencyMutation) ResetField(name string) error {
 		return nil
 	case evaluationcompetency.FieldComments:
 		m.ResetComments()
+		return nil
+	case evaluationcompetency.FieldSource:
+		m.ResetSource()
 		return nil
 	case evaluationcompetency.FieldEvaluationID:
 		m.ResetEvaluationID()
