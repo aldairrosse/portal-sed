@@ -51,13 +51,21 @@
         oncancel,
     }: Props = $props();
 
+    // svelte-ignore state_referenced_locally (intentional: form state seeded once from prop)
     let name = $state(initialName);
+    // svelte-ignore state_referenced_locally (intentional: form state seeded once from prop)
     let description = $state(initialDescription);
+    // svelte-ignore state_referenced_locally (intentional: form state seeded once from prop)
     let unit = $state(initialUnit);
+    // svelte-ignore state_referenced_locally (intentional: form state seeded once from prop)
     let weight = $state(initialWeight);
+    // svelte-ignore state_referenced_locally (intentional: form state seeded once from prop)
     let target = $state(initialTarget);
+    // svelte-ignore state_referenced_locally (intentional: form state seeded once from prop)
     let direction = $state(initialDirection);
+    // svelte-ignore state_referenced_locally (intentional: form state seeded once from prop)
     let baseline = $state<number | undefined>(initialBaseline);
+    // svelte-ignore state_referenced_locally (intentional: form state seeded once from prop)
     let kpiIds = $state<string[]>([...initialKpiIds]);
     let localError = $state('');
 

@@ -35,15 +35,20 @@
 		error = null,
 	}: Props = $props();
 
-	const progressId = `progress-${goal.id}`;
-	const selfAssessmentId = `self-assessment-${goal.id}`;
-	const rhAssessmentId = `rh-assessment-${goal.id}`;
-	const managerCommentId = `manager-comment-${goal.id}`;
+	const progressId = $derived(`progress-${goal.id}`);
+	const selfAssessmentId = $derived(`self-assessment-${goal.id}`);
+	const rhAssessmentId = $derived(`rh-assessment-${goal.id}`);
+	const managerCommentId = $derived(`manager-comment-${goal.id}`);
 
+	// svelte-ignore state_referenced_locally (intentional: form state seeded once from prop)
 	let progressValue = $state(closure?.finalProgress ?? goal.progress ?? 0);
+	// svelte-ignore state_referenced_locally (intentional: form state seeded once from prop)
 	let selfAssessmentValue = $state(closure?.selfAssessment ?? '');
+	// svelte-ignore state_referenced_locally (intentional: form state seeded once from prop)
 	let rhAssessmentValue = $state(closure?.rhAssessment ?? '');
+	// svelte-ignore state_referenced_locally (intentional: form state seeded once from prop)
 	let managerCommentValue = $state(closure?.managerComment ?? '');
+	// svelte-ignore state_referenced_locally (intentional: form state seeded once from prop)
 	let saved = $state(!!closure?.closedAt);
 
 	const unitLabels: Record<string, string> = {

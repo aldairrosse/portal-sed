@@ -23,9 +23,13 @@
 		submitLabel = 'Guardar categoría'
 	}: Props = $props();
 
+	// svelte-ignore state_referenced_locally (intentional: form state seeded once from prop)
 	let name = $state(category?.name ?? '');
+	// svelte-ignore state_referenced_locally (intentional: form state seeded once from prop)
 	let description = $state(category?.description ?? '');
+	// svelte-ignore state_referenced_locally (intentional: form state seeded once from prop)
 	let weight = $state(category?.weight ?? 0);
+	// svelte-ignore state_referenced_locally (intentional: form state seeded once from prop)
 	let pillarId = $state<string>(category?.pillarId ?? '');
 	let localError = $state('');
 

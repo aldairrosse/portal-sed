@@ -76,6 +76,7 @@
         onOpenComments,
     }: Props = $props();
 
+    // svelte-ignore state_referenced_locally (intentional: form state seeded once from prop)
     // eslint-disable-next-line svelte/prefer-writable-derived
     let progressValue = $state(goal.progress ?? 0);
 
