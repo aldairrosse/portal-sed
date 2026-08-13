@@ -132,8 +132,8 @@ func TestEmployeeRepo_List_WithFilters(t *testing.T) {
 	now := time.Now()
 	active := true
 
-	mock.ExpectQuery("SELECT e\\.id, e\\.created_at, e\\.updated_at, e\\.first_name, e\\.last_name, e\\.email, e\\.employee_number, e\\.is_active, e\\.org_node_id, e\\.manager_id, e\\.profile_id, e\\.job_title FROM employees e JOIN org_nodes on2 ON e\\.org_node_id = on2\\.id WHERE on2\\.organization_id = \\$1 AND e\\.org_node_id = \\$2 AND e\\.profile_id = \\$3 AND e\\.is_active = \\$4 AND \\(e\\.first_name ILIKE \\$5 OR e\\.last_name ILIKE \\$5 OR e\\.email ILIKE \\$5 OR e\\.employee_number ILIKE \\$5\\) ORDER BY e\\.last_name, e\\.first_name, e\\.id LIMIT \\$6").
-		WithArgs(treeID, nodeID, profileID, active, "%smith%", 51).
+	mock.ExpectQuery("SELECT e\\.id, e\\.created_at, e\\.updated_at, e\\.first_name, e\\.last_name, e\\.email, e\\.employee_number, e\\.is_active, e\\.org_node_id, e\\.manager_id, e\\.profile_id, e\\.job_title FROM employees e JOIN org_nodes on2 ON e\\.org_node_id = on2\\.id WHERE on2\\.organization_id = \\$1 AND e\\.org_node_id = \\$2 AND e\\.profile_id = \\$3 AND e\\.is_active = \\$4 AND \\(e\\.first_name ILIKE \\$5 OR e\\.last_name ILIKE \\$5 OR e\\.email ILIKE \\$5 OR e\\.employee_number ILIKE \\$5\\) ORDER BY e\\.last_name, e\\.first_name, e\\.id LIMIT \\$6 OFFSET \\$7").
+		WithArgs(treeID, nodeID, profileID, active, "%smith%", 50, 0).
 		WillReturnRows(sqlmock.NewRows([]string{
 			"id", "created_at", "updated_at", "first_name", "last_name", "email",
 			"employee_number", "is_active", "org_node_id", "manager_id", "profile_id", "job_title",

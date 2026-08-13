@@ -24,8 +24,8 @@ func newMetricsService(db *sql.DB, mock sqlmock.Sqlmock) svc.MetricsService {
 func newOrgNodeRow(id, orgID uuid.UUID, now time.Time) *sqlmock.Rows {
 	return sqlmock.NewRows([]string{
 		"id", "created_at", "updated_at", "name", "type", "code",
-		"organization_id", "parent_id", "path", "version",
-	}).AddRow(id, now, now, "Engineering", "corporate", "ENG", orgID, nil, "1", 1)
+		"organization_id", "parent_id", "path", "version", "head_employee_id",
+	}).AddRow(id, now, now, "Engineering", "corporate", "ENG", orgID, nil, "1", 1, nil)
 }
 
 func TestMetricsService_GetAreaMetrics_Success(t *testing.T) {
@@ -45,19 +45,19 @@ func TestMetricsService_GetAreaMetrics_Success(t *testing.T) {
 	now := time.Now()
 
 	// Expect node existence check
-	mock.ExpectQuery("SELECT id, created_at, updated_at, name, type, code, organization_id, parent_id, COALESCE\\(path::text, ''\\) as path, COALESCE\\(version, 0\\) FROM org_nodes WHERE id = \\$1").
+	mock.ExpectQuery("SELECT id, created_at, updated_at, name, type, code, organization_id, parent_id, COALESCE\\(path::text, ''\\) as path, COALESCE\\(version, 0\\), head_employee_id FROM org_nodes WHERE id = \\$1").
 		WithArgs(nodeID).
 		WillReturnRows(newOrgNodeRow(nodeID, orgID, now))
 
 	// Expect GetDirectEmployees
-	mock.ExpectQuery("SELECT id, created_at, updated_at, first_name, last_name, email, employee_number, is_active, org_node_id, manager_id, profile_id FROM employees WHERE org_node_id = \\$1 AND is_active = true ORDER BY last_name, first_name").
+	mock.ExpectQuery("SELECT e\\.id, e\\.created_at, e\\.updated_at, e\\.first_name, e\\.last_name, e\\.email, e\\.employee_number, e\\.is_active, e\\.org_node_id, e\\.manager_id, e\\.profile_id, COALESCE\\(ep\\.name, ''\\) as profile_name, COALESCE\\(ep\\.description, ''\\) as profile_description, e\\.job_title FROM employees e LEFT JOIN evaluation_profiles ep ON e\\.profile_id = ep\\.id WHERE e\\.org_node_id = \\$1 AND e\\.is_active = true ORDER BY e\\.last_name, e\\.first_name").
 		WithArgs(nodeID).
 		WillReturnRows(sqlmock.NewRows([]string{
 			"id", "created_at", "updated_at", "first_name", "last_name", "email",
-			"employee_number", "is_active", "org_node_id", "manager_id", "profile_id",
+			"employee_number", "is_active", "org_node_id", "manager_id", "profile_id", "profile_name", "profile_description", "job_title",
 		}).
-			AddRow(empID1, now, now, "Alice", "Smith", "alice@example.com", "E001", true, nodeID, nil, profileID).
-			AddRow(empID2, now, now, "Bob", "Jones", "bob@example.com", "E002", true, nodeID, nil, profileID))
+			AddRow(empID1, now, now, "Alice", "Smith", "alice@example.com", "E001", true, nodeID, nil, profileID, "", "", "").
+			AddRow(empID2, now, now, "Bob", "Jones", "bob@example.com", "E002", true, nodeID, nil, profileID, "", "", ""))
 
 	// Expect GetGoalsByEmployees
 	mock.ExpectQuery("SELECT g.id, g.name, g.target_value, g.current_value, g.state, gc.employee_id FROM goals g JOIN goal_categories gc ON gc.id = g.category_id WHERE gc.employee_id IN \\(\\$1,\\$2\\) AND g.target_value > 0").
@@ -115,16 +115,16 @@ func TestMetricsService_GetAreaMetrics_NoEmployees(t *testing.T) {
 	now := time.Now()
 
 	// Expect node existence check
-	mock.ExpectQuery("SELECT id, created_at, updated_at, name, type, code, organization_id, parent_id, COALESCE\\(path::text, ''\\) as path, COALESCE\\(version, 0\\) FROM org_nodes WHERE id = \\$1").
+	mock.ExpectQuery("SELECT id, created_at, updated_at, name, type, code, organization_id, parent_id, COALESCE\\(path::text, ''\\) as path, COALESCE\\(version, 0\\), head_employee_id FROM org_nodes WHERE id = \\$1").
 		WithArgs(nodeID).
 		WillReturnRows(newOrgNodeRow(nodeID, orgID, now))
 
 	// Expect empty employees
-	mock.ExpectQuery("SELECT id, created_at, updated_at, first_name, last_name, email, employee_number, is_active, org_node_id, manager_id, profile_id FROM employees WHERE org_node_id = \\$1 AND is_active = true ORDER BY last_name, first_name").
+	mock.ExpectQuery("SELECT e\\.id, e\\.created_at, e\\.updated_at, e\\.first_name, e\\.last_name, e\\.email, e\\.employee_number, e\\.is_active, e\\.org_node_id, e\\.manager_id, e\\.profile_id, COALESCE\\(ep\\.name, ''\\) as profile_name, COALESCE\\(ep\\.description, ''\\) as profile_description, e\\.job_title FROM employees e LEFT JOIN evaluation_profiles ep ON e\\.profile_id = ep\\.id WHERE e\\.org_node_id = \\$1 AND e\\.is_active = true ORDER BY e\\.last_name, e\\.first_name").
 		WithArgs(nodeID).
 		WillReturnRows(sqlmock.NewRows([]string{
 			"id", "created_at", "updated_at", "first_name", "last_name", "email",
-			"employee_number", "is_active", "org_node_id", "manager_id", "profile_id",
+			"employee_number", "is_active", "org_node_id", "manager_id", "profile_id", "profile_name", "profile_description", "job_title",
 		}))
 
 	resp, err := service.GetAreaMetrics(context.Background(), nodeID.String(), "")
@@ -155,17 +155,17 @@ func TestMetricsService_GetAreaMetrics_NoGoals(t *testing.T) {
 	now := time.Now()
 
 	// Expect node existence check
-	mock.ExpectQuery("SELECT id, created_at, updated_at, name, type, code, organization_id, parent_id, COALESCE\\(path::text, ''\\) as path, COALESCE\\(version, 0\\) FROM org_nodes WHERE id = \\$1").
+	mock.ExpectQuery("SELECT id, created_at, updated_at, name, type, code, organization_id, parent_id, COALESCE\\(path::text, ''\\) as path, COALESCE\\(version, 0\\), head_employee_id FROM org_nodes WHERE id = \\$1").
 		WithArgs(nodeID).
 		WillReturnRows(newOrgNodeRow(nodeID, orgID, now))
 
 	// Expect GetDirectEmployees
-	mock.ExpectQuery("SELECT id, created_at, updated_at, first_name, last_name, email, employee_number, is_active, org_node_id, manager_id, profile_id FROM employees WHERE org_node_id = \\$1 AND is_active = true ORDER BY last_name, first_name").
+	mock.ExpectQuery("SELECT e\\.id, e\\.created_at, e\\.updated_at, e\\.first_name, e\\.last_name, e\\.email, e\\.employee_number, e\\.is_active, e\\.org_node_id, e\\.manager_id, e\\.profile_id, COALESCE\\(ep\\.name, ''\\) as profile_name, COALESCE\\(ep\\.description, ''\\) as profile_description, e\\.job_title FROM employees e LEFT JOIN evaluation_profiles ep ON e\\.profile_id = ep\\.id WHERE e\\.org_node_id = \\$1 AND e\\.is_active = true ORDER BY e\\.last_name, e\\.first_name").
 		WithArgs(nodeID).
 		WillReturnRows(sqlmock.NewRows([]string{
 			"id", "created_at", "updated_at", "first_name", "last_name", "email",
-			"employee_number", "is_active", "org_node_id", "manager_id", "profile_id",
-		}).AddRow(empID1, now, now, "Alice", "Smith", "alice@example.com", "E001", true, nodeID, nil, profileID))
+			"employee_number", "is_active", "org_node_id", "manager_id", "profile_id", "profile_name", "profile_description", "job_title",
+		}).AddRow(empID1, now, now, "Alice", "Smith", "alice@example.com", "E001", true, nodeID, nil, profileID, "", "", ""))
 
 	// Expect empty goals
 	mock.ExpectQuery("SELECT g.id, g.name, g.target_value, g.current_value, g.state, gc.employee_id FROM goals g JOIN goal_categories gc ON gc.id = g.category_id WHERE gc.employee_id IN \\(\\$1\\) AND g.target_value > 0").
@@ -204,17 +204,17 @@ func TestMetricsService_GetAreaMetrics_NoRatings(t *testing.T) {
 	now := time.Now()
 
 	// Expect node existence check
-	mock.ExpectQuery("SELECT id, created_at, updated_at, name, type, code, organization_id, parent_id, COALESCE\\(path::text, ''\\) as path, COALESCE\\(version, 0\\) FROM org_nodes WHERE id = \\$1").
+	mock.ExpectQuery("SELECT id, created_at, updated_at, name, type, code, organization_id, parent_id, COALESCE\\(path::text, ''\\) as path, COALESCE\\(version, 0\\), head_employee_id FROM org_nodes WHERE id = \\$1").
 		WithArgs(nodeID).
 		WillReturnRows(newOrgNodeRow(nodeID, orgID, now))
 
 	// Expect GetDirectEmployees
-	mock.ExpectQuery("SELECT id, created_at, updated_at, first_name, last_name, email, employee_number, is_active, org_node_id, manager_id, profile_id FROM employees WHERE org_node_id = \\$1 AND is_active = true ORDER BY last_name, first_name").
+	mock.ExpectQuery("SELECT e\\.id, e\\.created_at, e\\.updated_at, e\\.first_name, e\\.last_name, e\\.email, e\\.employee_number, e\\.is_active, e\\.org_node_id, e\\.manager_id, e\\.profile_id, COALESCE\\(ep\\.name, ''\\) as profile_name, COALESCE\\(ep\\.description, ''\\) as profile_description, e\\.job_title FROM employees e LEFT JOIN evaluation_profiles ep ON e\\.profile_id = ep\\.id WHERE e\\.org_node_id = \\$1 AND e\\.is_active = true ORDER BY e\\.last_name, e\\.first_name").
 		WithArgs(nodeID).
 		WillReturnRows(sqlmock.NewRows([]string{
 			"id", "created_at", "updated_at", "first_name", "last_name", "email",
-			"employee_number", "is_active", "org_node_id", "manager_id", "profile_id",
-		}).AddRow(empID1, now, now, "Alice", "Smith", "alice@example.com", "E001", true, nodeID, nil, profileID))
+			"employee_number", "is_active", "org_node_id", "manager_id", "profile_id", "profile_name", "profile_description", "job_title",
+		}).AddRow(empID1, now, now, "Alice", "Smith", "alice@example.com", "E001", true, nodeID, nil, profileID, "", "", ""))
 
 	// Expect GetGoalsByEmployees
 	mock.ExpectQuery("SELECT g.id, g.name, g.target_value, g.current_value, g.state, gc.employee_id FROM goals g JOIN goal_categories gc ON gc.id = g.category_id WHERE gc.employee_id IN \\(\\$1\\) AND g.target_value > 0").
@@ -256,7 +256,7 @@ func TestMetricsService_GetAreaMetrics_NodeNotFound(t *testing.T) {
 	nodeID := uuid.MustParse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
 
 	// Expect node existence check - no rows
-	mock.ExpectQuery("SELECT id, created_at, updated_at, name, type, code, organization_id, parent_id, COALESCE\\(path::text, ''\\) as path, COALESCE\\(version, 0\\) FROM org_nodes WHERE id = \\$1").
+	mock.ExpectQuery("SELECT id, created_at, updated_at, name, type, code, organization_id, parent_id, COALESCE\\(path::text, ''\\) as path, COALESCE\\(version, 0\\), head_employee_id FROM org_nodes WHERE id = \\$1").
 		WithArgs(nodeID).
 		WillReturnRows(sqlmock.NewRows([]string{
 			"id", "created_at", "updated_at", "name", "type", "code",
@@ -302,17 +302,17 @@ func TestMetricsService_GetAreaMetrics_InvalidCycleID(t *testing.T) {
 	now := time.Now()
 
 	// Expect node existence check
-	mock.ExpectQuery("SELECT id, created_at, updated_at, name, type, code, organization_id, parent_id, COALESCE\\(path::text, ''\\) as path, COALESCE\\(version, 0\\) FROM org_nodes WHERE id = \\$1").
+	mock.ExpectQuery("SELECT id, created_at, updated_at, name, type, code, organization_id, parent_id, COALESCE\\(path::text, ''\\) as path, COALESCE\\(version, 0\\), head_employee_id FROM org_nodes WHERE id = \\$1").
 		WithArgs(nodeID).
 		WillReturnRows(newOrgNodeRow(nodeID, orgID, now))
 
 	// Expect GetDirectEmployees
-	mock.ExpectQuery("SELECT id, created_at, updated_at, first_name, last_name, email, employee_number, is_active, org_node_id, manager_id, profile_id FROM employees WHERE org_node_id = \\$1 AND is_active = true ORDER BY last_name, first_name").
+	mock.ExpectQuery("SELECT e\\.id, e\\.created_at, e\\.updated_at, e\\.first_name, e\\.last_name, e\\.email, e\\.employee_number, e\\.is_active, e\\.org_node_id, e\\.manager_id, e\\.profile_id, COALESCE\\(ep\\.name, ''\\) as profile_name, COALESCE\\(ep\\.description, ''\\) as profile_description, e\\.job_title FROM employees e LEFT JOIN evaluation_profiles ep ON e\\.profile_id = ep\\.id WHERE e\\.org_node_id = \\$1 AND e\\.is_active = true ORDER BY e\\.last_name, e\\.first_name").
 		WithArgs(nodeID).
 		WillReturnRows(sqlmock.NewRows([]string{
 			"id", "created_at", "updated_at", "first_name", "last_name", "email",
-			"employee_number", "is_active", "org_node_id", "manager_id", "profile_id",
-		}).AddRow(empID1, now, now, "Alice", "Smith", "alice@example.com", "E001", true, nodeID, nil, profileID))
+			"employee_number", "is_active", "org_node_id", "manager_id", "profile_id", "profile_name", "profile_description", "job_title",
+		}).AddRow(empID1, now, now, "Alice", "Smith", "alice@example.com", "E001", true, nodeID, nil, profileID, "", "", ""))
 
 	// Expect empty goals (no cycle filter needed, but we need goals query)
 	mock.ExpectQuery("SELECT g.id, g.name, g.target_value, g.current_value, g.state, gc.employee_id FROM goals g JOIN goal_categories gc ON gc.id = g.category_id WHERE gc.employee_id IN \\(\\$1\\) AND g.target_value > 0").
@@ -346,17 +346,17 @@ func TestMetricsService_GetAreaMetrics_NoCycleID(t *testing.T) {
 	now := time.Now()
 
 	// Expect node existence check
-	mock.ExpectQuery("SELECT id, created_at, updated_at, name, type, code, organization_id, parent_id, COALESCE\\(path::text, ''\\) as path, COALESCE\\(version, 0\\) FROM org_nodes WHERE id = \\$1").
+	mock.ExpectQuery("SELECT id, created_at, updated_at, name, type, code, organization_id, parent_id, COALESCE\\(path::text, ''\\) as path, COALESCE\\(version, 0\\), head_employee_id FROM org_nodes WHERE id = \\$1").
 		WithArgs(nodeID).
 		WillReturnRows(newOrgNodeRow(nodeID, orgID, now))
 
 	// Expect GetDirectEmployees
-	mock.ExpectQuery("SELECT id, created_at, updated_at, first_name, last_name, email, employee_number, is_active, org_node_id, manager_id, profile_id FROM employees WHERE org_node_id = \\$1 AND is_active = true ORDER BY last_name, first_name").
+	mock.ExpectQuery("SELECT e\\.id, e\\.created_at, e\\.updated_at, e\\.first_name, e\\.last_name, e\\.email, e\\.employee_number, e\\.is_active, e\\.org_node_id, e\\.manager_id, e\\.profile_id, COALESCE\\(ep\\.name, ''\\) as profile_name, COALESCE\\(ep\\.description, ''\\) as profile_description, e\\.job_title FROM employees e LEFT JOIN evaluation_profiles ep ON e\\.profile_id = ep\\.id WHERE e\\.org_node_id = \\$1 AND e\\.is_active = true ORDER BY e\\.last_name, e\\.first_name").
 		WithArgs(nodeID).
 		WillReturnRows(sqlmock.NewRows([]string{
 			"id", "created_at", "updated_at", "first_name", "last_name", "email",
-			"employee_number", "is_active", "org_node_id", "manager_id", "profile_id",
-		}).AddRow(empID1, now, now, "Alice", "Smith", "alice@example.com", "E001", true, nodeID, nil, profileID))
+			"employee_number", "is_active", "org_node_id", "manager_id", "profile_id", "profile_name", "profile_description", "job_title",
+		}).AddRow(empID1, now, now, "Alice", "Smith", "alice@example.com", "E001", true, nodeID, nil, profileID, "", "", ""))
 
 	// Expect GetGoalsByEmployees
 	mock.ExpectQuery("SELECT g.id, g.name, g.target_value, g.current_value, g.state, gc.employee_id FROM goals g JOIN goal_categories gc ON gc.id = g.category_id WHERE gc.employee_id IN \\(\\$1\\) AND g.target_value > 0").

@@ -47,16 +47,16 @@ func TestEvaluateeService_GetMyEvaluatees(t *testing.T) {
 	now := time.Now()
 
 	// Expect GetByID for evaluator
-	mock.ExpectQuery("SELECT id, created_at, updated_at, first_name, last_name, email, employee_number, is_active, org_node_id, manager_id, profile_id FROM employees WHERE id = \\$1").
+	mock.ExpectQuery("SELECT id, created_at, updated_at, first_name, last_name, email, employee_number, is_active, org_node_id, manager_id, profile_id, job_title FROM employees WHERE id = \\$1").
 		WithArgs(evaluatorID).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "created_at", "updated_at", "first_name", "last_name", "email", "employee_number", "is_active", "org_node_id", "manager_id", "profile_id"}).
-			AddRow(evaluatorID, now, now, "Alice", "Smith", "alice@example.com", "E001", true, orgNodeID, nil, profileID))
+		WillReturnRows(sqlmock.NewRows([]string{"id", "created_at", "updated_at", "first_name", "last_name", "email", "employee_number", "is_active", "org_node_id", "manager_id", "profile_id", "job_title"}).
+			AddRow(evaluatorID, now, now, "Alice", "Smith", "alice@example.com", "E001", true, orgNodeID, nil, profileID, ""))
 
 	// Expect ListByManager
-	mock.ExpectQuery("SELECT id, created_at, updated_at, first_name, last_name, email, employee_number, is_active, org_node_id, manager_id, profile_id FROM employees WHERE manager_id = \\$1 AND is_active = true ORDER BY last_name, first_name").
+	mock.ExpectQuery("SELECT id, created_at, updated_at, first_name, last_name, email, employee_number, is_active, org_node_id, manager_id, profile_id, job_title FROM employees WHERE manager_id = \\$1 AND is_active = true ORDER BY last_name, first_name").
 		WithArgs(evaluatorID).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "created_at", "updated_at", "first_name", "last_name", "email", "employee_number", "is_active", "org_node_id", "manager_id", "profile_id"}).
-			AddRow(reportID, now, now, "Bob", "Jones", "bob@example.com", "E002", true, orgNodeID, evaluatorID, profileID))
+		WillReturnRows(sqlmock.NewRows([]string{"id", "created_at", "updated_at", "first_name", "last_name", "email", "employee_number", "is_active", "org_node_id", "manager_id", "profile_id", "job_title"}).
+			AddRow(reportID, now, now, "Bob", "Jones", "bob@example.com", "E002", true, orgNodeID, evaluatorID, profileID, ""))
 
 	resp, err := service.GetMyEvaluatees(context.Background(), evaluatorID.String())
 	require.NoError(t, err)
@@ -220,28 +220,28 @@ func TestEvaluateeService_GetChainOfCommand_DeepTree(t *testing.T) {
 	now := time.Now()
 
 	// Expect GetByID for employee
-	mock.ExpectQuery("SELECT id, created_at, updated_at, first_name, last_name, email, employee_number, is_active, org_node_id, manager_id, profile_id FROM employees WHERE id = \\$1").
+	mock.ExpectQuery("SELECT id, created_at, updated_at, first_name, last_name, email, employee_number, is_active, org_node_id, manager_id, profile_id, job_title FROM employees WHERE id = \\$1").
 		WithArgs(empID).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "created_at", "updated_at", "first_name", "last_name", "email", "employee_number", "is_active", "org_node_id", "manager_id", "profile_id"}).
-			AddRow(empID, now, now, "Charlie", "Brown", "charlie@example.com", "E003", true, nodeID, nil, uuid.New()))
+		WillReturnRows(sqlmock.NewRows([]string{"id", "created_at", "updated_at", "first_name", "last_name", "email", "employee_number", "is_active", "org_node_id", "manager_id", "profile_id", "job_title"}).
+			AddRow(empID, now, now, "Charlie", "Brown", "charlie@example.com", "E003", true, nodeID, nil, uuid.New(), ""))
 
 	// Expect GetByID for org node
-	mock.ExpectQuery("SELECT id, created_at, updated_at, name, type, code, organization_id, parent_id, COALESCE\\(path::text, ''\\) as path, COALESCE\\(version, 0\\) FROM org_nodes WHERE id = \\$1").
+	mock.ExpectQuery("SELECT id, created_at, updated_at, name, type, code, organization_id, parent_id, COALESCE\\(path::text, ''\\) as path, COALESCE\\(version, 0\\), head_employee_id FROM org_nodes WHERE id = \\$1").
 		WithArgs(nodeID).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "created_at", "updated_at", "name", "type", "code", "organization_id", "parent_id", "path", "version"}).
-			AddRow(nodeID, now, now, "Engineering", "corporate", "ENG", orgID, nil, "1.2.3.4", 1))
+		WillReturnRows(sqlmock.NewRows([]string{"id", "created_at", "updated_at", "name", "type", "code", "organization_id", "parent_id", "path", "version", "head_employee_id"}).
+			AddRow(nodeID, now, now, "Engineering", "corporate", "ENG", orgID, nil, "1.2.3.4", 1, nil))
 
 	// Expect GetAncestors — returns a deep chain
 	rootID := uuid.MustParse("88888888-8888-8888-8888-888888888888")
 	vpID := uuid.MustParse("99999999-9999-9999-9999-999999999999")
 	dirID := uuid.MustParse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
-	mock.ExpectQuery("SELECT id, created_at, updated_at, name, type, code, organization_id, parent_id, COALESCE\\(path::text, ''\\) as path, COALESCE\\(version, 0\\) FROM org_nodes WHERE \\$1 LIKE path::text \\|\\| '\\.%' OR path::text = \\$1 ORDER BY path::text").
+	mock.ExpectQuery("SELECT id, created_at, updated_at, name, type, code, organization_id, parent_id, COALESCE\\(path::text, ''\\) as path, COALESCE\\(version, 0\\), head_employee_id FROM org_nodes WHERE \\$1 LIKE path::text \\|\\| '\\.%' OR path::text = \\$1 ORDER BY path::text").
 		WithArgs("1.2.3.4").
-		WillReturnRows(sqlmock.NewRows([]string{"id", "created_at", "updated_at", "name", "type", "code", "organization_id", "parent_id", "path", "version"}).
-			AddRow(rootID, now, now, "Root", "corporate", "ROOT", orgID, nil, "1", 1).
-			AddRow(vpID, now, now, "VP", "corporate", "VP", orgID, rootID, "1.2", 1).
-			AddRow(dirID, now, now, "Director", "corporate", "DIR", orgID, vpID, "1.2.3", 1).
-			AddRow(nodeID, now, now, "Engineering", "corporate", "ENG", orgID, dirID, "1.2.3.4", 1))
+		WillReturnRows(sqlmock.NewRows([]string{"id", "created_at", "updated_at", "name", "type", "code", "organization_id", "parent_id", "path", "version", "head_employee_id"}).
+			AddRow(rootID, now, now, "Root", "corporate", "ROOT", orgID, nil, "1", 1, nil).
+			AddRow(vpID, now, now, "VP", "corporate", "VP", orgID, rootID, "1.2", 1, nil).
+			AddRow(dirID, now, now, "Director", "corporate", "DIR", orgID, vpID, "1.2.3", 1, nil).
+			AddRow(nodeID, now, now, "Engineering", "corporate", "ENG", orgID, dirID, "1.2.3.4", 1, nil))
 
 	resp, err := service.GetChainOfCommand(context.Background(), empID.String())
 	require.NoError(t, err)
@@ -274,20 +274,20 @@ func TestEvaluateeService_GetChainOfCommand_ShallowTree(t *testing.T) {
 	orgID := uuid.MustParse("dddddddd-dddd-dddd-dddd-dddddddddddd")
 	now := time.Now()
 
-	mock.ExpectQuery("SELECT id, created_at, updated_at, first_name, last_name, email, employee_number, is_active, org_node_id, manager_id, profile_id FROM employees WHERE id = \\$1").
+	mock.ExpectQuery("SELECT id, created_at, updated_at, first_name, last_name, email, employee_number, is_active, org_node_id, manager_id, profile_id, job_title FROM employees WHERE id = \\$1").
 		WithArgs(empID).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "created_at", "updated_at", "first_name", "last_name", "email", "employee_number", "is_active", "org_node_id", "manager_id", "profile_id"}).
-			AddRow(empID, now, now, "Diana", "Prince", "diana@example.com", "E004", true, nodeID, nil, uuid.New()))
+		WillReturnRows(sqlmock.NewRows([]string{"id", "created_at", "updated_at", "first_name", "last_name", "email", "employee_number", "is_active", "org_node_id", "manager_id", "profile_id", "job_title"}).
+			AddRow(empID, now, now, "Diana", "Prince", "diana@example.com", "E004", true, nodeID, nil, uuid.New(), ""))
 
-	mock.ExpectQuery("SELECT id, created_at, updated_at, name, type, code, organization_id, parent_id, COALESCE\\(path::text, ''\\) as path, COALESCE\\(version, 0\\) FROM org_nodes WHERE id = \\$1").
+	mock.ExpectQuery("SELECT id, created_at, updated_at, name, type, code, organization_id, parent_id, COALESCE\\(path::text, ''\\) as path, COALESCE\\(version, 0\\), head_employee_id FROM org_nodes WHERE id = \\$1").
 		WithArgs(nodeID).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "created_at", "updated_at", "name", "type", "code", "organization_id", "parent_id", "path", "version"}).
-			AddRow(nodeID, now, now, "Sales", "retail", "SAL", orgID, nil, "1", 1))
+		WillReturnRows(sqlmock.NewRows([]string{"id", "created_at", "updated_at", "name", "type", "code", "organization_id", "parent_id", "path", "version", "head_employee_id"}).
+			AddRow(nodeID, now, now, "Sales", "retail", "SAL", orgID, nil, "1", 1, nil))
 
-	mock.ExpectQuery("SELECT id, created_at, updated_at, name, type, code, organization_id, parent_id, COALESCE\\(path::text, ''\\) as path, COALESCE\\(version, 0\\) FROM org_nodes WHERE \\$1 LIKE path::text \\|\\| '\\.%' OR path::text = \\$1 ORDER BY path::text").
+	mock.ExpectQuery("SELECT id, created_at, updated_at, name, type, code, organization_id, parent_id, COALESCE\\(path::text, ''\\) as path, COALESCE\\(version, 0\\), head_employee_id FROM org_nodes WHERE \\$1 LIKE path::text \\|\\| '\\.%' OR path::text = \\$1 ORDER BY path::text").
 		WithArgs("1").
-		WillReturnRows(sqlmock.NewRows([]string{"id", "created_at", "updated_at", "name", "type", "code", "organization_id", "parent_id", "path", "version"}).
-			AddRow(nodeID, now, now, "Sales", "retail", "SAL", orgID, nil, "1", 1))
+		WillReturnRows(sqlmock.NewRows([]string{"id", "created_at", "updated_at", "name", "type", "code", "organization_id", "parent_id", "path", "version", "head_employee_id"}).
+			AddRow(nodeID, now, now, "Sales", "retail", "SAL", orgID, nil, "1", 1, nil))
 
 	resp, err := service.GetChainOfCommand(context.Background(), empID.String())
 	require.NoError(t, err)
@@ -331,15 +331,15 @@ func TestEvaluateeService_ConcurrentEvaluateeResolution(t *testing.T) {
 	const workers = 20
 
 	for i := 0; i < workers; i++ {
-		mock.ExpectQuery("SELECT id, created_at, updated_at, first_name, last_name, email, employee_number, is_active, org_node_id, manager_id, profile_id FROM employees WHERE id = \\$1").
+		mock.ExpectQuery("SELECT id, created_at, updated_at, first_name, last_name, email, employee_number, is_active, org_node_id, manager_id, profile_id, job_title FROM employees WHERE id = \\$1").
 			WithArgs(evaluatorID).
-			WillReturnRows(sqlmock.NewRows([]string{"id", "created_at", "updated_at", "first_name", "last_name", "email", "employee_number", "is_active", "org_node_id", "manager_id", "profile_id"}).
-				AddRow(evaluatorID, now, now, "Alice", "Smith", "alice@example.com", "E001", true, orgNodeID, nil, profileID))
+			WillReturnRows(sqlmock.NewRows([]string{"id", "created_at", "updated_at", "first_name", "last_name", "email", "employee_number", "is_active", "org_node_id", "manager_id", "profile_id", "job_title"}).
+				AddRow(evaluatorID, now, now, "Alice", "Smith", "alice@example.com", "E001", true, orgNodeID, nil, profileID, ""))
 
-		mock.ExpectQuery("SELECT id, created_at, updated_at, first_name, last_name, email, employee_number, is_active, org_node_id, manager_id, profile_id FROM employees WHERE manager_id = \\$1 AND is_active = true ORDER BY last_name, first_name").
+		mock.ExpectQuery("SELECT id, created_at, updated_at, first_name, last_name, email, employee_number, is_active, org_node_id, manager_id, profile_id, job_title FROM employees WHERE manager_id = \\$1 AND is_active = true ORDER BY last_name, first_name").
 			WithArgs(evaluatorID).
-			WillReturnRows(sqlmock.NewRows([]string{"id", "created_at", "updated_at", "first_name", "last_name", "email", "employee_number", "is_active", "org_node_id", "manager_id", "profile_id"}).
-				AddRow(reportID, now, now, "Bob", "Jones", "bob@example.com", "E002", true, orgNodeID, evaluatorID, profileID))
+			WillReturnRows(sqlmock.NewRows([]string{"id", "created_at", "updated_at", "first_name", "last_name", "email", "employee_number", "is_active", "org_node_id", "manager_id", "profile_id", "job_title"}).
+				AddRow(reportID, now, now, "Bob", "Jones", "bob@example.com", "E002", true, orgNodeID, evaluatorID, profileID, ""))
 	}
 
 	var wg sync.WaitGroup
@@ -378,17 +378,17 @@ func TestEvaluateeService_GetManager(t *testing.T) {
 		WithArgs(empID).
 		WillReturnRows(sqlmock.NewRows([]string{"manager_id"}).AddRow(managerID))
 
-	mock.ExpectQuery("SELECT id, created_at, updated_at, first_name, last_name, email, employee_number, is_active, org_node_id, manager_id, profile_id FROM employees WHERE id = \\$1").
+	mock.ExpectQuery("SELECT id, created_at, updated_at, first_name, last_name, email, employee_number, is_active, org_node_id, manager_id, profile_id, job_title FROM employees WHERE id = \\$1").
 		WithArgs(managerID).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "created_at", "updated_at", "first_name", "last_name", "email", "employee_number", "is_active", "org_node_id", "manager_id", "profile_id"}).
-			AddRow(managerID, now, now, "Frank", "Lead", "frank@example.com", "E099", true, orgNodeID, nil, profileID))
+		WillReturnRows(sqlmock.NewRows([]string{"id", "created_at", "updated_at", "first_name", "last_name", "email", "employee_number", "is_active", "org_node_id", "manager_id", "profile_id", "job_title"}).
+			AddRow(managerID, now, now, "Frank", "Lead", "frank@example.com", "E099", true, orgNodeID, nil, profileID, ""))
 
-	mock.ExpectQuery("SELECT e\\.id, e\\.created_at, e\\.updated_at, e\\.first_name, e\\.last_name, e\\.email, e\\.employee_number, e\\.is_active, e\\.org_node_id, e\\.manager_id, e\\.profile_id, COALESCE\\(on2\\.name, ''\\) as org_node_name, COALESCE\\(on2\\.path::text, ''\\) as org_node_path, COALESCE\\(m\\.first_name \\|\\| ' ' \\|\\| m\\.last_name, ''\\) as manager_name").
+	mock.ExpectQuery("SELECT e\\.id, e\\.created_at, e\\.updated_at, e\\.first_name, e\\.last_name, e\\.email, e\\.employee_number, e\\.is_active, e\\.org_node_id, e\\.manager_id, e\\.profile_id, e\\.job_title, COALESCE\\(on2\\.name, ''\\) as org_node_name, COALESCE\\(on2\\.path::text, ''\\) as org_node_path, COALESCE\\(m\\.first_name \\|\\| ' ' \\|\\| m\\.last_name, ''\\) as manager_name, COALESCE\\(ep\\.name, ''\\) as profile_name").
 		WithArgs(managerID).
 		WillReturnRows(sqlmock.NewRows([]string{
 			"id", "created_at", "updated_at", "first_name", "last_name", "email", "employee_number", "is_active",
-			"org_node_id", "manager_id", "profile_id", "org_node_name", "org_node_path", "manager_name",
-		}).AddRow(managerID, now, now, "Frank", "Lead", "frank@example.com", "E099", true, orgNodeID, nil, profileID, "Engineering", "1.2", ""))
+			"org_node_id", "manager_id", "profile_id", "job_title", "org_node_name", "org_node_path", "manager_name", "profile_name",
+		}).AddRow(managerID, now, now, "Frank", "Lead", "frank@example.com", "E099", true, orgNodeID, nil, profileID, "", "Engineering", "1.2", "", ""))
 
 	resp, err := service.GetManager(context.Background(), empID.String())
 	require.NoError(t, err)
@@ -413,11 +413,11 @@ func TestEvaluateeService_BatchLookup(t *testing.T) {
 	profileID := uuid.MustParse("dddddddd-dddd-dddd-dddd-dddddddddddd")
 	now := time.Now()
 
-	mock.ExpectQuery("SELECT id, created_at, updated_at, first_name, last_name, email, employee_number, is_active, org_node_id, manager_id, profile_id FROM employees WHERE id IN \\(").
+	mock.ExpectQuery("SELECT id, created_at, updated_at, first_name, last_name, email, employee_number, is_active, org_node_id, manager_id, profile_id, job_title FROM employees WHERE id IN \\(").
 		WithArgs(id1, id2).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "created_at", "updated_at", "first_name", "last_name", "email", "employee_number", "is_active", "org_node_id", "manager_id", "profile_id"}).
-			AddRow(id1, now, now, "Gina", "Green", "gina@example.com", "E100", true, orgNodeID, nil, profileID).
-			AddRow(id2, now, now, "Hank", "Hill", "hank@example.com", "E101", true, orgNodeID, nil, profileID))
+		WillReturnRows(sqlmock.NewRows([]string{"id", "created_at", "updated_at", "first_name", "last_name", "email", "employee_number", "is_active", "org_node_id", "manager_id", "profile_id", "job_title"}).
+			AddRow(id1, now, now, "Gina", "Green", "gina@example.com", "E100", true, orgNodeID, nil, profileID, "").
+			AddRow(id2, now, now, "Hank", "Hill", "hank@example.com", "E101", true, orgNodeID, nil, profileID, ""))
 
 	resp, err := service.BatchLookup(context.Background(), []string{id1.String(), id2.String()})
 	require.NoError(t, err)
@@ -427,5 +427,3 @@ func TestEvaluateeService_BatchLookup(t *testing.T) {
 
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
-
-

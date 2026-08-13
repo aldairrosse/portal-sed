@@ -221,7 +221,7 @@ func setupTestServerWithPhaseChecker(t *testing.T, phaseChecker goalsvc.PhaseChe
 	catSvc := goalsvc.NewCategoryService(catRepo, pillarRepo, phaseCheck)
 	goalSvc := goalsvc.NewGoalService(goalRepo, catRepo, kpiRepo, linkRepo, weightQ, phaseCheck)
 	progressSvc := goalsvc.NewProgressService(goalRepo, catRepo, phaseCheck)
-	kpiSvc := goalsvc.NewKPIService(kpiRepo, linkRepo, goalRepo, catRepo, phaseCheck)
+ 	kpiSvc := goalsvc.NewKPIService(kpiRepo, linkRepo, goalRepo, catRepo, phaseCheck, orgNodeRepo, orgTreeRepo, employeeRepo)
 	scoringSvc := goalsvc.NewScoringService(catRepo, goalRepo)
 	weightSvc := goalsvc.NewWeightValidationService(catRepo, goalRepo)
 	batchSvc := goalsvc.NewBatchService(goalRepo, catRepo, kpiRepo, linkRepo, weightQ, phaseCheck)
