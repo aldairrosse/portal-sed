@@ -769,6 +769,19 @@ func assignmentRowToResponse(a *repogoal.AssignmentRow) dtogoal.AssignmentRespon
 	}
 }
 
+func assignedGoalResponse(id string, name, description, unit, direction, kind string, weight, target, current float64, baseline *float64, state, source string) dtogoal.AssignedGoalResponse {
+	baselineValue := 0.0
+	if baseline != nil {
+		baselineValue = *baseline
+	}
+	return dtogoal.AssignedGoalResponse{
+		ID: id, Name: name, Description: description, Unit: unit, Direction: direction,
+		GoalKind: kind, Weight: weight, TargetValue: target, BaselineValue: baseline,
+		CurrentValue: current, ProgressPercent: scoring.ProgressPercent(current, target, baselineValue, direction),
+		State: state, Source: source,
+	}
+}
+
 func (h *GoalHandler) GetAssignment(w http.ResponseWriter, r *http.Request) {
 	empID, err := parseEmpID(r)
 	if err != nil {
@@ -788,6 +801,28 @@ func (h *GoalHandler) GetAssignment(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := assignmentRowToResponse(assignment)
+	globalGoals, err := h.assignRepo.ListGlobalGoalsByEmployee(r.Context(), empID)
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+	for _, g := range globalGoals {
+		if len(g.Assignments) > 0 {
+			a := g.Assignments[0]
+			resp.GlobalGoals = append(resp.GlobalGoals, assignedGoalResponse(g.ID.String(), g.Name, g.Description, g.Unit, g.Direction, g.GoalKind, a.Weight, a.TargetValue, g.CurrentValue, a.BaselineValue, g.State, "global"))
+		}
+	}
+	sharedGoals, err := h.assignRepo.ListSharedGoalsAsMember(r.Context(), empID)
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+	for _, g := range sharedGoals {
+		if len(g.Members) > 0 {
+			m := g.Members[0]
+			resp.SharedGoals = append(resp.SharedGoals, assignedGoalResponse(g.ID.String(), g.Name, g.Description, g.Unit, g.Direction, g.GoalKind, m.Weight, m.TargetValue, g.CurrentValue, m.BaselineValue, g.State, "shared"))
+		}
+	}
 
 	cats, _ := h.catRepo.ListCategoriesByEmployee(r.Context(), empID)
 	if cats != nil {

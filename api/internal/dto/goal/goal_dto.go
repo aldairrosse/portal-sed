@@ -189,11 +189,30 @@ type CreateAssignmentRequest struct {
 
 // AssignmentResponse is the response body for a goal assignment.
 type AssignmentResponse struct {
-	ID         string             `json:"id"`
-	EmployeeID string             `json:"employee_id"`
-	CycleID    string             `json:"cycle_id"`
-	Categories []CategoryResponse `json:"categories,omitempty"`
-	CreatedAt  string             `json:"created_at"`
+	ID          string                 `json:"id"`
+	EmployeeID  string                 `json:"employee_id"`
+	CycleID     string                 `json:"cycle_id"`
+	Categories  []CategoryResponse     `json:"categories,omitempty"`
+	GlobalGoals []AssignedGoalResponse `json:"global_goals,omitempty"`
+	SharedGoals []AssignedGoalResponse `json:"shared_goals,omitempty"`
+	CreatedAt   string                 `json:"created_at"`
+}
+
+// AssignedGoalResponse is a goal assigned through a global or shared goal.
+type AssignedGoalResponse struct {
+	ID              string   `json:"id"`
+	Name            string   `json:"name"`
+	Description     string   `json:"description,omitempty"`
+	Unit            string   `json:"unit"`
+	Direction       string   `json:"direction"`
+	GoalKind        string   `json:"goal_kind"`
+	Weight          float64  `json:"weight"`
+	TargetValue     float64  `json:"target_value"`
+	BaselineValue   *float64 `json:"baseline_value,omitempty"`
+	CurrentValue    float64  `json:"current_value"`
+	ProgressPercent float64  `json:"progress_percent"`
+	State           string   `json:"state"`
+	Source          string   `json:"source"`
 }
 
 // ─── Goal Proposal DTOs ──────────────────────────────────────────────────────

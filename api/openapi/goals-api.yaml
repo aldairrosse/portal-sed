@@ -1357,6 +1357,10 @@ components:
           type: number
           minimum: 0
           maximum: 100
+        default_target:
+          type: number
+          default: 100
+          exclusiveMinimum: 0
 
     # ============================================================================
     # Assignment Schemas
@@ -1377,6 +1381,14 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/CategoryResponse'
+        global_goals:
+          type: array
+          items:
+            $ref: '#/components/schemas/AssignedGoalResponse'
+        shared_goals:
+          type: array
+          items:
+            $ref: '#/components/schemas/AssignedGoalResponse'
         created_at:
           type: string
           format: date-time
@@ -1388,6 +1400,23 @@ components:
         cycle_id:
           type: string
           format: uuid
+
+    AssignedGoalResponse:
+      type: object
+      properties:
+        id: {type: string, format: uuid}
+        name: {type: string}
+        description: {type: string}
+        unit: {type: string}
+        direction: {type: string}
+        goal_kind: {type: string}
+        weight: {type: number}
+        target_value: {type: number}
+        baseline_value: {type: number, nullable: true}
+        current_value: {type: number}
+        progress_percent: {type: number}
+        state: {type: string}
+        source: {type: string, enum: [global, shared]}
 
     GoalComment:
       type: object

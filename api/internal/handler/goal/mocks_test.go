@@ -255,8 +255,12 @@ func (m *mockGoalRepo) ListGoalsByCategory(ctx context.Context, catID uuid.UUID)
 
 type mockKpiRepo struct{}
 
-func (m *mockKpiRepo) ListKPIs(ctx context.Context, orgNodeID *uuid.UUID) ([]*repogoal.KpiRow, error) { return nil, nil }
-func (m *mockKpiRepo) GetKPI(ctx context.Context, kpiID uuid.UUID) (*repogoal.KpiRow, error)       { return nil, nil }
+func (m *mockKpiRepo) ListKPIs(ctx context.Context, orgNodeID *uuid.UUID) ([]*repogoal.KpiRow, error) {
+	return nil, nil
+}
+func (m *mockKpiRepo) GetKPI(ctx context.Context, kpiID uuid.UUID) (*repogoal.KpiRow, error) {
+	return nil, nil
+}
 func (m *mockKpiRepo) CreateKPI(ctx context.Context, name, unit, description string, targetValue *float64, orgNodeID *uuid.UUID) (*repogoal.KpiRow, error) {
 	return nil, nil
 }
@@ -266,18 +270,24 @@ func (m *mockKpiRepo) UpdateKPI(ctx context.Context, kpiID uuid.UUID, name, unit
 func (m *mockKpiRepo) UpdateKPIValue(ctx context.Context, kpiID uuid.UUID, currentValue float64) (*repogoal.KpiRow, error) {
 	return nil, nil
 }
-func (m *mockKpiRepo) DeleteKPI(ctx context.Context, kpiID uuid.UUID) error                     { return nil }
-func (m *mockKpiRepo) CountGoalLinksByKPI(ctx context.Context, kpiID uuid.UUID) (int, error)    { return 0, nil }
+func (m *mockKpiRepo) DeleteKPI(ctx context.Context, kpiID uuid.UUID) error { return nil }
+func (m *mockKpiRepo) CountGoalLinksByKPI(ctx context.Context, kpiID uuid.UUID) (int, error) {
+	return 0, nil
+}
 
 type mockLinkRepo struct{}
 
-func (m *mockLinkRepo) LinkKPI(ctx context.Context, goalID, kpiID uuid.UUID) error                    { return nil }
-func (m *mockLinkRepo) UnlinkKPI(ctx context.Context, goalID, kpiID uuid.UUID) error                  { return nil }
-func (m *mockLinkRepo) CountGoalKPILinks(ctx context.Context, goalID uuid.UUID) (int, error)          { return 0, nil }
+func (m *mockLinkRepo) LinkKPI(ctx context.Context, goalID, kpiID uuid.UUID) error   { return nil }
+func (m *mockLinkRepo) UnlinkKPI(ctx context.Context, goalID, kpiID uuid.UUID) error { return nil }
+func (m *mockLinkRepo) CountGoalKPILinks(ctx context.Context, goalID uuid.UUID) (int, error) {
+	return 0, nil
+}
 func (m *mockLinkRepo) ReplaceGoalKpiLinks(ctx context.Context, goalID uuid.UUID, kpiIDs []uuid.UUID) error {
 	return nil
 }
-func (m *mockLinkRepo) ListKpiIDsByGoal(ctx context.Context, goalID uuid.UUID) ([]uuid.UUID, error) { return nil, nil }
+func (m *mockLinkRepo) ListKpiIDsByGoal(ctx context.Context, goalID uuid.UUID) ([]uuid.UUID, error) {
+	return nil, nil
+}
 func (m *mockLinkRepo) ListLinksByGoal(ctx context.Context, goalID uuid.UUID) ([]*repogoal.KpiLinkRow, error) {
 	return nil, nil
 }
@@ -285,6 +295,30 @@ func (m *mockLinkRepo) ListLinksByGoal(ctx context.Context, goalID uuid.UUID) ([
 type mockAssignmentRepo struct {
 	getFunc    func(ctx context.Context, empID uuid.UUID) (*repogoal.AssignmentRow, error)
 	createFunc func(ctx context.Context, empID, cycleID uuid.UUID) (*repogoal.AssignmentRow, error)
+}
+
+type mockGoalProposalRepo struct{}
+
+func (m *mockGoalProposalRepo) Create(ctx context.Context, goalID, requestedBy uuid.UUID, name, description, unit, direction string, weight, targetValue float64, baselineValue *float64) (*repogoal.GoalProposalRow, error) {
+	return nil, nil
+}
+func (m *mockGoalProposalRepo) GetByID(ctx context.Context, proposalID uuid.UUID) (*repogoal.GoalProposalRow, error) {
+	return nil, nil
+}
+func (m *mockGoalProposalRepo) ListByGoal(ctx context.Context, goalID uuid.UUID) ([]*repogoal.GoalProposalRow, error) {
+	return nil, nil
+}
+func (m *mockGoalProposalRepo) ListPendingByGoalIDs(ctx context.Context, goalIDs []uuid.UUID) ([]*repogoal.GoalProposalRow, error) {
+	return nil, nil
+}
+func (m *mockGoalProposalRepo) UpdateStatus(ctx context.Context, proposalID uuid.UUID, status string, reviewedBy uuid.UUID) (*repogoal.GoalProposalRow, error) {
+	return nil, nil
+}
+func (m *mockGoalProposalRepo) GetKpiIDs(ctx context.Context, proposalID uuid.UUID) ([]uuid.UUID, error) {
+	return nil, nil
+}
+func (m *mockGoalProposalRepo) SetKpis(ctx context.Context, proposalID uuid.UUID, kpiIDs []uuid.UUID) error {
+	return nil
 }
 
 func (m *mockAssignmentRepo) GetAssignment(ctx context.Context, empID uuid.UUID) (*repogoal.AssignmentRow, error) {
@@ -298,6 +332,14 @@ func (m *mockAssignmentRepo) CreateAssignment(ctx context.Context, empID, cycleI
 	if m.createFunc != nil {
 		return m.createFunc(ctx, empID, cycleID)
 	}
+	return nil, nil
+}
+
+func (m *mockAssignmentRepo) ListGlobalGoalsByEmployee(ctx context.Context, empID uuid.UUID) ([]*repogoal.GlobalGoalRow, error) {
+	return nil, nil
+}
+
+func (m *mockAssignmentRepo) ListSharedGoalsAsMember(ctx context.Context, empID uuid.UUID) ([]*repogoal.SharedGoalRow, error) {
 	return nil, nil
 }
 
@@ -355,7 +397,7 @@ func newTestHandler(
 	if assignRepo == nil {
 		assignRepo = &mockAssignmentRepo{}
 	}
-	return NewGoalHandler(catSvc, goalSvc, progSvc, kpiSvc, scoringSvc, weightSvc, batchSvc, nil, catRepo, goalRepo, kpiRepo, linkRepo, assignRepo, nil, nil, nil)
+	return NewGoalHandler(catSvc, goalSvc, progSvc, kpiSvc, scoringSvc, weightSvc, batchSvc, nil, catRepo, goalRepo, kpiRepo, linkRepo, assignRepo, &mockGoalProposalRepo{}, nil, nil)
 }
 
 func mustParseUUID(s string) uuid.UUID {

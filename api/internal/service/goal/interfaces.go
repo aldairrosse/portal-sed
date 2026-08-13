@@ -59,6 +59,8 @@ type LinkKPIRepository interface {
 type AssignmentRepository interface {
 	GetAssignment(ctx context.Context, empID uuid.UUID) (*repogoal.AssignmentRow, error)
 	CreateAssignment(ctx context.Context, empID, cycleID uuid.UUID) (*repogoal.AssignmentRow, error)
+	ListGlobalGoalsByEmployee(ctx context.Context, empID uuid.UUID) ([]*repogoal.GlobalGoalRow, error)
+	ListSharedGoalsAsMember(ctx context.Context, empID uuid.UUID) ([]*repogoal.SharedGoalRow, error)
 }
 
 // WeightQuerier defines aggregate weight queries.

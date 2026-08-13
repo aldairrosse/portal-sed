@@ -8,27 +8,28 @@ import (
 	"github.com/google/uuid"
 	"github.com/sed-evaluacion-desempeno/api/internal"
 	"github.com/sed-evaluacion-desempeno/api/internal/goal"
+	pkgerrors "github.com/sed-evaluacion-desempeno/api/internal/pkg/errors"
 	"github.com/sed-evaluacion-desempeno/api/internal/sharedgoalgroup"
 	"github.com/sed-evaluacion-desempeno/api/internal/sharedgoalmember"
-	pkgerrors "github.com/sed-evaluacion-desempeno/api/internal/pkg/errors"
 )
 
 // SharedGoalRow is the full representation of a shared goal with its group and members.
 type SharedGoalRow struct {
-	ID          uuid.UUID          `json:"id"`
-	Name        string             `json:"name"`
-	Description string             `json:"description"`
-	Unit        string             `json:"unit"`
-	Direction   string             `json:"direction"`
-	Weight      float64            `json:"weight"`
-	TargetValue float64            `json:"target_value"`
-	GoalKind    string             `json:"goal_kind"`
-	State       string             `json:"state"`
-	CreatedBy   uuid.UUID          `json:"created_by"`
-	CreatedAt   time.Time          `json:"created_at"`
-	UpdatedAt   time.Time          `json:"updated_at"`
-	Group       *SharedGroupRow    `json:"group"`
-	Members     []*SharedMemberRow `json:"members"`
+	ID           uuid.UUID          `json:"id"`
+	Name         string             `json:"name"`
+	Description  string             `json:"description"`
+	Unit         string             `json:"unit"`
+	Direction    string             `json:"direction"`
+	Weight       float64            `json:"weight"`
+	TargetValue  float64            `json:"target_value"`
+	CurrentValue float64            `json:"current_value"`
+	GoalKind     string             `json:"goal_kind"`
+	State        string             `json:"state"`
+	CreatedBy    uuid.UUID          `json:"created_by"`
+	CreatedAt    time.Time          `json:"created_at"`
+	UpdatedAt    time.Time          `json:"updated_at"`
+	Group        *SharedGroupRow    `json:"group"`
+	Members      []*SharedMemberRow `json:"members"`
 }
 
 // SharedGroupRow represents the group for a shared goal.
@@ -100,11 +101,11 @@ func (r *SharedGoalRepo) CreateSharedGoal(ctx context.Context, createdBy uuid.UU
 			SetEmployeeID(m.EmployeeID).
 			SetWeight(m.Weight).
 			SetTargetValue(m.TargetValue)
-		
+
 		if m.BaselineValue != nil {
 			create = create.SetBaselineValue(*m.BaselineValue)
 		}
-		
+
 		_, err := create.Save(ctx)
 		if err != nil {
 			return nil, err
@@ -132,19 +133,20 @@ func (r *SharedGoalRepo) GetSharedGoal(ctx context.Context, goalID uuid.UUID) (*
 	}
 
 	row := &SharedGoalRow{
-		ID:          g.ID,
-		Name:        g.Name,
-		Description: g.Description,
-		Unit:        string(g.Unit),
-		Direction:   string(g.Direction),
-		Weight:      g.Weight,
-		TargetValue: g.TargetValue,
-		GoalKind:    string(*g.GoalKind),
-		State:       string(g.State),
-		CreatedBy:   g.CreatedBy,
-		CreatedAt:   g.CreatedAt,
-		UpdatedAt:   g.UpdatedAt,
-		Members:     make([]*SharedMemberRow, 0),
+		ID:           g.ID,
+		Name:         g.Name,
+		Description:  g.Description,
+		Unit:         string(g.Unit),
+		Direction:    string(g.Direction),
+		Weight:       g.Weight,
+		TargetValue:  g.TargetValue,
+		CurrentValue: g.CurrentValue,
+		GoalKind:     goalKindValue(g.GoalKind),
+		State:        string(g.State),
+		CreatedBy:    g.CreatedBy,
+		CreatedAt:    g.CreatedAt,
+		UpdatedAt:    g.UpdatedAt,
+		Members:      make([]*SharedMemberRow, 0),
 	}
 
 	if len(g.Edges.SharedGroup) > 0 {
@@ -258,11 +260,11 @@ func (r *SharedGoalRepo) AddMember(ctx context.Context, goalID, employeeID uuid.
 		SetEmployeeID(employeeID).
 		SetWeight(weight).
 		SetTargetValue(targetValue)
-	
+
 	if baselineValue != nil {
 		create = create.SetBaselineValue(*baselineValue)
 	}
-	
+
 	m, err := create.Save(ctx)
 	if err != nil {
 		return nil, err
@@ -310,19 +312,20 @@ func (r *SharedGoalRepo) toRows(goals []*internal.Goal) []*SharedGoalRow {
 	rows := make([]*SharedGoalRow, 0, len(goals))
 	for _, g := range goals {
 		row := &SharedGoalRow{
-			ID:          g.ID,
-			Name:        g.Name,
-			Description: g.Description,
-			Unit:        string(g.Unit),
-			Direction:   string(g.Direction),
-			Weight:      g.Weight,
-			TargetValue: g.TargetValue,
-			GoalKind:    string(*g.GoalKind),
-			State:       string(g.State),
-			CreatedBy:   g.CreatedBy,
-			CreatedAt:   g.CreatedAt,
-			UpdatedAt:   g.UpdatedAt,
-			Members:     make([]*SharedMemberRow, 0),
+			ID:           g.ID,
+			Name:         g.Name,
+			Description:  g.Description,
+			Unit:         string(g.Unit),
+			Direction:    string(g.Direction),
+			Weight:       g.Weight,
+			TargetValue:  g.TargetValue,
+			CurrentValue: g.CurrentValue,
+			GoalKind:     goalKindValue(g.GoalKind),
+			State:        string(g.State),
+			CreatedBy:    g.CreatedBy,
+			CreatedAt:    g.CreatedAt,
+			UpdatedAt:    g.UpdatedAt,
+			Members:      make([]*SharedMemberRow, 0),
 		}
 		rows = append(rows, row)
 	}

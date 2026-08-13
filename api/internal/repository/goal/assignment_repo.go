@@ -64,6 +64,55 @@ func (r *AssignmentRepo) GetAssignment(ctx context.Context, empID uuid.UUID) (*A
 	return assignmentToRow(a), nil
 }
 
+func (r *AssignmentRepo) ListGlobalGoalsByEmployee(ctx context.Context, empID uuid.UUID) ([]*GlobalGoalRow, error) {
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT g.id, g.name, g.description, g.unit, g.direction, g.goal_kind, g.state,
+		       g.weight, g.target_value, g.current_value, a.weight, a.target_value, a.baseline_value
+		FROM goals g JOIN global_goal_assignments a ON a.goal_id = g.id
+		WHERE g.type = 'global' AND a.employee_id = $1 ORDER BY g.created_at DESC`, empID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	result := make([]*GlobalGoalRow, 0)
+	for rows.Next() {
+		var g GlobalGoalRow
+		var a GlobalAssignmentRow
+		if err := rows.Scan(&g.ID, &g.Name, &g.Description, &g.Unit, &g.Direction, &g.GoalKind, &g.State, &g.Weight, &g.TargetValue, &g.CurrentValue, &a.Weight, &a.TargetValue, &a.BaselineValue); err != nil {
+			return nil, err
+		}
+		a.GoalID, a.EmployeeID = g.ID, empID
+		g.Assignments = []*GlobalAssignmentRow{&a}
+		result = append(result, &g)
+	}
+	return result, rows.Err()
+}
+
+func (r *AssignmentRepo) ListSharedGoalsAsMember(ctx context.Context, empID uuid.UUID) ([]*SharedGoalRow, error) {
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT g.id, g.name, g.description, g.unit, g.direction, g.goal_kind, g.state,
+		       g.weight, g.target_value, g.current_value, m.weight, m.target_value, m.baseline_value
+		FROM goals g JOIN shared_goal_groups sg ON sg.goal_id = g.id
+		JOIN shared_goal_members m ON m.group_id = sg.id
+		WHERE g.type = 'shared' AND m.employee_id = $1 ORDER BY g.created_at DESC`, empID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	result := make([]*SharedGoalRow, 0)
+	for rows.Next() {
+		var g SharedGoalRow
+		var m SharedMemberRow
+		if err := rows.Scan(&g.ID, &g.Name, &g.Description, &g.Unit, &g.Direction, &g.GoalKind, &g.State, &g.Weight, &g.TargetValue, &g.CurrentValue, &m.Weight, &m.TargetValue, &m.BaselineValue); err != nil {
+			return nil, err
+		}
+		m.EmployeeID = empID
+		g.Members = []*SharedMemberRow{&m}
+		result = append(result, &g)
+	}
+	return result, rows.Err()
+}
+
 // GetAssignmentByEmployeeAndCycle retrieves an assignment by employee and cycle.
 func (r *AssignmentRepo) GetAssignmentByEmployeeAndCycle(ctx context.Context, empID, cycleID uuid.UUID) (*AssignmentRow, error) {
 	a, err := r.client.GoalAssignment.Query().
