@@ -99,6 +99,7 @@
 	aria-hidden={ariaHidden}
 >
 	{#if icon}
+		<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 		{@html icon}
 	{/if}
 </span>

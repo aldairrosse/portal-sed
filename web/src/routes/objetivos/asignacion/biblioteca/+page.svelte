@@ -78,8 +78,8 @@
 			await addKpi(newKpi);
 			showAddForm = false;
 			resetAddForm();
-		} catch (err: any) {
-			notifications.error(err.message);
+		} catch (err) {
+			notifications.error(err instanceof Error ? err.message : 'Error desconocido');
 		}
 	}
 
@@ -125,8 +125,8 @@
 				targetValue: editTargetValue
 			});
 			editingId = null;
-		} catch (err: any) {
-			notifications.error(err.message);
+		} catch (err) {
+			notifications.error(err instanceof Error ? err.message : 'Error desconocido');
 		}
 	}
 
@@ -144,8 +144,8 @@
 		if (deleteTargetId) {
 			try {
 				await deleteKpi(deleteTargetId);
-			} catch (err: any) {
-				notifications.error(err.message);
+			} catch (err) {
+				notifications.error(err instanceof Error ? err.message : 'Error desconocido');
 			}
 		}
 		deleteTargetId = null;

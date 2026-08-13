@@ -119,10 +119,10 @@
 	});
 
 	function toggleAllSections(expand: boolean) {
+		// SvelteSet is reactive: mutate in place so the template re-renders (a plain `let` reassignment would not).
+		expandedSections.clear();
 		if (expand) {
-			expandedSections = new SvelteSet(DATA.map((s) => s.seccion));
-		} else {
-			expandedSections = new SvelteSet();
+			for (const sec of DATA) expandedSections.add(sec.seccion);
 		}
 	}
 

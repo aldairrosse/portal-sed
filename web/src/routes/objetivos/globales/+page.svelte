@@ -71,16 +71,16 @@
         }
     }
 
-    const weightTimers = new Map<string, ReturnType<typeof setTimeout>>();
+    const weightTimers: Record<string, ReturnType<typeof setTimeout>> = {};
 
     function scheduleWeightSave(goal: GlobalGoal) {
-        const prev = weightTimers.get(goal.id);
+        const prev = weightTimers[goal.id];
         if (prev) clearTimeout(prev);
-        weightTimers.set(goal.id, setTimeout(() => saveWeight(goal.id), 800));
+        weightTimers[goal.id] = setTimeout(() => saveWeight(goal.id), 800);
     }
 
     async function saveWeight(goalId: string) {
-        weightTimers.delete(goalId);
+        delete weightTimers[goalId];
         const goal = goals.find(g => g.id === goalId);
         if (!goal) return;
         savingIds = [...savingIds, goalId];

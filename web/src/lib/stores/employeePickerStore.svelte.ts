@@ -95,8 +95,9 @@ export async function loadMore(): Promise<void> {
 		const nextPage = page + 1;
 		const body = await fetchEmployees(undefined, nextPage * PAGE_SIZE);
 		const fresh = (body.data ?? []).map(toOption);
-		const seen = new Set(items.map(i => i.value));
-		items = [...items, ...fresh.filter(i => !seen.has(i.value))];
+		const seen: Record<string, true> = {};
+		for (const i of items) seen[i.value] = true;
+		items = [...items, ...fresh.filter(i => !seen[i.value])];
 		page = nextPage;
 		hasMore = body.meta?.hasMore ?? false;
 		allLoaded = !hasMore;
