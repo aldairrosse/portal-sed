@@ -4,6 +4,8 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/sed-evaluacion-desempeno/api/internal/auth"
+	pkgerrors "github.com/sed-evaluacion-desempeno/api/internal/pkg/errors"
 	repogoal "github.com/sed-evaluacion-desempeno/api/internal/repository/goal"
 )
 
@@ -71,7 +73,10 @@ func NewGlobalGoalService(repo *repogoal.GlobalGoalRepo) GlobalGoalServicer {
 // CreateGlobalGoal creates a new global goal.
 func (s *globalGoalService) CreateGlobalGoal(ctx context.Context, req CreateGlobalGoalRequest) (*repogoal.GlobalGoalRow, error) {
 	// Get current user from context
-	userID := ctx.Value("user_id").(uuid.UUID)
+	userID, ok := auth.GetEmployeeID(ctx)
+	if !ok {
+		return nil, pkgerrors.NewDomainError(pkgerrors.NotAuthenticated, "no authenticated user", nil)
+	}
 
 	// Convert assignments
 	assignments := make([]*repogoal.GlobalAssignmentRow, 0, len(req.Assignments))

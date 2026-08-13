@@ -5,6 +5,8 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
+	"github.com/sed-evaluacion-desempeno/api/internal/auth"
+	pkgerrors "github.com/sed-evaluacion-desempeno/api/internal/pkg/errors"
 	repogoal "github.com/sed-evaluacion-desempeno/api/internal/repository/goal"
 )
 
@@ -79,7 +81,10 @@ func NewSharedGoalService(repo *repogoal.SharedGoalRepo) SharedGoalServicer {
 
 // CreateSharedGoal creates a new shared goal.
 func (s *sharedGoalService) CreateSharedGoal(ctx context.Context, req CreateSharedGoalRequest) (*repogoal.SharedGoalRow, error) {
-	userID := ctx.Value("user_id").(uuid.UUID)
+	userID, ok := auth.GetEmployeeID(ctx)
+	if !ok {
+		return nil, pkgerrors.NewDomainError(pkgerrors.NotAuthenticated, "no authenticated user", nil)
+	}
 
 	members := make([]*repogoal.SharedMemberRow, 0, len(req.Members))
 	for _, m := range req.Members {
@@ -101,13 +106,19 @@ func (s *sharedGoalService) GetSharedGoal(ctx context.Context, goalID uuid.UUID)
 
 // ListSharedGoalsAsCreator lists shared goals created by the user.
 func (s *sharedGoalService) ListSharedGoalsAsCreator(ctx context.Context) ([]*repogoal.SharedGoalRow, error) {
-	userID := ctx.Value("user_id").(uuid.UUID)
+	userID, ok := auth.GetEmployeeID(ctx)
+	if !ok {
+		return nil, pkgerrors.NewDomainError(pkgerrors.NotAuthenticated, "no authenticated user", nil)
+	}
 	return s.repo.ListSharedGoalsAsCreator(ctx, userID)
 }
 
 // ListSharedGoalsAsMember lists shared goals where the user is a member.
 func (s *sharedGoalService) ListSharedGoalsAsMember(ctx context.Context) ([]*repogoal.SharedGoalRow, error) {
-	userID := ctx.Value("user_id").(uuid.UUID)
+	userID, ok := auth.GetEmployeeID(ctx)
+	if !ok {
+		return nil, pkgerrors.NewDomainError(pkgerrors.NotAuthenticated, "no authenticated user", nil)
+	}
 	return s.repo.ListSharedGoalsAsMember(ctx, userID)
 }
 
@@ -117,7 +128,10 @@ func (s *sharedGoalService) UpdateSharedGoal(ctx context.Context, goalID uuid.UU
 	if err != nil {
 		return nil, err
 	}
-	userID := ctx.Value("user_id").(uuid.UUID)
+	userID, ok := auth.GetEmployeeID(ctx)
+	if !ok {
+		return nil, pkgerrors.NewDomainError(pkgerrors.NotAuthenticated, "no authenticated user", nil)
+	}
 	if goal.CreatedBy != userID {
 		return nil, ErrNotCreator
 	}
@@ -131,7 +145,10 @@ func (s *sharedGoalService) DeleteSharedGoal(ctx context.Context, goalID uuid.UU
 	if err != nil {
 		return err
 	}
-	userID := ctx.Value("user_id").(uuid.UUID)
+	userID, ok := auth.GetEmployeeID(ctx)
+	if !ok {
+		return pkgerrors.NewDomainError(pkgerrors.NotAuthenticated, "no authenticated user", nil)
+	}
 	if goal.CreatedBy != userID {
 		return ErrNotCreator
 	}
@@ -145,7 +162,10 @@ func (s *sharedGoalService) AddMember(ctx context.Context, goalID uuid.UUID, req
 	if err != nil {
 		return nil, err
 	}
-	userID := ctx.Value("user_id").(uuid.UUID)
+	userID, ok := auth.GetEmployeeID(ctx)
+	if !ok {
+		return nil, pkgerrors.NewDomainError(pkgerrors.NotAuthenticated, "no authenticated user", nil)
+	}
 	if goal.CreatedBy != userID {
 		return nil, ErrNotCreator
 	}
@@ -159,7 +179,10 @@ func (s *sharedGoalService) RemoveMember(ctx context.Context, goalID, employeeID
 	if err != nil {
 		return err
 	}
-	userID := ctx.Value("user_id").(uuid.UUID)
+	userID, ok := auth.GetEmployeeID(ctx)
+	if !ok {
+		return pkgerrors.NewDomainError(pkgerrors.NotAuthenticated, "no authenticated user", nil)
+	}
 	if goal.CreatedBy != userID {
 		return ErrNotCreator
 	}
@@ -173,7 +196,10 @@ func (s *sharedGoalService) UpdateProgress(ctx context.Context, goalID, employee
 	if err != nil {
 		return err
 	}
-	userID := ctx.Value("user_id").(uuid.UUID)
+	userID, ok := auth.GetEmployeeID(ctx)
+	if !ok {
+		return pkgerrors.NewDomainError(pkgerrors.NotAuthenticated, "no authenticated user", nil)
+	}
 	if goal.CreatedBy != userID {
 		return ErrNotCreator
 	}
