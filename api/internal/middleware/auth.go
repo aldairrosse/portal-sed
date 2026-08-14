@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"context"
+	"errors"
 	"log"
 	"net/http"
 	"strings"
@@ -80,7 +81,9 @@ func RequireAuth(authSvc *svc.AuthService) func(http.Handler) http.Handler {
 			if err != nil {
 				// Try one refresh before giving up (max 1 retry, no loop)
 				var refreshErr error
-				if sess, getErr := authSvc.SessionStore().GetByToken(r.Context(), token); getErr == nil && sess != nil {
+				var sess *auth.Session
+				if s, getErr := authSvc.SessionStore().GetByToken(r.Context(), token); getErr == nil && s != nil {
+					sess = s
 					if _, refreshErr = authSvc.RefreshTokens(r.Context(), sess); refreshErr == nil {
 						if retryResult, retryErr := authSvc.ValidateSession(r.Context(), token); retryErr == nil && retryResult != nil && retryResult.Session != nil {
 							ctx := auth.WithSession(r.Context(), retryResult.Session, retryResult.Role, retryResult.ProfileID)
@@ -90,16 +93,38 @@ func RequireAuth(authSvc *svc.AuthService) func(http.Handler) http.Handler {
 					}
 				}
 
-			if refreshErr != nil {
-				log.Printf("auth middleware: refresh failed, forcing re-login: %v", refreshErr)
-				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(http.StatusUnauthorized)
-				de := pkgerrors.NewDomainError("SSO_SESSION_EXPIRED",
-					"invalid or expired session", refreshErr)
-				ae := pkgerrors.NewAPIErrorResponse(de, "")
-				_, _ = w.Write(ae.MustMarshalJSON())
-				return
-			}
+				// Transient refresh failure (network/IdP unavailable, session NOT
+				// destroyed) → 502 so the client keeps the session and retries.
+				// Fatal (refresh token permanently invalid) → destroy the local
+				// session and respond 401 SSO_SESSION_EXPIRED so the client
+				// redirects to /login.
+				var fatal *svc.ErrRefreshFatal
+				if refreshErr != nil && !errors.As(refreshErr, &fatal) {
+					log.Printf("auth middleware: transient refresh failure, keeping session alive: %v", refreshErr)
+					w.Header().Set("Content-Type", "application/json")
+					w.WriteHeader(http.StatusBadGateway)
+					de := pkgerrors.NewDomainError("SSO_REFRESH_UNAVAILABLE",
+						"No se pudo renovar la sesión. Intenta de nuevo.", refreshErr)
+					ae := pkgerrors.NewAPIErrorResponse(de, "")
+					_, _ = w.Write(ae.MustMarshalJSON())
+					return
+				}
+
+				if refreshErr != nil {
+					// Fatal: destroy the local session so a stale session can't be
+					// reused, then force re-login.
+					if sess != nil {
+						_ = authSvc.Logout(r.Context(), sess.ID)
+					}
+					log.Printf("auth middleware: refresh failed, forcing re-login: %v", refreshErr)
+					w.Header().Set("Content-Type", "application/json")
+					w.WriteHeader(http.StatusUnauthorized)
+					de := pkgerrors.NewDomainError("SSO_SESSION_EXPIRED",
+						"invalid or expired session", refreshErr)
+					ae := pkgerrors.NewAPIErrorResponse(de, "")
+					_, _ = w.Write(ae.MustMarshalJSON())
+					return
+				}
 			}
 
 			if result == nil || result.Session == nil {
