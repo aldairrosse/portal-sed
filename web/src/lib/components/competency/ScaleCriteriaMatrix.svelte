@@ -9,8 +9,7 @@
 		replaceScaleCriteria
 	} from '$lib/stores/competencyStore.svelte';
 	import type { ScaleCriterion } from '$lib/types/competency';
-
-	const PILLAR_COLORS = ['#D97706', '#7C3AED', '#B45309', '#0369A1'] as const;
+	import { pillarColors } from '$lib/utils/pillarColors';
 
 	interface Props {
 		isAnyInlineEditing?: boolean;
@@ -47,10 +46,6 @@
 
 	function getLevelCriteria(competencyId: string, pillarId: string, level: number): ScaleCriterion[] {
 		return getScaleCriteriaForCell(competencyId, pillarId).filter((c) => c.level === level);
-	}
-
-	function pillarBadgeStyle(index: number): string {
-		return `background-color: ${PILLAR_COLORS[index % PILLAR_COLORS.length]}; color: #fff`;
 	}
 
 	// ─── Inline editing actions ────────────────────────────────────────────
@@ -120,7 +115,7 @@
 	{@const pillarCompetencies = competencies.filter((c) => c.pillarId === pillar.id)}
 	<div class="mb-8">
 		<div class="flex items-center gap-2 mb-3">
-						<div class="badge text-sm px-3 py-2" style={pillarBadgeStyle(i)}>{pillar.name}</div>
+			<div class="badge text-sm px-3 py-2" style={pillarColors(i).badgeStyle}>{pillar.name}</div>
 		</div>
 
 		<div class="overflow-x-auto rounded-box">
