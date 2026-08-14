@@ -1,7 +1,6 @@
 <script lang="ts">
 	import type { NineBoxEntry, NineBoxTier } from '$lib/types/nine-box';
 	import { getQuadrantDef } from '$lib/stores/nineBoxStore.svelte';
-	import { PROFILE_LABELS } from '$lib/types/evaluation';
 	import { X, ChevronRight } from '@lucide/svelte';
 
 	interface Props {
@@ -20,10 +19,6 @@
 	};
 
 	const quadrantDef = $derived(getQuadrantDef(entries[0]?.quadrant ?? 0));
-
-	function getProfileLabel(profileId: string): string {
-		return PROFILE_LABELS[profileId as keyof typeof PROFILE_LABELS] ?? profileId;
-	}
 </script>
 
 <svelte:window onkeydown={(e) => {
@@ -38,7 +33,7 @@
 	onclose={onClose}
 	onclick={(e) => { if (e.target === e.currentTarget) onClose(); }}
 >
-	<div class="modal-box max-w-md">
+	<div class="modal-box max-w-md max-h-[80vh] overflow-hidden flex flex-col">
 		<!-- Header -->
 		<div class="flex items-start justify-between gap-2 mb-4">
 			<div>
@@ -70,7 +65,12 @@
 		</div>
 
 		<!-- Employee list -->
-		<ul class="divide-y divide-base-200">
+		<ul class="divide-y divide-base-200 overflow-y-auto overflow-x-hidden h-full">
+			{#if entries.length === 0}
+				<li class="py-4 text-center text-sm text-base-content/50">
+					No hay empleados en este cuadrante.
+				</li>
+			{:else}
 			{#each entries as entry (entry.id)}
 				<li>
 					<a
@@ -89,12 +89,9 @@
 								<p class="text-sm font-medium text-base-content group-hover:text-primary transition-colors">
 									{entry.employeeName}
 								</p>
-								<p class="text-xs text-base-content/40">
-									{getProfileLabel(entry.profileId)}
-								</p>
 								{#if entry.goalProgressPercent != null || entry.selfRating != null || entry.hrRating != null || entry.weights != null}
 									<p class="text-xs text-base-content/40 mt-0.5">
-										Avance {entry.goalProgressPercent ?? '—'}% · Auto {entry.selfRating ?? '—'} · RH {entry.hrRating ?? '—'} · Pesos {entry.weights?.self != null && entry.weights?.hr != null ? `${entry.weights.self}/${entry.weights.hr}` : '—'}
+										Avance {entry.goalProgressPercent ?? '0'}% · Auto {entry.selfRating ?? '0'} · EV {entry.hrRating ?? '0'} · {entry.weights?.self != null && entry.weights?.hr != null ? `(${entry.weights.self}/${entry.weights.hr})` : '—'}
 									</p>
 								{/if}
 							</div>
@@ -103,6 +100,7 @@
 					</a>
 				</li>
 			{/each}
+			{/if}
 		</ul>
 
 		<!-- Read-only notice -->

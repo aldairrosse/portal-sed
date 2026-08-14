@@ -55,10 +55,12 @@ func (NineBoxMatrix) Edges() []ent.Edge {
 	}
 }
 
-func (NineBoxMatrix) Index() []ent.Index {
+func (NineBoxMatrix) Indexes() []ent.Index {
 	return []ent.Index{
 		index.Fields("cycle_id", "evaluator_id", "phase_id").
-			Unique(),
-		index.Fields("evaluator_id"),
+			Unique().
+			StorageKey("idx_nine_box_matrixes_cycle_eval_phase"),
+		index.Fields("evaluator_id").
+			StorageKey("idx_nine_box_matrixes_evaluator"),
 	}
 }

@@ -43,14 +43,22 @@ func NewNineBoxService(nineBoxRepo NineBoxRepo, catalogRepo CatalogRepo, db DB, 
 }
 
 // CreateMatrix creates a new 9×9 matrix for an evaluator in a cycle.
+// ponytail: legacy endpoint (POST /nine-box/matrices) has no phaseId in its
+// contract, but the matrix model is phase-scoped (phase_id NOT NULL). Derive
+// the cycle's current phase instead of failing; remove when the legacy
+// endpoint is retired.
 func (s *NineBoxService) CreateMatrix(ctx context.Context, cycleID, evaluatorID uuid.UUID) (*dto.NineBoxMatrixResponse, error) {
-	m, err := s.nineBoxRepo.CreateMatrix(ctx, cycleID, evaluatorID)
+	phaseID, err := s.resolvePhase(ctx, cycleID, nil)
+	if err != nil {
+		return nil, err
+	}
+	m, err := s.nineBoxRepo.CreateMatrixWithPhase(ctx, cycleID, evaluatorID, phaseID)
 	if err != nil {
 		return nil, err
 	}
 	return &dto.NineBoxMatrixResponse{
 		ID: m.ID, CycleID: m.CycleID, EvaluatorID: m.EvaluatorID,
-		Entries: []dto.NineBoxEntryDTO{}, CreatedAt: m.CreatedAt, UpdatedAt: m.UpdatedAt,
+		PhaseID: m.PhaseID, Entries: []dto.NineBoxEntryDTO{}, CreatedAt: m.CreatedAt, UpdatedAt: m.UpdatedAt,
 	}, nil
 }
 

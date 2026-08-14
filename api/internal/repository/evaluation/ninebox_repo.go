@@ -43,12 +43,30 @@ func (r *NineBoxRepo) CreateMatrix(ctx context.Context, cycleID, evaluatorID uui
 }
 
 // CreateMatrixWithPhase creates a new 9×9 matrix for an evaluator in a cycle and phase.
+// Resilient to the get-or-create race: with the unique index
+// idx_nine_box_matrixes_cycle_eval_phase the losing writer hits a conflict,
+// so DO NOTHING and refetch the winner's row.
 func (r *NineBoxRepo) CreateMatrixWithPhase(ctx context.Context, cycleID, evaluatorID, phaseID uuid.UUID) (*internal.NineBoxMatrix, error) {
-	return r.client.NineBoxMatrix.Create().
-		SetCycleID(cycleID).
-		SetEvaluatorID(evaluatorID).
-		SetPhaseID(phaseID).
-		Save(ctx)
+	// ponytail: raw SQL because the Ent upsert feature (OnConflict*) is not
+	// enabled in this repo; enabling it would regenerate every builder.
+	// id/created_at/updated_at are explicit params (same pattern as
+	// UpsertEntry) because Ent auto-migrate drops the table defaults.
+	now := time.Now()
+	if _, err := r.db.ExecContext(ctx,
+		`INSERT INTO nine_box_matrixes (id, created_at, updated_at, cycle_id, evaluator_id, phase_id)
+		 VALUES ($1, $2, $3, $4, $5, $6)
+		 ON CONFLICT (cycle_id, evaluator_id, phase_id) DO NOTHING`,
+		uuid.New(), now, now, cycleID, evaluatorID, phaseID,
+	); err != nil {
+		return nil, err
+	}
+	return r.client.NineBoxMatrix.Query().
+		Where(
+			nineboxmatrix.CycleID(cycleID),
+			nineboxmatrix.EvaluatorID(evaluatorID),
+			nineboxmatrix.PhaseID(phaseID),
+		).
+		Only(ctx)
 }
 
 // GetMatrixByID retrieves a matrix by ID with entries preloaded.

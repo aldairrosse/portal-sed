@@ -2,11 +2,12 @@
 
 ## Task 1: DB migration — index + rating source
 
-- [ ] Add goose migration `api/cmd/server/migrations/0000xx_ninebox_phase_unique.sql`:
-  - Drop old unique index `idx_nine_box_matrixes_cycle_eval` on `nine_box_matrixes`
-  - Create unique index `(cycle_id, evaluator_id, phase_id)` matching the Ent schema
-  - Add `source` enum column (`self` | `rh`) to `evaluation_competencies`
-  - Backfill `source` from `evaluations.self_evaluation_completed_at` vs `rh_evaluation_completed_at`
+- [x] Add goose migration for the unique phase index — DDL quedó en `000033_ninebox_phase_unique_and_competency_source.up.sql` (drop índice viejo + `source` enum + backfill) y `000036_ninebox_phase_unique.up.sql`:
+  - [x] Drop old unique index `idx_nine_box_matrixes_cycle_eval` on `nine_box_matrixes`
+  - [x] Create unique index `(cycle_id, evaluator_id, phase_id)` matching the Ent schema
+  - [x] Add `source` enum column (`self` | `rh`) to `evaluation_competencies`
+  - [x] Backfill `source` from `evaluations.self_evaluation_completed_at` vs `rh_evaluation_completed_at`
+- [x] `000036_ninebox_phase_unique.up.sql` incluye: `ADD COLUMN IF NOT EXISTS phase_id` (goose no lo crea; Ent auto-migrate sí), dedupe de matrices duplicadas (conserva `max(id)`, reasigna/descarta `nine_box_entries` antes del DELETE — manejando 3+ duplicados y colisión con `idx_nine_box_entries_matrix_eval`) y `CREATE UNIQUE INDEX idx_nine_box_matrixes_cycle_eval_phase`
 - [ ] Verify against live DB index name before writing DDL
 - [ ] Run migration on a fresh test DB (5433) and confirm `TestMatrixByPhase_TwoPerEvaluator` passes the duplicate-key issue
 

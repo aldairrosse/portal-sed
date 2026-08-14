@@ -91,16 +91,6 @@
         return lum > 0.35 ? "text-black" : "text-white";
     }
 
-    /** Badge class matching the text color for contrast. */
-    function badgeClassForBg(hex: string | undefined): string {
-        if (!hex) return "badge-ghost text-white border-white/40";
-        const lum = relativeLuminance(hex);
-        if (lum > 0.35) {
-            return "badge-ghost text-black/70 border-black/30";
-        }
-        return "badge-ghost text-white border-white/40";
-    }
-
     // ─── Keyboard navigation (WCAG roving tabindex) ───────────────────────────
 
     let activePerf = $state<NineBoxTier>(2);
@@ -254,7 +244,6 @@
                 {@const isActive = activePerf === perf && activePot === pot}
                 {@const cellId = `nb-cell-${quadrant}`}
                 {@const textColor = textColorForBg(qDef?.colorHex)}
-                {@const badgeClass = badgeClassForBg(qDef?.colorHex)}
                 <button
                     type="button"
                     id={cellId}
@@ -308,14 +297,14 @@
                         </a>
                     {/if}
 
+                    {#if count > 0}
+                        <span class="text-sm font-bold {textColor}">{count}</span>
+                    {/if}
                     <span
                         class="text-xs font-semibold {textColor} drop-shadow-sm text-center leading-tight"
                     >
                         {qDef?.title ?? ""}
                     </span>
-                    {#if count > 0}
-                        <span class="badge badge-sm {badgeClass}">{count}</span>
-                    {/if}
                 </button>
             {/each}
         {/each}
