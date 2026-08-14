@@ -2,11 +2,10 @@
     import { getProfile } from '$lib/stores/devContext.svelte';
     import { goto } from '$app/navigation';
     import { onMount } from 'svelte';
-    import { Target, Plus, Globe, Users, Loader2 } from '@lucide/svelte';
+    import { Target, Plus, Globe, Users, Loader2, TrendingDown, TrendingUp } from '@lucide/svelte';
     import WeightIndicator from '$lib/components/goals/WeightIndicator.svelte';
     import { listGlobalGoals, deleteGlobalGoal, executeRules, updateGlobalGoal, type GlobalGoal } from '$lib/api/globalGoals';
     import GlobalGoalCreateForm from '$lib/components/goals/GlobalGoalCreateForm.svelte';
-    import { TrendingDown, TrendingUp } from 'lucide-react';
 
     const profile = $derived(getProfile());
 
