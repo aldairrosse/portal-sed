@@ -75,6 +75,8 @@ export interface UpdateGlobalGoalRequest {
   goal_kind: string;
   weight: number;
   target_value: number;
+  assignments?: CreateAssignmentRequest[];
+  rules?: CreateRuleRequest[];
 }
 
 async function fetchJSON<T>(url: string, options?: RequestInit): Promise<T> {

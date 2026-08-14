@@ -11,6 +11,7 @@
 		value: string;
 		onChange: (value: string) => void;
 		placeholder?: string;
+		initialLabel?: string;
 		ariaLabel?: string;
 		class?: string;
 		searchable?: boolean;
@@ -25,6 +26,7 @@
 		value,
 		onChange,
 		placeholder = 'Seleccionar',
+		initialLabel,
 		ariaLabel,
 		class: className = '',
 		searchable = false,
@@ -52,7 +54,7 @@
 	);
 
 	const selectedLabel = $derived(
-		options.find((o) => o.value === value)?.label ?? placeholder
+		options.find((o) => o.value === value)?.label ?? initialLabel ?? placeholder
 	);
 
 	function close() {
@@ -142,7 +144,7 @@
 	aria-expanded={open}
 	aria-controls={popoverId}
 	aria-label={ariaLabel}
-	class="input input-bordered input-sm w-64 text-left flex items-center justify-between gap-2 cursor-pointer h-8 min-h-0 text-xs truncate flex-shrink-0 {className}"
+	class="input input-bordered input-sm text-left flex items-center justify-between gap-2 cursor-pointer h-8 min-h-0 text-xs truncate {className}"
 >
 	<span class="truncate">{selectedLabel}</span>
 	<span class="flex-shrink-0 transition-transform" class:rotate-180={open}>

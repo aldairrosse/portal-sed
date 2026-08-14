@@ -180,6 +180,7 @@
                                     <div>
                                         <p class="font-medium">{goal.name}</p>
                                         <p class="text-sm text-base-content/60">Target: {formatTarget(goal)}</p>
+                                        <p class="text-xs text-base-content/50">{goal.rules.length} reglas · {goal.assignments.length} asignados</p>
                                     </div>
                                     <div class="flex items-center gap-2">
                                         <div class="flex items-center gap-1">
@@ -257,6 +258,7 @@
                                     <div>
                                         <p class="font-medium">{goal.name}</p>
                                         <p class="text-sm text-base-content/60">Target: {formatTarget(goal)}</p>
+                                        <p class="text-xs text-base-content/50">{goal.rules.length} reglas · {goal.assignments.length} asignados</p>
                                     </div>
                                     <div class="flex items-center gap-2">
                                         <div class="flex items-center gap-1">
@@ -324,6 +326,8 @@
             direction: editGoal.direction as 'ascendente' | 'descendente',
             weight: editGoal.weight,
             target_value: editGoal.target_value,
+            rules: editGoal.rules,
+            assignments: editGoal.assignments,
         } : undefined}
         oncancel={() => { showCreate = false; editGoal = null; }}
         onsaved={() => { showCreate = false; editGoal = null; loadGoals(); }}

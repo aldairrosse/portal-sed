@@ -1,7 +1,8 @@
 <script lang="ts">
     import { Loader2, Plus, Trash2 } from '@lucide/svelte';
     import CustomSelect from '$lib/components/ui/CustomSelect.svelte';
-    import { createGlobalGoal, updateGlobalGoal, type CreateGlobalGoalRequest } from '$lib/api/globalGoals';
+    import { createGlobalGoal, updateGlobalGoal, type CreateGlobalGoalRequest, type CreateAssignmentRequest, type CreateRuleRequest } from '$lib/api/globalGoals';
+    import { client } from '$lib/api/client';
     import { load, getRoot, getNodeById, getScopeIds } from '$lib/stores/orgHierarchyStore.svelte';
     import { loadFirstPage, search, loadMore, getEmployeeOptions, hasMoreEmployees, isLoadingMore } from '$lib/stores/employeePickerStore.svelte';
     import { getProfiles, load as loadCompetencyData } from '$lib/stores/competencyStore.svelte';
@@ -19,6 +20,8 @@
             direction: 'ascendente' | 'descendente';
             weight: number;
             target_value: number;
+            rules?: CreateRuleRequest[];
+            assignments?: CreateAssignmentRequest[];
         };
         oncancel: () => void;
         onsaved: () => void;
@@ -32,11 +35,11 @@
         { value: 'numero', label: 'Número' },
     ];
 
-    const RULE_TYPE_OPTIONS = [
-        { value: 'department', label: 'Por departamento' },
-        { value: 'min_direct_reports', label: 'Mínimo de reportes directos' },
-        { value: 'role', label: 'Por rol' },
-    ];
+    const RULE_TYPE_LABELS: Record<'department' | 'min_direct_reports' | 'role', string> = {
+        department: 'Departamento',
+        min_direct_reports: 'Min. reportes',
+        role: 'Rol',
+    };
 
     const root = $derived(getRoot());
 
@@ -84,13 +87,14 @@
 
     $effect(() => {
         if (open) {
-            if (initial) {
-                name = initial.name;
-                description = initial.description;
-                unit = initial.unit;
-                direction = initial.direction;
-                weight = initial.weight;
-                targetValue = initial.target_value;
+            const init = initial;
+            if (init) {
+                name = init.name;
+                description = init.description;
+                unit = init.unit;
+                direction = init.direction;
+                weight = init.weight;
+                targetValue = init.target_value;
             } else {
                 name = '';
                 description = '';
@@ -99,8 +103,20 @@
                 weight = 0;
                 targetValue = 0;
             }
-            assignments = [];
-            rules = [];
+            assignments = (init?.assignments ?? []).map(a => ({
+                employeeId: a.employee_id,
+                employeeName: '',
+                weight: a.weight,
+                targetValue: a.target_value,
+            }));
+            rules = (init?.rules ?? []).map(r => ({
+                ruleType: r.rule_type === 'min_direct_reports' ? 'min_direct_reports' : r.rule_type === 'role' ? 'role' : 'department',
+                departmentId: r.department_id ?? '',
+                minDirectReports: r.min_direct_reports ?? 0,
+                profileId: r.profile_id ?? '',
+                defaultWeight: r.default_weight,
+                defaultTarget: r.default_target ?? 100,
+            }));
             employeeSelect = '';
             error = '';
             saving = false;
@@ -112,11 +128,33 @@
                 pickerInitialized = true;
                 loadFirstPage();
             }
+            if (goalId && init?.assignments && init.assignments.length > 0) {
+                resolveAssignmentNames();
+            }
         }
     });
 
+    async function resolveEmployeeName(employeeId: string): Promise<string> {
+        const fromPicker = employeeOptions.find(o => o.value === employeeId);
+        if (fromPicker) return fromPicker.label;
+        const res = await client.GET('/employees/{empId}', {
+            params: { path: { empId: employeeId } },
+        });
+        const data = (res.data as { data?: { firstName?: string; lastName?: string } })?.data;
+        return data ? `${data.firstName} ${data.lastName}`.trim() : employeeId;
+    }
+
+    async function resolveAssignmentNames() {
+        const resolved = await Promise.all(assignments.map(async a => {
+            if (a.employeeName) return a;
+            const name = await resolveEmployeeName(a.employeeId);
+            return { ...a, employeeName: name || a.employeeId };
+        }));
+        assignments = resolved;
+    }
+
     function addAssignment() {
-        const emp = employeeOptions.find(o => o.value === employeeSelect) ?? employeeOptions[0];
+        const emp = employeeOptions.find(o => o.value === employeeSelect);
         if (!emp) return;
         if (assignments.some(a => a.employeeId === emp.value)) return;
         assignments = [...assignments, { employeeId: emp.value, employeeName: emp.label, weight: 0, targetValue: 0 }];
@@ -126,26 +164,30 @@
         assignments = assignments.filter((_, i) => i !== index);
     }
 
-    function addRule() {
-        const used = rules.map(r => r.ruleType);
-        const firstFree = RULE_TYPE_OPTIONS.find(o => !used.includes(o.value as 'department' | 'min_direct_reports' | 'role'))?.value as 'department' | 'min_direct_reports' | 'role' ?? 'department';
-        rules = [...rules, { ruleType: firstFree, departmentId: departmentOptions[0]?.value ?? '', minDirectReports: 0, profileId: '', defaultWeight: 0, defaultTarget: 100 }];
+    function addDepartmentRule() {
+        rules = [...rules, { ruleType: 'department', departmentId: departmentOptions[0]?.value ?? '', minDirectReports: 0, profileId: '', defaultWeight: 0, defaultTarget: 100 }];
     }
 
-    function ruleTypeOptionsFor(index: number) {
-        const usedByOthers = rules
-            .map((r, i) => (i === index ? null : r.ruleType))
-            .filter((t): t is 'department' | 'min_direct_reports' | 'role' => t !== null);
-        return RULE_TYPE_OPTIONS.filter(o => !usedByOthers.includes(o.value as 'department' | 'min_direct_reports' | 'role'));
+    function addRoleRule() {
+        rules = [...rules, { ruleType: 'role', departmentId: '', minDirectReports: 0, profileId: '', defaultWeight: 0, defaultTarget: 100 }];
+    }
+
+    function addMinReportsRule() {
+        rules = [...rules, { ruleType: 'min_direct_reports', departmentId: '', minDirectReports: 0, profileId: '', defaultWeight: 0, defaultTarget: 100 }];
     }
 
     function removeRule(index: number) {
         rules = rules.filter((_, i) => i !== index);
     }
 
-    function changeRuleType(index: number, value: string) {
-        const ruleType = value === 'min_direct_reports' ? 'min_direct_reports' : value === 'role' ? 'role' : 'department';
-        rules = rules.map((r, i) => i === index ? { ...r, ruleType, departmentId: '', minDirectReports: 0, profileId: '' } : r);
+    function departmentLabel(deptId: string): string {
+        if (!deptId) return '';
+        return departmentOptions.find(o => o.value === deptId)?.label ?? getNodeById(deptId)?.name ?? '';
+    }
+
+    function profileLabel(profileId: string): string {
+        if (!profileId) return '';
+        return profileOptions.find(o => o.value === profileId)?.label ?? '';
     }
 
     function validate(): string {
@@ -163,7 +205,7 @@
             if (r.ruleType === 'role' && !r.profileId) return 'Selecciona un perfil';
             if (r.ruleType === 'min_direct_reports' && !(r.minDirectReports > 0)) return 'El mínimo de reportes directos debe ser mayor a 0';
         }
-        if (new Set(rules.map(r => r.ruleType)).size !== rules.length) return 'No pueden repetirse reglas del mismo tipo';
+        if (rules.filter(r => r.ruleType === 'min_direct_reports').length > 1) return 'Solo puede haber una regla de mínimo de reportes directos';
         return '';
     }
 
@@ -173,6 +215,21 @@
         error = '';
         saving = true;
         try {
+            const assignmentsPayload = assignments.length > 0
+                ? assignments.map(a => ({
+                    employee_id: a.employeeId,
+                    weight: a.weight,
+                    target_value: a.targetValue,
+                }))
+                : undefined;
+            const rulesPayload = rules.length > 0
+                ? rules.map(r => ({
+                    rule_type: r.ruleType,
+                    ...(r.ruleType === 'department' ? { department_id: r.departmentId } : r.ruleType === 'role' ? { profile_id: r.profileId } : { min_direct_reports: r.minDirectReports }),
+                    default_weight: r.defaultWeight,
+                    default_target: r.defaultTarget ?? 100,
+                }))
+                : undefined;
             if (goalId) {
                 await updateGlobalGoal(goalId, {
                     name: name.trim(),
@@ -182,6 +239,8 @@
                     goal_kind: goalKind,
                     weight,
                     target_value: targetValue,
+                    assignments: assignmentsPayload,
+                    rules: rulesPayload,
                 });
             } else {
                 const request: CreateGlobalGoalRequest = {
@@ -192,21 +251,8 @@
                     goal_kind: goalKind,
                     weight,
                     target_value: targetValue,
-                    assignments: assignments.length > 0
-                        ? assignments.map(a => ({
-                            employee_id: a.employeeId,
-                            weight: a.weight,
-                            target_value: a.targetValue,
-                        }))
-                        : undefined,
-                    rules: rules.length > 0
-                        ? rules.map(r => ({
-                            rule_type: r.ruleType,
-                            ...(r.ruleType === 'department' ? { department_id: r.departmentId } : r.ruleType === 'role' ? { profile_id: r.profileId } : { min_direct_reports: r.minDirectReports }),
-                            default_weight: r.defaultWeight,
-                            default_target: r.defaultTarget ?? 100,
-                        }))
-                        : undefined,
+                    assignments: assignmentsPayload,
+                    rules: rulesPayload,
                 };
                 await createGlobalGoal(request);
             }
@@ -234,13 +280,13 @@
             <div class="alert alert-error text-sm mb-3" role="alert"><span>{error}</span></div>
         {/if}
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
-            <div class="form-control">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-3">
+            <div class="form-control sm:col-span-2 lg:col-span-3">
                 <label class="label" for="global-goal-name"><span class="label-text text-xs">Nombre de la meta</span></label>
                 <input id="global-goal-name" type="text" class="input input-bordered input-sm w-full"
                     bind:value={name} placeholder="Nombre" required />
             </div>
-            <div class="form-control">
+            <div class="form-control sm:col-span-2 lg:col-span-3">
                 <label class="label" for="global-goal-desc"><span class="label-text text-xs">Descripción</span></label>
                 <textarea id="global-goal-desc" class="textarea textarea-bordered textarea-sm w-full"
                     rows={1} bind:value={description} placeholder="Descripción"></textarea>
@@ -252,6 +298,7 @@
                     value={unit}
                     onChange={(v) => { unit = v; }}
                     ariaLabel="Unidad"
+                    class="w-full"
                 />
             </div>
             <div class="form-control">
@@ -285,7 +332,6 @@
             </div>
         </div>
 
-        {#if !goalId}
         <!-- Asignación a empleados -->
         <div class="border border-base-300 rounded-lg p-3 mb-3">
             <div class="flex items-center justify-between mb-2">
@@ -296,6 +342,7 @@
                         value={employeeSelect}
                         onChange={(v) => { employeeSelect = v; }}
                         ariaLabel="Empleado"
+                        class="w-64"
                         searchable
                         onSearch={(q) => search(q)}
                         loadMore={() => loadMore()}
@@ -341,9 +388,18 @@
         <div class="border border-base-300 rounded-lg p-3 mb-3">
             <div class="flex items-center justify-between mb-2">
                 <span class="label-text text-xs font-semibold">Reglas de asignación (opcional)</span>
-                <button class="btn btn-outline btn-sm" onclick={addRule} type="button" disabled={rules.length >= RULE_TYPE_OPTIONS.length}>
-                    <Plus class="w-4 h-4" /> Agregar regla
-                </button>
+                <div class="flex items-center gap-2">
+                    <button class="btn btn-outline btn-xs" onclick={addDepartmentRule} type="button">
+                        <Plus class="w-3 h-3" /> Agregar departamento
+                    </button>
+                    <button class="btn btn-outline btn-xs" onclick={addRoleRule} type="button">
+                        <Plus class="w-3 h-3" /> Agregar rol
+                    </button>
+                    <button class="btn btn-outline btn-xs" onclick={addMinReportsRule} type="button"
+                        disabled={rules.some(r => r.ruleType === 'min_direct_reports')}>
+                        <Plus class="w-3 h-3" /> Mínimo de reportes
+                    </button>
+                </div>
             </div>
             {#if rules.length > 0}
             <div class="flex items-center gap-2 px-1 mb-1">
@@ -358,18 +414,15 @@
                 <div class="space-y-2">
                     {#each rules as r, i (i)}
                         <div class="flex items-center gap-2">
-                            <CustomSelect
-                                options={ruleTypeOptionsFor(i)}
-                                value={r.ruleType}
-                                onChange={(v) => changeRuleType(i, v)}
-                                ariaLabel="Tipo de regla"
-                            />
+                            <span class="badge badge-sm badge-outline flex-shrink-0">{RULE_TYPE_LABELS[r.ruleType]}</span>
                             {#if r.ruleType === 'department'}
                                 <CustomSelect
                                     options={departmentOptions}
                                     value={r.departmentId}
                                     onChange={(v) => { r.departmentId = v; }}
                                     ariaLabel="Departamento"
+                                    initialLabel={departmentLabel(r.departmentId)}
+                                    class="w-64"
                                 />
                             {:else if r.ruleType === 'role'}
                                 <CustomSelect
@@ -377,6 +430,8 @@
                                     value={r.profileId}
                                     onChange={(v) => { r.profileId = v; }}
                                     ariaLabel="Perfil"
+                                    initialLabel={profileLabel(r.profileId)}
+                                    class="w-64"
                                 />
                             {:else}
                                 <div class="form-control w-32">
@@ -403,7 +458,6 @@
                 </div>
             {/if}
         </div>
-        {/if}
 
         <div class="modal-action">
             <button class="btn btn-ghost btn-sm" onclick={oncancel} disabled={saving} type="button">Cancelar</button>
