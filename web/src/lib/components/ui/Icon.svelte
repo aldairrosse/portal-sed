@@ -92,7 +92,7 @@
 </script>
 
 <span
-	class="icon {variant} {className ?? ''}"
+	class="icon icon-{variant} {className ?? ''}"
 	style="display:inline-flex;position:relative;width:{size}px;height:{size}px;{color ? `color:${color};` : ''}"
 	aria-label={ariaLabel}
 	role={role}
@@ -113,7 +113,7 @@
 
 	/* Tint outline icons (hardcoded fill="#5E5E5E" is a presentation attribute, CSS wins).
 	   Colorfull icons keep their gradient url(#...) fills. */
-	.outline :global(svg path) {
+	.icon-outline :global(svg path) {
 		fill: currentColor;
 	}
 </style>

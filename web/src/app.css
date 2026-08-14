@@ -120,7 +120,10 @@
 }
 
 /* === GLOBAL RESETS === */
-* {
+.card,
+.btn,
+.input,
+.navbar {
 	box-shadow: none !important;
 }
 
