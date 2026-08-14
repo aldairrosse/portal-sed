@@ -293,9 +293,9 @@
 
         {#if profile !== "director-general"}
             <!-- Progress -->
-            <section class="lg:col-span-4 bg-(--color-base) rounded-xl">
+            <section class="lg:col-span-4 bg-(--color-base) rounded-xl px-4 pt-3 pb-6">
                 <h2
-                    class="text-sm font-bold text-base-content px-4 py-3 tracking-wide mb-3"
+                    class="text-sm font-bold text-base-content tracking-wide mb-6"
                 >
                     Tu progreso del ciclo
                 </h2>

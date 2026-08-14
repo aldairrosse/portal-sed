@@ -647,15 +647,11 @@
                         class="text-2xl font-bold text-base-content flex items-center gap-2"
                     >
                         <Target class="w-6 h-6" />
-                        {phase === "medio-anio"
-                            ? "Avance de metas"
-                            : phase === "fin-anio"
-                              ? "Evaluación anual"
-                              : "Asignación anual"}
+                        Metas
                     </h1>
                     <p class="text-sm text-base-content/50 mt-1">
                         {phase === "medio-anio"
-                            ? "Registre el avance de sus metas y agregue comentarios."
+                            ? "Registre el avance de sus metas o agregue sus comentarios."
                             : "Defina las categorías y metas para el período de evaluación."}
                     </p>
                 </div>
@@ -850,37 +846,6 @@
                     <p class="text-sm text-base-content/50">No hay metas cualitativas institucionales.</p>
                 {/each}
 
-                {#each categories as cat (cat.id)}
-                    {@const catGoals = getGoalsByCategory(cat.id).filter((g) => g.goalKind !== "quantitative")}
-                    {#if catGoals.length > 0 || getGoalsByCategory(cat.id).length === 0}
-                        <CategoryCard
-                            category={cat}
-                            goals={catGoals}
-                            {getKpisForGoal}
-                            onSaveCategory={handleSaveCategory}
-                            onDeleteCategory={handleDeleteCategory}
-                            onSaveGoal={handleSaveGoal}
-                            onDeleteGoal={handleDeleteGoal}
-                            {mode}
-                            pillars={pillarOptions}
-                            onRequestChangeCategory={handleRequestChangeCategory}
-                            onSaveProposal={handleSaveProposal}
-                            onAcceptProposal={handleAcceptProposal}
-                            onRejectProposal={handleRejectProposal}
-                            {phase}
-                            canDelete={permissions.canDelete}
-                            canAddGoal={permissions.canDelete}
-                            canEditCategory={permissions.canEditWeight}
-                            canEditProgress={permissions.canEditProgress}
-                            canComment={permissions.canComment}
-                            {allKpis}
-                            bind:isAnyInlineEditing
-                            onUpdateProgress={handleUpdateProgress}
-                            onOpenComments={openComments}
-                            onOpenCategoryComments={openCategoryComments}
-                        />
-                    {/if}
-                {/each}
             </div>
         </details>
 
@@ -907,37 +872,45 @@
                 {#if categories.length > 0}
                     <div class="space-y-4 min-w-0">
                         {#each categories as cat (cat.id)}
-                            {@const catGoals = getGoalsByCategory(cat.id).filter((g) => g.goalKind === "quantitative")}
-                            {#if catGoals.length > 0}
-                                <CategoryCard
-                                    category={cat}
-                                    goals={catGoals}
-                                    {getKpisForGoal}
-                                    onSaveCategory={handleSaveCategory}
-                                    onDeleteCategory={handleDeleteCategory}
-                                    onSaveGoal={handleSaveGoal}
-                                    onDeleteGoal={handleDeleteGoal}
-                                    {mode}
-                                    pillars={pillarOptions}
-                                    onRequestChangeCategory={handleRequestChangeCategory}
-                                    onSaveProposal={handleSaveProposal}
-                                    onAcceptProposal={handleAcceptProposal}
-                                    onRejectProposal={handleRejectProposal}
-                                    {phase}
-                                    canDelete={permissions.canDelete}
-                                    canAddGoal={permissions.canDelete}
-                                    canEditCategory={permissions.canEditWeight}
-                                    canEditProgress={permissions.canEditProgress}
-                                    canComment={permissions.canComment}
-                                    {allKpis}
-                                    bind:isAnyInlineEditing
-                                    onUpdateProgress={handleUpdateProgress}
-                                    onOpenComments={openComments}
-                                    onOpenCategoryComments={openCategoryComments}
-                                />
-                            {/if}
+                            <CategoryCard
+                                category={cat}
+                                goals={getGoalsByCategory(cat.id)}
+                                {getKpisForGoal}
+                                onSaveCategory={handleSaveCategory}
+                                onDeleteCategory={handleDeleteCategory}
+                                onSaveGoal={handleSaveGoal}
+                                onDeleteGoal={handleDeleteGoal}
+                                {mode}
+                                pillars={pillarOptions}
+                                onRequestChangeCategory={handleRequestChangeCategory}
+                                onSaveProposal={handleSaveProposal}
+                                onAcceptProposal={handleAcceptProposal}
+                                onRejectProposal={handleRejectProposal}
+                                {phase}
+                                canDelete={permissions.canDelete}
+                                canAddGoal={permissions.canDelete}
+                                canEditCategory={permissions.canEditWeight}
+                                canEditProgress={permissions.canEditProgress}
+                                canComment={permissions.canComment}
+                                {allKpis}
+                                bind:isAnyInlineEditing
+                                onUpdateProgress={handleUpdateProgress}
+                                onOpenComments={openComments}
+                                onOpenCategoryComments={openCategoryComments}
+                            />
                         {/each}
                     </div>
+                    {#if !creatingCategory && mode === "editor" && phase !== "medio-anio" && phase !== "fin-anio"}
+                        <div class="flex justify-center">
+                            <button
+                                class="btn btn-outline btn-primary"
+                                disabled={isAnyInlineEditing}
+                                onclick={startCreateCategory}
+                            >
+                                <Plus class="w-4 h-4" /> Nueva categoría
+                            </button>
+                        </div>
+                    {/if}
                 {:else if !creatingCategory && mode === "editor" && phase !== "medio-anio" && phase !== "fin-anio"}
                     <EmptyState
                         title="Sin categorías"
@@ -946,13 +919,8 @@
                         onaction={startCreateCategory}
                     />
                 {/if}
-            </div>
-        </details>
 
-        <!-- Nueva categoría inline form -->
-        {#if mode === "editor" && phase !== "medio-anio" && phase !== "fin-anio"}
-            <div class="pt-2">
-                {#if creatingCategory}
+                {#if creatingCategory && mode === "editor" && phase !== "medio-anio" && phase !== "fin-anio"}
                     <CategoryCreateForm
                         mode="create"
                         pillars={pillarOptions}
@@ -962,19 +930,9 @@
                             isAnyInlineEditing = false;
                         }}
                     />
-                {:else if categories.length > 0}
-                    <div class="flex justify-center">
-                        <button
-                            class="btn btn-outline btn-primary"
-                            disabled={isAnyInlineEditing}
-                            onclick={startCreateCategory}
-                        >
-                            <Plus class="w-4 h-4" /> Nueva categoría
-                        </button>
-                    </div>
                 {/if}
             </div>
-        {/if}
+        </details>
     </div>
 {/if}
 
