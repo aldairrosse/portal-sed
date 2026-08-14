@@ -270,6 +270,12 @@ func (_u *GoalUpdate) SetNillableCategoryID(v *uuid.UUID) *GoalUpdate {
 	return _u
 }
 
+// ClearCategoryID clears the value of the "category_id" field.
+func (_u *GoalUpdate) ClearCategoryID() *GoalUpdate {
+	_u.mutation.ClearCategoryID()
+	return _u
+}
+
 // SetType sets the "type" field.
 func (_u *GoalUpdate) SetType(v goal.Type) *GoalUpdate {
 	_u.mutation.SetType(v)
@@ -582,9 +588,6 @@ func (_u *GoalUpdate) check() error {
 		if err := goal.GoalKindValidator(v); err != nil {
 			return &ValidationError{Name: "goal_kind", err: fmt.Errorf(`internal: validator failed for field "Goal.goal_kind": %w`, err)}
 		}
-	}
-	if _u.mutation.CategoryCleared() && len(_u.mutation.CategoryIDs()) > 0 {
-		return errors.New(`internal: clearing a required unique edge "Goal.category"`)
 	}
 	return nil
 }
@@ -1179,6 +1182,12 @@ func (_u *GoalUpdateOne) SetNillableCategoryID(v *uuid.UUID) *GoalUpdateOne {
 	return _u
 }
 
+// ClearCategoryID clears the value of the "category_id" field.
+func (_u *GoalUpdateOne) ClearCategoryID() *GoalUpdateOne {
+	_u.mutation.ClearCategoryID()
+	return _u
+}
+
 // SetType sets the "type" field.
 func (_u *GoalUpdateOne) SetType(v goal.Type) *GoalUpdateOne {
 	_u.mutation.SetType(v)
@@ -1504,9 +1513,6 @@ func (_u *GoalUpdateOne) check() error {
 		if err := goal.GoalKindValidator(v); err != nil {
 			return &ValidationError{Name: "goal_kind", err: fmt.Errorf(`internal: validator failed for field "Goal.goal_kind": %w`, err)}
 		}
-	}
-	if _u.mutation.CategoryCleared() && len(_u.mutation.CategoryIDs()) > 0 {
-		return errors.New(`internal: clearing a required unique edge "Goal.category"`)
 	}
 	return nil
 }

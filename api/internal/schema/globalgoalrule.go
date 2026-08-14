@@ -4,7 +4,6 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
-	"entgo.io/ent/schema/index"
 	"github.com/google/uuid"
 )
 
@@ -62,8 +61,8 @@ func (GlobalGoalRule) Edges() []ent.Edge {
 	}
 }
 
+// Index returns no unique index on (goal_id, rule_type): a goal may hold
+// multiple rules of the same type (e.g. one per department).
 func (GlobalGoalRule) Index() []ent.Index {
-	return []ent.Index{
-		index.Fields("goal_id", "rule_type").Unique(),
-	}
+	return nil
 }

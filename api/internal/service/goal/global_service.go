@@ -52,13 +52,15 @@ type CreateRuleRequest struct {
 
 // UpdateGlobalGoalRequest is the request body for updating a global goal.
 type UpdateGlobalGoalRequest struct {
-	Name        string  `json:"name" validate:"required"`
-	Description string  `json:"description"`
-	Unit        string  `json:"unit" validate:"required,oneof=porcentaje moneda numero"`
-	Direction   string  `json:"direction" validate:"required,oneof=ascendente descendente"`
-	GoalKind    string  `json:"goal_kind" validate:"required,oneof=qualitative quantitative"`
-	Weight      float64 `json:"weight" validate:"required,min=0,max=100"`
-	TargetValue float64 `json:"target_value" validate:"required,gt=0"`
+	Name        string                    `json:"name" validate:"required"`
+	Description string                    `json:"description"`
+	Unit        string                    `json:"unit" validate:"required,oneof=porcentaje moneda numero"`
+	Direction   string                    `json:"direction" validate:"required,oneof=ascendente descendente"`
+	GoalKind    string                    `json:"goal_kind" validate:"required,oneof=qualitative quantitative"`
+	Weight      float64                   `json:"weight" validate:"required,min=0,max=100"`
+	TargetValue float64                   `json:"target_value" validate:"required,gt=0"`
+	Assignments []CreateAssignmentRequest `json:"assignments"`
+	Rules       []CreateRuleRequest       `json:"rules"`
 }
 
 // globalGoalService implements GlobalGoalServicer.
@@ -122,7 +124,35 @@ func (s *globalGoalService) ListGlobalGoals(ctx context.Context, cycleID uuid.UU
 
 // UpdateGlobalGoal updates a global goal.
 func (s *globalGoalService) UpdateGlobalGoal(ctx context.Context, goalID uuid.UUID, req UpdateGlobalGoalRequest) (*repogoal.GlobalGoalRow, error) {
-	return s.repo.UpdateGlobalGoal(ctx, goalID, req.Name, req.Description, req.Unit, req.Direction, req.GoalKind, req.Weight, req.TargetValue, 0)
+	// Convert assignments
+	assignments := make([]*repogoal.GlobalAssignmentRow, 0, len(req.Assignments))
+	for _, a := range req.Assignments {
+		assignments = append(assignments, &repogoal.GlobalAssignmentRow{
+			EmployeeID:    a.EmployeeID,
+			Weight:        a.Weight,
+			TargetValue:   a.TargetValue,
+			BaselineValue: a.BaselineValue,
+		})
+	}
+
+	// Convert rules
+	rules := make([]*repogoal.GlobalRuleRow, 0, len(req.Rules))
+	for _, r := range req.Rules {
+		defaultTarget := r.DefaultTarget
+		if defaultTarget == 0 {
+			defaultTarget = 100
+		}
+		rules = append(rules, &repogoal.GlobalRuleRow{
+			RuleType:         r.RuleType,
+			DepartmentID:     r.DepartmentID,
+			MinDirectReports: r.MinDirectReports,
+			ProfileID:        r.ProfileID,
+			DefaultWeight:    r.DefaultWeight,
+			DefaultTarget:    defaultTarget,
+		})
+	}
+
+	return s.repo.UpdateGlobalGoal(ctx, goalID, req.Name, req.Description, req.Unit, req.Direction, req.GoalKind, req.Weight, req.TargetValue, assignments, rules)
 }
 
 // DeleteGlobalGoal deletes a global goal.

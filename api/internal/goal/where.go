@@ -706,6 +706,16 @@ func CategoryIDNotIn(vs ...uuid.UUID) predicate.Goal {
 	return predicate.Goal(sql.FieldNotIn(FieldCategoryID, vs...))
 }
 
+// CategoryIDIsNil applies the IsNil predicate on the "category_id" field.
+func CategoryIDIsNil() predicate.Goal {
+	return predicate.Goal(sql.FieldIsNull(FieldCategoryID))
+}
+
+// CategoryIDNotNil applies the NotNil predicate on the "category_id" field.
+func CategoryIDNotNil() predicate.Goal {
+	return predicate.Goal(sql.FieldNotNull(FieldCategoryID))
+}
+
 // TypeEQ applies the EQ predicate on the "type" field.
 func TypeEQ(v Type) predicate.Goal {
 	return predicate.Goal(sql.FieldEQ(FieldType, v))

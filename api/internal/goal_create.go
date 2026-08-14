@@ -173,6 +173,14 @@ func (_c *GoalCreate) SetCategoryID(v uuid.UUID) *GoalCreate {
 	return _c
 }
 
+// SetNillableCategoryID sets the "category_id" field if the given value is not nil.
+func (_c *GoalCreate) SetNillableCategoryID(v *uuid.UUID) *GoalCreate {
+	if v != nil {
+		_c.SetCategoryID(*v)
+	}
+	return _c
+}
+
 // SetType sets the "type" field.
 func (_c *GoalCreate) SetType(v goal.Type) *GoalCreate {
 	_c.mutation.SetType(v)
@@ -433,9 +441,6 @@ func (_c *GoalCreate) check() error {
 			return &ValidationError{Name: "state", err: fmt.Errorf(`internal: validator failed for field "Goal.state": %w`, err)}
 		}
 	}
-	if _, ok := _c.mutation.CategoryID(); !ok {
-		return &ValidationError{Name: "category_id", err: errors.New(`internal: missing required field "Goal.category_id"`)}
-	}
 	if _, ok := _c.mutation.GetType(); !ok {
 		return &ValidationError{Name: "type", err: errors.New(`internal: missing required field "Goal.type"`)}
 	}
@@ -448,9 +453,6 @@ func (_c *GoalCreate) check() error {
 		if err := goal.GoalKindValidator(v); err != nil {
 			return &ValidationError{Name: "goal_kind", err: fmt.Errorf(`internal: validator failed for field "Goal.goal_kind": %w`, err)}
 		}
-	}
-	if len(_c.mutation.CategoryIDs()) == 0 {
-		return &ValidationError{Name: "category", err: errors.New(`internal: missing required edge "Goal.category"`)}
 	}
 	return nil
 }
@@ -565,7 +567,7 @@ func (_c *GoalCreate) createSpec() (*Goal, *sqlgraph.CreateSpec) {
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
-		_node.CategoryID = nodes[0]
+		_node.CategoryID = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := _c.mutation.KpiLinksIDs(); len(nodes) > 0 {

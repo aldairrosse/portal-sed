@@ -23,6 +23,8 @@ import (
 	repogoal "github.com/sed-evaluacion-desempeno/api/internal/repository/goal"
 )
 
+func ptrUUID(v uuid.UUID) *uuid.UUID { return &v }
+
 // ---------------------------------------------------------------------------
 // Happy path (17 endpoints)
 // ---------------------------------------------------------------------------
@@ -140,7 +142,7 @@ func TestCreateGoal_Success(t *testing.T) {
 		createFunc: func(ctx context.Context, eid, cid uuid.UUID, req dtogoal.CreateGoalRequest) (*repogoal.GoalRow, error) {
 			require.Equal(t, empID, eid)
 			require.Equal(t, catID, cid)
-			return &repogoal.GoalRow{ID: goalID, CategoryID: catID, Name: req.Name, Weight: req.Weight, Unit: req.Unit, TargetValue: req.TargetValue, State: "borrador", Version: 1, CreatedAt: fixedTime(), UpdatedAt: fixedTime()}, nil
+			return &repogoal.GoalRow{ID: goalID, CategoryID: &catID, Name: req.Name, Weight: req.Weight, Unit: req.Unit, TargetValue: req.TargetValue, State: "borrador", Version: 1, CreatedAt: fixedTime(), UpdatedAt: fixedTime()}, nil
 		},
 	}
 
@@ -168,7 +170,7 @@ func TestUpdateGoal_Success(t *testing.T) {
 		updateFunc: func(ctx context.Context, eid, gid uuid.UUID, req dtogoal.UpdateGoalRequest) (*repogoal.GoalRow, error) {
 			require.Equal(t, empID, eid)
 			require.Equal(t, goalID, gid)
-			return &repogoal.GoalRow{ID: goalID, CategoryID: uuid.MustParse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"), Name: req.Name, Weight: req.Weight, Unit: req.Unit, TargetValue: req.TargetValue, Version: req.Version + 1, CreatedAt: fixedTime(), UpdatedAt: fixedTime()}, nil
+			return &repogoal.GoalRow{ID: goalID, CategoryID: ptrUUID(uuid.MustParse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")), Name: req.Name, Weight: req.Weight, Unit: req.Unit, TargetValue: req.TargetValue, Version: req.Version + 1, CreatedAt: fixedTime(), UpdatedAt: fixedTime()}, nil
 		},
 	}
 
@@ -229,7 +231,7 @@ func TestUpdateGoalProgress_Success(t *testing.T) {
 		updateFunc: func(ctx context.Context, eid, gid uuid.UUID, req dtogoal.UpdateProgressRequest) (*repogoal.GoalRow, error) {
 			require.Equal(t, empID, eid)
 			require.Equal(t, goalID, gid)
-			return &repogoal.GoalRow{ID: goalID, CategoryID: uuid.MustParse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"), Name: "Ventas", CurrentValue: req.CurrentValue, Version: 2, CreatedAt: fixedTime(), UpdatedAt: fixedTime()}, nil
+			return &repogoal.GoalRow{ID: goalID, CategoryID: ptrUUID(uuid.MustParse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")), Name: "Ventas", CurrentValue: req.CurrentValue, Version: 2, CreatedAt: fixedTime(), UpdatedAt: fixedTime()}, nil
 		},
 	}
 
@@ -381,7 +383,7 @@ func TestLinkKPI_Success(t *testing.T) {
 
 	goalRepo := &mockGoalRepo{
 		getFunc: func(ctx context.Context, id uuid.UUID) (*repogoal.GoalRow, error) {
-			return &repogoal.GoalRow{ID: goalID, CategoryID: uuid.MustParse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"), Name: "Ventas", Version: 1, CreatedAt: fixedTime(), UpdatedAt: fixedTime()}, nil
+			return &repogoal.GoalRow{ID: goalID, CategoryID: ptrUUID(uuid.MustParse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")), Name: "Ventas", Version: 1, CreatedAt: fixedTime(), UpdatedAt: fixedTime()}, nil
 		},
 	}
 
@@ -461,7 +463,7 @@ func TestGetAssignment_Success(t *testing.T) {
 	goalRepo := &mockGoalRepo{
 		listByCategoryFunc: func(ctx context.Context, catID uuid.UUID) ([]*repogoal.GoalRow, error) {
 			return []*repogoal.GoalRow{
-				{ID: uuid.MustParse("cccccccc-cccc-cccc-cccc-cccccccccccc"), CategoryID: catID, Name: "Meta 1", Weight: 100, Version: 1, CreatedAt: fixedTime(), UpdatedAt: fixedTime()},
+				{ID: uuid.MustParse("cccccccc-cccc-cccc-cccc-cccccccccccc"), CategoryID: &catID, Name: "Meta 1", Weight: 100, Version: 1, CreatedAt: fixedTime(), UpdatedAt: fixedTime()},
 			}, nil
 		},
 	}
@@ -526,7 +528,7 @@ func TestBatchGoals_Success(t *testing.T) {
 		batchFunc: func(ctx context.Context, id uuid.UUID, req dtogoal.BatchGoalRequest) ([]*repogoal.GoalRow, error) {
 			require.Equal(t, empID, id)
 			return []*repogoal.GoalRow{
-				{ID: goalID, CategoryID: uuid.MustParse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"), Name: "Batch goal", Weight: 50, Version: 1, CreatedAt: fixedTime(), UpdatedAt: fixedTime()},
+				{ID: goalID, CategoryID: ptrUUID(uuid.MustParse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")), Name: "Batch goal", Weight: 50, Version: 1, CreatedAt: fixedTime(), UpdatedAt: fixedTime()},
 			}, nil
 		},
 	}

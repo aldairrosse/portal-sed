@@ -48,7 +48,7 @@ type Goal struct {
 	// State holds the value of the "state" field.
 	State goal.State `json:"state,omitempty"`
 	// CategoryID holds the value of the "category_id" field.
-	CategoryID uuid.UUID `json:"category_id,omitempty"`
+	CategoryID *uuid.UUID `json:"category_id,omitempty"`
 	// Type holds the value of the "type" field.
 	Type goal.Type `json:"type,omitempty"`
 	// GoalKind holds the value of the "goal_kind" field.
@@ -139,6 +139,8 @@ func (*Goal) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case goal.FieldCategoryID:
+			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		case goal.FieldWeight, goal.FieldTargetValue, goal.FieldCurrentValue, goal.FieldBaselineValue:
 			values[i] = new(sql.NullFloat64)
 		case goal.FieldVersion:
@@ -147,7 +149,7 @@ func (*Goal) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullString)
 		case goal.FieldCreatedAt, goal.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
-		case goal.FieldID, goal.FieldCreatedBy, goal.FieldUpdatedBy, goal.FieldCategoryID:
+		case goal.FieldID, goal.FieldCreatedBy, goal.FieldUpdatedBy:
 			values[i] = new(uuid.UUID)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -256,10 +258,11 @@ func (_m *Goal) assignValues(columns []string, values []any) error {
 				_m.State = goal.State(value.String)
 			}
 		case goal.FieldCategoryID:
-			if value, ok := values[i].(*uuid.UUID); !ok {
+			if value, ok := values[i].(*sql.NullScanner); !ok {
 				return fmt.Errorf("unexpected type %T for field category_id", values[i])
-			} else if value != nil {
-				_m.CategoryID = *value
+			} else if value.Valid {
+				_m.CategoryID = new(uuid.UUID)
+				*_m.CategoryID = *value.S.(*uuid.UUID)
 			}
 		case goal.FieldType:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -384,8 +387,10 @@ func (_m *Goal) String() string {
 	builder.WriteString("state=")
 	builder.WriteString(fmt.Sprintf("%v", _m.State))
 	builder.WriteString(", ")
-	builder.WriteString("category_id=")
-	builder.WriteString(fmt.Sprintf("%v", _m.CategoryID))
+	if v := _m.CategoryID; v != nil {
+		builder.WriteString("category_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
 	builder.WriteString(", ")
 	builder.WriteString("type=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Type))

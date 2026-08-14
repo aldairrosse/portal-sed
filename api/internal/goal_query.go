@@ -629,7 +629,10 @@ func (_q *GoalQuery) loadCategory(ctx context.Context, query *GoalCategoryQuery,
 	ids := make([]uuid.UUID, 0, len(nodes))
 	nodeids := make(map[uuid.UUID][]*Goal)
 	for i := range nodes {
-		fk := nodes[i].CategoryID
+		if nodes[i].CategoryID == nil {
+			continue
+		}
+		fk := *nodes[i].CategoryID
 		if _, ok := nodeids[fk]; !ok {
 			ids = append(ids, fk)
 		}

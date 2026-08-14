@@ -29,7 +29,7 @@ type GoalRow struct {
 	Direction     string     `json:"direction"`
 	BaselineValue *float64   `json:"baseline_value,omitempty"`
 	State         string     `json:"state"`
-	CategoryID    uuid.UUID  `json:"category_id"`
+	CategoryID    *uuid.UUID `json:"category_id,omitempty"`
 	Version       int        `json:"version"`
 }
 
@@ -104,7 +104,7 @@ func (r *GoalRepo) CreateGoal(ctx context.Context, catID, createdBy uuid.UUID, n
 		Direction:     direction,
 		BaselineValue: baselineValue,
 		State:         state,
-		CategoryID:    catID,
+		CategoryID:    &catID,
 		Version:       1,
 	}, nil
 }
@@ -240,11 +240,12 @@ func (r *GoalRepo) ListGoalsByCategory(ctx context.Context, catID uuid.UUID) ([]
 		var g GoalRow
 		var createdAt, updatedAt sql.NullTime
 		var baselineValue sql.NullFloat64
+		var categoryID sql.NullString
 		if err := rows.Scan(
 			&g.ID, &createdAt, &updatedAt, &g.CreatedBy, &g.UpdatedBy,
 			&g.Name, &g.Description, &g.Unit, &g.Direction, &g.Weight,
 			&g.TargetValue, &g.CurrentValue, &baselineValue, &g.State,
-			&g.CategoryID, &g.Version,
+			&categoryID, &g.Version,
 		); err != nil {
 			return nil, err
 		}
@@ -256,6 +257,12 @@ func (r *GoalRepo) ListGoalsByCategory(ctx context.Context, catID uuid.UUID) ([]
 		}
 		if baselineValue.Valid {
 			g.BaselineValue = &baselineValue.Float64
+		}
+		if categoryID.Valid {
+			parsed, err := uuid.Parse(categoryID.String)
+			if err == nil {
+				g.CategoryID = &parsed
+			}
 		}
 		result = append(result, &g)
 	}

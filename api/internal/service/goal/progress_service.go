@@ -45,7 +45,10 @@ func (s *ProgressService) UpdateGoalProgress(ctx context.Context, empID, goalID 
 	if err != nil {
 		return nil, err
 	}
-	cat, err := s.catRepo.GetCategory(ctx, existing.CategoryID)
+	if existing.CategoryID == nil {
+		return nil, pkgerrors.ErrGoalNotFound
+	}
+	cat, err := s.catRepo.GetCategory(ctx, *existing.CategoryID)
 	if err != nil {
 		return nil, err
 	}

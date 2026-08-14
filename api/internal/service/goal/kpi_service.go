@@ -131,7 +131,10 @@ func (s *KPIService) LinkKPI(ctx context.Context, empID, goalID, kpiID uuid.UUID
 	if err != nil {
 		return err
 	}
-	cat, err := s.catRepo.GetCategory(ctx, goal.CategoryID)
+	if goal.CategoryID == nil {
+		return pkgerrors.ErrGoalNotFound
+	}
+	cat, err := s.catRepo.GetCategory(ctx, *goal.CategoryID)
 	if err != nil {
 		return err
 	}
@@ -167,7 +170,10 @@ func (s *KPIService) UnlinkKPI(ctx context.Context, empID, goalID, kpiID uuid.UU
 	if err != nil {
 		return err
 	}
-	cat, err := s.catRepo.GetCategory(ctx, goal.CategoryID)
+	if goal.CategoryID == nil {
+		return pkgerrors.ErrGoalNotFound
+	}
+	cat, err := s.catRepo.GetCategory(ctx, *goal.CategoryID)
 	if err != nil {
 		return err
 	}

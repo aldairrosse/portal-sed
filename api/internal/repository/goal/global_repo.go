@@ -88,57 +88,50 @@ func (r *GlobalGoalRepo) CreateGlobalGoal(ctx context.Context, cycleID, createdB
 		SetTargetValue(targetValue).
 		SetGoalKind(goal.GoalKind(goalKind)).
 		SetState(goal.StateBorrador).
-		SetCategoryID(uuid.Nil). // Global goals don't belong to a category
+		SetNillableCategoryID(nil). // Global goals don't belong to a category
 		SetCreatedBy(createdBy).
 		SetUpdatedBy(createdBy).
+		SetType(goal.TypeGlobal).
 		Save(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	// Create assignments
-	for _, a := range assignments {
-		create := r.client.GlobalGoalAssignment.Create().
-			SetGoalID(g.ID).
-			SetEmployeeID(a.EmployeeID).
-			SetWeight(a.Weight).
-			SetTargetValue(a.TargetValue)
-
-		if a.BaselineValue != nil {
-			create = create.SetBaselineValue(*a.BaselineValue)
-		}
-
-		_, err := create.Save(ctx)
-		if err != nil {
+	// Persist rules.
+	for _, rule := range rules {
+		if err := r.createRule(ctx, g.ID, rule); err != nil {
 			return nil, err
 		}
 	}
 
-	// Create rules
-	for _, rule := range rules {
-		create := r.client.GlobalGoalRule.Create().
-			SetGoalID(g.ID).
-			SetRuleType(globalgoalrule.RuleType(rule.RuleType)).
-			SetDefaultWeight(rule.DefaultWeight).
-			SetDefaultTarget(rule.DefaultTarget)
-
-		if rule.DepartmentID != nil {
-			create = create.SetDepartmentID(*rule.DepartmentID)
-		}
-		if rule.MinDirectReports != nil {
-			create = create.SetMinDirectReports(*rule.MinDirectReports)
-		}
-		if rule.ProfileID != nil {
-			create = create.SetProfileID(*rule.ProfileID)
-		}
-
-		_, err = create.Save(ctx)
-		if err != nil {
-			return nil, err
-		}
+	// Materialize assignments (manual + rule-matched).
+	if _, err := r.evaluateAndAssign(ctx, g.ID, rules, assignments); err != nil {
+		return nil, err
 	}
 
 	return r.GetGlobalGoal(ctx, g.ID)
+}
+
+// createRule persists a single global goal rule.
+func (r *GlobalGoalRepo) createRule(ctx context.Context, goalID uuid.UUID, rule *GlobalRuleRow) error {
+	create := r.client.GlobalGoalRule.Create().
+		SetGoalID(goalID).
+		SetRuleType(globalgoalrule.RuleType(rule.RuleType)).
+		SetDefaultWeight(rule.DefaultWeight).
+		SetDefaultTarget(rule.DefaultTarget)
+
+	if rule.DepartmentID != nil {
+		create = create.SetDepartmentID(*rule.DepartmentID)
+	}
+	if rule.MinDirectReports != nil {
+		create = create.SetMinDirectReports(*rule.MinDirectReports)
+	}
+	if rule.ProfileID != nil {
+		create = create.SetProfileID(*rule.ProfileID)
+	}
+
+	_, err := create.Save(ctx)
+	return err
 }
 
 // GetGlobalGoal retrieves a global goal with its assignments and rules.
@@ -159,6 +152,13 @@ func (r *GlobalGoalRepo) GetGlobalGoal(ctx context.Context, goalID uuid.UUID) (*
 		return nil, err
 	}
 
+	row := goalRowFromEnt(g)
+	return row, nil
+}
+
+// goalRowFromEnt builds a GlobalGoalRow from an ent Goal entity, populating
+// Assignments and Rules from the preloaded edges.
+func goalRowFromEnt(g *internal.Goal) *GlobalGoalRow {
 	row := &GlobalGoalRow{
 		ID:          g.ID,
 		Name:        g.Name,
@@ -188,26 +188,31 @@ func (r *GlobalGoalRepo) GetGlobalGoal(ctx context.Context, goalID uuid.UUID) (*
 	}
 
 	for _, rule := range g.Edges.GlobalRules {
-		ruleRow := &GlobalRuleRow{
-			ID:            rule.ID,
-			GoalID:        rule.GoalID,
-			RuleType:      string(rule.RuleType),
-			DefaultWeight: rule.DefaultWeight,
-			DefaultTarget: rule.DefaultTarget,
-		}
-		if rule.DepartmentID != nil {
-			ruleRow.DepartmentID = rule.DepartmentID
-		}
-		if rule.MinDirectReports != nil {
-			ruleRow.MinDirectReports = rule.MinDirectReports
-		}
-		if rule.ProfileID != nil {
-			ruleRow.ProfileID = rule.ProfileID
-		}
-		row.Rules = append(row.Rules, ruleRow)
+		row.Rules = append(row.Rules, ruleRowFromEnt(rule))
 	}
 
-	return row, nil
+	return row
+}
+
+// ruleRowFromEnt converts an ent GlobalGoalRule entity into a GlobalRuleRow.
+func ruleRowFromEnt(rule *internal.GlobalGoalRule) *GlobalRuleRow {
+	row := &GlobalRuleRow{
+		ID:            rule.ID,
+		GoalID:        rule.GoalID,
+		RuleType:      string(rule.RuleType),
+		DefaultWeight: rule.DefaultWeight,
+		DefaultTarget: rule.DefaultTarget,
+	}
+	if rule.DepartmentID != nil {
+		row.DepartmentID = rule.DepartmentID
+	}
+	if rule.MinDirectReports != nil {
+		row.MinDirectReports = rule.MinDirectReports
+	}
+	if rule.ProfileID != nil {
+		row.ProfileID = rule.ProfileID
+	}
+	return row
 }
 
 // ListGlobalGoalsByCycle lists all global goals for a cycle.
@@ -224,30 +229,14 @@ func (r *GlobalGoalRepo) ListGlobalGoalsByCycle(ctx context.Context, cycleID uui
 
 	rows := make([]*GlobalGoalRow, 0, len(goals))
 	for _, g := range goals {
-		row := &GlobalGoalRow{
-			ID:          g.ID,
-			Name:        g.Name,
-			Description: g.Description,
-			Unit:        string(g.Unit),
-			Direction:   string(g.Direction),
-			Weight:      g.Weight,
-			TargetValue: g.TargetValue,
-			GoalKind:    goalKindValue(g.GoalKind),
-			State:       string(g.State),
-			CreatedBy:   g.CreatedBy,
-			CreatedAt:   g.CreatedAt,
-			UpdatedAt:   g.UpdatedAt,
-			Assignments: make([]*GlobalAssignmentRow, 0),
-			Rules:       make([]*GlobalRuleRow, 0),
-		}
-		rows = append(rows, row)
+		rows = append(rows, goalRowFromEnt(g))
 	}
 
 	return rows, nil
 }
 
-// UpdateGlobalGoal updates a global goal.
-func (r *GlobalGoalRepo) UpdateGlobalGoal(ctx context.Context, goalID uuid.UUID, name, description, unit, direction, goalKind string, weight, targetValue float64, expectedVersion int) (*GlobalGoalRow, error) {
+// UpdateGlobalGoal updates a global goal and re-applies its rules and assignments.
+func (r *GlobalGoalRepo) UpdateGlobalGoal(ctx context.Context, goalID uuid.UUID, name, description, unit, direction, goalKind string, weight, targetValue float64, assignments []*GlobalAssignmentRow, rules []*GlobalRuleRow) (*GlobalGoalRow, error) {
 	g, err := r.client.Goal.UpdateOneID(goalID).
 		SetName(name).
 		SetDescription(description).
@@ -258,6 +247,24 @@ func (r *GlobalGoalRepo) UpdateGlobalGoal(ctx context.Context, goalID uuid.UUID,
 		SetTargetValue(targetValue).
 		Save(ctx)
 	if err != nil {
+		return nil, err
+	}
+
+	// Remove the goal from everyone, then re-apply rules and assignments.
+	if _, err := r.client.GlobalGoalAssignment.Delete().Where(globalgoalassignment.GoalID(goalID)).Exec(ctx); err != nil {
+		return nil, err
+	}
+	if _, err := r.client.GlobalGoalRule.Delete().Where(globalgoalrule.GoalID(goalID)).Exec(ctx); err != nil {
+		return nil, err
+	}
+
+	for _, rule := range rules {
+		if err := r.createRule(ctx, goalID, rule); err != nil {
+			return nil, err
+		}
+	}
+
+	if _, err := r.evaluateAndAssign(ctx, goalID, rules, assignments); err != nil {
 		return nil, err
 	}
 
@@ -291,21 +298,46 @@ func (r *GlobalGoalRepo) ExecuteRules(ctx context.Context, goalID uuid.UUID) (in
 		return 0, pkgerrors.NewDomainError(pkgerrors.InvalidRequest, "No existe un ciclo activo para la organización actual.", nil)
 	}
 
-	tx, err := r.client.Tx(ctx)
+	entRules, err := r.client.GlobalGoalRule.Query().Where(globalgoalrule.GoalID(goalID)).Order(internal.Asc(globalgoalrule.FieldID)).All(ctx)
 	if err != nil {
 		return 0, err
 	}
-	rollback := func(err error) (int, error) { _ = tx.Rollback(); return 0, err }
-	rules, err := tx.GlobalGoalRule.Query().Where(globalgoalrule.GoalID(goalID)).Order(internal.Asc(globalgoalrule.FieldID)).All(ctx)
-	if err != nil {
-		return rollback(err)
+	if len(entRules) == 0 {
+		return 0, pkgerrors.NewDomainError(pkgerrors.InvalidRequest, "La meta no tiene reglas de asignación.", nil)
 	}
-	if len(rules) == 0 {
-		return rollback(pkgerrors.NewDomainError(pkgerrors.InvalidRequest, "La meta no tiene reglas de asignación.", nil))
+
+	rules := make([]*GlobalRuleRow, 0, len(entRules))
+	for _, rule := range entRules {
+		rules = append(rules, ruleRowFromEnt(rule))
 	}
-	employees, err := tx.Employee.Query().Where(employee.IsActive(true)).WithOrgNode().All(ctx)
+
+	return r.evaluateAndAssign(ctx, goalID, rules, nil)
+}
+
+// evaluateAndAssign materializes global_goal_assignments rows for a goal by
+// evaluating its rules over the organization's active employees and unioning the
+// result with the manual assignments. Rule semantics: departments ∩ min_direct_reports ∩ roles,
+// with OR within each category and identity for categories without rules.
+// Manual assignments always win. It is idempotent: an already-assigned employee is
+// never duplicated. It returns the number of newly created assignments.
+func (r *GlobalGoalRepo) evaluateAndAssign(ctx context.Context, goalID uuid.UUID, rules []*GlobalRuleRow, manualAssignments []*GlobalAssignmentRow) (int, error) {
+	// Resolve the goal's organization from its creator.
+	creator, err := r.client.Goal.Query().Where(goal.ID(goalID)).Only(ctx)
 	if err != nil {
-		return rollback(err)
+		return 0, err
+	}
+	creatorEmp, err := r.client.Employee.Query().Where(employee.ID(creator.CreatedBy)).WithOrgNode().Only(ctx)
+	if err != nil {
+		return 0, err
+	}
+	if creatorEmp.Edges.OrgNode == nil {
+		return 0, pkgerrors.NewDomainError(pkgerrors.InvalidRequest, "La organización del creador no está disponible.", nil)
+	}
+	orgID := creatorEmp.Edges.OrgNode.OrganizationID
+
+	employees, err := r.client.Employee.Query().Where(employee.IsActive(true)).WithOrgNode().All(ctx)
+	if err != nil {
+		return 0, err
 	}
 	orgEmployees := make([]*internal.Employee, 0, len(employees))
 	for _, emp := range employees {
@@ -313,94 +345,181 @@ func (r *GlobalGoalRepo) ExecuteRules(ctx context.Context, goalID uuid.UUID) (in
 			orgEmployees = append(orgEmployees, emp)
 		}
 	}
-	if len(orgEmployees) == 0 {
-		return rollback(pkgerrors.NewDomainError(pkgerrors.InvalidRequest, "No hay empleados activos en la organización actual.", nil))
-	}
-
-	departmentPaths := make(map[uuid.UUID]string)
-	sets := make([]map[uuid.UUID]bool, 0, len(rules))
-	for _, rule := range rules {
-		set := make(map[uuid.UUID]bool)
-		var departmentPath string
-		if rule.RuleType == globalgoalrule.RuleTypeDepartment && rule.DepartmentID != nil {
-			departmentPath, ok = departmentPaths[*rule.DepartmentID]
-			if !ok {
-				node, e := tx.OrgNode.Get(ctx, *rule.DepartmentID)
-				if e != nil {
-					return rollback(e)
-				}
-				departmentPath = node.Path
-				departmentPaths[*rule.DepartmentID] = departmentPath
-			}
-		}
-		for _, emp := range orgEmployees {
-			if emp.Edges.OrgNode == nil || emp.Edges.OrgNode.OrganizationID != orgID {
-				continue
-			}
-			match := false
-			switch rule.RuleType {
-			case globalgoalrule.RuleTypeDepartment:
-				if rule.DepartmentID != nil {
-					employeePath := emp.Edges.OrgNode.Path
-					match = employeePath == departmentPath || strings.HasPrefix(employeePath, departmentPath+".")
-				}
-			case globalgoalrule.RuleTypeRole:
-				match = rule.ProfileID != nil && emp.ProfileID == *rule.ProfileID
-			case globalgoalrule.RuleTypeMinDirectReports:
-				if rule.MinDirectReports != nil {
-					count := 0
-					for _, report := range orgEmployees {
-						if report.Edges.OrgNode == nil || report.Edges.OrgNode.OrganizationID != orgID {
-							continue
-						}
-						managerMatch := report.ManagerID != nil && *report.ManagerID == emp.ID
-						departmentMatch := report.Edges.OrgNode.ParentID != nil && *report.Edges.OrgNode.ParentID == emp.OrgNodeID
-						if managerMatch || departmentMatch {
-							count++
-						}
-					}
-					match = count >= *rule.MinDirectReports
-				}
-			}
-			if match {
-				set[emp.ID] = true
-			}
-		}
-		sets = append(sets, set)
-	}
 
 	assigned := 0
-	for _, emp := range orgEmployees {
-		if len(sets) == 0 {
+	assignedSet := make(map[uuid.UUID]bool)
+
+	// Manual assignments first: they always win over rule-matched employees.
+	for _, a := range manualAssignments {
+		if assignedSet[a.EmployeeID] {
 			continue
 		}
-		match := true
-		for _, set := range sets {
-			if !set[emp.ID] {
-				match = false
-				break
-			}
-		}
-		if !match {
-			continue
-		}
-		exists, err := tx.GlobalGoalAssignment.Query().Where(globalgoalassignment.GoalID(goalID), globalgoalassignment.EmployeeID(emp.ID)).Exist(ctx)
+		exists, err := r.client.GlobalGoalAssignment.Query().
+			Where(globalgoalassignment.GoalID(goalID), globalgoalassignment.EmployeeID(a.EmployeeID)).
+			Exist(ctx)
 		if err != nil {
-			return rollback(err)
+			return 0, err
 		}
 		if exists {
+			assignedSet[a.EmployeeID] = true
 			continue
 		}
-		// A single assignment stores one target/weight. Rules are ordered by ID,
-		// so the first persisted rule deterministically wins for an intersection.
-		weight, target := rules[0].DefaultWeight, rules[0].DefaultTarget
-		if _, err = tx.GlobalGoalAssignment.Create().SetGoalID(goalID).SetEmployeeID(emp.ID).SetWeight(weight).SetTargetValue(target).Save(ctx); err != nil {
-			return rollback(err)
+		create := r.client.GlobalGoalAssignment.Create().
+			SetGoalID(goalID).
+			SetEmployeeID(a.EmployeeID).
+			SetWeight(a.Weight).
+			SetTargetValue(a.TargetValue)
+		if a.BaselineValue != nil {
+			create = create.SetBaselineValue(*a.BaselineValue)
 		}
+		if _, err := create.Save(ctx); err != nil {
+			return 0, err
+		}
+		assignedSet[a.EmployeeID] = true
 		assigned++
 	}
-	if err := tx.Commit(); err != nil {
-		return 0, err
+
+	if len(rules) == 0 {
+		return assigned, nil
 	}
+
+	// Categorize rules: OR within a category, AND across categories.
+	var deptRules, minReportRules, roleRules []*GlobalRuleRow
+	for _, rule := range rules {
+		switch rule.RuleType {
+		case string(globalgoalrule.RuleTypeDepartment):
+			deptRules = append(deptRules, rule)
+		case string(globalgoalrule.RuleTypeMinDirectReports):
+			minReportRules = append(minReportRules, rule)
+		case string(globalgoalrule.RuleTypeRole):
+			roleRules = append(roleRules, rule)
+		}
+	}
+
+	// Precompute department ltree paths.
+	departmentPaths := make(map[uuid.UUID]string, len(deptRules))
+	for _, rule := range deptRules {
+		if rule.DepartmentID == nil {
+			continue
+		}
+		if _, ok := departmentPaths[*rule.DepartmentID]; ok {
+			continue
+		}
+		node, err := r.client.OrgNode.Get(ctx, *rule.DepartmentID)
+		if err != nil {
+			return 0, err
+		}
+		departmentPaths[*rule.DepartmentID] = node.Path
+	}
+
+	// Max threshold across min_direct_reports rules.
+	var minReports *int
+	for _, rule := range minReportRules {
+		if rule.MinDirectReports == nil {
+			continue
+		}
+		if minReports == nil || *rule.MinDirectReports > *minReports {
+			v := *rule.MinDirectReports
+			minReports = &v
+		}
+	}
+
+	// Direct report counts, cached per employee.
+	reportCounts := make(map[uuid.UUID]int)
+	directReports := func(emp *internal.Employee) int {
+		if c, ok := reportCounts[emp.ID]; ok {
+			return c
+		}
+		count := 0
+		for _, report := range orgEmployees {
+			if report.Edges.OrgNode == nil {
+				continue
+			}
+			managerMatch := report.ManagerID != nil && *report.ManagerID == emp.ID
+			departmentMatch := report.Edges.OrgNode.ParentID != nil && *report.Edges.OrgNode.ParentID == emp.OrgNodeID
+			if managerMatch || departmentMatch {
+				count++
+			}
+		}
+		reportCounts[emp.ID] = count
+		return count
+	}
+
+	for _, emp := range orgEmployees {
+		if emp.Edges.OrgNode == nil || assignedSet[emp.ID] {
+			continue
+		}
+
+		// Department filter (OR across department rules).
+		if len(deptRules) > 0 {
+			matched := false
+			for _, rule := range deptRules {
+				if rule.DepartmentID == nil {
+					continue
+				}
+				deptPath := departmentPaths[*rule.DepartmentID]
+				employeePath := emp.Edges.OrgNode.Path
+				if employeePath == deptPath || strings.HasPrefix(employeePath, deptPath+".") {
+					matched = true
+					break
+				}
+			}
+			if !matched {
+				continue
+			}
+		}
+
+		// Role filter (OR across role rules).
+		if len(roleRules) > 0 {
+			matched := false
+			for _, rule := range roleRules {
+				if rule.ProfileID != nil && emp.ProfileID == *rule.ProfileID {
+					matched = true
+					break
+				}
+			}
+			if !matched {
+				continue
+			}
+		}
+
+		// Min direct reports filter (single max threshold).
+		if len(minReportRules) > 0 && minReports != nil && directReports(emp) < *minReports {
+			continue
+		}
+
+		// Rule weight/target precedence: department → min_direct_reports → role.
+		weight, target := 0.0, 100.0
+		switch {
+		case len(deptRules) > 0:
+			weight, target = deptRules[0].DefaultWeight, deptRules[0].DefaultTarget
+		case len(minReportRules) > 0:
+			weight, target = minReportRules[0].DefaultWeight, minReportRules[0].DefaultTarget
+		case len(roleRules) > 0:
+			weight, target = roleRules[0].DefaultWeight, roleRules[0].DefaultTarget
+		}
+
+		exists, err := r.client.GlobalGoalAssignment.Query().
+			Where(globalgoalassignment.GoalID(goalID), globalgoalassignment.EmployeeID(emp.ID)).
+			Exist(ctx)
+		if err != nil {
+			return 0, err
+		}
+		if exists {
+			assignedSet[emp.ID] = true
+			continue
+		}
+		if _, err := r.client.GlobalGoalAssignment.Create().
+			SetGoalID(goalID).
+			SetEmployeeID(emp.ID).
+			SetWeight(weight).
+			SetTargetValue(target).
+			Save(ctx); err != nil {
+			return 0, err
+		}
+		assignedSet[emp.ID] = true
+		assigned++
+	}
+
 	return assigned, nil
 }

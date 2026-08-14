@@ -89,8 +89,8 @@ func TestValidateDoubleWeighting_Perfect100(t *testing.T) {
 	}
 	goals := map[uuid.UUID][]*repogoal.GoalRow{
 		catID: {
-			{ID: uuid.MustParse("11111111-1111-1111-1111-111111111112"), CategoryID: catID, Name: "G1", Weight: 40.0},
-			{ID: uuid.MustParse("11111111-1111-1111-1111-111111111113"), CategoryID: catID, Name: "G2", Weight: 60.0},
+			{ID: uuid.MustParse("11111111-1111-1111-1111-111111111112"), CategoryID: &catID, Name: "G1", Weight: 40.0},
+			{ID: uuid.MustParse("11111111-1111-1111-1111-111111111113"), CategoryID: &catID, Name: "G2", Weight: 60.0},
 		},
 	}
 
@@ -112,8 +112,8 @@ func TestValidateDoubleWeighting_Under100(t *testing.T) {
 	}
 	goals := map[uuid.UUID][]*repogoal.GoalRow{
 		catID: {
-			{ID: uuid.MustParse("11111111-1111-1111-1111-111111111112"), CategoryID: catID, Name: "G1", Weight: 40.0},
-			{ID: uuid.MustParse("11111111-1111-1111-1111-111111111113"), CategoryID: catID, Name: "G2", Weight: 50.0},
+			{ID: uuid.MustParse("11111111-1111-1111-1111-111111111112"), CategoryID: &catID, Name: "G1", Weight: 40.0},
+			{ID: uuid.MustParse("11111111-1111-1111-1111-111111111113"), CategoryID: &catID, Name: "G2", Weight: 50.0},
 		},
 	}
 
@@ -134,8 +134,8 @@ func TestValidateDoubleWeighting_Over100(t *testing.T) {
 	}
 	goals := map[uuid.UUID][]*repogoal.GoalRow{
 		catID: {
-			{ID: uuid.MustParse("11111111-1111-1111-1111-111111111112"), CategoryID: catID, Name: "G1", Weight: 60.0},
-			{ID: uuid.MustParse("11111111-1111-1111-1111-111111111113"), CategoryID: catID, Name: "G2", Weight: 50.0},
+			{ID: uuid.MustParse("11111111-1111-1111-1111-111111111112"), CategoryID: &catID, Name: "G1", Weight: 60.0},
+			{ID: uuid.MustParse("11111111-1111-1111-1111-111111111113"), CategoryID: &catID, Name: "G2", Weight: 50.0},
 		},
 	}
 
@@ -157,7 +157,7 @@ func TestValidateDoubleWeighting_Tolerance9999(t *testing.T) {
 	}
 	goals := map[uuid.UUID][]*repogoal.GoalRow{
 		catID: {
-			{ID: uuid.MustParse("11111111-1111-1111-1111-111111111112"), CategoryID: catID, Name: "G1", Weight: 99.99},
+			{ID: uuid.MustParse("11111111-1111-1111-1111-111111111112"), CategoryID: &catID, Name: "G1", Weight: 99.99},
 		},
 	}
 
@@ -177,7 +177,7 @@ func TestValidateDoubleWeighting_Tolerance10001(t *testing.T) {
 	}
 	goals := map[uuid.UUID][]*repogoal.GoalRow{
 		catID: {
-			{ID: uuid.MustParse("11111111-1111-1111-1111-111111111112"), CategoryID: catID, Name: "G1", Weight: 100.01},
+			{ID: uuid.MustParse("11111111-1111-1111-1111-111111111112"), CategoryID: &catID, Name: "G1", Weight: 100.01},
 		},
 	}
 
@@ -207,7 +207,7 @@ func TestValidateDoubleWeighting_SingleGoalPerCategory(t *testing.T) {
 	}
 	goals := map[uuid.UUID][]*repogoal.GoalRow{
 		catID: {
-			{ID: uuid.MustParse("11111111-1111-1111-1111-111111111112"), CategoryID: catID, Name: "G1", Weight: 100.0},
+			{ID: uuid.MustParse("11111111-1111-1111-1111-111111111112"), CategoryID: &catID, Name: "G1", Weight: 100.0},
 		},
 	}
 
@@ -228,10 +228,10 @@ func TestValidateDoubleWeighting_MultipleGoalsPerCategory(t *testing.T) {
 	}
 	goals := map[uuid.UUID][]*repogoal.GoalRow{
 		catID: {
-			{ID: uuid.MustParse("11111111-1111-1111-1111-111111111112"), CategoryID: catID, Name: "G1", Weight: 25.0},
-			{ID: uuid.MustParse("11111111-1111-1111-1111-111111111113"), CategoryID: catID, Name: "G2", Weight: 25.0},
-			{ID: uuid.MustParse("11111111-1111-1111-1111-111111111114"), CategoryID: catID, Name: "G3", Weight: 25.0},
-			{ID: uuid.MustParse("11111111-1111-1111-1111-111111111115"), CategoryID: catID, Name: "G4", Weight: 25.0},
+			{ID: uuid.MustParse("11111111-1111-1111-1111-111111111112"), CategoryID: &catID, Name: "G1", Weight: 25.0},
+			{ID: uuid.MustParse("11111111-1111-1111-1111-111111111113"), CategoryID: &catID, Name: "G2", Weight: 25.0},
+			{ID: uuid.MustParse("11111111-1111-1111-1111-111111111114"), CategoryID: &catID, Name: "G3", Weight: 25.0},
+			{ID: uuid.MustParse("11111111-1111-1111-1111-111111111115"), CategoryID: &catID, Name: "G4", Weight: 25.0},
 		},
 	}
 
@@ -253,9 +253,9 @@ func TestValidateDoubleWeighting_FloatingPointPrecision(t *testing.T) {
 	}
 	goals := map[uuid.UUID][]*repogoal.GoalRow{
 		catID: {
-			{ID: uuid.MustParse("11111111-1111-1111-1111-111111111112"), CategoryID: catID, Name: "G1", Weight: 33.333333},
-			{ID: uuid.MustParse("11111111-1111-1111-1111-111111111113"), CategoryID: catID, Name: "G2", Weight: 33.333333},
-			{ID: uuid.MustParse("11111111-1111-1111-1111-111111111114"), CategoryID: catID, Name: "G3", Weight: 33.333334},
+			{ID: uuid.MustParse("11111111-1111-1111-1111-111111111112"), CategoryID: &catID, Name: "G1", Weight: 33.333333},
+			{ID: uuid.MustParse("11111111-1111-1111-1111-111111111113"), CategoryID: &catID, Name: "G2", Weight: 33.333333},
+			{ID: uuid.MustParse("11111111-1111-1111-1111-111111111114"), CategoryID: &catID, Name: "G3", Weight: 33.333334},
 		},
 	}
 

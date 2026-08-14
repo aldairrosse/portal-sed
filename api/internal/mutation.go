@@ -13253,7 +13253,7 @@ func (m *GoalMutation) CategoryID() (r uuid.UUID, exists bool) {
 // OldCategoryID returns the old "category_id" field's value of the Goal entity.
 // If the Goal object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *GoalMutation) OldCategoryID(ctx context.Context) (v uuid.UUID, err error) {
+func (m *GoalMutation) OldCategoryID(ctx context.Context) (v *uuid.UUID, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldCategoryID is only allowed on UpdateOne operations")
 	}
@@ -13267,9 +13267,22 @@ func (m *GoalMutation) OldCategoryID(ctx context.Context) (v uuid.UUID, err erro
 	return oldValue.CategoryID, nil
 }
 
+// ClearCategoryID clears the value of the "category_id" field.
+func (m *GoalMutation) ClearCategoryID() {
+	m.category = nil
+	m.clearedFields[goal.FieldCategoryID] = struct{}{}
+}
+
+// CategoryIDCleared returns if the "category_id" field was cleared in this mutation.
+func (m *GoalMutation) CategoryIDCleared() bool {
+	_, ok := m.clearedFields[goal.FieldCategoryID]
+	return ok
+}
+
 // ResetCategoryID resets all changes to the "category_id" field.
 func (m *GoalMutation) ResetCategoryID() {
 	m.category = nil
+	delete(m.clearedFields, goal.FieldCategoryID)
 }
 
 // SetType sets the "type" field.
@@ -13365,7 +13378,7 @@ func (m *GoalMutation) ClearCategory() {
 
 // CategoryCleared reports if the "category" edge to the GoalCategory entity was cleared.
 func (m *GoalMutation) CategoryCleared() bool {
-	return m.clearedcategory
+	return m.CategoryIDCleared() || m.clearedcategory
 }
 
 // CategoryIDs returns the "category" edge IDs in the mutation.
@@ -14052,6 +14065,9 @@ func (m *GoalMutation) ClearedFields() []string {
 	if m.FieldCleared(goal.FieldBaselineValue) {
 		fields = append(fields, goal.FieldBaselineValue)
 	}
+	if m.FieldCleared(goal.FieldCategoryID) {
+		fields = append(fields, goal.FieldCategoryID)
+	}
 	if m.FieldCleared(goal.FieldGoalKind) {
 		fields = append(fields, goal.FieldGoalKind)
 	}
@@ -14074,6 +14090,9 @@ func (m *GoalMutation) ClearField(name string) error {
 		return nil
 	case goal.FieldBaselineValue:
 		m.ClearBaselineValue()
+		return nil
+	case goal.FieldCategoryID:
+		m.ClearCategoryID()
 		return nil
 	case goal.FieldGoalKind:
 		m.ClearGoalKind()

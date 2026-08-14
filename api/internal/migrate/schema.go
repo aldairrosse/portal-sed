@@ -397,7 +397,7 @@ var (
 		{Name: "state", Type: field.TypeEnum, Enums: []string{"borrador", "fijada", "en_seguimiento", "evaluada", "cerrada"}, SchemaType: map[string]string{"postgres": "goal_state"}},
 		{Name: "type", Type: field.TypeEnum, Enums: []string{"personal", "global", "shared"}, Default: "personal", SchemaType: map[string]string{"postgres": "goal_type"}},
 		{Name: "goal_kind", Type: field.TypeEnum, Nullable: true, Enums: []string{"qualitative", "quantitative"}},
-		{Name: "category_id", Type: field.TypeUUID},
+		{Name: "category_id", Type: field.TypeUUID, Nullable: true},
 	}
 	// GoalsTable holds the schema information for the "goals" table.
 	GoalsTable = &schema.Table{
@@ -668,6 +668,18 @@ var (
 				Columns:    []*schema.Column{NineBoxMatrixesColumns[5]},
 				RefColumns: []*schema.Column{PhaseDefinitionsColumns[0]},
 				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "idx_nine_box_matrixes_cycle_eval_phase",
+				Unique:  true,
+				Columns: []*schema.Column{NineBoxMatrixesColumns[3], NineBoxMatrixesColumns[4], NineBoxMatrixesColumns[5]},
+			},
+			{
+				Name:    "idx_nine_box_matrixes_evaluator",
+				Unique:  false,
+				Columns: []*schema.Column{NineBoxMatrixesColumns[4]},
 			},
 		},
 	}

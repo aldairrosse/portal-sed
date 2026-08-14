@@ -53,7 +53,9 @@ func (Goal) Fields() []ent.Field {
 			SchemaType(map[string]string{
 				dialect.Postgres: "goal_state",
 			}),
-		field.UUID("category_id", uuid.UUID{}),
+		field.UUID("category_id", uuid.UUID{}).
+			Optional().
+			Nillable(),
 		field.Enum("type").
 			Values("personal", "global", "shared").
 			Default("personal").
@@ -72,7 +74,6 @@ func (Goal) Edges() []ent.Edge {
 		edge.From("category", GoalCategory.Type).
 			Ref("goals").
 			Unique().
-			Required().
 			Field("category_id"),
 		edge.To("kpi_links", GoalKpiLink.Type).
 			Annotations(entsql.Annotation{

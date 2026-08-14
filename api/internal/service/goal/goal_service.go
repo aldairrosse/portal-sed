@@ -135,7 +135,10 @@ func (s *GoalService) UpdateGoal(ctx context.Context, empID, goalID uuid.UUID, r
 	}
 
 	// Get the category to verify ownership
-	cat, err := s.catRepo.GetCategory(ctx, existing.CategoryID)
+	if existing.CategoryID == nil {
+		return nil, pkgerrors.ErrGoalNotFound
+	}
+	cat, err := s.catRepo.GetCategory(ctx, *existing.CategoryID)
 	if err != nil {
 		return nil, err
 	}
@@ -206,7 +209,10 @@ func (s *GoalService) DeleteGoal(ctx context.Context, empID, goalID uuid.UUID) e
 	if err != nil {
 		return err
 	}
-	cat, err := s.catRepo.GetCategory(ctx, existing.CategoryID)
+	if existing.CategoryID == nil {
+		return pkgerrors.ErrGoalNotFound
+	}
+	cat, err := s.catRepo.GetCategory(ctx, *existing.CategoryID)
 	if err != nil {
 		return err
 	}

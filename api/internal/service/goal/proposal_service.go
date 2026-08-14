@@ -111,7 +111,10 @@ func (s *GoalProposalService) AcceptProposal(ctx context.Context, ownerID, propo
 		return nil, err
 	}
 
-	cat, err := s.catRepo.GetCategory(ctx, goal.CategoryID)
+	if goal.CategoryID == nil {
+		return nil, pkgerrors.ErrGoalNotFound
+	}
+	cat, err := s.catRepo.GetCategory(ctx, *goal.CategoryID)
 	if err != nil {
 		return nil, err
 	}
@@ -235,7 +238,10 @@ func (s *GoalProposalService) RejectProposal(ctx context.Context, ownerID, propo
 		return nil, err
 	}
 
-	cat, err := s.catRepo.GetCategory(ctx, goal.CategoryID)
+	if goal.CategoryID == nil {
+		return nil, pkgerrors.ErrGoalNotFound
+	}
+	cat, err := s.catRepo.GetCategory(ctx, *goal.CategoryID)
 	if err != nil {
 		return nil, err
 	}

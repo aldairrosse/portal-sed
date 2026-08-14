@@ -139,9 +139,9 @@ func (s *BatchService) BatchCreateUpdateGoals(ctx context.Context, empID uuid.UU
 		if item.Operation == "update" {
 			goalID, _ := uuid.Parse(item.GoalID)
 			g, err := s.goalRepo.GetGoal(ctx, goalID)
-			if err == nil {
-				categoryIDs[g.CategoryID] = true
-			}
+		if err == nil && g.CategoryID != nil {
+			categoryIDs[*g.CategoryID] = true
+		}
 		}
 	}
 

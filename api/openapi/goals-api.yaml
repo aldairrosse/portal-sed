@@ -465,6 +465,267 @@ paths:
           $ref: '#/components/responses/GoalNotFound'
 
   # ============================================================================
+  # Global Goals
+  # ============================================================================
+  /goals/global:
+    post:
+      operationId: createGlobalGoal
+      summary: Create a global goal
+      tags: [Goals]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateGlobalGoalRequest'
+      responses:
+        '201':
+          description: Created global goal
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GlobalGoalResponse'
+        '400':
+          $ref: '#/components/responses/InvalidGoalRequest'
+        '429':
+          $ref: '#/components/responses/RateLimit'
+    get:
+      operationId: listGlobalGoals
+      summary: List global goals
+      tags: [Goals]
+      responses:
+        '200':
+          description: List of global goals
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GlobalGoalListResponse'
+        '429':
+          $ref: '#/components/responses/RateLimit'
+
+  /goals/global/{goalId}:
+    get:
+      operationId: getGlobalGoal
+      summary: Get a global goal
+      tags: [Goals]
+      parameters:
+        - $ref: '#/components/parameters/GoalId'
+      responses:
+        '200':
+          description: Global goal detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GlobalGoalResponse'
+        '404':
+          $ref: '#/components/responses/GoalNotFound'
+    put:
+      operationId: updateGlobalGoal
+      summary: Update a global goal
+      tags: [Goals]
+      parameters:
+        - $ref: '#/components/parameters/GoalId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateGlobalGoalRequest'
+      responses:
+        '200':
+          description: Updated global goal
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GlobalGoalResponse'
+        '400':
+          $ref: '#/components/responses/InvalidGoalRequest'
+        '404':
+          $ref: '#/components/responses/GoalNotFound'
+    delete:
+      operationId: deleteGlobalGoal
+      summary: Delete a global goal
+      tags: [Goals]
+      parameters:
+        - $ref: '#/components/parameters/GoalId'
+      responses:
+        '204':
+          description: Global goal deleted
+        '404':
+          $ref: '#/components/responses/GoalNotFound'
+
+  /goals/global/{goalId}/execute-rules:
+    post:
+      operationId: executeGlobalGoalRules
+      summary: Execute mass assignment rules for a global goal
+      tags: [Goals]
+      parameters:
+        - $ref: '#/components/parameters/GoalId'
+      responses:
+        '200':
+          description: Assignment result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  assigned:
+                    type: integer
+        '404':
+          $ref: '#/components/responses/GoalNotFound'
+
+  # ============================================================================
+  # Shared Goals
+  # ============================================================================
+  /goals/shared:
+    post:
+      operationId: createSharedGoal
+      summary: Create a shared goal
+      tags: [Goals]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSharedGoalRequest'
+      responses:
+        '201':
+          description: Created shared goal
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SharedGoalResponse'
+        '400':
+          $ref: '#/components/responses/InvalidGoalRequest'
+        '429':
+          $ref: '#/components/responses/RateLimit'
+    get:
+      operationId: listSharedGoals
+      summary: List shared goals
+      tags: [Goals]
+      responses:
+        '200':
+          description: List of shared goals
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SharedGoalListResponse'
+        '429':
+          $ref: '#/components/responses/RateLimit'
+
+  /goals/shared/{goalId}:
+    get:
+      operationId: getSharedGoal
+      summary: Get a shared goal
+      tags: [Goals]
+      parameters:
+        - $ref: '#/components/parameters/GoalId'
+      responses:
+        '200':
+          description: Shared goal detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SharedGoalResponse'
+        '404':
+          $ref: '#/components/responses/GoalNotFound'
+    put:
+      operationId: updateSharedGoal
+      summary: Update a shared goal
+      tags: [Goals]
+      parameters:
+        - $ref: '#/components/parameters/GoalId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateSharedGoalRequest'
+      responses:
+        '200':
+          description: Updated shared goal
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SharedGoalResponse'
+        '400':
+          $ref: '#/components/responses/InvalidGoalRequest'
+        '404':
+          $ref: '#/components/responses/GoalNotFound'
+    delete:
+      operationId: deleteSharedGoal
+      summary: Delete a shared goal
+      tags: [Goals]
+      parameters:
+        - $ref: '#/components/parameters/GoalId'
+      responses:
+        '204':
+          description: Shared goal deleted
+        '404':
+          $ref: '#/components/responses/GoalNotFound'
+
+  /goals/shared/{goalId}/members:
+    post:
+      operationId: addSharedGoalMember
+      summary: Add a member to a shared goal
+      tags: [Goals]
+      parameters:
+        - $ref: '#/components/parameters/GoalId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddMemberRequest'
+      responses:
+        '201':
+          description: Member added
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SharedMemberResponse'
+        '400':
+          $ref: '#/components/responses/InvalidRequest'
+        '404':
+          $ref: '#/components/responses/GoalNotFound'
+
+  /goals/shared/{goalId}/members/{employeeId}:
+    delete:
+      operationId: removeSharedGoalMember
+      summary: Remove a member from a shared goal
+      tags: [Goals]
+      parameters:
+        - $ref: '#/components/parameters/GoalId'
+        - $ref: '#/components/parameters/EmployeeId'
+      responses:
+        '204':
+          description: Member removed
+        '404':
+          $ref: '#/components/responses/GoalNotFound'
+
+  /goals/shared/{goalId}/progress/{employeeId}:
+    put:
+      operationId: updateSharedGoalMemberProgress
+      summary: Update progress for a shared goal member
+      tags: [Goals]
+      parameters:
+        - $ref: '#/components/parameters/GoalId'
+        - $ref: '#/components/parameters/EmployeeId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateMemberProgressRequest'
+      responses:
+        '200':
+          description: Progress updated
+        '400':
+          $ref: '#/components/responses/InvalidRequest'
+        '404':
+          $ref: '#/components/responses/GoalNotFound'
+
+  # ============================================================================
   # Assignments
   # ============================================================================
   /employees/{empId}/assignments:
@@ -793,6 +1054,13 @@ components:
         format: uuid
     GoalId:
       name: goalId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    EmployeeId:
+      name: employeeId
       in: path
       required: true
       schema:
@@ -1361,6 +1629,420 @@ components:
           type: number
           default: 100
           exclusiveMinimum: 0
+
+    # ============================================================================
+    # Global Goal Schemas
+    # ============================================================================
+    CreateGlobalGoalRequest:
+      type: object
+      required: [name, unit, weight, target_value]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        description:
+          type: string
+        unit:
+          type: string
+          enum: [porcentaje, moneda, numero, binario]
+        weight:
+          type: number
+          minimum: 0.01
+          maximum: 100
+        target_value:
+          type: number
+          minimum: 0.01
+        direction:
+          type: string
+          enum: [ascendente, descendente]
+          default: ascendente
+        baseline_value:
+          type: number
+          nullable: true
+          minimum: 0
+        goal_kind:
+          type: string
+        category_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: "Optional; global goals typically have no category."
+        assignments:
+          type: array
+          items:
+            $ref: '#/components/schemas/GlobalAssignmentRequest'
+        rules:
+          type: array
+          items:
+            $ref: '#/components/schemas/GlobalRuleRequest'
+
+    UpdateGlobalGoalRequest:
+      type: object
+      required: [name, unit, weight, target_value]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        description:
+          type: string
+        unit:
+          type: string
+          enum: [porcentaje, moneda, numero, binario]
+        weight:
+          type: number
+          minimum: 0.01
+          maximum: 100
+        target_value:
+          type: number
+          minimum: 0.01
+        direction:
+          type: string
+          enum: [ascendente, descendente]
+          default: ascendente
+        baseline_value:
+          type: number
+          nullable: true
+          minimum: 0
+        goal_kind:
+          type: string
+        category_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: "Optional; global goals typically have no category."
+
+    GlobalAssignmentRequest:
+      type: object
+      required: [employee_id, weight, target_value]
+      properties:
+        employee_id:
+          type: string
+          format: uuid
+        weight:
+          type: number
+          minimum: 0.01
+          maximum: 100
+        target_value:
+          type: number
+          minimum: 0.01
+        baseline_value:
+          type: number
+          nullable: true
+          minimum: 0
+
+    GlobalRuleRequest:
+      type: object
+      required: [rule_type, default_weight, default_target]
+      properties:
+        rule_type:
+          type: string
+          enum: [department, min_direct_reports, role]
+        department_id:
+          type: string
+          format: uuid
+          nullable: true
+        min_direct_reports:
+          type: integer
+          nullable: true
+        profile_id:
+          type: string
+          format: uuid
+          nullable: true
+        default_weight:
+          type: number
+          minimum: 0
+          maximum: 100
+        default_target:
+          type: number
+          exclusiveMinimum: 0
+
+    GlobalGoalResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        unit:
+          type: string
+        direction:
+          type: string
+        weight:
+          type: number
+        target_value:
+          type: number
+        current_value:
+          type: number
+        goal_kind:
+          type: string
+        state:
+          type: string
+        created_by:
+          type: string
+          format: uuid
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        assignments:
+          type: array
+          items:
+            $ref: '#/components/schemas/GlobalAssignmentResponse'
+        rules:
+          type: array
+          items:
+            $ref: '#/components/schemas/GlobalRule'
+
+    GlobalAssignmentResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        goal_id:
+          type: string
+          format: uuid
+        employee_id:
+          type: string
+          format: uuid
+        weight:
+          type: number
+        target_value:
+          type: number
+        baseline_value:
+          type: number
+          nullable: true
+
+    GlobalGoalListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/GlobalGoalResponse'
+
+    # ============================================================================
+    # Shared Goal Schemas
+    # ============================================================================
+    CreateSharedGoalRequest:
+      type: object
+      required: [name, unit, weight, target_value, group_name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        description:
+          type: string
+        unit:
+          type: string
+          enum: [porcentaje, moneda, numero, binario]
+        weight:
+          type: number
+          minimum: 0.01
+          maximum: 100
+        target_value:
+          type: number
+          minimum: 0.01
+        direction:
+          type: string
+          enum: [ascendente, descendente]
+          default: ascendente
+        baseline_value:
+          type: number
+          nullable: true
+          minimum: 0
+        goal_kind:
+          type: string
+        category_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: "Optional; shared goals typically have no category."
+        group_name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        group_description:
+          type: string
+        members:
+          type: array
+          items:
+            $ref: '#/components/schemas/SharedMemberRequest'
+
+    UpdateSharedGoalRequest:
+      type: object
+      required: [name, unit, weight, target_value]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        description:
+          type: string
+        unit:
+          type: string
+          enum: [porcentaje, moneda, numero, binario]
+        weight:
+          type: number
+          minimum: 0.01
+          maximum: 100
+        target_value:
+          type: number
+          minimum: 0.01
+        direction:
+          type: string
+          enum: [ascendente, descendente]
+          default: ascendente
+        baseline_value:
+          type: number
+          nullable: true
+          minimum: 0
+        goal_kind:
+          type: string
+        category_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: "Optional; shared goals typically have no category."
+
+    SharedMemberRequest:
+      type: object
+      required: [employee_id, weight, target_value]
+      properties:
+        employee_id:
+          type: string
+          format: uuid
+        weight:
+          type: number
+          minimum: 0.01
+          maximum: 100
+        target_value:
+          type: number
+          minimum: 0.01
+        baseline_value:
+          type: number
+          nullable: true
+          minimum: 0
+
+    AddMemberRequest:
+      type: object
+      required: [employee_id, weight, target_value]
+      properties:
+        employee_id:
+          type: string
+          format: uuid
+        weight:
+          type: number
+          minimum: 0.01
+          maximum: 100
+        target_value:
+          type: number
+          minimum: 0.01
+        baseline_value:
+          type: number
+          nullable: true
+          minimum: 0
+
+    UpdateMemberProgressRequest:
+      type: object
+      required: [current_value]
+      properties:
+        current_value:
+          type: number
+          minimum: 0
+
+    SharedGoalResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        unit:
+          type: string
+        direction:
+          type: string
+        weight:
+          type: number
+        target_value:
+          type: number
+        current_value:
+          type: number
+        goal_kind:
+          type: string
+        state:
+          type: string
+        created_by:
+          type: string
+          format: uuid
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        group:
+          $ref: '#/components/schemas/SharedGroupResponse'
+        members:
+          type: array
+          items:
+            $ref: '#/components/schemas/SharedMemberResponse'
+
+    SharedGroupResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        goal_id:
+          type: string
+          format: uuid
+        created_by:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+
+    SharedMemberResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        group_id:
+          type: string
+          format: uuid
+        employee_id:
+          type: string
+          format: uuid
+        weight:
+          type: number
+        target_value:
+          type: number
+        baseline_value:
+          type: number
+          nullable: true
+
+    SharedGoalListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/SharedGoalResponse'
 
     # ============================================================================
     # Assignment Schemas
