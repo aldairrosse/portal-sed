@@ -10,6 +10,11 @@ export interface NineBoxEntry {
 	potentialTier: NineBoxTier;   // Y axis (1-3) — derived from competency ratings
 	quadrant: number;             // 1-9 computed from tiers: (potentialTier - 1) * 3 + performanceTier
 	cycleId?: string;
+	// Raw inputs used to derive tiers (transparency — REQ-NBM-005)
+	goalProgressPercent?: number;
+	selfRating?: number | null;
+	hrRating?: number | null;
+	weights?: { self?: number; hr?: number };
 }
 
 export interface NineBoxQuadrantDef {

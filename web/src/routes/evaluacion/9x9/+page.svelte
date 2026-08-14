@@ -3,7 +3,6 @@
 	import { getProfile } from '$lib/stores/devContext.svelte';
 	import {
 		load,
-		getMatrixEntries,
 		getAllEntries,
 		getQuadrantDefs,
 		getQuadrantDef,
@@ -12,7 +11,6 @@
 		reload,
 		markReady
 	} from '$lib/stores/nineBoxStore.svelte';
-	import { getDescendants } from '$lib/stores/orgHierarchyStore.svelte';
 	import { loadCycles, getActiveCycle, getError as cycleError } from '$lib/stores/cycleStore.svelte';
 	import { loadPhases, getPhaseId } from '$lib/stores/phaseStore.svelte';
 	import { type EvaluationProfile } from '$lib/types/evaluation';
@@ -32,14 +30,7 @@
 
 	type NineBoxPhaseId = (typeof NINEBOX_PHASES)[number]['id'];
 
-	// ─── Profile-to-employee mapping (dev fixtures) ───────────────────────────
-
-	const PROFILE_NODE_ID: Partial<Record<EvaluationProfile, string>> = {
-		'director-general': 'emp-dg-01',
-		director: 'emp-director-01',
-		jefe: 'emp-jefe-01',
-		rh: 'emp-rh-01'
-	};
+	// ─── Reactive state ──────────────────────────────────────────────────────
 
 	const MANAGER_PROFILES: EvaluationProfile[] = [
 		'jefe',
@@ -47,8 +38,6 @@
 		'director-general',
 		'rh'
 	];
-
-	// ─── Reactive state ──────────────────────────────────────────────────────
 
 	const profile = $derived(getProfile());
 	const isAuthorized = $derived(MANAGER_PROFILES.includes(profile));
@@ -87,30 +76,11 @@
 		}
 	});
 
-	const scopeIds = $derived.by<string[]>(() => {
-		if (!isAuthorized) return [];
-
-		switch (profile) {
-			case 'jefe': {
-				const nodeId = PROFILE_NODE_ID[profile]!;
-				return getDescendants(nodeId).map((n) => n.id);
-			}
-			case 'director': {
-				const nodeId = PROFILE_NODE_ID[profile]!;
-				return getDescendants(nodeId).map((n) => n.id);
-			}
-			case 'director-general':
-			case 'rh':
-				return getAllEntries().map((e) => e.employeeId);
-			default:
-				return [];
-		}
-	});
-
+	// Backend scopes matrix reads by viewer (REQ-NBM-003) — use entries as returned
+	const matrixEntries = $derived<NineBoxEntry[]>(getAllEntries());
+	const quadrantDefs = $derived(getQuadrantDefs());
 	const loading = $derived(isLoading());
 	const error = $derived(getError());
-	const matrixEntries = $derived<NineBoxEntry[]>(getMatrixEntries(scopeIds));
-	const quadrantDefs = $derived(getQuadrantDefs());
 
 	// Prereq state: cycles and phases loaded (even if empty — show matrix anyway)
 	const prereqError = $derived(cycleError());

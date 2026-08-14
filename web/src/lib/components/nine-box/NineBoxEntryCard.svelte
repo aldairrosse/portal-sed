@@ -92,6 +92,11 @@
 								<p class="text-xs text-base-content/40">
 									{getProfileLabel(entry.profileId)}
 								</p>
+								{#if entry.goalProgressPercent != null || entry.selfRating != null || entry.hrRating != null || entry.weights != null}
+									<p class="text-xs text-base-content/40 mt-0.5">
+										Avance {entry.goalProgressPercent ?? '—'}% · Auto {entry.selfRating ?? '—'} · RH {entry.hrRating ?? '—'} · Pesos {entry.weights?.self != null && entry.weights?.hr != null ? `${entry.weights.self}/${entry.weights.hr}` : '—'}
+									</p>
+								{/if}
 							</div>
 						</div>
 						<ChevronRight class="w-4 h-4 text-base-content/30 group-hover:text-primary transition-colors" />

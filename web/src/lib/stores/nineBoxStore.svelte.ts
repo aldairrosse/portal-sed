@@ -39,7 +39,11 @@ function normalizeApiData(
 		profileId: dto.profileId ?? '',
 		performanceTier: (dto.performanceTier ?? 2) as NineBoxTier,
 		potentialTier: (dto.potentialTier ?? 2) as NineBoxTier,
-		quadrant: dto.quadrant ?? 5
+		quadrant: dto.quadrant ?? 5,
+		goalProgressPercent: dto.goalProgressPercent,
+		selfRating: dto.selfRating,
+		hrRating: dto.hrRating,
+		weights: dto.weights
 	}));
 
 	const quadrantDefs: NineBoxQuadrantDef[] = apiQuadrants.map((dto) => ({
@@ -89,8 +93,7 @@ export function getCurrentPhaseId(): string {
 /**
  * Load nine-box data for a given cycle and phase.
  *
- * In DEV without VITE_USE_API: loads from fixture files (structured clone).
- * In production / VITE_USE_API=true: fetches from the real API endpoints.
+ * Always fetches from the real API endpoints (scoped by viewer on the backend).
  */
 export async function load(cycleId?: string, phaseId?: string): Promise<void> {
 	loading = true;
@@ -99,12 +102,18 @@ export async function load(cycleId?: string, phaseId?: string): Promise<void> {
 	if (cycleId) currentCycleId = cycleId;
 	if (phaseId) currentPhaseId = phaseId;
 
+	// cycle_id is required by the API — nothing to load without an active cycle
+	if (!currentCycleId) {
+		loading = false;
+		return;
+	}
+
 	try {
 		const [matricesRes, quadrantsRes] = await Promise.all([
 			client.GET('/nine-box/matrices', {
 				params: {
 					query: {
-						cycle_id: currentCycleId || undefined,
+						cycle_id: currentCycleId,
 						phase_id: currentPhaseId || undefined
 					}
 				}
@@ -159,15 +168,6 @@ export function getAllEntries(): NineBoxEntry[] {
 	return data?.entries ?? [];
 }
 
-export function getMatrixEntries(scopeIds: string[]): NineBoxEntry[] {
-	if (scopeIds.length === 0) return [];
-	return (data?.entries ?? []).filter((e) => scopeIds.includes(e.employeeId));
-}
-
-export function getEntryByEmployee(employeeId: string): NineBoxEntry | undefined {
-	return (data?.entries ?? []).find((e) => e.employeeId === employeeId);
-}
-
 export function getQuadrantDefs(): NineBoxQuadrantDef[] {
 	const defs = data?.quadrantDefs ?? [];
 	return [...DEFAULT_QUADRANT_DEFS.filter((_, i) => !defs.some((d) => d.quadrant === i + 1)), ...defs].sort((a, b) => a.quadrant - b.quadrant);
@@ -175,24 +175,6 @@ export function getQuadrantDefs(): NineBoxQuadrantDef[] {
 
 export function getQuadrantDef(quadrant: number): NineBoxQuadrantDef | undefined {
 	return getQuadrantDefs().find((d) => d.quadrant === quadrant);
-}
-
-export function getEntriesByQuadrant(
-	scopeIds: string[],
-	quadrant: number
-): NineBoxEntry[] {
-	const scoped = scopeIds.length > 0 ? getMatrixEntries(scopeIds) : (data?.entries ?? []);
-	return scoped.filter((e) => e.quadrant === quadrant);
-}
-
-export function getQuadrantStats(scopeIds: string[]): Record<number, number> {
-	const scoped = getMatrixEntries(scopeIds);
-	const stats: Record<number, number> = {};
-	for (let i = 1; i <= 9; i++) stats[i] = 0;
-	for (const entry of scoped) {
-		stats[entry.quadrant] = (stats[entry.quadrant] ?? 0) + 1;
-	}
-	return stats;
 }
 
 // ─── Mutations ────────────────────────────────────────────────────────────────

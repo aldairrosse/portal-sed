@@ -440,6 +440,14 @@ export interface components {
             quadrantColor?: string;
             comments?: string;
             version?: number;
+            /** Format: float */
+            readonly goalProgressPercent?: number;
+            readonly selfRating?: number | null;
+            readonly hrRating?: number | null;
+            readonly weights?: {
+                self?: number;
+                hr?: number;
+            };
         };
         /** @description ⚠️ Deprecated: entries are computed automatically via RecomputeMatrix. Use POST /nine-box/recompute/{cycleId}/{phaseId} instead. */
         NineBoxEntryInput: {
@@ -509,6 +517,15 @@ export interface components {
         };
         /** @description Validation error */
         BadRequest: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ErrorResponse"];
+            };
+        };
+        /** @description Viewer lacks permission for the requested scope */
+        Forbidden: {
             headers: {
                 [name: string]: unknown;
             };
@@ -900,8 +917,9 @@ export interface operations {
     };
     listMatrices: {
         parameters: {
-            query?: {
-                cycle_id?: string;
+            query: {
+                cycle_id: string;
+                /** @description defaults to cycle.current_phase */
                 phase_id?: string;
                 evaluator_id?: string;
             };
@@ -920,6 +938,7 @@ export interface operations {
                     "application/json": components["schemas"]["NineBoxMatrixResponse"][];
                 };
             };
+            403: components["responses"]["Forbidden"];
         };
     };
     createMatrix: {
@@ -971,6 +990,7 @@ export interface operations {
                     "application/json": components["schemas"]["NineBoxMatrixResponse"];
                 };
             };
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
         };
     };
@@ -997,6 +1017,7 @@ export interface operations {
                 };
             };
             400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
         };
     };
     getScales: {

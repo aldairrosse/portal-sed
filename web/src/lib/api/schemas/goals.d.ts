@@ -133,10 +133,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List all KPIs */
+        /**
+         * List KPIs
+         * @description Returns the KPIs of the caller's department plus global KPIs (org_node_id null). The department is derived from the authenticated user's org node.
+         */
         get: operations["listKPIs"];
         put?: never;
-        /** Create a KPI */
+        /**
+         * Create a KPI
+         * @description Creates a KPI. The owning department (org_node_id) is derived from the authenticated creator's org node: the node directly below the organization root, or the top-level node when it does not match the explicit org root. No org_node_id is accepted from the client; null means a global KPI.
+         */
         post: operations["createKPI"];
         delete?: never;
         options?: never;
@@ -647,6 +653,11 @@ export interface components {
             description?: string;
             /** @enum {string} */
             direction?: "ascendente" | "descendente";
+            /**
+             * Format: uuid
+             * @description Org node (department) that owns the KPI; null means a global KPI visible across the organization.
+             */
+            org_node_id?: string | null;
             current_value?: number | null;
             progress_percent?: number;
             /** Format: date-time */
@@ -662,6 +673,22 @@ export interface components {
             /** Format: uuid */
             kpi_id: string;
         };
+        GlobalRule: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            goal_id?: string;
+            /** @enum {string} */
+            rule_type?: "department" | "min_direct_reports" | "role";
+            /** Format: uuid */
+            department_id?: string | null;
+            min_direct_reports?: number | null;
+            /** Format: uuid */
+            profile_id?: string | null;
+            default_weight?: number;
+            /** @default 100 */
+            default_target: number;
+        };
         AssignmentResponse: {
             /** Format: uuid */
             id?: string;
@@ -670,12 +697,31 @@ export interface components {
             /** Format: uuid */
             cycle_id?: string;
             categories?: components["schemas"]["CategoryResponse"][];
+            global_goals?: components["schemas"]["AssignedGoalResponse"][];
+            shared_goals?: components["schemas"]["AssignedGoalResponse"][];
             /** Format: date-time */
             created_at?: string;
         };
         CreateAssignmentRequest: {
             /** Format: uuid */
             cycle_id: string;
+        };
+        AssignedGoalResponse: {
+            /** Format: uuid */
+            id?: string;
+            name?: string;
+            description?: string;
+            unit?: string;
+            direction?: string;
+            goal_kind?: string;
+            weight?: number;
+            target_value?: number;
+            baseline_value?: number | null;
+            current_value?: number;
+            progress_percent?: number;
+            state?: string;
+            /** @enum {string} */
+            source?: "global" | "shared";
         };
         GoalComment: {
             /** Format: uuid */
