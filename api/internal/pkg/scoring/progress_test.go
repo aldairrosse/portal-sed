@@ -34,6 +34,8 @@ func TestProgressPercent(t *testing.T) {
 		{name: "descendente worse than baseline", currentValue: 120, targetValue: 10, baselineValue: 100, direction: "descendente", want: 0},
 		{name: "descendente baseline equals target", currentValue: 50, targetValue: 100, baselineValue: 100, direction: "descendente", want: 0},
 		{name: "descendente over-target clamp", currentValue: 5, targetValue: 10, baselineValue: 100, direction: "descendente", want: 100},
+		{name: "descendente zero target complete", currentValue: 0, targetValue: 0, baselineValue: 100, direction: "descendente", want: 100},
+		{name: "descendente zero target partial", currentValue: 50, targetValue: 0, baselineValue: 100, direction: "descendente", want: 50},
 	}
 
 	for _, tt := range tests {

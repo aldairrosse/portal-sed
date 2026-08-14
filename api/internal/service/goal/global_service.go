@@ -21,15 +21,16 @@ type GlobalGoalServicer interface {
 
 // CreateGlobalGoalRequest is the request body for creating a global goal.
 type CreateGlobalGoalRequest struct {
-	Name        string                    `json:"name" validate:"required"`
-	Description string                    `json:"description"`
-	Unit        string                    `json:"unit" validate:"required,oneof=porcentaje moneda numero"`
-	Direction   string                    `json:"direction" validate:"required,oneof=ascendente descendente"`
-	GoalKind    string                    `json:"goal_kind" validate:"required,oneof=qualitative quantitative"`
-	Weight      float64                   `json:"weight" validate:"required,min=0,max=100"`
-	TargetValue float64                   `json:"target_value" validate:"required,gt=0"`
-	Assignments []CreateAssignmentRequest `json:"assignments"`
-	Rules       []CreateRuleRequest       `json:"rules"`
+	Name          string                    `json:"name" validate:"required"`
+	Description   string                    `json:"description"`
+	Unit          string                    `json:"unit" validate:"required,oneof=porcentaje moneda numero binario"`
+	Direction     string                    `json:"direction" validate:"required,oneof=ascendente descendente"`
+	GoalKind      string                    `json:"goal_kind" validate:"required,oneof=qualitative quantitative"`
+	Weight        float64                   `json:"weight" validate:"required,min=0,max=100"`
+	TargetValue   float64                   `json:"target_value" validate:"required,gte=0"`
+	BaselineValue *float64                  `json:"baseline_value,omitempty"`
+	Assignments   []CreateAssignmentRequest `json:"assignments"`
+	Rules         []CreateRuleRequest       `json:"rules"`
 }
 
 // CreateAssignmentRequest is the request body for creating an assignment.
@@ -52,15 +53,17 @@ type CreateRuleRequest struct {
 
 // UpdateGlobalGoalRequest is the request body for updating a global goal.
 type UpdateGlobalGoalRequest struct {
-	Name        string                    `json:"name" validate:"required"`
-	Description string                    `json:"description"`
-	Unit        string                    `json:"unit" validate:"required,oneof=porcentaje moneda numero"`
-	Direction   string                    `json:"direction" validate:"required,oneof=ascendente descendente"`
-	GoalKind    string                    `json:"goal_kind" validate:"required,oneof=qualitative quantitative"`
-	Weight      float64                   `json:"weight" validate:"required,min=0,max=100"`
-	TargetValue float64                   `json:"target_value" validate:"required,gt=0"`
-	Assignments []CreateAssignmentRequest `json:"assignments"`
-	Rules       []CreateRuleRequest       `json:"rules"`
+	Name          string                    `json:"name" validate:"required"`
+	Description   string                    `json:"description"`
+	Unit          string                    `json:"unit" validate:"required,oneof=porcentaje moneda numero binario"`
+	Direction     string                    `json:"direction" validate:"required,oneof=ascendente descendente"`
+	GoalKind      string                    `json:"goal_kind" validate:"required,oneof=qualitative quantitative"`
+	Weight        float64                   `json:"weight" validate:"required,min=0,max=100"`
+	TargetValue   float64                   `json:"target_value" validate:"required,gte=0"`
+	BaselineValue *float64                  `json:"baseline_value,omitempty"`
+	CurrentValue  *float64                  `json:"current_value,omitempty"`
+	Assignments   []CreateAssignmentRequest `json:"assignments"`
+	Rules         []CreateRuleRequest       `json:"rules"`
 }
 
 // globalGoalService implements GlobalGoalServicer.
@@ -81,6 +84,18 @@ func (s *globalGoalService) CreateGlobalGoal(ctx context.Context, req CreateGlob
 		return nil, pkgerrors.NewDomainError(pkgerrors.NotAuthenticated, "no authenticated user", nil)
 	}
 
+	// Validate unit, target and baseline (mirrors personal goal validation).
+	if !validUnits[req.Unit] {
+		return nil, pkgerrors.ErrInvalidUnit
+	}
+	if req.TargetValue <= 0 && req.Direction != "descendente" && req.Unit != "binario" {
+		return nil, pkgerrors.ErrInvalidTargetValue
+	}
+	if err := validateDirection(req.Direction, req.BaselineValue, req.TargetValue); err != nil {
+		return nil, err
+	}
+	normalizedTarget := normalizeBinaryValue(req.Unit, req.TargetValue)
+
 	// Convert assignments
 	assignments := make([]*repogoal.GlobalAssignmentRow, 0, len(req.Assignments))
 	for _, a := range req.Assignments {
@@ -109,7 +124,7 @@ func (s *globalGoalService) CreateGlobalGoal(ctx context.Context, req CreateGlob
 		})
 	}
 
-	return s.repo.CreateGlobalGoal(ctx, uuid.Nil, userID, req.Name, req.Description, req.Unit, req.Direction, req.GoalKind, req.Weight, req.TargetValue, assignments, rules)
+	return s.repo.CreateGlobalGoal(ctx, uuid.Nil, userID, req.Name, req.Description, req.Unit, req.Direction, req.GoalKind, req.Weight, normalizedTarget, req.BaselineValue, assignments, rules)
 }
 
 // GetGlobalGoal retrieves a global goal.
@@ -124,6 +139,30 @@ func (s *globalGoalService) ListGlobalGoals(ctx context.Context, cycleID uuid.UU
 
 // UpdateGlobalGoal updates a global goal.
 func (s *globalGoalService) UpdateGlobalGoal(ctx context.Context, goalID uuid.UUID, req UpdateGlobalGoalRequest) (*repogoal.GlobalGoalRow, error) {
+	// Validate unit, target and baseline (mirrors personal goal validation).
+	if !validUnits[req.Unit] {
+		return nil, pkgerrors.ErrInvalidUnit
+	}
+	if req.TargetValue <= 0 && req.Direction != "descendente" && req.Unit != "binario" {
+		return nil, pkgerrors.ErrInvalidTargetValue
+	}
+	if err := validateDirection(req.Direction, req.BaselineValue, req.TargetValue); err != nil {
+		return nil, err
+	}
+	normalizedTarget := normalizeBinaryValue(req.Unit, req.TargetValue)
+
+	// Validate current_value against the stored goal so a client cannot
+	// bypass the rules by changing baseline/unit in the request.
+	existing, err := s.repo.GetGlobalGoal(ctx, goalID)
+	if err != nil {
+		return nil, err
+	}
+	if req.CurrentValue != nil {
+		if err := validateProgressValue(existing.Unit, existing.Direction, existing.BaselineValue, *req.CurrentValue); err != nil {
+			return nil, err
+		}
+	}
+
 	// Convert assignments
 	assignments := make([]*repogoal.GlobalAssignmentRow, 0, len(req.Assignments))
 	for _, a := range req.Assignments {
@@ -152,7 +191,7 @@ func (s *globalGoalService) UpdateGlobalGoal(ctx context.Context, goalID uuid.UU
 		})
 	}
 
-	return s.repo.UpdateGlobalGoal(ctx, goalID, req.Name, req.Description, req.Unit, req.Direction, req.GoalKind, req.Weight, req.TargetValue, assignments, rules)
+	return s.repo.UpdateGlobalGoal(ctx, goalID, req.Name, req.Description, req.Unit, req.Direction, req.GoalKind, req.Weight, normalizedTarget, req.CurrentValue, req.BaselineValue, assignments, rules)
 }
 
 // DeleteGlobalGoal deletes a global goal.

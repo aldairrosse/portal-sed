@@ -15,14 +15,11 @@ import "math"
 //	progress = min((baseline - current) / (baseline - target) * 100, 100), clamped to [0, 100]
 //
 // Edge cases:
-//   - target == 0 returns 0 (no target defined = no progress)
+//   - ascendente (or any other direction) with target == 0 returns 0 (no target defined = no progress)
+//   - descendente with target == 0 reaches 100 when currentValue == 0
 //   - descendente with baseline == target returns 0 (division by zero guard)
 //   - results are clamped to the [0, 100] range.
 func ProgressPercent(currentValue, targetValue, baselineValue float64, direction string) float64 {
-	if targetValue == 0 {
-		return 0
-	}
-
 	var pct float64
 	switch direction {
 	case "descendente":
@@ -31,6 +28,9 @@ func ProgressPercent(currentValue, targetValue, baselineValue float64, direction
 		}
 		pct = (baselineValue - currentValue) / (baselineValue - targetValue) * 100
 	default: // "ascendente" or any other value
+		if targetValue == 0 {
+			return 0
+		}
 		pct = currentValue / targetValue * 100
 	}
 

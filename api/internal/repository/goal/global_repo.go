@@ -26,6 +26,7 @@ type GlobalGoalRow struct {
 	Direction    string                 `json:"direction"`
 	Weight       float64                `json:"weight"`
 	TargetValue  float64                `json:"target_value"`
+	BaselineValue *float64              `json:"baseline_value,omitempty"`
 	CurrentValue float64                `json:"current_value"`
 	GoalKind     string                 `json:"goal_kind"`
 	State        string                 `json:"state"`
@@ -77,7 +78,7 @@ func NewGlobalGoalRepo(client *internal.Client, db *sql.DB) *GlobalGoalRepo {
 }
 
 // CreateGlobalGoal creates a new global goal with assignments and rules.
-func (r *GlobalGoalRepo) CreateGlobalGoal(ctx context.Context, cycleID, createdBy uuid.UUID, name, description, unit, direction, goalKind string, weight, targetValue float64, assignments []*GlobalAssignmentRow, rules []*GlobalRuleRow) (*GlobalGoalRow, error) {
+func (r *GlobalGoalRepo) CreateGlobalGoal(ctx context.Context, cycleID, createdBy uuid.UUID, name, description, unit, direction, goalKind string, weight, targetValue float64, baselineValue *float64, assignments []*GlobalAssignmentRow, rules []*GlobalRuleRow) (*GlobalGoalRow, error) {
 	// Create the goal
 	g, err := r.client.Goal.Create().
 		SetName(name).
@@ -86,6 +87,7 @@ func (r *GlobalGoalRepo) CreateGlobalGoal(ctx context.Context, cycleID, createdB
 		SetDirection(goal.Direction(direction)).
 		SetWeight(weight).
 		SetTargetValue(targetValue).
+		SetNillableBaselineValue(baselineValue).
 		SetGoalKind(goal.GoalKind(goalKind)).
 		SetState(goal.StateBorrador).
 		SetNillableCategoryID(nil). // Global goals don't belong to a category
@@ -160,13 +162,15 @@ func (r *GlobalGoalRepo) GetGlobalGoal(ctx context.Context, goalID uuid.UUID) (*
 // Assignments and Rules from the preloaded edges.
 func goalRowFromEnt(g *internal.Goal) *GlobalGoalRow {
 	row := &GlobalGoalRow{
-		ID:          g.ID,
-		Name:        g.Name,
-		Description: g.Description,
-		Unit:        string(g.Unit),
-		Direction:   string(g.Direction),
-		Weight:      g.Weight,
-		TargetValue: g.TargetValue,
+		ID:            g.ID,
+		Name:          g.Name,
+		Description:   g.Description,
+		Unit:          string(g.Unit),
+		Direction:     string(g.Direction),
+		Weight:        g.Weight,
+		TargetValue:   g.TargetValue,
+		BaselineValue: g.BaselineValue,
+		CurrentValue:  g.CurrentValue,
 		GoalKind:    goalKindValue(g.GoalKind),
 		State:       string(g.State),
 		CreatedBy:   g.CreatedBy,
@@ -236,16 +240,22 @@ func (r *GlobalGoalRepo) ListGlobalGoalsByCycle(ctx context.Context, cycleID uui
 }
 
 // UpdateGlobalGoal updates a global goal and re-applies its rules and assignments.
-func (r *GlobalGoalRepo) UpdateGlobalGoal(ctx context.Context, goalID uuid.UUID, name, description, unit, direction, goalKind string, weight, targetValue float64, assignments []*GlobalAssignmentRow, rules []*GlobalRuleRow) (*GlobalGoalRow, error) {
-	g, err := r.client.Goal.UpdateOneID(goalID).
+func (r *GlobalGoalRepo) UpdateGlobalGoal(ctx context.Context, goalID uuid.UUID, name, description, unit, direction, goalKind string, weight, targetValue float64, currentValue *float64, baselineValue *float64, assignments []*GlobalAssignmentRow, rules []*GlobalRuleRow) (*GlobalGoalRow, error) {
+	update := r.client.Goal.UpdateOneID(goalID).
 		SetName(name).
 		SetDescription(description).
 		SetUnit(goal.Unit(unit)).
 		SetDirection(goal.Direction(direction)).
 		SetGoalKind(goal.GoalKind(goalKind)).
 		SetWeight(weight).
-		SetTargetValue(targetValue).
-		Save(ctx)
+		SetTargetValue(targetValue)
+	if currentValue != nil {
+		update = update.SetCurrentValue(*currentValue)
+	}
+	if baselineValue != nil {
+		update = update.SetBaselineValue(*baselineValue)
+	}
+	g, err := update.Save(ctx)
 	if err != nil {
 		return nil, err
 	}

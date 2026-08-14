@@ -22,6 +22,7 @@ type SharedGoalRow struct {
 	Direction    string             `json:"direction"`
 	Weight       float64            `json:"weight"`
 	TargetValue  float64            `json:"target_value"`
+	BaselineValue *float64          `json:"baseline_value,omitempty"`
 	CurrentValue float64            `json:"current_value"`
 	GoalKind     string             `json:"goal_kind"`
 	State        string             `json:"state"`
@@ -63,7 +64,7 @@ func NewSharedGoalRepo(client *internal.Client, db *sql.DB) *SharedGoalRepo {
 }
 
 // CreateSharedGoal creates a new shared goal with its group and members.
-func (r *SharedGoalRepo) CreateSharedGoal(ctx context.Context, createdBy uuid.UUID, name, description, unit, direction, goalKind string, weight, targetValue float64, groupName, groupDescription string, members []*SharedMemberRow) (*SharedGoalRow, error) {
+func (r *SharedGoalRepo) CreateSharedGoal(ctx context.Context, createdBy uuid.UUID, name, description, unit, direction, goalKind string, weight, targetValue float64, baselineValue *float64, groupName, groupDescription string, members []*SharedMemberRow) (*SharedGoalRow, error) {
 	// Create the goal
 	g, err := r.client.Goal.Create().
 		SetName(name).
@@ -72,6 +73,7 @@ func (r *SharedGoalRepo) CreateSharedGoal(ctx context.Context, createdBy uuid.UU
 		SetDirection(goal.Direction(direction)).
 		SetWeight(weight).
 		SetTargetValue(targetValue).
+		SetNillableBaselineValue(baselineValue).
 		SetGoalKind(goal.GoalKind(goalKind)).
 		SetState(goal.StateBorrador).
 		SetNillableCategoryID(nil). // Shared goals don't belong to a category
@@ -134,20 +136,21 @@ func (r *SharedGoalRepo) GetSharedGoal(ctx context.Context, goalID uuid.UUID) (*
 	}
 
 	row := &SharedGoalRow{
-		ID:           g.ID,
-		Name:         g.Name,
-		Description:  g.Description,
-		Unit:         string(g.Unit),
-		Direction:    string(g.Direction),
-		Weight:       g.Weight,
-		TargetValue:  g.TargetValue,
-		CurrentValue: g.CurrentValue,
-		GoalKind:     goalKindValue(g.GoalKind),
-		State:        string(g.State),
-		CreatedBy:    g.CreatedBy,
-		CreatedAt:    g.CreatedAt,
-		UpdatedAt:    g.UpdatedAt,
-		Members:      make([]*SharedMemberRow, 0),
+		ID:            g.ID,
+		Name:          g.Name,
+		Description:   g.Description,
+		Unit:          string(g.Unit),
+		Direction:     string(g.Direction),
+		Weight:        g.Weight,
+		TargetValue:   g.TargetValue,
+		BaselineValue: g.BaselineValue,
+		CurrentValue:  g.CurrentValue,
+		GoalKind:      goalKindValue(g.GoalKind),
+		State:         string(g.State),
+		CreatedBy:     g.CreatedBy,
+		CreatedAt:     g.CreatedAt,
+		UpdatedAt:     g.UpdatedAt,
+		Members:       make([]*SharedMemberRow, 0),
 	}
 
 	if len(g.Edges.SharedGroup) > 0 {
@@ -224,16 +227,24 @@ func (r *SharedGoalRepo) ListSharedGoalsAsMember(ctx context.Context, employeeID
 }
 
 // UpdateSharedGoal updates a shared goal.
-func (r *SharedGoalRepo) UpdateSharedGoal(ctx context.Context, goalID uuid.UUID, name, description, unit, direction, goalKind string, weight, targetValue float64) (*SharedGoalRow, error) {
-	_, err := r.client.Goal.UpdateOneID(goalID).
+func (r *SharedGoalRepo) UpdateSharedGoal(ctx context.Context, goalID uuid.UUID, name, description, unit, direction, goalKind string, weight, targetValue float64, currentValue *float64, baselineValue *float64) (*SharedGoalRow, error) {
+	update := r.client.Goal.UpdateOneID(goalID).
 		SetName(name).
 		SetDescription(description).
 		SetUnit(goal.Unit(unit)).
 		SetDirection(goal.Direction(direction)).
 		SetGoalKind(goal.GoalKind(goalKind)).
 		SetWeight(weight).
-		SetTargetValue(targetValue).
-		Save(ctx)
+		SetTargetValue(targetValue)
+
+	if currentValue != nil {
+		update = update.SetCurrentValue(*currentValue)
+	}
+	if baselineValue != nil {
+		update = update.SetBaselineValue(*baselineValue)
+	}
+
+	_, err := update.Save(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -313,20 +324,21 @@ func (r *SharedGoalRepo) toRows(goals []*internal.Goal) []*SharedGoalRow {
 	rows := make([]*SharedGoalRow, 0, len(goals))
 	for _, g := range goals {
 		row := &SharedGoalRow{
-			ID:           g.ID,
-			Name:         g.Name,
-			Description:  g.Description,
-			Unit:         string(g.Unit),
-			Direction:    string(g.Direction),
-			Weight:       g.Weight,
-			TargetValue:  g.TargetValue,
-			CurrentValue: g.CurrentValue,
-			GoalKind:     goalKindValue(g.GoalKind),
-			State:        string(g.State),
-			CreatedBy:    g.CreatedBy,
-			CreatedAt:    g.CreatedAt,
-			UpdatedAt:    g.UpdatedAt,
-			Members:      make([]*SharedMemberRow, 0),
+			ID:            g.ID,
+			Name:          g.Name,
+			Description:   g.Description,
+			Unit:          string(g.Unit),
+			Direction:     string(g.Direction),
+			Weight:        g.Weight,
+			TargetValue:   g.TargetValue,
+			BaselineValue: g.BaselineValue,
+			CurrentValue:  g.CurrentValue,
+			GoalKind:      goalKindValue(g.GoalKind),
+			State:         string(g.State),
+			CreatedBy:     g.CreatedBy,
+			CreatedAt:     g.CreatedAt,
+			UpdatedAt:     g.UpdatedAt,
+			Members:       make([]*SharedMemberRow, 0),
 		}
 		rows = append(rows, row)
 	}

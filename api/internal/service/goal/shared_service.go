@@ -27,11 +27,12 @@ type SharedGoalServicer interface {
 type CreateSharedGoalRequest struct {
 	Name             string                `json:"name" validate:"required"`
 	Description      string                `json:"description"`
-	Unit             string                `json:"unit" validate:"required,oneof=porcentaje moneda numero"`
+	Unit             string                `json:"unit" validate:"required,oneof=porcentaje moneda numero binario"`
 	Direction        string                `json:"direction" validate:"required,oneof=ascendente descendente"`
 	GoalKind         string                `json:"goal_kind" validate:"required,oneof=qualitative quantitative"`
 	Weight           float64               `json:"weight" validate:"required,min=0,max=100"`
-	TargetValue      float64               `json:"target_value" validate:"required,gt=0"`
+	TargetValue      float64               `json:"target_value" validate:"required,gte=0"`
+	BaselineValue    *float64              `json:"baseline_value,omitempty"`
 	GroupName        string                `json:"group_name" validate:"required"`
 	GroupDescription string                `json:"group_description"`
 	Members          []CreateMemberRequest `json:"members" validate:"required,min=1"`
@@ -47,13 +48,15 @@ type CreateMemberRequest struct {
 
 // UpdateSharedGoalRequest is the request body for updating a shared goal.
 type UpdateSharedGoalRequest struct {
-	Name        string  `json:"name" validate:"required"`
-	Description string  `json:"description"`
-	Unit        string  `json:"unit" validate:"required,oneof=porcentaje moneda numero"`
-	Direction   string  `json:"direction" validate:"required,oneof=ascendente descendente"`
-	GoalKind    string  `json:"goal_kind" validate:"required,oneof=qualitative quantitative"`
-	Weight      float64 `json:"weight" validate:"required,min=0,max=100"`
-	TargetValue float64 `json:"target_value" validate:"required,gt=0"`
+	Name          string   `json:"name" validate:"required"`
+	Description   string   `json:"description"`
+	Unit          string   `json:"unit" validate:"required,oneof=porcentaje moneda numero binario"`
+	Direction     string   `json:"direction" validate:"required,oneof=ascendente descendente"`
+	GoalKind      string   `json:"goal_kind" validate:"required,oneof=qualitative quantitative"`
+	Weight        float64  `json:"weight" validate:"required,min=0,max=100"`
+	TargetValue   float64  `json:"target_value" validate:"required,gte=0"`
+	BaselineValue *float64 `json:"baseline_value,omitempty"`
+	CurrentValue  *float64 `json:"current_value,omitempty"`
 }
 
 // AddMemberRequest is the request body for adding a member.
@@ -86,6 +89,18 @@ func (s *sharedGoalService) CreateSharedGoal(ctx context.Context, req CreateShar
 		return nil, pkgerrors.NewDomainError(pkgerrors.NotAuthenticated, "no authenticated user", nil)
 	}
 
+	// Validate unit, target and baseline (mirrors personal goal validation).
+	if !validUnits[req.Unit] {
+		return nil, pkgerrors.ErrInvalidUnit
+	}
+	if req.TargetValue <= 0 && req.Direction != "descendente" && req.Unit != "binario" {
+		return nil, pkgerrors.ErrInvalidTargetValue
+	}
+	if err := validateDirection(req.Direction, req.BaselineValue, req.TargetValue); err != nil {
+		return nil, err
+	}
+	normalizedTarget := normalizeBinaryValue(req.Unit, req.TargetValue)
+
 	members := make([]*repogoal.SharedMemberRow, 0, len(req.Members))
 	for _, m := range req.Members {
 		members = append(members, &repogoal.SharedMemberRow{
@@ -96,7 +111,7 @@ func (s *sharedGoalService) CreateSharedGoal(ctx context.Context, req CreateShar
 		})
 	}
 
-	return s.repo.CreateSharedGoal(ctx, userID, req.Name, req.Description, req.Unit, req.Direction, req.GoalKind, req.Weight, req.TargetValue, req.GroupName, req.GroupDescription, members)
+	return s.repo.CreateSharedGoal(ctx, userID, req.Name, req.Description, req.Unit, req.Direction, req.GoalKind, req.Weight, normalizedTarget, req.BaselineValue, req.GroupName, req.GroupDescription, members)
 }
 
 // GetSharedGoal retrieves a shared goal.
@@ -136,7 +151,25 @@ func (s *sharedGoalService) UpdateSharedGoal(ctx context.Context, goalID uuid.UU
 		return nil, ErrNotCreator
 	}
 
-	return s.repo.UpdateSharedGoal(ctx, goalID, req.Name, req.Description, req.Unit, req.Direction, req.GoalKind, req.Weight, req.TargetValue)
+	// Validate unit, target and baseline (mirrors personal goal validation).
+	if !validUnits[req.Unit] {
+		return nil, pkgerrors.ErrInvalidUnit
+	}
+	if req.TargetValue <= 0 && req.Direction != "descendente" && req.Unit != "binario" {
+		return nil, pkgerrors.ErrInvalidTargetValue
+	}
+	if err := validateDirection(req.Direction, req.BaselineValue, req.TargetValue); err != nil {
+		return nil, err
+	}
+	normalizedTarget := normalizeBinaryValue(req.Unit, req.TargetValue)
+
+	if req.CurrentValue != nil {
+		if err := validateProgressValue(goal.Unit, goal.Direction, goal.BaselineValue, *req.CurrentValue); err != nil {
+			return nil, err
+		}
+	}
+
+	return s.repo.UpdateSharedGoal(ctx, goalID, req.Name, req.Description, req.Unit, req.Direction, req.GoalKind, req.Weight, normalizedTarget, req.CurrentValue, req.BaselineValue)
 }
 
 // DeleteSharedGoal deletes a shared goal.
@@ -202,6 +235,10 @@ func (s *sharedGoalService) UpdateProgress(ctx context.Context, goalID, employee
 	}
 	if goal.CreatedBy != userID {
 		return ErrNotCreator
+	}
+
+	if err := validateProgressValue(goal.Unit, goal.Direction, goal.BaselineValue, req.CurrentValue); err != nil {
+		return err
 	}
 
 	return s.repo.UpdateProgress(ctx, goalID, employeeID, req.CurrentValue)
