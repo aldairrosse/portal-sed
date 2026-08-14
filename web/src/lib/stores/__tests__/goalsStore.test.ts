@@ -110,16 +110,37 @@ const SAMPLE_API_ASSIGNMENT = {
 	created_at: '2026-01-01T00:00:00Z'
 };
 
-// ─── DEV mode ──────────────────────────────────────────────────────────────────
+/**
+ * Route every GET the store can issue to a realistic response.
+ * A full load() is: 3 main endpoints + 1 comment GET per goal + 1 per category.
+ */
+function mockApiRoutes(cm: MockClient) {
+	cm.GET.mockImplementation((url: string) => {
+		if (url.includes('/comments')) {
+			return Promise.resolve({ data: [], error: null });
+		}
+		if (url.includes('categories')) {
+			return Promise.resolve(okGetResponse(SAMPLE_API_CATEGORIES));
+		}
+		if (url.includes('kpis')) {
+			return Promise.resolve(okGetResponse(SAMPLE_API_KPIS));
+		}
+		// assignments endpoint returns a single object, not { items }
+		return Promise.resolve({ data: SAMPLE_API_ASSIGNMENT, error: null });
+	});
+}
 
-describe('goalsStore – DEV mode', () => {
+// ─── Store contract (API-only) ─────────────────────────────────────────────────
+
+describe('goalsStore – API contract', () => {
 	beforeEach(() => {
 		vi.resetModules();
-		vi.stubEnv('DEV', true);
-		vi.stubEnv('VITE_USE_API', '');
+		vi.clearAllMocks();
 	});
 
-	it('load() populates from fixture files when DEV && !VITE_USE_API', async () => {
+	it('load() populates store from API responses', async () => {
+		const cm = await getClientMock();
+		mockApiRoutes(cm);
 		const store = await import('../goalsStore.svelte');
 
 		// Initial state before load
@@ -129,207 +150,148 @@ describe('goalsStore – DEV mode', () => {
 
 		expect(store.storeState.loading).toBe(false);
 		expect(store.storeState.error).toBeNull();
-		expect(store.getCategories()).toHaveLength(4);
-		expect(store.getGoals()).toHaveLength(10);
-		expect(store.getKpis()).toHaveLength(6);
-		expect(store.getGoalKpiLinks()).toHaveLength(11);
-		expect(store.getAssignments()).toHaveLength(10);
+		expect(store.getCategories()).toHaveLength(2);
+		expect(store.getGoals()).toHaveLength(1);
+		expect(store.getKpis()).toHaveLength(1);
+		expect(store.getGoalKpiLinks()).toHaveLength(1);
+		expect(store.getAssignments()).toHaveLength(1);
 		expect(store.getChangeRequests()).toHaveLength(0);
 	}, 15000);
 
-	it('does not call client API in DEV mode', async () => {
+	it('load() fetches the main endpoints plus one comments GET per goal/category', async () => {
+		const cm = await getClientMock();
+		mockApiRoutes(cm);
 		const store = await import('../goalsStore.svelte');
 		await store.load();
 
-		const cm = await getClientMock();
-		expect(cm.GET).not.toHaveBeenCalled();
+		// 3 main endpoints + 1 goal comment (goal-api-1) + 2 category comments
+		expect(cm.GET).toHaveBeenCalledTimes(6);
+		expect(cm.GET).toHaveBeenCalledWith(
+			'/employees/{empId}/categories',
+			expect.objectContaining({ params: { path: { empId: 'emp-test-01' } } })
+		);
+		expect(cm.GET).toHaveBeenCalledWith('/kpis', {});
+		expect(cm.GET).toHaveBeenCalledWith(
+			'/goals/{goalId}/comments',
+			expect.objectContaining({ params: { path: { goalId: 'goal-api-1' } } })
+		);
 	});
 
-	it('getCategories() returns fixture categories', async () => {
+	it('getCategories() returns normalized categories', async () => {
+		const cm = await getClientMock();
+		mockApiRoutes(cm);
 		const store = await import('../goalsStore.svelte');
 		await store.load();
 
 		const cats = store.getCategories();
-		expect(cats.find((c: { id: string }) => c.id === 'cat-ventas-finanzas')?.name).toBe(
-			'Ventas y resultados financieros'
-		);
+		expect(cats.find((c: { id: string }) => c.id === 'cat-api-1')?.name).toBe('Ventas');
 	});
 
 	it('getGoalsByCategory() filters correctly', async () => {
+		const cm = await getClientMock();
+		mockApiRoutes(cm);
 		const store = await import('../goalsStore.svelte');
 		await store.load();
 
-		const goals = store.getGoalsByCategory('cat-ventas-finanzas');
-		expect(goals).toHaveLength(3);
-		expect(goals[0].name).toBe('Alcanzar meta de ventas mensuales');
+		const goals = store.getGoalsByCategory('cat-api-1');
+		expect(goals).toHaveLength(1);
+		expect(goals[0].name).toBe('Alcanzar cuota');
 	});
 
 	it('getKpisForGoal() returns linked KPIs', async () => {
+		const cm = await getClientMock();
+		mockApiRoutes(cm);
 		const store = await import('../goalsStore.svelte');
 		await store.load();
 
-		const kpis = store.getKpisForGoal('goal-alcanzar-ventas');
+		const kpis = store.getKpisForGoal('goal-api-1');
 		expect(kpis.length).toBeGreaterThanOrEqual(1);
-		expect(kpis.some((k: { id: string }) => k.id === 'kpi-ventas-mensuales')).toBe(true);
+		expect(kpis.some((k: { id: string }) => k.id === 'kpi-api-1')).toBe(true);
 	});
 
 	it('getCategoryProgressAverage() computes direction-aware average from goals with progress', async () => {
+		const cm = await getClientMock();
+		mockApiRoutes(cm);
 		const store = await import('../goalsStore.svelte');
 		await store.load();
 
-		// cat-ventas-finanzas has 3 goals:
-		//   - goal-alcanzar-ventas:   ascendente  progress=650000  target=1_000_000 → (650000/1_000_000)*100 = 65
-		//   - goal-mejorar-margen:    ascendente  progress=18      target=25         → (18/25)*100 = 72
-		//   - goal-reducir-costos:    descendente no progress → excluded from average
-		// avg = (65 + 72) / 2 = 68.5
-		const avg = store.getCategoryProgressAverage('cat-ventas-finanzas');
-		expect(avg).toBeCloseTo(68.5, 0);
+		// cat-api-1 has 1 goal: goal-api-1 ascendente progress=300000 target=500000 → 60
+		const avg = store.getCategoryProgressAverage('cat-api-1');
+		expect(avg).toBeCloseTo(60, 0);
 	});
 
 	it('getWeightedScore() calculates total weighted score across all categories', async () => {
+		const cm = await getClientMock();
+		mockApiRoutes(cm);
 		const store = await import('../goalsStore.svelte');
 		await store.load();
 
-		// cat-ventas-finanzas (w=40):
-		//   goal-alcanzar-ventas (w=50): (50/100)*65 = 32.5
-		//   goal-mejorar-margen (w=30):  (30/100)*72 = 21.6
-		//   → sum: 54.1 × (40/100) = 21.64
-		// cat-clientes-calidad (w=30):
-		//   goal-mejorar-satisfaccion (w=40): (40/100)*91.11... = 36.444...
-		//   goal-reducir-quejas (w=30):      (30/100)*50 = 15
-		//   goal-fidelizacion (w=30):        (30/100)*12.5 = 3.75
-		//   → sum: 55.194... × (30/100) ≈ 16.558...
-		// cat-personas-equipo (w=20):
-		//   goal-reducir-rotacion (w=50): (50/100)*100 = 50
-		//   goal-capacitaciones (w=50):  (50/100)*50 = 25
-		//   → sum: 75 × (20/100) = 15
-		// cat-operaciones-procesos (w=10):
-		//   goal-reducir-ausentismo (w=40): (40/100)*0 = 0
-		//   → sum: 0
-		// Total ≈ 21.64 + 16.558 + 15 + 0 = 53.198
+		// cat-api-1 (w=60): goal-api-1 (w=100): (100/100)*60 = 60 → 60*(60/100) = 36
 		const score = store.getWeightedScore();
-		expect(score).toBeCloseTo(53.2, 0);
+		expect(score).toBeCloseTo(36, 0);
 	});
 
 	it('getGoalsByCategory() returns empty array for unknown category', async () => {
+		const cm = await getClientMock();
+		mockApiRoutes(cm);
 		const store = await import('../goalsStore.svelte');
 		await store.load();
 
 		expect(store.getGoalsByCategory('cat-nonexistent')).toEqual([]);
 	});
 
-	it('isAssignmentValid() returns true for fixture data', async () => {
+	it('isAssignmentValid() returns true for valid API data', async () => {
+		const cm = await getClientMock();
+		mockApiRoutes(cm);
 		const store = await import('../goalsStore.svelte');
 		await store.load();
 
 		expect(store.isAssignmentValid()).toBe(true);
 	});
 
-	it('addCategory() mutates local state without API call', async () => {
-		const store = await import('../goalsStore.svelte');
-		await store.load();
-
-		const before = store.getCategories().length;
-		await store.addCategory({
-			id: 'cat-test',
-			name: 'Test',
-			description: 'Test category',
-			weight: 10
-		});
-
-		expect(store.getCategories()).toHaveLength(before + 1);
-		expect(store.getCategories().find((c: { id: string }) => c.id === 'cat-test')).toBeTruthy();
-
-		const cm = await getClientMock();
-		expect(cm.POST).not.toHaveBeenCalled();
-	});
-
-	it('updateCategory() mutates local state without API call', async () => {
-		const store = await import('../goalsStore.svelte');
-		await store.load();
-
-		await store.updateCategory('cat-ventas-finanzas', { name: 'Ventas actualizado' });
-
-		const cat = store.getCategories().find((c: { id: string }) => c.id === 'cat-ventas-finanzas');
-		expect(cat?.name).toBe('Ventas actualizado');
-	});
-
-	it('deleteCategory() removes category and cascade deletes goals and links', async () => {
-		const store = await import('../goalsStore.svelte');
-		await store.load();
-
-		await store.deleteCategory('cat-operaciones-procesos');
-
-		expect(store.getCategories().find((c: { id: string }) => c.id === 'cat-operaciones-procesos')).toBeUndefined();
-		// Cascade: goals in that category should be gone
-		expect(store.getGoalsByCategory('cat-operaciones-procesos')).toHaveLength(0);
-	});
-
-	it('getChangeRequests() returns empty until a change is recorded', async () => {
-		const store = await import('../goalsStore.svelte');
-		await store.load();
-
-		expect(store.getChangeRequests()).toHaveLength(0);
-	});
-
-	it('recordChangeRequest() appends to change requests', async () => {
-		const store = await import('../goalsStore.svelte');
-		await store.load();
-
-		await store.recordChangeRequest({
-			id: 'cr-test',
-			entityType: 'goal',
-			entityId: 'goal-api-1',
-			action: 'create',
-			changes: {},
-			reason: 'Test',
-			requestedBy: 'tester',
-			requestedAt: new Date().toISOString(),
-			status: 'pending'
-		});
-
-		expect(store.getChangeRequests()).toHaveLength(1);
-		expect(store.getChangeRequests()[0].id).toBe('cr-test');
-	});
-});
-
-// ─── API mode ──────────────────────────────────────────────────────────────────
-
-describe('goalsStore – API mode', () => {
-	beforeEach(() => {
-		vi.resetModules();
-		vi.clearAllMocks();
-		vi.stubEnv('DEV', false);
-		vi.stubEnv('VITE_USE_API', 'true');
-	});
-
-	it('load() calls three GET endpoints and populates store from API response', async () => {
+	it('isAssignmentValid() returns false when category weights do not sum to 100', async () => {
 		const cm = await getClientMock();
 		cm.GET.mockImplementation((url: string) => {
+			if (url.includes('/comments')) {
+				return Promise.resolve({ data: [], error: null });
+			}
 			if (url.includes('categories')) {
-				return Promise.resolve(okGetResponse(SAMPLE_API_CATEGORIES));
+				return Promise.resolve(okGetResponse([{ ...SAMPLE_API_CATEGORIES[0], weight: 30 }]));
 			}
 			if (url.includes('kpis')) {
 				return Promise.resolve(okGetResponse(SAMPLE_API_KPIS));
 			}
-			// assignments endpoint returns a single object, not { items }
 			return Promise.resolve({ data: SAMPLE_API_ASSIGNMENT, error: null });
 		});
 
 		const store = await import('../goalsStore.svelte');
 		await store.load();
 
-		expect(store.storeState.loading).toBe(false);
-		expect(store.storeState.error).toBeNull();
-		expect(cm.GET).toHaveBeenCalledTimes(3);
-		expect(store.getCategories()).toHaveLength(2);
-		expect(store.getGoals()).toHaveLength(1);
+		expect(store.isAssignmentValid()).toBe(false);
 	});
 
-	it('addCategory() calls POST then reloads (three GETs again)', async () => {
+	it('getAssignmentByEmployee() returns the normalized assignment', async () => {
 		const cm = await getClientMock();
-		// Set up GET responses for the reload that happens after POST
+		mockApiRoutes(cm);
+		const store = await import('../goalsStore.svelte');
+		await store.load();
+
+		const assignment = store.getAssignmentByEmployee('emp-test-01');
+		expect(assignment?.id).toBe('asign-api-1');
+		expect(assignment?.goalIds).toEqual(['goal-api-1']);
+	});
+
+	it('load() maps goal comments into getGoalComments()', async () => {
+		const cm = await getClientMock();
 		cm.GET.mockImplementation((url: string) => {
+			if (url.includes('/comments')) {
+				return Promise.resolve({
+					data: [
+						{ id: 'cm-1', author_id: 'a1', author_name: 'Ana', content: 'Hola', created_at: '2026-01-01T00:00:00Z' }
+					],
+					error: null
+				});
+			}
 			if (url.includes('categories')) {
 				return Promise.resolve(okGetResponse(SAMPLE_API_CATEGORIES));
 			}
@@ -338,6 +300,17 @@ describe('goalsStore – API mode', () => {
 			}
 			return Promise.resolve({ data: SAMPLE_API_ASSIGNMENT, error: null });
 		});
+
+		const store = await import('../goalsStore.svelte');
+		await store.load();
+
+		expect(store.getGoalComments('goal-api-1')).toHaveLength(1);
+		expect(store.getGoalComments('goal-api-1')[0].content).toBe('Hola');
+	});
+
+	it('addCategory() calls POST then reloads', async () => {
+		const cm = await getClientMock();
+		mockApiRoutes(cm);
 		cm.POST.mockResolvedValue({ error: null });
 
 		const store = await import('../goalsStore.svelte');
@@ -348,10 +321,66 @@ describe('goalsStore – API mode', () => {
 			weight: 15
 		});
 
-		// POST called once
 		expect(cm.POST).toHaveBeenCalledTimes(1);
-		// Reload triggers GET again: 3 calls per reload
-		expect(cm.GET).toHaveBeenCalledTimes(3);
+		// Reload triggers a full load again: 6 GETs
+		expect(cm.GET).toHaveBeenCalledTimes(6);
+	});
+
+	it('updateCategory() calls PUT then reloads', async () => {
+		const cm = await getClientMock();
+		mockApiRoutes(cm);
+		cm.PUT.mockResolvedValue({ error: null });
+
+		const store = await import('../goalsStore.svelte');
+		await store.updateCategory('cat-api-1', { name: 'Ventas actualizado' });
+
+		expect(cm.PUT).toHaveBeenCalledTimes(1);
+		expect(cm.GET).toHaveBeenCalledTimes(6);
+	});
+
+	it('deleteCategory() calls DELETE then reloads', async () => {
+		const cm = await getClientMock();
+		mockApiRoutes(cm);
+		cm.DELETE.mockResolvedValue({ error: null });
+
+		const store = await import('../goalsStore.svelte');
+		await store.deleteCategory('cat-api-1');
+
+		expect(cm.DELETE).toHaveBeenCalledTimes(1);
+		expect(cm.GET).toHaveBeenCalledTimes(6);
+	});
+
+	it('recordChangeRequest() POSTs and appends the returned change request', async () => {
+		const cm = await getClientMock();
+		mockApiRoutes(cm);
+		const cr = {
+			id: 'cr-test',
+			entityType: 'goal' as const,
+			entityId: 'goal-api-1',
+			action: 'create' as const,
+			changes: {},
+			reason: 'Test',
+			requestedBy: 'tester',
+			requestedAt: new Date().toISOString(),
+			status: 'pending' as const
+		};
+		cm.POST.mockResolvedValue({ data: cr, error: null });
+
+		const store = await import('../goalsStore.svelte');
+		await store.load();
+		await store.recordChangeRequest(cr);
+
+		expect(store.getChangeRequests()).toHaveLength(1);
+		expect(store.getChangeRequests()[0].id).toBe('cr-test');
+	});
+});
+
+// ─── Error / empty handling ────────────────────────────────────────────────────
+
+describe('goalsStore – error handling', () => {
+	beforeEach(() => {
+		vi.resetModules();
+		vi.clearAllMocks();
 	});
 
 	it('handles API error in load() gracefully', async () => {
@@ -372,6 +401,9 @@ describe('goalsStore – API mode', () => {
 	it('handles empty API responses', async () => {
 		const cm = await getClientMock();
 		cm.GET.mockImplementation((url: string) => {
+			if (url.includes('/comments')) {
+				return Promise.resolve({ data: [], error: null });
+			}
 			if (url.includes('assignments')) {
 				return Promise.resolve({ data: null, error: null });
 			}
