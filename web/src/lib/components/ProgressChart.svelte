@@ -126,7 +126,7 @@
 		{#if personal && personal.total > 0}
 			<div class="flex items-start gap-2">
 				<span
-					class="badge badge-info badge-sm mt-0.5 shrink-0"
+					class="badge badge-info badge-xs mt-0.5 shrink-0"
 				></span>
 				<div>
 					<p class="text-sm font-bold text-base-content">
@@ -141,7 +141,7 @@
 		{#if global && global.total > 0}
 			<div class="flex items-start gap-2">
 				<span
-					class="badge badge-primary badge-sm mt-0.5 shrink-0"
+					class="badge badge-primary badge-xs mt-0.5 shrink-0"
 				></span>
 				<div>
 					<p class="text-sm font-bold text-base-content">
@@ -156,7 +156,7 @@
 		{#if shared && shared.total > 0}
 			<div class="flex items-start gap-2">
 				<span
-					class="badge badge-warning badge-sm mt-0.5 shrink-0"
+					class="badge badge-warning badge-xs mt-0.5 shrink-0"
 				></span>
 				<div>
 					<p class="text-sm font-bold text-base-content">
@@ -171,7 +171,7 @@
 		{#if grayPct > 0}
 			<div class="flex items-start gap-2">
 				<span
-					class="badge bg-base-300 text-base-content border-transparent badge-sm mt-0.5 shrink-0"
+					class="badge bg-base-300 text-base-content border-transparent badge-xs mt-0.5 shrink-0"
 				></span>
 				<div>
 					<p class="text-sm font-bold text-base-content">
