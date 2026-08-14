@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { Loader2, Plus, Trash2 } from '@lucide/svelte';
+    import { Loader2, Plus, Trash2, X } from '@lucide/svelte';
     import { untrack } from 'svelte';
     import CustomSelect from '$lib/components/ui/CustomSelect.svelte';
     import { createGlobalGoal, updateGlobalGoal, type CreateGlobalGoalRequest, type CreateAssignmentRequest, type CreateRuleRequest } from '$lib/api/globalGoals';
@@ -21,6 +21,7 @@
             direction: 'ascendente' | 'descendente';
             weight: number;
             target_value: number;
+            baseline_value?: number;
             rules?: CreateRuleRequest[];
             assignments?: CreateAssignmentRequest[];
         };
@@ -34,6 +35,7 @@
         { value: 'porcentaje', label: 'Porcentaje (%)' },
         { value: 'moneda', label: 'Moneda ($)' },
         { value: 'numero', label: 'Número' },
+        { value: 'binario', label: 'Binario (Sí/No)' },
     ];
 
     const RULE_TYPE_LABELS: Record<'department' | 'min_direct_reports' | 'role', string> = {
@@ -79,12 +81,14 @@
     let direction = $state<'ascendente' | 'descendente'>('ascendente');
     let weight = $state(0);
     let targetValue = $state(0);
+    let baselineValue = $state<number | null>(null);
     let assignments = $state<AssignmentRow[]>([]);
     let rules = $state<RuleRow[]>([]);
     let employeeSelect = $state('');
     let error = $state('');
     let saving = $state(false);
     let pickerInitialized = $state(false);
+    let loadingNames = $state(false);
     let initializedFor: string | null = null;
 
     $effect(() => {
@@ -105,6 +109,7 @@
                 direction = init.direction;
                 weight = init.weight;
                 targetValue = init.target_value;
+                baselineValue = init?.baseline_value ?? null;
             } else {
                 name = '';
                 description = '';
@@ -112,6 +117,7 @@
                 direction = 'ascendente';
                 weight = 0;
                 targetValue = 0;
+                baselineValue = null;
             }
             assignments = (init?.assignments ?? []).map(a => ({
                 employeeId: a.employee_id,
@@ -157,12 +163,18 @@
     async function resolveAssignmentNames() {
         // ponytail: untrack so writing the resolved array below doesn't re-trigger the $effect
         const current = untrack(() => assignments);
-        const resolved = await Promise.all(current.map(async a => {
-            if (a.employeeName) return a;
-            const name = await resolveEmployeeName(a.employeeId);
-            return { ...a, employeeName: name || a.employeeId };
-        }));
-        assignments = resolved;
+        if (!current.some(a => !a.employeeName)) return;
+        loadingNames = true;
+        try {
+            const resolved = await Promise.all(current.map(async a => {
+                if (a.employeeName) return a;
+                const name = await resolveEmployeeName(a.employeeId);
+                return { ...a, employeeName: name || a.employeeId };
+            }));
+            assignments = resolved;
+        } finally {
+            loadingNames = false;
+        }
     }
 
     function addAssignment() {
@@ -205,11 +217,12 @@
     function validate(): string {
         if (!name.trim()) return 'El nombre es obligatorio';
         if (!(weight >= 0 && weight <= 100)) return 'La ponderación debe estar entre 0 y 100';
-        if (!(targetValue > 0)) return 'El valor objetivo debe ser mayor a 0';
+        if (targetValue <= 0 && direction !== 'descendente' && unit !== 'binario') return 'El valor objetivo debe ser mayor a 0';
+        if (direction === 'descendente' && (baselineValue === null || baselineValue <= targetValue)) return 'Para objetivos descendentes, el valor inicial debe ser mayor al objetivo';
         if (!goalId && assignments.length === 0 && rules.length === 0) return 'Selecciona al menos un empleado o una regla';
         for (const a of assignments) {
             if (!(a.weight >= 0 && a.weight <= 100)) return 'Ponderación de empleado inválida (0-100)';
-            if (!(a.targetValue > 0)) return 'El valor objetivo del empleado debe ser mayor a 0';
+            if (a.targetValue <= 0 && direction !== 'descendente' && unit !== 'binario') return 'El valor objetivo del empleado debe ser mayor a 0';
         }
         for (const r of rules) {
             if (!(r.defaultWeight >= 0 && r.defaultWeight <= 100)) return 'Ponderación por defecto inválida (0-100)';
@@ -251,6 +264,7 @@
                     goal_kind: goalKind,
                     weight,
                     target_value: targetValue,
+                    baseline_value: baselineValue ?? undefined,
                     assignments: assignmentsPayload,
                     rules: rulesPayload,
                 });
@@ -263,6 +277,7 @@
                     goal_kind: goalKind,
                     weight,
                     target_value: targetValue,
+                    baseline_value: baselineValue ?? undefined,
                     assignments: assignmentsPayload,
                     rules: rulesPayload,
                 };
@@ -283,22 +298,27 @@
     aria-modal="true"
     onclick={(e) => { if (e.target === e.currentTarget) oncancel(); }}
 >
-    <div class="modal-box max-w-2xl">
-        <h3 class="font-bold text-lg mb-4">
-            {goalId ? 'Editar' : 'Nueva'} meta {goalKind === 'qualitative' ? 'cualitativa' : 'cuantitativa'}
-        </h3>
+    <div class="modal-box max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="font-bold text-lg">
+                {goalId ? 'Editar' : 'Nueva'} meta {goalKind === 'qualitative' ? 'cualitativa' : 'cuantitativa'}
+            </h3>
+            <button class="btn btn-sm btn-ghost btn-circle" onclick={oncancel} disabled={saving}>
+                <X class="w-4 h-4" />
+            </button>
+        </div>
 
         {#if error}
             <div class="alert alert-error text-sm mb-3" role="alert"><span>{error}</span></div>
         {/if}
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-3">
-            <div class="form-control sm:col-span-2 lg:col-span-3">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+            <div class="form-control sm:col-span-2">
                 <label class="label" for="global-goal-name"><span class="label-text text-xs">Nombre de la meta</span></label>
                 <input id="global-goal-name" type="text" class="input input-bordered input-sm w-full"
                     bind:value={name} placeholder="Nombre" required />
             </div>
-            <div class="form-control sm:col-span-2 lg:col-span-3">
+            <div class="form-control sm:col-span-2">
                 <label class="label" for="global-goal-desc"><span class="label-text text-xs">Descripción</span></label>
                 <textarea id="global-goal-desc" class="textarea textarea-bordered textarea-sm w-full"
                     rows={1} bind:value={description} placeholder="Descripción"></textarea>
@@ -342,6 +362,13 @@
                 <input id="global-goal-target" type="number" class="input input-bordered input-sm w-full"
                     bind:value={targetValue} min={0} step={0.01} required />
             </div>
+            {#if direction === 'descendente'}
+                <div class="form-control">
+                    <label class="label" for="global-goal-baseline"><span class="label-text text-xs">Valor inicial</span></label>
+                    <input id="global-goal-baseline" type="number" class="input input-bordered input-sm w-full"
+                        bind:value={baselineValue} min={0} step={0.01} required placeholder="Valor inicial" />
+                </div>
+            {/if}
         </div>
 
         <!-- Asignación a empleados -->
@@ -366,33 +393,40 @@
                     </button>
                 </div>
             </div>
-            <div class="flex items-center gap-2 px-1 mb-1">
-                <span class="label-text text-xs flex-1">Nombre</span>
-                <span class="label-text text-xs w-24">Peso %</span>
-                <span class="label-text text-xs w-28">Objetivo</span>
-                <span class="w-7"></span>
+            <div class="grid grid-cols-[minmax(0,1fr)_6rem_7rem_2rem] gap-2 mb-1 opacity-60">
+                <span class="label-text text-xs">Nombre</span>
+                <span class="label-text text-xs">Peso %</span>
+                <span class="label-text text-xs">Objetivo</span>
+                <span></span>
             </div>
             {#if assignments.length > 0}
-                <div class="space-y-2">
-                    {#each assignments as a, i (a.employeeId)}
-                        <div class="flex items-center gap-2">
-                            <span class="text-sm flex-1 truncate">{a.employeeName}</span>
-                            <div class="form-control w-24">
-                                <input type="number" class="input input-bordered input-sm w-full"
-                                    bind:value={a.weight} min={0} max={100} step={0.1}
-                                    aria-label={`Ponderación de ${a.employeeName}`} placeholder="Peso %" />
+                {#if loadingNames}
+                    <div class="flex items-center justify-center gap-2 py-4">
+                        <Loader2 class="w-4 h-4 animate-spin" />
+                        <span class="text-xs text-base-content/60">Cargando nombres…</span>
+                    </div>
+                {:else}
+                    <div class="space-y-2 max-h-64 overflow-y-auto overflow-x-hidden">
+                        {#each assignments as a, i (a.employeeId)}
+                            <div class="grid grid-cols-[minmax(0,1fr)_6rem_7rem_2rem] gap-2 items-center">
+                                <span class="text-sm truncate">{a.employeeName}</span>
+                                <div class="form-control">
+                                    <input type="number" class="input input-bordered input-sm w-full"
+                                        bind:value={a.weight} min={0} max={100} step={0.1}
+                                        aria-label={`Ponderación de ${a.employeeName}`} placeholder="Peso %" />
+                                </div>
+                                <div class="form-control">
+                                    <input type="number" class="input input-bordered input-sm w-full"
+                                        bind:value={a.targetValue} min={0} step={0.01}
+                                        aria-label={`Valor objetivo de ${a.employeeName}`} placeholder="Objetivo" />
+                                </div>
+                                <button class="btn btn-ghost btn-xs text-error" onclick={() => removeAssignment(i)} type="button">
+                                    <Trash2 class="w-4 h-4" />
+                                </button>
                             </div>
-                            <div class="form-control w-28">
-                                <input type="number" class="input input-bordered input-sm w-full"
-                                    bind:value={a.targetValue} min={0} step={0.01}
-                                    aria-label={`Valor objetivo de ${a.employeeName}`} placeholder="Objetivo" />
-                            </div>
-                            <button class="btn btn-ghost btn-xs text-error" onclick={() => removeAssignment(i)} type="button">
-                                <Trash2 class="w-4 h-4" />
-                            </button>
-                        </div>
-                    {/each}
-                </div>
+                        {/each}
+                    </div>
+                {/if}
             {/if}
         </div>
 
@@ -414,19 +448,19 @@
                 </div>
             </div>
             {#if rules.length > 0}
-            <div class="flex items-center gap-2 px-1 mb-1">
-                <span class="label-text text-xs flex-1">Tipo</span>
-                <span class="label-text text-xs flex-1">Detalle</span>
-                <span class="label-text text-xs w-28">Objetivo</span>
-                <span class="label-text text-xs w-36">Peso %</span>
-                <span class="w-7"></span>
+            <div class="grid grid-cols-[6rem_minmax(0,1fr)_6rem_7rem_2rem] gap-2 mb-1 opacity-60">
+                <span class="label-text text-xs">Tipo</span>
+                <span class="label-text text-xs">Detalle</span>
+                <span class="label-text text-xs">Peso %</span>
+                <span class="label-text text-xs">Objetivo</span>
+                <span></span>
             </div>
             {/if}
             {#if rules.length > 0}
                 <div class="space-y-2">
                     {#each rules as r, i (i)}
-                        <div class="flex items-center gap-2">
-                            <span class="badge badge-sm badge-outline flex-shrink-0">{RULE_TYPE_LABELS[r.ruleType]}</span>
+                        <div class="grid grid-cols-[6rem_minmax(0,1fr)_6rem_7rem_2rem] gap-2 items-center">
+                            <span class="badge badge-sm badge-outline justify-self-start">{RULE_TYPE_LABELS[r.ruleType]}</span>
                             {#if r.ruleType === 'department'}
                                 <CustomSelect
                                     options={departmentOptions}
@@ -434,7 +468,8 @@
                                     onChange={(v) => { r.departmentId = v; }}
                                     ariaLabel="Departamento"
                                     initialLabel={departmentLabel(r.departmentId)}
-                                    class="w-64"
+                                    class="w-full"
+                                    searchable
                                 />
                             {:else if r.ruleType === 'role'}
                                 <CustomSelect
@@ -443,24 +478,24 @@
                                     onChange={(v) => { r.profileId = v; }}
                                     ariaLabel="Perfil"
                                     initialLabel={profileLabel(r.profileId)}
-                                    class="w-64"
+                                    class="w-full"
                                 />
                             {:else}
-                                <div class="form-control w-32">
+                                <div class="form-control">
                                     <input type="number" class="input input-bordered input-sm w-full"
                                         bind:value={r.minDirectReports} min={1} step={1}
                                         aria-label="Mínimo de reportes directos" placeholder="Min. reportes" />
                                 </div>
                             {/if}
-                            <div class="form-control w-28">
-                                <input type="number" class="input input-bordered input-sm w-full"
-                                    bind:value={r.defaultTarget} min={0} step={0.01}
-                                    aria-label="Objetivo por defecto" placeholder="Objetivo" />
-                            </div>
-                            <div class="form-control w-36">
+                            <div class="form-control">
                                 <input type="number" class="input input-bordered input-sm w-full"
                                     bind:value={r.defaultWeight} min={0} max={100} step={0.1}
                                     aria-label="Ponderación por defecto" placeholder="Peso %" />
+                            </div>
+                            <div class="form-control">
+                                <input type="number" class="input input-bordered input-sm w-full"
+                                    bind:value={r.defaultTarget} min={0} step={0.01}
+                                    aria-label="Objetivo por defecto" placeholder="Objetivo" />
                             </div>
                             <button class="btn btn-ghost btn-xs text-error" onclick={() => removeRule(i)} type="button">
                                 <Trash2 class="w-4 h-4" />

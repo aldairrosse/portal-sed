@@ -3,11 +3,15 @@
     import { goto } from '$app/navigation';
     import { onMount } from 'svelte';
     import { Target, Plus, Globe, Users, Loader2, TrendingDown, TrendingUp } from '@lucide/svelte';
-    import WeightIndicator from '$lib/components/goals/WeightIndicator.svelte';
-    import { listGlobalGoals, deleteGlobalGoal, executeRules, updateGlobalGoal, type GlobalGoal } from '$lib/api/globalGoals';
+    import ProgressIndicator from '$lib/components/goals/ProgressIndicator.svelte';
+    import { listGlobalGoals, deleteGlobalGoal, updateGlobalGoal, type GlobalGoal } from '$lib/api/globalGoals';
+    import { getActivePhase } from '$lib/api/cycle.svelte';
     import GlobalGoalCreateForm from '$lib/components/goals/GlobalGoalCreateForm.svelte';
 
     const profile = $derived(getProfile());
+
+    const phase = $derived(getActivePhase() ?? 'inicio-anio');
+    const canEditProgress = $derived(phase === 'medio-anio' || phase === 'fin-anio');
 
     let goals = $state<GlobalGoal[]>([]);
     let loading = $state(true);
@@ -16,7 +20,6 @@
     let createKind = $state<'qualitative' | 'quantitative'>('qualitative');
     let editGoal = $state<GlobalGoal | null>(null);
     let notice = $state('');
-    let runningRules = $state('');
     let savingIds = $state<string[]>([]);
 
     onMount(() => {
@@ -30,7 +33,7 @@
     async function loadGoals() {
         try {
             loading = true;
-            goals = await listGlobalGoals();
+            goals = (await listGlobalGoals()) ?? [];
         } catch (e) {
             error = e instanceof Error ? e.message : 'Error al cargar objetivos';
         } finally {
@@ -48,39 +51,22 @@
         }
     }
 
-    function showNotice(msg: string) {
-        notice = msg;
-        setTimeout(() => { if (notice === msg) notice = ''; }, 5000);
-    }
-
     function openEdit(goal: GlobalGoal) {
         editGoal = goal;
         createKind = goal.goal_kind === 'quantitative' ? 'quantitative' : 'qualitative';
         showCreate = true;
     }
 
-    async function handleExecuteRules(goalId: string) {
-        runningRules = goalId;
-        try {
-            const res = await executeRules(goalId);
-            showNotice(`Se asignó la meta a ${res.assignments_created} empleados`);
-        } catch (e) {
-            error = e instanceof Error ? e.message : 'Error al ejecutar asignación';
-        } finally {
-            runningRules = '';
-        }
-    }
+    const progressTimers: Record<string, ReturnType<typeof setTimeout>> = {};
 
-    const weightTimers: Record<string, ReturnType<typeof setTimeout>> = {};
-
-    function scheduleWeightSave(goal: GlobalGoal) {
-        const prev = weightTimers[goal.id];
+    function scheduleProgressSave(goal: GlobalGoal) {
+        const prev = progressTimers[goal.id];
         if (prev) clearTimeout(prev);
-        weightTimers[goal.id] = setTimeout(() => saveWeight(goal.id), 800);
+        progressTimers[goal.id] = setTimeout(() => saveProgress(goal.id), 800);
     }
 
-    async function saveWeight(goalId: string) {
-        delete weightTimers[goalId];
+    async function saveProgress(goalId: string) {
+        delete progressTimers[goalId];
         const goal = goals.find(g => g.id === goalId);
         if (!goal) return;
         savingIds = [...savingIds, goalId];
@@ -93,9 +79,11 @@
                 goal_kind: goal.goal_kind,
                 weight: goal.weight,
                 target_value: goal.target_value,
+                baseline_value: goal.baseline_value,
+                current_value: goal.current_value,
             });
         } catch (e) {
-            error = e instanceof Error ? e.message : 'Error al guardar ponderación';
+            error = e instanceof Error ? e.message : 'Error al guardar avance';
         } finally {
             savingIds = savingIds.filter(id => id !== goalId);
         }
@@ -111,6 +99,25 @@
         quantitativeGoals.reduce((sum, g) => sum + g.weight, 0)
     );
     const totalSum = $derived(qualitativeSum + quantitativeSum);
+
+    const weightedProgress = $derived((() => {
+        const totalWeight = goals.reduce((s, g) => s + g.weight, 0);
+        if (totalWeight === 0) return 0;
+        return Math.min(100, Math.max(0, goals.reduce((s, g) => s + progressPercent(g) * g.weight, 0) / totalWeight));
+    })());
+
+    function progressPercent(goal: { current_value: number; target_value: number; baseline_value?: number | null; direction: string }): number {
+        const current = goal.current_value ?? 0;
+        const target = goal.target_value;
+        const baseline = goal.baseline_value ?? 0;
+        if (goal.direction === 'descendente') {
+            if (baseline === target) return 0;
+            const pct = ((baseline - current) / (baseline - target)) * 100;
+            return Math.min(100, Math.max(0, pct));
+        }
+        if (target === 0) return 0;
+        return Math.min(100, Math.max(0, (current / target) * 100));
+    }
 
     function formatTarget(goal: GlobalGoal) {
         if (goal.unit === 'porcentaje') return `${goal.target_value}%`;
@@ -151,12 +158,10 @@
     {:else}
         <div class="bg-base-200 rounded-lg p-4 mb-6">
             <div class="flex items-center justify-between mb-2">
-                <span class="text-sm font-medium">Ponderación total</span>
-                <span class="text-sm {totalSum === 100 ? 'text-success' : 'text-warning'}">
-                    {totalSum}%
-                </span>
+                <span class="text-sm font-medium">Progreso global</span>
+                <span class="text-sm font-semibold">{Math.round(totalSum)}%</span>
             </div>
-            <WeightIndicator current={totalSum} label="Ponderación total" />
+            <ProgressIndicator value={weightedProgress} wide />
         </div>
 
         <!-- Cualitativos -->
@@ -179,8 +184,11 @@
                             {#each qualitativeGoals as goal (goal.id)}
                                 <div class="flex items-center justify-between p-3 bg-base-100 rounded-lg">
                                     <div>
-                                        <p class="font-medium">{goal.name}</p>
-                                        <p class="text-sm text-base-content/60">
+                                        <p class="font-medium flex items-center gap-2">
+                                            {goal.name}
+                                            <span class="badge badge-ghost shrink-0">Peso: {goal.weight}%</span>
+                                        </p>
+                                        <p class="text-sm text-base-content/60 flex items-center gap-1">
                                             {#if goal.direction === "ascendente"}
                                                 <TrendingUp class="w-3 h-3" />
                                             {:else}
@@ -191,35 +199,22 @@
                                         <p class="text-xs text-base-content/50">{goal.rules.length} reglas · {goal.assignments.length} asignados</p>
                                     </div>
                                     <div class="flex items-center gap-2">
-                                        <div class="flex items-center gap-1">
-                                            <input
-                                                type="number"
-                                                class="input input-bordered input-xs w-20"
-                                                bind:value={goal.weight}
-                                                oninput={() => scheduleWeightSave(goal)}
-                                                min={0}
-                                                max={100}
-                                                step={0.1}
-                                                aria-label={`Ponderación de ${goal.name}`}
-                                            />
-                                            <span class="text-xs text-base-content/60">%</span>
-                                            {#if savingIds.includes(goal.id)}
-                                                <span class="text-xs text-base-content/40">Guardando…</span>
-                                            {/if}
-                                        </div>
-                                        {#if goal.rules.length > 0}
-                                            <button
-                                                class="btn btn-outline btn-xs"
-                                                disabled={runningRules !== ''}
-                                                onclick={() => handleExecuteRules(goal.id)}
-                                            >
-                                                {#if runningRules === goal.id}
-                                                    <Loader2 class="w-3 h-3 animate-spin" />
-                                                    Ejecutando…
-                                                {:else}
-                                                    Ejecutar asignación
+                                        {#if canEditProgress}
+                                            <div class="flex items-center gap-1">
+                                                <input
+                                                    type="number"
+                                                    class="input input-bordered input-xs w-20"
+                                                    bind:value={goal.current_value}
+                                                    oninput={() => scheduleProgressSave(goal)}
+                                                    min={0}
+                                                    step={0.1}
+                                                    aria-label={`Avance de ${goal.name}`}
+                                                />
+                                                <span class="text-xs text-base-content/60">{progressPercent(goal).toFixed(1)}%</span>
+                                                {#if savingIds.includes(goal.id)}
+                                                    <span class="text-xs text-base-content/40">Guardando…</span>
                                                 {/if}
-                                            </button>
+                                            </div>
                                         {/if}
                                         <button
                                             class="btn btn-ghost btn-xs"
@@ -264,8 +259,11 @@
                             {#each quantitativeGoals as goal (goal.id)}
                                 <div class="flex items-center justify-between p-3 bg-base-100 rounded-lg">
                                     <div>
-                                        <p class="font-medium">{goal.name}</p>
-                                        <p class="text-sm text-base-content/60">
+                                        <p class="font-medium flex items-center gap-2">
+                                            {goal.name}
+                                            <span class="badge badge-ghost shrink-0">Peso: {goal.weight}%</span>
+                                        </p>
+                                        <p class="text-sm text-base-content/60 flex items-center gap-1">
                                             {#if goal.direction === "ascendente"}
                                                 <TrendingUp class="w-3 h-3" />
                                             {:else}
@@ -276,35 +274,22 @@
                                         <p class="text-xs text-base-content/50">{goal.rules.length} reglas · {goal.assignments.length} asignados</p>
                                     </div>
                                     <div class="flex items-center gap-2">
-                                        <div class="flex items-center gap-1">
-                                            <input
-                                                type="number"
-                                                class="input input-bordered input-xs w-20"
-                                                bind:value={goal.weight}
-                                                oninput={() => scheduleWeightSave(goal)}
-                                                min={0}
-                                                max={100}
-                                                step={0.1}
-                                                aria-label={`Ponderación de ${goal.name}`}
-                                            />
-                                            <span class="text-xs text-base-content/60">%</span>
-                                            {#if savingIds.includes(goal.id)}
-                                                <span class="text-xs text-base-content/40">Guardando…</span>
-                                            {/if}
-                                        </div>
-                                        {#if goal.rules.length > 0}
-                                            <button
-                                                class="btn btn-outline btn-xs"
-                                                disabled={runningRules !== ''}
-                                                onclick={() => handleExecuteRules(goal.id)}
-                                            >
-                                                {#if runningRules === goal.id}
-                                                    <Loader2 class="w-3 h-3 animate-spin" />
-                                                    Ejecutando…
-                                                {:else}
-                                                    Ejecutar asignación
+                                        {#if canEditProgress}
+                                            <div class="flex items-center gap-1">
+                                                <input
+                                                    type="number"
+                                                    class="input input-bordered input-xs w-20"
+                                                    bind:value={goal.current_value}
+                                                    oninput={() => scheduleProgressSave(goal)}
+                                                    min={0}
+                                                    step={0.1}
+                                                    aria-label={`Avance de ${goal.name}`}
+                                                />
+                                                <span class="text-xs text-base-content/60">{progressPercent(goal).toFixed(1)}%</span>
+                                                {#if savingIds.includes(goal.id)}
+                                                    <span class="text-xs text-base-content/40">Guardando…</span>
                                                 {/if}
-                                            </button>
+                                            </div>
                                         {/if}
                                         <button
                                             class="btn btn-ghost btn-xs"
@@ -341,6 +326,7 @@
             direction: editGoal.direction as 'ascendente' | 'descendente',
             weight: editGoal.weight,
             target_value: editGoal.target_value,
+            baseline_value: editGoal.baseline_value,
             rules: editGoal.rules,
             assignments: editGoal.assignments,
         } : undefined}

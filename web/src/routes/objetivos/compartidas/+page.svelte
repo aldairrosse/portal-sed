@@ -3,29 +3,32 @@
     import { goto } from '$app/navigation';
     import { onMount } from 'svelte';
     import { Users, Plus, Edit, Trash, Loader2 } from '@lucide/svelte';
-    import WeightIndicator from '$lib/components/goals/WeightIndicator.svelte';
+    import ProgressIndicator from '$lib/components/goals/ProgressIndicator.svelte';
     import SharedGoalCreateForm from '$lib/components/goals/SharedGoalCreateForm.svelte';
-    import { listSharedGoals, deleteSharedGoal, updateSharedGoal, type SharedGoal, type UpdateSharedGoalRequest } from '$lib/api/sharedGoals';
+    import { listSharedGoals, deleteSharedGoal, updateSharedGoal, type SharedGoal } from '$lib/api/sharedGoals';
+    import { getActivePhase } from '$lib/api/cycle.svelte';
 
     const profile = $derived(getProfile());
     const allowedProfiles = ['jefe', 'director', 'director-general'];
+
+    const phase = $derived(getActivePhase() ?? 'inicio-anio');
+    const canEditProgress = $derived(phase === 'medio-anio' || phase === 'fin-anio');
 
     let goals = $state<SharedGoal[]>([]);
     let loading = $state(true);
     let error = $state('');
 
     onMount(() => {
+        loadGoals();
         if (!allowedProfiles.includes(profile)) {
             goto('/');
-            return;
         }
-        loadGoals();
     });
 
     async function loadGoals() {
         try {
             loading = true;
-            goals = await listSharedGoals('creator');
+            goals = (await listSharedGoals('creator')) ?? [];
         } catch (e) {
             error = e instanceof Error ? e.message : 'Error al cargar metas compartidas';
         } finally {
@@ -54,32 +57,43 @@
                   direction: editGoal.direction as 'ascendente' | 'descendente',
                   weight: editGoal.weight,
                   target_value: editGoal.target_value,
+                  baseline_value: editGoal.baseline_value,
               }
             : undefined
     );
 
-    let weightTimer: ReturnType<typeof setTimeout> | undefined;
+    let savingIds = $state<string[]>([]);
 
-    function scheduleWeightSave(goal: SharedGoal) {
-        clearTimeout(weightTimer);
-        weightTimer = setTimeout(async () => {
-            const w = Number(goal.weight);
-            if (!Number.isFinite(w)) return;
-            try {
-                // ponytail: UpdateSharedGoalRequest type lacks weight; backend accepts it
-                await updateSharedGoal(goal.id, {
-                    name: goal.name,
-                    description: goal.description,
-                    unit: goal.unit,
-                    direction: goal.direction,
-                    goal_kind: goal.goal_kind,
-                    weight: w,
-                    target_value: goal.target_value,
-                } as UpdateSharedGoalRequest);
-            } catch (e) {
-                error = e instanceof Error ? e.message : 'Error al guardar la ponderación';
-            }
-        }, 800);
+    const progressTimers: Record<string, ReturnType<typeof setTimeout>> = {};
+
+    function scheduleProgressSave(goal: SharedGoal) {
+        const prev = progressTimers[goal.id];
+        if (prev) clearTimeout(prev);
+        progressTimers[goal.id] = setTimeout(() => saveProgress(goal.id), 800);
+    }
+
+    async function saveProgress(goalId: string) {
+        delete progressTimers[goalId];
+        const goal = goals.find(g => g.id === goalId);
+        if (!goal) return;
+        savingIds = [...savingIds, goalId];
+        try {
+            await updateSharedGoal(goalId, {
+                name: goal.name,
+                description: goal.description,
+                unit: goal.unit,
+                direction: goal.direction,
+                goal_kind: goal.goal_kind,
+                weight: goal.weight,
+                target_value: goal.target_value,
+                baseline_value: goal.baseline_value,
+                current_value: goal.current_value,
+            });
+        } catch (e) {
+            error = e instanceof Error ? e.message : 'Error al guardar avance';
+        } finally {
+            savingIds = savingIds.filter(id => id !== goalId);
+        }
     }
 
     let showCreate = $state(false);
@@ -96,9 +110,29 @@
     );
     const totalSum = $derived(qualitativeSum + quantitativeSum);
 
+    const weightedProgress = $derived((() => {
+        const totalWeight = goals.reduce((s, g) => s + g.weight, 0);
+        if (totalWeight === 0) return 0;
+        return Math.min(100, Math.max(0, goals.reduce((s, g) => s + progressPercent(g) * g.weight, 0) / totalWeight));
+    })());
+
+    function progressPercent(goal: { current_value: number; target_value: number; baseline_value?: number | null; direction: string }): number {
+        const current = goal.current_value ?? 0;
+        const target = goal.target_value;
+        const baseline = goal.baseline_value ?? 0;
+        if (goal.direction === 'descendente') {
+            if (baseline === target) return 0;
+            const pct = ((baseline - current) / (baseline - target)) * 100;
+            return Math.min(100, Math.max(0, pct));
+        }
+        if (target === 0) return 0;
+        return Math.min(100, Math.max(0, (current / target) * 100));
+    }
+
     function formatTarget(goal: SharedGoal) {
         if (goal.unit === 'porcentaje') return `${goal.target_value}%`;
         if (goal.unit === 'moneda') return `$${goal.target_value.toLocaleString()}`;
+        if (goal.unit === 'binario') return goal.target_value === 1 ? 'Sí' : 'No';
         return `${goal.target_value}`;
     }
 </script>
@@ -128,12 +162,10 @@
     {:else}
         <div class="bg-base-200 rounded-lg p-4 mb-6">
             <div class="flex items-center justify-between mb-2">
-                <span class="text-sm font-medium">Ponderación total</span>
-                <span class="text-sm {totalSum === 100 ? 'text-success' : 'text-warning'}">
-                    {totalSum}%
-                </span>
+                <span class="text-sm font-medium">Progreso global</span>
+                <span class="text-sm font-semibold">{Math.round(totalSum)}%</span>
             </div>
-            <WeightIndicator current={totalSum} label="Ponderación total" />
+            <ProgressIndicator value={weightedProgress} wide />
         </div>
 
         <!-- Cualitativos -->
@@ -155,22 +187,32 @@
                             {#each qualitativeGoals as goal (goal.id)}
                                 <div class="flex items-center justify-between p-3 bg-base-100 rounded-lg">
                                     <div class="flex-1">
-                                        <p class="font-medium">{goal.name}</p>
+                                        <p class="font-medium flex items-center gap-2">
+                                            {goal.name}
+                                            <span class="badge badge-ghost shrink-0">Peso: {goal.weight}%</span>
+                                        </p>
                                         <p class="text-sm text-base-content/60">
                                             Target: {formatTarget(goal)} · {goal.members.length} miembros
                                         </p>
                                     </div>
                                     <div class="flex items-center gap-2">
-                                        <input
-                                            type="number"
-                                            class="input input-bordered input-xs w-20"
-                                            bind:value={goal.weight}
-                                            min={0}
-                                            max={100}
-                                            step={0.1}
-                                            oninput={() => scheduleWeightSave(goal)}
-                                            aria-label={`Ponderación de ${goal.name}`}
-                                        />
+                                        {#if canEditProgress}
+                                            <div class="flex items-center gap-1">
+                                                <input
+                                                    type="number"
+                                                    class="input input-bordered input-xs w-20"
+                                                    bind:value={goal.current_value}
+                                                    min={0}
+                                                    step={0.1}
+                                                    oninput={() => scheduleProgressSave(goal)}
+                                                    aria-label={`Avance de ${goal.name}`}
+                                                />
+                                                <span class="text-xs text-base-content/60">{progressPercent(goal).toFixed(1)}%</span>
+                                                {#if savingIds.includes(goal.id)}
+                                                    <span class="text-xs text-base-content/40">Guardando…</span>
+                                                {/if}
+                                            </div>
+                                        {/if}
                                         <button
                                             type="button"
                                             class="btn btn-ghost btn-xs"
@@ -217,22 +259,32 @@
                             {#each quantitativeGoals as goal (goal.id)}
                                 <div class="flex items-center justify-between p-3 bg-base-100 rounded-lg">
                                     <div class="flex-1">
-                                        <p class="font-medium">{goal.name}</p>
+                                        <p class="font-medium flex items-center gap-2">
+                                            {goal.name}
+                                            <span class="badge badge-ghost shrink-0">Peso: {goal.weight}%</span>
+                                        </p>
                                         <p class="text-sm text-base-content/60">
                                             Target: {formatTarget(goal)} · {goal.members.length} miembros
                                         </p>
                                     </div>
                                     <div class="flex items-center gap-2">
-                                        <input
-                                            type="number"
-                                            class="input input-bordered input-xs w-20"
-                                            bind:value={goal.weight}
-                                            min={0}
-                                            max={100}
-                                            step={0.1}
-                                            oninput={() => scheduleWeightSave(goal)}
-                                            aria-label={`Ponderación de ${goal.name}`}
-                                        />
+                                        {#if canEditProgress}
+                                            <div class="flex items-center gap-1">
+                                                <input
+                                                    type="number"
+                                                    class="input input-bordered input-xs w-20"
+                                                    bind:value={goal.current_value}
+                                                    min={0}
+                                                    step={0.1}
+                                                    oninput={() => scheduleProgressSave(goal)}
+                                                    aria-label={`Avance de ${goal.name}`}
+                                                />
+                                                <span class="text-xs text-base-content/60">{progressPercent(goal).toFixed(1)}%</span>
+                                                {#if savingIds.includes(goal.id)}
+                                                    <span class="text-xs text-base-content/40">Guardando…</span>
+                                                {/if}
+                                            </div>
+                                        {/if}
                                         <button
                                             type="button"
                                             class="btn btn-ghost btn-xs"

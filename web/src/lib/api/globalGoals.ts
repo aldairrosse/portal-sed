@@ -10,6 +10,8 @@ export interface GlobalGoal {
   direction: string;
   weight: number;
   target_value: number;
+  baseline_value?: number;
+  current_value: number;
   goal_kind: string;
   state: string;
   created_by: string;
@@ -47,6 +49,7 @@ export interface CreateGlobalGoalRequest {
   goal_kind: string;
   weight: number;
   target_value: number;
+  baseline_value?: number;
   assignments?: CreateAssignmentRequest[];
   rules?: CreateRuleRequest[];
 }
@@ -75,6 +78,8 @@ export interface UpdateGlobalGoalRequest {
   goal_kind: string;
   weight: number;
   target_value: number;
+  baseline_value?: number;
+  current_value?: number;
   assignments?: CreateAssignmentRequest[];
   rules?: CreateRuleRequest[];
 }

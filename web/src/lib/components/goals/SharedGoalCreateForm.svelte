@@ -16,6 +16,7 @@
             direction: 'ascendente' | 'descendente';
             weight: number;
             target_value: number;
+            baseline_value?: number;
         };
         oncancel: () => void;
         onsaved: () => void;
@@ -27,6 +28,7 @@
         { value: 'porcentaje', label: 'Porcentaje' },
         { value: 'moneda', label: 'Moneda' },
         { value: 'numero', label: 'Número' },
+        { value: 'binario', label: 'Binario (Sí/No)' },
     ];
 
     let name = $state('');
@@ -35,6 +37,7 @@
     let direction = $state<'ascendente' | 'descendente'>('ascendente');
     let weight = $state(0);
     let targetValue = $state(0);
+    let baselineValue = $state<number | null>(null);
     let groupName = $state('Grupo directo');
     let groupDescription = $state('');
     let members = $state<TeamMember[]>([]);
@@ -49,6 +52,7 @@
         direction = 'ascendente';
         weight = 0;
         targetValue = 0;
+        baselineValue = null;
         groupName = 'Grupo directo';
         groupDescription = '';
         memberForm = {};
@@ -64,6 +68,7 @@
             direction = initial.direction;
             weight = initial.weight;
             targetValue = initial.target_value;
+            baselineValue = initial.baseline_value ?? null;
             error = '';
         } else {
             reset();
@@ -98,7 +103,8 @@
         if (!name.trim()) return 'El nombre de la meta es obligatorio';
         if (!goalId && !groupName.trim()) return 'El nombre del grupo es obligatorio';
         if (weight < 0 || weight > 100) return 'La ponderación debe estar entre 0 y 100';
-        if (targetValue <= 0) return 'El valor objetivo debe ser mayor a 0';
+        if (targetValue <= 0 && direction !== 'descendente' && unit !== 'binario') return 'El valor objetivo debe ser mayor a 0';
+        if (direction === 'descendente' && (baselineValue === null || baselineValue <= targetValue)) return 'Para objetivos descendentes, el valor inicial debe ser mayor al objetivo';
         if (!goalId && Object.keys(memberForm).length === 0) return 'Selecciona al menos un miembro del grupo';
         return '';
     }
@@ -119,6 +125,7 @@
                     goal_kind: goalKind,
                     weight,
                     target_value: targetValue,
+                    baseline_value: baselineValue ?? undefined,
                 } as UpdateSharedGoalRequest);
             } else {
                 const membersPayload: CreateMemberRequest[] = Object.values(memberForm).map((m) => ({
@@ -134,6 +141,7 @@
                     goal_kind: goalKind,
                     weight,
                     target_value: targetValue,
+                    baseline_value: baselineValue ?? undefined,
                     group_name: groupName.trim(),
                     group_description: groupDescription.trim(),
                     members: membersPayload,
@@ -150,7 +158,7 @@
 </script>
 
 <dialog class="modal" open={open} aria-modal="true">
-    <div class="modal-box max-w-2xl">
+    <div class="modal-box max-w-2xl max-h-[90vh] overflow-y-auto">
         <div class="flex items-center justify-between mb-4">
             <h3 class="font-bold text-lg">
                 {goalId
@@ -225,37 +233,42 @@
                 <input id="shared-target" type="number" class="input input-bordered input-sm w-full"
                     bind:value={targetValue} min={0} step={0.01} required />
             </div>
+            {#if direction === 'descendente'}
+                <div class="form-control">
+                    <label class="label" for="shared-goal-baseline"><span class="label-text text-xs">Valor inicial</span></label>
+                    <input id="shared-goal-baseline" type="number" class="input input-bordered input-sm w-full"
+                        bind:value={baselineValue} min={0} step={0.01} required placeholder="Valor inicial" />
+                </div>
+            {/if}
         </div>
 
         {#if !goalId}
         <div class="form-control">
             <span class="label"><span class="label-text text-xs">Miembros del grupo</span></span>
             {#if members.length > 0}
-                <div class="flex items-center gap-2 px-1 mb-1">
-                    <span class="w-4"></span>
-                    <span class="label-text text-xs flex-1">Nombre</span>
-                    <span class="label-text text-xs w-20">Peso %</span>
-                    <span class="label-text text-xs w-24">Objetivo</span>
+                <div class="grid grid-cols-[1.25rem_minmax(0,1fr)_6rem_7rem] gap-2 mb-1 opacity-60">
+                    <span></span>
+                    <span class="label-text text-xs">Nombre</span>
+                    <span class="label-text text-xs">Peso %</span>
+                    <span class="label-text text-xs">Objetivo</span>
                 </div>
             {/if}
             {#if members.length === 0}
                 <p class="text-sm text-base-content/60">No se encontró tu equipo.</p>
             {:else}
-                <div class="space-y-2 max-h-64 overflow-y-auto pr-1">
+                <div class="space-y-2 max-h-64 overflow-y-auto pr-1 overflow-x-hidden">
                     {#each members as member (member.id)}
-                        <div class="flex items-center gap-2 p-2 border border-base-300 rounded-lg">
-                            <label class="flex items-center gap-1.5 cursor-pointer flex-1 min-w-0">
-                                <input type="checkbox" class="checkbox checkbox-xs checkbox-primary"
-                                    checked={memberForm[member.id] !== undefined}
-                                    onchange={() => toggleMember(member)} />
-                                <span class="text-xs truncate">{member.firstName} {member.lastName}</span>
-                            </label>
+                        <div class="grid grid-cols-[1.25rem_minmax(0,1fr)_6rem_7rem] gap-2 items-center">
+                            <input type="checkbox" class="checkbox checkbox-xs checkbox-primary"
+                                checked={memberForm[member.id] !== undefined}
+                                onchange={() => toggleMember(member)} />
+                            <span class="text-xs truncate">{member.firstName} {member.lastName}</span>
                             {#if memberForm[member.id]}
-                                <input type="number" class="input input-bordered input-xs w-20"
+                                <input type="number" class="input input-bordered input-sm w-full"
                                     placeholder="Peso %" min={0} max={100} step={0.1}
                                     value={memberForm[member.id].weight}
                                     oninput={(e) => setMemberWeight(member.id, Number(e.currentTarget.value))} />
-                                <input type="number" class="input input-bordered input-xs w-24"
+                                <input type="number" class="input input-bordered input-sm w-full"
                                     placeholder="Objetivo" min={0} step={0.01}
                                     value={memberForm[member.id].target_value}
                                     oninput={(e) => setMemberTarget(member.id, Number(e.currentTarget.value))} />

@@ -10,6 +10,8 @@ export interface SharedGoal {
   direction: string;
   weight: number;
   target_value: number;
+  baseline_value?: number;
+  current_value: number;
   goal_kind: string;
   state: string;
   created_by: string;
@@ -44,6 +46,7 @@ export interface CreateSharedGoalRequest {
   goal_kind: string;
   weight: number;
   target_value: number;
+  baseline_value?: number;
   group_name: string;
   group_description: string;
   members: CreateMemberRequest[];
@@ -64,6 +67,8 @@ export interface UpdateSharedGoalRequest {
   goal_kind: string;
   weight: number;
   target_value: number;
+  baseline_value?: number;
+  current_value?: number;
 }
 
 export interface AddMemberRequest {

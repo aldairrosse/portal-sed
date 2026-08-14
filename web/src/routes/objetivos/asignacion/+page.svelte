@@ -322,6 +322,10 @@
         return Math.min(100, Math.max(0, goal.progressPercent ?? 0));
     }
 
+    function institutionalProgressColor(pct: number): string {
+        return pct < 40 ? 'text-error' : pct < 80 ? 'text-warning' : 'text-success';
+    }
+
 
     // ─── Request change modal state ─────────────────────────────────────────
 
@@ -833,13 +837,20 @@
             <summary class="collapse-title font-semibold">Metas cualitativas</summary>
             <div class="collapse-content space-y-3">
                 {#each institutionalGoals.filter((g) => g.goalKind === "qualitative") as goal (goal.id)}
-                    <div class="rounded-lg border border-base-300 p-4">
+                    <div class="px-0 py-4">
                         <div class="flex items-start justify-between gap-3">
-                            <div>
-                                <h3 class="font-semibold">{goal.name}</h3>
-                                <p class="text-sm text-base-content/60">{goal.description}</p>
+                            <div class="min-w-0">
+                                <h3 class="font-semibold flex items-center gap-2">
+                                    {goal.name}
+                                    <span class="badge badge-ghost shrink-0">{goal.weight}%</span>
+                                </h3>
+                                <p class="text-sm text-base-content/60 mt-1">{goal.description}</p>
                             </div>
-                            <span class="badge badge-outline">{goal.source === "global" ? "Global" : "Compartida"}</span>
+                            <span class="badge badge-outline shrink-0">{goal.source === "global" ? "Global" : "Compartida"}</span>
+                        </div>
+                        <div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-base-content/60">
+                            <span>Avance: <span class={institutionalProgressColor(institutionalProgress(goal))}>{institutionalProgress(goal).toFixed(1)}%</span></span>
+                            {#if goal.targetValue !== undefined}<span>Objetivo: {goal.targetValue}</span>{/if}
                         </div>
                     </div>
                 {:else}
@@ -853,16 +864,19 @@
             <summary class="collapse-title font-semibold">Metas cuantitativas</summary>
             <div class="collapse-content space-y-4">
                 {#each institutionalGoals.filter((g) => g.goalKind === "quantitative") as goal (goal.id)}
-                    <div class="rounded-lg border border-base-300 p-4">
+                    <div class="px-0 py-4">
                         <div class="flex items-start justify-between gap-3">
-                            <div>
-                                <h3 class="font-semibold">{goal.name}</h3>
-                                <p class="text-sm text-base-content/60">{goal.description}</p>
+                            <div class="min-w-0">
+                                <h3 class="font-semibold flex items-center gap-2">
+                                    {goal.name}
+                                    <span class="badge badge-ghost shrink-0">{goal.weight}%</span>
+                                </h3>
+                                <p class="text-sm text-base-content/60 mt-1">{goal.description}</p>
                             </div>
-                            <span class="badge badge-outline">{goal.source === "global" ? "Global" : "Compartida"} · {goal.weight}%</span>
+                            <span class="badge badge-outline shrink-0">{goal.source === "global" ? "Global" : "Compartida"}</span>
                         </div>
-                        <div class="mt-3 flex items-center justify-between text-xs text-base-content/60">
-                            <span>Avance: {institutionalProgress(goal).toFixed(1)}%</span>
+                        <div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-base-content/60">
+                            <span>Avance: <span class={institutionalProgressColor(institutionalProgress(goal))}>{institutionalProgress(goal).toFixed(1)}%</span></span>
                             {#if goal.targetValue !== undefined}<span>Objetivo: {goal.targetValue}</span>{/if}
                         </div>
                     </div>
