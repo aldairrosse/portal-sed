@@ -55,7 +55,7 @@ func (h *SharedGoalHandler) Create(w http.ResponseWriter, r *http.Request) {
 func (h *SharedGoalHandler) List(w http.ResponseWriter, r *http.Request) {
 	viewType := r.URL.Query().Get("view")
 	
-	var goals []interface{}
+	goals := make([]interface{}, 0)
 	var err error
 
 	switch viewType {
