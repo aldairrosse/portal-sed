@@ -6,6 +6,7 @@
     import WeightIndicator from '$lib/components/goals/WeightIndicator.svelte';
     import { listGlobalGoals, deleteGlobalGoal, executeRules, updateGlobalGoal, type GlobalGoal } from '$lib/api/globalGoals';
     import GlobalGoalCreateForm from '$lib/components/goals/GlobalGoalCreateForm.svelte';
+    import { TrendingDown, TrendingUp } from 'lucide-react';
 
     const profile = $derived(getProfile());
 
@@ -115,6 +116,7 @@
     function formatTarget(goal: GlobalGoal) {
         if (goal.unit === 'porcentaje') return `${goal.target_value}%`;
         if (goal.unit === 'moneda') return `$${goal.target_value.toLocaleString()}`;
+        if(goal.unit === 'binario') return goal.target_value === 1 ? 'Sí' : 'No';
         return `${goal.target_value}`;
     }
 </script>
@@ -179,7 +181,14 @@
                                 <div class="flex items-center justify-between p-3 bg-base-100 rounded-lg">
                                     <div>
                                         <p class="font-medium">{goal.name}</p>
-                                        <p class="text-sm text-base-content/60">Target: {formatTarget(goal)}</p>
+                                        <p class="text-sm text-base-content/60">
+                                            {#if goal.direction === "ascendente"}
+                                                <TrendingUp class="w-3 h-3" />
+                                            {:else}
+                                                <TrendingDown class="w-3 h-3" />
+                                            {/if}
+                                            {formatTarget(goal)}
+                                        </p>
                                         <p class="text-xs text-base-content/50">{goal.rules.length} reglas · {goal.assignments.length} asignados</p>
                                     </div>
                                     <div class="flex items-center gap-2">
@@ -257,7 +266,14 @@
                                 <div class="flex items-center justify-between p-3 bg-base-100 rounded-lg">
                                     <div>
                                         <p class="font-medium">{goal.name}</p>
-                                        <p class="text-sm text-base-content/60">Target: {formatTarget(goal)}</p>
+                                        <p class="text-sm text-base-content/60">
+                                            {#if goal.direction === "ascendente"}
+                                                <TrendingUp class="w-3 h-3" />
+                                            {:else}
+                                                <TrendingDown class="w-3 h-3" />
+                                            {/if}
+                                            {formatTarget(goal)}
+                                        </p>
                                         <p class="text-xs text-base-content/50">{goal.rules.length} reglas · {goal.assignments.length} asignados</p>
                                     </div>
                                     <div class="flex items-center gap-2">

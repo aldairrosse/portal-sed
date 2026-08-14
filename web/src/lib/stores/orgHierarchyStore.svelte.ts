@@ -77,7 +77,9 @@ function apiErrorMessage(payload: unknown, fallback: string): string {
  * In DEV without VITE_USE_API: loads from fixture file (structured clone).
  * In production / VITE_USE_API=true: fetches from the real API endpoint.
  */
-export async function load(): Promise<void> {
+export async function load(force = false): Promise<void> {
+	// ponytail: skip refetch when already loaded; reload() passes force=true
+	if (!force && data) return;
 	loading = true;
 	error = null;
 
@@ -125,9 +127,9 @@ export async function load(): Promise<void> {
 	}
 }
 
-/** Alias for load(). */
+/** Force-refetch variant of load(). */
 export function reload(): Promise<void> {
-	return load();
+	return load(true);
 }
 
 // ─── Getters ──────────────────────────────────────────────────────────────────

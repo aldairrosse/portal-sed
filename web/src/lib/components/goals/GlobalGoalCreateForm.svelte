@@ -1,5 +1,6 @@
 <script lang="ts">
     import { Loader2, Plus, Trash2 } from '@lucide/svelte';
+    import { untrack } from 'svelte';
     import CustomSelect from '$lib/components/ui/CustomSelect.svelte';
     import { createGlobalGoal, updateGlobalGoal, type CreateGlobalGoalRequest, type CreateAssignmentRequest, type CreateRuleRequest } from '$lib/api/globalGoals';
     import { client } from '$lib/api/client';
@@ -84,9 +85,18 @@
     let error = $state('');
     let saving = $state(false);
     let pickerInitialized = $state(false);
+    let initializedFor: string | null = null;
 
     $effect(() => {
-        if (open) {
+        if (!open) {
+            // ponytail: reset so re-opening the modal re-runs init once
+            initializedFor = null;
+            return;
+        }
+        const key = goalId ?? '';
+        if (initializedFor === key) return;
+        initializedFor = key;
+        {
             const init = initial;
             if (init) {
                 name = init.name;
@@ -145,7 +155,9 @@
     }
 
     async function resolveAssignmentNames() {
-        const resolved = await Promise.all(assignments.map(async a => {
+        // ponytail: untrack so writing the resolved array below doesn't re-trigger the $effect
+        const current = untrack(() => assignments);
+        const resolved = await Promise.all(current.map(async a => {
             if (a.employeeName) return a;
             const name = await resolveEmployeeName(a.employeeId);
             return { ...a, employeeName: name || a.employeeId };
