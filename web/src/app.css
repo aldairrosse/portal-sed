@@ -12,6 +12,7 @@
 	color-scheme: light;
 
 	/* SED palette — hex */
+	--color-base: #FFFFFF;
 	--color-base-100: #F6F8FC;
 	--color-base-200: #eef2f7;
 	--color-base-300: #e2e8f0;
@@ -67,6 +68,7 @@
 	color-scheme: dark;
 
 	/* Base — dark slate */
+	--color-base: #000000;
 	--color-base-100: #0f172a;
 	--color-base-200: #1e293b;
 	--color-base-300: #334155;

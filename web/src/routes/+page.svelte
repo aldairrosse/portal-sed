@@ -3,7 +3,6 @@
 	import { getProfile } from '$lib/stores/devContext.svelte';
 	import { getActivePhase } from '$lib/api/cycle.svelte';
 	import { getSession } from '$lib/api/session.svelte';
-	import { titleCase } from '$lib/utils/text';
 	import type { CyclePhase } from '$lib/types/evaluation';
 	import { getGoals, getCategories, getAssignments, getKpis, getGoalKpiLinks } from '$lib/stores/goalsStore.svelte';
 	import { load as loadCompetencies, getPillars, getCompetencies, getLevelDefinitions, getCompetencyAcceptanceLevelsByProfile } from '$lib/stores/competencyStore.svelte';
@@ -12,11 +11,8 @@
 		Target,
 		Users,
 		BarChart3,
-		Building2,
 		User,
-		Check,
-		Briefcase,
-		ShieldCheck
+		Briefcase
 	} from '@lucide/svelte';
 	import type { Goal, KPI } from '$lib/types/goal';
 
@@ -134,23 +130,15 @@
 	<title>Inicio — SED</title>
 </svelte:head>
 
-<div class="max-w-5xl mx-auto space-y-16">
+<div class="max-w-5xl mx-auto space-y-6">
 	<!-- Welcome + profile row -->
 	<header>
-		<p class="text-sm text-base-content/40">Hola,</p>
+		<p class="text-sm text-base-content/80">Hola,</p>
 		<h1 class="mt-1">{user?.name}</h1>
 		<div class="flex flex-wrap items-center gap-3 mt-3">
-			<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
+			<span class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary/10 text-primary text-sm font-medium">
 				<Briefcase class="w-3 h-3" />
 				{user?.jobTitle}
-			</span>
-			<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-base-200 text-base-content/60 text-xs font-medium">
-				<Building2 class="w-3 h-3" />
-				{user?.orgNodeName}
-			</span>
-			<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-secondary/10 text-secondary text-xs font-medium">
-				<ShieldCheck class="w-3 h-3" />
-				{titleCase(user?.profileName ?? '')}
 			</span>
 			{#if hasReports && myDirectReports.length > 0}
 				<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-base-200 text-base-content/60 text-xs font-medium">
@@ -170,16 +158,15 @@
 	<!-- Cycle status + Competencies + Quick access (responsive row) -->
 	<div class="grid grid-cols-1 lg:grid-cols-3 gap-12">
 		<!-- Cycle -->
-		<section class="{profile === 'director-general' ? 'lg:col-span-3' : 'lg:col-span-2'}">
-			<h2 class="text-xs font-semibold text-base-content/50 tracking-wide mb-3">
+		<section class="bg-(--color-base) rounded-xl {profile === 'director-general' ? 'lg:col-span-3' : 'lg:col-span-2'}">
+			<h2 class="text-sm font-bold text-base-content px-4 pt-3 tracking-wide mb-3">
 				Ciclo {year}
 			</h2>
 			<!-- Timeline -->
 			<div class="relative w-full pt-2.5 pb-1">
-				<!-- Line behind dots (centered: 10px padding + 10px half of 20px dot = 20px) -->
-				<div class="absolute top-[20px] left-0 right-0 h-0.5 bg-base-300 -translate-y-1/2"></div>
+				<div class="absolute top-[22px] left-0 right-0 h-0.5 bg-base-300 -translate-y-1/2"></div>
 				<div
-					class="absolute top-[20px] left-0 h-0.5 bg-success/70 transition-all -translate-y-1/2"
+					class="absolute top-[22px] left-0 h-0.5 bg-primary transition-all -translate-y-1/2"
 					style="width: {phase === 'inicio-anio' ? '33%' : phase === 'medio-anio' ? '66%' : '100%'}"
 				></div>
 
@@ -187,31 +174,31 @@
 				<div class="relative flex w-full">
 					<!-- Step 1 -->
 					<div class="flex-1 flex justify-center">
-						<div class="w-5 h-5 rounded-full bg-success flex items-center justify-center relative z-10">
-							<Check class="w-3 h-3 text-success-content" />
+						<div class="w-6 h-6 rounded-full bg-primary flex items-center justify-center relative z-10">
+							<span class="text-primary-content text-[10px] font-bold">1</span>
 						</div>
 					</div>
 					<!-- Step 2 -->
 					<div class="flex-1 flex justify-center">
 						{#if phase === 'inicio-anio'}
-							<div class="w-5 h-5 rounded-full border-2 border-primary/40 bg-base-100 flex items-center justify-center relative z-10">
-								<span class="text-primary/40 text-[10px] font-bold">2</span>
+							<div class="w-6 h-6 rounded-full border-2 border-base-300 bg-(--color-base) flex items-center justify-center relative z-10">
+								<span class="text-base-content/50 text-[10px] font-bold">2</span>
 							</div>
 						{:else}
-							<div class="w-5 h-5 rounded-full bg-success flex items-center justify-center relative z-10">
-								<Check class="w-3 h-3 text-success-content" />
+							<div class="w-6 h-6 rounded-full bg-primary flex items-center justify-center relative z-10">
+								<span class="text-primary-content text-[10px] font-bold">2</span>
 							</div>
 						{/if}
 					</div>
 					<!-- Step 3 -->
 					<div class="flex-1 flex justify-center">
 						{#if phase === 'fin-anio'}
-							<div class="w-5 h-5 rounded-full bg-success flex items-center justify-center relative z-10">
-								<Check class="w-3 h-3 text-success-content" />
+							<div class="w-6 h-6 rounded-full bg-primary flex items-center justify-center relative z-10">
+								<span class="text-primary-content text-[10px] font-bold">3</span>
 							</div>
 						{:else}
-							<div class="w-5 h-5 rounded-full border-2 border-primary/40 bg-base-100 flex items-center justify-center relative z-10">
-								<span class="text-primary/40 text-[10px] font-bold">3</span>
+							<div class="w-6 h-6 rounded-full border-2 border-base-300 bg-(--color-base) flex items-center justify-center relative z-10">
+								<span class="text-base-content/50 text-[10px] font-bold">3</span>
 							</div>
 						{/if}
 					</div>
@@ -236,7 +223,7 @@
 					</div>
 				</div>
 			</div>
-			<p class="mt-3 text-sm text-base-content/70">{phaseGuidance[phase]}</p>
+			<p class="p-4 text-sm text-base-content/70">{phaseGuidance[phase]}</p>
 		</section>
 
 		<!-- Quick access cards -->
