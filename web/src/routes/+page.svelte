@@ -444,7 +444,7 @@
                             </div>
                             <div>
                                 <h3
-                                    class="font-binjay text-lg font-normal text-white mb-2"
+                                    class="text-lg font-normal text-white mb-2"
                                 >
                                     {group.pilar.name}
                                 </h3>

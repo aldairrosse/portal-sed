@@ -792,15 +792,26 @@ func (h *GoalHandler) GetAssignment(w http.ResponseWriter, r *http.Request) {
 	assignment, err := h.assignRepo.GetAssignment(r.Context(), empID)
 	if err != nil {
 		var de *pkgerrors.DomainError
-		if pkgerrors.AsDomainError(err, &de) && de.Code == pkgerrors.GoalNotFound {
-			writeJSON(w, http.StatusOK, nil)
+		if !pkgerrors.AsDomainError(err, &de) || de.Code != pkgerrors.GoalNotFound {
+			writeError(w, err)
 			return
 		}
-		writeError(w, err)
-		return
+		// No personal assignment: fall through so global/shared goals are still returned.
+		assignment = nil
 	}
 
-	resp := assignmentRowToResponse(assignment)
+	var resp dtogoal.AssignmentResponse
+	if assignment != nil {
+		resp = assignmentRowToResponse(assignment)
+	} else {
+		resp = dtogoal.AssignmentResponse{EmployeeID: empID.String()}
+		if h.cycleResolver != nil {
+			if cid, cerr := h.cycleResolver.ResolveActiveCycleID(r.Context(), empID); cerr == nil {
+				resp.CycleID = cid.String()
+			}
+		}
+	}
+	resp.Categories = []dtogoal.CategoryResponse{}
 	globalGoals, err := h.assignRepo.ListGlobalGoalsByEmployee(r.Context(), empID)
 	if err != nil {
 		writeError(w, err)
@@ -914,6 +925,7 @@ func (h *GoalHandler) CreateAssignment(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := assignmentRowToResponse(assignment)
+	resp.Categories = []dtogoal.CategoryResponse{}
 
 	cats, _ := h.catRepo.ListCategoriesByEmployee(r.Context(), empID)
 	if cats != nil {
