@@ -21,6 +21,7 @@
     import { Users, User } from "@lucide/svelte";
     import type { Goal } from "$lib/types/goal";
     import Icon from "$lib/components/ui/Icon.svelte";
+    import { pillarColors } from "$lib/utils/pillarColors";
     import calendar from "$lib/assets/calendario_1.png";
 
     const session = $derived(getSession());
@@ -421,23 +422,40 @@
 
     <!-- Competencies summary -->
     {#if myCompetencies.length > 0}
-        <section class="bg-(--color-base) rounded-xl">
+        <section class="bg-(--color-base) rounded-xl overflow-hidden">
             <div class="grid grid-cols-1 sm:grid-cols-4 gap-0">
-                {#each competenciesByPillar as group (group.pilar.id)}
+                {#each competenciesByPillar as group, i (group.pilar.id)}
                     {#if group.items.length > 0}
-                        <div>
-                            <h3
-                                class="font-binjay text-lg font-normal text-base-content mb-2"
+                        <div
+                            class="flex items-center gap-3 px-4 py-6"
+                            style="background-color: {pillarColors(i).color}"
+                        >
+                            <div
+                                class="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
+                                style="background-color: {pillarColors(i).colorDarker}"
                             >
-                                {group.pilar.name}
-                            </h3>
-                            <ul class="space-y-1">
-                                {#each group.items.slice(0, 1) as comp (comp.id)}
-                                    <li class="text-sm text-base-content/50">
-                                        {comp.name}
-                                    </li>
-                                {/each}
-                            </ul>
+                                <Icon
+                                    name={pillarColors(i).icon}
+                                    variant="colorfull"
+                                    size={32}
+                                    aria-hidden="true"
+                                    class={i !== 0 ? 'translate-x-0.5' : ''}
+                                />
+                            </div>
+                            <div>
+                                <h3
+                                    class="font-binjay text-lg font-normal text-white mb-2"
+                                >
+                                    {group.pilar.name}
+                                </h3>
+                                <ul class="space-y-1">
+                                    {#each group.items.slice(0, 1) as comp (comp.id)}
+                                        <li class="text-sm text-white/80">
+                                            {comp.name}
+                                        </li>
+                                    {/each}
+                                </ul>
+                            </div>
                         </div>
                     {/if}
                 {/each}
