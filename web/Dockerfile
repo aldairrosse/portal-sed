@@ -13,8 +13,5 @@ FROM nginx:stable-alpine
 COPY --from=builder /app/build /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# ponytail: pid en /tmp — /dev/shm pwrite falla en CentOS 7 (kernel 3.10 + SELinux)
-RUN sed -i 's|^pid .*|pid /tmp/nginx.pid;|' /etc/nginx/nginx.conf
-
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
