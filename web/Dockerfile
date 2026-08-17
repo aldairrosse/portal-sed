@@ -14,5 +14,4 @@ COPY --from=builder /app/build /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
-# ponytail: single-process mode avoids nginx's pid-file pwrite on CentOS 7.
-CMD ["nginx", "-g", "daemon off; master_process off;"]
+CMD ["nginx", "-g", "daemon off;"]

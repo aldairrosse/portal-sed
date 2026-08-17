@@ -39,6 +39,8 @@ services:
   web:
     build:
       context: ./web
+    security_opt:
+      - seccomp=unconfined
     depends_on:
       - api
 
