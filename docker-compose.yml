@@ -39,6 +39,8 @@ services:
   web:
     build:
       context: ./web
+    tmpfs:
+      - /run
     depends_on:
       - api
 
