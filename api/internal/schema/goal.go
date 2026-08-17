@@ -39,7 +39,7 @@ func (Goal) Fields() []ent.Field {
 		field.Float("weight").
 			Range(0, 100),
 		field.Float("target_value").
-			Positive(),
+			Min(0),
 		field.Float("current_value").
 			Default(0),
 		field.Enum("direction").
