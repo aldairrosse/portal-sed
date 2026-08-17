@@ -47,6 +47,8 @@ services:
   proxy:
     image: nginx:stable-alpine
     ports: ["8088:443"]
+    security_opt:
+      - seccomp=unconfined
     volumes:
       - ./certs:/etc/nginx/certs:ro
       - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
