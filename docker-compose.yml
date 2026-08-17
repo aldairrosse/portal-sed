@@ -39,8 +39,6 @@ services:
   web:
     build:
       context: ./web
-    security_opt:
-      - label=disable
     depends_on:
       - api
 
