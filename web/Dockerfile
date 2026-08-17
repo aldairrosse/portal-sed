@@ -13,5 +13,8 @@ FROM nginx:stable-alpine
 COPY --from=builder /app/build /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
+# ponytail: pid en /dev/shm — kernel 3.10/overlayfs no permite pwrite en /run
+RUN sed -i 's|pid /var/run/nginx.pid;|pid /dev/shm/nginx.pid;|' /etc/nginx/nginx.conf
+
 EXPOSE 80
-CMD ["nginx", "-g", "daemon off; pid /dev/shm/nginx.pid;"]
+CMD ["nginx", "-g", "daemon off;"]
