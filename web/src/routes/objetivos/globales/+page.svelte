@@ -7,6 +7,8 @@
     import { listGlobalGoals, deleteGlobalGoal, updateGlobalGoal, type GlobalGoal } from '$lib/api/globalGoals';
     import { getActivePhase } from '$lib/api/cycle.svelte';
     import GlobalGoalCreateForm from '$lib/components/goals/GlobalGoalCreateForm.svelte';
+    import ConfirmDialog from '$lib/components/ui/ConfirmDialog.svelte';
+    import { humanizeError } from '$lib/utils/error';
 
     const profile = $derived(getProfile());
 
@@ -21,6 +23,12 @@
     let editGoal = $state<GlobalGoal | null>(null);
     let notice = $state('');
     let savingIds = $state<string[]>([]);
+    let confirmGoal = $state<GlobalGoal | null>(null);
+    const confirmMessage = $derived(
+        confirmGoal
+            ? `Se eliminarán las asignaciones (${confirmGoal.assignments.length}) y reglas (${confirmGoal.rules.length}) asociadas y luego la meta. ¿Continuar?`
+            : 'Se eliminarán las asignaciones y reglas asociadas y luego la meta. ¿Continuar?'
+    );
 
     onMount(() => {
         if (profile !== 'rh') {
@@ -35,20 +43,30 @@
             loading = true;
             goals = (await listGlobalGoals()) ?? [];
         } catch (e) {
-            error = e instanceof Error ? e.message : 'Error al cargar objetivos';
+            error = humanizeError(e, 'Error al cargar objetivos');
         } finally {
             loading = false;
         }
     }
 
-    async function handleDelete(goalId: string) {
-        if (!confirm('¿Eliminar este objetivo global?')) return;
+    function requestDelete(goal: GlobalGoal) {
+        confirmGoal = goal;
+    }
+
+    async function confirmDelete() {
+        if (!confirmGoal) return;
+        const id = confirmGoal.id;
+        confirmGoal = null;
         try {
-            await deleteGlobalGoal(goalId);
+            await deleteGlobalGoal(id);
             await loadGoals();
         } catch (e) {
-            error = e instanceof Error ? e.message : 'Error al eliminar';
+            error = humanizeError(e, 'Error al eliminar');
         }
+    }
+
+    function cancelDelete() {
+        confirmGoal = null;
     }
 
     function openEdit(goal: GlobalGoal) {
@@ -83,7 +101,7 @@
                 current_value: goal.current_value,
             });
         } catch (e) {
-            error = e instanceof Error ? e.message : 'Error al guardar avance';
+            error = humanizeError(e, 'Error al guardar avance');
         } finally {
             savingIds = savingIds.filter(id => id !== goalId);
         }
@@ -224,7 +242,7 @@
                                         </button>
                                         <button
                                             class="btn btn-ghost btn-xs text-error"
-                                            onclick={() => handleDelete(goal.id)}
+                                            onclick={() => requestDelete(goal)}
                                         >
                                             Eliminar
                                         </button>
@@ -299,7 +317,7 @@
                                         </button>
                                         <button
                                             class="btn btn-ghost btn-xs text-error"
-                                            onclick={() => handleDelete(goal.id)}
+                                            onclick={() => requestDelete(goal)}
                                         >
                                             Eliminar
                                         </button>
@@ -332,5 +350,15 @@
         } : undefined}
         oncancel={() => { showCreate = false; editGoal = null; }}
         onsaved={() => { showCreate = false; editGoal = null; loadGoals(); }}
+    />
+
+    <ConfirmDialog
+        open={confirmGoal !== null}
+        title="Eliminar meta global"
+        message={confirmMessage}
+        variant="error"
+        confirmLabel="Eliminar"
+        onconfirm={confirmDelete}
+        oncancel={cancelDelete}
     />
 </div>

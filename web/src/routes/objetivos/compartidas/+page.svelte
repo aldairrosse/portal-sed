@@ -7,6 +7,8 @@
     import SharedGoalCreateForm from '$lib/components/goals/SharedGoalCreateForm.svelte';
     import { listSharedGoals, deleteSharedGoal, updateSharedGoal, type SharedGoal } from '$lib/api/sharedGoals';
     import { getActivePhase } from '$lib/api/cycle.svelte';
+    import ConfirmDialog from '$lib/components/ui/ConfirmDialog.svelte';
+    import { humanizeError } from '$lib/utils/error';
 
     const profile = $derived(getProfile());
     const allowedProfiles = ['jefe', 'director', 'director-general'];
@@ -17,6 +19,12 @@
     let goals = $state<SharedGoal[]>([]);
     let loading = $state(true);
     let error = $state('');
+    let confirmGoal = $state<SharedGoal | null>(null);
+    const confirmMessage = $derived(
+        confirmGoal
+            ? `Se eliminarán las asignaciones (${confirmGoal.members.length} miembros) y luego la meta. ¿Continuar?`
+            : 'Se eliminarán las asignaciones y reglas asociadas y luego la meta. ¿Continuar?'
+    );
 
     onMount(() => {
         loadGoals();
@@ -30,20 +38,30 @@
             loading = true;
             goals = (await listSharedGoals('creator')) ?? [];
         } catch (e) {
-            error = e instanceof Error ? e.message : 'Error al cargar metas compartidas';
+            error = humanizeError(e, 'Error al cargar metas compartidas');
         } finally {
             loading = false;
         }
     }
 
-    async function handleDelete(goalId: string) {
-        if (!confirm('¿Eliminar esta meta compartida?')) return;
+    function requestDelete(goal: SharedGoal) {
+        confirmGoal = goal;
+    }
+
+    async function confirmDelete() {
+        if (!confirmGoal) return;
+        const id = confirmGoal.id;
+        confirmGoal = null;
         try {
-            await deleteSharedGoal(goalId);
+            await deleteSharedGoal(id);
             await loadGoals();
         } catch (e) {
-            error = e instanceof Error ? e.message : 'Error al eliminar';
+            error = humanizeError(e, 'Error al eliminar');
         }
+    }
+
+    function cancelDelete() {
+        confirmGoal = null;
     }
 
     let editGoal = $state<SharedGoal | null>(null);
@@ -90,7 +108,7 @@
                 current_value: goal.current_value,
             });
         } catch (e) {
-            error = e instanceof Error ? e.message : 'Error al guardar avance';
+            error = humanizeError(e, 'Error al guardar avance');
         } finally {
             savingIds = savingIds.filter(id => id !== goalId);
         }
@@ -222,7 +240,7 @@
                                         </button>
                                         <button
                                             class="btn btn-ghost btn-xs text-error"
-                                            onclick={() => handleDelete(goal.id)}
+                                            onclick={() => requestDelete(goal)}
                                         >
                                             <Trash class="w-3 h-3" />
                                         </button>
@@ -294,7 +312,7 @@
                                         </button>
                                         <button
                                             class="btn btn-ghost btn-xs text-error"
-                                            onclick={() => handleDelete(goal.id)}
+                                            onclick={() => requestDelete(goal)}
                                         >
                                             <Trash class="w-3 h-3" />
                                         </button>
@@ -322,3 +340,5 @@
     oncancel={() => { showCreate = false; editGoal = null; }}
     onsaved={() => { showCreate = false; editGoal = null; loadGoals(); }}
 />
+
+<ConfirmDialog open={confirmGoal!==null} title="Eliminar meta compartida" message={confirmMessage} variant="error" confirmLabel="Eliminar" onconfirm={confirmDelete} oncancel={cancelDelete} />
