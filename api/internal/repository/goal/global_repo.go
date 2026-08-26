@@ -3,6 +3,7 @@ package goal
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"strings"
 	"time"
 
@@ -16,6 +17,17 @@ import (
 	"github.com/sed-evaluacion-desempeno/api/internal/goal"
 	pkgerrors "github.com/sed-evaluacion-desempeno/api/internal/pkg/errors"
 )
+
+// deleteGlobalDeps removes assignments and rules for a goal inside the given transaction.
+func deleteGlobalDeps(ctx context.Context, tx *internal.Tx, goalID uuid.UUID) error {
+	if _, err := tx.GlobalGoalAssignment.Delete().Where(globalgoalassignment.GoalID(goalID)).Exec(ctx); err != nil {
+		return fmt.Errorf("delete global assignments: %w", err)
+	}
+	if _, err := tx.GlobalGoalRule.Delete().Where(globalgoalrule.GoalID(goalID)).Exec(ctx); err != nil {
+		return fmt.Errorf("delete global rules: %w", err)
+	}
+	return nil
+}
 
 // GlobalGoalRow is the full representation of a global goal with its assignments.
 type GlobalGoalRow struct {
@@ -101,22 +113,22 @@ func (r *GlobalGoalRepo) CreateGlobalGoal(ctx context.Context, cycleID, createdB
 
 	// Persist rules.
 	for _, rule := range rules {
-		if err := r.createRule(ctx, g.ID, rule); err != nil {
+		if err := r.createRule(ctx, r.client, g.ID, rule); err != nil {
 			return nil, err
 		}
 	}
 
 	// Materialize assignments (manual + rule-matched).
-	if _, err := r.evaluateAndAssign(ctx, g.ID, rules, assignments); err != nil {
+	if _, err := r.evaluateAndAssign(ctx, r.client, g.ID, rules, assignments); err != nil {
 		return nil, err
 	}
 
 	return r.GetGlobalGoal(ctx, g.ID)
 }
 
-// createRule persists a single global goal rule.
-func (r *GlobalGoalRepo) createRule(ctx context.Context, goalID uuid.UUID, rule *GlobalRuleRow) error {
-	create := r.client.GlobalGoalRule.Create().
+// createRule persists a single global goal rule using the provided client (r.client or tx.Client()).
+func (r *GlobalGoalRepo) createRule(ctx context.Context, c *internal.Client, goalID uuid.UUID, rule *GlobalRuleRow) error {
+	create := c.GlobalGoalRule.Create().
 		SetGoalID(goalID).
 		SetRuleType(globalgoalrule.RuleType(rule.RuleType)).
 		SetDefaultWeight(rule.DefaultWeight).
@@ -241,7 +253,18 @@ func (r *GlobalGoalRepo) ListGlobalGoalsByCycle(ctx context.Context, cycleID uui
 
 // UpdateGlobalGoal updates a global goal and re-applies its rules and assignments.
 func (r *GlobalGoalRepo) UpdateGlobalGoal(ctx context.Context, goalID uuid.UUID, name, description, unit, direction, goalKind string, weight, targetValue float64, currentValue *float64, baselineValue *float64, assignments []*GlobalAssignmentRow, rules []*GlobalRuleRow) (*GlobalGoalRow, error) {
-	update := r.client.Goal.UpdateOneID(goalID).
+	tx, err := r.client.Tx(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if v := recover(); v != nil {
+			_ = tx.Rollback()
+			panic(v)
+		}
+	}()
+
+	update := tx.Goal.UpdateOneID(goalID).
 		SetName(name).
 		SetDescription(description).
 		SetUnit(goal.Unit(unit)).
@@ -257,24 +280,28 @@ func (r *GlobalGoalRepo) UpdateGlobalGoal(ctx context.Context, goalID uuid.UUID,
 	}
 	g, err := update.Save(ctx)
 	if err != nil {
+		_ = tx.Rollback()
 		return nil, err
 	}
 
-	// Remove the goal from everyone, then re-apply rules and assignments.
-	if _, err := r.client.GlobalGoalAssignment.Delete().Where(globalgoalassignment.GoalID(goalID)).Exec(ctx); err != nil {
-		return nil, err
-	}
-	if _, err := r.client.GlobalGoalRule.Delete().Where(globalgoalrule.GoalID(goalID)).Exec(ctx); err != nil {
+	if err := deleteGlobalDeps(ctx, tx, goalID); err != nil {
+		_ = tx.Rollback()
 		return nil, err
 	}
 
 	for _, rule := range rules {
-		if err := r.createRule(ctx, goalID, rule); err != nil {
+		if err := r.createRule(ctx, tx.Client(), goalID, rule); err != nil {
+			_ = tx.Rollback()
 			return nil, err
 		}
 	}
 
-	if _, err := r.evaluateAndAssign(ctx, goalID, rules, assignments); err != nil {
+	if _, err := r.evaluateAndAssign(ctx, tx.Client(), goalID, rules, assignments); err != nil {
+		_ = tx.Rollback()
+		return nil, err
+	}
+
+	if err := tx.Commit(); err != nil {
 		return nil, err
 	}
 
@@ -283,8 +310,29 @@ func (r *GlobalGoalRepo) UpdateGlobalGoal(ctx context.Context, goalID uuid.UUID,
 
 // DeleteGlobalGoal deletes a global goal and its assignments/rules.
 func (r *GlobalGoalRepo) DeleteGlobalGoal(ctx context.Context, goalID uuid.UUID) error {
-	// Cascading deletes will handle assignments and rules
-	return r.client.Goal.DeleteOneID(goalID).Exec(ctx)
+	tx, err := r.client.Tx(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if v := recover(); v != nil {
+			_ = tx.Rollback()
+			panic(v)
+		}
+	}()
+
+	if err := deleteGlobalDeps(ctx, tx, goalID); err != nil {
+		_ = tx.Rollback()
+		return err
+	}
+	if err := tx.Goal.DeleteOneID(goalID).Exec(ctx); err != nil {
+		_ = tx.Rollback()
+		if internal.IsNotFound(err) {
+			return pkgerrors.ErrGoalNotFound
+		}
+		return err
+	}
+	return tx.Commit()
 }
 
 // ExecuteRules executes mass assignment rules for a global goal.
@@ -321,7 +369,7 @@ func (r *GlobalGoalRepo) ExecuteRules(ctx context.Context, goalID uuid.UUID) (in
 		rules = append(rules, ruleRowFromEnt(rule))
 	}
 
-	return r.evaluateAndAssign(ctx, goalID, rules, nil)
+	return r.evaluateAndAssign(ctx, r.client, goalID, rules, nil)
 }
 
 // evaluateAndAssign materializes global_goal_assignments rows for a goal by
@@ -330,13 +378,13 @@ func (r *GlobalGoalRepo) ExecuteRules(ctx context.Context, goalID uuid.UUID) (in
 // with OR within each category and identity for categories without rules.
 // Manual assignments always win. It is idempotent: an already-assigned employee is
 // never duplicated. It returns the number of newly created assignments.
-func (r *GlobalGoalRepo) evaluateAndAssign(ctx context.Context, goalID uuid.UUID, rules []*GlobalRuleRow, manualAssignments []*GlobalAssignmentRow) (int, error) {
+func (r *GlobalGoalRepo) evaluateAndAssign(ctx context.Context, c *internal.Client, goalID uuid.UUID, rules []*GlobalRuleRow, manualAssignments []*GlobalAssignmentRow) (int, error) {
 	// Resolve the goal's organization from its creator.
-	creator, err := r.client.Goal.Query().Where(goal.ID(goalID)).Only(ctx)
+	creator, err := c.Goal.Query().Where(goal.ID(goalID)).Only(ctx)
 	if err != nil {
 		return 0, err
 	}
-	creatorEmp, err := r.client.Employee.Query().Where(employee.ID(creator.CreatedBy)).WithOrgNode().Only(ctx)
+	creatorEmp, err := c.Employee.Query().Where(employee.ID(creator.CreatedBy)).WithOrgNode().Only(ctx)
 	if err != nil {
 		return 0, err
 	}
@@ -345,7 +393,7 @@ func (r *GlobalGoalRepo) evaluateAndAssign(ctx context.Context, goalID uuid.UUID
 	}
 	orgID := creatorEmp.Edges.OrgNode.OrganizationID
 
-	employees, err := r.client.Employee.Query().Where(employee.IsActive(true)).WithOrgNode().All(ctx)
+	employees, err := c.Employee.Query().Where(employee.IsActive(true)).WithOrgNode().All(ctx)
 	if err != nil {
 		return 0, err
 	}
@@ -364,7 +412,7 @@ func (r *GlobalGoalRepo) evaluateAndAssign(ctx context.Context, goalID uuid.UUID
 		if assignedSet[a.EmployeeID] {
 			continue
 		}
-		exists, err := r.client.GlobalGoalAssignment.Query().
+		exists, err := c.GlobalGoalAssignment.Query().
 			Where(globalgoalassignment.GoalID(goalID), globalgoalassignment.EmployeeID(a.EmployeeID)).
 			Exist(ctx)
 		if err != nil {
@@ -374,7 +422,7 @@ func (r *GlobalGoalRepo) evaluateAndAssign(ctx context.Context, goalID uuid.UUID
 			assignedSet[a.EmployeeID] = true
 			continue
 		}
-		create := r.client.GlobalGoalAssignment.Create().
+		create := c.GlobalGoalAssignment.Create().
 			SetGoalID(goalID).
 			SetEmployeeID(a.EmployeeID).
 			SetWeight(a.Weight).
@@ -415,7 +463,7 @@ func (r *GlobalGoalRepo) evaluateAndAssign(ctx context.Context, goalID uuid.UUID
 		if _, ok := departmentPaths[*rule.DepartmentID]; ok {
 			continue
 		}
-		node, err := r.client.OrgNode.Get(ctx, *rule.DepartmentID)
+		node, err := c.OrgNode.Get(ctx, *rule.DepartmentID)
 		if err != nil {
 			return 0, err
 		}
@@ -509,7 +557,7 @@ func (r *GlobalGoalRepo) evaluateAndAssign(ctx context.Context, goalID uuid.UUID
 			weight, target = roleRules[0].DefaultWeight, roleRules[0].DefaultTarget
 		}
 
-		exists, err := r.client.GlobalGoalAssignment.Query().
+		exists, err := c.GlobalGoalAssignment.Query().
 			Where(globalgoalassignment.GoalID(goalID), globalgoalassignment.EmployeeID(emp.ID)).
 			Exist(ctx)
 		if err != nil {
@@ -519,7 +567,7 @@ func (r *GlobalGoalRepo) evaluateAndAssign(ctx context.Context, goalID uuid.UUID
 			assignedSet[emp.ID] = true
 			continue
 		}
-		if _, err := r.client.GlobalGoalAssignment.Create().
+		if _, err := c.GlobalGoalAssignment.Create().
 			SetGoalID(goalID).
 			SetEmployeeID(emp.ID).
 			SetWeight(weight).

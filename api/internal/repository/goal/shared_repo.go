@@ -3,6 +3,7 @@ package goal
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -12,6 +13,23 @@ import (
 	"github.com/sed-evaluacion-desempeno/api/internal/sharedgoalgroup"
 	"github.com/sed-evaluacion-desempeno/api/internal/sharedgoalmember"
 )
+
+// deleteSharedDeps removes members and groups for a goal inside the given transaction.
+func deleteSharedDeps(ctx context.Context, tx *internal.Tx, goalID uuid.UUID) error {
+	groupIDs, err := tx.SharedGoalGroup.Query().Where(sharedgoalgroup.GoalID(goalID)).IDs(ctx)
+	if err != nil {
+		return fmt.Errorf("query shared groups: %w", err)
+	}
+	if len(groupIDs) > 0 {
+		if _, err := tx.SharedGoalMember.Delete().Where(sharedgoalmember.GroupIDIn(groupIDs...)).Exec(ctx); err != nil {
+			return fmt.Errorf("delete shared members: %w", err)
+		}
+	}
+	if _, err := tx.SharedGoalGroup.Delete().Where(sharedgoalgroup.GoalID(goalID)).Exec(ctx); err != nil {
+		return fmt.Errorf("delete shared groups: %w", err)
+	}
+	return nil
+}
 
 // SharedGoalRow is the full representation of a shared goal with its group and members.
 type SharedGoalRow struct {
@@ -254,7 +272,29 @@ func (r *SharedGoalRepo) UpdateSharedGoal(ctx context.Context, goalID uuid.UUID,
 
 // DeleteSharedGoal deletes a shared goal and its group/members.
 func (r *SharedGoalRepo) DeleteSharedGoal(ctx context.Context, goalID uuid.UUID) error {
-	return r.client.Goal.DeleteOneID(goalID).Exec(ctx)
+	tx, err := r.client.Tx(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if v := recover(); v != nil {
+			_ = tx.Rollback()
+			panic(v)
+		}
+	}()
+
+	if err := deleteSharedDeps(ctx, tx, goalID); err != nil {
+		_ = tx.Rollback()
+		return err
+	}
+	if err := tx.Goal.DeleteOneID(goalID).Exec(ctx); err != nil {
+		_ = tx.Rollback()
+		if internal.IsNotFound(err) {
+			return pkgerrors.ErrGoalNotFound
+		}
+		return err
+	}
+	return tx.Commit()
 }
 
 // AddMember adds a member to a shared goal group.
