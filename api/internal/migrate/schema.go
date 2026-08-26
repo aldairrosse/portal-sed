@@ -335,7 +335,7 @@ var (
 				Symbol:     "global_goal_assignments_goals_global_assignments",
 				Columns:    []*schema.Column{GlobalGoalAssignmentsColumns[7]},
 				RefColumns: []*schema.Column{GoalsColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.Cascade,
 			},
 		},
 	}
@@ -368,7 +368,7 @@ var (
 				Symbol:     "global_goal_rules_goals_global_rules",
 				Columns:    []*schema.Column{GlobalGoalRulesColumns[8]},
 				RefColumns: []*schema.Column{GoalsColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "global_goal_rules_org_nodes_global_goal_rules",
@@ -909,7 +909,7 @@ var (
 				Symbol:     "shared_goal_groups_goals_shared_group",
 				Columns:    []*schema.Column{SharedGoalGroupsColumns[7]},
 				RefColumns: []*schema.Column{GoalsColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.Cascade,
 			},
 		},
 	}
@@ -940,7 +940,7 @@ var (
 				Symbol:     "shared_goal_members_shared_goal_groups_members",
 				Columns:    []*schema.Column{SharedGoalMembersColumns[7]},
 				RefColumns: []*schema.Column{SharedGoalGroupsColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.Cascade,
 			},
 		},
 	}

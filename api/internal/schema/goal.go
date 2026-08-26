@@ -80,9 +80,18 @@ func (Goal) Edges() []ent.Edge {
 				OnDelete: entsql.Cascade,
 			}),
 		edge.To("evaluation_goals", EvaluationGoal.Type),
-		edge.To("global_assignments", GlobalGoalAssignment.Type),
-		edge.To("global_rules", GlobalGoalRule.Type),
-		edge.To("shared_group", SharedGoalGroup.Type),
+		edge.To("global_assignments", GlobalGoalAssignment.Type).
+			Annotations(entsql.Annotation{
+				OnDelete: entsql.Cascade,
+			}),
+		edge.To("global_rules", GlobalGoalRule.Type).
+			Annotations(entsql.Annotation{
+				OnDelete: entsql.Cascade,
+			}),
+		edge.To("shared_group", SharedGoalGroup.Type).
+			Annotations(entsql.Annotation{
+				OnDelete: entsql.Cascade,
+			}),
 	}
 }
 
