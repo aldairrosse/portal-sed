@@ -104,7 +104,9 @@
         if (!goalId && !groupName.trim()) return 'El nombre del grupo es obligatorio';
         if (weight < 0 || weight > 100) return 'La ponderación debe estar entre 0 y 100';
         if (targetValue <= 0 && direction !== 'descendente' && unit !== 'binario') return 'El valor objetivo debe ser mayor a 0';
-        if (direction === 'descendente' && (baselineValue === null || baselineValue <= targetValue)) return 'Para objetivos descendentes, el valor inicial debe ser mayor al objetivo';
+        if (direction === 'descendente') {
+            if (baselineValue === null || baselineValue <= targetValue) return 'Para objetivos descendentes, el valor inicial debe ser mayor al objetivo';
+        }
         if (!goalId && Object.keys(memberForm).length === 0) return 'Selecciona al menos un miembro del grupo';
         return '';
     }
@@ -125,7 +127,7 @@
                     goal_kind: goalKind,
                     weight,
                     target_value: targetValue,
-                    baseline_value: baselineValue ?? undefined,
+                    baseline_value: direction === 'descendente' ? (baselineValue ?? undefined) : undefined,
                 } as UpdateSharedGoalRequest);
             } else {
                 const membersPayload: CreateMemberRequest[] = Object.values(memberForm).map((m) => ({
@@ -141,7 +143,7 @@
                     goal_kind: goalKind,
                     weight,
                     target_value: targetValue,
-                    baseline_value: baselineValue ?? undefined,
+                    baseline_value: direction === 'descendente' ? (baselineValue ?? undefined) : undefined,
                     group_name: groupName.trim(),
                     group_description: groupDescription.trim(),
                     members: membersPayload,
@@ -211,7 +213,7 @@
                         <input type="radio" class="radio radio-primary radio-xs"
                             name="shared-dir" value="ascendente"
                             checked={direction === 'ascendente'}
-                            onchange={() => direction = 'ascendente'} />
+                            onchange={() => { direction = 'ascendente'; baselineValue = null; }} />
                         <span class="text-xs">Ascendente (↑)</span>
                     </label>
                     <label class="flex items-center gap-1.5 cursor-pointer">

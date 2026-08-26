@@ -78,6 +78,32 @@ type GlobalRuleRow struct {
 	DefaultTarget    float64    `json:"default_target"`
 }
 
+// EffectiveWeight returns given weight if >0, otherwise falls back to global.
+func EffectiveWeight(globalWeight, given float64) float64 {
+	if given > 0 {
+		return given
+	}
+	if globalWeight > 0 {
+		return globalWeight
+	}
+	return given
+}
+
+// EffectiveTarget returns given target if non-zero, otherwise falls back to global
+// except for descendente/binario where 0 is a valid intentional target.
+func EffectiveTarget(direction, unit string, globalTarget, given float64) float64 {
+	if given != 0 {
+		return given
+	}
+	if direction == "descendente" || unit == "binario" {
+		return given
+	}
+	if globalTarget != 0 {
+		return globalTarget
+	}
+	return given
+}
+
 // GlobalGoalRepo provides Ent-backed operations for global goals.
 type GlobalGoalRepo struct {
 	client *internal.Client
@@ -384,6 +410,11 @@ func (r *GlobalGoalRepo) evaluateAndAssign(ctx context.Context, c *internal.Clie
 	if err != nil {
 		return 0, err
 	}
+	// Fallback defaults from global goal — weight/target 0 means use global (progress 0 normal at creation).
+	globalWeight := creator.Weight
+	globalTarget := creator.TargetValue
+	globalDirection := string(creator.Direction)
+	globalUnit := string(creator.Unit)
 	creatorEmp, err := c.Employee.Query().Where(employee.ID(creator.CreatedBy)).WithOrgNode().Only(ctx)
 	if err != nil {
 		return 0, err
@@ -422,11 +453,13 @@ func (r *GlobalGoalRepo) evaluateAndAssign(ctx context.Context, c *internal.Clie
 			assignedSet[a.EmployeeID] = true
 			continue
 		}
+		w := EffectiveWeight(globalWeight, a.Weight)
+		t := EffectiveTarget(globalDirection, globalUnit, globalTarget, a.TargetValue)
 		create := c.GlobalGoalAssignment.Create().
 			SetGoalID(goalID).
 			SetEmployeeID(a.EmployeeID).
-			SetWeight(a.Weight).
-			SetTargetValue(a.TargetValue)
+			SetWeight(w).
+			SetTargetValue(t)
 		if a.BaselineValue != nil {
 			create = create.SetBaselineValue(*a.BaselineValue)
 		}
@@ -546,15 +579,18 @@ func (r *GlobalGoalRepo) evaluateAndAssign(ctx context.Context, c *internal.Clie
 			continue
 		}
 
-		// Rule weight/target precedence: department → min_direct_reports → role.
-		weight, target := 0.0, 100.0
+		// Rule weight/target precedence: department → min_direct_reports → role, fallback to global weight/target.
+		weight, target := globalWeight, globalTarget
 		switch {
 		case len(deptRules) > 0:
-			weight, target = deptRules[0].DefaultWeight, deptRules[0].DefaultTarget
+			weight = EffectiveWeight(globalWeight, deptRules[0].DefaultWeight)
+			target = EffectiveTarget(globalDirection, globalUnit, globalTarget, deptRules[0].DefaultTarget)
 		case len(minReportRules) > 0:
-			weight, target = minReportRules[0].DefaultWeight, minReportRules[0].DefaultTarget
+			weight = EffectiveWeight(globalWeight, minReportRules[0].DefaultWeight)
+			target = EffectiveTarget(globalDirection, globalUnit, globalTarget, minReportRules[0].DefaultTarget)
 		case len(roleRules) > 0:
-			weight, target = roleRules[0].DefaultWeight, roleRules[0].DefaultTarget
+			weight = EffectiveWeight(globalWeight, roleRules[0].DefaultWeight)
+			target = EffectiveTarget(globalDirection, globalUnit, globalTarget, roleRules[0].DefaultTarget)
 		}
 
 		exists, err := c.GlobalGoalAssignment.Query().

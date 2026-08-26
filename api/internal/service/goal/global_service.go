@@ -26,7 +26,7 @@ type CreateGlobalGoalRequest struct {
 	Unit          string                    `json:"unit" validate:"required,oneof=porcentaje moneda numero binario"`
 	Direction     string                    `json:"direction" validate:"required,oneof=ascendente descendente"`
 	GoalKind      string                    `json:"goal_kind" validate:"required,oneof=qualitative quantitative"`
-	Weight        float64                   `json:"weight" validate:"required,min=0,max=100"`
+	Weight        float64                   `json:"weight" validate:"required,gt=0,lte=100"`
 	TargetValue   float64                   `json:"target_value" validate:"required,gte=0"`
 	BaselineValue *float64                  `json:"baseline_value,omitempty"`
 	Assignments   []CreateAssignmentRequest `json:"assignments"`
@@ -36,8 +36,8 @@ type CreateGlobalGoalRequest struct {
 // CreateAssignmentRequest is the request body for creating an assignment.
 type CreateAssignmentRequest struct {
 	EmployeeID    uuid.UUID `json:"employee_id" validate:"required"`
-	Weight        float64   `json:"weight" validate:"required,min=0,max=100"`
-	TargetValue   float64   `json:"target_value" validate:"required,gt=0"`
+	Weight        float64   `json:"weight" validate:"gte=0,lte=100"`
+	TargetValue   float64   `json:"target_value" validate:"gte=0"`
 	BaselineValue *float64  `json:"baseline_value,omitempty"`
 }
 
@@ -47,8 +47,8 @@ type CreateRuleRequest struct {
 	DepartmentID     *uuid.UUID `json:"department_id,omitempty"`
 	MinDirectReports *int       `json:"min_direct_reports,omitempty"`
 	ProfileID        *uuid.UUID `json:"profile_id,omitempty"`
-	DefaultWeight    float64    `json:"default_weight" validate:"required,min=0,max=100"`
-	DefaultTarget    float64    `json:"default_target" validate:"omitempty,gt=0"`
+	DefaultWeight    float64    `json:"default_weight" validate:"gte=0,lte=100"`
+	DefaultTarget    float64    `json:"default_target" validate:"gte=0"`
 }
 
 // UpdateGlobalGoalRequest is the request body for updating a global goal.
@@ -58,7 +58,7 @@ type UpdateGlobalGoalRequest struct {
 	Unit          string                    `json:"unit" validate:"required,oneof=porcentaje moneda numero binario"`
 	Direction     string                    `json:"direction" validate:"required,oneof=ascendente descendente"`
 	GoalKind      string                    `json:"goal_kind" validate:"required,oneof=qualitative quantitative"`
-	Weight        float64                   `json:"weight" validate:"required,min=0,max=100"`
+	Weight        float64                   `json:"weight" validate:"required,gt=0,lte=100"`
 	TargetValue   float64                   `json:"target_value" validate:"required,gte=0"`
 	BaselineValue *float64                  `json:"baseline_value,omitempty"`
 	CurrentValue  *float64                  `json:"current_value,omitempty"`
@@ -84,6 +84,10 @@ func (s *globalGoalService) CreateGlobalGoal(ctx context.Context, req CreateGlob
 		return nil, pkgerrors.NewDomainError(pkgerrors.NotAuthenticated, "no authenticated user", nil)
 	}
 
+	// Guard: peso global obligatorio >0 (effective weight must be >0).
+	if req.Weight <= 0 {
+		return nil, pkgerrors.ErrInvalidWeightRange
+	}
 	// Validate unit, target and baseline (mirrors personal goal validation).
 	if !validUnits[req.Unit] {
 		return nil, pkgerrors.ErrInvalidUnit
@@ -96,31 +100,35 @@ func (s *globalGoalService) CreateGlobalGoal(ctx context.Context, req CreateGlob
 	}
 	normalizedTarget := normalizeBinaryValue(req.Unit, req.TargetValue)
 
-	// Convert assignments
+	// Convert assignments — fallback to global weight/target when 0 (ponytail: reuse global defaults, progress 0 is normal at creation, update via CurrentValue in avance phase only)
 	assignments := make([]*repogoal.GlobalAssignmentRow, 0, len(req.Assignments))
 	for _, a := range req.Assignments {
+		w := effectiveWeight(req.Weight, a.Weight)
+		if w <= 0 {
+			return nil, pkgerrors.ErrInvalidWeightRange
+		}
 		assignments = append(assignments, &repogoal.GlobalAssignmentRow{
 			EmployeeID:    a.EmployeeID,
-			Weight:        a.Weight,
-			TargetValue:   a.TargetValue,
+			Weight:        w,
+			TargetValue:   effectiveTarget(req.Direction, req.Unit, normalizedTarget, a.TargetValue),
 			BaselineValue: a.BaselineValue,
 		})
 	}
 
-	// Convert rules
+	// Convert rules — fallback to global weight/target when 0
 	rules := make([]*repogoal.GlobalRuleRow, 0, len(req.Rules))
 	for _, r := range req.Rules {
-		defaultTarget := r.DefaultTarget
-		if defaultTarget == 0 {
-			defaultTarget = 100
+		w := effectiveWeight(req.Weight, r.DefaultWeight)
+		if w <= 0 {
+			return nil, pkgerrors.ErrInvalidWeightRange
 		}
 		rules = append(rules, &repogoal.GlobalRuleRow{
 			RuleType:         r.RuleType,
 			DepartmentID:     r.DepartmentID,
 			MinDirectReports: r.MinDirectReports,
 			ProfileID:        r.ProfileID,
-			DefaultWeight:    r.DefaultWeight,
-			DefaultTarget:    defaultTarget,
+			DefaultWeight:    w,
+			DefaultTarget:    effectiveTarget(req.Direction, req.Unit, normalizedTarget, r.DefaultTarget),
 		})
 	}
 
@@ -139,6 +147,10 @@ func (s *globalGoalService) ListGlobalGoals(ctx context.Context, cycleID uuid.UU
 
 // UpdateGlobalGoal updates a global goal.
 func (s *globalGoalService) UpdateGlobalGoal(ctx context.Context, goalID uuid.UUID, req UpdateGlobalGoalRequest) (*repogoal.GlobalGoalRow, error) {
+	// Guard: peso global obligatorio >0 (effective weight must be >0).
+	if req.Weight <= 0 {
+		return nil, pkgerrors.ErrInvalidWeightRange
+	}
 	// Validate unit, target and baseline (mirrors personal goal validation).
 	if !validUnits[req.Unit] {
 		return nil, pkgerrors.ErrInvalidUnit
@@ -153,6 +165,7 @@ func (s *globalGoalService) UpdateGlobalGoal(ctx context.Context, goalID uuid.UU
 
 	// Validate current_value against the stored goal so a client cannot
 	// bypass the rules by changing baseline/unit in the request.
+	// Progress 0 is normal at creation; CurrentValue is updated only in avance phase via explicit progress.
 	existing, err := s.repo.GetGlobalGoal(ctx, goalID)
 	if err != nil {
 		return nil, err
@@ -163,35 +176,47 @@ func (s *globalGoalService) UpdateGlobalGoal(ctx context.Context, goalID uuid.UU
 		}
 	}
 
-	// Convert assignments
+	// Convert assignments — fallback to global weight/target when 0
 	assignments := make([]*repogoal.GlobalAssignmentRow, 0, len(req.Assignments))
 	for _, a := range req.Assignments {
+		w := effectiveWeight(req.Weight, a.Weight)
+		if w <= 0 {
+			return nil, pkgerrors.ErrInvalidWeightRange
+		}
 		assignments = append(assignments, &repogoal.GlobalAssignmentRow{
 			EmployeeID:    a.EmployeeID,
-			Weight:        a.Weight,
-			TargetValue:   a.TargetValue,
+			Weight:        w,
+			TargetValue:   effectiveTarget(req.Direction, req.Unit, normalizedTarget, a.TargetValue),
 			BaselineValue: a.BaselineValue,
 		})
 	}
 
-	// Convert rules
+	// Convert rules — fallback to global weight/target when 0
 	rules := make([]*repogoal.GlobalRuleRow, 0, len(req.Rules))
 	for _, r := range req.Rules {
-		defaultTarget := r.DefaultTarget
-		if defaultTarget == 0 {
-			defaultTarget = 100
+		w := effectiveWeight(req.Weight, r.DefaultWeight)
+		if w <= 0 {
+			return nil, pkgerrors.ErrInvalidWeightRange
 		}
 		rules = append(rules, &repogoal.GlobalRuleRow{
 			RuleType:         r.RuleType,
 			DepartmentID:     r.DepartmentID,
 			MinDirectReports: r.MinDirectReports,
 			ProfileID:        r.ProfileID,
-			DefaultWeight:    r.DefaultWeight,
-			DefaultTarget:    defaultTarget,
+			DefaultWeight:    w,
+			DefaultTarget:    effectiveTarget(req.Direction, req.Unit, normalizedTarget, r.DefaultTarget),
 		})
 	}
 
 	return s.repo.UpdateGlobalGoal(ctx, goalID, req.Name, req.Description, req.Unit, req.Direction, req.GoalKind, req.Weight, normalizedTarget, req.CurrentValue, req.BaselineValue, assignments, rules)
+}
+
+func effectiveWeight(globalWeight, given float64) float64 {
+	return repogoal.EffectiveWeight(globalWeight, given)
+}
+
+func effectiveTarget(direction, unit string, globalTarget, given float64) float64 {
+	return repogoal.EffectiveTarget(direction, unit, globalTarget, given)
 }
 
 // DeleteGlobalGoal deletes a global goal.

@@ -131,7 +131,7 @@
                 minDirectReports: r.min_direct_reports ?? 0,
                 profileId: r.profile_id ?? '',
                 defaultWeight: r.default_weight,
-                defaultTarget: r.default_target ?? 100,
+                defaultTarget: r.default_target ?? 0,
             }));
             employeeSelect = '';
             error = '';
@@ -181,7 +181,7 @@
         const emp = employeeOptions.find(o => o.value === employeeSelect);
         if (!emp) return;
         if (assignments.some(a => a.employeeId === emp.value)) return;
-        assignments = [...assignments, { employeeId: emp.value, employeeName: emp.label, weight: 0, targetValue: 0 }];
+        assignments = [...assignments, { employeeId: emp.value, employeeName: emp.label, weight: weight > 0 ? weight : 0, targetValue: targetValue }];
     }
 
     function removeAssignment(index: number) {
@@ -189,15 +189,15 @@
     }
 
     function addDepartmentRule() {
-        rules = [...rules, { ruleType: 'department', departmentId: departmentOptions[0]?.value ?? '', minDirectReports: 0, profileId: '', defaultWeight: 0, defaultTarget: 100 }];
+        rules = [...rules, { ruleType: 'department', departmentId: departmentOptions[0]?.value ?? '', minDirectReports: 0, profileId: '', defaultWeight: weight > 0 ? weight : 0, defaultTarget: targetValue }];
     }
 
     function addRoleRule() {
-        rules = [...rules, { ruleType: 'role', departmentId: '', minDirectReports: 0, profileId: '', defaultWeight: 0, defaultTarget: 100 }];
+        rules = [...rules, { ruleType: 'role', departmentId: '', minDirectReports: 0, profileId: '', defaultWeight: weight > 0 ? weight : 0, defaultTarget: targetValue }];
     }
 
     function addMinReportsRule() {
-        rules = [...rules, { ruleType: 'min_direct_reports', departmentId: '', minDirectReports: 0, profileId: '', defaultWeight: 0, defaultTarget: 100 }];
+        rules = [...rules, { ruleType: 'min_direct_reports', departmentId: '', minDirectReports: 0, profileId: '', defaultWeight: weight > 0 ? weight : 0, defaultTarget: targetValue }];
     }
 
     function removeRule(index: number) {
@@ -218,14 +218,17 @@
         if (!name.trim()) return 'El nombre es obligatorio';
         if (!(weight >= 0 && weight <= 100)) return 'La ponderación debe estar entre 0 y 100';
         if (targetValue <= 0 && direction !== 'descendente' && unit !== 'binario') return 'El valor objetivo debe ser mayor a 0';
-        if (direction === 'descendente' && (baselineValue === null || baselineValue <= targetValue)) return 'Para objetivos descendentes, el valor inicial debe ser mayor al objetivo';
+        if (direction === 'descendente') {
+            if (baselineValue === null || baselineValue <= targetValue) return 'Para objetivos descendentes, el valor inicial debe ser mayor al objetivo';
+        }
         if (!goalId && assignments.length === 0 && rules.length === 0) return 'Selecciona al menos un empleado o una regla';
         for (const a of assignments) {
             if (!(a.weight >= 0 && a.weight <= 100)) return 'Ponderación de empleado inválida (0-100)';
-            if (a.targetValue <= 0 && direction !== 'descendente' && unit !== 'binario') return 'El valor objetivo del empleado debe ser mayor a 0';
+            if (a.targetValue < 0) return 'El valor objetivo del empleado debe ser mayor o igual a 0';
         }
         for (const r of rules) {
             if (!(r.defaultWeight >= 0 && r.defaultWeight <= 100)) return 'Ponderación por defecto inválida (0-100)';
+            if (r.defaultTarget < 0) return 'El objetivo por defecto debe ser mayor o igual a 0';
             if (r.ruleType === 'department' && !r.departmentId) return 'Selecciona un departamento';
             if (r.ruleType === 'role' && !r.profileId) return 'Selecciona un perfil';
             if (r.ruleType === 'min_direct_reports' && !(r.minDirectReports > 0)) return 'El mínimo de reportes directos debe ser mayor a 0';
@@ -252,7 +255,7 @@
                     rule_type: r.ruleType,
                     ...(r.ruleType === 'department' ? { department_id: r.departmentId } : r.ruleType === 'role' ? { profile_id: r.profileId } : { min_direct_reports: r.minDirectReports }),
                     default_weight: r.defaultWeight,
-                    default_target: r.defaultTarget ?? 100,
+                    default_target: r.defaultTarget,
                 }))
                 : undefined;
             if (goalId) {
@@ -264,7 +267,7 @@
                     goal_kind: goalKind,
                     weight,
                     target_value: targetValue,
-                    baseline_value: baselineValue ?? undefined,
+                    baseline_value: direction === 'descendente' ? (baselineValue ?? undefined) : undefined,
                     assignments: assignmentsPayload,
                     rules: rulesPayload,
                 });
@@ -277,7 +280,7 @@
                     goal_kind: goalKind,
                     weight,
                     target_value: targetValue,
-                    baseline_value: baselineValue ?? undefined,
+                    baseline_value: direction === 'descendente' ? (baselineValue ?? undefined) : undefined,
                     assignments: assignmentsPayload,
                     rules: rulesPayload,
                 };
@@ -340,7 +343,7 @@
                         <input type="radio" class="radio radio-primary radio-xs"
                             name="global-goal-dir" value="ascendente"
                             checked={direction === 'ascendente'}
-                            onchange={() => direction = 'ascendente'} />
+                            onchange={() => { direction = 'ascendente'; baselineValue = null; }} />
                         <span class="text-xs">Ascendente (↑)</span>
                     </label>
                     <label class="flex items-center gap-1.5 cursor-pointer">

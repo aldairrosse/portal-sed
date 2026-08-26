@@ -27,9 +27,10 @@ func (GlobalGoalAssignment) Fields() []ent.Field {
 		field.UUID("goal_id", uuid.UUID{}),
 		field.UUID("employee_id", uuid.UUID{}),
 		field.Float("weight").
-			Range(0, 100),
+			Min(0).
+			Max(100),
 		field.Float("target_value").
-			Positive(),
+			Min(0),
 		field.Float("baseline_value").
 			Optional().
 			Nillable(),
