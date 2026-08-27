@@ -2,6 +2,7 @@ package schema
 
 import (
 	"entgo.io/ent"
+	"entgo.io/ent/dialect"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
@@ -26,6 +27,15 @@ func (GoalAssignment) Fields() []ent.Field {
 			StorageKey("id"),
 		field.UUID("employee_id", uuid.UUID{}),
 		field.UUID("cycle_id", uuid.UUID{}),
+		field.Enum("status").
+			Values("borrador", "enviada").
+			Default("borrador").
+			SchemaType(map[string]string{
+				dialect.Postgres: "goal_assignment_status",
+			}),
+		field.Time("submitted_at").
+			Optional().
+			Nillable(),
 	}
 }
 

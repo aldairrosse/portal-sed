@@ -14374,6 +14374,8 @@ type GoalAssignmentMutation struct {
 	id              *uuid.UUID
 	created_at      *time.Time
 	updated_at      *time.Time
+	status          *goalassignment.Status
+	submitted_at    *time.Time
 	clearedFields   map[string]struct{}
 	employee        *uuid.UUID
 	clearedemployee bool
@@ -14632,6 +14634,91 @@ func (m *GoalAssignmentMutation) ResetCycleID() {
 	m.cycle = nil
 }
 
+// SetStatus sets the "status" field.
+func (m *GoalAssignmentMutation) SetStatus(_go goalassignment.Status) {
+	m.status = &_go
+}
+
+// Status returns the value of the "status" field in the mutation.
+func (m *GoalAssignmentMutation) Status() (r goalassignment.Status, exists bool) {
+	v := m.status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStatus returns the old "status" field's value of the GoalAssignment entity.
+// If the GoalAssignment object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GoalAssignmentMutation) OldStatus(ctx context.Context) (v goalassignment.Status, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStatus is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStatus requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStatus: %w", err)
+	}
+	return oldValue.Status, nil
+}
+
+// ResetStatus resets all changes to the "status" field.
+func (m *GoalAssignmentMutation) ResetStatus() {
+	m.status = nil
+}
+
+// SetSubmittedAt sets the "submitted_at" field.
+func (m *GoalAssignmentMutation) SetSubmittedAt(t time.Time) {
+	m.submitted_at = &t
+}
+
+// SubmittedAt returns the value of the "submitted_at" field in the mutation.
+func (m *GoalAssignmentMutation) SubmittedAt() (r time.Time, exists bool) {
+	v := m.submitted_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSubmittedAt returns the old "submitted_at" field's value of the GoalAssignment entity.
+// If the GoalAssignment object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GoalAssignmentMutation) OldSubmittedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSubmittedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSubmittedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSubmittedAt: %w", err)
+	}
+	return oldValue.SubmittedAt, nil
+}
+
+// ClearSubmittedAt clears the value of the "submitted_at" field.
+func (m *GoalAssignmentMutation) ClearSubmittedAt() {
+	m.submitted_at = nil
+	m.clearedFields[goalassignment.FieldSubmittedAt] = struct{}{}
+}
+
+// SubmittedAtCleared returns if the "submitted_at" field was cleared in this mutation.
+func (m *GoalAssignmentMutation) SubmittedAtCleared() bool {
+	_, ok := m.clearedFields[goalassignment.FieldSubmittedAt]
+	return ok
+}
+
+// ResetSubmittedAt resets all changes to the "submitted_at" field.
+func (m *GoalAssignmentMutation) ResetSubmittedAt() {
+	m.submitted_at = nil
+	delete(m.clearedFields, goalassignment.FieldSubmittedAt)
+}
+
 // ClearEmployee clears the "employee" edge to the Employee entity.
 func (m *GoalAssignmentMutation) ClearEmployee() {
 	m.clearedemployee = true
@@ -14720,7 +14807,7 @@ func (m *GoalAssignmentMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *GoalAssignmentMutation) Fields() []string {
-	fields := make([]string, 0, 4)
+	fields := make([]string, 0, 6)
 	if m.created_at != nil {
 		fields = append(fields, goalassignment.FieldCreatedAt)
 	}
@@ -14732,6 +14819,12 @@ func (m *GoalAssignmentMutation) Fields() []string {
 	}
 	if m.cycle != nil {
 		fields = append(fields, goalassignment.FieldCycleID)
+	}
+	if m.status != nil {
+		fields = append(fields, goalassignment.FieldStatus)
+	}
+	if m.submitted_at != nil {
+		fields = append(fields, goalassignment.FieldSubmittedAt)
 	}
 	return fields
 }
@@ -14749,6 +14842,10 @@ func (m *GoalAssignmentMutation) Field(name string) (ent.Value, bool) {
 		return m.EmployeeID()
 	case goalassignment.FieldCycleID:
 		return m.CycleID()
+	case goalassignment.FieldStatus:
+		return m.Status()
+	case goalassignment.FieldSubmittedAt:
+		return m.SubmittedAt()
 	}
 	return nil, false
 }
@@ -14766,6 +14863,10 @@ func (m *GoalAssignmentMutation) OldField(ctx context.Context, name string) (ent
 		return m.OldEmployeeID(ctx)
 	case goalassignment.FieldCycleID:
 		return m.OldCycleID(ctx)
+	case goalassignment.FieldStatus:
+		return m.OldStatus(ctx)
+	case goalassignment.FieldSubmittedAt:
+		return m.OldSubmittedAt(ctx)
 	}
 	return nil, fmt.Errorf("unknown GoalAssignment field %s", name)
 }
@@ -14803,6 +14904,20 @@ func (m *GoalAssignmentMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetCycleID(v)
 		return nil
+	case goalassignment.FieldStatus:
+		v, ok := value.(goalassignment.Status)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStatus(v)
+		return nil
+	case goalassignment.FieldSubmittedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSubmittedAt(v)
+		return nil
 	}
 	return fmt.Errorf("unknown GoalAssignment field %s", name)
 }
@@ -14832,7 +14947,11 @@ func (m *GoalAssignmentMutation) AddField(name string, value ent.Value) error {
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
 func (m *GoalAssignmentMutation) ClearedFields() []string {
-	return nil
+	var fields []string
+	if m.FieldCleared(goalassignment.FieldSubmittedAt) {
+		fields = append(fields, goalassignment.FieldSubmittedAt)
+	}
+	return fields
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
@@ -14845,6 +14964,11 @@ func (m *GoalAssignmentMutation) FieldCleared(name string) bool {
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *GoalAssignmentMutation) ClearField(name string) error {
+	switch name {
+	case goalassignment.FieldSubmittedAt:
+		m.ClearSubmittedAt()
+		return nil
+	}
 	return fmt.Errorf("unknown GoalAssignment nullable field %s", name)
 }
 
@@ -14863,6 +14987,12 @@ func (m *GoalAssignmentMutation) ResetField(name string) error {
 		return nil
 	case goalassignment.FieldCycleID:
 		m.ResetCycleID()
+		return nil
+	case goalassignment.FieldStatus:
+		m.ResetStatus()
+		return nil
+	case goalassignment.FieldSubmittedAt:
+		m.ResetSubmittedAt()
 		return nil
 	}
 	return fmt.Errorf("unknown GoalAssignment field %s", name)

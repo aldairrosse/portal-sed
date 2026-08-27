@@ -2,6 +2,7 @@ package goal
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/sed-evaluacion-desempeno/api/internal"
@@ -59,6 +60,7 @@ type LinkKPIRepository interface {
 type AssignmentRepository interface {
 	GetAssignment(ctx context.Context, empID uuid.UUID) (*repogoal.AssignmentRow, error)
 	CreateAssignment(ctx context.Context, empID, cycleID uuid.UUID) (*repogoal.AssignmentRow, error)
+	UpdateAssignmentStatus(ctx context.Context, empID, cycleID uuid.UUID, status string, submittedAt *time.Time) (*repogoal.AssignmentRow, error)
 	ListGlobalGoalsByEmployee(ctx context.Context, empID uuid.UUID) ([]*repogoal.GlobalGoalRow, error)
 	ListSharedGoalsAsMember(ctx context.Context, empID uuid.UUID) ([]*repogoal.SharedGoalRow, error)
 }

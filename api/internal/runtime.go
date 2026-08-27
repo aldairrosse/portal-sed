@@ -308,7 +308,21 @@ func init() {
 	// globalgoalassignmentDescWeight is the schema descriptor for weight field.
 	globalgoalassignmentDescWeight := globalgoalassignmentFields[3].Descriptor()
 	// globalgoalassignment.WeightValidator is a validator for the "weight" field. It is called by the builders before save.
-	globalgoalassignment.WeightValidator = globalgoalassignmentDescWeight.Validators[0].(func(float64) error)
+	globalgoalassignment.WeightValidator = func() func(float64) error {
+		validators := globalgoalassignmentDescWeight.Validators
+		fns := [...]func(float64) error{
+			validators[0].(func(float64) error),
+			validators[1].(func(float64) error),
+		}
+		return func(weight float64) error {
+			for _, fn := range fns {
+				if err := fn(weight); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
 	// globalgoalassignmentDescTargetValue is the schema descriptor for target_value field.
 	globalgoalassignmentDescTargetValue := globalgoalassignmentFields[4].Descriptor()
 	// globalgoalassignment.TargetValueValidator is a validator for the "target_value" field. It is called by the builders before save.
@@ -335,7 +349,21 @@ func init() {
 	// globalgoalruleDescDefaultWeight is the schema descriptor for default_weight field.
 	globalgoalruleDescDefaultWeight := globalgoalruleFields[6].Descriptor()
 	// globalgoalrule.DefaultWeightValidator is a validator for the "default_weight" field. It is called by the builders before save.
-	globalgoalrule.DefaultWeightValidator = globalgoalruleDescDefaultWeight.Validators[0].(func(float64) error)
+	globalgoalrule.DefaultWeightValidator = func() func(float64) error {
+		validators := globalgoalruleDescDefaultWeight.Validators
+		fns := [...]func(float64) error{
+			validators[0].(func(float64) error),
+			validators[1].(func(float64) error),
+		}
+		return func(default_weight float64) error {
+			for _, fn := range fns {
+				if err := fn(default_weight); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
 	// globalgoalruleDescDefaultTarget is the schema descriptor for default_target field.
 	globalgoalruleDescDefaultTarget := globalgoalruleFields[7].Descriptor()
 	// globalgoalrule.DefaultDefaultTarget holds the default value on creation for the default_target field.

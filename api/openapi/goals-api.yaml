@@ -2059,6 +2059,15 @@ components:
         cycle_id:
           type: string
           format: uuid
+        status:
+          type: string
+          enum: [borrador, enviada]
+          description: Estado actual de la asignación de metas
+        submitted_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Fecha y hora en que la asignación fue enviada formalmente
         categories:
           type: array
           items:

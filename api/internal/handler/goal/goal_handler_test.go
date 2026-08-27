@@ -520,6 +520,92 @@ func TestCreateAssignment_Success(t *testing.T) {
 	assert.Equal(t, assignID.String(), resp.ID)
 }
 
+func TestCreateAssignment_ValidationError_WeightSumInvalid(t *testing.T) {
+	empID := mustParseUUID("11111111-1111-1111-1111-111111111111")
+	cycleID := uuid.MustParse("99999999-9999-9999-9999-999999999999")
+	assignID := uuid.MustParse("ffffffff-ffff-ffff-ffff-ffffffffffff")
+
+	assignRepo := &mockAssignmentRepo{
+		createFunc: func(ctx context.Context, eid, cid uuid.UUID) (*repogoal.AssignmentRow, error) {
+			return &repogoal.AssignmentRow{ID: assignID, EmployeeID: empID, CycleID: cycleID, CreatedAt: fixedTime(), Status: "borrador"}, nil
+		},
+	}
+
+	weightSvc := &mockWeightValidationService{
+		validateFunc: func(ctx context.Context, id uuid.UUID) (*dtogoal.WeightValidationResponse, error) {
+			return &dtogoal.WeightValidationResponse{
+				Valid:       false,
+				CategorySum: 80.0,
+				ExpectedSum: 100.0,
+				Deficit:     20.0,
+				GoalSums: []dtogoal.CategoryGoalSum{
+					{CategoryID: "cat-1", CategoryName: "Estratégicas", Sum: 80.0, ExpectedSum: 100.0, Deficit: 20.0},
+				},
+			}, nil
+		},
+	}
+
+	h := newTestHandler(nil, nil, nil, nil, nil, weightSvc, nil, nil, nil, nil, nil, assignRepo)
+	r := chi.NewRouter()
+	r.Post("/employees/{empId}/assignments", h.CreateAssignment)
+
+	body := fmt.Sprintf(`{"cycle_id":"%s"}`, cycleID)
+	req := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/employees/%s/assignments", empID), strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	require.Equal(t, http.StatusUnprocessableEntity, w.Code)
+	var errResp pkgerrors.APIError
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &errResp))
+	assert.Equal(t, string(pkgerrors.WeightSumInvalid), errResp.Error.Code)
+	assert.NotEmpty(t, errResp.Error.Details)
+}
+
+func TestCreateAssignment_WeightValidationSuccess_TransitionsToEnviada(t *testing.T) {
+	empID := mustParseUUID("11111111-1111-1111-1111-111111111111")
+	cycleID := uuid.MustParse("99999999-9999-9999-9999-999999999999")
+	assignID := uuid.MustParse("ffffffff-ffff-ffff-ffff-ffffffffffff")
+
+	assignRepo := &mockAssignmentRepo{
+		createFunc: func(ctx context.Context, eid, cid uuid.UUID) (*repogoal.AssignmentRow, error) {
+			return &repogoal.AssignmentRow{ID: assignID, EmployeeID: empID, CycleID: cycleID, CreatedAt: fixedTime(), Status: "borrador"}, nil
+		},
+		updateStatusFunc: func(ctx context.Context, eid, cid uuid.UUID, status string, submittedAt *time.Time) (*repogoal.AssignmentRow, error) {
+			require.Equal(t, "enviada", status)
+			require.NotNil(t, submittedAt)
+			return &repogoal.AssignmentRow{ID: assignID, EmployeeID: empID, CycleID: cycleID, Status: "enviada", SubmittedAt: submittedAt, CreatedAt: fixedTime()}, nil
+		},
+	}
+
+	weightSvc := &mockWeightValidationService{
+		validateFunc: func(ctx context.Context, id uuid.UUID) (*dtogoal.WeightValidationResponse, error) {
+			return &dtogoal.WeightValidationResponse{
+				Valid:       true,
+				CategorySum: 100.0,
+				ExpectedSum: 100.0,
+				Deficit:     0,
+			}, nil
+		},
+	}
+
+	h := newTestHandler(nil, nil, nil, nil, nil, weightSvc, nil, nil, nil, nil, nil, assignRepo)
+	r := chi.NewRouter()
+	r.Post("/employees/{empId}/assignments", h.CreateAssignment)
+
+	body := fmt.Sprintf(`{"cycle_id":"%s"}`, cycleID)
+	req := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/employees/%s/assignments", empID), strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	require.Equal(t, http.StatusCreated, w.Code)
+	var resp dtogoal.AssignmentResponse
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
+	assert.Equal(t, "enviada", resp.Status)
+	assert.NotNil(t, resp.SubmittedAt)
+}
+
 func TestBatchGoals_Success(t *testing.T) {
 	empID := mustParseUUID("11111111-1111-1111-1111-111111111111")
 	goalID := uuid.MustParse("cccccccc-cccc-cccc-cccc-cccccccccccc")

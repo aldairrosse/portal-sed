@@ -295,6 +295,7 @@ func (m *mockLinkRepo) ListLinksByGoal(ctx context.Context, goalID uuid.UUID) ([
 type mockAssignmentRepo struct {
 	getFunc    func(ctx context.Context, empID uuid.UUID) (*repogoal.AssignmentRow, error)
 	createFunc func(ctx context.Context, empID, cycleID uuid.UUID) (*repogoal.AssignmentRow, error)
+	updateStatusFunc func(ctx context.Context, empID, cycleID uuid.UUID, status string, submittedAt *time.Time) (*repogoal.AssignmentRow, error)
 }
 
 type mockGoalProposalRepo struct{}
@@ -331,6 +332,13 @@ func (m *mockAssignmentRepo) GetAssignment(ctx context.Context, empID uuid.UUID)
 func (m *mockAssignmentRepo) CreateAssignment(ctx context.Context, empID, cycleID uuid.UUID) (*repogoal.AssignmentRow, error) {
 	if m.createFunc != nil {
 		return m.createFunc(ctx, empID, cycleID)
+	}
+	return nil, nil
+}
+
+func (m *mockAssignmentRepo) UpdateAssignmentStatus(ctx context.Context, empID, cycleID uuid.UUID, status string, submittedAt *time.Time) (*repogoal.AssignmentRow, error) {
+	if m.updateStatusFunc != nil {
+		return m.updateStatusFunc(ctx, empID, cycleID, status, submittedAt)
 	}
 	return nil, nil
 }

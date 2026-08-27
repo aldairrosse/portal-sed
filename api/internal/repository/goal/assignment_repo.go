@@ -17,11 +17,13 @@ import (
 
 // AssignmentRow is the full representation of a GoalAssignment.
 type AssignmentRow struct {
-	ID         uuid.UUID `json:"id"`
-	CreatedAt  time.Time `json:"created_at"`
-	UpdatedAt  time.Time `json:"updated_at"`
-	EmployeeID uuid.UUID `json:"employee_id"`
-	CycleID    uuid.UUID `json:"cycle_id"`
+	ID          uuid.UUID  `json:"id"`
+	CreatedAt   time.Time  `json:"created_at"`
+	UpdatedAt   time.Time  `json:"updated_at"`
+	EmployeeID  uuid.UUID  `json:"employee_id"`
+	CycleID     uuid.UUID  `json:"cycle_id"`
+	Status      string     `json:"status"`
+	SubmittedAt *time.Time `json:"submitted_at,omitempty"`
 }
 
 // assignmentToRow converts an ent GoalAssignment to an AssignmentRow.
@@ -30,11 +32,13 @@ func assignmentToRow(a *internal.GoalAssignment) *AssignmentRow {
 		return nil
 	}
 	return &AssignmentRow{
-		ID:         a.ID,
-		CreatedAt:  a.CreatedAt,
-		UpdatedAt:  a.UpdatedAt,
-		EmployeeID: a.EmployeeID,
-		CycleID:    a.CycleID,
+		ID:          a.ID,
+		CreatedAt:   a.CreatedAt,
+		UpdatedAt:   a.UpdatedAt,
+		EmployeeID:  a.EmployeeID,
+		CycleID:     a.CycleID,
+		Status:      string(a.Status),
+		SubmittedAt: a.SubmittedAt,
 	}
 }
 
@@ -171,6 +175,27 @@ func (r *AssignmentRepo) CreateAssignment(ctx context.Context, empID, cycleID uu
 		return nil, err
 	}
 	return assignmentToRow(a), nil
+}
+
+// UpdateAssignmentStatus transitions an assignment to the given status.
+func (r *AssignmentRepo) UpdateAssignmentStatus(ctx context.Context, empID, cycleID uuid.UUID, status string, submittedAt *time.Time) (*AssignmentRow, error) {
+	a, err := r.client.GoalAssignment.Query().
+		Where(goalassignment.EmployeeID(empID), goalassignment.CycleID(cycleID)).
+		Only(ctx)
+	if err != nil {
+		return nil, err
+	}
+	upd := r.client.GoalAssignment.UpdateOneID(a.ID).SetStatus(goalassignment.Status(status))
+	if submittedAt != nil {
+		upd = upd.SetSubmittedAt(*submittedAt)
+	} else {
+		upd = upd.ClearSubmittedAt()
+	}
+	saved, err := upd.Save(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return assignmentToRow(saved), nil
 }
 
 // hashEmployeeCycle creates a deterministic int64 hash from employee_id and cycle_id.

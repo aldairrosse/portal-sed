@@ -63,6 +63,34 @@ func (_c *GoalAssignmentCreate) SetCycleID(v uuid.UUID) *GoalAssignmentCreate {
 	return _c
 }
 
+// SetStatus sets the "status" field.
+func (_c *GoalAssignmentCreate) SetStatus(v goalassignment.Status) *GoalAssignmentCreate {
+	_c.mutation.SetStatus(v)
+	return _c
+}
+
+// SetNillableStatus sets the "status" field if the given value is not nil.
+func (_c *GoalAssignmentCreate) SetNillableStatus(v *goalassignment.Status) *GoalAssignmentCreate {
+	if v != nil {
+		_c.SetStatus(*v)
+	}
+	return _c
+}
+
+// SetSubmittedAt sets the "submitted_at" field.
+func (_c *GoalAssignmentCreate) SetSubmittedAt(v time.Time) *GoalAssignmentCreate {
+	_c.mutation.SetSubmittedAt(v)
+	return _c
+}
+
+// SetNillableSubmittedAt sets the "submitted_at" field if the given value is not nil.
+func (_c *GoalAssignmentCreate) SetNillableSubmittedAt(v *time.Time) *GoalAssignmentCreate {
+	if v != nil {
+		_c.SetSubmittedAt(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *GoalAssignmentCreate) SetID(v uuid.UUID) *GoalAssignmentCreate {
 	_c.mutation.SetID(v)
@@ -130,6 +158,10 @@ func (_c *GoalAssignmentCreate) defaults() {
 		v := goalassignment.DefaultUpdatedAt()
 		_c.mutation.SetUpdatedAt(v)
 	}
+	if _, ok := _c.mutation.Status(); !ok {
+		v := goalassignment.DefaultStatus
+		_c.mutation.SetStatus(v)
+	}
 	if _, ok := _c.mutation.ID(); !ok {
 		v := goalassignment.DefaultID()
 		_c.mutation.SetID(v)
@@ -149,6 +181,14 @@ func (_c *GoalAssignmentCreate) check() error {
 	}
 	if _, ok := _c.mutation.CycleID(); !ok {
 		return &ValidationError{Name: "cycle_id", err: errors.New(`internal: missing required field "GoalAssignment.cycle_id"`)}
+	}
+	if _, ok := _c.mutation.Status(); !ok {
+		return &ValidationError{Name: "status", err: errors.New(`internal: missing required field "GoalAssignment.status"`)}
+	}
+	if v, ok := _c.mutation.Status(); ok {
+		if err := goalassignment.StatusValidator(v); err != nil {
+			return &ValidationError{Name: "status", err: fmt.Errorf(`internal: validator failed for field "GoalAssignment.status": %w`, err)}
+		}
 	}
 	if len(_c.mutation.EmployeeIDs()) == 0 {
 		return &ValidationError{Name: "employee", err: errors.New(`internal: missing required edge "GoalAssignment.employee"`)}
@@ -198,6 +238,14 @@ func (_c *GoalAssignmentCreate) createSpec() (*GoalAssignment, *sqlgraph.CreateS
 	if value, ok := _c.mutation.UpdatedAt(); ok {
 		_spec.SetField(goalassignment.FieldUpdatedAt, field.TypeTime, value)
 		_node.UpdatedAt = value
+	}
+	if value, ok := _c.mutation.Status(); ok {
+		_spec.SetField(goalassignment.FieldStatus, field.TypeEnum, value)
+		_node.Status = value
+	}
+	if value, ok := _c.mutation.SubmittedAt(); ok {
+		_spec.SetField(goalassignment.FieldSubmittedAt, field.TypeTime, value)
+		_node.SubmittedAt = &value
 	}
 	if nodes := _c.mutation.EmployeeIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

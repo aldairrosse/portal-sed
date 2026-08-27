@@ -3,7 +3,9 @@ package goal
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
+	"math"
 	"net/http"
 	"strconv"
 	"time"
@@ -761,11 +763,22 @@ func (h *GoalHandler) GetEmployeeScore(w http.ResponseWriter, r *http.Request) {
 // ============================================================================
 
 func assignmentRowToResponse(a *repogoal.AssignmentRow) dtogoal.AssignmentResponse {
+	var submittedAt *string
+	if a.SubmittedAt != nil {
+		s := a.SubmittedAt.Format(time.RFC3339)
+		submittedAt = &s
+	}
+	status := a.Status
+	if status == "" {
+		status = "borrador"
+	}
 	return dtogoal.AssignmentResponse{
-		ID:         a.ID.String(),
-		EmployeeID: a.EmployeeID.String(),
-		CycleID:    a.CycleID.String(),
-		CreatedAt:  a.CreatedAt.Format(time.RFC3339),
+		ID:          a.ID.String(),
+		EmployeeID:  a.EmployeeID.String(),
+		CycleID:     a.CycleID.String(),
+		Status:      status,
+		SubmittedAt: submittedAt,
+		CreatedAt:   a.CreatedAt.Format(time.RFC3339),
 	}
 }
 
@@ -922,6 +935,41 @@ func (h *GoalHandler) CreateAssignment(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		writeError(w, err)
 		return
+	}
+
+	// Weight validation gate: if Double 100% passes, transition to 'enviada'.
+	if h.weightSvc != nil {
+		v, verr := h.weightSvc.ValidateDoubleWeighting(r.Context(), empID)
+		if verr != nil {
+			writeError(w, verr)
+			return
+		}
+		if v != nil && !v.Valid {
+			var details []string
+			if math.Abs(v.CategorySum-100.0) > 0.01 {
+				details = append(details, fmt.Sprintf("La suma de pesos de las categorías es %.1f%% (debe ser 100%%)", v.CategorySum))
+			}
+			for _, gs := range v.GoalSums {
+				if math.Abs(gs.Sum-100.0) > 0.01 {
+					details = append(details, fmt.Sprintf("Las metas en la categoría '%s' suman %.1f%% (debe ser 100%%)", gs.CategoryName, gs.Sum))
+				}
+			}
+			if len(details) == 0 {
+				details = append(details, "Las categorías y/o metas deben sumar 100%")
+			}
+			writeError(w, pkgerrors.NewDomainError(pkgerrors.WeightSumInvalid, "La asignación no cumple con la regla de Double 100% de pesos", nil).WithDetails(details...))
+			return
+		}
+
+		now := time.Now().UTC()
+		updated, uerr := h.assignRepo.UpdateAssignmentStatus(r.Context(), empID, cycleID, "enviada", &now)
+		if uerr != nil {
+			writeError(w, uerr)
+			return
+		}
+		if updated != nil {
+			assignment = updated
+		}
 	}
 
 	resp := assignmentRowToResponse(assignment)

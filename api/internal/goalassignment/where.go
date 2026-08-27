@@ -76,6 +76,11 @@ func CycleID(v uuid.UUID) predicate.GoalAssignment {
 	return predicate.GoalAssignment(sql.FieldEQ(FieldCycleID, v))
 }
 
+// SubmittedAt applies equality check predicate on the "submitted_at" field. It's identical to SubmittedAtEQ.
+func SubmittedAt(v time.Time) predicate.GoalAssignment {
+	return predicate.GoalAssignment(sql.FieldEQ(FieldSubmittedAt, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.GoalAssignment {
 	return predicate.GoalAssignment(sql.FieldEQ(FieldCreatedAt, v))
@@ -194,6 +199,76 @@ func CycleIDIn(vs ...uuid.UUID) predicate.GoalAssignment {
 // CycleIDNotIn applies the NotIn predicate on the "cycle_id" field.
 func CycleIDNotIn(vs ...uuid.UUID) predicate.GoalAssignment {
 	return predicate.GoalAssignment(sql.FieldNotIn(FieldCycleID, vs...))
+}
+
+// StatusEQ applies the EQ predicate on the "status" field.
+func StatusEQ(v Status) predicate.GoalAssignment {
+	return predicate.GoalAssignment(sql.FieldEQ(FieldStatus, v))
+}
+
+// StatusNEQ applies the NEQ predicate on the "status" field.
+func StatusNEQ(v Status) predicate.GoalAssignment {
+	return predicate.GoalAssignment(sql.FieldNEQ(FieldStatus, v))
+}
+
+// StatusIn applies the In predicate on the "status" field.
+func StatusIn(vs ...Status) predicate.GoalAssignment {
+	return predicate.GoalAssignment(sql.FieldIn(FieldStatus, vs...))
+}
+
+// StatusNotIn applies the NotIn predicate on the "status" field.
+func StatusNotIn(vs ...Status) predicate.GoalAssignment {
+	return predicate.GoalAssignment(sql.FieldNotIn(FieldStatus, vs...))
+}
+
+// SubmittedAtEQ applies the EQ predicate on the "submitted_at" field.
+func SubmittedAtEQ(v time.Time) predicate.GoalAssignment {
+	return predicate.GoalAssignment(sql.FieldEQ(FieldSubmittedAt, v))
+}
+
+// SubmittedAtNEQ applies the NEQ predicate on the "submitted_at" field.
+func SubmittedAtNEQ(v time.Time) predicate.GoalAssignment {
+	return predicate.GoalAssignment(sql.FieldNEQ(FieldSubmittedAt, v))
+}
+
+// SubmittedAtIn applies the In predicate on the "submitted_at" field.
+func SubmittedAtIn(vs ...time.Time) predicate.GoalAssignment {
+	return predicate.GoalAssignment(sql.FieldIn(FieldSubmittedAt, vs...))
+}
+
+// SubmittedAtNotIn applies the NotIn predicate on the "submitted_at" field.
+func SubmittedAtNotIn(vs ...time.Time) predicate.GoalAssignment {
+	return predicate.GoalAssignment(sql.FieldNotIn(FieldSubmittedAt, vs...))
+}
+
+// SubmittedAtGT applies the GT predicate on the "submitted_at" field.
+func SubmittedAtGT(v time.Time) predicate.GoalAssignment {
+	return predicate.GoalAssignment(sql.FieldGT(FieldSubmittedAt, v))
+}
+
+// SubmittedAtGTE applies the GTE predicate on the "submitted_at" field.
+func SubmittedAtGTE(v time.Time) predicate.GoalAssignment {
+	return predicate.GoalAssignment(sql.FieldGTE(FieldSubmittedAt, v))
+}
+
+// SubmittedAtLT applies the LT predicate on the "submitted_at" field.
+func SubmittedAtLT(v time.Time) predicate.GoalAssignment {
+	return predicate.GoalAssignment(sql.FieldLT(FieldSubmittedAt, v))
+}
+
+// SubmittedAtLTE applies the LTE predicate on the "submitted_at" field.
+func SubmittedAtLTE(v time.Time) predicate.GoalAssignment {
+	return predicate.GoalAssignment(sql.FieldLTE(FieldSubmittedAt, v))
+}
+
+// SubmittedAtIsNil applies the IsNil predicate on the "submitted_at" field.
+func SubmittedAtIsNil() predicate.GoalAssignment {
+	return predicate.GoalAssignment(sql.FieldIsNull(FieldSubmittedAt))
+}
+
+// SubmittedAtNotNil applies the NotNil predicate on the "submitted_at" field.
+func SubmittedAtNotNil() predicate.GoalAssignment {
+	return predicate.GoalAssignment(sql.FieldNotNull(FieldSubmittedAt))
 }
 
 // HasEmployee applies the HasEdge predicate on the "employee" edge.

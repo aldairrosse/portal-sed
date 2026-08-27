@@ -192,6 +192,8 @@ type AssignmentResponse struct {
 	ID          string                 `json:"id"`
 	EmployeeID  string                 `json:"employee_id"`
 	CycleID     string                 `json:"cycle_id"`
+	Status      string                 `json:"status,omitempty"`
+	SubmittedAt *string                `json:"submitted_at,omitempty"`
 	Categories  []CategoryResponse     `json:"categories"`
 	GlobalGoals []AssignedGoalResponse `json:"global_goals,omitempty"`
 	SharedGoals []AssignedGoalResponse `json:"shared_goals,omitempty"`

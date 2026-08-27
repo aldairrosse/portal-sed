@@ -418,6 +418,8 @@ var (
 		{Name: "id", Type: field.TypeUUID},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "status", Type: field.TypeEnum, Enums: []string{"borrador", "enviada"}, Default: "borrador", SchemaType: map[string]string{"postgres": "goal_assignment_status"}},
+		{Name: "submitted_at", Type: field.TypeTime, Nullable: true},
 		{Name: "cycle_id", Type: field.TypeUUID},
 		{Name: "employee_id", Type: field.TypeUUID},
 	}
@@ -429,13 +431,13 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "goal_assignments_cycles_goal_assignments",
-				Columns:    []*schema.Column{GoalAssignmentsColumns[3]},
+				Columns:    []*schema.Column{GoalAssignmentsColumns[5]},
 				RefColumns: []*schema.Column{CyclesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "goal_assignments_employees_goal_assignments",
-				Columns:    []*schema.Column{GoalAssignmentsColumns[4]},
+				Columns:    []*schema.Column{GoalAssignmentsColumns[6]},
 				RefColumns: []*schema.Column{EmployeesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},

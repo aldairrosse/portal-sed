@@ -3,6 +3,7 @@
 package goalassignment
 
 import (
+	"fmt"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
@@ -23,6 +24,10 @@ const (
 	FieldEmployeeID = "employee_id"
 	// FieldCycleID holds the string denoting the cycle_id field in the database.
 	FieldCycleID = "cycle_id"
+	// FieldStatus holds the string denoting the status field in the database.
+	FieldStatus = "status"
+	// FieldSubmittedAt holds the string denoting the submitted_at field in the database.
+	FieldSubmittedAt = "submitted_at"
 	// EdgeEmployee holds the string denoting the employee edge name in mutations.
 	EdgeEmployee = "employee"
 	// EdgeCycle holds the string denoting the cycle edge name in mutations.
@@ -52,6 +57,8 @@ var Columns = []string{
 	FieldUpdatedAt,
 	FieldEmployeeID,
 	FieldCycleID,
+	FieldStatus,
+	FieldSubmittedAt,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -74,6 +81,32 @@ var (
 	// DefaultID holds the default value on creation for the "id" field.
 	DefaultID func() uuid.UUID
 )
+
+// Status defines the type for the "status" enum field.
+type Status string
+
+// StatusBorrador is the default value of the Status enum.
+const DefaultStatus = StatusBorrador
+
+// Status values.
+const (
+	StatusBorrador Status = "borrador"
+	StatusEnviada  Status = "enviada"
+)
+
+func (s Status) String() string {
+	return string(s)
+}
+
+// StatusValidator is a validator for the "status" field enum values. It is called by the builders before save.
+func StatusValidator(s Status) error {
+	switch s {
+	case StatusBorrador, StatusEnviada:
+		return nil
+	default:
+		return fmt.Errorf("goalassignment: invalid enum value for status field: %q", s)
+	}
+}
 
 // OrderOption defines the ordering options for the GoalAssignment queries.
 type OrderOption func(*sql.Selector)
@@ -101,6 +134,16 @@ func ByEmployeeID(opts ...sql.OrderTermOption) OrderOption {
 // ByCycleID orders the results by the cycle_id field.
 func ByCycleID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldCycleID, opts...).ToFunc()
+}
+
+// ByStatus orders the results by the status field.
+func ByStatus(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldStatus, opts...).ToFunc()
+}
+
+// BySubmittedAt orders the results by the submitted_at field.
+func BySubmittedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSubmittedAt, opts...).ToFunc()
 }
 
 // ByEmployeeField orders the results by employee field.

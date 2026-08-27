@@ -65,6 +65,40 @@ func (_u *GoalAssignmentUpdate) SetNillableCycleID(v *uuid.UUID) *GoalAssignment
 	return _u
 }
 
+// SetStatus sets the "status" field.
+func (_u *GoalAssignmentUpdate) SetStatus(v goalassignment.Status) *GoalAssignmentUpdate {
+	_u.mutation.SetStatus(v)
+	return _u
+}
+
+// SetNillableStatus sets the "status" field if the given value is not nil.
+func (_u *GoalAssignmentUpdate) SetNillableStatus(v *goalassignment.Status) *GoalAssignmentUpdate {
+	if v != nil {
+		_u.SetStatus(*v)
+	}
+	return _u
+}
+
+// SetSubmittedAt sets the "submitted_at" field.
+func (_u *GoalAssignmentUpdate) SetSubmittedAt(v time.Time) *GoalAssignmentUpdate {
+	_u.mutation.SetSubmittedAt(v)
+	return _u
+}
+
+// SetNillableSubmittedAt sets the "submitted_at" field if the given value is not nil.
+func (_u *GoalAssignmentUpdate) SetNillableSubmittedAt(v *time.Time) *GoalAssignmentUpdate {
+	if v != nil {
+		_u.SetSubmittedAt(*v)
+	}
+	return _u
+}
+
+// ClearSubmittedAt clears the value of the "submitted_at" field.
+func (_u *GoalAssignmentUpdate) ClearSubmittedAt() *GoalAssignmentUpdate {
+	_u.mutation.ClearSubmittedAt()
+	return _u
+}
+
 // SetEmployee sets the "employee" edge to the Employee entity.
 func (_u *GoalAssignmentUpdate) SetEmployee(v *Employee) *GoalAssignmentUpdate {
 	return _u.SetEmployeeID(v.ID)
@@ -130,6 +164,11 @@ func (_u *GoalAssignmentUpdate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *GoalAssignmentUpdate) check() error {
+	if v, ok := _u.mutation.Status(); ok {
+		if err := goalassignment.StatusValidator(v); err != nil {
+			return &ValidationError{Name: "status", err: fmt.Errorf(`internal: validator failed for field "GoalAssignment.status": %w`, err)}
+		}
+	}
 	if _u.mutation.EmployeeCleared() && len(_u.mutation.EmployeeIDs()) > 0 {
 		return errors.New(`internal: clearing a required unique edge "GoalAssignment.employee"`)
 	}
@@ -153,6 +192,15 @@ func (_u *GoalAssignmentUpdate) sqlSave(ctx context.Context) (_node int, err err
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(goalassignment.FieldUpdatedAt, field.TypeTime, value)
+	}
+	if value, ok := _u.mutation.Status(); ok {
+		_spec.SetField(goalassignment.FieldStatus, field.TypeEnum, value)
+	}
+	if value, ok := _u.mutation.SubmittedAt(); ok {
+		_spec.SetField(goalassignment.FieldSubmittedAt, field.TypeTime, value)
+	}
+	if _u.mutation.SubmittedAtCleared() {
+		_spec.ClearField(goalassignment.FieldSubmittedAt, field.TypeTime)
 	}
 	if _u.mutation.EmployeeCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -266,6 +314,40 @@ func (_u *GoalAssignmentUpdateOne) SetNillableCycleID(v *uuid.UUID) *GoalAssignm
 	return _u
 }
 
+// SetStatus sets the "status" field.
+func (_u *GoalAssignmentUpdateOne) SetStatus(v goalassignment.Status) *GoalAssignmentUpdateOne {
+	_u.mutation.SetStatus(v)
+	return _u
+}
+
+// SetNillableStatus sets the "status" field if the given value is not nil.
+func (_u *GoalAssignmentUpdateOne) SetNillableStatus(v *goalassignment.Status) *GoalAssignmentUpdateOne {
+	if v != nil {
+		_u.SetStatus(*v)
+	}
+	return _u
+}
+
+// SetSubmittedAt sets the "submitted_at" field.
+func (_u *GoalAssignmentUpdateOne) SetSubmittedAt(v time.Time) *GoalAssignmentUpdateOne {
+	_u.mutation.SetSubmittedAt(v)
+	return _u
+}
+
+// SetNillableSubmittedAt sets the "submitted_at" field if the given value is not nil.
+func (_u *GoalAssignmentUpdateOne) SetNillableSubmittedAt(v *time.Time) *GoalAssignmentUpdateOne {
+	if v != nil {
+		_u.SetSubmittedAt(*v)
+	}
+	return _u
+}
+
+// ClearSubmittedAt clears the value of the "submitted_at" field.
+func (_u *GoalAssignmentUpdateOne) ClearSubmittedAt() *GoalAssignmentUpdateOne {
+	_u.mutation.ClearSubmittedAt()
+	return _u
+}
+
 // SetEmployee sets the "employee" edge to the Employee entity.
 func (_u *GoalAssignmentUpdateOne) SetEmployee(v *Employee) *GoalAssignmentUpdateOne {
 	return _u.SetEmployeeID(v.ID)
@@ -344,6 +426,11 @@ func (_u *GoalAssignmentUpdateOne) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *GoalAssignmentUpdateOne) check() error {
+	if v, ok := _u.mutation.Status(); ok {
+		if err := goalassignment.StatusValidator(v); err != nil {
+			return &ValidationError{Name: "status", err: fmt.Errorf(`internal: validator failed for field "GoalAssignment.status": %w`, err)}
+		}
+	}
 	if _u.mutation.EmployeeCleared() && len(_u.mutation.EmployeeIDs()) > 0 {
 		return errors.New(`internal: clearing a required unique edge "GoalAssignment.employee"`)
 	}
@@ -384,6 +471,15 @@ func (_u *GoalAssignmentUpdateOne) sqlSave(ctx context.Context) (_node *GoalAssi
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(goalassignment.FieldUpdatedAt, field.TypeTime, value)
+	}
+	if value, ok := _u.mutation.Status(); ok {
+		_spec.SetField(goalassignment.FieldStatus, field.TypeEnum, value)
+	}
+	if value, ok := _u.mutation.SubmittedAt(); ok {
+		_spec.SetField(goalassignment.FieldSubmittedAt, field.TypeTime, value)
+	}
+	if _u.mutation.SubmittedAtCleared() {
+		_spec.ClearField(goalassignment.FieldSubmittedAt, field.TypeTime)
 	}
 	if _u.mutation.EmployeeCleared() {
 		edge := &sqlgraph.EdgeSpec{

@@ -28,6 +28,10 @@ type GoalAssignment struct {
 	EmployeeID uuid.UUID `json:"employee_id,omitempty"`
 	// CycleID holds the value of the "cycle_id" field.
 	CycleID uuid.UUID `json:"cycle_id,omitempty"`
+	// Status holds the value of the "status" field.
+	Status goalassignment.Status `json:"status,omitempty"`
+	// SubmittedAt holds the value of the "submitted_at" field.
+	SubmittedAt *time.Time `json:"submitted_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the GoalAssignmentQuery when eager-loading is set.
 	Edges        GoalAssignmentEdges `json:"edges"`
@@ -72,7 +76,9 @@ func (*GoalAssignment) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case goalassignment.FieldCreatedAt, goalassignment.FieldUpdatedAt:
+		case goalassignment.FieldStatus:
+			values[i] = new(sql.NullString)
+		case goalassignment.FieldCreatedAt, goalassignment.FieldUpdatedAt, goalassignment.FieldSubmittedAt:
 			values[i] = new(sql.NullTime)
 		case goalassignment.FieldID, goalassignment.FieldEmployeeID, goalassignment.FieldCycleID:
 			values[i] = new(uuid.UUID)
@@ -120,6 +126,19 @@ func (_m *GoalAssignment) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field cycle_id", values[i])
 			} else if value != nil {
 				_m.CycleID = *value
+			}
+		case goalassignment.FieldStatus:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field status", values[i])
+			} else if value.Valid {
+				_m.Status = goalassignment.Status(value.String)
+			}
+		case goalassignment.FieldSubmittedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field submitted_at", values[i])
+			} else if value.Valid {
+				_m.SubmittedAt = new(time.Time)
+				*_m.SubmittedAt = value.Time
 			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
@@ -178,6 +197,14 @@ func (_m *GoalAssignment) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("cycle_id=")
 	builder.WriteString(fmt.Sprintf("%v", _m.CycleID))
+	builder.WriteString(", ")
+	builder.WriteString("status=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Status))
+	builder.WriteString(", ")
+	if v := _m.SubmittedAt; v != nil {
+		builder.WriteString("submitted_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
 	builder.WriteByte(')')
 	return builder.String()
 }
