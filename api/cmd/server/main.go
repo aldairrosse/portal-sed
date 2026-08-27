@@ -24,6 +24,7 @@ import (
 
 	"github.com/sed-evaluacion-desempeno/api/internal"
 	"github.com/sed-evaluacion-desempeno/api/internal/auth"
+	"github.com/sed-evaluacion-desempeno/api/internal/auth/dev"
 	"github.com/sed-evaluacion-desempeno/api/internal/auth/sso"
 	authsvc "github.com/sed-evaluacion-desempeno/api/internal/service/auth"
 
@@ -400,6 +401,9 @@ func main() {
 	commentchangehandler.RegisterRoutes(apiV1, commentChangeH, authSvc)
 	activityhandler.RegisterActivityRoutes(apiV1, activityH, authSvc)
 	r.Mount("/api/v1", apiV1)
+	if os.Getenv("ENV") == "development" || os.Getenv("APP_ENV") == "development" {
+		r.Mount("/api/v1/dev", dev.Routes(db, sessionStore))
+	}
 
 	// Health check
 	r.Get("/health", func(w http.ResponseWriter, _ *http.Request) {
