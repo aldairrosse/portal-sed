@@ -36,6 +36,13 @@ async function fetchWithCredentials(input: RequestInfo | URL, init?: RequestInit
 			// forces re-login. Transient failures (5xx or other codes) fall
 			// through so the caller can surface the error without losing the session.
 			if (body?.error?.code === 'SSO_SESSION_EXPIRED') {
+				// Allow unauthenticated dev view: bypass redirect when dev mode enabled
+				try {
+					const devRes = await fetch('/api/v1/dev/status', { credentials: 'include' });
+					if (devRes.ok) return response;
+				} catch {
+					// dev probe failed — fall through to redirect
+				}
 				console.warn('[sso] 401 SSO_SESSION_EXPIRED -> redirect /login', window.location.pathname);
 				sessionStorage.setItem('return_to', window.location.pathname + window.location.search);
 				sessionStorage.removeItem('sso_redirect_count');

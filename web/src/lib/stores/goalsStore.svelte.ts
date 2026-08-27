@@ -158,6 +158,8 @@ function normalizeApiData(
 		id?: string;
 		employee_id?: string;
 		cycle_id?: string;
+		status?: string;
+		submitted_at?: string | null;
 		categories?: Array<unknown>;
 		created_at?: string;
 		global_goals?: Array<Record<string, unknown>>;
@@ -276,6 +278,8 @@ function normalizeApiData(
 			profileId: profileId as EvaluationProfile ?? 'colaborador',
 			managerId: null,
 			goalIds: assignedGoalIds,
+			status: (apiAssignment.status as 'borrador' | 'enviada' | undefined) ?? 'borrador',
+			submittedAt: apiAssignment.submitted_at ?? null,
 			createdAt: apiAssignment.created_at ?? new Date().toISOString(),
 			updatedAt: apiAssignment.created_at ?? new Date().toISOString()
 		});
@@ -356,6 +360,8 @@ async function _doLoad(empIdOverride?: string): Promise<void> {
 					id?: string;
 					employee_id?: string;
 					cycle_id?: string;
+					status?: string;
+					submitted_at?: string | null;
 					categories?: Array<unknown>;
 					created_at?: string;
 					global_goals?: Array<Record<string, unknown>>;
@@ -363,22 +369,6 @@ async function _doLoad(empIdOverride?: string): Promise<void> {
 			  }
 			| null
 			| undefined) ?? null;
-
-		if (empIdOverride && !apiAssignment?.id) {
-			const activeCycle = getActiveCycle();
-			if (activeCycle?.id) {
-				const { error: createErr } = await client.POST('/employees/{empId}/assignments', {
-					params: { path: { empId } },
-					body: { cycle_id: activeCycle.id }
-				});
-				if (!createErr) {
-					const { data: fresh } = await client.GET('/employees/{empId}/assignments', {
-						params: { path: { empId } }
-					});
-					apiAssignment = (fresh as typeof apiAssignment) ?? null;
-				}
-			}
-		}
 
 		const apiCategories = (catsRes.data as { items?: Array<unknown> })?.items ?? [];
 		const apiKpis = (kpisRes.data as { items?: Array<unknown> })?.items ?? [];
@@ -912,7 +902,13 @@ export async function addAssignment(_assignment: EmployeeAssignment): Promise<vo
 		params: { path: { empId } },
 		body: { cycle_id: activeCycle.id }
 	});
-	if (apiError) throw new Error((apiError as { error?: { message?: string } })?.error?.message ?? 'Error al crear asignación');
+	if (apiError) {
+		const errObj = (apiError as { error?: { message?: string; details?: string[] } })?.error;
+		if (errObj?.details && errObj.details.length > 0) {
+			throw new Error(`${errObj.message}: ${errObj.details.join('. ')}`);
+		}
+		throw new Error(errObj?.message ?? 'Error al enviar asignación');
+	}
 	await reload(true);
 }
 

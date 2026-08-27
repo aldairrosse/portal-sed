@@ -7,6 +7,8 @@
 	import '../app.css';
 	import AppShell from '$lib/components/AppShell.svelte';
 	import ToastContainer from '$lib/components/ui/ToastContainer.svelte';
+	import DevBar from '$lib/components/DevBar.svelte';
+	import DevModeSelector from '$lib/components/DevModeSelector.svelte';
 	import { initTheme } from '$lib/stores/theme';
 
 	let { children } = $props();
@@ -27,6 +29,11 @@
 	// AppShell never renders until this is confirmed — zero flash.
 	let authResolved = $derived(!session.loading && !!session.user);
 
+	// Dev unauthenticated view: when /api/v1/dev/status 200 allow unauthenticated shell
+	let devEnabled = $state(false);
+	let devChecked = $state(false);
+	let devBypass = $derived(devChecked && devEnabled && !session.loading && !session.user);
+
 	// Minimum loader time elapsed — prevents flash on fast sessions
 	let minTimeElapsed = $state(false);
 
@@ -35,8 +42,9 @@
 
 	// Auth guard: redirect to login if not authenticated
 	// Fires only when auth is fully resolved (no user) and loader time passed
+	// Bypassed when dev mode is enabled (unauthenticated dev view shows only DevBar + login via impersonate)
 	$effect(() => {
-		if (session.loading) return;
+		if (session.loading || !devChecked) return;
 
 		// Authenticated user landed on a standalone route (/login) — bounce to home
 		// so the demo view never flashes before the redirect.
@@ -47,6 +55,7 @@
 
 		if (isStandalone) return;
 		if (ready) return;
+		if (devBypass || devEnabled) return;
 		if (!authResolved && minTimeElapsed) {
 			// Session resolved with no user, min time passed → redirect
 			// Keep the intended destination for the post-SSO redirect (single use).
@@ -59,6 +68,14 @@
 
 	onMount(() => {
 		ensureSession().then(() => loadCycle());
+		fetch('/api/v1/dev/status', { credentials: 'include' })
+			.then((r) => {
+				devEnabled = r.ok;
+			})
+			.catch(() => {})
+			.finally(() => {
+				devChecked = true;
+			});
 
 		// Release loader after minimum display time
 		const timer = setTimeout(() => {
@@ -69,7 +86,7 @@
 	});
 </script>
 
-{#if isStandalone || ready}
+{#if isStandalone || ready || devBypass}
 	{#if isStandalone}
 		<!-- Standalone routes (/login) only render once the session is resolved
 		     AND the user is not already authenticated. If they are, the
@@ -81,6 +98,8 @@
 		{:else}
 			{@render children()}
 		{/if}
+	{:else if devBypass}
+		<DevModeSelector />
 	{:else}
 		<AppShell>
 			{@render children()}
@@ -93,3 +112,4 @@
 {/if}
 
 <ToastContainer />
+<DevBar />

@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { page } from "$app/stores";
     import { goto } from "$app/navigation";
     import {
         Save,
@@ -183,7 +184,21 @@
 
     $effect(() => {
         if (!selectedEmployeeId) {
+            const urlEmpId = $page.url.searchParams.get('empId');
+            if (urlEmpId) {
+                selectedEmployeeId = urlEmpId;
+                loadForEmployee(urlEmpId);
+                return;
+            }
             selectedEmployeeId = viewerEmployeeId;
+        }
+    });
+
+    $effect(() => {
+        const urlEmpId = $page.url.searchParams.get('empId');
+        if (urlEmpId && urlEmpId !== selectedEmployeeId) {
+            selectedEmployeeId = urlEmpId;
+            loadForEmployee(urlEmpId);
         }
     });
 
@@ -527,22 +542,20 @@
     async function handleSaveAssignment() {
         if (!targetAssignment) return;
         try {
-            if (targetAssignment.id.startsWith("stub-")) {
-                await addAssignment({
-                    id: `stub-${targetAssignment.employeeId}`,
-                    employeeId: targetAssignment.employeeId,
-                    employeeName: targetAssignment.employeeName,
-                    profileId: targetAssignment.profileId,
-                    managerId: null,
-                    goalIds: [],
-                    createdAt: new Date().toISOString(),
-                    updatedAt: new Date().toISOString(),
-                });
-            }
-            notifications.success("Asignación guardada correctamente.");
+            await addAssignment({
+                id: targetAssignment.id,
+                employeeId: targetAssignment.employeeId,
+                employeeName: targetAssignment.employeeName,
+                profileId: targetAssignment.profileId,
+                managerId: null,
+                goalIds: [],
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+            });
+            notifications.success("Asignación enviada correctamente.");
         } catch (e) {
             notifications.error(
-                e instanceof Error ? e.message : "Error al guardar asignación",
+                e instanceof Error ? e.message : "Error al enviar asignación",
             );
         }
     }

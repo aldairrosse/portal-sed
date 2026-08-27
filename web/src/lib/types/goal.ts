@@ -106,6 +106,8 @@ export interface EmployeeAssignment {
 	profileId: EvaluationProfile;
 	managerId: string | null;
 	goalIds: string[];
+	status?: 'borrador' | 'enviada';
+	submittedAt?: string | null;
 	createdAt: string;
 	updatedAt: string;
 }

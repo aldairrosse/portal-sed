@@ -11,7 +11,7 @@
         getCompetenciesByPillar,
     } from "$lib/stores/competencyStore.svelte";
     import { getNodeById } from "$lib/stores/orgHierarchyStore.svelte";
-    import { getGoals } from "$lib/stores/goalsStore.svelte";
+    import { getGoals, getAssignments } from "$lib/stores/goalsStore.svelte";
     import PageSkeleton from "$lib/components/ui/PageSkeleton.svelte";
     import ErrorState from "$lib/components/ui/ErrorState.svelte";
     import { PROFILE_LABELS, PHASE_LABELS } from "$lib/types/evaluation";
@@ -20,7 +20,7 @@
     import type { EmployeeAssignment } from "$lib/types/goal";
     import type { Snippet } from "svelte";
     import { load as reloadRhEvaluados } from "$lib/stores/rhEvaluadosStore.svelte";
-    import { FileDown, ChevronRight, Pencil } from "@lucide/svelte";
+    import { FileDown, ChevronRight, Pencil, Target } from "@lucide/svelte";
     import { toCsv } from "$lib/utils/export";
     import ChangeDepartmentProfileModal from "./ChangeDepartmentProfileModal.svelte";
 
@@ -74,6 +74,16 @@
         pillars.flatMap((p) => getCompetenciesByPillar(p.id)),
     );
     const goals = $derived(getGoals());
+    const assignments = $derived(getAssignments());
+
+    function getAssignmentStatus(employeeId: string): 'borrador' | 'enviada' {
+        const a = assignments.find((x) => x.employeeId === employeeId) ?? employees.find((x) => x.employeeId === employeeId) as EmployeeAssignment | undefined;
+        return (a?.status as 'borrador' | 'enviada' | undefined) ?? 'borrador';
+    }
+
+    function isDraftOrBeginning(rowId: string): boolean {
+        return currentPhase === 'inicio-anio' || getAssignmentStatus(rowId) === 'borrador';
+    }
 
     const filteredEmployees = $derived(
         searchQuery.trim() === ""
@@ -250,32 +260,20 @@
             <table class="table table-sm">
                 <thead>
                     <tr>
-                        <th class="text-xs font-semibold text-base-content/60"
-                            >Empleado</th
-                        >
-                        <th class="text-xs font-semibold text-base-content/60"
-                            >Perfil</th
-                        >
-                        <th class="text-xs font-semibold text-base-content/60"
-                            >Metas</th
-                        >
-                        <th
-                            class="text-xs font-semibold text-base-content/60 text-center"
-                            >Autoevaluación</th
-                        >
-                        <th
-                            class="text-xs font-semibold text-base-content/60 text-center"
-                            >Evaluación</th
-                        >
-                        <th class="text-xs font-semibold text-base-content/60"
-                            >Estado</th
-                        >
+                        <th class="text-xs font-semibold text-base-content/60">Empleado</th>
+                        <th class="text-xs font-semibold text-base-content/60">Perfil</th>
+                        <th class="text-xs font-semibold text-base-content/60 text-center">Estado Metas</th>
+                        <th class="text-xs font-semibold text-base-content/60 text-center">Autoevaluación</th>
+                        <th class="text-xs font-semibold text-base-content/60 text-center">Evaluación</th>
+                        <th class="text-xs font-semibold text-base-content/60 text-center">Estado</th>
                         <th class="text-center text-xs font-semibold text-base-content/60">Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
                     {#each rows as row (row.id)}
                         {@const cr = competencyRatings?.get(row.id)}
+                        {@const rowStatus = getAssignmentStatus(row.id)}
+                        {@const isDraft = isDraftOrBeginning(row.id)}
                         <tr class="hover:bg-base-200">
                             <td>
                                 <div class="flex items-center gap-2.5">
@@ -302,6 +300,11 @@
                                 >
                             </td>
                             <td class="text-center">
+                                <span class="badge badge-sm {rowStatus === 'enviada' ? 'badge-success' : 'badge-warning'}">
+                                    {rowStatus === 'enviada' ? 'Enviada' : 'Borrador'}
+                                </span>
+                            </td>
+                            <td class="text-center">
                                 <span
                                     class="text-sm font-mono {cr?.selfAvg !=
                                     null
@@ -320,12 +323,7 @@
                                     {cr?.rhAvg?.toFixed(1) ?? "—"}
                                 </span>
                             </td>
-                            <td>
-                                <span class="text-xs text-base-content/30"
-                                    >—</span
-                                >
-                            </td>
-                            <td class={competencyRatings ? "text-center" : ""}>
+                            <td class={competencyRatings ? "text-center" : "text-center"}>
                                 {#if cr?.status}
                                     {@const badge = competencyStatusBadge(
                                         cr.status,
@@ -339,32 +337,42 @@
                                     >
                                 {/if}
                             </td>
-                            <td class="flex items-center jusify-end gap-2 h-full">
-                                {#if mode === 'rh' && currentPhase === 'inicio-anio'}
+                            <td>
+                                <div class="flex items-center justify-end gap-1">
+                                    {#if mode === 'rh' && currentPhase === 'inicio-anio'}
+                                        <button
+                                            type="button"
+                                            class="btn btn-outline btn-xs"
+                                            onclick={() => (changeTargetId = row.id)}
+                                        >
+                                            <Pencil class="w-3 h-3" />
+                                            Cambiar
+                                        </button>
+                                    {/if}
+                                    <a
+                                        href={isDraft ? `/objetivos/asignacion?empId=${row.id}` : `/mis-evaluados/${row.id}/metas`}
+                                        class="btn btn-outline btn-xs gap-1"
+                                        title="Ver/Editar Metas"
+                                    >
+                                        <Target class="w-3.5 h-3.5" />
+                                        Metas
+                                    </a>
                                     <button
                                         type="button"
-                                        class="btn btn-outline btn-xs"
-                                        onclick={() => (changeTargetId = row.id)}
+                                        class="btn btn-primary btn-xs"
+                                        onclick={() => onSelect(row.id)}
+                                        {disabled}
                                     >
-                                        <Pencil class="w-3 h-3" />
-                                        Cambiar
+                                        Evaluar
                                     </button>
-                                {/if}
-                                <button
-                                    type="button"
-                                    class="btn btn-primary btn-xs"
-                                    onclick={() => onSelect(row.id)}
-                                    {disabled}
-                                >
-                                    Evaluar
-                                </button>
-                                <a
-                                    href={`/evaluacion/9x9/competencias/${row.id}`}
-                                    class="btn btn-ghost btn-square btn-xs"
-                                    aria-label="Ver competencias de {row.firstName} {row.lastName}"
-                                >
-                                    <ChevronRight class="w-4 h-4" />
-                                </a>
+                                    <a
+                                        href={`/evaluacion/9x9/competencias/${row.id}`}
+                                        class="btn btn-ghost btn-square btn-xs"
+                                        aria-label="Ver competencias de {row.firstName} {row.lastName}"
+                                    >
+                                        <ChevronRight class="w-4 h-4" />
+                                    </a>
+                                </div>
                             </td>
                         </tr>
                     {/each}
