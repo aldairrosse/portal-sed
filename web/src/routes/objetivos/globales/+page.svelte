@@ -261,15 +261,17 @@
                                             {goal.name}
                                             <span class="badge badge-ghost shrink-0">Peso: {goal.weight}%</span>
                                         </p>
-                                        <p class="text-sm text-base-content/60 flex items-center gap-1">
-                                            {#if goal.direction === "ascendente"}
-                                                <TrendingUp class="w-3 h-3" />
-                                            {:else}
-                                                <TrendingDown class="w-3 h-3" />
-                                            {/if}
-                                            {formatTarget(goal)}
-                                        </p>
-                                        <p class="text-xs text-base-content/50">{goal.rules.length} reglas · {goal.assignments.length} asignados</p>
+                                        <div class="flex flex-wrap items-center gap-x-2 text-sm text-base-content/60">
+                                            <span class="inline-flex items-center gap-1">
+                                                {#if goal.direction === "ascendente"}
+                                                    <TrendingUp class="w-3 h-3" />
+                                                {:else}
+                                                    <TrendingDown class="w-3 h-3" />
+                                                {/if}
+                                                {formatTarget(goal)}
+                                            </span>
+                                            <span class="text-xs text-base-content/50">{goal.rules.length} reglas · {goal.assignments.length} asignados</span>
+                                        </div>
                                     </div>
                                     <div class="flex items-center gap-2">
                                         {#if canEditProgress}
@@ -336,15 +338,17 @@
                                             {goal.name}
                                             <span class="badge badge-ghost shrink-0">Peso: {goal.weight}%</span>
                                         </p>
-                                        <p class="text-sm text-base-content/60 flex items-center gap-1">
-                                            {#if goal.direction === "ascendente"}
-                                                <TrendingUp class="w-3 h-3" />
-                                            {:else}
-                                                <TrendingDown class="w-3 h-3" />
-                                            {/if}
-                                            {formatTarget(goal)}
-                                        </p>
-                                        <p class="text-xs text-base-content/50">{goal.rules.length} reglas · {goal.assignments.length} asignados</p>
+                                        <div class="flex flex-wrap items-center gap-x-2 text-sm text-base-content/60">
+                                            <span class="inline-flex items-center gap-1">
+                                                {#if goal.direction === "ascendente"}
+                                                    <TrendingUp class="w-3 h-3" />
+                                                {:else}
+                                                    <TrendingDown class="w-3 h-3" />
+                                                {/if}
+                                                {formatTarget(goal)}
+                                            </span>
+                                            <span class="text-xs text-base-content/50">{goal.rules.length} reglas · {goal.assignments.length} asignados</span>
+                                        </div>
                                     </div>
                                     <div class="flex items-center gap-2">
                                         {#if canEditProgress}
