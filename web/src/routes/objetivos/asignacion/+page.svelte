@@ -61,7 +61,10 @@
         refreshAssignmentComments,
         addAssignmentComment,
         deleteAssignmentComment,
+        getCycleWeights,
+        getTeamWeights,
     } from "$lib/stores/goalsStore.svelte";
+    import { effectiveWeightGlobal, effectiveWeightShared } from "$lib/utils/scoring";
     import { getSession } from "$lib/api/session.svelte";
     import {
         load as loadOrgHierarchy,
@@ -333,6 +336,15 @@
 
     function institutionalProgressColor(pct: number): string {
         return pct < 40 ? 'text-error' : pct < 80 ? 'text-warning' : 'text-success';
+    }
+
+    function effectiveFor(goal: InstitutionalGoal): number | undefined {
+        if (goal.effectiveWeight !== undefined && goal.effectiveWeight !== null) return goal.effectiveWeight;
+        const cw = getCycleWeights();
+        const tw = getTeamWeights();
+        if (goal.source === "global") return effectiveWeightGlobal(goal.weight, cw.pWeight);
+        if (goal.source === "shared") return effectiveWeightShared(goal.weight, cw.pWeight, tw.pjWeight);
+        return undefined;
     }
 
 
@@ -853,6 +865,7 @@
                                 <h3 class="font-semibold flex items-center gap-2">
                                     {goal.name}
                                     <span class="badge badge-ghost shrink-0">{goal.weight}%</span>
+                                    {#if effectiveFor(goal) !== undefined}<span class="badge badge-ghost badge-sm font-mono" title="Peso ponderado">{effectiveFor(goal)!.toFixed(1)}%</span>{/if}
                                 </h3>
                                 <p class="text-sm text-base-content/60 mt-1">{goal.description}</p>
                             </div>
@@ -880,6 +893,7 @@
                                 <h3 class="font-semibold flex items-center gap-2">
                                     {goal.name}
                                     <span class="badge badge-ghost shrink-0">{goal.weight}%</span>
+                                    {#if effectiveFor(goal) !== undefined}<span class="badge badge-ghost badge-sm font-mono" title="Peso ponderado">{effectiveFor(goal)!.toFixed(1)}%</span>{/if}
                                 </h3>
                                 <p class="text-sm text-base-content/60 mt-1">{goal.description}</p>
                             </div>

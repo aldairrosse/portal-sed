@@ -21,6 +21,7 @@ import { getSession } from '$lib/api/session.svelte';
 import { client } from '$lib/api/client';
 import { getActiveCycle } from '$lib/stores/cycleStore.svelte';
 import { progressPercent, hierarchicalScore } from '$lib/utils/scoring';
+import { getCycleWeightConfig, getTeamWeightConfig } from '$lib/api/weightConfig';
 import { SvelteDate, SvelteMap } from 'svelte/reactivity';
 
 // ─── Hierarchical weights G/P J/PJ (fallback 100 per #363/#364) ───────────────
@@ -126,6 +127,7 @@ function normalizeApiData(
 		name?: string;
 		description?: string;
 		weight?: number;
+		effective_weight?: number;
 		goals?: Array<{
 			id?: string;
 			category_id?: string;
@@ -133,6 +135,7 @@ function normalizeApiData(
 			description?: string;
 			unit?: string;
 			weight?: number;
+			effective_weight?: number;
 			target_value?: number;
 			current_value?: number;
 			state?: string;
@@ -209,6 +212,7 @@ function normalizeApiData(
 				direction: (raw.direction as 'ascendente' | 'descendente') ?? 'ascendente',
 				goalKind: raw.goal_kind as GoalKind | undefined,
 				weight: (raw.weight as number) ?? 0,
+				effectiveWeight: raw.effective_weight as number | undefined,
 				targetValue: raw.target_value as number | undefined,
 				baselineValue: raw.baseline_value as number | undefined,
 				currentValue: raw.current_value as number | undefined,
@@ -226,6 +230,7 @@ function normalizeApiData(
 			name: ac.name ?? '',
 			description: ac.description ?? '',
 			weight: ac.weight ?? 0,
+			effectiveWeight: (ac.effective_weight as number | undefined) ?? (ac as Record<string, unknown>).effective_weight as number | undefined,
 			pillarId: (ac as Record<string, unknown>)?.pillar_id as string | undefined
 		});
 
@@ -238,6 +243,7 @@ function normalizeApiData(
 				description: ag.description ?? '',
 				categoryId: ag.category_id ?? catId,
 				weight: ag.weight ?? 0,
+				effectiveWeight: ag.effective_weight as number | undefined,
 				unit: (ag.unit as GoalUnit) ?? 'numero',
 				direction: (ag.direction as 'ascendente' | 'descendente') ?? 'ascendente',
 				goalKind: ag.goal_kind === 'quantitative'
@@ -374,6 +380,12 @@ async function _doLoad(empIdOverride?: string): Promise<void> {
 	try {
 		const empId = empIdOverride ?? getEmployeeId();
 
+		const fetchWeights = async () => {
+			try { const c = await getCycleWeightConfig(); setCycleWeights(c.g_weight, c.p_weight); } catch {}
+			try { const t = await getTeamWeightConfig(); setTeamWeights(t.j_weight, t.pj_weight); } catch {}
+		};
+		const fetchWeightsPromise = fetchWeights();
+
 		const [catsRes, kpisRes, assignmentRes] = await Promise.all([
 			client.GET('/employees/{empId}/categories', {
 				params: { path: { empId } }
@@ -409,12 +421,15 @@ async function _doLoad(empIdOverride?: string): Promise<void> {
 		const apiCategories = (catsRes.data as { items?: Array<unknown> })?.items ?? [];
 		const apiKpis = (kpisRes.data as { items?: Array<unknown> })?.items ?? [];
 
+		await fetchWeightsPromise;
+
 		storeState.data = normalizeApiData(
 			apiCategories as Parameters<typeof normalizeApiData>[0],
 			apiKpis as Parameters<typeof normalizeApiData>[1],
 			apiAssignment ?? null,
 			getSession().user?.profileId
 		);
+		console.debug('[debug-assigned] store raw', { institutional: storeState.data.institutionalGoals.map(g => ({src:g.source,w:g.weight,ew:g.effectiveWeight})), cW:getCycleWeights(), tW:getTeamWeights(), rawGlobal: (apiAssignment as unknown as {global_goals?: unknown})?.global_goals, rawShared: (apiAssignment as unknown as {shared_goals?: unknown})?.shared_goals });
 
 		// ponytail: load comments for all goals so badges show correct counts
 		await loadAllGoalComments(empId);

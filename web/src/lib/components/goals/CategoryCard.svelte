@@ -6,6 +6,8 @@
 	import GoalRow from './GoalRow.svelte';
 	import GoalForm from './GoalForm.svelte';
 	import CategoryCreateForm from './CategoryCreateForm.svelte';
+	import { effectiveWeightPersonal } from '$lib/utils/scoring';
+	import { getCycleWeights, getTeamWeights } from '$lib/stores/goalsStore.svelte';
 
 	interface Props {
 		category: GoalCategory;
@@ -122,6 +124,16 @@
 	// ─── GoalRow coordination state ────────────────────────────────────────
 
 	let editingGoalId = $state<string | null>(null);
+
+	let categoryEffective = $derived.by(() => {
+		if (category.effectiveWeight !== undefined && category.effectiveWeight !== null) return category.effectiveWeight;
+		const cw = getCycleWeights();
+		const tw = getTeamWeights();
+		return effectiveWeightPersonal(category.weight ?? 0, cw.pWeight, tw.pjWeight);
+	});
+    $effect(() => {
+        console.debug('[CategoryCard]', {weight: category.weight, effective: categoryEffective, cW:getCycleWeights(), tW:getTeamWeights()});
+    });
 </script>
 
 <div class="card bg-base-100 border border-base-300 max-w-full">
@@ -144,6 +156,7 @@
 					<div class="flex items-center gap-2 mb-1">
 						<h3 class="text-lg font-semibold text-base-content">{category.name}</h3>
 						<span class="badge badge-md font-mono">{category.weight}%</span>
+						<span class="badge badge-ghost badge-sm font-mono" title="Peso ponderado">{categoryEffective.toFixed(2).replace(/\.?0+$/, '')}%</span>
 					</div>
 					<p class="text-xs text-base-content/50 truncate">{category.description}</p>
 				</div>

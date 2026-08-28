@@ -57,3 +57,41 @@ func HierarchicalScore(personalScore float64, pWeight, pjWeight float64) float64
 	}
 	return result
 }
+
+// EffectiveWeightPersonal returns peso ponderado personal: w * (P/100) * (PJ/100) fallback 100.
+func EffectiveWeightPersonal(w, pWeight, pjWeight float64) float64 {
+	if pWeight == 0 {
+		pWeight = 100
+	}
+	if pjWeight == 0 {
+		pjWeight = 100
+	}
+	return w * (pWeight / 100) * (pjWeight / 100)
+}
+
+// EffectiveWeightGlobal returns peso ponderado global: w * (G/100) where G=100-P fallback 100.
+func EffectiveWeightGlobal(w, pWeight float64) float64 {
+	if pWeight == 0 {
+		pWeight = 100
+	}
+	g := 100 - pWeight
+	if g < 0 {
+		g = 0
+	}
+	return w * (g / 100)
+}
+
+// EffectiveWeightShared returns peso ponderado compartida: w * (J/100) * (P/100) where J=100-PJ fallback 100.
+func EffectiveWeightShared(w, pWeight, pjWeight float64) float64 {
+	if pWeight == 0 {
+		pWeight = 100
+	}
+	if pjWeight == 0 {
+		pjWeight = 100
+	}
+	j := 100 - pjWeight
+	if j < 0 {
+		j = 0
+	}
+	return w * (j / 100) * (pWeight / 100)
+}

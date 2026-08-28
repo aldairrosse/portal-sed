@@ -33,6 +33,7 @@ export interface GoalCategory {
 	name: string;
 	description: string;
 	weight: number;
+	effectiveWeight?: number;
 	pillarId?: string;
 	comments?: GoalComment[];
 }
@@ -45,6 +46,7 @@ export interface Goal {
 	description: string;
 	categoryId: string;
 	weight: number;
+	effectiveWeight?: number;
 	unit: GoalUnit;
 	direction: 'ascendente' | 'descendente';
 	goalKind?: GoalKind;
@@ -66,6 +68,7 @@ export interface InstitutionalGoal {
 	direction: 'ascendente' | 'descendente';
 	goalKind?: GoalKind;
 	weight: number;
+	effectiveWeight?: number;
 	targetValue?: number;
 	baselineValue?: number;
 	currentValue?: number;

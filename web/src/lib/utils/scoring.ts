@@ -100,3 +100,20 @@ export function hierarchicalScore(personalScore: number, pWeight = 100, pjWeight
 	const r = personalScore * (pWeight / 100) * (pjWeight / 100);
 	return Math.min(Math.max(r, 0), 100);
 }
+
+export function effectiveWeightPersonal(w: number, pWeight = 100, pjWeight = 100): number {
+	if (!pWeight) pWeight = 100;
+	if (!pjWeight) pjWeight = 100;
+	return w * (pWeight / 100) * (pjWeight / 100);
+}
+export function effectiveWeightGlobal(w: number, pWeight = 100): number {
+	if (!pWeight) pWeight = 100;
+	const g = 100 - pWeight;
+	return w * (Math.max(0, g) / 100);
+}
+export function effectiveWeightShared(w: number, pWeight = 100, pjWeight = 100): number {
+	if (!pWeight) pWeight = 100;
+	if (!pjWeight) pjWeight = 100;
+	const j = 100 - pjWeight;
+	return w * (Math.max(0, j) / 100) * (pWeight / 100);
+}

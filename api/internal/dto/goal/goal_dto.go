@@ -78,6 +78,7 @@ type GoalResponse struct {
 	Description     string                `json:"description,omitempty"`
 	Unit            string                `json:"unit"`
 	Weight          float64               `json:"weight"`
+	EffectiveWeight *float64              `json:"effective_weight,omitempty"`
 	TargetValue     float64               `json:"target_value"`
 	CurrentValue    float64               `json:"current_value"`
 	Direction       string                `json:"direction"`
@@ -209,6 +210,7 @@ type AssignedGoalResponse struct {
 	Direction       string   `json:"direction"`
 	GoalKind        string   `json:"goal_kind"`
 	Weight          float64  `json:"weight"`
+	EffectiveWeight *float64 `json:"effective_weight,omitempty"`
 	TargetValue     float64  `json:"target_value"`
 	BaselineValue   *float64 `json:"baseline_value,omitempty"`
 	CurrentValue    float64  `json:"current_value"`

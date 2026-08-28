@@ -375,7 +375,7 @@ func main() {
 	goalH := goalhandler.NewGoalHandler(
 		catSvc, goalSvc, progressSvc, kpiSvc, scoringSvc, weightSvc, batchSvc, proposalSvc,
 		catRepo, goalRepo, kpiRepo, linkRepo, assignRepo, proposalRepo, activitySvc, evalSvc,
-	)
+	).WithWeightResolver(hierarchicalWeightSvc)
 	cycleH := cyclehandler.NewCycleHandler(cycleSvc, phaseSvc, activitySvc, assignRepo, employeeRepo)
 	compH := comphandler.NewHandler(pillarSvc, competencySvc, scaleSvc, catalogSvc, acceptanceSvc, activitySvc)
 	evalH := evalhandler.NewEvaluationHandler(evalSvc, nineBoxSvc, dashboardSvc, activitySvc)

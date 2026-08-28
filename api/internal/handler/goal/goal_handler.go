@@ -56,22 +56,23 @@ type CycleResolver interface {
 	ResolveActiveCycleID(ctx context.Context, employeeID uuid.UUID) (uuid.UUID, error)
 }
 type GoalHandler struct {
-	catService    svcgoal.CategoryServicer
-	goalService   svcgoal.GoalServicer
-	progressSvc   svcgoal.ProgressServicer
-	kpiService    svcgoal.KpiServicer
-	scoringSvc    svcgoal.ScoringServicer
-	weightSvc     svcgoal.WeightValidationServicer
-	batchService  svcgoal.BatchServicer
-	proposalSvc   svcgoal.GoalProposalServicer
-	catRepo       svcgoal.CategoryRepository
-	goalRepo      svcgoal.GoalRepository
-	kpiRepo       svcgoal.KPIRepository
-	linkRepo      svcgoal.LinkKPIRepository
-	assignRepo    svcgoal.AssignmentRepository
-	proposalRepo  svcgoal.GoalProposalRepository
-	activitySvc   activitysvc.Service
-	cycleResolver CycleResolver
+	catService     svcgoal.CategoryServicer
+	goalService    svcgoal.GoalServicer
+	progressSvc    svcgoal.ProgressServicer
+	kpiService     svcgoal.KpiServicer
+	scoringSvc     svcgoal.ScoringServicer
+	weightSvc      svcgoal.WeightValidationServicer
+	weightResolver svcgoal.WeightResolver
+	batchService   svcgoal.BatchServicer
+	proposalSvc    svcgoal.GoalProposalServicer
+	catRepo        svcgoal.CategoryRepository
+	goalRepo       svcgoal.GoalRepository
+	kpiRepo        svcgoal.KPIRepository
+	linkRepo       svcgoal.LinkKPIRepository
+	assignRepo     svcgoal.AssignmentRepository
+	proposalRepo   svcgoal.GoalProposalRepository
+	activitySvc    activitysvc.Service
+	cycleResolver  CycleResolver
 }
 
 func NewGoalHandler(
@@ -93,23 +94,29 @@ func NewGoalHandler(
 	cycleResolver CycleResolver,
 ) *GoalHandler {
 	return &GoalHandler{
-		catService:    catService,
-		goalService:   goalService,
-		progressSvc:   progressSvc,
-		kpiService:    kpiService,
-		scoringSvc:    scoringSvc,
-		weightSvc:     weightSvc,
-		batchService:  batchService,
-		proposalSvc:   proposalSvc,
-		catRepo:       catRepo,
-		goalRepo:      goalRepo,
-		kpiRepo:       kpiRepo,
-		linkRepo:      linkRepo,
-		assignRepo:    assignRepo,
-		proposalRepo:  proposalRepo,
-		activitySvc:   activitySvc,
+		catService:   catService,
+		goalService:  goalService,
+		progressSvc:  progressSvc,
+		kpiService:   kpiService,
+		scoringSvc:   scoringSvc,
+		weightSvc:    weightSvc,
+		batchService: batchService,
+		proposalSvc:  proposalSvc,
+		catRepo:      catRepo,
+		goalRepo:     goalRepo,
+		kpiRepo:      kpiRepo,
+		linkRepo:     linkRepo,
+		assignRepo:   assignRepo,
+		proposalRepo: proposalRepo,
+		activitySvc:  activitySvc,
 		cycleResolver: cycleResolver,
 	}
+}
+
+// WithWeightResolver injects hierarchical weight resolver for effective_weight calculation.
+func (h *GoalHandler) WithWeightResolver(r svcgoal.WeightResolver) *GoalHandler {
+	h.weightResolver = r
+	return h
 }
 
 // ============================================================================
@@ -303,6 +310,8 @@ func goalRowToResponse(g *repogoal.GoalRow, kpis ...[]dtogoal.KpiResponse) dtogo
 	if len(kpis) > 0 {
 		kpiResponses = kpis[0]
 	}
+	// ponytail: effective_weight fallback 1×1 (P=100,PJ=100) when weights unavailable
+	ew := scoring.EffectiveWeightPersonal(g.Weight, 100, 100)
 	return dtogoal.GoalResponse{
 		ID:              g.ID.String(),
 		CategoryID:      g.CategoryID.String(),
@@ -310,6 +319,7 @@ func goalRowToResponse(g *repogoal.GoalRow, kpis ...[]dtogoal.KpiResponse) dtogo
 		Description:     g.Description,
 		Unit:            g.Unit,
 		Weight:          g.Weight,
+		EffectiveWeight: &ew,
 		TargetValue:     g.TargetValue,
 		CurrentValue:    g.CurrentValue,
 		Direction:       g.Direction,
@@ -782,14 +792,24 @@ func assignmentRowToResponse(a *repogoal.AssignmentRow) dtogoal.AssignmentRespon
 	}
 }
 
-func assignedGoalResponse(id string, name, description, unit, direction, kind string, weight, target, current float64, baseline *float64, state, source string) dtogoal.AssignedGoalResponse {
+func assignedGoalResponse(id string, name, description, unit, direction, kind string, weight, target, current float64, baseline *float64, state, source string, pWeight, pjWeight float64) dtogoal.AssignedGoalResponse {
 	baselineValue := 0.0
 	if baseline != nil {
 		baselineValue = *baseline
 	}
+	var ew float64
+	switch source {
+	case "global":
+		ew = scoring.EffectiveWeightGlobal(weight, pWeight)
+	case "shared":
+		ew = scoring.EffectiveWeightShared(weight, pWeight, pjWeight)
+	default:
+		ew = scoring.EffectiveWeightPersonal(weight, pWeight, pjWeight)
+	}
+	log.Printf("[debug-assigned] src=%s w=%.2f p=%.2f pj=%.2f ew=%.2f", source, weight, pWeight, pjWeight, ew)
 	return dtogoal.AssignedGoalResponse{
 		ID: id, Name: name, Description: description, Unit: unit, Direction: direction,
-		GoalKind: kind, Weight: weight, TargetValue: target, BaselineValue: baseline,
+		GoalKind: kind, Weight: weight, EffectiveWeight: &ew, TargetValue: target, BaselineValue: baseline,
 		CurrentValue: current, ProgressPercent: scoring.ProgressPercent(current, target, baselineValue, direction),
 		State: state, Source: source,
 	}
@@ -801,6 +821,11 @@ func (h *GoalHandler) GetAssignment(w http.ResponseWriter, r *http.Request) {
 		writeError(w, err)
 		return
 	}
+	pWeight, pjWeight := 100.0, 100.0
+	if h.weightResolver != nil {
+		pWeight, pjWeight = h.weightResolver.GetEmployeeHierarchicalWeights(r.Context(), empID)
+	}
+	log.Printf("[debug-assigned] p=%.2f pj=%.2f nilResolver=%v", pWeight, pjWeight, h.weightResolver == nil)
 
 	assignment, err := h.assignRepo.GetAssignment(r.Context(), empID)
 	if err != nil {
@@ -833,7 +858,7 @@ func (h *GoalHandler) GetAssignment(w http.ResponseWriter, r *http.Request) {
 	for _, g := range globalGoals {
 		if len(g.Assignments) > 0 {
 			a := g.Assignments[0]
-			resp.GlobalGoals = append(resp.GlobalGoals, assignedGoalResponse(g.ID.String(), g.Name, g.Description, g.Unit, g.Direction, g.GoalKind, a.Weight, a.TargetValue, g.CurrentValue, a.BaselineValue, g.State, "global"))
+			resp.GlobalGoals = append(resp.GlobalGoals, assignedGoalResponse(g.ID.String(), g.Name, g.Description, g.Unit, g.Direction, g.GoalKind, a.Weight, a.TargetValue, g.CurrentValue, a.BaselineValue, g.State, "global", pWeight, pjWeight))
 		}
 	}
 	sharedGoals, err := h.assignRepo.ListSharedGoalsAsMember(r.Context(), empID)
@@ -844,7 +869,7 @@ func (h *GoalHandler) GetAssignment(w http.ResponseWriter, r *http.Request) {
 	for _, g := range sharedGoals {
 		if len(g.Members) > 0 {
 			m := g.Members[0]
-			resp.SharedGoals = append(resp.SharedGoals, assignedGoalResponse(g.ID.String(), g.Name, g.Description, g.Unit, g.Direction, g.GoalKind, m.Weight, m.TargetValue, g.CurrentValue, m.BaselineValue, g.State, "shared"))
+			resp.SharedGoals = append(resp.SharedGoals, assignedGoalResponse(g.ID.String(), g.Name, g.Description, g.Unit, g.Direction, g.GoalKind, m.Weight, m.TargetValue, g.CurrentValue, m.BaselineValue, g.State, "shared", pWeight, pjWeight))
 		}
 	}
 
@@ -865,7 +890,10 @@ func (h *GoalHandler) GetAssignment(w http.ResponseWriter, r *http.Request) {
 							kpis = append(kpis, kpiRowToResponse(kl.Kpi))
 						}
 					}
-					goalResponses[j] = goalRowToResponse(g, kpis)
+					gr := goalRowToResponse(g, kpis)
+					ew := scoring.EffectiveWeightPersonal(g.Weight, pWeight, pjWeight)
+					gr.EffectiveWeight = &ew
+					goalResponses[j] = gr
 					allGoalIDs = append(allGoalIDs, g.ID)
 				}
 				cr.Goals = goalResponses

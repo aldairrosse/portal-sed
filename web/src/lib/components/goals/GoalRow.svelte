@@ -8,7 +8,8 @@
         Eye,
     } from "@lucide/svelte";
     import type { Goal, GoalUnit, KPI, CyclePhase } from "$lib/types/goal";
-    import { deltaIndicator, formatDelta } from "$lib/utils/scoring";
+    import { deltaIndicator, formatDelta, effectiveWeightPersonal, effectiveWeightGlobal, effectiveWeightShared } from "$lib/utils/scoring";
+    import { getCycleWeights, getTeamWeights } from "$lib/stores/goalsStore.svelte";
     import KpiBadge from "./KpiBadge.svelte";
     import ProgressIndicator from "./ProgressIndicator.svelte";
     import GoalForm from "./GoalForm.svelte";
@@ -132,6 +133,23 @@
             return formatted + "%";
         return formatted;
     });
+
+    // ─── Effective weight (ponderado) ────────────────────────────────────
+    let effective = $derived.by(() => {
+        if (goal.effectiveWeight !== undefined && goal.effectiveWeight !== null) return goal.effectiveWeight;
+        const cw = getCycleWeights();
+        const tw = getTeamWeights();
+        const w = goal.weight ?? 0;
+        const src = (goal as unknown as { source?: string }).source;
+        if (src === "global") return effectiveWeightGlobal(w, cw.pWeight);
+        if (src === "shared") return effectiveWeightShared(w, cw.pWeight, tw.pjWeight);
+        return effectiveWeightPersonal(w, cw.pWeight, tw.pjWeight);
+    });
+    $effect(() => {
+        // debug-assigned: H1/H3 — verify source vs badge condition and weight fallback
+        const src = (goal as unknown as { source?: string }).source;
+        console.debug('[GoalRow]', {source: src, weight: goal.weight, effective, cW:getCycleWeights(), tW:getTeamWeights()});
+    });
 </script>
 
 <tr>
@@ -210,8 +228,7 @@
             {goal.targetValue}{unitLabels[goal.unit] ?? goal.unit}
             {/if}
         </td>
-        <td class="text-sm text-base-content/70">
-            {goal.weight}%</td
+        <td class="text-sm text-base-content/70">{goal.weight}%{#if (goal as unknown as { source?: string }).source === 'global' || (goal as unknown as { source?: string }).source === 'shared'}<span class="badge badge-ghost badge-sm font-mono ml-1 align-middle" title="Peso ponderado">{effective.toFixed(2).replace(/\.?0+$/, '')}%</span>{/if}</td
         >
         <td>
             {#if phase === "fin-anio"}
