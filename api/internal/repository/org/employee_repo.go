@@ -534,6 +534,31 @@ func (r *EmployeeRepo) BatchSetActive(ctx context.Context, employeeNumbers []str
 	return n, nil
 }
 
+// Upsert inserta o actualiza empleado por id determinístico (SeedID(email)).
+// Idempotente: ON CONFLICT (id) DO UPDATE. Usado por mobonet_sync para nuevos ingresos.
+func (r *EmployeeRepo) Upsert(ctx context.Context, id uuid.UUID, email, firstName, lastName, employeeNumber, jobTitle string, orgNodeID, profileID, actorID uuid.UUID) error {
+	_, err := r.db.ExecContext(ctx,
+		`INSERT INTO employees (id, email, first_name, last_name, employee_number, job_title, is_active, org_node_id, profile_id, created_by, updated_by, created_at, updated_at)
+		 VALUES ($1,$2,$3,$4,$5,$6,true,$7,$8,$9,$10,NOW(),NOW())
+		 ON CONFLICT (id) DO UPDATE SET
+		   email = EXCLUDED.email, first_name = EXCLUDED.first_name, last_name = EXCLUDED.last_name,
+		   employee_number = EXCLUDED.employee_number, job_title = EXCLUDED.job_title,
+		   org_node_id = EXCLUDED.org_node_id, profile_id = EXCLUDED.profile_id,
+		   is_active = true, updated_at = NOW()`,
+		id, email, firstName, lastName, employeeNumber, jobTitle, orgNodeID, profileID, actorID, actorID,
+	)
+	return err
+}
+
+// UpdateFromMobonet refresca nombre/email/job_title para empleado existente (idempotente).
+func (r *EmployeeRepo) UpdateFromMobonet(ctx context.Context, id uuid.UUID, email, firstName, lastName, jobTitle string) error {
+	_, err := r.db.ExecContext(ctx,
+		`UPDATE employees SET email = $1, first_name = $2, last_name = $3, job_title = $4, updated_at = NOW() WHERE id = $5`,
+		email, firstName, lastName, jobTitle, id,
+	)
+	return err
+}
+
 // ---------- helpers ----------
 
 func scanEmployeeRow(row *sql.Row) (*EmployeeRow, error) {

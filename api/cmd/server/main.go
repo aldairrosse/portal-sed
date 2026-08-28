@@ -230,7 +230,7 @@ func main() {
 		log.Printf("[seed] error: %v", err)
 	}
 
-	// Scheduler nocturno Mobonet sync — 02:00 daily
+	// Scheduler nocturno Mobonet sync — 02:00 daily (upsert + SSO al mismo cron)
 	go func() {
 		now := time.Now()
 		next := time.Date(now.Year(), now.Month(), now.Day(), 2, 0, 0, 0, now.Location())
@@ -241,7 +241,9 @@ func main() {
 		ticker := time.NewTicker(24 * time.Hour)
 		defer ticker.Stop()
 		ctx := context.Background()
-		if _, err := syncsvc.NewService(db).Run(ctx); err != nil {
+		// NewService inyecta repo via db; SSO se resuelve interno por env (SSO_SEED_*/SSO_KC_ISSUER) y vía WithSSO si se provee
+		svc := syncsvc.NewService(db)
+		if _, err := svc.Run(ctx); err != nil {
 			slog.Error("mobonet_sync: scheduled run failed", "error", err)
 		}
 		for range ticker.C {
