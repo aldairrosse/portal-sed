@@ -6,6 +6,7 @@ import (
 	"github.com/google/uuid"
 	dtogoal "github.com/sed-evaluacion-desempeno/api/internal/dto/goal"
 	pkgerrors "github.com/sed-evaluacion-desempeno/api/internal/pkg/errors"
+	repocycle "github.com/sed-evaluacion-desempeno/api/internal/repository/cycle"
 	repogoal "github.com/sed-evaluacion-desempeno/api/internal/repository/goal"
 )
 
@@ -14,14 +15,20 @@ type CategoryService struct {
 	catRepo    CategoryRepository
 	pillarRepo PillarRepository
 	phaseCheck *PhaseCheck
+	assignRepo *repogoal.AssignmentRepo
+	cycleRepo  *repocycle.CycleRepo
 }
 
-// NewCategoryService creates a new CategoryService.
-func NewCategoryService(catRepo CategoryRepository, pillarRepo PillarRepository, phaseCheck *PhaseCheck) *CategoryService {
+// NewCategoryService creates a new CategoryService. assignRepo and cycleRepo
+// are used to ensure an assignment row exists (status borrador) once the
+// collaborator creates their first category, so managers can see progress.
+func NewCategoryService(catRepo CategoryRepository, pillarRepo PillarRepository, phaseCheck *PhaseCheck, assignRepo *repogoal.AssignmentRepo, cycleRepo *repocycle.CycleRepo) *CategoryService {
 	return &CategoryService{
 		catRepo:    catRepo,
 		pillarRepo: pillarRepo,
 		phaseCheck: phaseCheck,
+		assignRepo: assignRepo,
+		cycleRepo:  cycleRepo,
 	}
 }
 
@@ -48,7 +55,26 @@ func (s *CategoryService) CreateCategory(ctx context.Context, empID uuid.UUID, r
 		return nil, err
 	}
 
-	return s.catRepo.CreateCategory(ctx, empID, req.Name, req.Description, req.Weight, pillarID)
+	cat, err := s.catRepo.CreateCategory(ctx, empID, req.Name, req.Description, req.Weight, pillarID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Ensure an assignment row exists with status borrador once the
+	// collaborator starts creating categories, so managers see "borrador"
+	// in their evaluatees view. Idempotent: CreateAssignment returns the
+	// existing row when already present.
+	if s.assignRepo != nil && s.cycleRepo != nil {
+		cycle, cErr := s.cycleRepo.GetActive(ctx)
+		if cErr == nil && cycle != nil {
+			if _, aErr := s.assignRepo.CreateAssignment(ctx, empID, cycle.ID); aErr != nil {
+				// ponytail: best-effort; a missing assignment is non-fatal for category creation
+				_ = aErr
+			}
+		}
+	}
+
+	return cat, nil
 }
 
 // UpdateCategory updates a category.
