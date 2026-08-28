@@ -65,9 +65,11 @@ type OrgNodeEdges struct {
 	Kpis []*KPI `json:"kpis,omitempty"`
 	// GlobalGoalRules holds the value of the global_goal_rules edge.
 	GlobalGoalRules []*GlobalGoalRule `json:"global_goal_rules,omitempty"`
+	// TeamWeightConfigs holds the value of the team_weight_configs edge.
+	TeamWeightConfigs []*TeamWeightConfig `json:"team_weight_configs,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [7]bool
+	loadedTypes [8]bool
 }
 
 // OrganizationOrErr returns the Organization value or an error if the edge
@@ -137,6 +139,15 @@ func (e OrgNodeEdges) GlobalGoalRulesOrErr() ([]*GlobalGoalRule, error) {
 		return e.GlobalGoalRules, nil
 	}
 	return nil, &NotLoadedError{edge: "global_goal_rules"}
+}
+
+// TeamWeightConfigsOrErr returns the TeamWeightConfigs value or an error if the edge
+// was not loaded in eager-loading.
+func (e OrgNodeEdges) TeamWeightConfigsOrErr() ([]*TeamWeightConfig, error) {
+	if e.loadedTypes[7] {
+		return e.TeamWeightConfigs, nil
+	}
+	return nil, &NotLoadedError{edge: "team_weight_configs"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -293,6 +304,11 @@ func (_m *OrgNode) QueryKpis() *KPIQuery {
 // QueryGlobalGoalRules queries the "global_goal_rules" edge of the OrgNode entity.
 func (_m *OrgNode) QueryGlobalGoalRules() *GlobalGoalRuleQuery {
 	return NewOrgNodeClient(_m.config).QueryGlobalGoalRules(_m)
+}
+
+// QueryTeamWeightConfigs queries the "team_weight_configs" edge of the OrgNode entity.
+func (_m *OrgNode) QueryTeamWeightConfigs() *TeamWeightConfigQuery {
+	return NewOrgNodeClient(_m.config).QueryTeamWeightConfigs(_m)
 }
 
 // Update returns a builder for updating this OrgNode.

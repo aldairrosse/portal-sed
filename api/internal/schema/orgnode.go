@@ -77,6 +77,8 @@ func (OrgNode) Edges() []ent.Edge {
 				OnDelete: entsql.Cascade,
 			}),
 		edge.To("global_goal_rules", GlobalGoalRule.Type),
+		edge.To("team_weight_configs", TeamWeightConfig.Type).
+			Annotations(entsql.Annotation{OnDelete: entsql.Cascade}),
 	}
 }
 

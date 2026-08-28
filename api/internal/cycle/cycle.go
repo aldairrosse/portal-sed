@@ -46,6 +46,10 @@ const (
 	EdgeEvaluations = "evaluations"
 	// EdgeNineBoxMatrices holds the string denoting the nine_box_matrices edge name in mutations.
 	EdgeNineBoxMatrices = "nine_box_matrices"
+	// EdgeCycleConfig holds the string denoting the cycle_config edge name in mutations.
+	EdgeCycleConfig = "cycle_config"
+	// EdgeTeamWeightConfigs holds the string denoting the team_weight_configs edge name in mutations.
+	EdgeTeamWeightConfigs = "team_weight_configs"
 	// Table holds the table name of the cycle in the database.
 	Table = "cycles"
 	// OrganizationTable is the table that holds the organization relation/edge.
@@ -97,6 +101,20 @@ const (
 	NineBoxMatricesInverseTable = "nine_box_matrixes"
 	// NineBoxMatricesColumn is the table column denoting the nine_box_matrices relation/edge.
 	NineBoxMatricesColumn = "cycle_id"
+	// CycleConfigTable is the table that holds the cycle_config relation/edge.
+	CycleConfigTable = "cycle_configs"
+	// CycleConfigInverseTable is the table name for the CycleConfig entity.
+	// It exists in this package in order to avoid circular dependency with the "cycleconfig" package.
+	CycleConfigInverseTable = "cycle_configs"
+	// CycleConfigColumn is the table column denoting the cycle_config relation/edge.
+	CycleConfigColumn = "cycle_id"
+	// TeamWeightConfigsTable is the table that holds the team_weight_configs relation/edge.
+	TeamWeightConfigsTable = "team_weight_configs"
+	// TeamWeightConfigsInverseTable is the table name for the TeamWeightConfig entity.
+	// It exists in this package in order to avoid circular dependency with the "teamweightconfig" package.
+	TeamWeightConfigsInverseTable = "team_weight_configs"
+	// TeamWeightConfigsColumn is the table column denoting the team_weight_configs relation/edge.
+	TeamWeightConfigsColumn = "cycle_id"
 )
 
 // Columns holds all SQL columns for cycle fields.
@@ -299,6 +317,27 @@ func ByNineBoxMatrices(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newNineBoxMatricesStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByCycleConfigField orders the results by cycle_config field.
+func ByCycleConfigField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newCycleConfigStep(), sql.OrderByField(field, opts...))
+	}
+}
+
+// ByTeamWeightConfigsCount orders the results by team_weight_configs count.
+func ByTeamWeightConfigsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newTeamWeightConfigsStep(), opts...)
+	}
+}
+
+// ByTeamWeightConfigs orders the results by team_weight_configs terms.
+func ByTeamWeightConfigs(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newTeamWeightConfigsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newOrganizationStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -346,5 +385,19 @@ func newNineBoxMatricesStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(NineBoxMatricesInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, NineBoxMatricesTable, NineBoxMatricesColumn),
+	)
+}
+func newCycleConfigStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(CycleConfigInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2O, false, CycleConfigTable, CycleConfigColumn),
+	)
+}
+func newTeamWeightConfigsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(TeamWeightConfigsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, TeamWeightConfigsTable, TeamWeightConfigsColumn),
 	)
 }

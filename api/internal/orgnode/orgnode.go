@@ -52,6 +52,8 @@ const (
 	EdgeKpis = "kpis"
 	// EdgeGlobalGoalRules holds the string denoting the global_goal_rules edge name in mutations.
 	EdgeGlobalGoalRules = "global_goal_rules"
+	// EdgeTeamWeightConfigs holds the string denoting the team_weight_configs edge name in mutations.
+	EdgeTeamWeightConfigs = "team_weight_configs"
 	// Table holds the table name of the orgnode in the database.
 	Table = "org_nodes"
 	// OrganizationTable is the table that holds the organization relation/edge.
@@ -97,6 +99,13 @@ const (
 	GlobalGoalRulesInverseTable = "global_goal_rules"
 	// GlobalGoalRulesColumn is the table column denoting the global_goal_rules relation/edge.
 	GlobalGoalRulesColumn = "department_id"
+	// TeamWeightConfigsTable is the table that holds the team_weight_configs relation/edge.
+	TeamWeightConfigsTable = "team_weight_configs"
+	// TeamWeightConfigsInverseTable is the table name for the TeamWeightConfig entity.
+	// It exists in this package in order to avoid circular dependency with the "teamweightconfig" package.
+	TeamWeightConfigsInverseTable = "team_weight_configs"
+	// TeamWeightConfigsColumn is the table column denoting the team_weight_configs relation/edge.
+	TeamWeightConfigsColumn = "team_id"
 )
 
 // Columns holds all SQL columns for orgnode fields.
@@ -301,6 +310,20 @@ func ByGlobalGoalRules(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newGlobalGoalRulesStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByTeamWeightConfigsCount orders the results by team_weight_configs count.
+func ByTeamWeightConfigsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newTeamWeightConfigsStep(), opts...)
+	}
+}
+
+// ByTeamWeightConfigs orders the results by team_weight_configs terms.
+func ByTeamWeightConfigs(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newTeamWeightConfigsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newOrganizationStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -348,5 +371,12 @@ func newGlobalGoalRulesStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(GlobalGoalRulesInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, GlobalGoalRulesTable, GlobalGoalRulesColumn),
+	)
+}
+func newTeamWeightConfigsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(TeamWeightConfigsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, TeamWeightConfigsTable, TeamWeightConfigsColumn),
 	)
 }

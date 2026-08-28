@@ -18,6 +18,9 @@ type CompetencyAcceptanceLevel func(*sql.Selector)
 // Cycle is the predicate function for cycle builders.
 type Cycle func(*sql.Selector)
 
+// CycleConfig is the predicate function for cycleconfig builders.
+type CycleConfig func(*sql.Selector)
+
 // Employee is the predicate function for employee builders.
 type Employee func(*sql.Selector)
 
@@ -101,3 +104,6 @@ type SharedGoalGroup func(*sql.Selector)
 
 // SharedGoalMember is the predicate function for sharedgoalmember builders.
 type SharedGoalMember func(*sql.Selector)
+
+// TeamWeightConfig is the predicate function for teamweightconfig builders.
+type TeamWeightConfig func(*sql.Selector)

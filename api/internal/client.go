@@ -20,6 +20,7 @@ import (
 	"github.com/sed-evaluacion-desempeno/api/internal/competency"
 	"github.com/sed-evaluacion-desempeno/api/internal/competencyacceptancelevel"
 	"github.com/sed-evaluacion-desempeno/api/internal/cycle"
+	"github.com/sed-evaluacion-desempeno/api/internal/cycleconfig"
 	"github.com/sed-evaluacion-desempeno/api/internal/employee"
 	"github.com/sed-evaluacion-desempeno/api/internal/evaluation"
 	"github.com/sed-evaluacion-desempeno/api/internal/evaluationcompetency"
@@ -48,6 +49,7 @@ import (
 	"github.com/sed-evaluacion-desempeno/api/internal/scalecriterion"
 	"github.com/sed-evaluacion-desempeno/api/internal/sharedgoalgroup"
 	"github.com/sed-evaluacion-desempeno/api/internal/sharedgoalmember"
+	"github.com/sed-evaluacion-desempeno/api/internal/teamweightconfig"
 )
 
 // Client is the client that holds all ent builders.
@@ -63,6 +65,8 @@ type Client struct {
 	CompetencyAcceptanceLevel *CompetencyAcceptanceLevelClient
 	// Cycle is the client for interacting with the Cycle builders.
 	Cycle *CycleClient
+	// CycleConfig is the client for interacting with the CycleConfig builders.
+	CycleConfig *CycleConfigClient
 	// Employee is the client for interacting with the Employee builders.
 	Employee *EmployeeClient
 	// Evaluation is the client for interacting with the Evaluation builders.
@@ -119,6 +123,8 @@ type Client struct {
 	SharedGoalGroup *SharedGoalGroupClient
 	// SharedGoalMember is the client for interacting with the SharedGoalMember builders.
 	SharedGoalMember *SharedGoalMemberClient
+	// TeamWeightConfig is the client for interacting with the TeamWeightConfig builders.
+	TeamWeightConfig *TeamWeightConfigClient
 }
 
 // NewClient creates a new client configured with the given options.
@@ -134,6 +140,7 @@ func (c *Client) init() {
 	c.Competency = NewCompetencyClient(c.config)
 	c.CompetencyAcceptanceLevel = NewCompetencyAcceptanceLevelClient(c.config)
 	c.Cycle = NewCycleClient(c.config)
+	c.CycleConfig = NewCycleConfigClient(c.config)
 	c.Employee = NewEmployeeClient(c.config)
 	c.Evaluation = NewEvaluationClient(c.config)
 	c.EvaluationCompetency = NewEvaluationCompetencyClient(c.config)
@@ -162,6 +169,7 @@ func (c *Client) init() {
 	c.ScaleCriterion = NewScaleCriterionClient(c.config)
 	c.SharedGoalGroup = NewSharedGoalGroupClient(c.config)
 	c.SharedGoalMember = NewSharedGoalMemberClient(c.config)
+	c.TeamWeightConfig = NewTeamWeightConfigClient(c.config)
 }
 
 type (
@@ -258,6 +266,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Competency:                NewCompetencyClient(cfg),
 		CompetencyAcceptanceLevel: NewCompetencyAcceptanceLevelClient(cfg),
 		Cycle:                     NewCycleClient(cfg),
+		CycleConfig:               NewCycleConfigClient(cfg),
 		Employee:                  NewEmployeeClient(cfg),
 		Evaluation:                NewEvaluationClient(cfg),
 		EvaluationCompetency:      NewEvaluationCompetencyClient(cfg),
@@ -286,6 +295,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		ScaleCriterion:            NewScaleCriterionClient(cfg),
 		SharedGoalGroup:           NewSharedGoalGroupClient(cfg),
 		SharedGoalMember:          NewSharedGoalMemberClient(cfg),
+		TeamWeightConfig:          NewTeamWeightConfigClient(cfg),
 	}, nil
 }
 
@@ -309,6 +319,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Competency:                NewCompetencyClient(cfg),
 		CompetencyAcceptanceLevel: NewCompetencyAcceptanceLevelClient(cfg),
 		Cycle:                     NewCycleClient(cfg),
+		CycleConfig:               NewCycleConfigClient(cfg),
 		Employee:                  NewEmployeeClient(cfg),
 		Evaluation:                NewEvaluationClient(cfg),
 		EvaluationCompetency:      NewEvaluationCompetencyClient(cfg),
@@ -337,6 +348,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		ScaleCriterion:            NewScaleCriterionClient(cfg),
 		SharedGoalGroup:           NewSharedGoalGroupClient(cfg),
 		SharedGoalMember:          NewSharedGoalMemberClient(cfg),
+		TeamWeightConfig:          NewTeamWeightConfigClient(cfg),
 	}, nil
 }
 
@@ -366,14 +378,15 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
-		c.ActivityLog, c.Competency, c.CompetencyAcceptanceLevel, c.Cycle, c.Employee,
-		c.Evaluation, c.EvaluationCompetency, c.EvaluationGoal, c.EvaluationProfile,
-		c.EvaluatorScope, c.GlobalGoalAssignment, c.GlobalGoalRule, c.Goal,
-		c.GoalAssignment, c.GoalCategory, c.GoalKpiLink, c.GoalTemplate,
-		c.GoalTemplateKpiLink, c.KPI, c.LevelDefinition, c.NineBoxEntry,
-		c.NineBoxMatrix, c.NineBoxQuadrant, c.NineBoxScale, c.OrgNode, c.Organization,
-		c.PhaseDefinition, c.PhaseTransition, c.Pillar, c.ScaleCriterion,
-		c.SharedGoalGroup, c.SharedGoalMember,
+		c.ActivityLog, c.Competency, c.CompetencyAcceptanceLevel, c.Cycle,
+		c.CycleConfig, c.Employee, c.Evaluation, c.EvaluationCompetency,
+		c.EvaluationGoal, c.EvaluationProfile, c.EvaluatorScope,
+		c.GlobalGoalAssignment, c.GlobalGoalRule, c.Goal, c.GoalAssignment,
+		c.GoalCategory, c.GoalKpiLink, c.GoalTemplate, c.GoalTemplateKpiLink, c.KPI,
+		c.LevelDefinition, c.NineBoxEntry, c.NineBoxMatrix, c.NineBoxQuadrant,
+		c.NineBoxScale, c.OrgNode, c.Organization, c.PhaseDefinition,
+		c.PhaseTransition, c.Pillar, c.ScaleCriterion, c.SharedGoalGroup,
+		c.SharedGoalMember, c.TeamWeightConfig,
 	} {
 		n.Use(hooks...)
 	}
@@ -383,14 +396,15 @@ func (c *Client) Use(hooks ...Hook) {
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
-		c.ActivityLog, c.Competency, c.CompetencyAcceptanceLevel, c.Cycle, c.Employee,
-		c.Evaluation, c.EvaluationCompetency, c.EvaluationGoal, c.EvaluationProfile,
-		c.EvaluatorScope, c.GlobalGoalAssignment, c.GlobalGoalRule, c.Goal,
-		c.GoalAssignment, c.GoalCategory, c.GoalKpiLink, c.GoalTemplate,
-		c.GoalTemplateKpiLink, c.KPI, c.LevelDefinition, c.NineBoxEntry,
-		c.NineBoxMatrix, c.NineBoxQuadrant, c.NineBoxScale, c.OrgNode, c.Organization,
-		c.PhaseDefinition, c.PhaseTransition, c.Pillar, c.ScaleCriterion,
-		c.SharedGoalGroup, c.SharedGoalMember,
+		c.ActivityLog, c.Competency, c.CompetencyAcceptanceLevel, c.Cycle,
+		c.CycleConfig, c.Employee, c.Evaluation, c.EvaluationCompetency,
+		c.EvaluationGoal, c.EvaluationProfile, c.EvaluatorScope,
+		c.GlobalGoalAssignment, c.GlobalGoalRule, c.Goal, c.GoalAssignment,
+		c.GoalCategory, c.GoalKpiLink, c.GoalTemplate, c.GoalTemplateKpiLink, c.KPI,
+		c.LevelDefinition, c.NineBoxEntry, c.NineBoxMatrix, c.NineBoxQuadrant,
+		c.NineBoxScale, c.OrgNode, c.Organization, c.PhaseDefinition,
+		c.PhaseTransition, c.Pillar, c.ScaleCriterion, c.SharedGoalGroup,
+		c.SharedGoalMember, c.TeamWeightConfig,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -407,6 +421,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.CompetencyAcceptanceLevel.mutate(ctx, m)
 	case *CycleMutation:
 		return c.Cycle.mutate(ctx, m)
+	case *CycleConfigMutation:
+		return c.CycleConfig.mutate(ctx, m)
 	case *EmployeeMutation:
 		return c.Employee.mutate(ctx, m)
 	case *EvaluationMutation:
@@ -463,6 +479,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.SharedGoalGroup.mutate(ctx, m)
 	case *SharedGoalMemberMutation:
 		return c.SharedGoalMember.mutate(ctx, m)
+	case *TeamWeightConfigMutation:
+		return c.TeamWeightConfig.mutate(ctx, m)
 	default:
 		return nil, fmt.Errorf("internal: unknown mutation type %T", m)
 	}
@@ -1199,6 +1217,38 @@ func (c *CycleClient) QueryNineBoxMatrices(_m *Cycle) *NineBoxMatrixQuery {
 	return query
 }
 
+// QueryCycleConfig queries the cycle_config edge of a Cycle.
+func (c *CycleClient) QueryCycleConfig(_m *Cycle) *CycleConfigQuery {
+	query := (&CycleConfigClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(cycle.Table, cycle.FieldID, id),
+			sqlgraph.To(cycleconfig.Table, cycleconfig.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, cycle.CycleConfigTable, cycle.CycleConfigColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryTeamWeightConfigs queries the team_weight_configs edge of a Cycle.
+func (c *CycleClient) QueryTeamWeightConfigs(_m *Cycle) *TeamWeightConfigQuery {
+	query := (&TeamWeightConfigClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(cycle.Table, cycle.FieldID, id),
+			sqlgraph.To(teamweightconfig.Table, teamweightconfig.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, cycle.TeamWeightConfigsTable, cycle.TeamWeightConfigsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *CycleClient) Hooks() []Hook {
 	return c.hooks.Cycle
@@ -1221,6 +1271,155 @@ func (c *CycleClient) mutate(ctx context.Context, m *CycleMutation) (Value, erro
 		return (&CycleDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("internal: unknown Cycle mutation op: %q", m.Op())
+	}
+}
+
+// CycleConfigClient is a client for the CycleConfig schema.
+type CycleConfigClient struct {
+	config
+}
+
+// NewCycleConfigClient returns a client for the CycleConfig from the given config.
+func NewCycleConfigClient(c config) *CycleConfigClient {
+	return &CycleConfigClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `cycleconfig.Hooks(f(g(h())))`.
+func (c *CycleConfigClient) Use(hooks ...Hook) {
+	c.hooks.CycleConfig = append(c.hooks.CycleConfig, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `cycleconfig.Intercept(f(g(h())))`.
+func (c *CycleConfigClient) Intercept(interceptors ...Interceptor) {
+	c.inters.CycleConfig = append(c.inters.CycleConfig, interceptors...)
+}
+
+// Create returns a builder for creating a CycleConfig entity.
+func (c *CycleConfigClient) Create() *CycleConfigCreate {
+	mutation := newCycleConfigMutation(c.config, OpCreate)
+	return &CycleConfigCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of CycleConfig entities.
+func (c *CycleConfigClient) CreateBulk(builders ...*CycleConfigCreate) *CycleConfigCreateBulk {
+	return &CycleConfigCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *CycleConfigClient) MapCreateBulk(slice any, setFunc func(*CycleConfigCreate, int)) *CycleConfigCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &CycleConfigCreateBulk{err: fmt.Errorf("calling to CycleConfigClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*CycleConfigCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &CycleConfigCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for CycleConfig.
+func (c *CycleConfigClient) Update() *CycleConfigUpdate {
+	mutation := newCycleConfigMutation(c.config, OpUpdate)
+	return &CycleConfigUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *CycleConfigClient) UpdateOne(_m *CycleConfig) *CycleConfigUpdateOne {
+	mutation := newCycleConfigMutation(c.config, OpUpdateOne, withCycleConfig(_m))
+	return &CycleConfigUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *CycleConfigClient) UpdateOneID(id uuid.UUID) *CycleConfigUpdateOne {
+	mutation := newCycleConfigMutation(c.config, OpUpdateOne, withCycleConfigID(id))
+	return &CycleConfigUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for CycleConfig.
+func (c *CycleConfigClient) Delete() *CycleConfigDelete {
+	mutation := newCycleConfigMutation(c.config, OpDelete)
+	return &CycleConfigDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *CycleConfigClient) DeleteOne(_m *CycleConfig) *CycleConfigDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *CycleConfigClient) DeleteOneID(id uuid.UUID) *CycleConfigDeleteOne {
+	builder := c.Delete().Where(cycleconfig.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &CycleConfigDeleteOne{builder}
+}
+
+// Query returns a query builder for CycleConfig.
+func (c *CycleConfigClient) Query() *CycleConfigQuery {
+	return &CycleConfigQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeCycleConfig},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a CycleConfig entity by its id.
+func (c *CycleConfigClient) Get(ctx context.Context, id uuid.UUID) (*CycleConfig, error) {
+	return c.Query().Where(cycleconfig.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *CycleConfigClient) GetX(ctx context.Context, id uuid.UUID) *CycleConfig {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryCycle queries the cycle edge of a CycleConfig.
+func (c *CycleConfigClient) QueryCycle(_m *CycleConfig) *CycleQuery {
+	query := (&CycleClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(cycleconfig.Table, cycleconfig.FieldID, id),
+			sqlgraph.To(cycle.Table, cycle.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, true, cycleconfig.CycleTable, cycleconfig.CycleColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *CycleConfigClient) Hooks() []Hook {
+	return c.hooks.CycleConfig
+}
+
+// Interceptors returns the client interceptors.
+func (c *CycleConfigClient) Interceptors() []Interceptor {
+	return c.inters.CycleConfig
+}
+
+func (c *CycleConfigClient) mutate(ctx context.Context, m *CycleConfigMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&CycleConfigCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&CycleConfigUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&CycleConfigUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&CycleConfigDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("internal: unknown CycleConfig mutation op: %q", m.Op())
 	}
 }
 
@@ -5096,6 +5295,22 @@ func (c *OrgNodeClient) QueryGlobalGoalRules(_m *OrgNode) *GlobalGoalRuleQuery {
 	return query
 }
 
+// QueryTeamWeightConfigs queries the team_weight_configs edge of a OrgNode.
+func (c *OrgNodeClient) QueryTeamWeightConfigs(_m *OrgNode) *TeamWeightConfigQuery {
+	query := (&TeamWeightConfigClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(orgnode.Table, orgnode.FieldID, id),
+			sqlgraph.To(teamweightconfig.Table, teamweightconfig.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, orgnode.TeamWeightConfigsTable, orgnode.TeamWeightConfigsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *OrgNodeClient) Hooks() []Hook {
 	return c.hooks.OrgNode
@@ -6356,24 +6571,190 @@ func (c *SharedGoalMemberClient) mutate(ctx context.Context, m *SharedGoalMember
 	}
 }
 
+// TeamWeightConfigClient is a client for the TeamWeightConfig schema.
+type TeamWeightConfigClient struct {
+	config
+}
+
+// NewTeamWeightConfigClient returns a client for the TeamWeightConfig from the given config.
+func NewTeamWeightConfigClient(c config) *TeamWeightConfigClient {
+	return &TeamWeightConfigClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `teamweightconfig.Hooks(f(g(h())))`.
+func (c *TeamWeightConfigClient) Use(hooks ...Hook) {
+	c.hooks.TeamWeightConfig = append(c.hooks.TeamWeightConfig, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `teamweightconfig.Intercept(f(g(h())))`.
+func (c *TeamWeightConfigClient) Intercept(interceptors ...Interceptor) {
+	c.inters.TeamWeightConfig = append(c.inters.TeamWeightConfig, interceptors...)
+}
+
+// Create returns a builder for creating a TeamWeightConfig entity.
+func (c *TeamWeightConfigClient) Create() *TeamWeightConfigCreate {
+	mutation := newTeamWeightConfigMutation(c.config, OpCreate)
+	return &TeamWeightConfigCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of TeamWeightConfig entities.
+func (c *TeamWeightConfigClient) CreateBulk(builders ...*TeamWeightConfigCreate) *TeamWeightConfigCreateBulk {
+	return &TeamWeightConfigCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *TeamWeightConfigClient) MapCreateBulk(slice any, setFunc func(*TeamWeightConfigCreate, int)) *TeamWeightConfigCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &TeamWeightConfigCreateBulk{err: fmt.Errorf("calling to TeamWeightConfigClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*TeamWeightConfigCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &TeamWeightConfigCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for TeamWeightConfig.
+func (c *TeamWeightConfigClient) Update() *TeamWeightConfigUpdate {
+	mutation := newTeamWeightConfigMutation(c.config, OpUpdate)
+	return &TeamWeightConfigUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *TeamWeightConfigClient) UpdateOne(_m *TeamWeightConfig) *TeamWeightConfigUpdateOne {
+	mutation := newTeamWeightConfigMutation(c.config, OpUpdateOne, withTeamWeightConfig(_m))
+	return &TeamWeightConfigUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *TeamWeightConfigClient) UpdateOneID(id uuid.UUID) *TeamWeightConfigUpdateOne {
+	mutation := newTeamWeightConfigMutation(c.config, OpUpdateOne, withTeamWeightConfigID(id))
+	return &TeamWeightConfigUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for TeamWeightConfig.
+func (c *TeamWeightConfigClient) Delete() *TeamWeightConfigDelete {
+	mutation := newTeamWeightConfigMutation(c.config, OpDelete)
+	return &TeamWeightConfigDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *TeamWeightConfigClient) DeleteOne(_m *TeamWeightConfig) *TeamWeightConfigDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *TeamWeightConfigClient) DeleteOneID(id uuid.UUID) *TeamWeightConfigDeleteOne {
+	builder := c.Delete().Where(teamweightconfig.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &TeamWeightConfigDeleteOne{builder}
+}
+
+// Query returns a query builder for TeamWeightConfig.
+func (c *TeamWeightConfigClient) Query() *TeamWeightConfigQuery {
+	return &TeamWeightConfigQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeTeamWeightConfig},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a TeamWeightConfig entity by its id.
+func (c *TeamWeightConfigClient) Get(ctx context.Context, id uuid.UUID) (*TeamWeightConfig, error) {
+	return c.Query().Where(teamweightconfig.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *TeamWeightConfigClient) GetX(ctx context.Context, id uuid.UUID) *TeamWeightConfig {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryCycle queries the cycle edge of a TeamWeightConfig.
+func (c *TeamWeightConfigClient) QueryCycle(_m *TeamWeightConfig) *CycleQuery {
+	query := (&CycleClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(teamweightconfig.Table, teamweightconfig.FieldID, id),
+			sqlgraph.To(cycle.Table, cycle.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, teamweightconfig.CycleTable, teamweightconfig.CycleColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryTeamNode queries the team_node edge of a TeamWeightConfig.
+func (c *TeamWeightConfigClient) QueryTeamNode(_m *TeamWeightConfig) *OrgNodeQuery {
+	query := (&OrgNodeClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(teamweightconfig.Table, teamweightconfig.FieldID, id),
+			sqlgraph.To(orgnode.Table, orgnode.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, teamweightconfig.TeamNodeTable, teamweightconfig.TeamNodeColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *TeamWeightConfigClient) Hooks() []Hook {
+	return c.hooks.TeamWeightConfig
+}
+
+// Interceptors returns the client interceptors.
+func (c *TeamWeightConfigClient) Interceptors() []Interceptor {
+	return c.inters.TeamWeightConfig
+}
+
+func (c *TeamWeightConfigClient) mutate(ctx context.Context, m *TeamWeightConfigMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&TeamWeightConfigCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&TeamWeightConfigUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&TeamWeightConfigUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&TeamWeightConfigDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("internal: unknown TeamWeightConfig mutation op: %q", m.Op())
+	}
+}
+
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		ActivityLog, Competency, CompetencyAcceptanceLevel, Cycle, Employee, Evaluation,
-		EvaluationCompetency, EvaluationGoal, EvaluationProfile, EvaluatorScope,
-		GlobalGoalAssignment, GlobalGoalRule, Goal, GoalAssignment, GoalCategory,
-		GoalKpiLink, GoalTemplate, GoalTemplateKpiLink, KPI, LevelDefinition,
-		NineBoxEntry, NineBoxMatrix, NineBoxQuadrant, NineBoxScale, OrgNode,
-		Organization, PhaseDefinition, PhaseTransition, Pillar, ScaleCriterion,
-		SharedGoalGroup, SharedGoalMember []ent.Hook
+		ActivityLog, Competency, CompetencyAcceptanceLevel, Cycle, CycleConfig,
+		Employee, Evaluation, EvaluationCompetency, EvaluationGoal, EvaluationProfile,
+		EvaluatorScope, GlobalGoalAssignment, GlobalGoalRule, Goal, GoalAssignment,
+		GoalCategory, GoalKpiLink, GoalTemplate, GoalTemplateKpiLink, KPI,
+		LevelDefinition, NineBoxEntry, NineBoxMatrix, NineBoxQuadrant, NineBoxScale,
+		OrgNode, Organization, PhaseDefinition, PhaseTransition, Pillar,
+		ScaleCriterion, SharedGoalGroup, SharedGoalMember, TeamWeightConfig []ent.Hook
 	}
 	inters struct {
-		ActivityLog, Competency, CompetencyAcceptanceLevel, Cycle, Employee, Evaluation,
-		EvaluationCompetency, EvaluationGoal, EvaluationProfile, EvaluatorScope,
-		GlobalGoalAssignment, GlobalGoalRule, Goal, GoalAssignment, GoalCategory,
-		GoalKpiLink, GoalTemplate, GoalTemplateKpiLink, KPI, LevelDefinition,
-		NineBoxEntry, NineBoxMatrix, NineBoxQuadrant, NineBoxScale, OrgNode,
-		Organization, PhaseDefinition, PhaseTransition, Pillar, ScaleCriterion,
-		SharedGoalGroup, SharedGoalMember []ent.Interceptor
+		ActivityLog, Competency, CompetencyAcceptanceLevel, Cycle, CycleConfig,
+		Employee, Evaluation, EvaluationCompetency, EvaluationGoal, EvaluationProfile,
+		EvaluatorScope, GlobalGoalAssignment, GlobalGoalRule, Goal, GoalAssignment,
+		GoalCategory, GoalKpiLink, GoalTemplate, GoalTemplateKpiLink, KPI,
+		LevelDefinition, NineBoxEntry, NineBoxMatrix, NineBoxQuadrant, NineBoxScale,
+		OrgNode, Organization, PhaseDefinition, PhaseTransition, Pillar,
+		ScaleCriterion, SharedGoalGroup, SharedGoalMember,
+		TeamWeightConfig []ent.Interceptor
 	}
 )

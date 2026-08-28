@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
 	"github.com/sed-evaluacion-desempeno/api/internal/cycle"
+	"github.com/sed-evaluacion-desempeno/api/internal/cycleconfig"
 	"github.com/sed-evaluacion-desempeno/api/internal/evaluation"
 	"github.com/sed-evaluacion-desempeno/api/internal/evaluatorscope"
 	"github.com/sed-evaluacion-desempeno/api/internal/goalassignment"
@@ -21,6 +22,7 @@ import (
 	"github.com/sed-evaluacion-desempeno/api/internal/phasedefinition"
 	"github.com/sed-evaluacion-desempeno/api/internal/phasetransition"
 	"github.com/sed-evaluacion-desempeno/api/internal/predicate"
+	"github.com/sed-evaluacion-desempeno/api/internal/teamweightconfig"
 )
 
 // CycleUpdate is the builder for updating Cycle entities.
@@ -247,6 +249,40 @@ func (_u *CycleUpdate) AddNineBoxMatrices(v ...*NineBoxMatrix) *CycleUpdate {
 	return _u.AddNineBoxMatrixIDs(ids...)
 }
 
+// SetCycleConfigID sets the "cycle_config" edge to the CycleConfig entity by ID.
+func (_u *CycleUpdate) SetCycleConfigID(id uuid.UUID) *CycleUpdate {
+	_u.mutation.SetCycleConfigID(id)
+	return _u
+}
+
+// SetNillableCycleConfigID sets the "cycle_config" edge to the CycleConfig entity by ID if the given value is not nil.
+func (_u *CycleUpdate) SetNillableCycleConfigID(id *uuid.UUID) *CycleUpdate {
+	if id != nil {
+		_u = _u.SetCycleConfigID(*id)
+	}
+	return _u
+}
+
+// SetCycleConfig sets the "cycle_config" edge to the CycleConfig entity.
+func (_u *CycleUpdate) SetCycleConfig(v *CycleConfig) *CycleUpdate {
+	return _u.SetCycleConfigID(v.ID)
+}
+
+// AddTeamWeightConfigIDs adds the "team_weight_configs" edge to the TeamWeightConfig entity by IDs.
+func (_u *CycleUpdate) AddTeamWeightConfigIDs(ids ...uuid.UUID) *CycleUpdate {
+	_u.mutation.AddTeamWeightConfigIDs(ids...)
+	return _u
+}
+
+// AddTeamWeightConfigs adds the "team_weight_configs" edges to the TeamWeightConfig entity.
+func (_u *CycleUpdate) AddTeamWeightConfigs(v ...*TeamWeightConfig) *CycleUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddTeamWeightConfigIDs(ids...)
+}
+
 // Mutation returns the CycleMutation object of the builder.
 func (_u *CycleUpdate) Mutation() *CycleMutation {
 	return _u.mutation
@@ -382,6 +418,33 @@ func (_u *CycleUpdate) RemoveNineBoxMatrices(v ...*NineBoxMatrix) *CycleUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveNineBoxMatrixIDs(ids...)
+}
+
+// ClearCycleConfig clears the "cycle_config" edge to the CycleConfig entity.
+func (_u *CycleUpdate) ClearCycleConfig() *CycleUpdate {
+	_u.mutation.ClearCycleConfig()
+	return _u
+}
+
+// ClearTeamWeightConfigs clears all "team_weight_configs" edges to the TeamWeightConfig entity.
+func (_u *CycleUpdate) ClearTeamWeightConfigs() *CycleUpdate {
+	_u.mutation.ClearTeamWeightConfigs()
+	return _u
+}
+
+// RemoveTeamWeightConfigIDs removes the "team_weight_configs" edge to TeamWeightConfig entities by IDs.
+func (_u *CycleUpdate) RemoveTeamWeightConfigIDs(ids ...uuid.UUID) *CycleUpdate {
+	_u.mutation.RemoveTeamWeightConfigIDs(ids...)
+	return _u
+}
+
+// RemoveTeamWeightConfigs removes "team_weight_configs" edges to TeamWeightConfig entities.
+func (_u *CycleUpdate) RemoveTeamWeightConfigs(v ...*TeamWeightConfig) *CycleUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveTeamWeightConfigIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -779,6 +842,80 @@ func (_u *CycleUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if _u.mutation.CycleConfigCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   cycle.CycleConfigTable,
+			Columns: []string{cycle.CycleConfigColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(cycleconfig.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.CycleConfigIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   cycle.CycleConfigTable,
+			Columns: []string{cycle.CycleConfigColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(cycleconfig.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.TeamWeightConfigsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   cycle.TeamWeightConfigsTable,
+			Columns: []string{cycle.TeamWeightConfigsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(teamweightconfig.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedTeamWeightConfigsIDs(); len(nodes) > 0 && !_u.mutation.TeamWeightConfigsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   cycle.TeamWeightConfigsTable,
+			Columns: []string{cycle.TeamWeightConfigsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(teamweightconfig.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.TeamWeightConfigsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   cycle.TeamWeightConfigsTable,
+			Columns: []string{cycle.TeamWeightConfigsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(teamweightconfig.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{cycle.Label}
@@ -1010,6 +1147,40 @@ func (_u *CycleUpdateOne) AddNineBoxMatrices(v ...*NineBoxMatrix) *CycleUpdateOn
 	return _u.AddNineBoxMatrixIDs(ids...)
 }
 
+// SetCycleConfigID sets the "cycle_config" edge to the CycleConfig entity by ID.
+func (_u *CycleUpdateOne) SetCycleConfigID(id uuid.UUID) *CycleUpdateOne {
+	_u.mutation.SetCycleConfigID(id)
+	return _u
+}
+
+// SetNillableCycleConfigID sets the "cycle_config" edge to the CycleConfig entity by ID if the given value is not nil.
+func (_u *CycleUpdateOne) SetNillableCycleConfigID(id *uuid.UUID) *CycleUpdateOne {
+	if id != nil {
+		_u = _u.SetCycleConfigID(*id)
+	}
+	return _u
+}
+
+// SetCycleConfig sets the "cycle_config" edge to the CycleConfig entity.
+func (_u *CycleUpdateOne) SetCycleConfig(v *CycleConfig) *CycleUpdateOne {
+	return _u.SetCycleConfigID(v.ID)
+}
+
+// AddTeamWeightConfigIDs adds the "team_weight_configs" edge to the TeamWeightConfig entity by IDs.
+func (_u *CycleUpdateOne) AddTeamWeightConfigIDs(ids ...uuid.UUID) *CycleUpdateOne {
+	_u.mutation.AddTeamWeightConfigIDs(ids...)
+	return _u
+}
+
+// AddTeamWeightConfigs adds the "team_weight_configs" edges to the TeamWeightConfig entity.
+func (_u *CycleUpdateOne) AddTeamWeightConfigs(v ...*TeamWeightConfig) *CycleUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddTeamWeightConfigIDs(ids...)
+}
+
 // Mutation returns the CycleMutation object of the builder.
 func (_u *CycleUpdateOne) Mutation() *CycleMutation {
 	return _u.mutation
@@ -1145,6 +1316,33 @@ func (_u *CycleUpdateOne) RemoveNineBoxMatrices(v ...*NineBoxMatrix) *CycleUpdat
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveNineBoxMatrixIDs(ids...)
+}
+
+// ClearCycleConfig clears the "cycle_config" edge to the CycleConfig entity.
+func (_u *CycleUpdateOne) ClearCycleConfig() *CycleUpdateOne {
+	_u.mutation.ClearCycleConfig()
+	return _u
+}
+
+// ClearTeamWeightConfigs clears all "team_weight_configs" edges to the TeamWeightConfig entity.
+func (_u *CycleUpdateOne) ClearTeamWeightConfigs() *CycleUpdateOne {
+	_u.mutation.ClearTeamWeightConfigs()
+	return _u
+}
+
+// RemoveTeamWeightConfigIDs removes the "team_weight_configs" edge to TeamWeightConfig entities by IDs.
+func (_u *CycleUpdateOne) RemoveTeamWeightConfigIDs(ids ...uuid.UUID) *CycleUpdateOne {
+	_u.mutation.RemoveTeamWeightConfigIDs(ids...)
+	return _u
+}
+
+// RemoveTeamWeightConfigs removes "team_weight_configs" edges to TeamWeightConfig entities.
+func (_u *CycleUpdateOne) RemoveTeamWeightConfigs(v ...*TeamWeightConfig) *CycleUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveTeamWeightConfigIDs(ids...)
 }
 
 // Where appends a list predicates to the CycleUpdate builder.
@@ -1565,6 +1763,80 @@ func (_u *CycleUpdateOne) sqlSave(ctx context.Context) (_node *Cycle, err error)
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(nineboxmatrix.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.CycleConfigCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   cycle.CycleConfigTable,
+			Columns: []string{cycle.CycleConfigColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(cycleconfig.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.CycleConfigIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   cycle.CycleConfigTable,
+			Columns: []string{cycle.CycleConfigColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(cycleconfig.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.TeamWeightConfigsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   cycle.TeamWeightConfigsTable,
+			Columns: []string{cycle.TeamWeightConfigsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(teamweightconfig.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedTeamWeightConfigsIDs(); len(nodes) > 0 && !_u.mutation.TeamWeightConfigsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   cycle.TeamWeightConfigsTable,
+			Columns: []string{cycle.TeamWeightConfigsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(teamweightconfig.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.TeamWeightConfigsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   cycle.TeamWeightConfigsTable,
+			Columns: []string{cycle.TeamWeightConfigsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(teamweightconfig.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

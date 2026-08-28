@@ -120,6 +120,27 @@ var (
 			},
 		},
 	}
+	// CycleConfigsColumns holds the columns for the "cycle_configs" table.
+	CycleConfigsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "g_weight", Type: field.TypeFloat64, Default: 0},
+		{Name: "p_weight", Type: field.TypeFloat64, Default: 100},
+		{Name: "cycle_id", Type: field.TypeUUID, Unique: true},
+	}
+	// CycleConfigsTable holds the schema information for the "cycle_configs" table.
+	CycleConfigsTable = &schema.Table{
+		Name:       "cycle_configs",
+		Columns:    CycleConfigsColumns,
+		PrimaryKey: []*schema.Column{CycleConfigsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "cycle_configs_cycles_cycle_config",
+				Columns:    []*schema.Column{CycleConfigsColumns[3]},
+				RefColumns: []*schema.Column{CyclesColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+	}
 	// EmployeesColumns holds the columns for the "employees" table.
 	EmployeesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
@@ -946,12 +967,41 @@ var (
 			},
 		},
 	}
+	// TeamWeightConfigsColumns holds the columns for the "team_weight_configs" table.
+	TeamWeightConfigsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "j_weight", Type: field.TypeFloat64, Default: 0},
+		{Name: "pj_weight", Type: field.TypeFloat64, Default: 100},
+		{Name: "cycle_id", Type: field.TypeUUID},
+		{Name: "team_id", Type: field.TypeUUID},
+	}
+	// TeamWeightConfigsTable holds the schema information for the "team_weight_configs" table.
+	TeamWeightConfigsTable = &schema.Table{
+		Name:       "team_weight_configs",
+		Columns:    TeamWeightConfigsColumns,
+		PrimaryKey: []*schema.Column{TeamWeightConfigsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "team_weight_configs_cycles_team_weight_configs",
+				Columns:    []*schema.Column{TeamWeightConfigsColumns[3]},
+				RefColumns: []*schema.Column{CyclesColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "team_weight_configs_org_nodes_team_weight_configs",
+				Columns:    []*schema.Column{TeamWeightConfigsColumns[4]},
+				RefColumns: []*schema.Column{OrgNodesColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
 		ActivityLogsTable,
 		CompetenciesTable,
 		CompetencyAcceptanceLevelsTable,
 		CyclesTable,
+		CycleConfigsTable,
 		EmployeesTable,
 		EvaluationsTable,
 		EvaluationCompetenciesTable,
@@ -980,6 +1030,7 @@ var (
 		ScaleCriterionsTable,
 		SharedGoalGroupsTable,
 		SharedGoalMembersTable,
+		TeamWeightConfigsTable,
 	}
 )
 
@@ -992,6 +1043,7 @@ func init() {
 	CompetencyAcceptanceLevelsTable.ForeignKeys[0].RefTable = CompetenciesTable
 	CompetencyAcceptanceLevelsTable.ForeignKeys[1].RefTable = EvaluationProfilesTable
 	CyclesTable.ForeignKeys[0].RefTable = OrganizationsTable
+	CycleConfigsTable.ForeignKeys[0].RefTable = CyclesTable
 	EmployeesTable.ForeignKeys[0].RefTable = EmployeesTable
 	EmployeesTable.ForeignKeys[1].RefTable = EvaluationProfilesTable
 	EmployeesTable.ForeignKeys[2].RefTable = OrgNodesTable
@@ -1038,4 +1090,6 @@ func init() {
 	SharedGoalGroupsTable.ForeignKeys[1].RefTable = GoalsTable
 	SharedGoalMembersTable.ForeignKeys[0].RefTable = EmployeesTable
 	SharedGoalMembersTable.ForeignKeys[1].RefTable = SharedGoalGroupsTable
+	TeamWeightConfigsTable.ForeignKeys[0].RefTable = CyclesTable
+	TeamWeightConfigsTable.ForeignKeys[1].RefTable = OrgNodesTable
 }

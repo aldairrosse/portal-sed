@@ -552,6 +552,52 @@ func HasNineBoxMatricesWith(preds ...predicate.NineBoxMatrix) predicate.Cycle {
 	})
 }
 
+// HasCycleConfig applies the HasEdge predicate on the "cycle_config" edge.
+func HasCycleConfig() predicate.Cycle {
+	return predicate.Cycle(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, CycleConfigTable, CycleConfigColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasCycleConfigWith applies the HasEdge predicate on the "cycle_config" edge with a given conditions (other predicates).
+func HasCycleConfigWith(preds ...predicate.CycleConfig) predicate.Cycle {
+	return predicate.Cycle(func(s *sql.Selector) {
+		step := newCycleConfigStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasTeamWeightConfigs applies the HasEdge predicate on the "team_weight_configs" edge.
+func HasTeamWeightConfigs() predicate.Cycle {
+	return predicate.Cycle(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, TeamWeightConfigsTable, TeamWeightConfigsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasTeamWeightConfigsWith applies the HasEdge predicate on the "team_weight_configs" edge with a given conditions (other predicates).
+func HasTeamWeightConfigsWith(preds ...predicate.TeamWeightConfig) predicate.Cycle {
+	return predicate.Cycle(func(s *sql.Selector) {
+		step := newTeamWeightConfigsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.Cycle) predicate.Cycle {
 	return predicate.Cycle(sql.AndPredicates(predicates...))

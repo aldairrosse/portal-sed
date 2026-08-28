@@ -58,5 +58,10 @@ func (s *ScoringService) GetEmployeeScore(ctx context.Context, empID uuid.UUID) 
 		})
 	}
 
-	return scoring.EmployeeScore(catScores), nil
+	personalScore := scoring.EmployeeScore(catScores)
+	// Hierarchical G/P J/PJ: fetch weights with fallback 100 when no cycle/team config
+	// TODO: wire CycleConfig/TeamWeightConfig lookup once cycle/team resolvers available
+	pWeight, pjWeight := 100.0, 100.0
+	_ = ctx // placeholder for future config fetch
+	return scoring.HierarchicalScore(personalScore, pWeight, pjWeight), nil
 }

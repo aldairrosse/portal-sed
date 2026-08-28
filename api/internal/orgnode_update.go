@@ -18,6 +18,7 @@ import (
 	"github.com/sed-evaluacion-desempeno/api/internal/organization"
 	"github.com/sed-evaluacion-desempeno/api/internal/orgnode"
 	"github.com/sed-evaluacion-desempeno/api/internal/predicate"
+	"github.com/sed-evaluacion-desempeno/api/internal/teamweightconfig"
 )
 
 // OrgNodeUpdate is the builder for updating OrgNode entities.
@@ -263,6 +264,21 @@ func (_u *OrgNodeUpdate) AddGlobalGoalRules(v ...*GlobalGoalRule) *OrgNodeUpdate
 	return _u.AddGlobalGoalRuleIDs(ids...)
 }
 
+// AddTeamWeightConfigIDs adds the "team_weight_configs" edge to the TeamWeightConfig entity by IDs.
+func (_u *OrgNodeUpdate) AddTeamWeightConfigIDs(ids ...uuid.UUID) *OrgNodeUpdate {
+	_u.mutation.AddTeamWeightConfigIDs(ids...)
+	return _u
+}
+
+// AddTeamWeightConfigs adds the "team_weight_configs" edges to the TeamWeightConfig entity.
+func (_u *OrgNodeUpdate) AddTeamWeightConfigs(v ...*TeamWeightConfig) *OrgNodeUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddTeamWeightConfigIDs(ids...)
+}
+
 // Mutation returns the OrgNodeMutation object of the builder.
 func (_u *OrgNodeUpdate) Mutation() *OrgNodeMutation {
 	return _u.mutation
@@ -368,6 +384,27 @@ func (_u *OrgNodeUpdate) RemoveGlobalGoalRules(v ...*GlobalGoalRule) *OrgNodeUpd
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveGlobalGoalRuleIDs(ids...)
+}
+
+// ClearTeamWeightConfigs clears all "team_weight_configs" edges to the TeamWeightConfig entity.
+func (_u *OrgNodeUpdate) ClearTeamWeightConfigs() *OrgNodeUpdate {
+	_u.mutation.ClearTeamWeightConfigs()
+	return _u
+}
+
+// RemoveTeamWeightConfigIDs removes the "team_weight_configs" edge to TeamWeightConfig entities by IDs.
+func (_u *OrgNodeUpdate) RemoveTeamWeightConfigIDs(ids ...uuid.UUID) *OrgNodeUpdate {
+	_u.mutation.RemoveTeamWeightConfigIDs(ids...)
+	return _u
+}
+
+// RemoveTeamWeightConfigs removes "team_weight_configs" edges to TeamWeightConfig entities.
+func (_u *OrgNodeUpdate) RemoveTeamWeightConfigs(v ...*TeamWeightConfig) *OrgNodeUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveTeamWeightConfigIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -743,6 +780,51 @@ func (_u *OrgNodeUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if _u.mutation.TeamWeightConfigsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   orgnode.TeamWeightConfigsTable,
+			Columns: []string{orgnode.TeamWeightConfigsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(teamweightconfig.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedTeamWeightConfigsIDs(); len(nodes) > 0 && !_u.mutation.TeamWeightConfigsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   orgnode.TeamWeightConfigsTable,
+			Columns: []string{orgnode.TeamWeightConfigsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(teamweightconfig.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.TeamWeightConfigsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   orgnode.TeamWeightConfigsTable,
+			Columns: []string{orgnode.TeamWeightConfigsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(teamweightconfig.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{orgnode.Label}
@@ -993,6 +1075,21 @@ func (_u *OrgNodeUpdateOne) AddGlobalGoalRules(v ...*GlobalGoalRule) *OrgNodeUpd
 	return _u.AddGlobalGoalRuleIDs(ids...)
 }
 
+// AddTeamWeightConfigIDs adds the "team_weight_configs" edge to the TeamWeightConfig entity by IDs.
+func (_u *OrgNodeUpdateOne) AddTeamWeightConfigIDs(ids ...uuid.UUID) *OrgNodeUpdateOne {
+	_u.mutation.AddTeamWeightConfigIDs(ids...)
+	return _u
+}
+
+// AddTeamWeightConfigs adds the "team_weight_configs" edges to the TeamWeightConfig entity.
+func (_u *OrgNodeUpdateOne) AddTeamWeightConfigs(v ...*TeamWeightConfig) *OrgNodeUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddTeamWeightConfigIDs(ids...)
+}
+
 // Mutation returns the OrgNodeMutation object of the builder.
 func (_u *OrgNodeUpdateOne) Mutation() *OrgNodeMutation {
 	return _u.mutation
@@ -1098,6 +1195,27 @@ func (_u *OrgNodeUpdateOne) RemoveGlobalGoalRules(v ...*GlobalGoalRule) *OrgNode
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveGlobalGoalRuleIDs(ids...)
+}
+
+// ClearTeamWeightConfigs clears all "team_weight_configs" edges to the TeamWeightConfig entity.
+func (_u *OrgNodeUpdateOne) ClearTeamWeightConfigs() *OrgNodeUpdateOne {
+	_u.mutation.ClearTeamWeightConfigs()
+	return _u
+}
+
+// RemoveTeamWeightConfigIDs removes the "team_weight_configs" edge to TeamWeightConfig entities by IDs.
+func (_u *OrgNodeUpdateOne) RemoveTeamWeightConfigIDs(ids ...uuid.UUID) *OrgNodeUpdateOne {
+	_u.mutation.RemoveTeamWeightConfigIDs(ids...)
+	return _u
+}
+
+// RemoveTeamWeightConfigs removes "team_weight_configs" edges to TeamWeightConfig entities.
+func (_u *OrgNodeUpdateOne) RemoveTeamWeightConfigs(v ...*TeamWeightConfig) *OrgNodeUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveTeamWeightConfigIDs(ids...)
 }
 
 // Where appends a list predicates to the OrgNodeUpdate builder.
@@ -1496,6 +1614,51 @@ func (_u *OrgNodeUpdateOne) sqlSave(ctx context.Context) (_node *OrgNode, err er
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(globalgoalrule.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.TeamWeightConfigsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   orgnode.TeamWeightConfigsTable,
+			Columns: []string{orgnode.TeamWeightConfigsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(teamweightconfig.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedTeamWeightConfigsIDs(); len(nodes) > 0 && !_u.mutation.TeamWeightConfigsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   orgnode.TeamWeightConfigsTable,
+			Columns: []string{orgnode.TeamWeightConfigsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(teamweightconfig.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.TeamWeightConfigsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   orgnode.TeamWeightConfigsTable,
+			Columns: []string{orgnode.TeamWeightConfigsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(teamweightconfig.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

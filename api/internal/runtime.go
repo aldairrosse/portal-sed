@@ -10,6 +10,7 @@ import (
 	"github.com/sed-evaluacion-desempeno/api/internal/competency"
 	"github.com/sed-evaluacion-desempeno/api/internal/competencyacceptancelevel"
 	"github.com/sed-evaluacion-desempeno/api/internal/cycle"
+	"github.com/sed-evaluacion-desempeno/api/internal/cycleconfig"
 	"github.com/sed-evaluacion-desempeno/api/internal/employee"
 	"github.com/sed-evaluacion-desempeno/api/internal/evaluation"
 	"github.com/sed-evaluacion-desempeno/api/internal/evaluationcompetency"
@@ -39,6 +40,7 @@ import (
 	"github.com/sed-evaluacion-desempeno/api/internal/schema"
 	"github.com/sed-evaluacion-desempeno/api/internal/sharedgoalgroup"
 	"github.com/sed-evaluacion-desempeno/api/internal/sharedgoalmember"
+	"github.com/sed-evaluacion-desempeno/api/internal/teamweightconfig"
 )
 
 // The init function reads all schema descriptors with runtime code
@@ -145,6 +147,52 @@ func init() {
 	cycleDescID := cycleFields[0].Descriptor()
 	// cycle.DefaultID holds the default value on creation for the id field.
 	cycle.DefaultID = cycleDescID.Default.(func() uuid.UUID)
+	cycleconfigFields := schema.CycleConfig{}.Fields()
+	_ = cycleconfigFields
+	// cycleconfigDescGWeight is the schema descriptor for g_weight field.
+	cycleconfigDescGWeight := cycleconfigFields[2].Descriptor()
+	// cycleconfig.DefaultGWeight holds the default value on creation for the g_weight field.
+	cycleconfig.DefaultGWeight = cycleconfigDescGWeight.Default.(float64)
+	// cycleconfig.GWeightValidator is a validator for the "g_weight" field. It is called by the builders before save.
+	cycleconfig.GWeightValidator = func() func(float64) error {
+		validators := cycleconfigDescGWeight.Validators
+		fns := [...]func(float64) error{
+			validators[0].(func(float64) error),
+			validators[1].(func(float64) error),
+		}
+		return func(g_weight float64) error {
+			for _, fn := range fns {
+				if err := fn(g_weight); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// cycleconfigDescPWeight is the schema descriptor for p_weight field.
+	cycleconfigDescPWeight := cycleconfigFields[3].Descriptor()
+	// cycleconfig.DefaultPWeight holds the default value on creation for the p_weight field.
+	cycleconfig.DefaultPWeight = cycleconfigDescPWeight.Default.(float64)
+	// cycleconfig.PWeightValidator is a validator for the "p_weight" field. It is called by the builders before save.
+	cycleconfig.PWeightValidator = func() func(float64) error {
+		validators := cycleconfigDescPWeight.Validators
+		fns := [...]func(float64) error{
+			validators[0].(func(float64) error),
+			validators[1].(func(float64) error),
+		}
+		return func(p_weight float64) error {
+			for _, fn := range fns {
+				if err := fn(p_weight); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// cycleconfigDescID is the schema descriptor for id field.
+	cycleconfigDescID := cycleconfigFields[0].Descriptor()
+	// cycleconfig.DefaultID holds the default value on creation for the id field.
+	cycleconfig.DefaultID = cycleconfigDescID.Default.(func() uuid.UUID)
 	employeeMixin := schema.Employee{}.Mixin()
 	employeeMixinFields0 := employeeMixin[0].Fields()
 	_ = employeeMixinFields0
@@ -861,4 +909,50 @@ func init() {
 	sharedgoalmemberDescID := sharedgoalmemberFields[0].Descriptor()
 	// sharedgoalmember.DefaultID holds the default value on creation for the id field.
 	sharedgoalmember.DefaultID = sharedgoalmemberDescID.Default.(func() uuid.UUID)
+	teamweightconfigFields := schema.TeamWeightConfig{}.Fields()
+	_ = teamweightconfigFields
+	// teamweightconfigDescJWeight is the schema descriptor for j_weight field.
+	teamweightconfigDescJWeight := teamweightconfigFields[3].Descriptor()
+	// teamweightconfig.DefaultJWeight holds the default value on creation for the j_weight field.
+	teamweightconfig.DefaultJWeight = teamweightconfigDescJWeight.Default.(float64)
+	// teamweightconfig.JWeightValidator is a validator for the "j_weight" field. It is called by the builders before save.
+	teamweightconfig.JWeightValidator = func() func(float64) error {
+		validators := teamweightconfigDescJWeight.Validators
+		fns := [...]func(float64) error{
+			validators[0].(func(float64) error),
+			validators[1].(func(float64) error),
+		}
+		return func(j_weight float64) error {
+			for _, fn := range fns {
+				if err := fn(j_weight); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// teamweightconfigDescPjWeight is the schema descriptor for pj_weight field.
+	teamweightconfigDescPjWeight := teamweightconfigFields[4].Descriptor()
+	// teamweightconfig.DefaultPjWeight holds the default value on creation for the pj_weight field.
+	teamweightconfig.DefaultPjWeight = teamweightconfigDescPjWeight.Default.(float64)
+	// teamweightconfig.PjWeightValidator is a validator for the "pj_weight" field. It is called by the builders before save.
+	teamweightconfig.PjWeightValidator = func() func(float64) error {
+		validators := teamweightconfigDescPjWeight.Validators
+		fns := [...]func(float64) error{
+			validators[0].(func(float64) error),
+			validators[1].(func(float64) error),
+		}
+		return func(pj_weight float64) error {
+			for _, fn := range fns {
+				if err := fn(pj_weight); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// teamweightconfigDescID is the schema descriptor for id field.
+	teamweightconfigDescID := teamweightconfigFields[0].Descriptor()
+	// teamweightconfig.DefaultID holds the default value on creation for the id field.
+	teamweightconfig.DefaultID = teamweightconfigDescID.Default.(func() uuid.UUID)
 }

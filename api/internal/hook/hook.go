@@ -57,6 +57,18 @@ func (f CycleFunc) Mutate(ctx context.Context, m internal.Mutation) (internal.Va
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *internal.CycleMutation", m)
 }
 
+// The CycleConfigFunc type is an adapter to allow the use of ordinary
+// function as CycleConfig mutator.
+type CycleConfigFunc func(context.Context, *internal.CycleConfigMutation) (internal.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f CycleConfigFunc) Mutate(ctx context.Context, m internal.Mutation) (internal.Value, error) {
+	if mv, ok := m.(*internal.CycleConfigMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *internal.CycleConfigMutation", m)
+}
+
 // The EmployeeFunc type is an adapter to allow the use of ordinary
 // function as Employee mutator.
 type EmployeeFunc func(context.Context, *internal.EmployeeMutation) (internal.Value, error)
@@ -391,6 +403,18 @@ func (f SharedGoalMemberFunc) Mutate(ctx context.Context, m internal.Mutation) (
 		return f(ctx, mv)
 	}
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *internal.SharedGoalMemberMutation", m)
+}
+
+// The TeamWeightConfigFunc type is an adapter to allow the use of ordinary
+// function as TeamWeightConfig mutator.
+type TeamWeightConfigFunc func(context.Context, *internal.TeamWeightConfigMutation) (internal.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f TeamWeightConfigFunc) Mutate(ctx context.Context, m internal.Mutation) (internal.Value, error) {
+	if mv, ok := m.(*internal.TeamWeightConfigMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *internal.TeamWeightConfigMutation", m)
 }
 
 // Condition is a hook condition function.

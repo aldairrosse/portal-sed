@@ -1503,6 +1503,34 @@ components:
         deficit:
           type: number
 
+    CycleWeights:
+      type: object
+      description: Hierarchical L1 RH weights G+P=100 (fallback P=100)
+      properties:
+        g_weight:
+          type: number
+          minimum: 0
+          maximum: 100
+        p_weight:
+          type: number
+          minimum: 0
+          maximum: 100
+      required: [g_weight, p_weight]
+
+    TeamWeights:
+      type: object
+      description: Hierarchical L2 Jefe weights J+PJ=100 within P (fallback PJ=100)
+      properties:
+        j_weight:
+          type: number
+          minimum: 0
+          maximum: 100
+        pj_weight:
+          type: number
+          minimum: 0
+          maximum: 100
+      required: [j_weight, pj_weight]
+
     # ============================================================================
     # KPI Schemas
     # ============================================================================

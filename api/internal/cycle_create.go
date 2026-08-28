@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
 	"github.com/sed-evaluacion-desempeno/api/internal/cycle"
+	"github.com/sed-evaluacion-desempeno/api/internal/cycleconfig"
 	"github.com/sed-evaluacion-desempeno/api/internal/evaluation"
 	"github.com/sed-evaluacion-desempeno/api/internal/evaluatorscope"
 	"github.com/sed-evaluacion-desempeno/api/internal/goalassignment"
@@ -19,6 +20,7 @@ import (
 	"github.com/sed-evaluacion-desempeno/api/internal/organization"
 	"github.com/sed-evaluacion-desempeno/api/internal/phasedefinition"
 	"github.com/sed-evaluacion-desempeno/api/internal/phasetransition"
+	"github.com/sed-evaluacion-desempeno/api/internal/teamweightconfig"
 )
 
 // CycleCreate is the builder for creating a Cycle entity.
@@ -223,6 +225,40 @@ func (_c *CycleCreate) AddNineBoxMatrices(v ...*NineBoxMatrix) *CycleCreate {
 		ids[i] = v[i].ID
 	}
 	return _c.AddNineBoxMatrixIDs(ids...)
+}
+
+// SetCycleConfigID sets the "cycle_config" edge to the CycleConfig entity by ID.
+func (_c *CycleCreate) SetCycleConfigID(id uuid.UUID) *CycleCreate {
+	_c.mutation.SetCycleConfigID(id)
+	return _c
+}
+
+// SetNillableCycleConfigID sets the "cycle_config" edge to the CycleConfig entity by ID if the given value is not nil.
+func (_c *CycleCreate) SetNillableCycleConfigID(id *uuid.UUID) *CycleCreate {
+	if id != nil {
+		_c = _c.SetCycleConfigID(*id)
+	}
+	return _c
+}
+
+// SetCycleConfig sets the "cycle_config" edge to the CycleConfig entity.
+func (_c *CycleCreate) SetCycleConfig(v *CycleConfig) *CycleCreate {
+	return _c.SetCycleConfigID(v.ID)
+}
+
+// AddTeamWeightConfigIDs adds the "team_weight_configs" edge to the TeamWeightConfig entity by IDs.
+func (_c *CycleCreate) AddTeamWeightConfigIDs(ids ...uuid.UUID) *CycleCreate {
+	_c.mutation.AddTeamWeightConfigIDs(ids...)
+	return _c
+}
+
+// AddTeamWeightConfigs adds the "team_weight_configs" edges to the TeamWeightConfig entity.
+func (_c *CycleCreate) AddTeamWeightConfigs(v ...*TeamWeightConfig) *CycleCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddTeamWeightConfigIDs(ids...)
 }
 
 // Mutation returns the CycleMutation object of the builder.
@@ -480,6 +516,38 @@ func (_c *CycleCreate) createSpec() (*Cycle, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(nineboxmatrix.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.CycleConfigIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   cycle.CycleConfigTable,
+			Columns: []string{cycle.CycleConfigColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(cycleconfig.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.TeamWeightConfigsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   cycle.TeamWeightConfigsTable,
+			Columns: []string{cycle.TeamWeightConfigsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(teamweightconfig.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

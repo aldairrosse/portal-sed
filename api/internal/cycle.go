@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"github.com/google/uuid"
 	"github.com/sed-evaluacion-desempeno/api/internal/cycle"
+	"github.com/sed-evaluacion-desempeno/api/internal/cycleconfig"
 	"github.com/sed-evaluacion-desempeno/api/internal/organization"
 )
 
@@ -57,9 +58,13 @@ type CycleEdges struct {
 	Evaluations []*Evaluation `json:"evaluations,omitempty"`
 	// NineBoxMatrices holds the value of the nine_box_matrices edge.
 	NineBoxMatrices []*NineBoxMatrix `json:"nine_box_matrices,omitempty"`
+	// CycleConfig holds the value of the cycle_config edge.
+	CycleConfig *CycleConfig `json:"cycle_config,omitempty"`
+	// TeamWeightConfigs holds the value of the team_weight_configs edge.
+	TeamWeightConfigs []*TeamWeightConfig `json:"team_weight_configs,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [7]bool
+	loadedTypes [9]bool
 }
 
 // OrganizationOrErr returns the Organization value or an error if the edge
@@ -125,6 +130,26 @@ func (e CycleEdges) NineBoxMatricesOrErr() ([]*NineBoxMatrix, error) {
 		return e.NineBoxMatrices, nil
 	}
 	return nil, &NotLoadedError{edge: "nine_box_matrices"}
+}
+
+// CycleConfigOrErr returns the CycleConfig value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e CycleEdges) CycleConfigOrErr() (*CycleConfig, error) {
+	if e.CycleConfig != nil {
+		return e.CycleConfig, nil
+	} else if e.loadedTypes[7] {
+		return nil, &NotFoundError{label: cycleconfig.Label}
+	}
+	return nil, &NotLoadedError{edge: "cycle_config"}
+}
+
+// TeamWeightConfigsOrErr returns the TeamWeightConfigs value or an error if the edge
+// was not loaded in eager-loading.
+func (e CycleEdges) TeamWeightConfigsOrErr() ([]*TeamWeightConfig, error) {
+	if e.loadedTypes[8] {
+		return e.TeamWeightConfigs, nil
+	}
+	return nil, &NotLoadedError{edge: "team_weight_configs"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -257,6 +282,16 @@ func (_m *Cycle) QueryEvaluations() *EvaluationQuery {
 // QueryNineBoxMatrices queries the "nine_box_matrices" edge of the Cycle entity.
 func (_m *Cycle) QueryNineBoxMatrices() *NineBoxMatrixQuery {
 	return NewCycleClient(_m.config).QueryNineBoxMatrices(_m)
+}
+
+// QueryCycleConfig queries the "cycle_config" edge of the Cycle entity.
+func (_m *Cycle) QueryCycleConfig() *CycleConfigQuery {
+	return NewCycleClient(_m.config).QueryCycleConfig(_m)
+}
+
+// QueryTeamWeightConfigs queries the "team_weight_configs" edge of the Cycle entity.
+func (_m *Cycle) QueryTeamWeightConfigs() *TeamWeightConfigQuery {
+	return NewCycleClient(_m.config).QueryTeamWeightConfigs(_m)
 }
 
 // Update returns a builder for updating this Cycle.

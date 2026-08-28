@@ -14,6 +14,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
 	"github.com/sed-evaluacion-desempeno/api/internal/cycle"
+	"github.com/sed-evaluacion-desempeno/api/internal/cycleconfig"
 	"github.com/sed-evaluacion-desempeno/api/internal/evaluation"
 	"github.com/sed-evaluacion-desempeno/api/internal/evaluatorscope"
 	"github.com/sed-evaluacion-desempeno/api/internal/goalassignment"
@@ -22,22 +23,25 @@ import (
 	"github.com/sed-evaluacion-desempeno/api/internal/phasedefinition"
 	"github.com/sed-evaluacion-desempeno/api/internal/phasetransition"
 	"github.com/sed-evaluacion-desempeno/api/internal/predicate"
+	"github.com/sed-evaluacion-desempeno/api/internal/teamweightconfig"
 )
 
 // CycleQuery is the builder for querying Cycle entities.
 type CycleQuery struct {
 	config
-	ctx                  *QueryContext
-	order                []cycle.OrderOption
-	inters               []Interceptor
-	predicates           []predicate.Cycle
-	withOrganization     *OrganizationQuery
-	withPhaseTransitions *PhaseTransitionQuery
-	withPhaseDefinitions *PhaseDefinitionQuery
-	withEvaluatorScopes  *EvaluatorScopeQuery
-	withGoalAssignments  *GoalAssignmentQuery
-	withEvaluations      *EvaluationQuery
-	withNineBoxMatrices  *NineBoxMatrixQuery
+	ctx                   *QueryContext
+	order                 []cycle.OrderOption
+	inters                []Interceptor
+	predicates            []predicate.Cycle
+	withOrganization      *OrganizationQuery
+	withPhaseTransitions  *PhaseTransitionQuery
+	withPhaseDefinitions  *PhaseDefinitionQuery
+	withEvaluatorScopes   *EvaluatorScopeQuery
+	withGoalAssignments   *GoalAssignmentQuery
+	withEvaluations       *EvaluationQuery
+	withNineBoxMatrices   *NineBoxMatrixQuery
+	withCycleConfig       *CycleConfigQuery
+	withTeamWeightConfigs *TeamWeightConfigQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -221,6 +225,50 @@ func (_q *CycleQuery) QueryNineBoxMatrices() *NineBoxMatrixQuery {
 			sqlgraph.From(cycle.Table, cycle.FieldID, selector),
 			sqlgraph.To(nineboxmatrix.Table, nineboxmatrix.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, cycle.NineBoxMatricesTable, cycle.NineBoxMatricesColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryCycleConfig chains the current query on the "cycle_config" edge.
+func (_q *CycleQuery) QueryCycleConfig() *CycleConfigQuery {
+	query := (&CycleConfigClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(cycle.Table, cycle.FieldID, selector),
+			sqlgraph.To(cycleconfig.Table, cycleconfig.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, cycle.CycleConfigTable, cycle.CycleConfigColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryTeamWeightConfigs chains the current query on the "team_weight_configs" edge.
+func (_q *CycleQuery) QueryTeamWeightConfigs() *TeamWeightConfigQuery {
+	query := (&TeamWeightConfigClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(cycle.Table, cycle.FieldID, selector),
+			sqlgraph.To(teamweightconfig.Table, teamweightconfig.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, cycle.TeamWeightConfigsTable, cycle.TeamWeightConfigsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -415,18 +463,20 @@ func (_q *CycleQuery) Clone() *CycleQuery {
 		return nil
 	}
 	return &CycleQuery{
-		config:               _q.config,
-		ctx:                  _q.ctx.Clone(),
-		order:                append([]cycle.OrderOption{}, _q.order...),
-		inters:               append([]Interceptor{}, _q.inters...),
-		predicates:           append([]predicate.Cycle{}, _q.predicates...),
-		withOrganization:     _q.withOrganization.Clone(),
-		withPhaseTransitions: _q.withPhaseTransitions.Clone(),
-		withPhaseDefinitions: _q.withPhaseDefinitions.Clone(),
-		withEvaluatorScopes:  _q.withEvaluatorScopes.Clone(),
-		withGoalAssignments:  _q.withGoalAssignments.Clone(),
-		withEvaluations:      _q.withEvaluations.Clone(),
-		withNineBoxMatrices:  _q.withNineBoxMatrices.Clone(),
+		config:                _q.config,
+		ctx:                   _q.ctx.Clone(),
+		order:                 append([]cycle.OrderOption{}, _q.order...),
+		inters:                append([]Interceptor{}, _q.inters...),
+		predicates:            append([]predicate.Cycle{}, _q.predicates...),
+		withOrganization:      _q.withOrganization.Clone(),
+		withPhaseTransitions:  _q.withPhaseTransitions.Clone(),
+		withPhaseDefinitions:  _q.withPhaseDefinitions.Clone(),
+		withEvaluatorScopes:   _q.withEvaluatorScopes.Clone(),
+		withGoalAssignments:   _q.withGoalAssignments.Clone(),
+		withEvaluations:       _q.withEvaluations.Clone(),
+		withNineBoxMatrices:   _q.withNineBoxMatrices.Clone(),
+		withCycleConfig:       _q.withCycleConfig.Clone(),
+		withTeamWeightConfigs: _q.withTeamWeightConfigs.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
@@ -510,6 +560,28 @@ func (_q *CycleQuery) WithNineBoxMatrices(opts ...func(*NineBoxMatrixQuery)) *Cy
 	return _q
 }
 
+// WithCycleConfig tells the query-builder to eager-load the nodes that are connected to
+// the "cycle_config" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *CycleQuery) WithCycleConfig(opts ...func(*CycleConfigQuery)) *CycleQuery {
+	query := (&CycleConfigClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withCycleConfig = query
+	return _q
+}
+
+// WithTeamWeightConfigs tells the query-builder to eager-load the nodes that are connected to
+// the "team_weight_configs" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *CycleQuery) WithTeamWeightConfigs(opts ...func(*TeamWeightConfigQuery)) *CycleQuery {
+	query := (&TeamWeightConfigClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withTeamWeightConfigs = query
+	return _q
+}
+
 // GroupBy is used to group vertices by one or more fields/columns.
 // It is often used with aggregate functions, like: count, max, mean, min, sum.
 //
@@ -588,7 +660,7 @@ func (_q *CycleQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Cycle,
 	var (
 		nodes       = []*Cycle{}
 		_spec       = _q.querySpec()
-		loadedTypes = [7]bool{
+		loadedTypes = [9]bool{
 			_q.withOrganization != nil,
 			_q.withPhaseTransitions != nil,
 			_q.withPhaseDefinitions != nil,
@@ -596,6 +668,8 @@ func (_q *CycleQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Cycle,
 			_q.withGoalAssignments != nil,
 			_q.withEvaluations != nil,
 			_q.withNineBoxMatrices != nil,
+			_q.withCycleConfig != nil,
+			_q.withTeamWeightConfigs != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -661,6 +735,19 @@ func (_q *CycleQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Cycle,
 		if err := _q.loadNineBoxMatrices(ctx, query, nodes,
 			func(n *Cycle) { n.Edges.NineBoxMatrices = []*NineBoxMatrix{} },
 			func(n *Cycle, e *NineBoxMatrix) { n.Edges.NineBoxMatrices = append(n.Edges.NineBoxMatrices, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withCycleConfig; query != nil {
+		if err := _q.loadCycleConfig(ctx, query, nodes, nil,
+			func(n *Cycle, e *CycleConfig) { n.Edges.CycleConfig = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withTeamWeightConfigs; query != nil {
+		if err := _q.loadTeamWeightConfigs(ctx, query, nodes,
+			func(n *Cycle) { n.Edges.TeamWeightConfigs = []*TeamWeightConfig{} },
+			func(n *Cycle, e *TeamWeightConfig) { n.Edges.TeamWeightConfigs = append(n.Edges.TeamWeightConfigs, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -864,6 +951,63 @@ func (_q *CycleQuery) loadNineBoxMatrices(ctx context.Context, query *NineBoxMat
 	}
 	query.Where(predicate.NineBoxMatrix(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(cycle.NineBoxMatricesColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.CycleID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "cycle_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *CycleQuery) loadCycleConfig(ctx context.Context, query *CycleConfigQuery, nodes []*Cycle, init func(*Cycle), assign func(*Cycle, *CycleConfig)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*Cycle)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(cycleconfig.FieldCycleID)
+	}
+	query.Where(predicate.CycleConfig(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(cycle.CycleConfigColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.CycleID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "cycle_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *CycleQuery) loadTeamWeightConfigs(ctx context.Context, query *TeamWeightConfigQuery, nodes []*Cycle, init func(*Cycle), assign func(*Cycle, *TeamWeightConfig)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*Cycle)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(teamweightconfig.FieldCycleID)
+	}
+	query.Where(predicate.TeamWeightConfig(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(cycle.TeamWeightConfigsColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

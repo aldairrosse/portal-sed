@@ -16,6 +16,7 @@ import (
 	"github.com/sed-evaluacion-desempeno/api/internal/competency"
 	"github.com/sed-evaluacion-desempeno/api/internal/competencyacceptancelevel"
 	"github.com/sed-evaluacion-desempeno/api/internal/cycle"
+	"github.com/sed-evaluacion-desempeno/api/internal/cycleconfig"
 	"github.com/sed-evaluacion-desempeno/api/internal/employee"
 	"github.com/sed-evaluacion-desempeno/api/internal/evaluation"
 	"github.com/sed-evaluacion-desempeno/api/internal/evaluationcompetency"
@@ -44,6 +45,7 @@ import (
 	"github.com/sed-evaluacion-desempeno/api/internal/scalecriterion"
 	"github.com/sed-evaluacion-desempeno/api/internal/sharedgoalgroup"
 	"github.com/sed-evaluacion-desempeno/api/internal/sharedgoalmember"
+	"github.com/sed-evaluacion-desempeno/api/internal/teamweightconfig"
 )
 
 // ent aliases to avoid import conflicts in user's code.
@@ -108,6 +110,7 @@ func checkColumn(t, c string) error {
 			competency.Table:                competency.ValidColumn,
 			competencyacceptancelevel.Table: competencyacceptancelevel.ValidColumn,
 			cycle.Table:                     cycle.ValidColumn,
+			cycleconfig.Table:               cycleconfig.ValidColumn,
 			employee.Table:                  employee.ValidColumn,
 			evaluation.Table:                evaluation.ValidColumn,
 			evaluationcompetency.Table:      evaluationcompetency.ValidColumn,
@@ -136,6 +139,7 @@ func checkColumn(t, c string) error {
 			scalecriterion.Table:            scalecriterion.ValidColumn,
 			sharedgoalgroup.Table:           sharedgoalgroup.ValidColumn,
 			sharedgoalmember.Table:          sharedgoalmember.ValidColumn,
+			teamweightconfig.Table:          teamweightconfig.ValidColumn,
 		})
 	})
 	return columnCheck(t, c)

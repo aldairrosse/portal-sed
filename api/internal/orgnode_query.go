@@ -19,22 +19,24 @@ import (
 	"github.com/sed-evaluacion-desempeno/api/internal/organization"
 	"github.com/sed-evaluacion-desempeno/api/internal/orgnode"
 	"github.com/sed-evaluacion-desempeno/api/internal/predicate"
+	"github.com/sed-evaluacion-desempeno/api/internal/teamweightconfig"
 )
 
 // OrgNodeQuery is the builder for querying OrgNode entities.
 type OrgNodeQuery struct {
 	config
-	ctx                 *QueryContext
-	order               []orgnode.OrderOption
-	inters              []Interceptor
-	predicates          []predicate.OrgNode
-	withOrganization    *OrganizationQuery
-	withParent          *OrgNodeQuery
-	withChildren        *OrgNodeQuery
-	withEmployees       *EmployeeQuery
-	withHeadEmployee    *EmployeeQuery
-	withKpis            *KPIQuery
-	withGlobalGoalRules *GlobalGoalRuleQuery
+	ctx                   *QueryContext
+	order                 []orgnode.OrderOption
+	inters                []Interceptor
+	predicates            []predicate.OrgNode
+	withOrganization      *OrganizationQuery
+	withParent            *OrgNodeQuery
+	withChildren          *OrgNodeQuery
+	withEmployees         *EmployeeQuery
+	withHeadEmployee      *EmployeeQuery
+	withKpis              *KPIQuery
+	withGlobalGoalRules   *GlobalGoalRuleQuery
+	withTeamWeightConfigs *TeamWeightConfigQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -218,6 +220,28 @@ func (_q *OrgNodeQuery) QueryGlobalGoalRules() *GlobalGoalRuleQuery {
 			sqlgraph.From(orgnode.Table, orgnode.FieldID, selector),
 			sqlgraph.To(globalgoalrule.Table, globalgoalrule.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, orgnode.GlobalGoalRulesTable, orgnode.GlobalGoalRulesColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryTeamWeightConfigs chains the current query on the "team_weight_configs" edge.
+func (_q *OrgNodeQuery) QueryTeamWeightConfigs() *TeamWeightConfigQuery {
+	query := (&TeamWeightConfigClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(orgnode.Table, orgnode.FieldID, selector),
+			sqlgraph.To(teamweightconfig.Table, teamweightconfig.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, orgnode.TeamWeightConfigsTable, orgnode.TeamWeightConfigsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -412,18 +436,19 @@ func (_q *OrgNodeQuery) Clone() *OrgNodeQuery {
 		return nil
 	}
 	return &OrgNodeQuery{
-		config:              _q.config,
-		ctx:                 _q.ctx.Clone(),
-		order:               append([]orgnode.OrderOption{}, _q.order...),
-		inters:              append([]Interceptor{}, _q.inters...),
-		predicates:          append([]predicate.OrgNode{}, _q.predicates...),
-		withOrganization:    _q.withOrganization.Clone(),
-		withParent:          _q.withParent.Clone(),
-		withChildren:        _q.withChildren.Clone(),
-		withEmployees:       _q.withEmployees.Clone(),
-		withHeadEmployee:    _q.withHeadEmployee.Clone(),
-		withKpis:            _q.withKpis.Clone(),
-		withGlobalGoalRules: _q.withGlobalGoalRules.Clone(),
+		config:                _q.config,
+		ctx:                   _q.ctx.Clone(),
+		order:                 append([]orgnode.OrderOption{}, _q.order...),
+		inters:                append([]Interceptor{}, _q.inters...),
+		predicates:            append([]predicate.OrgNode{}, _q.predicates...),
+		withOrganization:      _q.withOrganization.Clone(),
+		withParent:            _q.withParent.Clone(),
+		withChildren:          _q.withChildren.Clone(),
+		withEmployees:         _q.withEmployees.Clone(),
+		withHeadEmployee:      _q.withHeadEmployee.Clone(),
+		withKpis:              _q.withKpis.Clone(),
+		withGlobalGoalRules:   _q.withGlobalGoalRules.Clone(),
+		withTeamWeightConfigs: _q.withTeamWeightConfigs.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
@@ -507,6 +532,17 @@ func (_q *OrgNodeQuery) WithGlobalGoalRules(opts ...func(*GlobalGoalRuleQuery)) 
 	return _q
 }
 
+// WithTeamWeightConfigs tells the query-builder to eager-load the nodes that are connected to
+// the "team_weight_configs" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *OrgNodeQuery) WithTeamWeightConfigs(opts ...func(*TeamWeightConfigQuery)) *OrgNodeQuery {
+	query := (&TeamWeightConfigClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withTeamWeightConfigs = query
+	return _q
+}
+
 // GroupBy is used to group vertices by one or more fields/columns.
 // It is often used with aggregate functions, like: count, max, mean, min, sum.
 //
@@ -585,7 +621,7 @@ func (_q *OrgNodeQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*OrgN
 	var (
 		nodes       = []*OrgNode{}
 		_spec       = _q.querySpec()
-		loadedTypes = [7]bool{
+		loadedTypes = [8]bool{
 			_q.withOrganization != nil,
 			_q.withParent != nil,
 			_q.withChildren != nil,
@@ -593,6 +629,7 @@ func (_q *OrgNodeQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*OrgN
 			_q.withHeadEmployee != nil,
 			_q.withKpis != nil,
 			_q.withGlobalGoalRules != nil,
+			_q.withTeamWeightConfigs != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -656,6 +693,15 @@ func (_q *OrgNodeQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*OrgN
 		if err := _q.loadGlobalGoalRules(ctx, query, nodes,
 			func(n *OrgNode) { n.Edges.GlobalGoalRules = []*GlobalGoalRule{} },
 			func(n *OrgNode, e *GlobalGoalRule) { n.Edges.GlobalGoalRules = append(n.Edges.GlobalGoalRules, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withTeamWeightConfigs; query != nil {
+		if err := _q.loadTeamWeightConfigs(ctx, query, nodes,
+			func(n *OrgNode) { n.Edges.TeamWeightConfigs = []*TeamWeightConfig{} },
+			func(n *OrgNode, e *TeamWeightConfig) {
+				n.Edges.TeamWeightConfigs = append(n.Edges.TeamWeightConfigs, e)
+			}); err != nil {
 			return nil, err
 		}
 	}
@@ -879,6 +925,36 @@ func (_q *OrgNodeQuery) loadGlobalGoalRules(ctx context.Context, query *GlobalGo
 		node, ok := nodeids[*fk]
 		if !ok {
 			return fmt.Errorf(`unexpected referenced foreign-key "department_id" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *OrgNodeQuery) loadTeamWeightConfigs(ctx context.Context, query *TeamWeightConfigQuery, nodes []*OrgNode, init func(*OrgNode), assign func(*OrgNode, *TeamWeightConfig)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*OrgNode)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(teamweightconfig.FieldTeamID)
+	}
+	query.Where(predicate.TeamWeightConfig(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(orgnode.TeamWeightConfigsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.TeamID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "team_id" returned %v for node %v`, fk, n.ID)
 		}
 		assign(node, n)
 	}

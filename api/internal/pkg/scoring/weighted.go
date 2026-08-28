@@ -37,3 +37,23 @@ func EmployeeScore(categories []CategoryScore) float64 {
 
 	return total
 }
+
+// HierarchicalScore applies hierarchical weighting P/100 * PJ/100 to personalScore.
+// If pWeight or pjWeight is 0, it falls back to 100 (no reduction).
+// Result is clamped to [0, 100].
+func HierarchicalScore(personalScore float64, pWeight, pjWeight float64) float64 {
+	if pWeight == 0 {
+		pWeight = 100
+	}
+	if pjWeight == 0 {
+		pjWeight = 100
+	}
+	result := personalScore * (pWeight / 100) * (pjWeight / 100)
+	if result < 0 {
+		return 0
+	}
+	if result > 100 {
+		return 100
+	}
+	return result
+}

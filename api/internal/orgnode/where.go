@@ -697,6 +697,29 @@ func HasGlobalGoalRulesWith(preds ...predicate.GlobalGoalRule) predicate.OrgNode
 	})
 }
 
+// HasTeamWeightConfigs applies the HasEdge predicate on the "team_weight_configs" edge.
+func HasTeamWeightConfigs() predicate.OrgNode {
+	return predicate.OrgNode(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, TeamWeightConfigsTable, TeamWeightConfigsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasTeamWeightConfigsWith applies the HasEdge predicate on the "team_weight_configs" edge with a given conditions (other predicates).
+func HasTeamWeightConfigsWith(preds ...predicate.TeamWeightConfig) predicate.OrgNode {
+	return predicate.OrgNode(func(s *sql.Selector) {
+		step := newTeamWeightConfigsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.OrgNode) predicate.OrgNode {
 	return predicate.OrgNode(sql.AndPredicates(predicates...))

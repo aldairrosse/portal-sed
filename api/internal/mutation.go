@@ -16,6 +16,7 @@ import (
 	"github.com/sed-evaluacion-desempeno/api/internal/competency"
 	"github.com/sed-evaluacion-desempeno/api/internal/competencyacceptancelevel"
 	"github.com/sed-evaluacion-desempeno/api/internal/cycle"
+	"github.com/sed-evaluacion-desempeno/api/internal/cycleconfig"
 	"github.com/sed-evaluacion-desempeno/api/internal/employee"
 	"github.com/sed-evaluacion-desempeno/api/internal/evaluation"
 	"github.com/sed-evaluacion-desempeno/api/internal/evaluationcompetency"
@@ -45,6 +46,7 @@ import (
 	"github.com/sed-evaluacion-desempeno/api/internal/scalecriterion"
 	"github.com/sed-evaluacion-desempeno/api/internal/sharedgoalgroup"
 	"github.com/sed-evaluacion-desempeno/api/internal/sharedgoalmember"
+	"github.com/sed-evaluacion-desempeno/api/internal/teamweightconfig"
 )
 
 const (
@@ -60,6 +62,7 @@ const (
 	TypeCompetency                = "Competency"
 	TypeCompetencyAcceptanceLevel = "CompetencyAcceptanceLevel"
 	TypeCycle                     = "Cycle"
+	TypeCycleConfig               = "CycleConfig"
 	TypeEmployee                  = "Employee"
 	TypeEvaluation                = "Evaluation"
 	TypeEvaluationCompetency      = "EvaluationCompetency"
@@ -88,6 +91,7 @@ const (
 	TypeScaleCriterion            = "ScaleCriterion"
 	TypeSharedGoalGroup           = "SharedGoalGroup"
 	TypeSharedGoalMember          = "SharedGoalMember"
+	TypeTeamWeightConfig          = "TeamWeightConfig"
 )
 
 // ActivityLogMutation represents an operation that mutates the ActivityLog nodes in the graph.
@@ -2474,42 +2478,47 @@ func (m *CompetencyAcceptanceLevelMutation) ResetEdge(name string) error {
 // CycleMutation represents an operation that mutates the Cycle nodes in the graph.
 type CycleMutation struct {
 	config
-	op                       Op
-	typ                      string
-	id                       *uuid.UUID
-	created_at               *time.Time
-	updated_at               *time.Time
-	version                  *int
-	addversion               *int
-	year                     *int
-	addyear                  *int
-	current_phase            *cycle.CurrentPhase
-	started_at               *time.Time
-	finished_at              *time.Time
-	clearedFields            map[string]struct{}
-	organization             *uuid.UUID
-	clearedorganization      bool
-	phase_transitions        map[uuid.UUID]struct{}
-	removedphase_transitions map[uuid.UUID]struct{}
-	clearedphase_transitions bool
-	phase_definitions        map[uuid.UUID]struct{}
-	removedphase_definitions map[uuid.UUID]struct{}
-	clearedphase_definitions bool
-	evaluator_scopes         map[uuid.UUID]struct{}
-	removedevaluator_scopes  map[uuid.UUID]struct{}
-	clearedevaluator_scopes  bool
-	goal_assignments         map[uuid.UUID]struct{}
-	removedgoal_assignments  map[uuid.UUID]struct{}
-	clearedgoal_assignments  bool
-	evaluations              map[uuid.UUID]struct{}
-	removedevaluations       map[uuid.UUID]struct{}
-	clearedevaluations       bool
-	nine_box_matrices        map[uuid.UUID]struct{}
-	removednine_box_matrices map[uuid.UUID]struct{}
-	clearednine_box_matrices bool
-	done                     bool
-	oldValue                 func(context.Context) (*Cycle, error)
-	predicates               []predicate.Cycle
+	op                         Op
+	typ                        string
+	id                         *uuid.UUID
+	created_at                 *time.Time
+	updated_at                 *time.Time
+	version                    *int
+	addversion                 *int
+	year                       *int
+	addyear                    *int
+	current_phase              *cycle.CurrentPhase
+	started_at                 *time.Time
+	finished_at                *time.Time
+	clearedFields              map[string]struct{}
+	organization               *uuid.UUID
+	clearedorganization        bool
+	phase_transitions          map[uuid.UUID]struct{}
+	removedphase_transitions   map[uuid.UUID]struct{}
+	clearedphase_transitions   bool
+	phase_definitions          map[uuid.UUID]struct{}
+	removedphase_definitions   map[uuid.UUID]struct{}
+	clearedphase_definitions   bool
+	evaluator_scopes           map[uuid.UUID]struct{}
+	removedevaluator_scopes    map[uuid.UUID]struct{}
+	clearedevaluator_scopes    bool
+	goal_assignments           map[uuid.UUID]struct{}
+	removedgoal_assignments    map[uuid.UUID]struct{}
+	clearedgoal_assignments    bool
+	evaluations                map[uuid.UUID]struct{}
+	removedevaluations         map[uuid.UUID]struct{}
+	clearedevaluations         bool
+	nine_box_matrices          map[uuid.UUID]struct{}
+	removednine_box_matrices   map[uuid.UUID]struct{}
+	clearednine_box_matrices   bool
+	cycle_config               *uuid.UUID
+	clearedcycle_config        bool
+	team_weight_configs        map[uuid.UUID]struct{}
+	removedteam_weight_configs map[uuid.UUID]struct{}
+	clearedteam_weight_configs bool
+	done                       bool
+	oldValue                   func(context.Context) (*Cycle, error)
+	predicates                 []predicate.Cycle
 }
 
 var _ ent.Mutation = (*CycleMutation)(nil)
@@ -3321,6 +3330,99 @@ func (m *CycleMutation) ResetNineBoxMatrices() {
 	m.removednine_box_matrices = nil
 }
 
+// SetCycleConfigID sets the "cycle_config" edge to the CycleConfig entity by id.
+func (m *CycleMutation) SetCycleConfigID(id uuid.UUID) {
+	m.cycle_config = &id
+}
+
+// ClearCycleConfig clears the "cycle_config" edge to the CycleConfig entity.
+func (m *CycleMutation) ClearCycleConfig() {
+	m.clearedcycle_config = true
+}
+
+// CycleConfigCleared reports if the "cycle_config" edge to the CycleConfig entity was cleared.
+func (m *CycleMutation) CycleConfigCleared() bool {
+	return m.clearedcycle_config
+}
+
+// CycleConfigID returns the "cycle_config" edge ID in the mutation.
+func (m *CycleMutation) CycleConfigID() (id uuid.UUID, exists bool) {
+	if m.cycle_config != nil {
+		return *m.cycle_config, true
+	}
+	return
+}
+
+// CycleConfigIDs returns the "cycle_config" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// CycleConfigID instead. It exists only for internal usage by the builders.
+func (m *CycleMutation) CycleConfigIDs() (ids []uuid.UUID) {
+	if id := m.cycle_config; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetCycleConfig resets all changes to the "cycle_config" edge.
+func (m *CycleMutation) ResetCycleConfig() {
+	m.cycle_config = nil
+	m.clearedcycle_config = false
+}
+
+// AddTeamWeightConfigIDs adds the "team_weight_configs" edge to the TeamWeightConfig entity by ids.
+func (m *CycleMutation) AddTeamWeightConfigIDs(ids ...uuid.UUID) {
+	if m.team_weight_configs == nil {
+		m.team_weight_configs = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.team_weight_configs[ids[i]] = struct{}{}
+	}
+}
+
+// ClearTeamWeightConfigs clears the "team_weight_configs" edge to the TeamWeightConfig entity.
+func (m *CycleMutation) ClearTeamWeightConfigs() {
+	m.clearedteam_weight_configs = true
+}
+
+// TeamWeightConfigsCleared reports if the "team_weight_configs" edge to the TeamWeightConfig entity was cleared.
+func (m *CycleMutation) TeamWeightConfigsCleared() bool {
+	return m.clearedteam_weight_configs
+}
+
+// RemoveTeamWeightConfigIDs removes the "team_weight_configs" edge to the TeamWeightConfig entity by IDs.
+func (m *CycleMutation) RemoveTeamWeightConfigIDs(ids ...uuid.UUID) {
+	if m.removedteam_weight_configs == nil {
+		m.removedteam_weight_configs = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.team_weight_configs, ids[i])
+		m.removedteam_weight_configs[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedTeamWeightConfigs returns the removed IDs of the "team_weight_configs" edge to the TeamWeightConfig entity.
+func (m *CycleMutation) RemovedTeamWeightConfigsIDs() (ids []uuid.UUID) {
+	for id := range m.removedteam_weight_configs {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// TeamWeightConfigsIDs returns the "team_weight_configs" edge IDs in the mutation.
+func (m *CycleMutation) TeamWeightConfigsIDs() (ids []uuid.UUID) {
+	for id := range m.team_weight_configs {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetTeamWeightConfigs resets all changes to the "team_weight_configs" edge.
+func (m *CycleMutation) ResetTeamWeightConfigs() {
+	m.team_weight_configs = nil
+	m.clearedteam_weight_configs = false
+	m.removedteam_weight_configs = nil
+}
+
 // Where appends a list predicates to the CycleMutation builder.
 func (m *CycleMutation) Where(ps ...predicate.Cycle) {
 	m.predicates = append(m.predicates, ps...)
@@ -3615,7 +3717,7 @@ func (m *CycleMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *CycleMutation) AddedEdges() []string {
-	edges := make([]string, 0, 7)
+	edges := make([]string, 0, 9)
 	if m.organization != nil {
 		edges = append(edges, cycle.EdgeOrganization)
 	}
@@ -3636,6 +3738,12 @@ func (m *CycleMutation) AddedEdges() []string {
 	}
 	if m.nine_box_matrices != nil {
 		edges = append(edges, cycle.EdgeNineBoxMatrices)
+	}
+	if m.cycle_config != nil {
+		edges = append(edges, cycle.EdgeCycleConfig)
+	}
+	if m.team_weight_configs != nil {
+		edges = append(edges, cycle.EdgeTeamWeightConfigs)
 	}
 	return edges
 }
@@ -3684,13 +3792,23 @@ func (m *CycleMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case cycle.EdgeCycleConfig:
+		if id := m.cycle_config; id != nil {
+			return []ent.Value{*id}
+		}
+	case cycle.EdgeTeamWeightConfigs:
+		ids := make([]ent.Value, 0, len(m.team_weight_configs))
+		for id := range m.team_weight_configs {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *CycleMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 7)
+	edges := make([]string, 0, 9)
 	if m.removedphase_transitions != nil {
 		edges = append(edges, cycle.EdgePhaseTransitions)
 	}
@@ -3708,6 +3826,9 @@ func (m *CycleMutation) RemovedEdges() []string {
 	}
 	if m.removednine_box_matrices != nil {
 		edges = append(edges, cycle.EdgeNineBoxMatrices)
+	}
+	if m.removedteam_weight_configs != nil {
+		edges = append(edges, cycle.EdgeTeamWeightConfigs)
 	}
 	return edges
 }
@@ -3752,13 +3873,19 @@ func (m *CycleMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case cycle.EdgeTeamWeightConfigs:
+		ids := make([]ent.Value, 0, len(m.removedteam_weight_configs))
+		for id := range m.removedteam_weight_configs {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *CycleMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 7)
+	edges := make([]string, 0, 9)
 	if m.clearedorganization {
 		edges = append(edges, cycle.EdgeOrganization)
 	}
@@ -3779,6 +3906,12 @@ func (m *CycleMutation) ClearedEdges() []string {
 	}
 	if m.clearednine_box_matrices {
 		edges = append(edges, cycle.EdgeNineBoxMatrices)
+	}
+	if m.clearedcycle_config {
+		edges = append(edges, cycle.EdgeCycleConfig)
+	}
+	if m.clearedteam_weight_configs {
+		edges = append(edges, cycle.EdgeTeamWeightConfigs)
 	}
 	return edges
 }
@@ -3801,6 +3934,10 @@ func (m *CycleMutation) EdgeCleared(name string) bool {
 		return m.clearedevaluations
 	case cycle.EdgeNineBoxMatrices:
 		return m.clearednine_box_matrices
+	case cycle.EdgeCycleConfig:
+		return m.clearedcycle_config
+	case cycle.EdgeTeamWeightConfigs:
+		return m.clearedteam_weight_configs
 	}
 	return false
 }
@@ -3811,6 +3948,9 @@ func (m *CycleMutation) ClearEdge(name string) error {
 	switch name {
 	case cycle.EdgeOrganization:
 		m.ClearOrganization()
+		return nil
+	case cycle.EdgeCycleConfig:
+		m.ClearCycleConfig()
 		return nil
 	}
 	return fmt.Errorf("unknown Cycle unique edge %s", name)
@@ -3841,8 +3981,577 @@ func (m *CycleMutation) ResetEdge(name string) error {
 	case cycle.EdgeNineBoxMatrices:
 		m.ResetNineBoxMatrices()
 		return nil
+	case cycle.EdgeCycleConfig:
+		m.ResetCycleConfig()
+		return nil
+	case cycle.EdgeTeamWeightConfigs:
+		m.ResetTeamWeightConfigs()
+		return nil
 	}
 	return fmt.Errorf("unknown Cycle edge %s", name)
+}
+
+// CycleConfigMutation represents an operation that mutates the CycleConfig nodes in the graph.
+type CycleConfigMutation struct {
+	config
+	op            Op
+	typ           string
+	id            *uuid.UUID
+	g_weight      *float64
+	addg_weight   *float64
+	p_weight      *float64
+	addp_weight   *float64
+	clearedFields map[string]struct{}
+	cycle         *uuid.UUID
+	clearedcycle  bool
+	done          bool
+	oldValue      func(context.Context) (*CycleConfig, error)
+	predicates    []predicate.CycleConfig
+}
+
+var _ ent.Mutation = (*CycleConfigMutation)(nil)
+
+// cycleconfigOption allows management of the mutation configuration using functional options.
+type cycleconfigOption func(*CycleConfigMutation)
+
+// newCycleConfigMutation creates new mutation for the CycleConfig entity.
+func newCycleConfigMutation(c config, op Op, opts ...cycleconfigOption) *CycleConfigMutation {
+	m := &CycleConfigMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeCycleConfig,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withCycleConfigID sets the ID field of the mutation.
+func withCycleConfigID(id uuid.UUID) cycleconfigOption {
+	return func(m *CycleConfigMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *CycleConfig
+		)
+		m.oldValue = func(ctx context.Context) (*CycleConfig, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().CycleConfig.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withCycleConfig sets the old CycleConfig of the mutation.
+func withCycleConfig(node *CycleConfig) cycleconfigOption {
+	return func(m *CycleConfigMutation) {
+		m.oldValue = func(context.Context) (*CycleConfig, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m CycleConfigMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m CycleConfigMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("internal: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of CycleConfig entities.
+func (m *CycleConfigMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *CycleConfigMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *CycleConfigMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().CycleConfig.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCycleID sets the "cycle_id" field.
+func (m *CycleConfigMutation) SetCycleID(u uuid.UUID) {
+	m.cycle = &u
+}
+
+// CycleID returns the value of the "cycle_id" field in the mutation.
+func (m *CycleConfigMutation) CycleID() (r uuid.UUID, exists bool) {
+	v := m.cycle
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCycleID returns the old "cycle_id" field's value of the CycleConfig entity.
+// If the CycleConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CycleConfigMutation) OldCycleID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCycleID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCycleID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCycleID: %w", err)
+	}
+	return oldValue.CycleID, nil
+}
+
+// ResetCycleID resets all changes to the "cycle_id" field.
+func (m *CycleConfigMutation) ResetCycleID() {
+	m.cycle = nil
+}
+
+// SetGWeight sets the "g_weight" field.
+func (m *CycleConfigMutation) SetGWeight(f float64) {
+	m.g_weight = &f
+	m.addg_weight = nil
+}
+
+// GWeight returns the value of the "g_weight" field in the mutation.
+func (m *CycleConfigMutation) GWeight() (r float64, exists bool) {
+	v := m.g_weight
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldGWeight returns the old "g_weight" field's value of the CycleConfig entity.
+// If the CycleConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CycleConfigMutation) OldGWeight(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldGWeight is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldGWeight requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldGWeight: %w", err)
+	}
+	return oldValue.GWeight, nil
+}
+
+// AddGWeight adds f to the "g_weight" field.
+func (m *CycleConfigMutation) AddGWeight(f float64) {
+	if m.addg_weight != nil {
+		*m.addg_weight += f
+	} else {
+		m.addg_weight = &f
+	}
+}
+
+// AddedGWeight returns the value that was added to the "g_weight" field in this mutation.
+func (m *CycleConfigMutation) AddedGWeight() (r float64, exists bool) {
+	v := m.addg_weight
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetGWeight resets all changes to the "g_weight" field.
+func (m *CycleConfigMutation) ResetGWeight() {
+	m.g_weight = nil
+	m.addg_weight = nil
+}
+
+// SetPWeight sets the "p_weight" field.
+func (m *CycleConfigMutation) SetPWeight(f float64) {
+	m.p_weight = &f
+	m.addp_weight = nil
+}
+
+// PWeight returns the value of the "p_weight" field in the mutation.
+func (m *CycleConfigMutation) PWeight() (r float64, exists bool) {
+	v := m.p_weight
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPWeight returns the old "p_weight" field's value of the CycleConfig entity.
+// If the CycleConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CycleConfigMutation) OldPWeight(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPWeight is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPWeight requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPWeight: %w", err)
+	}
+	return oldValue.PWeight, nil
+}
+
+// AddPWeight adds f to the "p_weight" field.
+func (m *CycleConfigMutation) AddPWeight(f float64) {
+	if m.addp_weight != nil {
+		*m.addp_weight += f
+	} else {
+		m.addp_weight = &f
+	}
+}
+
+// AddedPWeight returns the value that was added to the "p_weight" field in this mutation.
+func (m *CycleConfigMutation) AddedPWeight() (r float64, exists bool) {
+	v := m.addp_weight
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetPWeight resets all changes to the "p_weight" field.
+func (m *CycleConfigMutation) ResetPWeight() {
+	m.p_weight = nil
+	m.addp_weight = nil
+}
+
+// ClearCycle clears the "cycle" edge to the Cycle entity.
+func (m *CycleConfigMutation) ClearCycle() {
+	m.clearedcycle = true
+	m.clearedFields[cycleconfig.FieldCycleID] = struct{}{}
+}
+
+// CycleCleared reports if the "cycle" edge to the Cycle entity was cleared.
+func (m *CycleConfigMutation) CycleCleared() bool {
+	return m.clearedcycle
+}
+
+// CycleIDs returns the "cycle" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// CycleID instead. It exists only for internal usage by the builders.
+func (m *CycleConfigMutation) CycleIDs() (ids []uuid.UUID) {
+	if id := m.cycle; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetCycle resets all changes to the "cycle" edge.
+func (m *CycleConfigMutation) ResetCycle() {
+	m.cycle = nil
+	m.clearedcycle = false
+}
+
+// Where appends a list predicates to the CycleConfigMutation builder.
+func (m *CycleConfigMutation) Where(ps ...predicate.CycleConfig) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the CycleConfigMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *CycleConfigMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.CycleConfig, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *CycleConfigMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *CycleConfigMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (CycleConfig).
+func (m *CycleConfigMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *CycleConfigMutation) Fields() []string {
+	fields := make([]string, 0, 3)
+	if m.cycle != nil {
+		fields = append(fields, cycleconfig.FieldCycleID)
+	}
+	if m.g_weight != nil {
+		fields = append(fields, cycleconfig.FieldGWeight)
+	}
+	if m.p_weight != nil {
+		fields = append(fields, cycleconfig.FieldPWeight)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *CycleConfigMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case cycleconfig.FieldCycleID:
+		return m.CycleID()
+	case cycleconfig.FieldGWeight:
+		return m.GWeight()
+	case cycleconfig.FieldPWeight:
+		return m.PWeight()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *CycleConfigMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case cycleconfig.FieldCycleID:
+		return m.OldCycleID(ctx)
+	case cycleconfig.FieldGWeight:
+		return m.OldGWeight(ctx)
+	case cycleconfig.FieldPWeight:
+		return m.OldPWeight(ctx)
+	}
+	return nil, fmt.Errorf("unknown CycleConfig field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *CycleConfigMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case cycleconfig.FieldCycleID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCycleID(v)
+		return nil
+	case cycleconfig.FieldGWeight:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetGWeight(v)
+		return nil
+	case cycleconfig.FieldPWeight:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPWeight(v)
+		return nil
+	}
+	return fmt.Errorf("unknown CycleConfig field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *CycleConfigMutation) AddedFields() []string {
+	var fields []string
+	if m.addg_weight != nil {
+		fields = append(fields, cycleconfig.FieldGWeight)
+	}
+	if m.addp_weight != nil {
+		fields = append(fields, cycleconfig.FieldPWeight)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *CycleConfigMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case cycleconfig.FieldGWeight:
+		return m.AddedGWeight()
+	case cycleconfig.FieldPWeight:
+		return m.AddedPWeight()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *CycleConfigMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case cycleconfig.FieldGWeight:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddGWeight(v)
+		return nil
+	case cycleconfig.FieldPWeight:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddPWeight(v)
+		return nil
+	}
+	return fmt.Errorf("unknown CycleConfig numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *CycleConfigMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *CycleConfigMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *CycleConfigMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown CycleConfig nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *CycleConfigMutation) ResetField(name string) error {
+	switch name {
+	case cycleconfig.FieldCycleID:
+		m.ResetCycleID()
+		return nil
+	case cycleconfig.FieldGWeight:
+		m.ResetGWeight()
+		return nil
+	case cycleconfig.FieldPWeight:
+		m.ResetPWeight()
+		return nil
+	}
+	return fmt.Errorf("unknown CycleConfig field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *CycleConfigMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.cycle != nil {
+		edges = append(edges, cycleconfig.EdgeCycle)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *CycleConfigMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case cycleconfig.EdgeCycle:
+		if id := m.cycle; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *CycleConfigMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *CycleConfigMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *CycleConfigMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedcycle {
+		edges = append(edges, cycleconfig.EdgeCycle)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *CycleConfigMutation) EdgeCleared(name string) bool {
+	switch name {
+	case cycleconfig.EdgeCycle:
+		return m.clearedcycle
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *CycleConfigMutation) ClearEdge(name string) error {
+	switch name {
+	case cycleconfig.EdgeCycle:
+		m.ClearCycle()
+		return nil
+	}
+	return fmt.Errorf("unknown CycleConfig unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *CycleConfigMutation) ResetEdge(name string) error {
+	switch name {
+	case cycleconfig.EdgeCycle:
+		m.ResetCycle()
+		return nil
+	}
+	return fmt.Errorf("unknown CycleConfig edge %s", name)
 }
 
 // EmployeeMutation represents an operation that mutates the Employee nodes in the graph.
@@ -23528,40 +24237,43 @@ func (m *NineBoxScaleMutation) ResetEdge(name string) error {
 // OrgNodeMutation represents an operation that mutates the OrgNode nodes in the graph.
 type OrgNodeMutation struct {
 	config
-	op                       Op
-	typ                      string
-	id                       *uuid.UUID
-	created_at               *time.Time
-	updated_at               *time.Time
-	version                  *int
-	addversion               *int
-	name                     *string
-	_type                    *orgnode.Type
-	code                     *string
-	metadata                 *map[string]interface{}
-	_path                    *string
-	clearedFields            map[string]struct{}
-	organization             *uuid.UUID
-	clearedorganization      bool
-	parent                   *uuid.UUID
-	clearedparent            bool
-	children                 map[uuid.UUID]struct{}
-	removedchildren          map[uuid.UUID]struct{}
-	clearedchildren          bool
-	employees                map[uuid.UUID]struct{}
-	removedemployees         map[uuid.UUID]struct{}
-	clearedemployees         bool
-	head_employee            *uuid.UUID
-	clearedhead_employee     bool
-	kpis                     map[uuid.UUID]struct{}
-	removedkpis              map[uuid.UUID]struct{}
-	clearedkpis              bool
-	global_goal_rules        map[uuid.UUID]struct{}
-	removedglobal_goal_rules map[uuid.UUID]struct{}
-	clearedglobal_goal_rules bool
-	done                     bool
-	oldValue                 func(context.Context) (*OrgNode, error)
-	predicates               []predicate.OrgNode
+	op                         Op
+	typ                        string
+	id                         *uuid.UUID
+	created_at                 *time.Time
+	updated_at                 *time.Time
+	version                    *int
+	addversion                 *int
+	name                       *string
+	_type                      *orgnode.Type
+	code                       *string
+	metadata                   *map[string]interface{}
+	_path                      *string
+	clearedFields              map[string]struct{}
+	organization               *uuid.UUID
+	clearedorganization        bool
+	parent                     *uuid.UUID
+	clearedparent              bool
+	children                   map[uuid.UUID]struct{}
+	removedchildren            map[uuid.UUID]struct{}
+	clearedchildren            bool
+	employees                  map[uuid.UUID]struct{}
+	removedemployees           map[uuid.UUID]struct{}
+	clearedemployees           bool
+	head_employee              *uuid.UUID
+	clearedhead_employee       bool
+	kpis                       map[uuid.UUID]struct{}
+	removedkpis                map[uuid.UUID]struct{}
+	clearedkpis                bool
+	global_goal_rules          map[uuid.UUID]struct{}
+	removedglobal_goal_rules   map[uuid.UUID]struct{}
+	clearedglobal_goal_rules   bool
+	team_weight_configs        map[uuid.UUID]struct{}
+	removedteam_weight_configs map[uuid.UUID]struct{}
+	clearedteam_weight_configs bool
+	done                       bool
+	oldValue                   func(context.Context) (*OrgNode, error)
+	predicates                 []predicate.OrgNode
 }
 
 var _ ent.Mutation = (*OrgNodeMutation)(nil)
@@ -24433,6 +25145,60 @@ func (m *OrgNodeMutation) ResetGlobalGoalRules() {
 	m.removedglobal_goal_rules = nil
 }
 
+// AddTeamWeightConfigIDs adds the "team_weight_configs" edge to the TeamWeightConfig entity by ids.
+func (m *OrgNodeMutation) AddTeamWeightConfigIDs(ids ...uuid.UUID) {
+	if m.team_weight_configs == nil {
+		m.team_weight_configs = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.team_weight_configs[ids[i]] = struct{}{}
+	}
+}
+
+// ClearTeamWeightConfigs clears the "team_weight_configs" edge to the TeamWeightConfig entity.
+func (m *OrgNodeMutation) ClearTeamWeightConfigs() {
+	m.clearedteam_weight_configs = true
+}
+
+// TeamWeightConfigsCleared reports if the "team_weight_configs" edge to the TeamWeightConfig entity was cleared.
+func (m *OrgNodeMutation) TeamWeightConfigsCleared() bool {
+	return m.clearedteam_weight_configs
+}
+
+// RemoveTeamWeightConfigIDs removes the "team_weight_configs" edge to the TeamWeightConfig entity by IDs.
+func (m *OrgNodeMutation) RemoveTeamWeightConfigIDs(ids ...uuid.UUID) {
+	if m.removedteam_weight_configs == nil {
+		m.removedteam_weight_configs = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.team_weight_configs, ids[i])
+		m.removedteam_weight_configs[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedTeamWeightConfigs returns the removed IDs of the "team_weight_configs" edge to the TeamWeightConfig entity.
+func (m *OrgNodeMutation) RemovedTeamWeightConfigsIDs() (ids []uuid.UUID) {
+	for id := range m.removedteam_weight_configs {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// TeamWeightConfigsIDs returns the "team_weight_configs" edge IDs in the mutation.
+func (m *OrgNodeMutation) TeamWeightConfigsIDs() (ids []uuid.UUID) {
+	for id := range m.team_weight_configs {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetTeamWeightConfigs resets all changes to the "team_weight_configs" edge.
+func (m *OrgNodeMutation) ResetTeamWeightConfigs() {
+	m.team_weight_configs = nil
+	m.clearedteam_weight_configs = false
+	m.removedteam_weight_configs = nil
+}
+
 // Where appends a list predicates to the OrgNodeMutation builder.
 func (m *OrgNodeMutation) Where(ps ...predicate.OrgNode) {
 	m.predicates = append(m.predicates, ps...)
@@ -24778,7 +25544,7 @@ func (m *OrgNodeMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *OrgNodeMutation) AddedEdges() []string {
-	edges := make([]string, 0, 7)
+	edges := make([]string, 0, 8)
 	if m.organization != nil {
 		edges = append(edges, orgnode.EdgeOrganization)
 	}
@@ -24799,6 +25565,9 @@ func (m *OrgNodeMutation) AddedEdges() []string {
 	}
 	if m.global_goal_rules != nil {
 		edges = append(edges, orgnode.EdgeGlobalGoalRules)
+	}
+	if m.team_weight_configs != nil {
+		edges = append(edges, orgnode.EdgeTeamWeightConfigs)
 	}
 	return edges
 }
@@ -24843,13 +25612,19 @@ func (m *OrgNodeMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case orgnode.EdgeTeamWeightConfigs:
+		ids := make([]ent.Value, 0, len(m.team_weight_configs))
+		for id := range m.team_weight_configs {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *OrgNodeMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 7)
+	edges := make([]string, 0, 8)
 	if m.removedchildren != nil {
 		edges = append(edges, orgnode.EdgeChildren)
 	}
@@ -24861,6 +25636,9 @@ func (m *OrgNodeMutation) RemovedEdges() []string {
 	}
 	if m.removedglobal_goal_rules != nil {
 		edges = append(edges, orgnode.EdgeGlobalGoalRules)
+	}
+	if m.removedteam_weight_configs != nil {
+		edges = append(edges, orgnode.EdgeTeamWeightConfigs)
 	}
 	return edges
 }
@@ -24893,13 +25671,19 @@ func (m *OrgNodeMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case orgnode.EdgeTeamWeightConfigs:
+		ids := make([]ent.Value, 0, len(m.removedteam_weight_configs))
+		for id := range m.removedteam_weight_configs {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *OrgNodeMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 7)
+	edges := make([]string, 0, 8)
 	if m.clearedorganization {
 		edges = append(edges, orgnode.EdgeOrganization)
 	}
@@ -24920,6 +25704,9 @@ func (m *OrgNodeMutation) ClearedEdges() []string {
 	}
 	if m.clearedglobal_goal_rules {
 		edges = append(edges, orgnode.EdgeGlobalGoalRules)
+	}
+	if m.clearedteam_weight_configs {
+		edges = append(edges, orgnode.EdgeTeamWeightConfigs)
 	}
 	return edges
 }
@@ -24942,6 +25729,8 @@ func (m *OrgNodeMutation) EdgeCleared(name string) bool {
 		return m.clearedkpis
 	case orgnode.EdgeGlobalGoalRules:
 		return m.clearedglobal_goal_rules
+	case orgnode.EdgeTeamWeightConfigs:
+		return m.clearedteam_weight_configs
 	}
 	return false
 }
@@ -24987,6 +25776,9 @@ func (m *OrgNodeMutation) ResetEdge(name string) error {
 		return nil
 	case orgnode.EdgeGlobalGoalRules:
 		m.ResetGlobalGoalRules()
+		return nil
+	case orgnode.EdgeTeamWeightConfigs:
+		m.ResetTeamWeightConfigs()
 		return nil
 	}
 	return fmt.Errorf("unknown OrgNode edge %s", name)
@@ -31357,4 +32149,680 @@ func (m *SharedGoalMemberMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown SharedGoalMember edge %s", name)
+}
+
+// TeamWeightConfigMutation represents an operation that mutates the TeamWeightConfig nodes in the graph.
+type TeamWeightConfigMutation struct {
+	config
+	op               Op
+	typ              string
+	id               *uuid.UUID
+	j_weight         *float64
+	addj_weight      *float64
+	pj_weight        *float64
+	addpj_weight     *float64
+	clearedFields    map[string]struct{}
+	cycle            *uuid.UUID
+	clearedcycle     bool
+	team_node        *uuid.UUID
+	clearedteam_node bool
+	done             bool
+	oldValue         func(context.Context) (*TeamWeightConfig, error)
+	predicates       []predicate.TeamWeightConfig
+}
+
+var _ ent.Mutation = (*TeamWeightConfigMutation)(nil)
+
+// teamweightconfigOption allows management of the mutation configuration using functional options.
+type teamweightconfigOption func(*TeamWeightConfigMutation)
+
+// newTeamWeightConfigMutation creates new mutation for the TeamWeightConfig entity.
+func newTeamWeightConfigMutation(c config, op Op, opts ...teamweightconfigOption) *TeamWeightConfigMutation {
+	m := &TeamWeightConfigMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeTeamWeightConfig,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withTeamWeightConfigID sets the ID field of the mutation.
+func withTeamWeightConfigID(id uuid.UUID) teamweightconfigOption {
+	return func(m *TeamWeightConfigMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *TeamWeightConfig
+		)
+		m.oldValue = func(ctx context.Context) (*TeamWeightConfig, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().TeamWeightConfig.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withTeamWeightConfig sets the old TeamWeightConfig of the mutation.
+func withTeamWeightConfig(node *TeamWeightConfig) teamweightconfigOption {
+	return func(m *TeamWeightConfigMutation) {
+		m.oldValue = func(context.Context) (*TeamWeightConfig, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m TeamWeightConfigMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m TeamWeightConfigMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("internal: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of TeamWeightConfig entities.
+func (m *TeamWeightConfigMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *TeamWeightConfigMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *TeamWeightConfigMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().TeamWeightConfig.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCycleID sets the "cycle_id" field.
+func (m *TeamWeightConfigMutation) SetCycleID(u uuid.UUID) {
+	m.cycle = &u
+}
+
+// CycleID returns the value of the "cycle_id" field in the mutation.
+func (m *TeamWeightConfigMutation) CycleID() (r uuid.UUID, exists bool) {
+	v := m.cycle
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCycleID returns the old "cycle_id" field's value of the TeamWeightConfig entity.
+// If the TeamWeightConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TeamWeightConfigMutation) OldCycleID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCycleID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCycleID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCycleID: %w", err)
+	}
+	return oldValue.CycleID, nil
+}
+
+// ResetCycleID resets all changes to the "cycle_id" field.
+func (m *TeamWeightConfigMutation) ResetCycleID() {
+	m.cycle = nil
+}
+
+// SetTeamID sets the "team_id" field.
+func (m *TeamWeightConfigMutation) SetTeamID(u uuid.UUID) {
+	m.team_node = &u
+}
+
+// TeamID returns the value of the "team_id" field in the mutation.
+func (m *TeamWeightConfigMutation) TeamID() (r uuid.UUID, exists bool) {
+	v := m.team_node
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTeamID returns the old "team_id" field's value of the TeamWeightConfig entity.
+// If the TeamWeightConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TeamWeightConfigMutation) OldTeamID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTeamID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTeamID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTeamID: %w", err)
+	}
+	return oldValue.TeamID, nil
+}
+
+// ResetTeamID resets all changes to the "team_id" field.
+func (m *TeamWeightConfigMutation) ResetTeamID() {
+	m.team_node = nil
+}
+
+// SetJWeight sets the "j_weight" field.
+func (m *TeamWeightConfigMutation) SetJWeight(f float64) {
+	m.j_weight = &f
+	m.addj_weight = nil
+}
+
+// JWeight returns the value of the "j_weight" field in the mutation.
+func (m *TeamWeightConfigMutation) JWeight() (r float64, exists bool) {
+	v := m.j_weight
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldJWeight returns the old "j_weight" field's value of the TeamWeightConfig entity.
+// If the TeamWeightConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TeamWeightConfigMutation) OldJWeight(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldJWeight is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldJWeight requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldJWeight: %w", err)
+	}
+	return oldValue.JWeight, nil
+}
+
+// AddJWeight adds f to the "j_weight" field.
+func (m *TeamWeightConfigMutation) AddJWeight(f float64) {
+	if m.addj_weight != nil {
+		*m.addj_weight += f
+	} else {
+		m.addj_weight = &f
+	}
+}
+
+// AddedJWeight returns the value that was added to the "j_weight" field in this mutation.
+func (m *TeamWeightConfigMutation) AddedJWeight() (r float64, exists bool) {
+	v := m.addj_weight
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetJWeight resets all changes to the "j_weight" field.
+func (m *TeamWeightConfigMutation) ResetJWeight() {
+	m.j_weight = nil
+	m.addj_weight = nil
+}
+
+// SetPjWeight sets the "pj_weight" field.
+func (m *TeamWeightConfigMutation) SetPjWeight(f float64) {
+	m.pj_weight = &f
+	m.addpj_weight = nil
+}
+
+// PjWeight returns the value of the "pj_weight" field in the mutation.
+func (m *TeamWeightConfigMutation) PjWeight() (r float64, exists bool) {
+	v := m.pj_weight
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPjWeight returns the old "pj_weight" field's value of the TeamWeightConfig entity.
+// If the TeamWeightConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TeamWeightConfigMutation) OldPjWeight(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPjWeight is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPjWeight requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPjWeight: %w", err)
+	}
+	return oldValue.PjWeight, nil
+}
+
+// AddPjWeight adds f to the "pj_weight" field.
+func (m *TeamWeightConfigMutation) AddPjWeight(f float64) {
+	if m.addpj_weight != nil {
+		*m.addpj_weight += f
+	} else {
+		m.addpj_weight = &f
+	}
+}
+
+// AddedPjWeight returns the value that was added to the "pj_weight" field in this mutation.
+func (m *TeamWeightConfigMutation) AddedPjWeight() (r float64, exists bool) {
+	v := m.addpj_weight
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetPjWeight resets all changes to the "pj_weight" field.
+func (m *TeamWeightConfigMutation) ResetPjWeight() {
+	m.pj_weight = nil
+	m.addpj_weight = nil
+}
+
+// ClearCycle clears the "cycle" edge to the Cycle entity.
+func (m *TeamWeightConfigMutation) ClearCycle() {
+	m.clearedcycle = true
+	m.clearedFields[teamweightconfig.FieldCycleID] = struct{}{}
+}
+
+// CycleCleared reports if the "cycle" edge to the Cycle entity was cleared.
+func (m *TeamWeightConfigMutation) CycleCleared() bool {
+	return m.clearedcycle
+}
+
+// CycleIDs returns the "cycle" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// CycleID instead. It exists only for internal usage by the builders.
+func (m *TeamWeightConfigMutation) CycleIDs() (ids []uuid.UUID) {
+	if id := m.cycle; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetCycle resets all changes to the "cycle" edge.
+func (m *TeamWeightConfigMutation) ResetCycle() {
+	m.cycle = nil
+	m.clearedcycle = false
+}
+
+// SetTeamNodeID sets the "team_node" edge to the OrgNode entity by id.
+func (m *TeamWeightConfigMutation) SetTeamNodeID(id uuid.UUID) {
+	m.team_node = &id
+}
+
+// ClearTeamNode clears the "team_node" edge to the OrgNode entity.
+func (m *TeamWeightConfigMutation) ClearTeamNode() {
+	m.clearedteam_node = true
+	m.clearedFields[teamweightconfig.FieldTeamID] = struct{}{}
+}
+
+// TeamNodeCleared reports if the "team_node" edge to the OrgNode entity was cleared.
+func (m *TeamWeightConfigMutation) TeamNodeCleared() bool {
+	return m.clearedteam_node
+}
+
+// TeamNodeID returns the "team_node" edge ID in the mutation.
+func (m *TeamWeightConfigMutation) TeamNodeID() (id uuid.UUID, exists bool) {
+	if m.team_node != nil {
+		return *m.team_node, true
+	}
+	return
+}
+
+// TeamNodeIDs returns the "team_node" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// TeamNodeID instead. It exists only for internal usage by the builders.
+func (m *TeamWeightConfigMutation) TeamNodeIDs() (ids []uuid.UUID) {
+	if id := m.team_node; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetTeamNode resets all changes to the "team_node" edge.
+func (m *TeamWeightConfigMutation) ResetTeamNode() {
+	m.team_node = nil
+	m.clearedteam_node = false
+}
+
+// Where appends a list predicates to the TeamWeightConfigMutation builder.
+func (m *TeamWeightConfigMutation) Where(ps ...predicate.TeamWeightConfig) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the TeamWeightConfigMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *TeamWeightConfigMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.TeamWeightConfig, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *TeamWeightConfigMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *TeamWeightConfigMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (TeamWeightConfig).
+func (m *TeamWeightConfigMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *TeamWeightConfigMutation) Fields() []string {
+	fields := make([]string, 0, 4)
+	if m.cycle != nil {
+		fields = append(fields, teamweightconfig.FieldCycleID)
+	}
+	if m.team_node != nil {
+		fields = append(fields, teamweightconfig.FieldTeamID)
+	}
+	if m.j_weight != nil {
+		fields = append(fields, teamweightconfig.FieldJWeight)
+	}
+	if m.pj_weight != nil {
+		fields = append(fields, teamweightconfig.FieldPjWeight)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *TeamWeightConfigMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case teamweightconfig.FieldCycleID:
+		return m.CycleID()
+	case teamweightconfig.FieldTeamID:
+		return m.TeamID()
+	case teamweightconfig.FieldJWeight:
+		return m.JWeight()
+	case teamweightconfig.FieldPjWeight:
+		return m.PjWeight()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *TeamWeightConfigMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case teamweightconfig.FieldCycleID:
+		return m.OldCycleID(ctx)
+	case teamweightconfig.FieldTeamID:
+		return m.OldTeamID(ctx)
+	case teamweightconfig.FieldJWeight:
+		return m.OldJWeight(ctx)
+	case teamweightconfig.FieldPjWeight:
+		return m.OldPjWeight(ctx)
+	}
+	return nil, fmt.Errorf("unknown TeamWeightConfig field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *TeamWeightConfigMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case teamweightconfig.FieldCycleID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCycleID(v)
+		return nil
+	case teamweightconfig.FieldTeamID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTeamID(v)
+		return nil
+	case teamweightconfig.FieldJWeight:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetJWeight(v)
+		return nil
+	case teamweightconfig.FieldPjWeight:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPjWeight(v)
+		return nil
+	}
+	return fmt.Errorf("unknown TeamWeightConfig field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *TeamWeightConfigMutation) AddedFields() []string {
+	var fields []string
+	if m.addj_weight != nil {
+		fields = append(fields, teamweightconfig.FieldJWeight)
+	}
+	if m.addpj_weight != nil {
+		fields = append(fields, teamweightconfig.FieldPjWeight)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *TeamWeightConfigMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case teamweightconfig.FieldJWeight:
+		return m.AddedJWeight()
+	case teamweightconfig.FieldPjWeight:
+		return m.AddedPjWeight()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *TeamWeightConfigMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case teamweightconfig.FieldJWeight:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddJWeight(v)
+		return nil
+	case teamweightconfig.FieldPjWeight:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddPjWeight(v)
+		return nil
+	}
+	return fmt.Errorf("unknown TeamWeightConfig numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *TeamWeightConfigMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *TeamWeightConfigMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *TeamWeightConfigMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown TeamWeightConfig nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *TeamWeightConfigMutation) ResetField(name string) error {
+	switch name {
+	case teamweightconfig.FieldCycleID:
+		m.ResetCycleID()
+		return nil
+	case teamweightconfig.FieldTeamID:
+		m.ResetTeamID()
+		return nil
+	case teamweightconfig.FieldJWeight:
+		m.ResetJWeight()
+		return nil
+	case teamweightconfig.FieldPjWeight:
+		m.ResetPjWeight()
+		return nil
+	}
+	return fmt.Errorf("unknown TeamWeightConfig field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *TeamWeightConfigMutation) AddedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.cycle != nil {
+		edges = append(edges, teamweightconfig.EdgeCycle)
+	}
+	if m.team_node != nil {
+		edges = append(edges, teamweightconfig.EdgeTeamNode)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *TeamWeightConfigMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case teamweightconfig.EdgeCycle:
+		if id := m.cycle; id != nil {
+			return []ent.Value{*id}
+		}
+	case teamweightconfig.EdgeTeamNode:
+		if id := m.team_node; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *TeamWeightConfigMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 2)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *TeamWeightConfigMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *TeamWeightConfigMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.clearedcycle {
+		edges = append(edges, teamweightconfig.EdgeCycle)
+	}
+	if m.clearedteam_node {
+		edges = append(edges, teamweightconfig.EdgeTeamNode)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *TeamWeightConfigMutation) EdgeCleared(name string) bool {
+	switch name {
+	case teamweightconfig.EdgeCycle:
+		return m.clearedcycle
+	case teamweightconfig.EdgeTeamNode:
+		return m.clearedteam_node
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *TeamWeightConfigMutation) ClearEdge(name string) error {
+	switch name {
+	case teamweightconfig.EdgeCycle:
+		m.ClearCycle()
+		return nil
+	case teamweightconfig.EdgeTeamNode:
+		m.ClearTeamNode()
+		return nil
+	}
+	return fmt.Errorf("unknown TeamWeightConfig unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *TeamWeightConfigMutation) ResetEdge(name string) error {
+	switch name {
+	case teamweightconfig.EdgeCycle:
+		m.ResetCycle()
+		return nil
+	case teamweightconfig.EdgeTeamNode:
+		m.ResetTeamNode()
+		return nil
+	}
+	return fmt.Errorf("unknown TeamWeightConfig edge %s", name)
 }

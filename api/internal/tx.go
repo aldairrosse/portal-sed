@@ -20,6 +20,8 @@ type Tx struct {
 	CompetencyAcceptanceLevel *CompetencyAcceptanceLevelClient
 	// Cycle is the client for interacting with the Cycle builders.
 	Cycle *CycleClient
+	// CycleConfig is the client for interacting with the CycleConfig builders.
+	CycleConfig *CycleConfigClient
 	// Employee is the client for interacting with the Employee builders.
 	Employee *EmployeeClient
 	// Evaluation is the client for interacting with the Evaluation builders.
@@ -76,6 +78,8 @@ type Tx struct {
 	SharedGoalGroup *SharedGoalGroupClient
 	// SharedGoalMember is the client for interacting with the SharedGoalMember builders.
 	SharedGoalMember *SharedGoalMemberClient
+	// TeamWeightConfig is the client for interacting with the TeamWeightConfig builders.
+	TeamWeightConfig *TeamWeightConfigClient
 
 	// lazily loaded.
 	client     *Client
@@ -211,6 +215,7 @@ func (tx *Tx) init() {
 	tx.Competency = NewCompetencyClient(tx.config)
 	tx.CompetencyAcceptanceLevel = NewCompetencyAcceptanceLevelClient(tx.config)
 	tx.Cycle = NewCycleClient(tx.config)
+	tx.CycleConfig = NewCycleConfigClient(tx.config)
 	tx.Employee = NewEmployeeClient(tx.config)
 	tx.Evaluation = NewEvaluationClient(tx.config)
 	tx.EvaluationCompetency = NewEvaluationCompetencyClient(tx.config)
@@ -239,6 +244,7 @@ func (tx *Tx) init() {
 	tx.ScaleCriterion = NewScaleCriterionClient(tx.config)
 	tx.SharedGoalGroup = NewSharedGoalGroupClient(tx.config)
 	tx.SharedGoalMember = NewSharedGoalMemberClient(tx.config)
+	tx.TeamWeightConfig = NewTeamWeightConfigClient(tx.config)
 }
 
 // txDriver wraps the given dialect.Tx with a nop dialect.Driver implementation.

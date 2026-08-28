@@ -3,6 +3,7 @@ package schema
 import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
@@ -55,6 +56,11 @@ func (Cycle) Edges() []ent.Edge {
 		edge.To("goal_assignments", GoalAssignment.Type),
 		edge.To("evaluations", Evaluation.Type),
 		edge.To("nine_box_matrices", NineBoxMatrix.Type),
+		edge.To("cycle_config", CycleConfig.Type).
+			Unique().
+			Annotations(entsql.Annotation{OnDelete: entsql.Cascade}),
+		edge.To("team_weight_configs", TeamWeightConfig.Type).
+			Annotations(entsql.Annotation{OnDelete: entsql.Cascade}),
 	}
 }
 

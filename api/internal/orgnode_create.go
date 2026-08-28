@@ -16,6 +16,7 @@ import (
 	"github.com/sed-evaluacion-desempeno/api/internal/kpi"
 	"github.com/sed-evaluacion-desempeno/api/internal/organization"
 	"github.com/sed-evaluacion-desempeno/api/internal/orgnode"
+	"github.com/sed-evaluacion-desempeno/api/internal/teamweightconfig"
 )
 
 // OrgNodeCreate is the builder for creating a OrgNode entity.
@@ -226,6 +227,21 @@ func (_c *OrgNodeCreate) AddGlobalGoalRules(v ...*GlobalGoalRule) *OrgNodeCreate
 		ids[i] = v[i].ID
 	}
 	return _c.AddGlobalGoalRuleIDs(ids...)
+}
+
+// AddTeamWeightConfigIDs adds the "team_weight_configs" edge to the TeamWeightConfig entity by IDs.
+func (_c *OrgNodeCreate) AddTeamWeightConfigIDs(ids ...uuid.UUID) *OrgNodeCreate {
+	_c.mutation.AddTeamWeightConfigIDs(ids...)
+	return _c
+}
+
+// AddTeamWeightConfigs adds the "team_weight_configs" edges to the TeamWeightConfig entity.
+func (_c *OrgNodeCreate) AddTeamWeightConfigs(v ...*TeamWeightConfig) *OrgNodeCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddTeamWeightConfigIDs(ids...)
 }
 
 // Mutation returns the OrgNodeMutation object of the builder.
@@ -502,6 +518,22 @@ func (_c *OrgNodeCreate) createSpec() (*OrgNode, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(globalgoalrule.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.TeamWeightConfigsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   orgnode.TeamWeightConfigsTable,
+			Columns: []string{orgnode.TeamWeightConfigsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(teamweightconfig.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
