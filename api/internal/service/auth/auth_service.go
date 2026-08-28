@@ -7,6 +7,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"log/slog"
 	"strings"
 	"sync"
 	"time"
@@ -256,6 +257,11 @@ func (s *AuthService) ValidateSession(ctx context.Context, token string) (*Valid
 	emp, err := s.employeeRepo.GetByID(ctx, session.EmployeeID)
 	if err != nil {
 		return nil, err
+	}
+	if !emp.IsActive {
+		_ = s.sessionStore.Revoke(ctx, session.ID)
+		slog.Warn("auth: inactive user blocked", "employee_id", emp.ID, "session_id", session.ID)
+		return nil, pkgerrors.NewDomainError(pkgerrors.DomainCode("FORBIDDEN"), "Usuario inactivo", nil)
 	}
 
 	profile, err := s.getProfileName(ctx, emp.ProfileID)

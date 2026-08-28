@@ -23,6 +23,7 @@
 	import { Users, ChevronLeft, ChevronRight } from '@lucide/svelte';
 
 	const items = $derived(getItems());
+	const visibleItems = $derived(items.filter((e: any) => e.isActive !== false));
 	const loading = $derived(isLoading());
 	const storeError = $derived(getError());
 	const hasMore = $derived(hasMoreItems());
@@ -143,7 +144,7 @@
 	{:else}
 		<EmployeeEvaluationTable
 			mode="manager"
-			rows={items}
+			rows={visibleItems}
 			onSelect={handleSelect}
 			selectedEmployeeId={selectedEmployeeId}
 			disabled={!isFinAnio}

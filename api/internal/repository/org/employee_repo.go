@@ -89,6 +89,8 @@ func (r *EmployeeRepo) List(ctx context.Context, filter EmployeeFilter) ([]*Empl
 		conditions = append(conditions, `e.is_active = $`+itoa(idx))
 		args = append(args, *filter.IsActive)
 		idx++
+	} else {
+		conditions = append(conditions, `e.is_active = true`)
 	}
 	if filter.Query != "" {
 		conditions = append(conditions, `(e.first_name ILIKE $`+itoa(idx)+
@@ -152,6 +154,8 @@ func (r *EmployeeRepo) ListWithProfiles(ctx context.Context, filter EmployeeFilt
 		conditions = append(conditions, `e.is_active = $`+itoa(idx))
 		args = append(args, *filter.IsActive)
 		idx++
+	} else {
+		conditions = append(conditions, `e.is_active = true`)
 	}
 	if filter.Query != "" {
 		conditions = append(conditions, `(e.first_name ILIKE $`+itoa(idx)+
@@ -213,6 +217,8 @@ func (r *EmployeeRepo) CountWithProfiles(ctx context.Context, filter EmployeeFil
 		conditions = append(conditions, `e.is_active = $`+itoa(idx))
 		args = append(args, *filter.IsActive)
 		idx++
+	} else {
+		conditions = append(conditions, `e.is_active = true`)
 	}
 	if filter.Query != "" {
 		conditions = append(conditions, `(e.first_name ILIKE $`+itoa(idx)+
@@ -309,7 +315,7 @@ func (r *EmployeeRepo) GetByIDs(ctx context.Context, ids []uuid.UUID) ([]*Employ
 	return scanEmployeeRows(r.db, ctx,
 		`SELECT id, created_at, updated_at, first_name, last_name, email,
 		        employee_number, is_active, org_node_id, manager_id, profile_id, job_title
-		 FROM employees WHERE id IN (`+strings.Join(placeholders, ",")+`)`, args...)
+		 FROM employees WHERE id IN (`+strings.Join(placeholders, ",")+`) AND is_active = true`, args...)
 }
 
 // GetByIDsWithProfiles performs a batch lookup with profile name resolved via JOIN.
@@ -334,7 +340,7 @@ func (r *EmployeeRepo) GetByIDsWithProfiles(ctx context.Context, ids []uuid.UUID
 		        COALESCE(ep.name, '') as profile_name, COALESCE(ep.description, '') as profile_description, e.job_title
 		 FROM employees e
 		 LEFT JOIN evaluation_profiles ep ON e.profile_id = ep.id
-		 WHERE e.id IN (`+strings.Join(placeholders, ",")+`)`, args...)
+		 WHERE e.id IN (`+strings.Join(placeholders, ",")+`) AND e.is_active = true`, args...)
 }
 
 // ListByManager returns employees managed by the given manager.
@@ -393,7 +399,7 @@ func (r *EmployeeRepo) Search(ctx context.Context, query string, limit int) ([]*
 		`SELECT id, created_at, updated_at, first_name, last_name, email,
 		        employee_number, is_active, org_node_id, manager_id, profile_id, job_title
 		 FROM employees
-		 WHERE first_name ILIKE $1 OR last_name ILIKE $1 OR email ILIKE $1 OR employee_number ILIKE $1
+		 WHERE is_active = true AND (first_name ILIKE $1 OR last_name ILIKE $1 OR email ILIKE $1 OR employee_number ILIKE $1)
 		 ORDER BY last_name, first_name
 		 LIMIT $2`, searchTerm, limit)
 }
@@ -500,6 +506,32 @@ func (r *EmployeeRepo) UpdateProfileAndDepartment(ctx context.Context, empID, pr
 		return ErrEmployeeNotFound
 	}
 	return nil
+}
+
+// Count returns total employees matching filter (with default active behavior).
+func (r *EmployeeRepo) Count(ctx context.Context, filter EmployeeFilter) (int, error) {
+	return r.CountWithProfiles(ctx, filter)
+}
+
+// BatchSetActive actualiza is_active en lote por employee_number (usado por mobonet_sync).
+func (r *EmployeeRepo) BatchSetActive(ctx context.Context, employeeNumbers []string, active bool) (int64, error) {
+	if len(employeeNumbers) == 0 {
+		return 0, nil
+	}
+	placeholders := make([]string, len(employeeNumbers))
+	args := make([]interface{}, len(employeeNumbers)+1)
+	args[0] = active
+	for i, n := range employeeNumbers {
+		placeholders[i] = "$" + itoa(i+2)
+		args[i+1] = n
+	}
+	q := `UPDATE employees SET is_active = $1, updated_at = NOW() WHERE employee_number IN (` + strings.Join(placeholders, ",") + `)`
+	res, err := r.db.ExecContext(ctx, q, args...)
+	if err != nil {
+		return 0, err
+	}
+	n, _ := res.RowsAffected()
+	return n, nil
 }
 
 // ---------- helpers ----------

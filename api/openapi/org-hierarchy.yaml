@@ -275,7 +275,7 @@ paths:
     get:
       operationId: listEmployees
       summary: List employees
-      description: Returns a cursor-paginated list of employees with optional filters.
+      description: Returns a cursor-paginated list of employees with optional filters. Solo empleados activos (is_active=true) se listan; inactivos excluidos por sync Mobonet nocturno.
       parameters:
         - name: treeId
           in: query
@@ -394,7 +394,7 @@ paths:
     get:
       operationId: getMyEvaluatees
       summary: Get my evaluatees
-      description: Returns direct reports (active only) for the given evaluator. Each item includes assignment_status for the active cycle (or cycleId if provided).
+      description: Returns direct reports (active only) for the given evaluator. Each item includes assignment_status for the active cycle (or cycleId if provided). Solo empleados activos (is_active=true) se listan; inactivos excluidos por sync Mobonet nocturno.
       parameters:
         - name: empId
           in: path
@@ -449,7 +449,7 @@ paths:
     get:
       operationId: getTeam
       summary: Get team members by org node
-      description: Returns all active employees in org nodes where the given employee is head_employee.
+      description: Returns all active employees in org nodes where the given employee is head_employee. Solo empleados activos (is_active=true) se listan; inactivos excluidos por sync Mobonet nocturno.
       parameters:
         - name: empId
           in: path

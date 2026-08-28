@@ -15,6 +15,7 @@ paths:
     get:
       operationId: listCategories
       summary: List categories with nested goals
+      description: Retorna categorías y objetivos del empleado. Solo objetivos de empleados activos (is_active=true) se listan; inactivos excluidos por sync Mobonet nocturno (filtro implícito is_active).
       parameters:
         - $ref: '#/components/parameters/EmpId'
       responses:
@@ -693,6 +694,7 @@ paths:
     get:
       operationId: listSharedGoals
       summary: List shared goals
+      description: Retorna objetivos compartidos. Solo objetivos de empleados activos (is_active=true) se listan; inactivos excluidos por sync Mobonet nocturno (filtro implícito is_active).
       tags: [Goals]
       responses:
         '200':
@@ -1565,22 +1567,26 @@ components:
     # ============================================================================
     WeightValidationResponse:
       type: object
+      description: Category sum solo personales (excluye globales/compartidas)
       properties:
         valid:
           type: boolean
         category_sum:
           type: number
+          description: Category sum solo personales (excluye globales/compartidas)
         expected_sum:
           type: number
         deficit:
           type: number
         goal_sums:
           type: array
+          description: Category sum solo personales (excluye globales/compartidas)
           items:
             $ref: '#/components/schemas/CategoryGoalSum'
 
     CategoryGoalSum:
       type: object
+      description: Category sum solo personales (excluye globales/compartidas)
       properties:
         category_id:
           type: string
@@ -1589,6 +1595,7 @@ components:
           type: string
         sum:
           type: number
+          description: Category sum solo personales (excluye globales/compartidas)
         expected_sum:
           type: number
         deficit:

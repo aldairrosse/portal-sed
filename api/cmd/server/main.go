@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"flag"
 	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -45,6 +46,7 @@ import (
 	goalsvc "github.com/sed-evaluacion-desempeno/api/internal/service/goal"
 	notifypkg "github.com/sed-evaluacion-desempeno/api/internal/service/notify"
 	orgsvc "github.com/sed-evaluacion-desempeno/api/internal/service/org"
+	syncsvc "github.com/sed-evaluacion-desempeno/api/internal/service/sync"
 	weightsvc "github.com/sed-evaluacion-desempeno/api/internal/service/weight"
 
 	// Handlers
@@ -227,6 +229,27 @@ func main() {
 	if err := seed.Run(bgCtx, client); err != nil {
 		log.Printf("[seed] error: %v", err)
 	}
+
+	// Scheduler nocturno Mobonet sync — 02:00 daily
+	go func() {
+		now := time.Now()
+		next := time.Date(now.Year(), now.Month(), now.Day(), 2, 0, 0, 0, now.Location())
+		if !next.After(now) {
+			next = next.Add(24 * time.Hour)
+		}
+		time.Sleep(time.Until(next))
+		ticker := time.NewTicker(24 * time.Hour)
+		defer ticker.Stop()
+		ctx := context.Background()
+		if _, err := syncsvc.NewService(db).Run(ctx); err != nil {
+			slog.Error("mobonet_sync: scheduled run failed", "error", err)
+		}
+		for range ticker.C {
+			if _, err := syncsvc.NewService(db).Run(ctx); err != nil {
+				slog.Error("mobonet_sync: scheduled run failed", "error", err)
+			}
+		}
+	}()
 
 	// -----------------------------------------------------------------------
 	// Dependency Injection — Repositories

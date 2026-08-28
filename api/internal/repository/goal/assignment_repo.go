@@ -74,6 +74,7 @@ func (r *AssignmentRepo) ListGlobalGoalsByEmployee(ctx context.Context, empID uu
 		SELECT g.id, g.name, g.description, g.unit, g.direction, g.goal_kind, g.state,
 		       g.weight, g.target_value, g.current_value, a.weight, a.target_value, a.baseline_value
 		FROM goals g JOIN global_goal_assignments a ON a.goal_id = g.id
+		JOIN employees e ON e.id = a.employee_id AND e.is_active = true
 		WHERE g.type = 'global' AND a.employee_id = $1 ORDER BY g.created_at DESC`, empID)
 	if err != nil {
 		return nil, err
@@ -99,6 +100,7 @@ func (r *AssignmentRepo) ListSharedGoalsAsMember(ctx context.Context, empID uuid
 		       g.weight, g.target_value, g.current_value, m.weight, m.target_value, m.baseline_value
 		FROM goals g JOIN shared_goal_groups sg ON sg.goal_id = g.id
 		JOIN shared_goal_members m ON m.group_id = sg.id
+		JOIN employees e ON e.id = m.employee_id AND e.is_active = true
 		WHERE g.type = 'shared' AND m.employee_id = $1 ORDER BY g.created_at DESC`, empID)
 	if err != nil {
 		return nil, err
