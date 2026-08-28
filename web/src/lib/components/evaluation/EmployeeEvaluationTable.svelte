@@ -11,7 +11,8 @@
         getCompetenciesByPillar,
     } from "$lib/stores/competencyStore.svelte";
     import { getNodeById } from "$lib/stores/orgHierarchyStore.svelte";
-    import { getGoals, getAssignments } from "$lib/stores/goalsStore.svelte";
+    import { getGoals } from "$lib/stores/goalsStore.svelte";
+    import { getAssignmentStatus as getMisAssignmentStatus, getItems as getMisItems } from "$lib/stores/misEvaluadosStore.svelte";
     import PageSkeleton from "$lib/components/ui/PageSkeleton.svelte";
     import ErrorState from "$lib/components/ui/ErrorState.svelte";
     import { PROFILE_LABELS, PHASE_LABELS } from "$lib/types/evaluation";
@@ -20,7 +21,7 @@
     import type { EmployeeAssignment } from "$lib/types/goal";
     import type { Snippet } from "svelte";
     import { load as reloadRhEvaluados } from "$lib/stores/rhEvaluadosStore.svelte";
-    import { FileDown, ChevronRight, Pencil, Target } from "@lucide/svelte";
+    import { FileDown, ChevronRight, Pencil } from "@lucide/svelte";
     import { toCsv } from "$lib/utils/export";
     import ChangeDepartmentProfileModal from "./ChangeDepartmentProfileModal.svelte";
 
@@ -74,15 +75,41 @@
         pillars.flatMap((p) => getCompetenciesByPillar(p.id)),
     );
     const goals = $derived(getGoals());
-    const assignments = $derived(getAssignments());
 
-    function getAssignmentStatus(employeeId: string): 'borrador' | 'enviada' {
-        const a = assignments.find((x) => x.employeeId === employeeId) ?? employees.find((x) => x.employeeId === employeeId) as EmployeeAssignment | undefined;
-        return (a?.status as 'borrador' | 'enviada' | undefined) ?? 'borrador';
+    function getAssignmentStatus(employeeId: string): 'no_iniciado' | 'borrador' | 'enviada' {
+        // primary: misEvaluadosStore (evaluatees endpoint)
+        const misItems = getMisItems();
+        const hit = misItems.find((x) => x.id === employeeId) as unknown as { assignmentStatus?: string } | undefined;
+        if (hit?.assignmentStatus) {
+            const s = hit.assignmentStatus;
+            if (s === 'no_iniciado' || s === 'borrador' || s === 'enviada') return s;
+        }
+        // fallback via exported helper (covers empty array case)
+        const viaHelper = getMisAssignmentStatus(employeeId);
+        if (misItems.length > 0) return viaHelper;
+        // legacy fallback: employees prop may carry status
+        const a = employees.find((x) => x.employeeId === employeeId) as EmployeeAssignment | undefined;
+        const raw = a?.status as string | undefined;
+        if (raw === 'enviada' || raw === 'borrador' || raw === 'no_iniciado') return raw as 'no_iniciado' | 'borrador' | 'enviada';
+        return viaHelper;
+    }
+
+    function assignmentBadge(status: 'no_iniciado' | 'borrador' | 'enviada'): { label: string; cls: string } {
+        if (status === 'enviada') return { label: 'Enviada', cls: 'badge-success' };
+        if (status === 'borrador') return { label: 'Borrador', cls: 'badge-warning' };
+        return { label: 'No iniciado', cls: 'badge-ghost' };
     }
 
     function isDraftOrBeginning(rowId: string): boolean {
-        return currentPhase === 'inicio-anio' || getAssignmentStatus(rowId) === 'borrador';
+        const s = getAssignmentStatus(rowId)
+        return s === 'no_iniciado' || s === 'borrador'
+    }
+
+    function isFormulacionPhase(): boolean {
+        const p = getActivePhase();
+        if (!p) return false;
+        const s = p.toLowerCase();
+        return s.includes("formul") || s.includes("inicio") || s.includes("planea") || s.includes("asignacion");
     }
 
     const filteredEmployees = $derived(
@@ -274,6 +301,7 @@
                         {@const cr = competencyRatings?.get(row.id)}
                         {@const rowStatus = getAssignmentStatus(row.id)}
                         {@const isDraft = isDraftOrBeginning(row.id)}
+                        {@const _badge = assignmentBadge(rowStatus)}
                         <tr class="hover:bg-base-200">
                             <td>
                                 <div class="flex items-center gap-2.5">
@@ -300,8 +328,8 @@
                                 >
                             </td>
                             <td class="text-center">
-                                <span class="badge badge-sm {rowStatus === 'enviada' ? 'badge-success' : 'badge-warning'}">
-                                    {rowStatus === 'enviada' ? 'Enviada' : 'Borrador'}
+                                <span class="badge badge-sm {_badge.cls}">
+                                    {_badge.label}
                                 </span>
                             </td>
                             <td class="text-center">
@@ -349,14 +377,15 @@
                                             Cambiar
                                         </button>
                                     {/if}
-                                    <a
-                                        href={isDraft ? `/objetivos/asignacion?empId=${row.id}` : `/mis-evaluados/${row.id}/metas`}
-                                        class="btn btn-outline btn-xs gap-1"
-                                        title="Ver/Editar Metas"
-                                    >
-                                        <Target class="w-3.5 h-3.5" />
-                                        Metas
-                                    </a>
+                                    {#if isFormulacionPhase()}
+                                        <a
+                                            href={`/objetivos/asignacion?empId=${row.id}`}
+                                            class="btn btn-outline btn-xs gap-1"
+                                            title="Ver/Editar Metas"
+                                        >
+                                            Metas
+                                        </a>
+                                    {/if}
                                     <button
                                         type="button"
                                         class="btn btn-primary btn-xs"

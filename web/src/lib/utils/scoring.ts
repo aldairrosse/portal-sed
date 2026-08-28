@@ -89,3 +89,14 @@ export function formatDelta(
 	if (type === 'positive') return `+${delta}`;
 	return `${delta}`;
 }
+
+/**
+ * Hierarchical weighted score: personal * P/100 * PJ/100 with fallback 100.
+ * Mirrors backend scoring.HierarchicalScore.
+ */
+export function hierarchicalScore(personalScore: number, pWeight = 100, pjWeight = 100): number {
+	if (pWeight === 0) pWeight = 100;
+	if (pjWeight === 0) pjWeight = 100;
+	const r = personalScore * (pWeight / 100) * (pjWeight / 100);
+	return Math.min(Math.max(r, 0), 100);
+}

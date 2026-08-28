@@ -205,7 +205,7 @@ export interface paths {
         };
         /**
          * Get my evaluatees
-         * @description Returns direct reports (active only) for the given evaluator.
+         * @description Returns direct reports (active only) for the given evaluator. Each item includes assignment_status for the active cycle (or cycleId if provided).
          */
         get: operations["getMyEvaluatees"];
         put?: never;
@@ -433,6 +433,12 @@ export interface components {
             isActive?: boolean;
             profileName?: string;
             jobTitle?: string;
+            /**
+             * @description Estado de la asignación de metas para el ciclo solicitado/activo. no_iniciado = sin assignment row.
+             * @example borrador
+             * @enum {string}
+             */
+            assignmentStatus?: "no_iniciado" | "borrador" | "enviada";
         };
         EmployeeDetail: components["schemas"]["Employee"] & {
             orgNode?: {
@@ -964,7 +970,14 @@ export interface operations {
     };
     getMyEvaluatees: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Cycle to scope assignment_status. If absent, active cycle is used; if no active cycle, status is no_iniciado. */
+                cycleId?: string;
+                /** @description Search filter on name, email, employeeNumber */
+                q?: string;
+                limit?: number;
+                offset?: number;
+            };
             header?: never;
             path: {
                 empId: string;

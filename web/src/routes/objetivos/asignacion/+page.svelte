@@ -181,24 +181,18 @@
     const showAssigneePicker = $derived(isBoss);
 
     let selectedEmployeeId = $state("");
+    let lastHandledUrlEmpId = $state<string | null>(null);
 
     $effect(() => {
-        if (!selectedEmployeeId) {
-            const urlEmpId = $page.url.searchParams.get('empId');
-            if (urlEmpId) {
+        const urlEmpId = $page.url.searchParams.get("empId");
+        if (urlEmpId) {
+            if (urlEmpId !== lastHandledUrlEmpId) {
+                lastHandledUrlEmpId = urlEmpId;
                 selectedEmployeeId = urlEmpId;
                 loadForEmployee(urlEmpId);
-                return;
             }
+        } else if (!selectedEmployeeId) {
             selectedEmployeeId = viewerEmployeeId;
-        }
-    });
-
-    $effect(() => {
-        const urlEmpId = $page.url.searchParams.get('empId');
-        if (urlEmpId && urlEmpId !== selectedEmployeeId) {
-            selectedEmployeeId = urlEmpId;
-            loadForEmployee(urlEmpId);
         }
     });
 
@@ -328,9 +322,9 @@
     const institutionalGoals = $derived(getInstitutionalGoals());
     const allKpis = $derived(getKpis());
     const globalSum = $derived(
-        categories.reduce((sum, c) => sum + c.weight, 0) +
-        institutionalGoals.reduce((sum, g) => sum + g.weight, 0),
+        categories.reduce((sum, c) => sum + c.weight, 0),
     );
+    const institutionalSum = $derived(institutionalGoals.reduce((sum, g) => sum + g.weight, 0));
     const valid = $derived(isAssignmentValid());
 
     function institutionalProgress(goal: InstitutionalGoal): number {
@@ -376,6 +370,14 @@
 
     function handleAssigneeSelect(employeeId: string) {
         selectedEmployeeId = employeeId;
+        if ($page.url.searchParams.has("empId")) {
+            const url = new URL($page.url);
+            url.searchParams.delete("empId");
+            goto(url.pathname + (url.search ? url.search : ""), {
+                replaceState: true,
+                keepFocus: true,
+            });
+        }
         if (employeeId === viewerEmployeeId) {
             load();
         } else {
@@ -945,6 +947,8 @@
                         actionLabel="Nueva categoría"
                         onaction={startCreateCategory}
                     />
+                {:else if mode === "reader"}
+                    <p class="text-sm text-base-content/50">No hay metas cuantitativas registradas para este colaborador.</p>
                 {/if}
 
                 {#if creatingCategory && mode === "editor" && phase !== "medio-anio" && phase !== "fin-anio"}

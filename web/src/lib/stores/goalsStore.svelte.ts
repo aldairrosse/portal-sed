@@ -20,8 +20,16 @@ import { getActivePhase } from '$lib/api/cycle.svelte';
 import { getSession } from '$lib/api/session.svelte';
 import { client } from '$lib/api/client';
 import { getActiveCycle } from '$lib/stores/cycleStore.svelte';
-import { progressPercent } from '$lib/utils/scoring';
+import { progressPercent, hierarchicalScore } from '$lib/utils/scoring';
 import { SvelteDate, SvelteMap } from 'svelte/reactivity';
+
+// ─── Hierarchical weights G/P J/PJ (fallback 100 per #363/#364) ───────────────
+let cycleWeights = $state({ gWeight: 100, pWeight: 100 });
+let teamWeights = $state({ jWeight: 100, pjWeight: 100 });
+export function getCycleWeights() { return cycleWeights; }
+export function getTeamWeights() { return teamWeights; }
+export function setCycleWeights(g: number, p: number) { cycleWeights = { gWeight: g || 100, pWeight: p || 100 }; }
+export function setTeamWeights(j: number, pj: number) { teamWeights = { jWeight: j || 100, pjWeight: pj || 100 }; }
 
 // ─── Internal data shape ──────────────────────────────────────────────────────
 
@@ -53,6 +61,7 @@ class StoreState {
 export const storeState = new StoreState();
 
 let loadPromise: Promise<void> | null = null;
+let loadingEmpId: string | null = null;
 let lastLoadTime = 0;
 const FRESHNESS_MS = 500;
 
@@ -268,7 +277,7 @@ function normalizeApiData(
 		}
 	}
 
-	// 3. Build assignments
+	// 3. Build assignments — always produce one row; no_iniciado when no id
 	const assignments: EmployeeAssignment[] = [];
 	if (apiAssignment?.id) {
 		assignments.push({
@@ -282,6 +291,19 @@ function normalizeApiData(
 			submittedAt: apiAssignment.submitted_at ?? null,
 			createdAt: apiAssignment.created_at ?? new Date().toISOString(),
 			updatedAt: apiAssignment.created_at ?? new Date().toISOString()
+		});
+	} else {
+		assignments.push({
+			id: (apiAssignment?.id as string) ?? '',
+			employeeId: (apiAssignment?.employee_id as string) ?? '',
+			employeeName: '',
+			profileId: profileId as EvaluationProfile ?? 'colaborador',
+			managerId: null,
+			goalIds: assignedGoalIds,
+			status: 'no_iniciado',
+			submittedAt: (apiAssignment?.submitted_at as string | null) ?? null,
+			createdAt: (apiAssignment?.created_at as string) ?? new Date().toISOString(),
+			updatedAt: (apiAssignment?.created_at as string) ?? new Date().toISOString()
 		});
 	}
 
@@ -307,11 +329,13 @@ function normalizeApiData(
 export async function load(forceRefresh = false): Promise<void> {
 	if (loadPromise) return loadPromise;
 	if (!forceRefresh && storeState.data && Date.now() - lastLoadTime < FRESHNESS_MS) return;
+	loadingEmpId = getEmployeeId();
 	loadPromise = _doLoad();
 	try {
 		await loadPromise;
 	} finally {
 		loadPromise = null;
+		loadingEmpId = null;
 		lastLoadTime = Date.now();
 	}
 }
@@ -321,12 +345,24 @@ export async function load(forceRefresh = false): Promise<void> {
  * Bypasses the freshness guard to force a reload with different employee data.
  */
 export async function loadForEmployee(empId: string): Promise<void> {
-	if (loadPromise) return loadPromise;
+	if (loadPromise) {
+		if (loadingEmpId !== null && loadingEmpId !== empId) {
+			try {
+				await loadPromise;
+			} catch {
+				// ignore previous load error, proceed to load requested empId
+			}
+		} else {
+			return loadPromise;
+		}
+	}
+	loadingEmpId = empId;
 	loadPromise = _doLoad(empId);
 	try {
 		await loadPromise;
 	} finally {
 		loadPromise = null;
+		loadingEmpId = null;
 		lastLoadTime = Date.now();
 	}
 }
@@ -525,36 +561,32 @@ export function getCategoryProgressAverage(categoryId: string): number {
 
 /**
  * Calculate the weighted score for the current employee across all categories.
- *
- * Formula: Σ(cat.weight/100 × Σ(goal.weight/100 × progressPercent(goal)))
- *
- * Only goals with progress data are included in the calculation.
+ * Hierarchical: personal part scaled by P/100*PJ/100 with fallback 100 (#363).
+ * Formula: hierarchicalScore(Σ(cat.weight/100 × Σ(goal.weight/100 × progressPercent)), pWeight, pjWeight) + institutional
  */
 export function getWeightedScore(): number {
 	const cats = storeState.data?.categories ?? [];
 	const allGoals = storeState.data?.goals ?? [];
-	let total = 0;
+	let personalTotal = 0;
 
 	for (const cat of cats) {
 		const catGoals = allGoals.filter((g) => g.categoryId === cat.id);
 		const withProgress = catGoals.filter((g) => g.progress !== undefined);
 		if (withProgress.length === 0) continue;
-
 		const catGoalSum = withProgress.reduce((acc, g) => {
 			const pct = progressPercent(g.progress ?? 0, g.targetValue, g.baselineValue, g.direction);
 			return acc + (g.weight / 100) * pct;
 		}, 0);
-
-		total += (cat.weight / 100) * catGoalSum;
+		personalTotal += (cat.weight / 100) * catGoalSum;
 	}
-
+	const hierarchicalPersonal = hierarchicalScore(personalTotal, cycleWeights.pWeight, teamWeights.pjWeight);
+	let institutionalTotal = 0;
 	for (const goal of storeState.data?.institutionalGoals ?? []) {
 		if (goal.progressPercent !== undefined) {
-			total += (goal.weight / 100) * goal.progressPercent;
+			institutionalTotal += (goal.weight / 100) * goal.progressPercent;
 		}
 	}
-
-	return total;
+	return hierarchicalPersonal + institutionalTotal;
 }
 
 export function getGoalPermissions(
@@ -636,11 +668,10 @@ export function getAssignmentByEmployee(employeeId: string): EmployeeAssignment 
 // ─── Getters: Validation ──────────────────────────────────────────────────────
 
 /**
- * Sum of all category weights equals 100 ± ε.
+ * Sum of personal category weights equals 100 ± ε (institutional excluded per #363 hierarchical G/P).
  */
 function doCategoryWeightsSumTo100(): boolean {
-	const sum = (storeState.data?.categories ?? []).reduce((acc, c) => acc + c.weight, 0)
-		+ (storeState.data?.institutionalGoals ?? []).reduce((acc, g) => acc + g.weight, 0);
+	const sum = (storeState.data?.categories ?? []).reduce((acc, c) => acc + c.weight, 0);
 	return Math.abs(sum - 100) <= EPSILON;
 }
 

@@ -266,6 +266,148 @@ export interface paths {
         patch: operations["updateGoalProposal"];
         trace?: never;
     };
+    "/goals/global": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List global goals */
+        get: operations["listGlobalGoals"];
+        put?: never;
+        /** Create a global goal */
+        post: operations["createGlobalGoal"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/goals/global/{goalId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a global goal */
+        get: operations["getGlobalGoal"];
+        /** Update a global goal */
+        put: operations["updateGlobalGoal"];
+        post?: never;
+        /** Delete a global goal */
+        delete: operations["deleteGlobalGoal"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/goals/global/{goalId}/execute-rules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Execute mass assignment rules for a global goal */
+        post: operations["executeGlobalGoalRules"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/goals/shared": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List shared goals */
+        get: operations["listSharedGoals"];
+        put?: never;
+        /** Create a shared goal */
+        post: operations["createSharedGoal"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/goals/shared/{goalId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a shared goal */
+        get: operations["getSharedGoal"];
+        /** Update a shared goal */
+        put: operations["updateSharedGoal"];
+        post?: never;
+        /** Delete a shared goal */
+        delete: operations["deleteSharedGoal"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/goals/shared/{goalId}/members": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add a member to a shared goal */
+        post: operations["addSharedGoalMember"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/goals/shared/{goalId}/members/{employeeId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove a member from a shared goal */
+        delete: operations["removeSharedGoalMember"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/goals/shared/{goalId}/progress/{employeeId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Update progress for a shared goal member */
+        put: operations["updateSharedGoalMemberProgress"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/employees/{empId}/assignments": {
         parameters: {
             query?: never;
@@ -623,6 +765,16 @@ export interface components {
             expected_sum?: number;
             deficit?: number;
         };
+        /** @description Hierarchical L1 RH weights G+P=100 (fallback P=100) */
+        CycleWeights: {
+            g_weight: number;
+            p_weight: number;
+        };
+        /** @description Hierarchical L2 Jefe weights J+PJ=100 within P (fallback PJ=100) */
+        TeamWeights: {
+            j_weight: number;
+            pj_weight: number;
+        };
         CreateKpiRequest: {
             name: string;
             /** @enum {string} */
@@ -689,6 +841,206 @@ export interface components {
             /** @default 100 */
             default_target: number;
         };
+        CreateGlobalGoalRequest: {
+            name: string;
+            description?: string;
+            /** @enum {string} */
+            unit: "porcentaje" | "moneda" | "numero" | "binario";
+            weight: number;
+            target_value: number;
+            /**
+             * @default ascendente
+             * @enum {string}
+             */
+            direction: "ascendente" | "descendente";
+            baseline_value?: number | null;
+            goal_kind?: string;
+            /**
+             * Format: uuid
+             * @description Optional; global goals typically have no category.
+             */
+            category_id?: string | null;
+            assignments?: components["schemas"]["GlobalAssignmentRequest"][];
+            rules?: components["schemas"]["GlobalRuleRequest"][];
+        };
+        UpdateGlobalGoalRequest: {
+            name: string;
+            description?: string;
+            /** @enum {string} */
+            unit: "porcentaje" | "moneda" | "numero" | "binario";
+            weight: number;
+            target_value: number;
+            /**
+             * @default ascendente
+             * @enum {string}
+             */
+            direction: "ascendente" | "descendente";
+            baseline_value?: number | null;
+            goal_kind?: string;
+            /**
+             * Format: uuid
+             * @description Optional; global goals typically have no category.
+             */
+            category_id?: string | null;
+        };
+        GlobalAssignmentRequest: {
+            /** Format: uuid */
+            employee_id: string;
+            weight: number;
+            target_value: number;
+            baseline_value?: number | null;
+        };
+        GlobalRuleRequest: {
+            /** @enum {string} */
+            rule_type: "department" | "min_direct_reports" | "role";
+            /** Format: uuid */
+            department_id?: string | null;
+            min_direct_reports?: number | null;
+            /** Format: uuid */
+            profile_id?: string | null;
+            default_weight: number;
+            default_target: number;
+        };
+        GlobalGoalResponse: {
+            /** Format: uuid */
+            id?: string;
+            name?: string;
+            description?: string;
+            unit?: string;
+            direction?: string;
+            weight?: number;
+            target_value?: number;
+            current_value?: number;
+            goal_kind?: string;
+            state?: string;
+            /** Format: uuid */
+            created_by?: string;
+            /** Format: date-time */
+            created_at?: string;
+            /** Format: date-time */
+            updated_at?: string;
+            assignments?: components["schemas"]["GlobalAssignmentResponse"][];
+            rules?: components["schemas"]["GlobalRule"][];
+        };
+        GlobalAssignmentResponse: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            goal_id?: string;
+            /** Format: uuid */
+            employee_id?: string;
+            weight?: number;
+            target_value?: number;
+            baseline_value?: number | null;
+        };
+        GlobalGoalListResponse: {
+            items?: components["schemas"]["GlobalGoalResponse"][];
+        };
+        CreateSharedGoalRequest: {
+            name: string;
+            description?: string;
+            /** @enum {string} */
+            unit: "porcentaje" | "moneda" | "numero" | "binario";
+            weight: number;
+            target_value: number;
+            /**
+             * @default ascendente
+             * @enum {string}
+             */
+            direction: "ascendente" | "descendente";
+            baseline_value?: number | null;
+            goal_kind?: string;
+            /**
+             * Format: uuid
+             * @description Optional; shared goals typically have no category.
+             */
+            category_id?: string | null;
+            group_name: string;
+            group_description?: string;
+            members?: components["schemas"]["SharedMemberRequest"][];
+        };
+        UpdateSharedGoalRequest: {
+            name: string;
+            description?: string;
+            /** @enum {string} */
+            unit: "porcentaje" | "moneda" | "numero" | "binario";
+            weight: number;
+            target_value: number;
+            /**
+             * @default ascendente
+             * @enum {string}
+             */
+            direction: "ascendente" | "descendente";
+            baseline_value?: number | null;
+            goal_kind?: string;
+            /**
+             * Format: uuid
+             * @description Optional; shared goals typically have no category.
+             */
+            category_id?: string | null;
+        };
+        SharedMemberRequest: {
+            /** Format: uuid */
+            employee_id: string;
+            weight: number;
+            target_value: number;
+            baseline_value?: number | null;
+        };
+        AddMemberRequest: {
+            /** Format: uuid */
+            employee_id: string;
+            weight: number;
+            target_value: number;
+            baseline_value?: number | null;
+        };
+        UpdateMemberProgressRequest: {
+            current_value: number;
+        };
+        SharedGoalResponse: {
+            /** Format: uuid */
+            id?: string;
+            name?: string;
+            description?: string;
+            unit?: string;
+            direction?: string;
+            weight?: number;
+            target_value?: number;
+            current_value?: number;
+            goal_kind?: string;
+            state?: string;
+            /** Format: uuid */
+            created_by?: string;
+            /** Format: date-time */
+            created_at?: string;
+            /** Format: date-time */
+            updated_at?: string;
+            group?: components["schemas"]["SharedGroupResponse"];
+            members?: components["schemas"]["SharedMemberResponse"][];
+        };
+        SharedGroupResponse: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            goal_id?: string;
+            /** Format: uuid */
+            created_by?: string;
+            name?: string;
+            description?: string;
+        };
+        SharedMemberResponse: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            group_id?: string;
+            /** Format: uuid */
+            employee_id?: string;
+            weight?: number;
+            target_value?: number;
+            baseline_value?: number | null;
+        };
+        SharedGoalListResponse: {
+            items?: components["schemas"]["SharedGoalResponse"][];
+        };
         AssignmentResponse: {
             /** Format: uuid */
             id?: string;
@@ -696,6 +1048,16 @@ export interface components {
             employee_id?: string;
             /** Format: uuid */
             cycle_id?: string;
+            /**
+             * @description Estado actual de la asignación de metas
+             * @enum {string}
+             */
+            status?: "borrador" | "enviada";
+            /**
+             * Format: date-time
+             * @description Fecha y hora en que la asignación fue enviada formalmente
+             */
+            submitted_at?: string | null;
             categories?: components["schemas"]["CategoryResponse"][];
             global_goals?: components["schemas"]["AssignedGoalResponse"][];
             shared_goals?: components["schemas"]["AssignedGoalResponse"][];
@@ -902,6 +1264,7 @@ export interface components {
         EmpId: string;
         CatId: string;
         GoalId: string;
+        EmployeeId: string;
         AssignmentId: string;
         KpiId: string;
         PropId: string;
@@ -1444,6 +1807,346 @@ export interface operations {
             };
             400: components["responses"]["InvalidRequest"];
             403: components["responses"]["PhaseRestricted"];
+            404: components["responses"]["GoalNotFound"];
+        };
+    };
+    listGlobalGoals: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of global goals */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GlobalGoalListResponse"];
+                };
+            };
+            429: components["responses"]["RateLimit"];
+        };
+    };
+    createGlobalGoal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateGlobalGoalRequest"];
+            };
+        };
+        responses: {
+            /** @description Created global goal */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GlobalGoalResponse"];
+                };
+            };
+            400: components["responses"]["InvalidGoalRequest"];
+            429: components["responses"]["RateLimit"];
+        };
+    };
+    getGlobalGoal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                goalId: components["parameters"]["GoalId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Global goal detail */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GlobalGoalResponse"];
+                };
+            };
+            404: components["responses"]["GoalNotFound"];
+        };
+    };
+    updateGlobalGoal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                goalId: components["parameters"]["GoalId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateGlobalGoalRequest"];
+            };
+        };
+        responses: {
+            /** @description Updated global goal */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GlobalGoalResponse"];
+                };
+            };
+            400: components["responses"]["InvalidGoalRequest"];
+            404: components["responses"]["GoalNotFound"];
+        };
+    };
+    deleteGlobalGoal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                goalId: components["parameters"]["GoalId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Global goal deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            404: components["responses"]["GoalNotFound"];
+        };
+    };
+    executeGlobalGoalRules: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                goalId: components["parameters"]["GoalId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Assignment result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        assigned?: number;
+                    };
+                };
+            };
+            404: components["responses"]["GoalNotFound"];
+        };
+    };
+    listSharedGoals: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of shared goals */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SharedGoalListResponse"];
+                };
+            };
+            429: components["responses"]["RateLimit"];
+        };
+    };
+    createSharedGoal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateSharedGoalRequest"];
+            };
+        };
+        responses: {
+            /** @description Created shared goal */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SharedGoalResponse"];
+                };
+            };
+            400: components["responses"]["InvalidGoalRequest"];
+            429: components["responses"]["RateLimit"];
+        };
+    };
+    getSharedGoal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                goalId: components["parameters"]["GoalId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Shared goal detail */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SharedGoalResponse"];
+                };
+            };
+            404: components["responses"]["GoalNotFound"];
+        };
+    };
+    updateSharedGoal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                goalId: components["parameters"]["GoalId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateSharedGoalRequest"];
+            };
+        };
+        responses: {
+            /** @description Updated shared goal */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SharedGoalResponse"];
+                };
+            };
+            400: components["responses"]["InvalidGoalRequest"];
+            404: components["responses"]["GoalNotFound"];
+        };
+    };
+    deleteSharedGoal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                goalId: components["parameters"]["GoalId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Shared goal deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            404: components["responses"]["GoalNotFound"];
+        };
+    };
+    addSharedGoalMember: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                goalId: components["parameters"]["GoalId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddMemberRequest"];
+            };
+        };
+        responses: {
+            /** @description Member added */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SharedMemberResponse"];
+                };
+            };
+            400: components["responses"]["InvalidRequest"];
+            404: components["responses"]["GoalNotFound"];
+        };
+    };
+    removeSharedGoalMember: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                goalId: components["parameters"]["GoalId"];
+                employeeId: components["parameters"]["EmployeeId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Member removed */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            404: components["responses"]["GoalNotFound"];
+        };
+    };
+    updateSharedGoalMemberProgress: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                goalId: components["parameters"]["GoalId"];
+                employeeId: components["parameters"]["EmployeeId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateMemberProgressRequest"];
+            };
+        };
+        responses: {
+            /** @description Progress updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["InvalidRequest"];
             404: components["responses"]["GoalNotFound"];
         };
     };

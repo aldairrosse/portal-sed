@@ -97,6 +97,8 @@ export interface GoalKpiLink {
 
 // ─── EmployeeAssignment ────────────────────────────────────────────────────────
 
+export type AssignmentStatus = 'no_iniciado' | 'borrador' | 'enviada';
+
 export interface EmployeeAssignment {
 	// Assignment ID (not the cycle id) - the active cycle is resolved server-side / via cycleStore.
 	id: string;
@@ -106,7 +108,7 @@ export interface EmployeeAssignment {
 	profileId: EvaluationProfile;
 	managerId: string | null;
 	goalIds: string[];
-	status?: 'borrador' | 'enviada';
+	status?: AssignmentStatus;
 	submittedAt?: string | null;
 	createdAt: string;
 	updatedAt: string;

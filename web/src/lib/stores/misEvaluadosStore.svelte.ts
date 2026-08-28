@@ -1,5 +1,7 @@
 import { client } from '$lib/api/client';
 
+export type AssignmentStatus = 'no_iniciado' | 'borrador' | 'enviada';
+
 // ponytail: remove when OpenAPI schema includes profileName/jobTitle
 interface EmployeeListItemExtended {
 	id: string;
@@ -14,6 +16,17 @@ interface EmployeeListItemExtended {
 	jobTitle?: string;
 	profileDescription?: string;
 	isActive: boolean;
+	assignmentStatus: AssignmentStatus;
+	assignmentId?: string;
+}
+
+function normalizeAssignmentStatus(raw: unknown): AssignmentStatus {
+	return raw === 'enviada' || raw === 'borrador' || raw === 'no_iniciado' ? raw : 'no_iniciado';
+}
+
+export function getAssignmentStatus(employeeId: string): AssignmentStatus {
+	const item = items.find((x) => x.id === employeeId);
+	return item?.assignmentStatus ?? 'no_iniciado';
 }
 
 // ─── Reactive state ──────────────────────────────────────────────────────────────
@@ -81,11 +94,18 @@ export async function load(): Promise<void> {
 		}
 
 		const body = res.data as {
-			data?: EmployeeListItemExtended[];
+			data?: Array<Record<string, unknown>>;
 			meta?: { hasMore?: boolean; total?: number };
 		};
 
-		items = body.data ?? [];
+		items = (body.data ?? []).map((raw) => {
+			const r = raw as Record<string, unknown> & EmployeeListItemExtended & { assignment_status?: unknown; assignmentStatus?: unknown; assignment_id?: unknown; assignmentId?: unknown };
+			return {
+				...r,
+				assignmentStatus: normalizeAssignmentStatus(r.assignmentStatus ?? r.assignment_status),
+				assignmentId: (r.assignmentId ?? r.assignment_id ?? undefined) as string | undefined
+			} as EmployeeListItemExtended;
+		});
 		hasMore = body.meta?.hasMore ?? false;
 		hasPrev = currentPage > 0;
 		apiTotal = body.meta?.total ?? 0;
