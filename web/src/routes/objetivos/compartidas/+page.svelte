@@ -9,6 +9,8 @@
     import { getActivePhase } from '$lib/api/cycle.svelte';
     import ConfirmDialog from '$lib/components/ui/ConfirmDialog.svelte';
     import { humanizeError } from '$lib/utils/error';
+    import { getTeamWeightConfig, saveTeamWeightConfig } from '$lib/api/weightConfig';
+    import { getSession } from '$lib/api/session.svelte';
 
     const profile = $derived(getProfile());
     const allowedProfiles = ['jefe', 'director', 'director-general'];
@@ -26,12 +28,40 @@
             : 'Se eliminarán las asignaciones y reglas asociadas y luego la meta. ¿Continuar?'
     );
 
+    let jWeight = $state(0);
+    let jSaving = $state(false);
+    let jError = $state('');
+    let jTimer: ReturnType<typeof setTimeout> | null = null;
+
     onMount(() => {
         loadGoals();
+        loadTeamWeight();
         if (!allowedProfiles.includes(profile)) {
             goto('/');
         }
     });
+    async function loadTeamWeight() {
+        try {
+            const teamId = getSession().user?.orgNodeId ?? undefined;
+            const w = await getTeamWeightConfig(teamId);
+            jWeight = w.j_weight ?? 0;
+        } catch {}
+    }
+    function onJInput(e: Event) {
+        const v = Number((e.target as HTMLInputElement).value);
+        jWeight = Math.min(100, Math.max(0, isNaN(v) ? 0 : v));
+        if (jTimer) clearTimeout(jTimer);
+        jTimer = setTimeout(saveJWeight, 600);
+    }
+    async function saveJWeight() {
+        if (jTimer) { clearTimeout(jTimer); jTimer = null; }
+        jSaving = true; jError='';
+        try {
+            const teamId = getSession().user?.orgNodeId ?? undefined;
+            const w = await saveTeamWeightConfig(jWeight, teamId);
+            jWeight = w.j_weight;
+        } catch (e) { jError = humanizeError(e, 'Error al guardar ponderación'); } finally { jSaving=false; }
+    }
 
     async function loadGoals() {
         try {
@@ -178,10 +208,26 @@
             <Loader2 class="w-8 h-8 animate-spin text-secondary" />
         </div>
     {:else}
+        <div class="bg-base-100 border border-base-300 rounded-lg p-4 mb-4">
+            <h2 class="text-sm font-semibold mb-2">Ponderación de grupo</h2>
+            <p class="text-xs text-base-content/60 mb-3">Jefe edita Grupo; Personal = 100 − Grupo se calcula automáticamente.</p>
+            {#if jError}<p class="text-xs text-error mb-2">{jError}</p>{/if}
+            <div class="flex items-end gap-4">
+                <label class="form-control w-28">
+                    <span class="label-text text-xs">Grupo</span>
+                    <input type="number" class="input input-bordered input-sm" min={0} max={100} value={jWeight} oninput={onJInput} aria-label="Grupo" />
+                </label>
+                <label class="form-control w-28">
+                    <span class="label-text text-xs">Personal</span>
+                    <input type="number" class="input input-bordered input-sm" value={100 - jWeight} readonly aria-label="Personal" />
+                </label>
+                {#if jSaving}<span class="text-xs text-base-content/50">Guardando…</span>{/if}
+            </div>
+        </div>
         <div class="bg-base-200 rounded-lg p-4 mb-6">
             <div class="flex items-center justify-between mb-2">
-                <span class="text-sm font-medium">Progreso global</span>
-                <span class="text-sm font-semibold">{Math.round(totalSum)}%</span>
+                <span class="text-sm font-medium">Progreso compartidas</span>
+                <span class="text-sm font-semibold">{jWeight}%</span>
             </div>
             <ProgressIndicator value={weightedProgress} wide />
         </div>

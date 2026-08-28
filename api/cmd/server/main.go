@@ -35,6 +35,7 @@ import (
 	repoeval "github.com/sed-evaluacion-desempeno/api/internal/repository/evaluation"
 	repogoal "github.com/sed-evaluacion-desempeno/api/internal/repository/goal"
 	repoorganization "github.com/sed-evaluacion-desempeno/api/internal/repository/org"
+	repoweight "github.com/sed-evaluacion-desempeno/api/internal/repository/weight"
 
 	// Services
 	activitysvc "github.com/sed-evaluacion-desempeno/api/internal/service/activity"
@@ -44,6 +45,7 @@ import (
 	goalsvc "github.com/sed-evaluacion-desempeno/api/internal/service/goal"
 	notifypkg "github.com/sed-evaluacion-desempeno/api/internal/service/notify"
 	orgsvc "github.com/sed-evaluacion-desempeno/api/internal/service/org"
+	weightsvc "github.com/sed-evaluacion-desempeno/api/internal/service/weight"
 
 	// Handlers
 	activityhandler "github.com/sed-evaluacion-desempeno/api/internal/handler/activity"
@@ -54,6 +56,7 @@ import (
 	evalhandler "github.com/sed-evaluacion-desempeno/api/internal/handler/evaluation"
 	goalhandler "github.com/sed-evaluacion-desempeno/api/internal/handler/goal"
 	orghandler "github.com/sed-evaluacion-desempeno/api/internal/handler/org"
+	weighthandler "github.com/sed-evaluacion-desempeno/api/internal/handler/weight"
 
 	// Middleware
 	"github.com/sed-evaluacion-desempeno/api/internal/middleware"
@@ -303,7 +306,9 @@ func main() {
 	goalSvc := goalsvc.NewGoalService(goalRepo, catRepo, kpiRepo, linkRepo, weightQ, phaseCheck)
 	progressSvc := goalsvc.NewProgressService(goalRepo, catRepo, phaseCheck)
 	kpiSvc := goalsvc.NewKPIService(kpiRepo, linkRepo, goalRepo, catRepo, phaseCheck, orgNodeRepo, orgTreeRepo, employeeRepo)
-	scoringSvc := goalsvc.NewScoringService(catRepo, goalRepo)
+	weightRepo := repoweight.NewRepo(client, db)
+	hierarchicalWeightSvc := weightsvc.NewService(weightRepo, cycleRepo, db)
+	scoringSvc := goalsvc.NewScoringService(catRepo, goalRepo).WithWeightResolver(hierarchicalWeightSvc)
 	weightSvc := goalsvc.NewWeightValidationService(catRepo, goalRepo)
 	batchSvc := goalsvc.NewBatchService(goalRepo, catRepo, kpiRepo, linkRepo, weightQ, phaseCheck)
 	proposalSvc := goalsvc.NewGoalProposalService(proposalRepo, goalRepo, catRepo, linkRepo, weightQ, phaseCheck, db)
@@ -353,6 +358,7 @@ func main() {
 	commentChangeH := commentchangehandler.NewHandler(db, notifypkg.NoopSender{})
 	globalGoalH := goalhandler.NewGlobalGoalHandler(globalGoalSvc)
 	sharedGoalH := goalhandler.NewSharedGoalHandler(sharedGoalSvc)
+	weightH := weighthandler.NewHandler(hierarchicalWeightSvc)
 
 	// -----------------------------------------------------------------------
 	// Router
@@ -399,6 +405,7 @@ func main() {
 		})
 	})
 	commentchangehandler.RegisterRoutes(apiV1, commentChangeH, authSvc)
+	weighthandler.RegisterRoutes(apiV1, weightH, authSvc)
 	activityhandler.RegisterActivityRoutes(apiV1, activityH, authSvc)
 	r.Mount("/api/v1", apiV1)
 	if os.Getenv("ENV") == "development" || os.Getenv("APP_ENV") == "development" {

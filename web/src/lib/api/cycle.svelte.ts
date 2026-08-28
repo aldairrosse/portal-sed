@@ -25,6 +25,7 @@ function mapApiPhase(apiPhase: string): CyclePhase {
 
 let activePhase = $state<CyclePhase | null>(null);
 let activeCycleYear = $state<number | null>(null)
+let activeCycleId = $state<string | null>(null);
 let loading = $state(true);
 let error = $state<string | null>(null);
 
@@ -46,19 +47,22 @@ export async function loadCycle(): Promise<void> {
 		if (apiError) {
 			throw new Error(typeof apiError === 'string' ? apiError : 'Error al cargar ciclo');
 		}
-		const raw = data as { data?: Array<{ current_phase?: string; year?: number }> };
+		const raw = data as { data?: Array<{ id?: string; current_phase?: string; year?: number }> };
 		const cycles = raw?.data ?? [];
 		if (cycles.length > 0) {
 			activePhase = mapApiPhase(cycles[0].current_phase ?? '');
 			const y = (cycles[0] as { year?: number }).year
 			activeCycleYear = typeof y === 'number' && Number.isFinite(y) ? y : null
+			activeCycleId = (cycles[0] as { id?: string }).id ?? null
 		} else {
 			activeCycleYear = null
+			activeCycleId = null
 		}
 	} catch (e) {
 		error = e instanceof Error ? e.message : 'Error al cargar ciclo';
 		activePhase = null;
 		activeCycleYear = null
+		activeCycleId = null
 	} finally {
 		loading = false;
 	}
@@ -70,6 +74,10 @@ export function getActivePhase(): CyclePhase | null {
 
 export function getActiveCycleYear(): number | null {
 	return activeCycleYear
+}
+
+export function getActiveCycleId(): string | null {
+	return activeCycleId
 }
 
 export function getCycleState(): CycleState {

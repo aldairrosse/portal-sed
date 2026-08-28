@@ -242,6 +242,97 @@ paths:
                 $ref: '#/components/schemas/WeightValidationResponse'
 
   # ============================================================================
+  # Hierarchical Weights (G%/P% and J%/PJ%)
+  # ============================================================================
+  /weights/cycle-config:
+    get:
+      operationId: getCycleWeightConfig
+      summary: Get hierarchical cycle weights G% / P% for active cycle
+      responses:
+        '200':
+          description: Cycle weights
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CycleWeightConfig'
+    put:
+      operationId: putCycleWeightConfig
+      summary: Save hierarchical cycle weights G% (P = 100 - G) for active cycle
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                g_weight:
+                  type: number
+                  minimum: 0
+                  maximum: 100
+                g:
+                  type: number
+                  minimum: 0
+                  maximum: 100
+      responses:
+        '200':
+          description: Updated cycle weights
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CycleWeightConfig'
+
+  /weights/team-config:
+    get:
+      operationId: getTeamWeightConfig
+      summary: Get hierarchical team weights J% / PJ% for active cycle and team
+      parameters:
+        - name: team_id
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Team weights
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeamWeightConfig'
+    put:
+      operationId: putTeamWeightConfig
+      summary: Save hierarchical team weights J% (PJ = 100 - J) for active cycle and team
+      parameters:
+        - name: team_id
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                j_weight:
+                  type: number
+                  minimum: 0
+                  maximum: 100
+                j:
+                  type: number
+                  minimum: 0
+                  maximum: 100
+      responses:
+        '200':
+          description: Updated team weights
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeamWeightConfig'
+
+  # ============================================================================
   # KPIs
   # ============================================================================
   /kpis:
@@ -1517,6 +1608,11 @@ components:
           maximum: 100
       required: [g_weight, p_weight]
 
+    CycleWeightConfig:
+      allOf:
+        - $ref: '#/components/schemas/CycleWeights'
+        - description: Alias for CycleWeights (G + P = 100)
+
     TeamWeights:
       type: object
       description: Hierarchical L2 Jefe weights J+PJ=100 within P (fallback PJ=100)
@@ -1530,6 +1626,11 @@ components:
           minimum: 0
           maximum: 100
       required: [j_weight, pj_weight]
+
+    TeamWeightConfig:
+      allOf:
+        - $ref: '#/components/schemas/TeamWeights'
+        - description: Alias for TeamWeights (J + PJ = 100)
 
     # ============================================================================
     # KPI Schemas

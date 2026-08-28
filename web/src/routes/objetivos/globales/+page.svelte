@@ -9,6 +9,7 @@
     import GlobalGoalCreateForm from '$lib/components/goals/GlobalGoalCreateForm.svelte';
     import ConfirmDialog from '$lib/components/ui/ConfirmDialog.svelte';
     import { humanizeError } from '$lib/utils/error';
+    import { getCycleWeightConfig, saveCycleWeightConfig } from '$lib/api/weightConfig';
 
     const profile = $derived(getProfile());
 
@@ -30,13 +31,47 @@
             : 'Se eliminarán las asignaciones y reglas asociadas y luego la meta. ¿Continuar?'
     );
 
+    let gWeight = $state(0);
+    let weightSaving = $state(false);
+    let weightError = $state('');
+    let weightTimer: ReturnType<typeof setTimeout> | null = null;
+
     onMount(() => {
         if (profile !== 'rh') {
             goto('/');
             return;
         }
         loadGoals();
+        loadWeight();
     });
+
+    async function loadWeight() {
+        try {
+            const w = await getCycleWeightConfig();
+            gWeight = w.g_weight ?? 0;
+        } catch {
+            // fallback P=100 already
+        }
+    }
+    function onGInput(e: Event) {
+        const v = Number((e.target as HTMLInputElement).value);
+        gWeight = Math.min(100, Math.max(0, isNaN(v) ? 0 : v));
+        if (weightTimer) clearTimeout(weightTimer);
+        weightTimer = setTimeout(saveWeight, 600);
+    }
+    async function saveWeight() {
+        if (weightTimer) { clearTimeout(weightTimer); weightTimer = null; }
+        weightSaving = true;
+        weightError = '';
+        try {
+            const w = await saveCycleWeightConfig(gWeight);
+            gWeight = w.g_weight;
+        } catch (e) {
+            weightError = humanizeError(e, 'Error al guardar ponderación');
+        } finally {
+            weightSaving = false;
+        }
+    }
 
     async function loadGoals() {
         try {
@@ -174,10 +209,26 @@
             <Loader2 class="w-8 h-8 animate-spin text-primary" />
         </div>
     {:else}
+        <div class="bg-base-100 border border-base-300 rounded-lg p-4 mb-4">
+            <h2 class="text-sm font-semibold mb-2">Ponderación institucional</h2>
+            <p class="text-xs text-base-content/60 mb-3">RH edita Global; Personal = 100 − Global se calcula automáticamente.</p>
+            {#if weightError}<p class="text-xs text-error mb-2">{weightError}</p>{/if}
+            <div class="flex items-end gap-4">
+                <label class="form-control w-28">
+                    <span class="label-text text-xs">Global</span>
+                    <input type="number" class="input input-bordered input-sm" min={0} max={100} value={gWeight} oninput={onGInput} aria-label="Global" />
+                </label>
+                <label class="form-control w-28">
+                    <span class="label-text text-xs">Personal</span>
+                    <input type="number" class="input input-bordered input-sm" value={100 - gWeight} readonly aria-label="Personal" />
+                </label>
+                {#if weightSaving}<span class="text-xs text-base-content/50">Guardando…</span>{/if}
+            </div>
+        </div>
         <div class="bg-base-200 rounded-lg p-4 mb-6">
             <div class="flex items-center justify-between mb-2">
                 <span class="text-sm font-medium">Progreso global</span>
-                <span class="text-sm font-semibold">{Math.round(totalSum)}%</span>
+                <span class="text-sm font-semibold">{gWeight}%</span>
             </div>
             <ProgressIndicator value={weightedProgress} wide />
         </div>

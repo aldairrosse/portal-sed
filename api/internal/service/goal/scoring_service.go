@@ -7,10 +7,16 @@ import (
 	"github.com/sed-evaluacion-desempeno/api/internal/pkg/scoring"
 )
 
+// WeightResolver resolves hierarchical P/PJ weights for an employee.
+type WeightResolver interface {
+	GetEmployeeHierarchicalWeights(ctx context.Context, empID uuid.UUID) (float64, float64)
+}
+
 // ScoringService handles employee score calculation.
 type ScoringService struct {
-	catRepo  CategoryRepository
-	goalRepo GoalRepository
+	catRepo     CategoryRepository
+	goalRepo    GoalRepository
+	weightSvc   WeightResolver
 }
 
 // NewScoringService creates a new ScoringService.
@@ -22,6 +28,12 @@ func NewScoringService(
 		catRepo:  catRepo,
 		goalRepo: goalRepo,
 	}
+}
+
+// WithWeightResolver injects the hierarchical weight resolver.
+func (s *ScoringService) WithWeightResolver(w WeightResolver) *ScoringService {
+	s.weightSvc = w
+	return s
 }
 
 // GetEmployeeScore calculates the overall weighted score for an employee.
@@ -59,9 +71,9 @@ func (s *ScoringService) GetEmployeeScore(ctx context.Context, empID uuid.UUID) 
 	}
 
 	personalScore := scoring.EmployeeScore(catScores)
-	// Hierarchical G/P J/PJ: fetch weights with fallback 100 when no cycle/team config
-	// TODO: wire CycleConfig/TeamWeightConfig lookup once cycle/team resolvers available
 	pWeight, pjWeight := 100.0, 100.0
-	_ = ctx // placeholder for future config fetch
+	if s.weightSvc != nil {
+		pWeight, pjWeight = s.weightSvc.GetEmployeeHierarchicalWeights(ctx, empID)
+	}
 	return scoring.HierarchicalScore(personalScore, pWeight, pjWeight), nil
 }
