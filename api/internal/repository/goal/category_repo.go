@@ -4,6 +4,8 @@ package goal
 import (
 	"context"
 	"database/sql"
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -163,6 +165,36 @@ func (r *CategoryRepo) GetCategory(ctx context.Context, catID uuid.UUID) (*Categ
 		cat.PillarID = &u
 	}
 	return &cat, nil
+}
+
+// BatchCountByEmployeeIDs returns employee_id -> category count in a single query.
+// ponytail: goal_categories sin cycle_id => conteo cross-ciclo; válido por ahora, filtrar por ciclo cuando columna exista.
+func (r *CategoryRepo) BatchCountByEmployeeIDs(ctx context.Context, empIDs []uuid.UUID) (map[uuid.UUID]int, error) {
+	if len(empIDs) == 0 {
+		return map[uuid.UUID]int{}, nil
+	}
+	placeholders := make([]string, len(empIDs))
+	args := make([]interface{}, len(empIDs))
+	for i, id := range empIDs {
+		placeholders[i] = fmt.Sprintf("$%d", i+1)
+		args[i] = id
+	}
+	query := fmt.Sprintf(`SELECT employee_id, count(*) FROM goal_categories WHERE employee_id IN (%s) GROUP BY employee_id`, strings.Join(placeholders, ","))
+	rows, err := r.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	m := make(map[uuid.UUID]int, len(empIDs))
+	for rows.Next() {
+		var eid uuid.UUID
+		var cnt int
+		if err := rows.Scan(&eid, &cnt); err != nil {
+			return nil, err
+		}
+		m[eid] = cnt
+	}
+	return m, rows.Err()
 }
 
 // LockCategory acquires a SELECT FOR UPDATE lock on a category row.
