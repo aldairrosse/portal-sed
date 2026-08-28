@@ -550,13 +550,20 @@ export function getGoalComments(goalId: string): GoalComment[] {
 export function getCategoryProgressAverage(categoryId: string): number {
 	const catGoals = (storeState.data?.goals ?? []).filter((g) => g.categoryId === categoryId);
 	if (catGoals.length === 0) return 0;
-	const withProgress = catGoals.filter((g) => g.progress !== undefined);
-	if (withProgress.length === 0) return 0;
-	const total = withProgress.reduce((acc, g) => {
+	// Weighted average within category: Σ(weight/100 * pct) — goals without progress count as 0
+	const cat = (storeState.data?.categories ?? []).find((c) => c.id === categoryId);
+	const catWeight = cat?.weight ?? 0;
+	if (catWeight === 0) return 0;
+	const totalWeight = catGoals.reduce((s, g) => s + g.weight, 0);
+	if (totalWeight === 0) return 0;
+	const weighted = catGoals.reduce((acc, g) => {
 		const pct = progressPercent(g.progress ?? 0, g.targetValue, g.baselineValue, g.direction);
-		return acc + pct;
+		// if progress undefined, pct is 0 (via progress 0) — counts as 0% contribution, not excluded
+		return acc + (g.weight / 100) * pct;
 	}, 0);
-	return total / withProgress.length;
+	// normalize by category's internal weight distribution (if goals sum !=100, scale)
+	const goalWeightSum = totalWeight / 100;
+	return goalWeightSum > 0 ? weighted / goalWeightSum : 0;
 }
 
 /**

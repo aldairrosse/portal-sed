@@ -11,6 +11,7 @@
     import { humanizeError } from '$lib/utils/error';
     import { getTeamWeightConfig, saveTeamWeightConfig } from '$lib/api/weightConfig';
     import { getSession } from '$lib/api/session.svelte';
+    import { progressPercent as calcProgress } from '$lib/utils/scoring';
 
     const profile = $derived(getProfile());
     const allowedProfiles = ['jefe', 'director', 'director-general'];
@@ -159,23 +160,22 @@
     const totalSum = $derived(qualitativeSum + quantitativeSum);
 
     const weightedProgress = $derived((() => {
-        const totalWeight = goals.reduce((s, g) => s + g.weight, 0);
-        if (totalWeight === 0) return 0;
-        return Math.min(100, Math.max(0, goals.reduce((s, g) => s + progressPercent(g) * g.weight, 0) / totalWeight));
+        return Math.min(100, Math.max(0, goals.reduce((s, g) => s + progressPercent(g) * g.weight, 0) / 100));
     })());
 
+    const displayProgress = $derived(phase === 'inicio-anio' ? totalSum : weightedProgress);
+
     function progressPercent(goal: { current_value: number; target_value: number; baseline_value?: number | null; direction: string }): number {
-        const current = goal.current_value ?? 0;
-        const target = goal.target_value;
-        const baseline = goal.baseline_value ?? 0;
-        if (goal.direction === 'descendente') {
-            if (baseline === target) return 0;
-            const pct = ((baseline - current) / (baseline - target)) * 100;
-            return Math.min(100, Math.max(0, pct));
-        }
-        if (target === 0) return 0;
-        return Math.min(100, Math.max(0, (current / target) * 100));
+        return calcProgress(goal.current_value ?? 0, goal.target_value, goal.baseline_value ?? undefined, goal.direction as 'ascendente' | 'descendente');
     }
+
+    const isWeightValid = $derived(Math.abs(totalSum - 100) < 0.01 || goals.length === 0);
+    const isOverWeight = $derived(totalSum > 100.01);
+    const barColor = $derived(
+        phase === 'inicio-anio'
+            ? isOverWeight ? 'error' as const : isWeightValid ? 'success' as const : 'warning' as const
+            : undefined
+    );
 
     function formatTarget(goal: SharedGoal) {
         if (goal.unit === 'porcentaje') return `${goal.target_value}%`;
@@ -229,7 +229,10 @@
                 <span class="text-sm font-medium">Progreso compartidas</span>
                 <span class="text-sm font-semibold">{jWeight}%</span>
             </div>
-            <ProgressIndicator value={weightedProgress} wide />
+            <ProgressIndicator value={displayProgress} wide decimals={1} color={barColor} />
+            {#if !isWeightValid}
+                <p class="text-xs mt-2 {isOverWeight ? 'text-error' : 'text-warning'}">La suma total de pesos debe ser 100% (actual {totalSum.toFixed(1)}%)</p>
+            {/if}
         </div>
 
         <!-- Cualitativos -->

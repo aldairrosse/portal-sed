@@ -766,26 +766,21 @@
                     : "Distribución global de metas"}
             </p>
             {#if phase === "medio-anio"}
-                {@const withProgress = [
-                    ...goals.filter((g) => g.progress !== undefined).map((g) =>
-                        g.unit === "porcentaje"
-                            ? (g.progress ?? 0)
-                            : ((g.progress ?? 0) / (g.targetValue || 1)) * 100,
-                    ),
-                    ...institutionalGoals
-                        .filter((g) => g.progressPercent !== undefined)
-                        .map((g) => g.progressPercent ?? 0),
-                ]}
-                {@const avgProgress =
-                    withProgress.length > 0
-                        ? withProgress.reduce((acc, pct) => acc + Math.min(pct, 100), 0) /
-                          withProgress.length
-                        : 0}
+                {@const avgProgress = (() => {
+                    // Weighted total: personal (cat*goal weights via progressPercent) + institutional Σ(weight/100*pct)
+                    // Use same logic as getWeightedScore but without hierarchical scaling for the bar display
+                    // personal portion already computed inside getWeightedScore, reuse its raw value
+                    const score = getWeightedScore();
+                    return Math.min(100, Math.max(0, score));
+                })()}
+                {@const personalScore = getWeightedScore()}
                 <ProgressIndicator
                     value={avgProgress}
-                    label="Avance promedio total"
+                    label="Avance ponderado total (personal + institucional)"
                     color="primary"
+                    decimals={1}
                 />
+                <p class="text-xs text-base-content/50 mt-1">Puntaje ponderado {personalScore.toFixed(1)}/100 — incluye pesos G/P y J/PJ</p>
             {:else}
                 <WeightIndicator
                     current={globalSum}
@@ -837,7 +832,7 @@
                                         >{cat.name} ({cat.weight}%)</span
                                     >
                                     <span class="font-mono text-base-content"
-                                        >{Math.round(catProgress)}%</span
+                                        >{catProgress.toFixed(1)}%</span
                                     >
                                 </div>
                             {/each}
