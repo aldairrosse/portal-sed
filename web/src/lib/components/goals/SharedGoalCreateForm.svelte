@@ -17,6 +17,7 @@
             weight: number;
             target_value: number;
             baseline_value?: number;
+            members?: { employee_id: string; weight: number; target_value: number; baseline_value?: number }[];
         };
         oncancel: () => void;
         onsaved: () => void;
@@ -35,7 +36,7 @@
     let description = $state('');
     let unit = $state('porcentaje');
     let direction = $state<'ascendente' | 'descendente'>('ascendente');
-    let weight = $state(0);
+    let weight = $state(1);
     let targetValue = $state(0);
     let baselineValue = $state<number | null>(null);
     let groupName = $state('Grupo directo');
@@ -50,7 +51,7 @@
         description = '';
         unit = 'porcentaje';
         direction = 'ascendente';
-        weight = 0;
+        weight = 1;
         targetValue = 0;
         baselineValue = null;
         groupName = 'Grupo directo';
@@ -70,6 +71,15 @@
             targetValue = initial.target_value;
             baselineValue = initial.baseline_value ?? null;
             error = '';
+            if (initial.members && initial.members.length > 0) {
+                const next: Record<string, { employee_id: string; weight: number; target_value: number }> = {};
+                for (const m of initial.members) {
+                    next[m.employee_id] = { employee_id: m.employee_id, weight: m.weight, target_value: m.target_value || initial.target_value || 0 };
+                }
+                memberForm = next;
+            } else if (initial.members) {
+                memberForm = {};
+            }
         } else {
             reset();
         }
@@ -86,13 +96,13 @@
         if (next[member.id]) {
             delete next[member.id];
         } else {
-            next[member.id] = { employee_id: member.id, weight: 0, target_value: 0 };
+            next[member.id] = { employee_id: member.id, weight: weight || 1, target_value: targetValue || 0 };
         }
         memberForm = next;
     }
 
     function setMemberWeight(memberId: string, value: number) {
-        memberForm = { ...memberForm, [memberId]: { ...memberForm[memberId], weight: value || 0 } };
+        memberForm = { ...memberForm, [memberId]: { ...memberForm[memberId], weight: value || (weight || 1) } };
     }
 
     function setMemberTarget(memberId: string, value: number) {
@@ -101,24 +111,32 @@
 
     function validate(): string {
         if (!name.trim()) return 'El nombre de la meta es obligatorio';
-        if (!goalId && !groupName.trim()) return 'El nombre del grupo es obligatorio';
-        if (weight < 0 || weight > 100) return 'La ponderación debe estar entre 0 y 100';
+        if (weight < 0.01 || weight > 100) return 'Peso debe ser >0 y ≤100';
         if (targetValue <= 0 && direction !== 'descendente' && unit !== 'binario') return 'El valor objetivo debe ser mayor a 0';
         if (direction === 'descendente') {
             if (baselineValue === null || baselineValue <= targetValue) return 'Para objetivos descendentes, el valor inicial debe ser mayor al objetivo';
         }
-        if (!goalId && Object.keys(memberForm).length === 0) return 'Selecciona al menos un miembro del grupo';
+        if (Object.keys(memberForm).length === 0) return 'Selecciona al menos un miembro del grupo';
+        for (const m of Object.values(memberForm)) {
+            if (m.weight < 0.01 || m.weight > 100) return 'Peso debe ser >0 y ≤100 para cada miembro';
+            if (m.target_value !== undefined && m.target_value !== null && m.target_value <= 0 && direction !== 'descendente' && unit !== 'binario') return 'El valor objetivo del miembro debe ser mayor a 0';
+        }
         return '';
     }
 
     async function handleSave() {
+        if (saving) return;
         const err = validate();
         if (err) { error = err; return; }
         error = '';
         saving = true;
         try {
             if (goalId) {
-                // ponytail: UpdateSharedGoalRequest type lacks weight; backend accepts it
+                const membersPayload: CreateMemberRequest[] = Object.values(memberForm).map((m) => ({
+                    employee_id: m.employee_id,
+                    weight: m.weight,
+                    target_value: m.target_value || targetValue || 0,
+                }));
                 await updateSharedGoal(goalId, {
                     name: name.trim(),
                     description: description.trim(),
@@ -128,12 +146,13 @@
                     weight,
                     target_value: targetValue,
                     baseline_value: direction === 'descendente' ? (baselineValue ?? undefined) : undefined,
+                    members: membersPayload,
                 } as UpdateSharedGoalRequest);
             } else {
                 const membersPayload: CreateMemberRequest[] = Object.values(memberForm).map((m) => ({
                     employee_id: m.employee_id,
                     weight: m.weight,
-                    target_value: m.target_value,
+                    target_value: m.target_value || targetValue || 0,
                 }));
                 const request: CreateSharedGoalRequest = {
                     name: name.trim(),
@@ -144,7 +163,7 @@
                     weight,
                     target_value: targetValue,
                     baseline_value: direction === 'descendente' ? (baselineValue ?? undefined) : undefined,
-                    group_name: groupName.trim(),
+                    group_name: groupName.trim() || 'Grupo',
                     group_description: groupDescription.trim(),
                     members: membersPayload,
                 };
@@ -183,19 +202,9 @@
                     bind:value={name} placeholder="Nombre" required />
             </div>
             <div class="form-control">
-                <label class="label" for="shared-group-name"><span class="label-text text-xs">Nombre del grupo</span></label>
-                <input id="shared-group-name" type="text" class="input input-bordered input-sm w-full"
-                    bind:value={groupName} placeholder="Grupo directo" required />
-            </div>
-            <div class="form-control">
                 <label class="label" for="shared-desc"><span class="label-text text-xs">Descripción</span></label>
                 <textarea id="shared-desc" class="textarea textarea-bordered textarea-sm w-full"
                     rows={1} bind:value={description} placeholder="Descripción"></textarea>
-            </div>
-            <div class="form-control">
-                <label class="label" for="shared-group-desc"><span class="label-text text-xs">Descripción del grupo</span></label>
-                <textarea id="shared-group-desc" class="textarea textarea-bordered textarea-sm w-full"
-                    rows={1} bind:value={groupDescription} placeholder="Descripción del grupo"></textarea>
             </div>
             <div class="form-control">
                 <label class="label" for="shared-unit"><span class="label-text text-xs">Unidad de medida</span></label>
@@ -228,7 +237,7 @@
             <div class="form-control">
                 <label class="label" for="shared-weight"><span class="label-text text-xs">Ponderación (%)</span></label>
                 <input id="shared-weight" type="number" class="input input-bordered input-sm w-full"
-                    bind:value={weight} min={0} max={100} step={0.1} required />
+                    bind:value={weight} min={0.01} max={100} step={0.1} required />
             </div>
             <div class="form-control">
                 <label class="label" for="shared-target"><span class="label-text text-xs">Valor objetivo</span></label>
@@ -244,7 +253,6 @@
             {/if}
         </div>
 
-        {#if !goalId}
         <div class="form-control">
             <span class="label"><span class="label-text text-xs">Miembros del grupo</span></span>
             {#if members.length > 0}
@@ -267,7 +275,7 @@
                             <span class="text-xs truncate">{member.firstName} {member.lastName}</span>
                             {#if memberForm[member.id]}
                                 <input type="number" class="input input-bordered input-sm w-full"
-                                    placeholder="Peso %" min={0} max={100} step={0.1}
+                                    placeholder="Peso %" min={0.01} max={100} step={0.1}
                                     value={memberForm[member.id].weight}
                                     oninput={(e) => setMemberWeight(member.id, Number(e.currentTarget.value))} />
                                 <input type="number" class="input input-bordered input-sm w-full"
@@ -280,7 +288,6 @@
                 </div>
             {/if}
         </div>
-        {/if}
 
         <div class="modal-action">
             <button class="btn btn-ghost" onclick={oncancel} disabled={saving}>Cancelar</button>

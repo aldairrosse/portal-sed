@@ -2,7 +2,7 @@
     import { getProfile } from '$lib/stores/devContext.svelte';
     import { goto } from '$app/navigation';
     import { onMount } from 'svelte';
-    import { Users, Plus, Edit, Trash, Loader2 } from '@lucide/svelte';
+    import { Users, Plus, Edit, Trash, Loader2, TrendingUp, TrendingDown } from '@lucide/svelte';
     import ProgressIndicator from '$lib/components/goals/ProgressIndicator.svelte';
     import SharedGoalCreateForm from '$lib/components/goals/SharedGoalCreateForm.svelte';
     import { listSharedGoals, deleteSharedGoal, updateSharedGoal, type SharedGoal } from '$lib/api/sharedGoals';
@@ -107,6 +107,7 @@
                   weight: editGoal.weight,
                   target_value: editGoal.target_value,
                   baseline_value: editGoal.baseline_value,
+                  members: editGoal.members.map(m => ({ employee_id: m.employee_id, weight: m.weight, target_value: m.target_value, baseline_value: m.baseline_value })),
               }
             : undefined
     );
@@ -258,8 +259,9 @@
                                             {goal.name}
                                             <span class="badge badge-ghost shrink-0">Peso: {goal.weight}%</span>
                                         </p>
-                                        <p class="text-sm text-base-content/60">
-                                            Target: {formatTarget(goal)} · {goal.members.length} miembros
+                                        <p class="text-sm text-base-content/60 flex items-center gap-1">
+                                            {#if goal.direction === 'ascendente'}<TrendingUp class="w-3 h-3" />{:else}<TrendingDown class="w-3 h-3" />{/if}
+                                            {formatTarget(goal)} · {goal.members.length} miembros
                                         </p>
                                     </div>
                                     <div class="flex items-center gap-2">
@@ -330,8 +332,9 @@
                                             {goal.name}
                                             <span class="badge badge-ghost shrink-0">Peso: {goal.weight}%</span>
                                         </p>
-                                        <p class="text-sm text-base-content/60">
-                                            Target: {formatTarget(goal)} · {goal.members.length} miembros
+                                        <p class="text-sm text-base-content/60 flex items-center gap-1">
+                                            {#if goal.direction === 'ascendente'}<TrendingUp class="w-3 h-3" />{:else}<TrendingDown class="w-3 h-3" />{/if}
+                                            {formatTarget(goal)} · {goal.members.length} miembros
                                         </p>
                                     </div>
                                     <div class="flex items-center gap-2">

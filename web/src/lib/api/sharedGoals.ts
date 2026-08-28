@@ -69,6 +69,7 @@ export interface UpdateSharedGoalRequest {
   target_value: number;
   baseline_value?: number;
   current_value?: number;
+  members?: CreateMemberRequest[];
 }
 
 export interface AddMemberRequest {
