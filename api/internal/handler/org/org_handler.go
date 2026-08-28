@@ -419,7 +419,16 @@ func (h *OrgHandler) GetMyEvaluatees(w http.ResponseWriter, r *http.Request) {
 
 	searchQuery := q.Get("q")
 
-	result, err := h.evaluateeSvc.GetMyEvaluateesPaginated(r.Context(), empID, searchQuery, offset, limit)
+	cycleID := q.Get("cycleId")
+	if cycleID != "" {
+		if _, err := uuid.Parse(strings.TrimSpace(cycleID)); err != nil {
+			writeError(w, errors.NewDomainError(errors.InvalidRequest, "cycleId must be a valid UUID v4", err))
+			return
+		}
+		cycleID = strings.TrimSpace(cycleID)
+	}
+
+	result, err := h.evaluateeSvc.GetMyEvaluateesPaginated(r.Context(), empID, searchQuery, offset, limit, cycleID)
 	if err != nil {
 		writeError(w, err)
 		return

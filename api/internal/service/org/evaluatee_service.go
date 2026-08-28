@@ -9,12 +9,14 @@ import (
 	"github.com/sed-evaluacion-desempeno/api/internal/dto/org"
 	"github.com/sed-evaluacion-desempeno/api/internal/pkg/errors"
 	repo "github.com/sed-evaluacion-desempeno/api/internal/repository/org"
+	repocycle "github.com/sed-evaluacion-desempeno/api/internal/repository/cycle"
+	repogoal "github.com/sed-evaluacion-desempeno/api/internal/repository/goal"
 )
 
 // EvaluateeService defines the interface for evaluatee and chain-of-command operations.
 type EvaluateeService interface {
 	GetMyEvaluatees(ctx context.Context, evaluatorID string) (*org.EmployeeListResponse, error)
-	GetMyEvaluateesPaginated(ctx context.Context, evaluatorID, query string, offset, limit int) (*org.EmployeeListResponse, error)
+	GetMyEvaluateesPaginated(ctx context.Context, evaluatorID, query string, offset, limit int, cycleID string) (*org.EmployeeListResponse, error)
 	GetTeamMembers(ctx context.Context, headEmployeeID string) (*org.EmployeeListResponse, error)
 	GetManager(ctx context.Context, empID string) (*org.EmployeeDetailResponse, error)
 	GetChainOfCommand(ctx context.Context, empID string) (*org.AncestorChainResponse, error)
@@ -22,17 +24,23 @@ type EvaluateeService interface {
 }
 
 type evaluateeService struct {
-	empRepo  *repo.EmployeeRepo
-	nodeRepo *repo.OrgNodeRepo
-	client   *internal.Client
+	empRepo      *repo.EmployeeRepo
+	nodeRepo     *repo.OrgNodeRepo
+	client       *internal.Client
+	cycleRepo    *repocycle.CycleRepo
+	assignRepo   *repogoal.AssignmentRepo
+	categoryRepo *repogoal.CategoryRepo
 }
 
 // NewEvaluateeService creates a new EvaluateeService.
-func NewEvaluateeService(empRepo *repo.EmployeeRepo, nodeRepo *repo.OrgNodeRepo, client *internal.Client) EvaluateeService {
+func NewEvaluateeService(empRepo *repo.EmployeeRepo, nodeRepo *repo.OrgNodeRepo, client *internal.Client, cycleRepo *repocycle.CycleRepo, assignRepo *repogoal.AssignmentRepo, categoryRepo *repogoal.CategoryRepo) EvaluateeService {
 	return &evaluateeService{
-		empRepo:  empRepo,
-		nodeRepo: nodeRepo,
-		client:   client,
+		empRepo:      empRepo,
+		nodeRepo:     nodeRepo,
+		client:       client,
+		cycleRepo:    cycleRepo,
+		assignRepo:   assignRepo,
+		categoryRepo: categoryRepo,
 	}
 }
 
@@ -67,7 +75,7 @@ func (s *evaluateeService) GetMyEvaluatees(ctx context.Context, evaluatorID stri
 	return resp, nil
 }
 
-func (s *evaluateeService) GetMyEvaluateesPaginated(ctx context.Context, evaluatorID, query string, offset, limit int) (*org.EmployeeListResponse, error) {
+func (s *evaluateeService) GetMyEvaluateesPaginated(ctx context.Context, evaluatorID, query string, offset, limit int, cycleID string) (*org.EmployeeListResponse, error) {
 	id, err := uuid.Parse(evaluatorID)
 	if err != nil {
 		return nil, errors.NewDomainError(errors.InvalidRequest, "Invalid evaluator ID: must be a valid UUID", err)
@@ -99,6 +107,49 @@ func (s *evaluateeService) GetMyEvaluateesPaginated(ctx context.Context, evaluat
 		return nil, err
 	}
 
+	// Resolve cycleId: query > active > no_iniciado (nil)
+	var targetCycleID *uuid.UUID
+	if strings.TrimSpace(cycleID) != "" {
+		parsed, err := uuid.Parse(strings.TrimSpace(cycleID))
+		if err != nil {
+			return nil, errors.NewDomainError(errors.InvalidRequest, "Invalid cycleId: must be a valid UUID", err)
+		}
+		targetCycleID = &parsed
+	} else if s.cycleRepo != nil {
+		active, err := s.cycleRepo.GetActive(ctx)
+		if err == nil && active != nil {
+			targetCycleID = &active.ID
+		}
+	}
+
+	// Batch fetch assignment statuses (single query, no N+1)
+	statusMap := map[uuid.UUID]string{}
+	var empIDsForBatch []uuid.UUID
+	if targetCycleID != nil && len(rows) > 0 && s.assignRepo != nil {
+		empIDsForBatch = make([]uuid.UUID, len(rows))
+		for i, r := range rows {
+			empIDsForBatch[i] = r.ID
+		}
+		m, err := s.assignRepo.BatchGetByEmployeeIDs(ctx, empIDsForBatch, *targetCycleID)
+		if err == nil {
+			statusMap = m
+		}
+	}
+
+	// ponytail: goal_categories sin cycle_id => heurística cross-ciclo; filtrar por ciclo cuando columna exista.
+	var catCounts map[uuid.UUID]int
+	if targetCycleID != nil && len(rows) > 0 && s.categoryRepo != nil {
+		if empIDsForBatch == nil {
+			empIDsForBatch = make([]uuid.UUID, len(rows))
+			for i, r := range rows {
+				empIDsForBatch[i] = r.ID
+			}
+		}
+		if m, err := s.categoryRepo.BatchCountByEmployeeIDs(ctx, empIDsForBatch); err == nil {
+			catCounts = m
+		}
+	}
+
 	resp := &org.EmployeeListResponse{
 		Data: make([]org.EmployeeListItem, len(rows)),
 	}
@@ -108,7 +159,25 @@ func (s *evaluateeService) GetMyEvaluateesPaginated(ctx context.Context, evaluat
 	resp.Meta.HasMore = offset+len(rows) < total
 
 	for i, r := range rows {
-		resp.Data[i] = employeeRowToItem(r)
+		item := employeeRowToItem(r)
+		if targetCycleID == nil {
+			item.AssignmentStatus = "no_iniciado"
+		} else {
+			if st, ok := statusMap[r.ID]; ok {
+				if strings.TrimSpace(st) == "" {
+					st = "borrador"
+				}
+				item.AssignmentStatus = st
+			} else {
+				item.AssignmentStatus = "no_iniciado"
+			}
+			if item.AssignmentStatus == "borrador" && catCounts != nil {
+				if cnt, ok := catCounts[r.ID]; !ok || cnt == 0 {
+					item.AssignmentStatus = "no_iniciado"
+				}
+			}
+		}
+		resp.Data[i] = item
 	}
 
 	return resp, nil

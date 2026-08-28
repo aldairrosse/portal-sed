@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"encoding/binary"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -196,6 +197,44 @@ func (r *AssignmentRepo) UpdateAssignmentStatus(ctx context.Context, empID, cycl
 		return nil, err
 	}
 	return assignmentToRow(saved), nil
+}
+
+// BatchGetByEmployeeIDs returns a map of employee_id -> status for a given cycle.
+// Normalizes empty status to "borrador". Missing rows are not in the map (caller maps to no_iniciado).
+func (r *AssignmentRepo) BatchGetByEmployeeIDs(ctx context.Context, empIDs []uuid.UUID, cycleID uuid.UUID) (map[uuid.UUID]string, error) {
+	if len(empIDs) == 0 || cycleID == uuid.Nil {
+		return map[uuid.UUID]string{}, nil
+	}
+	placeholders := make([]string, len(empIDs))
+	args := make([]interface{}, len(empIDs)+1)
+	args[0] = cycleID
+	for i, id := range empIDs {
+		placeholders[i] = fmt.Sprintf("$%d", i+2)
+		args[i+1] = id
+	}
+	query := fmt.Sprintf(`SELECT employee_id, status FROM goal_assignments WHERE cycle_id=$1 AND employee_id IN (%s)`, strings.Join(placeholders, ","))
+	rows, err := r.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	m := make(map[uuid.UUID]string, len(empIDs))
+	for rows.Next() {
+		var eid uuid.UUID
+		var status sql.NullString
+		if err := rows.Scan(&eid, &status); err != nil {
+			return nil, err
+		}
+		s := ""
+		if status.Valid {
+			s = strings.TrimSpace(status.String)
+		}
+		if s == "" {
+			s = "borrador"
+		}
+		m[eid] = s
+	}
+	return m, rows.Err()
 }
 
 // hashEmployeeCycle creates a deterministic int64 hash from employee_id and cycle_id.

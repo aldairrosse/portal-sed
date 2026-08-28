@@ -90,7 +90,7 @@ func (m *mockEmployeeService) SearchEmployees(ctx context.Context, query string,
 
 type mockEvaluateeService struct {
 	getMyEvaluateesFunc           func(ctx context.Context, evaluatorID string) (*dto.EmployeeListResponse, error)
-	getMyEvaluateesPaginatedFunc  func(ctx context.Context, evaluatorID, query string, offset, limit int) (*dto.EmployeeListResponse, error)
+	getMyEvaluateesPaginatedFunc  func(ctx context.Context, evaluatorID, query string, offset, limit int, cycleID string) (*dto.EmployeeListResponse, error)
 	getTeamMembersFunc            func(ctx context.Context, headEmployeeID string) (*dto.EmployeeListResponse, error)
 	getManagerFunc                func(ctx context.Context, empID string) (*dto.EmployeeDetailResponse, error)
 	getChainOfCommandFunc         func(ctx context.Context, empID string) (*dto.AncestorChainResponse, error)
@@ -100,8 +100,8 @@ type mockEvaluateeService struct {
 func (m *mockEvaluateeService) GetMyEvaluatees(ctx context.Context, evaluatorID string) (*dto.EmployeeListResponse, error) {
 	return m.getMyEvaluateesFunc(ctx, evaluatorID)
 }
-func (m *mockEvaluateeService) GetMyEvaluateesPaginated(ctx context.Context, evaluatorID, query string, offset, limit int) (*dto.EmployeeListResponse, error) {
-	return m.getMyEvaluateesPaginatedFunc(ctx, evaluatorID, query, offset, limit)
+func (m *mockEvaluateeService) GetMyEvaluateesPaginated(ctx context.Context, evaluatorID, query string, offset, limit int, cycleID string) (*dto.EmployeeListResponse, error) {
+	return m.getMyEvaluateesPaginatedFunc(ctx, evaluatorID, query, offset, limit, cycleID)
 }
 func (m *mockEvaluateeService) GetTeamMembers(ctx context.Context, headEmployeeID string) (*dto.EmployeeListResponse, error) {
 	if m.getTeamMembersFunc != nil {
@@ -424,7 +424,7 @@ func TestGetMyEvaluatees_Success(t *testing.T) {
 	empID := uuid.New().String()
 	empUUID := empID
 		evalSvc := &mockEvaluateeService{
-		getMyEvaluateesPaginatedFunc: func(_ context.Context, id, query string, offset, limit int) (*dto.EmployeeListResponse, error) {
+		getMyEvaluateesPaginatedFunc: func(_ context.Context, id, query string, offset, limit int, _ string) (*dto.EmployeeListResponse, error) {
 			assert.Equal(t, empUUID, id)
 			assert.Equal(t, "", query)
 			assert.Equal(t, 50, limit)
@@ -724,7 +724,7 @@ func TestGetMyEvaluatees_ResponseTime(t *testing.T) {
 	empID := uuid.New().String()
 	calls := 0
 	evalSvc := &mockEvaluateeService{
-		getMyEvaluateesPaginatedFunc: func(_ context.Context, id, query string, offset, limit int) (*dto.EmployeeListResponse, error) {
+		getMyEvaluateesPaginatedFunc: func(_ context.Context, id, query string, offset, limit int, _ string) (*dto.EmployeeListResponse, error) {
 			calls++
 			return &dto.EmployeeListResponse{Data: []dto.EmployeeListItem{}}, nil
 		},
@@ -1044,7 +1044,7 @@ func TestGetMyEvaluatees_WithQueryParams(t *testing.T) {
 	empID := uuid.New().String()
 	empUUID := empID
 	evalSvc := &mockEvaluateeService{
-		getMyEvaluateesPaginatedFunc: func(_ context.Context, id, query string, offset, limit int) (*dto.EmployeeListResponse, error) {
+		getMyEvaluateesPaginatedFunc: func(_ context.Context, id, query string, offset, limit int, _ string) (*dto.EmployeeListResponse, error) {
 			assert.Equal(t, empUUID, id)
 			assert.Equal(t, "smith", query)
 			assert.Equal(t, 25, limit)

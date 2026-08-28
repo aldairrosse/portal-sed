@@ -251,7 +251,7 @@ func setupTestServerWithPhaseChecker(t *testing.T, phaseChecker goalsvc.PhaseChe
 	authSvc := authsvc.NewAuthService(sessionStore, employeeReader, db)
 
 	phaseCheck := goalsvc.NewPhaseCheck(phaseChecker)
-	catSvc := goalsvc.NewCategoryService(catRepo, pillarRepo, phaseCheck)
+	catSvc := goalsvc.NewCategoryService(catRepo, pillarRepo, phaseCheck, assignRepo, cycleRepo)
 	goalSvc := goalsvc.NewGoalService(goalRepo, catRepo, kpiRepo, linkRepo, weightQ, phaseCheck)
 	progressSvc := goalsvc.NewProgressService(goalRepo, catRepo, phaseCheck)
  	kpiSvc := goalsvc.NewKPIService(kpiRepo, linkRepo, goalRepo, catRepo, phaseCheck, orgNodeRepo, orgTreeRepo, employeeRepo)
@@ -278,7 +278,7 @@ func setupTestServerWithPhaseChecker(t *testing.T, phaseChecker goalsvc.PhaseChe
 	orgTreeSvc := orgsvc.NewOrgTreeService(orgTreeRepo, orgNodeRepo, employeeRepo, client)
 	orgNodeSvc := orgsvc.NewOrgNodeService(orgNodeRepo, client)
 	employeeSvc := orgsvc.NewEmployeeService(employeeRepo, client)
-	evaluateeSvc := orgsvc.NewEvaluateeService(employeeRepo, orgNodeRepo, client)
+	evaluateeSvc := orgsvc.NewEvaluateeService(employeeRepo, orgNodeRepo, client, nil, nil, nil)
 	metricsSvc := orgsvc.NewMetricsService(metricsRepo, orgNodeRepo, client)
 
 	// Activity

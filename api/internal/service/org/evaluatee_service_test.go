@@ -38,7 +38,7 @@ func TestEvaluateeService_GetMyEvaluatees(t *testing.T) {
 	empRepo := newEmployeeRepo(db)
 	nodeRepo := newOrgNodeRepo(db)
 
-	service := svc.NewEvaluateeService(empRepo, nodeRepo, nil)
+	service := svc.NewEvaluateeService(empRepo, nodeRepo, nil, nil, nil, nil)
 
 	evaluatorID := uuid.MustParse("11111111-1111-1111-1111-111111111111")
 	reportID := uuid.MustParse("22222222-2222-2222-2222-222222222222")
@@ -76,7 +76,7 @@ func TestEvaluateeService_GetMyEvaluateesPaginated(t *testing.T) {
 	empRepo := newEmployeeRepo(db)
 	nodeRepo := newOrgNodeRepo(db)
 
-	service := svc.NewEvaluateeService(empRepo, nodeRepo, nil)
+	service := svc.NewEvaluateeService(empRepo, nodeRepo, nil, nil, nil, nil)
 
 	evaluatorID := uuid.MustParse("11111111-1111-1111-1111-111111111111")
 	reportID := uuid.MustParse("22222222-2222-2222-2222-222222222222")
@@ -106,7 +106,7 @@ func TestEvaluateeService_GetMyEvaluateesPaginated(t *testing.T) {
 		WithArgs(evaluatorID, "%bob%").
 		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(1))
 
-	resp, err := service.GetMyEvaluateesPaginated(context.Background(), evaluatorID.String(), "bob", 0, 50)
+	resp, err := service.GetMyEvaluateesPaginated(context.Background(), evaluatorID.String(), "bob", 0, 50, "")
 	require.NoError(t, err)
 	require.Len(t, resp.Data, 1)
 	assert.Equal(t, reportID.String(), resp.Data[0].ID)
@@ -127,7 +127,7 @@ func TestEvaluateeService_GetMyEvaluateesPaginated_HasMore(t *testing.T) {
 	empRepo := newEmployeeRepo(db)
 	nodeRepo := newOrgNodeRepo(db)
 
-	service := svc.NewEvaluateeService(empRepo, nodeRepo, nil)
+	service := svc.NewEvaluateeService(empRepo, nodeRepo, nil, nil, nil, nil)
 
 	evaluatorID := uuid.MustParse("11111111-1111-1111-1111-111111111111")
 	reportID := uuid.MustParse("22222222-2222-2222-2222-222222222222")
@@ -156,7 +156,7 @@ func TestEvaluateeService_GetMyEvaluateesPaginated_HasMore(t *testing.T) {
 		WithArgs(evaluatorID).
 		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(3))
 
-	resp, err := service.GetMyEvaluateesPaginated(context.Background(), evaluatorID.String(), "", 0, 1)
+	resp, err := service.GetMyEvaluateesPaginated(context.Background(), evaluatorID.String(), "", 0, 1, "")
 	require.NoError(t, err)
 	require.Len(t, resp.Data, 1)
 	assert.Equal(t, 1, resp.Meta.Limit)
@@ -173,9 +173,9 @@ func TestEvaluateeService_GetMyEvaluateesPaginated_InvalidUUID(t *testing.T) {
 	empRepo := newEmployeeRepo(db)
 	nodeRepo := newOrgNodeRepo(db)
 
-	service := svc.NewEvaluateeService(empRepo, nodeRepo, nil)
+	service := svc.NewEvaluateeService(empRepo, nodeRepo, nil, nil, nil, nil)
 
-	_, err := service.GetMyEvaluateesPaginated(context.Background(), "not-a-uuid", "", 0, 50)
+	_, err := service.GetMyEvaluateesPaginated(context.Background(), "not-a-uuid", "", 0, 50, "")
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "Invalid evaluator ID")
 
@@ -189,7 +189,7 @@ func TestEvaluateeService_GetMyEvaluateesPaginated_EvaluatorNotFound(t *testing.
 	empRepo := newEmployeeRepo(db)
 	nodeRepo := newOrgNodeRepo(db)
 
-	service := svc.NewEvaluateeService(empRepo, nodeRepo, nil)
+	service := svc.NewEvaluateeService(empRepo, nodeRepo, nil, nil, nil, nil)
 
 	unknownID := uuid.MustParse("99999999-9999-9999-9999-999999999999")
 
@@ -198,7 +198,7 @@ func TestEvaluateeService_GetMyEvaluateesPaginated_EvaluatorNotFound(t *testing.
 		WithArgs(unknownID).
 		WillReturnError(sql.ErrNoRows)
 
-	_, err := service.GetMyEvaluateesPaginated(context.Background(), unknownID.String(), "", 0, 50)
+	_, err := service.GetMyEvaluateesPaginated(context.Background(), unknownID.String(), "", 0, 50, "")
 	require.Error(t, err)
 	assert.ErrorIs(t, err, repo.ErrEmployeeNotFound)
 
@@ -212,7 +212,7 @@ func TestEvaluateeService_GetChainOfCommand_DeepTree(t *testing.T) {
 	empRepo := newEmployeeRepo(db)
 	nodeRepo := newOrgNodeRepo(db)
 
-	service := svc.NewEvaluateeService(empRepo, nodeRepo, nil)
+	service := svc.NewEvaluateeService(empRepo, nodeRepo, nil, nil, nil, nil)
 
 	empID := uuid.MustParse("55555555-5555-5555-5555-555555555555")
 	nodeID := uuid.MustParse("66666666-6666-6666-6666-666666666666")
@@ -267,7 +267,7 @@ func TestEvaluateeService_GetChainOfCommand_ShallowTree(t *testing.T) {
 	empRepo := newEmployeeRepo(db)
 	nodeRepo := newOrgNodeRepo(db)
 
-	service := svc.NewEvaluateeService(empRepo, nodeRepo, nil)
+	service := svc.NewEvaluateeService(empRepo, nodeRepo, nil, nil, nil, nil)
 
 	empID := uuid.MustParse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")
 	nodeID := uuid.MustParse("cccccccc-cccc-cccc-cccc-cccccccccccc")
@@ -305,7 +305,7 @@ func TestEvaluateeService_ConcurrentEvaluateeResolution(t *testing.T) {
 	empRepo := newEmployeeRepo(db)
 	nodeRepo := newOrgNodeRepo(db)
 
-	service := svc.NewEvaluateeService(empRepo, nodeRepo, nil)
+	service := svc.NewEvaluateeService(empRepo, nodeRepo, nil, nil, nil, nil)
 
 	evaluatorID := uuid.MustParse("77777777-8888-9999-aaaa-bbbbbbbbbbbb")
 	reportID := uuid.MustParse("cccccccc-dddd-eeee-ffff-000000000000")
@@ -366,7 +366,7 @@ func TestEvaluateeService_GetManager(t *testing.T) {
 	empRepo := newEmployeeRepo(db)
 	nodeRepo := newOrgNodeRepo(db)
 
-	service := svc.NewEvaluateeService(empRepo, nodeRepo, nil)
+	service := svc.NewEvaluateeService(empRepo, nodeRepo, nil, nil, nil, nil)
 
 	empID := uuid.MustParse("12345678-1234-1234-1234-123456789abc")
 	managerID := uuid.MustParse("abcdef12-3456-7890-abcd-ef1234567890")
@@ -405,7 +405,7 @@ func TestEvaluateeService_BatchLookup(t *testing.T) {
 	empRepo := newEmployeeRepo(db)
 	nodeRepo := newOrgNodeRepo(db)
 
-	service := svc.NewEvaluateeService(empRepo, nodeRepo, nil)
+	service := svc.NewEvaluateeService(empRepo, nodeRepo, nil, nil, nil, nil)
 
 	id1 := uuid.MustParse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
 	id2 := uuid.MustParse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")

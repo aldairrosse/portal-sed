@@ -394,7 +394,7 @@ paths:
     get:
       operationId: getMyEvaluatees
       summary: Get my evaluatees
-      description: Returns direct reports (active only) for the given evaluator.
+      description: Returns direct reports (active only) for the given evaluator. Each item includes assignment_status for the active cycle (or cycleId if provided).
       parameters:
         - name: empId
           in: path
@@ -402,6 +402,34 @@ paths:
           schema:
             type: string
             format: uuid
+        - name: cycleId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+          description: Cycle to scope assignment_status. If absent, active cycle is used; if no active cycle, status is no_iniciado.
+        - name: q
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Search filter on name, email, employeeNumber
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 50
+            minimum: 1
+            maximum: 200
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
       responses:
         '200':
           description: Successful response
@@ -750,6 +778,11 @@ components:
           type: string
         jobTitle:
           type: string
+        assignmentStatus:
+          type: string
+          enum: [no_iniciado, borrador, enviada]
+          description: Estado de la asignación de metas para el ciclo solicitado/activo. no_iniciado = sin assignment row.
+          example: borrador
 
     EmployeeDetail:
       allOf:

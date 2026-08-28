@@ -127,6 +127,7 @@ type EmployeeListItem struct {
 	ProfileDescription string `json:"profileDescription"`
 	JobTitle       string `json:"jobTitle"`
 	IsActive       bool   `json:"isActive"`
+	AssignmentStatus string `json:"assignmentStatus,omitempty"`
 }
 
 // EmployeeDetail is the detailed employee response with nested orgNode and manager.

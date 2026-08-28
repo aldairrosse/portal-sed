@@ -375,6 +375,32 @@ func (r *CycleRepo) ExecuteRawAdvisoryLock(ctx context.Context, orgID uuid.UUID,
 	}, nil
 }
 
+// GetActive returns the most recent unfinished cycle (finished_at IS NULL) ordered by created_at DESC.
+// Returns nil, nil if no active cycle exists.
+func (r *CycleRepo) GetActive(ctx context.Context) (*CycleRow, error) {
+	row := &CycleRow{}
+	var currentPhase string
+	var startedAt, finishedAt sql.NullTime
+	err := r.db.QueryRowContext(ctx,
+		`SELECT id, created_at, updated_at, year, current_phase, started_at, finished_at, organization_id, COALESCE(version, 1)
+		 FROM cycles WHERE finished_at IS NULL ORDER BY created_at DESC LIMIT 1`,
+	).Scan(&row.ID, &row.CreatedAt, &row.UpdatedAt, &row.Year, &currentPhase, &startedAt, &finishedAt, &row.OrganizationID, &row.Version)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+		return nil, err
+	}
+	row.CurrentPhase = cycle.CurrentPhase(currentPhase)
+	if startedAt.Valid {
+		row.StartedAt = &startedAt.Time
+	}
+	if finishedAt.Valid {
+		row.FinishedAt = &finishedAt.Time
+	}
+	return row, nil
+}
+
 // GetActiveCycleID finds the active (unfinished) cycle for an organization.
 func (r *CycleRepo) GetActiveCycleID(ctx context.Context, orgID uuid.UUID) (uuid.UUID, error) {
 	var id uuid.UUID
