@@ -111,6 +111,7 @@ const (
 	UnitPorcentaje Unit = "porcentaje"
 	UnitMoneda     Unit = "moneda"
 	UnitNumero     Unit = "numero"
+	UnitBinario    Unit = "binario"
 )
 
 func (u Unit) String() string {
@@ -120,7 +121,7 @@ func (u Unit) String() string {
 // UnitValidator is a validator for the "unit" field enum values. It is called by the builders before save.
 func UnitValidator(u Unit) error {
 	switch u {
-	case UnitPorcentaje, UnitMoneda, UnitNumero:
+	case UnitPorcentaje, UnitMoneda, UnitNumero, UnitBinario:
 		return nil
 	default:
 		return fmt.Errorf("goaltemplate: invalid enum value for unit field: %q", u)

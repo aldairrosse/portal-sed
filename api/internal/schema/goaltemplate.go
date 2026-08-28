@@ -29,7 +29,7 @@ func (GoalTemplate) Fields() []ent.Field {
 		field.Text("description").
 			Optional(),
 		field.Enum("unit").
-			Values("porcentaje", "moneda", "numero"),
+			Values("porcentaje", "moneda", "numero", "binario"),
 		field.Enum("direction").
 			Values("ascendente", "descendente").
 			Default("ascendente"),

@@ -81,10 +81,19 @@ func NewSharedGoalRepo(client *internal.Client, db *sql.DB) *SharedGoalRepo {
 	return &SharedGoalRepo{client: client, db: db}
 }
 
-// CreateSharedGoal creates a new shared goal with its group and members.
+// CreateSharedGoal creates a new shared goal with its group and members atomically.
 func (r *SharedGoalRepo) CreateSharedGoal(ctx context.Context, createdBy uuid.UUID, name, description, unit, direction, goalKind string, weight, targetValue float64, baselineValue *float64, groupName, groupDescription string, members []*SharedMemberRow) (*SharedGoalRow, error) {
-	// Create the goal
-	g, err := r.client.Goal.Create().
+	tx, err := r.client.Tx(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if v := recover(); v != nil {
+			_ = tx.Rollback()
+			panic(v)
+		}
+	}()
+	g, err := tx.Goal.Create().
 		SetName(name).
 		SetDescription(description).
 		SetUnit(goal.Unit(unit)).
@@ -94,17 +103,16 @@ func (r *SharedGoalRepo) CreateSharedGoal(ctx context.Context, createdBy uuid.UU
 		SetNillableBaselineValue(baselineValue).
 		SetGoalKind(goal.GoalKind(goalKind)).
 		SetState(goal.StateBorrador).
-		SetNillableCategoryID(nil). // Shared goals don't belong to a category
+		SetNillableCategoryID(nil).
 		SetCreatedBy(createdBy).
 		SetUpdatedBy(createdBy).
 		SetType(goal.TypeShared).
 		Save(ctx)
 	if err != nil {
+		_ = tx.Rollback()
 		return nil, err
 	}
-
-	// Create the group
-	grp, err := r.client.SharedGoalGroup.Create().
+	grp, err := tx.SharedGoalGroup.Create().
 		SetGoalID(g.ID).
 		SetCreatedBy(createdBy).
 		SetUpdatedBy(createdBy).
@@ -112,27 +120,26 @@ func (r *SharedGoalRepo) CreateSharedGoal(ctx context.Context, createdBy uuid.UU
 		SetDescription(groupDescription).
 		Save(ctx)
 	if err != nil {
+		_ = tx.Rollback()
 		return nil, err
 	}
-
-	// Create members
 	for _, m := range members {
-		create := r.client.SharedGoalMember.Create().
+		create := tx.SharedGoalMember.Create().
 			SetGroupID(grp.ID).
 			SetEmployeeID(m.EmployeeID).
 			SetWeight(m.Weight).
 			SetTargetValue(m.TargetValue)
-
 		if m.BaselineValue != nil {
 			create = create.SetBaselineValue(*m.BaselineValue)
 		}
-
-		_, err := create.Save(ctx)
-		if err != nil {
+		if _, err := create.Save(ctx); err != nil {
+			_ = tx.Rollback()
 			return nil, err
 		}
 	}
-
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
 	return r.GetSharedGoal(ctx, g.ID)
 }
 
@@ -201,7 +208,9 @@ func (r *SharedGoalRepo) ListSharedGoalsAsCreator(ctx context.Context, creatorID
 	goals, err := r.client.Goal.Query().
 		Where(goal.TypeEQ(goal.TypeShared), goal.CreatedBy(creatorID)).
 		WithSharedGroup(func(q *internal.SharedGoalGroupQuery) {
-			q.WithMembers()
+			q.WithMembers(func(mq *internal.SharedGoalMemberQuery) {
+				mq.Order(internal.Asc(sharedgoalmember.FieldEmployeeID))
+			})
 		}).
 		Order(internal.Desc(goal.FieldCreatedAt)).
 		All(ctx)
@@ -268,6 +277,44 @@ func (r *SharedGoalRepo) UpdateSharedGoal(ctx context.Context, goalID uuid.UUID,
 	}
 
 	return r.GetSharedGoal(ctx, goalID)
+}
+
+// SyncSharedGoalMembers replaces members for a shared goal's group atomically (delete + recreate).
+func (r *SharedGoalRepo) SyncSharedGoalMembers(ctx context.Context, goalID uuid.UUID, members []*SharedMemberRow) error {
+	tx, err := r.client.Tx(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if v := recover(); v != nil {
+			_ = tx.Rollback()
+			panic(v)
+		}
+	}()
+	grp, err := tx.SharedGoalGroup.Query().Where(sharedgoalgroup.GoalID(goalID)).Only(ctx)
+	if err != nil {
+		_ = tx.Rollback()
+		return err
+	}
+	if _, err := tx.SharedGoalMember.Delete().Where(sharedgoalmember.GroupID(grp.ID)).Exec(ctx); err != nil {
+		_ = tx.Rollback()
+		return fmt.Errorf("delete old members: %w", err)
+	}
+	for _, m := range members {
+		create := tx.SharedGoalMember.Create().
+			SetGroupID(grp.ID).
+			SetEmployeeID(m.EmployeeID).
+			SetWeight(m.Weight).
+			SetTargetValue(m.TargetValue)
+		if m.BaselineValue != nil {
+			create = create.SetBaselineValue(*m.BaselineValue)
+		}
+		if _, err := create.Save(ctx); err != nil {
+			_ = tx.Rollback()
+			return err
+		}
+	}
+	return tx.Commit()
 }
 
 // DeleteSharedGoal deletes a shared goal and its group/members.
@@ -379,6 +426,26 @@ func (r *SharedGoalRepo) toRows(goals []*internal.Goal) []*SharedGoalRow {
 			CreatedAt:     g.CreatedAt,
 			UpdatedAt:     g.UpdatedAt,
 			Members:       make([]*SharedMemberRow, 0),
+		}
+		if len(g.Edges.SharedGroup) > 0 {
+			grp := g.Edges.SharedGroup[0]
+			row.Group = &SharedGroupRow{
+				ID:          grp.ID,
+				GoalID:      grp.GoalID,
+				CreatedBy:   grp.CreatedBy,
+				Name:        grp.Name,
+				Description: grp.Description,
+			}
+			for _, m := range grp.Edges.Members {
+				row.Members = append(row.Members, &SharedMemberRow{
+					ID:            m.ID,
+					GroupID:       m.GroupID,
+					EmployeeID:    m.EmployeeID,
+					Weight:        m.Weight,
+					TargetValue:   m.TargetValue,
+					BaselineValue: m.BaselineValue,
+				})
+			}
 		}
 		rows = append(rows, row)
 	}

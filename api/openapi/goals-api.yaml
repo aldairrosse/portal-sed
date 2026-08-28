@@ -1308,7 +1308,8 @@ components:
           maximum: 100
         target_value:
           type: number
-          minimum: 0.01
+          minimum: 0
+          description: "0 permitido solo si unit=binario o direction=descendente; en otros casos debe ser >0"
         direction:
           type: string
           enum: [ascendente, descendente]
@@ -1344,7 +1345,8 @@ components:
           maximum: 100
         target_value:
           type: number
-          minimum: 0.01
+          minimum: 0
+          description: "0 permitido solo si unit=binario o direction=descendente; en otros casos debe ser >0"
         direction:
           type: string
           enum: [ascendente, descendente]
@@ -1449,7 +1451,8 @@ components:
           maximum: 100
         target_value:
           type: number
-          minimum: 0.01
+          minimum: 0
+          description: "0 permitido solo si unit=binario o direction=descendente; en otros casos debe ser >0"
         direction:
           type: string
           enum: [ascendente, descendente]
@@ -1788,7 +1791,8 @@ components:
           maximum: 100
         target_value:
           type: number
-          minimum: 0.01
+          minimum: 0
+          description: "0 permitido solo si unit=binario o direction=descendente; en otros casos debe ser >0"
         direction:
           type: string
           enum: [ascendente, descendente]
@@ -1832,7 +1836,8 @@ components:
           maximum: 100
         target_value:
           type: number
-          minimum: 0.01
+          minimum: 0
+          description: "0 permitido solo si unit=binario o direction=descendente; en otros casos debe ser >0"
         direction:
           type: string
           enum: [ascendente, descendente]
@@ -1862,7 +1867,8 @@ components:
           maximum: 100
         target_value:
           type: number
-          minimum: 0.01
+          minimum: 0
+          description: "0 permitido solo si unit=binario o direction=descendente; en otros casos debe ser >0"
         baseline_value:
           type: number
           nullable: true
@@ -1969,7 +1975,7 @@ components:
     # ============================================================================
     CreateSharedGoalRequest:
       type: object
-      required: [name, unit, weight, target_value, group_name]
+      required: [name, unit, weight, target_value]
       properties:
         name:
           type: string
@@ -1986,7 +1992,8 @@ components:
           maximum: 100
         target_value:
           type: number
-          minimum: 0.01
+          minimum: 0
+          description: "0 permitido solo si unit=binario o direction=descendente; en otros casos debe ser >0"
         direction:
           type: string
           enum: [ascendente, descendente]
@@ -2004,7 +2011,6 @@ components:
           description: "Optional; shared goals typically have no category."
         group_name:
           type: string
-          minLength: 1
           maxLength: 255
         group_description:
           type: string
@@ -2032,7 +2038,8 @@ components:
           maximum: 100
         target_value:
           type: number
-          minimum: 0.01
+          minimum: 0
+          description: "0 permitido solo si unit=binario o direction=descendente; en otros casos debe ser >0"
         direction:
           type: string
           enum: [ascendente, descendente]
@@ -2048,6 +2055,11 @@ components:
           format: uuid
           nullable: true
           description: "Optional; shared goals typically have no category."
+        members:
+          type: array
+          items:
+            $ref: '#/components/schemas/SharedMemberRequest'
+          description: "Optional; when present, replaces group members (delete+recreate). Omit to leave unchanged."
 
     SharedMemberRequest:
       type: object
@@ -2062,7 +2074,8 @@ components:
           maximum: 100
         target_value:
           type: number
-          minimum: 0.01
+          minimum: 0
+          description: "0 permitido solo si unit=binario o direction=descendente; en otros casos debe ser >0"
         baseline_value:
           type: number
           nullable: true
@@ -2081,7 +2094,8 @@ components:
           maximum: 100
         target_value:
           type: number
-          minimum: 0.01
+          minimum: 0
+          description: "0 permitido solo si unit=binario o direction=descendente; en otros casos debe ser >0"
         baseline_value:
           type: number
           nullable: true

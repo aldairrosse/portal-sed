@@ -3,6 +3,7 @@ package goal
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/sed-evaluacion-desempeno/api/internal/auth"
@@ -30,10 +31,10 @@ type CreateSharedGoalRequest struct {
 	Unit             string                `json:"unit" validate:"required,oneof=porcentaje moneda numero binario"`
 	Direction        string                `json:"direction" validate:"required,oneof=ascendente descendente"`
 	GoalKind         string                `json:"goal_kind" validate:"required,oneof=qualitative quantitative"`
-	Weight           float64               `json:"weight" validate:"required,min=0,max=100"`
+	Weight           float64               `json:"weight" validate:"required,gte=0.01,max=100"`
 	TargetValue      float64               `json:"target_value" validate:"required,gte=0"`
 	BaselineValue    *float64              `json:"baseline_value,omitempty"`
-	GroupName        string                `json:"group_name" validate:"required"`
+	GroupName        string                `json:"group_name"`
 	GroupDescription string                `json:"group_description"`
 	Members          []CreateMemberRequest `json:"members" validate:"required,min=1"`
 }
@@ -41,29 +42,30 @@ type CreateSharedGoalRequest struct {
 // CreateMemberRequest is the request body for creating a member.
 type CreateMemberRequest struct {
 	EmployeeID    uuid.UUID `json:"employee_id" validate:"required"`
-	Weight        float64   `json:"weight" validate:"required,min=0,max=100"`
-	TargetValue   float64   `json:"target_value" validate:"required,gt=0"`
+	Weight        float64   `json:"weight" validate:"required,gte=0.01,max=100"`
+	TargetValue   float64   `json:"target_value" validate:"required,gte=0"`
 	BaselineValue *float64  `json:"baseline_value,omitempty"`
 }
 
 // UpdateSharedGoalRequest is the request body for updating a shared goal.
 type UpdateSharedGoalRequest struct {
-	Name          string   `json:"name" validate:"required"`
-	Description   string   `json:"description"`
-	Unit          string   `json:"unit" validate:"required,oneof=porcentaje moneda numero binario"`
-	Direction     string   `json:"direction" validate:"required,oneof=ascendente descendente"`
-	GoalKind      string   `json:"goal_kind" validate:"required,oneof=qualitative quantitative"`
-	Weight        float64  `json:"weight" validate:"required,min=0,max=100"`
-	TargetValue   float64  `json:"target_value" validate:"required,gte=0"`
-	BaselineValue *float64 `json:"baseline_value,omitempty"`
-	CurrentValue  *float64 `json:"current_value,omitempty"`
+	Name          string                `json:"name" validate:"required"`
+	Description   string                `json:"description"`
+	Unit          string                `json:"unit" validate:"required,oneof=porcentaje moneda numero binario"`
+	Direction     string                `json:"direction" validate:"required,oneof=ascendente descendente"`
+	GoalKind      string                `json:"goal_kind" validate:"required,oneof=qualitative quantitative"`
+	Weight        float64               `json:"weight" validate:"required,gte=0.01,max=100"`
+	TargetValue   float64               `json:"target_value" validate:"required,gte=0"`
+	BaselineValue *float64              `json:"baseline_value,omitempty"`
+	CurrentValue  *float64              `json:"current_value,omitempty"`
+	Members       *[]CreateMemberRequest `json:"members,omitempty"`
 }
 
 // AddMemberRequest is the request body for adding a member.
 type AddMemberRequest struct {
 	EmployeeID    uuid.UUID `json:"employee_id" validate:"required"`
-	Weight        float64   `json:"weight" validate:"required,min=0,max=100"`
-	TargetValue   float64   `json:"target_value" validate:"required,gt=0"`
+	Weight        float64   `json:"weight" validate:"required,gte=0.01,max=100"`
+	TargetValue   float64   `json:"target_value" validate:"required,gte=0"`
 	BaselineValue *float64  `json:"baseline_value,omitempty"`
 }
 
@@ -89,9 +91,17 @@ func (s *sharedGoalService) CreateSharedGoal(ctx context.Context, req CreateShar
 		return nil, pkgerrors.NewDomainError(pkgerrors.NotAuthenticated, "no authenticated user", nil)
 	}
 
-	// Validate unit, target and baseline (mirrors personal goal validation).
+	// Validate unit, weight, target and baseline (mirrors personal goal validation).
 	if !validUnits[req.Unit] {
 		return nil, pkgerrors.ErrInvalidUnit
+	}
+	if req.Weight < 0.01 || req.Weight > 100 {
+		return nil, pkgerrors.ErrInvalidWeightRange
+	}
+	for _, m := range req.Members {
+		if m.Weight < 0.01 || m.Weight > 100 {
+			return nil, pkgerrors.ErrInvalidWeightRange
+		}
 	}
 	if req.TargetValue <= 0 && req.Direction != "descendente" && req.Unit != "binario" {
 		return nil, pkgerrors.ErrInvalidTargetValue
@@ -100,18 +110,32 @@ func (s *sharedGoalService) CreateSharedGoal(ctx context.Context, req CreateShar
 		return nil, err
 	}
 	normalizedTarget := normalizeBinaryValue(req.Unit, req.TargetValue)
+	groupName := strings.TrimSpace(req.GroupName)
+	if groupName == "" {
+		groupName = "Grupo"
+	}
 
 	members := make([]*repogoal.SharedMemberRow, 0, len(req.Members))
 	for _, m := range req.Members {
+		tv := m.TargetValue
+		if tv == 0 && req.Unit != "binario" && req.Direction != "descendente" {
+			tv = req.TargetValue
+		}
+		if req.Unit == "binario" {
+			tv = normalizeBinaryValue(req.Unit, tv)
+		}
+		if tv <= 0 && req.Unit != "binario" && req.Direction != "descendente" {
+			return nil, pkgerrors.ErrInvalidTargetValue
+		}
 		members = append(members, &repogoal.SharedMemberRow{
 			EmployeeID:    m.EmployeeID,
 			Weight:        m.Weight,
-			TargetValue:   m.TargetValue,
+			TargetValue:   tv,
 			BaselineValue: m.BaselineValue,
 		})
 	}
 
-	return s.repo.CreateSharedGoal(ctx, userID, req.Name, req.Description, req.Unit, req.Direction, req.GoalKind, req.Weight, normalizedTarget, req.BaselineValue, req.GroupName, req.GroupDescription, members)
+	return s.repo.CreateSharedGoal(ctx, userID, req.Name, req.Description, req.Unit, req.Direction, req.GoalKind, req.Weight, normalizedTarget, req.BaselineValue, groupName, req.GroupDescription, members)
 }
 
 // GetSharedGoal retrieves a shared goal.
@@ -151,9 +175,19 @@ func (s *sharedGoalService) UpdateSharedGoal(ctx context.Context, goalID uuid.UU
 		return nil, ErrNotCreator
 	}
 
-	// Validate unit, target and baseline (mirrors personal goal validation).
+	// Validate unit, weight, target and baseline (mirrors personal goal validation).
 	if !validUnits[req.Unit] {
 		return nil, pkgerrors.ErrInvalidUnit
+	}
+	if req.Weight < 0.01 || req.Weight > 100 {
+		return nil, pkgerrors.ErrInvalidWeightRange
+	}
+	if req.Members != nil {
+		for _, m := range *req.Members {
+			if m.Weight < 0.01 || m.Weight > 100 {
+				return nil, pkgerrors.ErrInvalidWeightRange
+			}
+		}
 	}
 	if req.TargetValue <= 0 && req.Direction != "descendente" && req.Unit != "binario" {
 		return nil, pkgerrors.ErrInvalidTargetValue
@@ -169,7 +203,40 @@ func (s *sharedGoalService) UpdateSharedGoal(ctx context.Context, goalID uuid.UU
 		}
 	}
 
-	return s.repo.UpdateSharedGoal(ctx, goalID, req.Name, req.Description, req.Unit, req.Direction, req.GoalKind, req.Weight, normalizedTarget, req.CurrentValue, req.BaselineValue)
+	updated, err := s.repo.UpdateSharedGoal(ctx, goalID, req.Name, req.Description, req.Unit, req.Direction, req.GoalKind, req.Weight, normalizedTarget, req.CurrentValue, req.BaselineValue)
+	if err != nil {
+		return nil, err
+	}
+
+	// ponytail: sync members only when explicitly sent (nil = unchanged); cheapest delete+recreate
+	if req.Members != nil {
+		members := make([]*repogoal.SharedMemberRow, 0, len(*req.Members))
+		for _, m := range *req.Members {
+			tv := m.TargetValue
+			if tv == 0 && req.Unit != "binario" && req.Direction != "descendente" {
+				tv = req.TargetValue
+			}
+			if req.Unit == "binario" {
+				tv = normalizeBinaryValue(req.Unit, tv)
+			}
+			if tv <= 0 && req.Unit != "binario" && req.Direction != "descendente" {
+				return nil, pkgerrors.ErrInvalidTargetValue
+			}
+			members = append(members, &repogoal.SharedMemberRow{
+				EmployeeID:    m.EmployeeID,
+				Weight:        m.Weight,
+				TargetValue:   tv,
+				BaselineValue: m.BaselineValue,
+			})
+		}
+		if err := s.repo.SyncSharedGoalMembers(ctx, goalID, members); err != nil {
+			return nil, err
+		}
+		// re-fetch to include synced members in response
+		return s.repo.GetSharedGoal(ctx, goalID)
+	}
+
+	return updated, nil
 }
 
 // DeleteSharedGoal deletes a shared goal.
@@ -202,8 +269,18 @@ func (s *sharedGoalService) AddMember(ctx context.Context, goalID uuid.UUID, req
 	if goal.CreatedBy != userID {
 		return nil, ErrNotCreator
 	}
+	if req.Weight < 0.01 || req.Weight > 100 {
+		return nil, pkgerrors.ErrInvalidWeightRange
+	}
+	if req.TargetValue <= 0 && goal.Unit != "binario" && goal.Direction != "descendente" {
+		return nil, pkgerrors.ErrInvalidTargetValue
+	}
+	tv := req.TargetValue
+	if goal.Unit == "binario" {
+		tv = normalizeBinaryValue(goal.Unit, tv)
+	}
 
-	return s.repo.AddMember(ctx, goalID, req.EmployeeID, req.Weight, req.TargetValue, req.BaselineValue)
+	return s.repo.AddMember(ctx, goalID, req.EmployeeID, req.Weight, tv, req.BaselineValue)
 }
 
 // RemoveMember removes a member from a shared goal.

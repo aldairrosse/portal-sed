@@ -32,7 +32,7 @@ func (Goal) Fields() []ent.Field {
 		field.Text("description").
 			Optional(),
 		field.Enum("unit").
-			Values("porcentaje", "moneda", "numero").
+			Values("porcentaje", "moneda", "numero", "binario").
 			SchemaType(map[string]string{
 				dialect.Postgres: "goal_unit",
 			}),
