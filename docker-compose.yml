@@ -1,7 +1,7 @@
 services:
   postgres:
     image: postgres:15
-    ports: ["5435:5432"]
+    ports: ["127.0.0.1:5435:5432"]
     container_name: portal-sed-db
     env_file: .env
     restart: always
