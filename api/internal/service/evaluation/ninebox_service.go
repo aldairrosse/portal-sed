@@ -299,6 +299,24 @@ func (s *NineBoxService) ComputeMatrixView(ctx context.Context, cycleID uuid.UUI
 	return results, nil
 }
 
+// ResolvePhaseID resolves a phase name and/or explicit phase ID to a phase ID.
+// When both are given they must match, else an InvalidRequest (400) error is
+// returned. Empty inputs resolve to the cycle's current phase.
+func (s *NineBoxService) ResolvePhaseID(ctx context.Context, cycleID uuid.UUID, phase string, phaseID *uuid.UUID) (uuid.UUID, error) {
+	if phase == "" {
+		return s.resolvePhase(ctx, cycleID, phaseID)
+	}
+	resolved, err := s.cycleRepo.GetPhaseID(ctx, cycleID, phase)
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("resolve phase %q for cycle %s: %w", phase, cycleID, err)
+	}
+	if phaseID != nil && *phaseID != uuid.Nil && *phaseID != resolved {
+		return uuid.Nil, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
+			"phase and phase_id conflict", nil)
+	}
+	return resolved, nil
+}
+
 // resolvePhase returns the requested phase ID, or resolves the cycle's current
 // phase when phaseID is nil.
 func (s *NineBoxService) resolvePhase(ctx context.Context, cycleID uuid.UUID, phaseID *uuid.UUID) (uuid.UUID, error) {

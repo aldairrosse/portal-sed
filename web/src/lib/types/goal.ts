@@ -8,8 +8,9 @@ export type GoalKind = 'qualitative' | 'quantitative';
 export type GoalSource = 'global' | 'shared';
 
 // ─── Cycle Phase ──────────────────────────────────────────────────────────────
-
-export type CyclePhase = 'inicio-anio' | 'medio-anio' | 'fin-anio';
+// Única verdad en $lib/types/cycle.ts; re-export para compatibilidad.
+import type { AnyCyclePhase } from './cycle';
+export type CyclePhase = AnyCyclePhase;
 
 // ─── KPI ───────────────────────────────────────────────────────────────────────
 

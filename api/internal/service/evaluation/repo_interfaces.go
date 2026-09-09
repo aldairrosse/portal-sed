@@ -18,13 +18,13 @@ type EvaluationRepo interface {
 	LockEvalForUpdate(ctx context.Context, tx *sql.Tx, evalID uuid.UUID) (*repo.EvaluationRow, error)
 	SubmitEval(ctx context.Context, tx *sql.Tx, evalID uuid.UUID, comps []repo.CompetencyUpsert, goals []repo.GoalCommentUpsert, newState string, setSelfCompleted, setRHCompleted bool) error
 	GetDetail(ctx context.Context, id uuid.UUID) (*repo.EvaluationRow, []*internal.EvaluationCompetency, []*internal.EvaluationGoal, error)
-	ListByCycle(ctx context.Context, cycleID uuid.UUID, state string, cursor string, limit int) ([]*repo.EvaluationRow, string, error)
+	ListByCycle(ctx context.Context, cycleID uuid.UUID, state string, phase string, cursor string, limit int) ([]*repo.EvaluationRow, string, error)
 	GetCompetencyRatingsByEmployee(ctx context.Context, employeeID, cycleID, profileID uuid.UUID) ([]repo.EmployeeCompetencyRatingRow, error)
 	FinalizeEval(ctx context.Context, tx *sql.Tx, evalID uuid.UUID) error
 	RefreshSummaryView(ctx context.Context) error
 	GetSummaryByCycle(ctx context.Context, cycleID uuid.UUID) (map[string]int64, error)
-	ListCompetencyResults(ctx context.Context, cycleID uuid.UUID, query string, managerID *uuid.UUID, offset, limit int) ([]*repo.CompetencyResultRow, error)
-	CountCompetencyResults(ctx context.Context, cycleID uuid.UUID, query string, managerID *uuid.UUID) (int, error)
+	ListCompetencyResults(ctx context.Context, cycleID uuid.UUID, phase string, query string, managerID *uuid.UUID, offset, limit int) ([]*repo.CompetencyResultRow, error)
+	CountCompetencyResults(ctx context.Context, cycleID uuid.UUID, phase string, query string, managerID *uuid.UUID) (int, error)
 }
 
 // CompetencyRatingRepo defines the operations required for competency ratings.

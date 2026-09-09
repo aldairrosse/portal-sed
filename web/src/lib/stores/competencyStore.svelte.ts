@@ -672,6 +672,8 @@ export async function setCompetencyAcceptanceLevelsForProfile(
 const DEFAULT_MIN_LEVELS: Record<EvaluationProfile, number> = {
     colaborador: 3,
     jefe: 3,
+    gerente: 4,
+    coordinador: 3,
     vendedor: 3,
     "gerente-tienda": 4,
     divisional: 4,

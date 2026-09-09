@@ -13,7 +13,7 @@ import (
 
 // MetricsService defines the interface for area metrics operations.
 type MetricsService interface {
-	GetAreaMetrics(ctx context.Context, nodeID, cycleID string) (*dto.AreaMetricsResponse, error)
+	GetAreaMetrics(ctx context.Context, nodeID, cycleID, phase string) (*dto.AreaMetricsResponse, error)
 }
 
 type metricsService struct {
@@ -31,8 +31,10 @@ func NewMetricsService(metricsRepo *repo.MetricsRepo, nodeRepo *repo.OrgNodeRepo
 	}
 }
 
-// GetAreaMetrics computes aggregated metrics for the employees of a given org node.
-func (s *metricsService) GetAreaMetrics(ctx context.Context, nodeID, cycleID string) (*dto.AreaMetricsResponse, error) {
+// GetAreaMetrics computes aggregated metrics for the team of a given org node
+// (direct employees plus heads of direct child nodes). When cycleID is set and
+// phase is empty, phase defaults to the cycle's current_phase.
+func (s *metricsService) GetAreaMetrics(ctx context.Context, nodeID, cycleID, phase string) (*dto.AreaMetricsResponse, error) {
 	// Parse and validate nodeId
 	nodeUUID, err := uuid.Parse(nodeID)
 	if err != nil {
@@ -48,8 +50,8 @@ func (s *metricsService) GetAreaMetrics(ctx context.Context, nodeID, cycleID str
 		return nil, err
 	}
 
-	// Get direct employees
-	employees, err := s.metricsRepo.GetDirectEmployees(ctx, nodeUUID)
+	// Get team employees (node staff plus child-node heads)
+	employees, err := s.metricsRepo.GetTeamEmployees(ctx, nodeUUID)
 	if err != nil {
 		return nil, err
 	}
@@ -105,11 +107,27 @@ func (s *metricsService) GetAreaMetrics(ctx context.Context, nodeID, cycleID str
 		if err != nil {
 			return nil, errors.NewDomainError(errors.InvalidRequest, "cycleId must be a valid UUID", err)
 		}
+		if phase == "" {
+			phase, err = s.metricsRepo.GetCyclePhase(ctx, cycleUUID)
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	// Validate explicit phase filter.
+	// "avance" and "medio-anio" are equivalent (see SamePhaseForWrite).
+	if phase != "" {
+		switch phase {
+		case "asignacion", "avance", "medio-anio", "medio_anio", "cierre":
+		default:
+			return nil, errors.NewDomainError(errors.InvalidRequest, "phase must be one of asignacion, avance, medio-anio, cierre", nil)
+		}
 	}
 
 	// Get RH evaluations if cycleID is provided
 	if cycleUUID != uuid.Nil {
-		ratings, err := s.metricsRepo.GetRHEvaluationsByEmployees(ctx, empIDs, cycleUUID)
+		ratings, err := s.metricsRepo.GetRHEvaluationsByEmployees(ctx, empIDs, cycleUUID, phase)
 		if err != nil {
 			return nil, err
 		}

@@ -28,6 +28,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/cycles/current": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get the current cycle
+         * @description Resolves the cycle for the given year, falling back to the active (unfinished) cycle. Must be matched before /cycles/{id}.
+         */
+        get: operations["getCurrentCycle"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/cycles/{id}": {
         parameters: {
             query?: never;
@@ -122,6 +142,26 @@ export interface paths {
         get: operations["getAvailableTransitions"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/cycles/{id}/revert": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Revert a cycle to the previous phase
+         * @description Reverts the cycle to the previous phase. RBAC: RH only. Empty body.
+         */
+        post: operations["revertPhase"];
         delete?: never;
         options?: never;
         head?: never;
@@ -284,6 +324,15 @@ export interface components {
                 "application/json": components["schemas"]["Error"];
             };
         };
+        /** @description Forbidden */
+        Forbidden: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["Error"];
+            };
+        };
         /** @description Precondition Required */
         PreconditionRequired: {
             headers: {
@@ -377,6 +426,33 @@ export interface operations {
             400: components["responses"]["BadRequest"];
             409: components["responses"]["Conflict"];
             429: components["responses"]["RateLimit"];
+        };
+    };
+    getCurrentCycle: {
+        parameters: {
+            query: {
+                /** @description Organization UUID */
+                organization_id: string;
+                /** @description Evaluation year (defaults to current year) */
+                year?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Current cycle */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Cycle"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            404: components["responses"]["NotFound"];
         };
     };
     getCycle: {
@@ -531,6 +607,34 @@ export interface operations {
                 };
             };
             404: components["responses"]["NotFound"];
+        };
+    };
+    revertPhase: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Unique idempotency key (UUID v4) */
+                "Idempotency-Key": string;
+            };
+            path: {
+                /** @description Cycle UUID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Phase reverted successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Cycle"];
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["Conflict"];
         };
     };
 }

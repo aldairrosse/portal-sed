@@ -128,7 +128,7 @@ func TestMetricsRepo_GetRHEvaluationsByEmployees_Success(t *testing.T) {
 			AddRow(4.5, empID1).
 			AddRow(3.0, empID2))
 
-	ratings, err := r.GetRHEvaluationsByEmployees(context.Background(), []uuid.UUID{empID1, empID2}, cycleID)
+	ratings, err := r.GetRHEvaluationsByEmployees(context.Background(), []uuid.UUID{empID1, empID2}, cycleID, "")
 	require.NoError(t, err)
 	require.Len(t, ratings, 2)
 	assert.Equal(t, 4.5, ratings[0].RHRating)
@@ -146,7 +146,7 @@ func TestMetricsRepo_GetRHEvaluationsByEmployees_EmptyIDs(t *testing.T) {
 	r := repo.NewMetricsRepo(nil, db)
 
 	cycleID := uuid.MustParse("77777777-7777-7777-7777-777777777777")
-	ratings, err := r.GetRHEvaluationsByEmployees(context.Background(), []uuid.UUID{}, cycleID)
+	ratings, err := r.GetRHEvaluationsByEmployees(context.Background(), []uuid.UUID{}, cycleID, "")
 	require.NoError(t, err)
 	assert.Nil(t, ratings)
 
@@ -168,7 +168,7 @@ func TestMetricsRepo_GetRHEvaluationsByEmployees_NoRatings(t *testing.T) {
 			"rh_rating", "employee_id",
 		}))
 
-	ratings, err := r.GetRHEvaluationsByEmployees(context.Background(), []uuid.UUID{empID}, cycleID)
+	ratings, err := r.GetRHEvaluationsByEmployees(context.Background(), []uuid.UUID{empID}, cycleID, "")
 	require.NoError(t, err)
 	assert.Empty(t, ratings)
 

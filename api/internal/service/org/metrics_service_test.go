@@ -49,8 +49,8 @@ func TestMetricsService_GetAreaMetrics_Success(t *testing.T) {
 		WithArgs(nodeID).
 		WillReturnRows(newOrgNodeRow(nodeID, orgID, now))
 
-	// Expect GetDirectEmployees
-	mock.ExpectQuery("SELECT e\\.id, e\\.created_at, e\\.updated_at, e\\.first_name, e\\.last_name, e\\.email, e\\.employee_number, e\\.is_active, e\\.org_node_id, e\\.manager_id, e\\.profile_id, COALESCE\\(ep\\.name, ''\\) as profile_name, COALESCE\\(ep\\.description, ''\\) as profile_description, e\\.job_title FROM employees e LEFT JOIN evaluation_profiles ep ON e\\.profile_id = ep\\.id WHERE e\\.org_node_id = \\$1 AND e\\.is_active = true ORDER BY e\\.last_name, e\\.first_name").
+	// Expect GetTeamEmployees
+	mock.ExpectQuery("SELECT e\\.id, e\\.created_at, e\\.updated_at, e\\.first_name, e\\.last_name, e\\.email, e\\.employee_number, e\\.is_active, e\\.org_node_id, e\\.manager_id, e\\.profile_id, COALESCE\\(ep\\.name, ''\\) as profile_name, COALESCE\\(ep\\.description, ''\\) as profile_description, e\\.job_title FROM employees e LEFT JOIN evaluation_profiles ep ON e\\.profile_id = ep\\.id WHERE e\\.is_active = true AND \\(e\\.org_node_id = \\$1 OR e\\.id IN \\(SELECT head_employee_id FROM org_nodes WHERE parent_id = \\$1 AND head_employee_id IS NOT NULL\\)\\) ORDER BY e\\.last_name, e\\.first_name").
 		WithArgs(nodeID).
 		WillReturnRows(sqlmock.NewRows([]string{
 			"id", "created_at", "updated_at", "first_name", "last_name", "email",
@@ -68,16 +68,21 @@ func TestMetricsService_GetAreaMetrics_Success(t *testing.T) {
 			AddRow(goalID1, "Goal A", 100.0, 75.0, "in_progress", empID1).
 			AddRow(goalID2, "Goal B", 50.0, 50.0, "completed", empID2))
 
+	// Expect GetCyclePhase (phase defaults to cycle current_phase)
+	mock.ExpectQuery("SELECT current_phase::text FROM cycles WHERE id = \\$1").
+		WithArgs(cycleID).
+		WillReturnRows(sqlmock.NewRows([]string{"current_phase"}).AddRow("avance"))
+
 	// Expect GetRHEvaluationsByEmployees
-	mock.ExpectQuery("SELECT ec.rh_rating, e.employee_id FROM evaluation_competencies ec JOIN evaluations e ON e.id = ec.evaluation_id WHERE e.employee_id IN \\(\\$1,\\$2\\) AND e.cycle_id = \\$3 AND ec.rh_rating IS NOT NULL").
-		WithArgs(empID1, empID2, cycleID).
+	mock.ExpectQuery("SELECT ec.rh_rating, e.employee_id FROM evaluation_competencies ec JOIN evaluations e ON e.id = ec.evaluation_id WHERE e.employee_id IN \\(\\$1,\\$2\\) AND e.cycle_id = \\$3 AND ec.rh_rating IS NOT NULL AND e.phase IN \\(\\$4, \\$5\\)").
+		WithArgs(empID1, empID2, cycleID, "avance", "medio-anio").
 		WillReturnRows(sqlmock.NewRows([]string{
 			"rh_rating", "employee_id",
 		}).
 			AddRow(4.5, empID1).
 			AddRow(3.5, empID2))
 
-	resp, err := service.GetAreaMetrics(context.Background(), nodeID.String(), cycleID.String())
+	resp, err := service.GetAreaMetrics(context.Background(), nodeID.String(), cycleID.String(), "")
 	require.NoError(t, err)
 	assert.Equal(t, nodeID.String(), resp.NodeID)
 	assert.Equal(t, 2, resp.EmployeeCount)
@@ -120,14 +125,14 @@ func TestMetricsService_GetAreaMetrics_NoEmployees(t *testing.T) {
 		WillReturnRows(newOrgNodeRow(nodeID, orgID, now))
 
 	// Expect empty employees
-	mock.ExpectQuery("SELECT e\\.id, e\\.created_at, e\\.updated_at, e\\.first_name, e\\.last_name, e\\.email, e\\.employee_number, e\\.is_active, e\\.org_node_id, e\\.manager_id, e\\.profile_id, COALESCE\\(ep\\.name, ''\\) as profile_name, COALESCE\\(ep\\.description, ''\\) as profile_description, e\\.job_title FROM employees e LEFT JOIN evaluation_profiles ep ON e\\.profile_id = ep\\.id WHERE e\\.org_node_id = \\$1 AND e\\.is_active = true ORDER BY e\\.last_name, e\\.first_name").
+	mock.ExpectQuery("SELECT e\\.id, e\\.created_at, e\\.updated_at, e\\.first_name, e\\.last_name, e\\.email, e\\.employee_number, e\\.is_active, e\\.org_node_id, e\\.manager_id, e\\.profile_id, COALESCE\\(ep\\.name, ''\\) as profile_name, COALESCE\\(ep\\.description, ''\\) as profile_description, e\\.job_title FROM employees e LEFT JOIN evaluation_profiles ep ON e\\.profile_id = ep\\.id WHERE e\\.is_active = true AND \\(e\\.org_node_id = \\$1 OR e\\.id IN \\(SELECT head_employee_id FROM org_nodes WHERE parent_id = \\$1 AND head_employee_id IS NOT NULL\\)\\) ORDER BY e\\.last_name, e\\.first_name").
 		WithArgs(nodeID).
 		WillReturnRows(sqlmock.NewRows([]string{
 			"id", "created_at", "updated_at", "first_name", "last_name", "email",
 			"employee_number", "is_active", "org_node_id", "manager_id", "profile_id", "profile_name", "profile_description", "job_title",
 		}))
 
-	resp, err := service.GetAreaMetrics(context.Background(), nodeID.String(), "")
+	resp, err := service.GetAreaMetrics(context.Background(), nodeID.String(), "", "")
 	require.NoError(t, err)
 	assert.Equal(t, nodeID.String(), resp.NodeID)
 	assert.Equal(t, 0, resp.EmployeeCount)
@@ -159,8 +164,8 @@ func TestMetricsService_GetAreaMetrics_NoGoals(t *testing.T) {
 		WithArgs(nodeID).
 		WillReturnRows(newOrgNodeRow(nodeID, orgID, now))
 
-	// Expect GetDirectEmployees
-	mock.ExpectQuery("SELECT e\\.id, e\\.created_at, e\\.updated_at, e\\.first_name, e\\.last_name, e\\.email, e\\.employee_number, e\\.is_active, e\\.org_node_id, e\\.manager_id, e\\.profile_id, COALESCE\\(ep\\.name, ''\\) as profile_name, COALESCE\\(ep\\.description, ''\\) as profile_description, e\\.job_title FROM employees e LEFT JOIN evaluation_profiles ep ON e\\.profile_id = ep\\.id WHERE e\\.org_node_id = \\$1 AND e\\.is_active = true ORDER BY e\\.last_name, e\\.first_name").
+	// Expect GetTeamEmployees
+	mock.ExpectQuery("SELECT e\\.id, e\\.created_at, e\\.updated_at, e\\.first_name, e\\.last_name, e\\.email, e\\.employee_number, e\\.is_active, e\\.org_node_id, e\\.manager_id, e\\.profile_id, COALESCE\\(ep\\.name, ''\\) as profile_name, COALESCE\\(ep\\.description, ''\\) as profile_description, e\\.job_title FROM employees e LEFT JOIN evaluation_profiles ep ON e\\.profile_id = ep\\.id WHERE e\\.is_active = true AND \\(e\\.org_node_id = \\$1 OR e\\.id IN \\(SELECT head_employee_id FROM org_nodes WHERE parent_id = \\$1 AND head_employee_id IS NOT NULL\\)\\) ORDER BY e\\.last_name, e\\.first_name").
 		WithArgs(nodeID).
 		WillReturnRows(sqlmock.NewRows([]string{
 			"id", "created_at", "updated_at", "first_name", "last_name", "email",
@@ -176,7 +181,7 @@ func TestMetricsService_GetAreaMetrics_NoGoals(t *testing.T) {
 
 	// No cycleID provided, so no RH evaluations query
 
-	resp, err := service.GetAreaMetrics(context.Background(), nodeID.String(), "")
+	resp, err := service.GetAreaMetrics(context.Background(), nodeID.String(), "", "")
 	require.NoError(t, err)
 	assert.Equal(t, 1, resp.EmployeeCount)
 	assert.Equal(t, 0, resp.EmployeesWithGoals)
@@ -208,8 +213,8 @@ func TestMetricsService_GetAreaMetrics_NoRatings(t *testing.T) {
 		WithArgs(nodeID).
 		WillReturnRows(newOrgNodeRow(nodeID, orgID, now))
 
-	// Expect GetDirectEmployees
-	mock.ExpectQuery("SELECT e\\.id, e\\.created_at, e\\.updated_at, e\\.first_name, e\\.last_name, e\\.email, e\\.employee_number, e\\.is_active, e\\.org_node_id, e\\.manager_id, e\\.profile_id, COALESCE\\(ep\\.name, ''\\) as profile_name, COALESCE\\(ep\\.description, ''\\) as profile_description, e\\.job_title FROM employees e LEFT JOIN evaluation_profiles ep ON e\\.profile_id = ep\\.id WHERE e\\.org_node_id = \\$1 AND e\\.is_active = true ORDER BY e\\.last_name, e\\.first_name").
+	// Expect GetTeamEmployees
+	mock.ExpectQuery("SELECT e\\.id, e\\.created_at, e\\.updated_at, e\\.first_name, e\\.last_name, e\\.email, e\\.employee_number, e\\.is_active, e\\.org_node_id, e\\.manager_id, e\\.profile_id, COALESCE\\(ep\\.name, ''\\) as profile_name, COALESCE\\(ep\\.description, ''\\) as profile_description, e\\.job_title FROM employees e LEFT JOIN evaluation_profiles ep ON e\\.profile_id = ep\\.id WHERE e\\.is_active = true AND \\(e\\.org_node_id = \\$1 OR e\\.id IN \\(SELECT head_employee_id FROM org_nodes WHERE parent_id = \\$1 AND head_employee_id IS NOT NULL\\)\\) ORDER BY e\\.last_name, e\\.first_name").
 		WithArgs(nodeID).
 		WillReturnRows(sqlmock.NewRows([]string{
 			"id", "created_at", "updated_at", "first_name", "last_name", "email",
@@ -224,13 +229,13 @@ func TestMetricsService_GetAreaMetrics_NoRatings(t *testing.T) {
 		}).AddRow(goalID1, "Goal A", 100.0, 50.0, "in_progress", empID1))
 
 	// Expect empty ratings
-	mock.ExpectQuery("SELECT ec.rh_rating, e.employee_id FROM evaluation_competencies ec JOIN evaluations e ON e.id = ec.evaluation_id WHERE e.employee_id IN \\(\\$1\\) AND e.cycle_id = \\$2 AND ec.rh_rating IS NOT NULL").
-		WithArgs(empID1, cycleID).
+	mock.ExpectQuery("SELECT ec.rh_rating, e.employee_id FROM evaluation_competencies ec JOIN evaluations e ON e.id = ec.evaluation_id WHERE e.employee_id IN \\(\\$1\\) AND e.cycle_id = \\$2 AND ec.rh_rating IS NOT NULL AND e.phase IN \\(\\$3, \\$4\\)").
+		WithArgs(empID1, cycleID, "avance", "medio-anio").
 		WillReturnRows(sqlmock.NewRows([]string{
 			"rh_rating", "employee_id",
 		}))
 
-	resp, err := service.GetAreaMetrics(context.Background(), nodeID.String(), cycleID.String())
+	resp, err := service.GetAreaMetrics(context.Background(), nodeID.String(), cycleID.String(), "avance")
 	require.NoError(t, err)
 	assert.Equal(t, 1, resp.EmployeeCount)
 
@@ -263,7 +268,7 @@ func TestMetricsService_GetAreaMetrics_NodeNotFound(t *testing.T) {
 			"organization_id", "parent_id", "path", "version",
 		}))
 
-	_, err := service.GetAreaMetrics(context.Background(), nodeID.String(), "")
+	_, err := service.GetAreaMetrics(context.Background(), nodeID.String(), "", "")
 	require.Error(t, err)
 
 	var de *errors.DomainError
@@ -279,7 +284,7 @@ func TestMetricsService_GetAreaMetrics_InvalidNodeID(t *testing.T) {
 	db, mock := newMockDB(t)
 	service := newMetricsService(db, mock)
 
-	_, err := service.GetAreaMetrics(context.Background(), "not-a-uuid", "")
+	_, err := service.GetAreaMetrics(context.Background(), "not-a-uuid", "", "")
 	require.Error(t, err)
 
 	var de *errors.DomainError
@@ -306,8 +311,8 @@ func TestMetricsService_GetAreaMetrics_InvalidCycleID(t *testing.T) {
 		WithArgs(nodeID).
 		WillReturnRows(newOrgNodeRow(nodeID, orgID, now))
 
-	// Expect GetDirectEmployees
-	mock.ExpectQuery("SELECT e\\.id, e\\.created_at, e\\.updated_at, e\\.first_name, e\\.last_name, e\\.email, e\\.employee_number, e\\.is_active, e\\.org_node_id, e\\.manager_id, e\\.profile_id, COALESCE\\(ep\\.name, ''\\) as profile_name, COALESCE\\(ep\\.description, ''\\) as profile_description, e\\.job_title FROM employees e LEFT JOIN evaluation_profiles ep ON e\\.profile_id = ep\\.id WHERE e\\.org_node_id = \\$1 AND e\\.is_active = true ORDER BY e\\.last_name, e\\.first_name").
+	// Expect GetTeamEmployees
+	mock.ExpectQuery("SELECT e\\.id, e\\.created_at, e\\.updated_at, e\\.first_name, e\\.last_name, e\\.email, e\\.employee_number, e\\.is_active, e\\.org_node_id, e\\.manager_id, e\\.profile_id, COALESCE\\(ep\\.name, ''\\) as profile_name, COALESCE\\(ep\\.description, ''\\) as profile_description, e\\.job_title FROM employees e LEFT JOIN evaluation_profiles ep ON e\\.profile_id = ep\\.id WHERE e\\.is_active = true AND \\(e\\.org_node_id = \\$1 OR e\\.id IN \\(SELECT head_employee_id FROM org_nodes WHERE parent_id = \\$1 AND head_employee_id IS NOT NULL\\)\\) ORDER BY e\\.last_name, e\\.first_name").
 		WithArgs(nodeID).
 		WillReturnRows(sqlmock.NewRows([]string{
 			"id", "created_at", "updated_at", "first_name", "last_name", "email",
@@ -322,7 +327,7 @@ func TestMetricsService_GetAreaMetrics_InvalidCycleID(t *testing.T) {
 		}))
 
 	// Provide an invalid cycleId - should cause error when parsing
-	_, err := service.GetAreaMetrics(context.Background(), nodeID.String(), "not-a-uuid")
+	_, err := service.GetAreaMetrics(context.Background(), nodeID.String(), "not-a-uuid", "")
 	require.Error(t, err)
 
 	var de *errors.DomainError
@@ -350,8 +355,8 @@ func TestMetricsService_GetAreaMetrics_NoCycleID(t *testing.T) {
 		WithArgs(nodeID).
 		WillReturnRows(newOrgNodeRow(nodeID, orgID, now))
 
-	// Expect GetDirectEmployees
-	mock.ExpectQuery("SELECT e\\.id, e\\.created_at, e\\.updated_at, e\\.first_name, e\\.last_name, e\\.email, e\\.employee_number, e\\.is_active, e\\.org_node_id, e\\.manager_id, e\\.profile_id, COALESCE\\(ep\\.name, ''\\) as profile_name, COALESCE\\(ep\\.description, ''\\) as profile_description, e\\.job_title FROM employees e LEFT JOIN evaluation_profiles ep ON e\\.profile_id = ep\\.id WHERE e\\.org_node_id = \\$1 AND e\\.is_active = true ORDER BY e\\.last_name, e\\.first_name").
+	// Expect GetTeamEmployees
+	mock.ExpectQuery("SELECT e\\.id, e\\.created_at, e\\.updated_at, e\\.first_name, e\\.last_name, e\\.email, e\\.employee_number, e\\.is_active, e\\.org_node_id, e\\.manager_id, e\\.profile_id, COALESCE\\(ep\\.name, ''\\) as profile_name, COALESCE\\(ep\\.description, ''\\) as profile_description, e\\.job_title FROM employees e LEFT JOIN evaluation_profiles ep ON e\\.profile_id = ep\\.id WHERE e\\.is_active = true AND \\(e\\.org_node_id = \\$1 OR e\\.id IN \\(SELECT head_employee_id FROM org_nodes WHERE parent_id = \\$1 AND head_employee_id IS NOT NULL\\)\\) ORDER BY e\\.last_name, e\\.first_name").
 		WithArgs(nodeID).
 		WillReturnRows(sqlmock.NewRows([]string{
 			"id", "created_at", "updated_at", "first_name", "last_name", "email",
@@ -366,7 +371,7 @@ func TestMetricsService_GetAreaMetrics_NoCycleID(t *testing.T) {
 		}).AddRow(goalID1, "Goal A", 100.0, 80.0, "in_progress", empID1))
 
 	// No cycleID, so no RH evaluations query
-	resp, err := service.GetAreaMetrics(context.Background(), nodeID.String(), "")
+	resp, err := service.GetAreaMetrics(context.Background(), nodeID.String(), "", "")
 	require.NoError(t, err)
 	assert.Equal(t, 1, resp.EmployeeCount)
 

@@ -12,6 +12,8 @@
 	const PROFILE_ABBREVIATIONS: Record<EvaluationProfile, string> = {
 		colaborador: 'COL',
 		jefe: 'JEF',
+		gerente: 'GER',
+		coordinador: 'COO',
 		vendedor: 'VEN',
 		'gerente-tienda': 'GTE',
 		divisional: 'DIV',

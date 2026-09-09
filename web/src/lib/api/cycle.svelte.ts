@@ -1,6 +1,11 @@
 import { client } from './client';
 import { getSession } from './session.svelte';
-import type { CyclePhase } from '$lib/types/evaluation';
+import { normalizePhase, CANONICAL_TO_ALIAS } from '$lib/types/cycle';
+import type { AnyCyclePhase } from '$lib/types/cycle';
+
+// Re-export: única verdad de fases en $lib/types/cycle.ts.
+export type { ApiCyclePhase, AnyCyclePhase, CyclePhaseAlias } from '$lib/types/cycle';
+export type CyclePhase = AnyCyclePhase;
 
 export interface CycleState {
 	activePhase: CyclePhase | null;
@@ -8,19 +13,8 @@ export interface CycleState {
 	error: string | null;
 }
 
-const API_PHASE_MAP: Record<string, CyclePhase> = {
-	asignacion: 'inicio-anio',
-	avance: 'medio-anio',
-	cierre: 'fin-anio'
-};
-
 function mapApiPhase(apiPhase: string): CyclePhase {
-	if (API_PHASE_MAP[apiPhase]) return API_PHASE_MAP[apiPhase];
-	const lower = apiPhase.toLowerCase();
-	if (lower.includes('formul') || lower.includes('inicio') || lower.includes('planea') || lower.includes('asignacion')) {
-		return 'inicio-anio';
-	}
-	return API_PHASE_MAP[apiPhase] ?? 'inicio-anio';
+	return CANONICAL_TO_ALIAS[normalizePhase(apiPhase)];
 }
 
 let activePhase = $state<CyclePhase | null>(null);

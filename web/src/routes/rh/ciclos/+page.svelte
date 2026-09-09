@@ -9,7 +9,7 @@
 		hasCycleForYear,
 		assignAll
 	} from '$lib/stores/cycleStore.svelte';
-	import { API_PHASE_LABELS } from '$lib/types/cycle';
+	import { getPhaseLabel, normalizePhase } from '$lib/types/cycle';
 	import type { ApiCyclePhase } from '$lib/types/cycle';
 	import { Calendar, Plus, ArrowRight, CheckCircle2, AlertCircle, Users } from '@lucide/svelte';
 
@@ -31,15 +31,17 @@
 		loadCycles();
 	});
 
-	function getPrevPhase(current: ApiCyclePhase): ApiCyclePhase | null {
-		if (current === 'avance') return 'asignacion';
-		if (current === 'cierre') return 'avance';
+	function getPrevPhase(current: string): ApiCyclePhase | null {
+		const canonical = normalizePhase(current);
+		if (canonical === 'avance') return 'asignacion';
+		if (canonical === 'cierre') return 'avance';
 		return null;
 	}
 
-	function getNextPhase(current: ApiCyclePhase): ApiCyclePhase | null {
-		if (current === 'asignacion') return 'avance';
-		if (current === 'avance') return 'cierre';
+	function getNextPhase(current: string): ApiCyclePhase | null {
+		const canonical = normalizePhase(current);
+		if (canonical === 'asignacion') return 'avance';
+		if (canonical === 'avance') return 'cierre';
 		return null;
 	}
 
@@ -47,9 +49,10 @@
 		return [...cycles].sort((a, b) => b.year - a.year);
 	}
 
-	function phaseBadgeClass(phase: ApiCyclePhase): string {
-		if (phase === 'cierre') return 'badge-success';
-		if (phase === 'avance') return 'badge-warning';
+	function phaseBadgeClass(phase: string): string {
+		const canonical = normalizePhase(phase);
+		if (canonical === 'cierre') return 'badge-success';
+		if (canonical === 'avance') return 'badge-warning';
 		return 'badge-neutral';
 	}
 
@@ -170,12 +173,12 @@
 
 						<div class="flex items-center gap-2 mt-2 text-xs text-base-content/50">
 							<span class="badge badge-sm {phaseBadgeClass(cycle.current_phase)}">
-								{API_PHASE_LABELS[cycle.current_phase]}
+								{getPhaseLabel(cycle.current_phase)}
 							</span>
 							{#if !cycle.finished_at && getNextPhase(cycle.current_phase)}
 								<ArrowRight class="w-3 h-3" />
 								<span class="text-base-content/50">
-									{API_PHASE_LABELS[getNextPhase(cycle.current_phase)!]}
+									{getPhaseLabel(getNextPhase(cycle.current_phase)!)}
 								</span>
 							{/if}
 						</div>
@@ -281,9 +284,9 @@
 			<h3 class="font-bold text-lg">{isAdvance ? 'Avanzar' : 'Retroceder'} fase del ciclo</h3>
 			<p class="py-4">
 				¿Deseas {isAdvance ? 'avanzar' : 'retroceder'} el ciclo {cycle?.year} de
-				<span class="font-medium">{API_PHASE_LABELS[cycle?.current_phase ?? 'asignacion']}</span>
+				<span class="font-medium">{getPhaseLabel(cycle?.current_phase ?? 'asignacion')}</span>
 				a
-				<span class="font-medium">{API_PHASE_LABELS[confirmAdvance.toPhase]}</span>?
+				<span class="font-medium">{getPhaseLabel(confirmAdvance.toPhase)}</span>?
 			</p>
 			{#if confirmAdvance.toPhase === 'cierre'}
 				<div class="alert alert-warning text-sm mb-4">

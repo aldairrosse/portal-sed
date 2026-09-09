@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/sed-evaluacion-desempeno/api/internal"
+	"github.com/sed-evaluacion-desempeno/api/internal/pkg/state"
 )
 
 // GoalRow is a read model for goals with their employee association.
@@ -50,6 +51,32 @@ func (r *MetricsRepo) GetDirectEmployees(ctx context.Context, nodeID uuid.UUID) 
 		 ORDER BY e.last_name, e.first_name`, nodeID)
 }
 
+// GetTeamEmployees returns the same base as EvaluateeService.GetTeamMembers
+// anchored on a node: direct employees of the node PLUS head employees of
+// direct child nodes. Results are ordered by last_name, first_name.
+func (r *MetricsRepo) GetTeamEmployees(ctx context.Context, nodeID uuid.UUID) ([]*EmployeeRow, error) {
+	return scanEmployeeRowsWithProfile(r.db, ctx,
+		`SELECT e.id, e.created_at, e.updated_at, e.first_name, e.last_name, e.email,
+		        e.employee_number, e.is_active, e.org_node_id, e.manager_id, e.profile_id,
+		        COALESCE(ep.name, '') as profile_name, COALESCE(ep.description, '') as profile_description, e.job_title
+		 FROM employees e
+		 LEFT JOIN evaluation_profiles ep ON e.profile_id = ep.id
+		 WHERE e.is_active = true
+		   AND (e.org_node_id = $1
+		     OR e.id IN (SELECT head_employee_id FROM org_nodes WHERE parent_id = $1 AND head_employee_id IS NOT NULL))
+		 ORDER BY e.last_name, e.first_name`, nodeID)
+}
+
+// GetCyclePhase returns the current_phase of a cycle as text.
+func (r *MetricsRepo) GetCyclePhase(ctx context.Context, cycleID uuid.UUID) (string, error) {
+	var phase string
+	err := r.db.QueryRowContext(ctx, `SELECT current_phase::text FROM cycles WHERE id = $1`, cycleID).Scan(&phase)
+	if err != nil {
+		return "", err
+	}
+	return phase, nil
+}
+
 // GetGoalsByEmployees returns goals for the given employees.
 // Joins through goal_categories to link goals to employees.
 // Excludes goals where target_value = 0 to avoid division by zero.
@@ -91,7 +118,9 @@ func (r *MetricsRepo) GetGoalsByEmployees(ctx context.Context, employeeIDs []uui
 
 // GetRHEvaluationsByEmployees returns RH evaluation ratings for the given
 // employees and cycle. Only includes competencies with a non-null rh_rating.
-func (r *MetricsRepo) GetRHEvaluationsByEmployees(ctx context.Context, employeeIDs []uuid.UUID, cycleID uuid.UUID) ([]*RHRatingRow, error) {
+// When phase is non-empty, filters evaluations to e.phase = phase,
+// except "avance"/"medio-anio" which match both.
+func (r *MetricsRepo) GetRHEvaluationsByEmployees(ctx context.Context, employeeIDs []uuid.UUID, cycleID uuid.UUID, phase string) ([]*RHRatingRow, error) {
 	if len(employeeIDs) == 0 {
 		return nil, nil
 	}
@@ -112,6 +141,17 @@ func (r *MetricsRepo) GetRHEvaluationsByEmployees(ctx context.Context, employeeI
 	           WHERE e.employee_id IN (` + strings.Join(placeholders, ",") + `)
 	             AND e.cycle_id = $` + itoa(cycleParamIdx) + `
 	             AND ec.rh_rating IS NOT NULL`
+	if phase != "" {
+		// "avance" and "medio-anio" are equivalent (same as evaluation_repo.go);
+		// IsMidYearPhase also normalizes "medio_anio".
+		if state.IsMidYearPhase(phase) {
+			query += ` AND e.phase IN ($` + itoa(cycleParamIdx+1) + `, $` + itoa(cycleParamIdx+2) + `)`
+			args = append(args, "avance", "medio-anio")
+		} else {
+			query += ` AND e.phase = $` + itoa(cycleParamIdx+1) + `::phase`
+			args = append(args, phase)
+		}
+	}
 
 	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {

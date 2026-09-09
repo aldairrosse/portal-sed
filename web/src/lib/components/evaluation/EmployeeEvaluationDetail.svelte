@@ -221,7 +221,7 @@
 						competencies={allCompetencies}
 						{acceptanceLevels}
 						{levelDefinitions}
-						showRhColumn={isFinAnio}
+						showRhColumn={isFinAnio && viewerMode !== 'self'}
 					/>
 				{/if}
 

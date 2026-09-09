@@ -2,6 +2,7 @@ import { client } from '$lib/api/client';
 import { getSession } from '$lib/api/session.svelte';
 import { loadCycle } from '$lib/api/cycle.svelte';
 import type { Cycle, PhaseTransition, ApiCyclePhase } from '$lib/types/cycle';
+import { normalizePhase } from '$lib/types/cycle';
 import type { components } from '$lib/api/schemas/cycle';
 
 // ─── Module state ───────────────────────────────────────────────────────────────
@@ -71,7 +72,7 @@ export async function loadCycles(): Promise<void> {
 			id: c.id,
 			organization_id: c.organization_id,
 			year: c.year,
-			current_phase: c.current_phase,
+			current_phase: normalizePhase(c.current_phase),
 			version: c.version,
 			started_at: null,
 			finished_at: null,
@@ -128,7 +129,7 @@ export async function createCycle(year: number): Promise<Cycle | null> {
 			id: raw.id,
 			organization_id: raw.organization_id,
 			year: raw.year,
-			current_phase: raw.current_phase,
+			current_phase: normalizePhase(raw.current_phase),
 			version: raw.version,
 			started_at: raw.started_at ?? null,
 			finished_at: raw.finished_at ?? null,
@@ -156,7 +157,7 @@ async function getCycle(cycleId: string): Promise<Cycle | null> {
 		id: raw.id,
 		organization_id: raw.organization_id,
 		year: raw.year,
-		current_phase: raw.current_phase,
+		current_phase: normalizePhase(raw.current_phase),
 		version: raw.version,
 		started_at: raw.started_at ?? null,
 		finished_at: raw.finished_at ?? null,
@@ -193,7 +194,7 @@ export async function advancePhase(cycleId: string, toPhase: ApiCyclePhase): Pro
 			c.id === cycleId
 				? {
 						...c,
-						current_phase: raw.current_phase,
+						current_phase: normalizePhase(raw.current_phase),
 						version: raw.version,
 						finished_at: raw.finished_at ?? c.finished_at,
 						updated_at: raw.updated_at
@@ -252,5 +253,7 @@ export async function assignAll(cycleId: string): Promise<{ assigned: number; sk
 }
 
 // ─── Helpers ────────────────────────────────────────────────────────────────────
+// Re-exports: única verdad de fases en $lib/types/cycle.ts.
+export { normalizePhase, getPhaseLabel, isMidYearPhase, samePhaseForWrite } from '$lib/types/cycle';
 
 
