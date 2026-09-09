@@ -114,7 +114,7 @@ El sistema SHALL implementar doble ponderación: las categorías suman 100% del 
 
 ### Requirement: Vinculación KPIs a metas (decisión #6)
 
-KPIs son **indicadores** reutilizables (numérico, porcentaje o moneda) que pueden vincularse a 1..N metas. Cada meta puede tener 0..N KPIs asociados.
+El sistema SHALL permitir vincular KPIs reutilizables (numérico, porcentaje o moneda) a 1..N metas. Cada meta SHALL poder tener 0..N KPIs asociados.
 
 #### Scenario: Vincular KPI existente a meta
 
@@ -139,7 +139,7 @@ KPIs son **indicadores** reutilizables (numérico, porcentaje o moneda) que pued
 
 ### Requirement: Restricciones de edición por fase (decisión #3)
 
-Las reglas de edición de metas dependen de la fase del ciclo activo. En medio de año (`avance`), está **prohibido eliminar** metas.
+El sistema SHALL restringir la edición de metas según la fase del ciclo activo. En medio de año (`avance`), el sistema SHALL prohibir eliminar metas.
 
 #### Scenario: Inicio de año — CRUD completo
 
@@ -163,7 +163,7 @@ Las reglas de edición de metas dependen de la fase del ciclo activo. En medio d
 
 ### Requirement: Jerarquía de edición (decisión #8)
 
-Cada empleado define sus propias metas, categorías, ponderaciones y KPIs. Jefes/directores/gerentes pueden **VER** las definiciones de personas a cargo y **SOLICITAR CAMBIOS**, pero NO pueden borrar ni agregar metas.
+El sistema SHALL permitir que cada empleado defina sus propias metas, categorías, ponderaciones y KPIs. El sistema SHALL permitir a jefes/directores/gerentes VER las definiciones de personas a cargo y SOLICITAR CAMBIOS, pero NO SHALL permitir borrar ni agregar metas ajenas.
 
 #### Scenario: Dueño tiene control total
 

@@ -58,14 +58,33 @@ The endpoint SHALL return direct reports of `empId` with `OFFSET`/`LIMIT` and op
 
 **Files**: `api/internal/repository/org/employee_repo.go`
 
+#### Scenario: Repo paginates and excludes manager
+
+- GIVEN a manager with 120 direct reports
+- WHEN `ListByManagerPaginated` is called with `offset=0, limit=50`
+- THEN it returns 50 rows with `profileName` populated and excludes the manager's own ID
+- AND `CountByManager` returns 120
+
 ### Requirement: Service layer hasMore computation
 
 `EvaluateeService` SHALL provide `GetMyEvaluateesPaginated(ctx, evaluatorID, query, offset, limit)` that computes `hasMore = offset + len(rows) < total` from repo results.
 
 **Files**: `api/internal/service/org/evaluatee_service.go`
 
+#### Scenario: Service computes hasMore
+
+- GIVEN repo returns 50 rows of 120 total with `offset=0`
+- WHEN `GetMyEvaluateesPaginated` is called
+- THEN response `meta` has `hasMore=true`, `total=120`, `offset=0`, `limit=50`
+
 ### Requirement: Handler query param parsing
 
 `OrgHandler.GetMyEvaluatees` SHALL parse `offset`, `limit`, `q` from query string. When present, SHALL delegate to paginated service; when absent, SHALL default to `offset=0, limit=50`. SHALL clamp `limit` to 1–200 and `offset` to ≥ 0.
 
 **Files**: `api/internal/handler/org/org_handler.go`
+
+#### Scenario: Handler parses and clamps params
+
+- GIVEN query `?offset=-5&limit=300&q=María`
+- WHEN `GetMyEvaluatees` is called
+- THEN it delegates with `offset=0`, `limit=200`, `q=María`

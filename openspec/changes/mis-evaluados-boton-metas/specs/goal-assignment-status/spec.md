@@ -7,6 +7,17 @@
 | **Purpose** | Controlar el ciclo de vida de la formulación y envío de metas individuales mediante estados formales (`borrador`, `enviada`) y sellado de fecha de envío (`submitted_at`), validando la regla de ponderación Double 100%. |
 | **Depends on** | `goals-and-weighting`, `evaluation-lifecycle` |
 
+## ADDED Requirements
+
+### Requirement: GoalAssignment lifecycle SHALL persist status and submission timestamp
+
+The `goal_assignments` table SHALL store `status` (`borrador`|`enviada`, default `borrador`) and `submitted_at` (nullable TIMESTAMPTZ); transition to `enviada` SHALL require passing `ValidateDoubleWeighting` and SHALL stamp `submitted_at = now()` (see REQ-MEM-001/002 below).
+
+#### Scenario: Creation starts as borrador
+
+- WHEN an assignment is created before validation or submission
+- THEN `status` is `borrador` and `submitted_at` is null
+
 ### REQ-MEM-001: Persistencia de status y submitted_at en GoalAssignment
 
 La tabla `goal_assignments` y el esquema Ent `GoalAssignment` DEBEN almacenar los campos:

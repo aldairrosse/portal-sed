@@ -33,11 +33,11 @@ CREATE INDEX IF NOT EXISTS idx_goal_progress_logs_goal_time
 
 `idx_goal_progress_logs_goal_time` en `(goal_id, recorded_at DESC)`: optimiza la consulta futura "historial de progreso de una meta ordenado por fecha descendente".
 
-## Requirements
+## ADDED Requirements
 
 ### Requirement: Registro condicional de cambio de progreso
 
-El sistema DEBE insertar una fila en `goal_progress_logs` SOLO cuando `current_value` en `goals` realmente cambia. Si el nuevo valor es igual al existente, NO debe insertarse registro de log.
+El sistema DEBE (SHALL) insertar una fila en `goal_progress_logs` SOLO cuando `current_value` en `goals` realmente cambia. Si el nuevo valor es igual al existente, NO debe insertarse registro de log.
 
 #### Scenario: Cambio real de progreso
 
@@ -69,7 +69,7 @@ El sistema DEBE insertar una fila en `goal_progress_logs` SOLO cuando `current_v
 
 ### Requirement: Atomicidad de UPDATE + INSERT
 
-El UPDATE en `goals` y el INSERT en `goal_progress_logs` DEBEN ocurrir en la misma transacción. Si cualquiera falla, ambos deben hacer rollback.
+El UPDATE en `goals` y el INSERT en `goal_progress_logs` DEBEN (SHALL) ocurrir en la misma transacción. Si cualquiera falla, ambos deben hacer rollback.
 
 #### Scenario: INSERT falla → rollback del UPDATE
 
@@ -87,7 +87,7 @@ El UPDATE en `goals` y el INSERT en `goal_progress_logs` DEBEN ocurrir en la mis
 
 ### Requirement: Índice para consultas futuras
 
-El índice compuesto `(goal_id, recorded_at DESC)` DEBE existir para que consultas futuras de historial ordenado por fecha sean eficientes.
+El índice compuesto `(goal_id, recorded_at DESC)` DEBE (SHALL) existir para que consultas futuras de historial ordenado por fecha sean eficientes.
 
 #### Scenario: Plan de consulta usa índice
 

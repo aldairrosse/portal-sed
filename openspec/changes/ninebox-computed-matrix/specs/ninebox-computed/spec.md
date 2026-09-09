@@ -7,6 +7,17 @@
 | **Purpose** | Compute the 9×9 matrix on demand from live goal progress and competency ratings, phase-driven from the current cycle, scoped by viewer role, with explicit rating source and configurable self/jefe weights. |
 | **Depends on** | `org-hierarchy` (getDescendants), `manager-9x9` (tier computation), `evaluation-lifecycle` (cycle phases, evaluation ratings) |
 
+## ADDED Requirements
+
+### Requirement: Matrix SHALL be computed on demand from live data with viewer scoping
+
+`GET /nine-box/matrices?cycle_id={cycleId}` SHALL compute entries on demand from live goal progress and competency ratings, defaulting `phase_id` to `cycle.current_phase`, and SHALL scope evaluatees to the viewer's org descendants (`rh`/`director-general` see all). Freshness SHALL be bounded by a 1h TTL over the persisted cache (see REQ-NBM-001/003 below).
+
+#### Scenario: Default phase from current cycle
+
+- WHEN a jefe calls `GET /nine-box/matrices?cycle_id=cycle-2026` without `phase_id`
+- THEN entries reflect live data for the cycle's `current_phase` scoped to the jefe's descendants
+
 ### REQ-NBM-001: On-demand matrix computation
 
 `GET /nine-box/matrices?cycle_id={cycleId}` SHALL compute matrix entries on demand from live data (goal progress + competency ratings) instead of reading a stored snapshot. When `phase_id` is omitted, the SHALL use `cycle.current_phase` of the requested cycle.

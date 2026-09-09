@@ -129,7 +129,7 @@ Cada jefe/director/gerente/director-general SHALL ver su propia matriz. El scope
 
 ### Requirement: Separación de evaluación RH (decisión #4)
 
-La matriz 3×3 es **exclusiva del jefe** y se enfoca en **potencial** para la matriz de sucesión. La evaluación formal de competencias la realiza **RH** de forma independiente. La matriz NO sustituye ni reemplaza la evaluación RH.
+La matriz 3×3 SHALL ser exclusiva del jefe y SHALL enfocarse en potencial para la matriz de sucesión. La evaluación formal de competencias SHALL ser realizada por RH de forma independiente. La matriz NO SHALL sustituir ni reemplazar la evaluación RH.
 
 #### Scenario: RH evalúa competencias por separado
 

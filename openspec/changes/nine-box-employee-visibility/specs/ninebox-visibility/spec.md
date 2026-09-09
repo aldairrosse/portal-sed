@@ -7,6 +7,17 @@
 | **Purpose** | Enrich 9-Box entries with employee name, profileId, and position. Fix scope resolution to use all descendants. Fix RecomputeMatrix evaluator assignment. |
 | **Depends on** | `org-hierarchy` (getDescendants), `manager-9x9` (tier computation) |
 
+## ADDED Requirements
+
+### Requirement: NineBoxEntryDTO SHALL include employee display data
+
+The `NineBoxEntryDTO` response SHALL include `employeeName` (string) and `profileId` (UUID) populated via JOIN on `employees` during `toEntryDTO()` mapping, so the detail modal renders names without client-side lookup (see REQ-NB-001 below).
+
+#### Scenario: Entry returns employee name
+
+- WHEN `GET /nine-box/matrices/{matrixId}` returns an entry for evaluatee "María García"
+- THEN the entry includes `employeeName: "María García"` and a valid `profileId`
+
 ### REQ-NB-001: Enriched NineBoxEntryDTO
 
 The `NineBoxEntryDTO` response SHALL include `employeeName` (string) and `profileId` (UUID) populated via JOIN on `employees` table during `toEntryDTO()` mapping.

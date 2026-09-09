@@ -1,6 +1,10 @@
 # hierarchy-api-contract Specification
 
-## ADDED Requirements
+## Purpose
+
+Contrato jerarquía y selector puesto/deptos ordenado.
+
+## Requirements
 
 ### Requirement: Area metrics endpoint in OpenAPI
 
@@ -8,7 +12,7 @@ The system SHALL expose `GET /org-nodes/{nodeId}/area-metrics` in the OpenAPI sp
 
 #### Scenario: Area metrics for mid-year phase
 
-- **WHEN** frontend calls `GET /org-nodes/{nodeId}/area-metrics?cycleId={cycleId}` where cycle phase is `medio-anio`
+- **WHEN** frontend calls `GET /org-nodes/{nodeId}/area-metrics?cycleId={cycleId}` where cycle phase is `avance`
 - **THEN** response 200 includes:
   ```json
   {
@@ -27,7 +31,7 @@ The system SHALL expose `GET /org-nodes/{nodeId}/area-metrics` in the OpenAPI sp
 
 #### Scenario: Area metrics for end-of-year phase
 
-- **WHEN** frontend calls `GET /org-nodes/{nodeId}/area-metrics?cycleId={cycleId}` where cycle phase is `fin-anio`
+- **WHEN** frontend calls `GET /org-nodes/{nodeId}/area-metrics?cycleId={cycleId}` where cycle phase is `cierre`
 - **THEN** response 200 includes:
   ```json
   {
@@ -176,6 +180,11 @@ The OpenAPI spec SHALL add a path item under `/org-nodes/{nodeId}/area-metrics`:
         $ref: '#/components/responses/BadRequest'
 ```
 
+#### Scenario: Path item present
+
+- **WHEN** consumer reads `org-hierarchy.yaml`
+- **THEN** the spec SHALL include path `/org-nodes/{nodeId}/area-metrics` with a `get` operation
+
 ### Requirement: Endpoint error responses
 
 The `GET /org-nodes/{nodeId}/area-metrics` endpoint SHALL return the following error responses:
@@ -217,6 +226,15 @@ The `GET /org-nodes/{nodeId}/area-metrics` endpoint SHALL return the following e
 
 - **WHEN** metrics service returns an unexpected error
 - **THEN** response 500 with generic error (no internal details exposed)
+
+### Requirement: Hierarchy selector respects order
+
+The system SHALL return puesto/deptos selector entries ordered deterministically.
+
+#### Scenario: Selector ordenado
+
+- **WHEN** frontend requests the hierarchy selector
+- **THEN** the system SHALL return entries ordered by puesto/deptos
 
 ## Acceptance Criteria
 

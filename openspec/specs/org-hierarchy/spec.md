@@ -200,7 +200,7 @@ Cada persona con subordinados directos SHALL ver una lista de "mis evaluados" co
 
 ### Requirement: Perfil de evaluación determina reglas
 
-El `profileId` de cada nodo en el árbol determina las reglas de escala y niveles de aceptación que aplican para ese empleado. El catálogo de pilares y competencias es el mismo para todos (decisión #2), pero los criterios de evaluación varían por perfil. Adicionalmente, el perfil `director-general` tiene acceso de solo lectura a toda la jerarquía bajo su mando.
+El sistema SHALL determinar las reglas de escala y niveles de aceptación desde el `profileId` de cada nodo en el árbol. El catálogo de pilares y competencias es el mismo para todos (decisión #2), pero los criterios de evaluación varían por perfil. Adicionalmente, el perfil `director-general` SHALL tener acceso de solo lectura a toda la jerarquía bajo su mando.
 
 (Previously: Director-general evaluaba solo directores; ahora puede ver toda la jerarquía.)
 

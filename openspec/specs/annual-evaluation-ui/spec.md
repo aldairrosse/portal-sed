@@ -134,6 +134,12 @@ The system SHALL compute and display `EvaluationStatus` per employee in the RH e
 | `in-progress` | Some ratings or goals incomplete | `badge-warning` |
 | `completed` | All 8 competencies rated + all goals closed | `badge-success` |
 
+#### Scenario: Status badge shown in RH picker
+
+- GIVEN employee with `EvaluationStatus = in-progress`
+- WHEN RH opens the employee picker on `/rh/evaluaciones`
+- THEN `EvaluationStatusBadge` shows `badge-warning` "En progreso"
+
 ## UI Components
 
 | Component | Props | Description |

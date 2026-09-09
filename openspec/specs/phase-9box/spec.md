@@ -1,7 +1,7 @@
 # phase-9box Specification
 
 ## Purpose
-TBD - created by archiving change sed-avances-evaluaciones-9box. Update Purpose after archive.
+Fases canónicas asignacion/avance/cierre y gate de escritura por fase para evaluaciones y matriz 9-box.
 
 ## Requirements
 

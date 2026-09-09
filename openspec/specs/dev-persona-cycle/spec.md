@@ -1,7 +1,7 @@
 # dev-persona-cycle Specification
 
 ## Purpose
-TBD - created by archiving change ui-shell-and-design-tokens. Update Purpose after archive.
+Selector de perfil y fase del ciclo solo en modo desarrollo para simular contextos de evaluación.
 ## Requirements
 ### Requirement: Selector de persona en desarrollo
 

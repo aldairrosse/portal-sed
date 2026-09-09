@@ -1,6 +1,10 @@
 # role-based-hierarchy-filter Specification
 
-## ADDED Requirements
+## Purpose
+
+Contrato jerarquía y selector puesto/deptos ordenado.
+
+## Requirements
 
 ### Requirement: Role-based tree filtering
 

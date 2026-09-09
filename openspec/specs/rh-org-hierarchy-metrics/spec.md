@@ -4,7 +4,7 @@
 
 Define la vista de métricas de jerarquía para RRHH, incluyendo el route `/rh/jerarquia`, el panel de métricas por área, y el consumo de la API backend `GET /org-nodes/{nodeId}/area-metrics` para obtener datos agregados.
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: RRHH Jerarquía — route and role guard
 

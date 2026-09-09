@@ -1,7 +1,7 @@
 # ui-shell Specification
 
 ## Purpose
-TBD - created by archiving change ui-shell-and-design-tokens. Update Purpose after archive.
+Layout autenticado con barra superior, menú lateral filtrable por perfil y carga diferida por ruta.
 ## Requirements
 ### Requirement: Layout autenticado simulado
 

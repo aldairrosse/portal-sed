@@ -4,11 +4,11 @@
 
 Corregir la pérdida de foco del input de progreso en `GoalRow.svelte` durante la fase medio-año. La causa raíz es que `updateGoalProgress` en el store invoca `reload()` después de cada PATCH, lo que dispara `storeState.loading = true` y causa que `PageSkeleton` destruya el DOM completo del formulario. La solución es adoptar el patrón de update optimista local que ya existe en `addGoalComment` (líneas 472-492 del store).
 
-## Requirements
+## ADDED Requirements
 
 ### Requirement: Update optimista local sin reload
 
-El sistema DEBE actualizar `storeState.data.goals[n].progress` localmente al invocar `updateGoalProgress`, sin disparar `reload()`. El PATCH al backend DEBE ejecutarse en segundo plano. Si el PATCH falla, el store DEBE hacer rollback al valor anterior. Este comportamiento reemplaza el actual que invoca `reload()` incondicionalmente tras cada PATCH.
+El sistema DEBE (SHALL) actualizar `storeState.data.goals[n].progress` localmente al invocar `updateGoalProgress`, sin disparar `reload()`. El PATCH al backend DEBE ejecutarse en segundo plano. Si el PATCH falla, el store DEBE hacer rollback al valor anterior. Este comportamiento reemplaza el actual que invoca `reload()` incondicionalmente tras cada PATCH.
 
 #### Scenario: Progreso actualizado sin perder foco
 
@@ -37,7 +37,7 @@ El sistema DEBE actualizar `storeState.data.goals[n].progress` localmente al inv
 
 ### Requirement: Debounce de 500ms
 
-El sistema DEBE aplicar un debounce de 500ms dentro de `updateGoalProgress` para que múltiples keystrokes rápidos generen un solo PATCH. El debounce DEBE vivir en el store, NO en `GoalRow.svelte`.
+El sistema DEBE (SHALL) aplicar un debounce de 500ms dentro de `updateGoalProgress` para que múltiples keystrokes rápidos generen un solo PATCH. El debounce DEBE vivir en el store, NO en `GoalRow.svelte`.
 
 #### Scenario: Múltiples keystrokes → un PATCH
 
@@ -63,7 +63,7 @@ El sistema DEBE aplicar un debounce de 500ms dentro de `updateGoalProgress` para
 
 ### Requirement: Guarda de valor sin cambio
 
-El sistema DEBE omitir el PATCH si el nuevo valor es idéntico al `progress` actual de la meta en el store. Esto evita requests innecesarios y duplicados en `goal_progress_logs`.
+El sistema DEBE (SHALL) omitir el PATCH si el nuevo valor es idéntico al `progress` actual de la meta en el store. Esto evita requests innecesarios y duplicados en `goal_progress_logs`.
 
 #### Scenario: Mismo valor → no PATCH
 
@@ -82,7 +82,7 @@ El sistema DEBE omitir el PATCH si el nuevo valor es idéntico al `progress` act
 
 ### Requirement: GoalRow.svelte sin cambios
 
-El componente `GoalRow.svelte` NO DEBE ser modificado. El debounce y la lógica optimista viven exclusivamente en el store `goalsStore.svelte.ts`. `GoalRow.svelte` sigue llamando a `updateGoalProgress` como lo hace actualmente (via `oninput`/`onchange`).
+El componente `GoalRow.svelte` NO DEBE (SHALL NOT) ser modificado. El debounce y la lógica optimista viven exclusivamente en el store `goalsStore.svelte.ts`. `GoalRow.svelte` sigue llamando a `updateGoalProgress` como lo hace actualmente (via `oninput`/`onchange`).
 
 #### Scenario: GoalRow.svelte intacto
 

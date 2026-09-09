@@ -1,7 +1,7 @@
 # design-tokens Specification
 
 ## Purpose
-TBD - created by archiving change ui-shell-and-design-tokens. Update Purpose after archive.
+Tema DaisyUI corporativo SED con tokens CSS reutilizables, sin sombras decorativas.
 ## Requirements
 ### Requirement: Tema DaisyUI corporativo SED
 
