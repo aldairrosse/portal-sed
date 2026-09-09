@@ -69,12 +69,28 @@ principles/   → decisiones transversales
 
 ## OpenSpec
 
-- Proponer: `/opsx:propose "<descripción>"`
-- Tras aprobar spec: `/opsx:apply`
-- Al cerrar: `/opsx:archive`
-- Validar: `openspec validate --all`
+Gate on-demand delegado a `~/.config/opencode/commands/openspec.md` (lazy, no precargar skills). Solo si existe `openspec/` o pedido explícito; si usuario niega openspec/opsx → prohibición total.
+Prohibido `mkdir openspec/changes/...` a mano — todo vía `rtk proxy openspec ...`. Descubrir opciones con `rtk openspec -h` y `rtk proxy openspec help <command>` / `instructions`.
 
-Artefactos en `openspec/specs/` son la verdad a largo plazo; `openspec/changes/` es trabajo en curso.
+| Acción | Comando |
+|--------|---------|
+| Crear change | `rtk proxy openspec new <nombre>` / `change new <nombre>` |
+| Crear spec delta | `rtk proxy openspec spec new <nombre> --change <change>` |
+| Listar changes/specs | `rtk proxy openspec list --json` |
+| Ver detalle/diff | `rtk proxy openspec show --type change <nombre> --diff` |
+| Validar | `rtk proxy openspec validate --all --strict --json` (o `--changes` / `--specs`) |
+| Ver estado/progreso | `rtk proxy openspec status --change <nombre> --json` |
+| Vaciar planner → tasks | ver sección dedicada abajo |
+| Archivar/cerrar | `rtk proxy openspec archive <nombre> -y` |
+| Actualizar/descartar | `rtk proxy openspec update <nombre>` o `archive --skip-specs` según `help` |
+| Instrucciones/plantillas | `rtk proxy openspec instructions [list\|show]` |
+| Doctor/context | `rtk proxy openspec doctor` / `context --change <nombre>` |
+
+### Vaciar planner a tasks
+Para change actual `sed-medio-cierre-9box`: `status --change sed-medio-cierre-9box --json` + `show --type change sed-medio-cierre-9box --diff` para volcar a `tasks.md`. Para nuevos: `new`/`change new`, luego `status` y recién completar `tasks.md`. Prohibido editar `tasks.md` sin pasar por `status`/`show`.
+
+### Validar / cerrar / actualizar / descartar demás
+`list --json` → `validate --all --strict --json` → `show` por ítem → `archive -y` para cerrar; `archive --skip-specs` o `update` según `help` para descartar/actualizar.
 
 ## Módulos de producto (referencia)
 

@@ -19,14 +19,8 @@
 ## OpenSpec global
 
 ```bash
-npm install -g @fission-ai/openspec@latest
+mise use --global openspec@1.12.0
 openspec --version
 ```
 
-En la raíz del proyecto:
-
-```bash
-openspec init --tools cursor --force
-```
-
-Si ya existe carpeta `openspec/`, usar `openspec update` para refrescar integración Cursor.
+Nota: `mise upgrade openspec` solo si falta o la versión instalada difiere.

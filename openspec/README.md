@@ -1,27 +1,11 @@
 # OpenSpec — SED
 
-Estructura base para Spec-Driven Development.
-
-## Inicialización completa
-
-Ejecuta en la raíz del proyecto (requiere Node ≥ 20.19):
+> Gate: solo si existe `openspec/` o pedido explícito; si usuario niega openspec/opsx → prohibición total. Delegado a `~/.config/opencode/commands/openspec.md` (lazy).
 
 ```bash
-openspec init --tools cursor --force
+rtk proxy openspec validate --all
+rtk proxy openspec list --specs
+rtk proxy openspec status
 ```
 
-Eso añade/actualiza integración Cursor (comandos `/opsx:*`) y plantillas oficiales.
-
-## Carpetas
-
-- **specs/** — especificaciones duraderas por dominio.
-- **changes/** — propuestas en curso (`/opsx:propose`).
-- **archive/** — cambios completados.
-
-## Roadmap y decisiones de producto
-
-**[SPEC-ROADMAP.md](./SPEC-ROADMAP.md)** — decisiones cerradas, convenciones, orden UI-first y textos listos para `/opsx:propose`.
-
-Resumen rápido: Fase A pantallas con fixtures → Fase B specs de dominio → Fase C API + auth.
-
-Ver también `docs/get-started/openspec.md`.
+- **specs/** — verdad duradera por dominio. **changes/** — trabajo en curso. **archive/** — cerrados.
