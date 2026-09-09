@@ -23,6 +23,13 @@ paths:
         - name: state
           in: query
           schema: { type: string }
+        - name: phase
+          in: query
+          required: false
+          description: "Filtra por fase, default current_phase, avance==medio-anio"
+          schema:
+            type: string
+            enum: [asignacion, avance, medio-anio, cierre]
         - name: cursor
           in: query
           schema: { type: string }
@@ -262,7 +269,7 @@ paths:
     get:
       operationId: getCompetencyResults
       summary: Get competency results with pagination
-      description: Returns paginated competency ratings across evaluations for a cycle.
+      description: "Returns paginated competency ratings across evaluations for a cycle. Doble 9-box por phase: avance y medio-anio generan vistas independientes; use phase para filtrar."
       parameters:
         - name: cycle_id
           in: query
@@ -270,6 +277,13 @@ paths:
           schema:
             type: string
             format: uuid
+        - name: phase
+          in: query
+          required: false
+          description: "Filtra por fase, default current_phase, avance==medio-anio"
+          schema:
+            type: string
+            enum: [asignacion, avance, medio-anio, cierre]
         - name: cursor
           in: query
           required: false
@@ -321,15 +335,31 @@ paths:
     get:
       operationId: listMatrices
       summary: List 9×9 matrices, optionally filtered by cycle, phase, and/or evaluator
+      description: "Doble 9-box por phase: avance y medio-anio generan matrices independientes; phase_id es obligatorio cuando cycle_id está presente (400 si falta)."
       parameters:
         - name: cycle_id
           in: query
           required: true
           schema: { type: string, format: uuid }
+        - name: phase
+          in: query
+          required: false
+          description: "Filtra por fase, avance==medio-anio (alias solo docs)"
+          schema:
+            type: string
+            enum: [asignacion, avance, medio-anio, cierre]
         - name: phase_id
           in: query
-          description: "defaults to cycle.current_phase"
+          required: true
+          description: "Obligatorio cuando cycle_id está presente; sin default a current_phase"
           schema: { type: string, format: uuid }
+        - name: viewerMode
+          in: query
+          required: false
+          description: "Modo de vista: self (colaborador ve solo lo propio, redactado) u otro rol"
+          schema:
+            type: string
+            enum: [self, manager, rh]
         - name: evaluator_id
           in: query
           schema: { type: string, format: uuid }
@@ -341,6 +371,7 @@ paths:
               schema:
                 type: array
                 items: { $ref: "#/components/schemas/NineBoxMatrixResponse" }
+        "400": { $ref: "#/components/responses/BadRequest" }
         "403": { $ref: "#/components/responses/Forbidden" }
     post:
       operationId: createMatrix
@@ -576,6 +607,14 @@ components:
         competencyId: { type: string, format: uuid }
         rating: { type: integer, minimum: 1, maximum: 5 }
         comments: { type: string }
+        source:
+          type: string
+          enum: [self, rh]
+          description: "Origen de la valoración: self o rh."
+        phase:
+          type: string
+          enum: [asignacion, avance, cierre]
+          description: "Fase de la valoración; alias medio-anio solo docs (equivale a avance)."
       required: [competencyId, rating]
 
     GoalCommentInput:

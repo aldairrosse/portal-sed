@@ -99,6 +99,38 @@ paths:
           $ref: "#/components/responses/Conflict"
         "429":
           $ref: "#/components/responses/RateLimit"
+  /cycles/current:
+    get:
+      operationId: getCurrentCycle
+      summary: Get the current cycle
+      description: Resolves the cycle for the given year, falling back to the active (unfinished) cycle. Must be matched before /cycles/{id}.
+      parameters:
+        - name: organization_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Organization UUID
+        - name: year
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 2000
+            maximum: 2100
+          description: Evaluation year (defaults to current year)
+      responses:
+        "200":
+          description: Current cycle
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Cycle"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
   /cycles/{id}:
     get:
       operationId: getCycle
@@ -267,6 +299,37 @@ paths:
                       $ref: "#/components/schemas/PhaseTransition"
         "404":
           $ref: "#/components/responses/NotFound"
+  /cycles/{id}/revert:
+    post:
+      operationId: revertPhase
+      summary: Revert a cycle to the previous phase
+      description: "Reverts the cycle to the previous phase. RBAC: RH only. Empty body."
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Cycle UUID
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Unique idempotency key (UUID v4)
+      responses:
+        "200":
+          description: Phase reverted successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Cycle"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
 
 components:
   schemas:
@@ -479,6 +542,12 @@ components:
             $ref: "#/components/schemas/Error"
     Conflict:
       description: Conflict
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Forbidden:
+      description: Forbidden
       content:
         application/json:
           schema:

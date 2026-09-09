@@ -61,7 +61,7 @@ func (m *mockEvalService) ResolveActiveCycleID(ctx context.Context, empID uuid.U
 	return uuid.Nil, nil
 }
 
-func (m *mockEvalService) ListEvaluations(ctx context.Context, cycleID uuid.UUID, stateFilter string, cursor string, limit int) (*dto.EvaluationListResponse, error) {
+func (m *mockEvalService) ListEvaluations(ctx context.Context, cycleID uuid.UUID, stateFilter string, phase string, cursor string, limit int) (*dto.EvaluationListResponse, error) {
 	m.recordCall("ListEvaluations")
 	if m.delay > 0 {
 		time.Sleep(m.delay)
@@ -72,6 +72,11 @@ func (m *mockEvalService) ListEvaluations(ctx context.Context, cycleID uuid.UUID
 func (m *mockEvalService) GetEvaluation(ctx context.Context, id uuid.UUID) (*dto.EvaluationDetailResponse, error) {
 	m.recordCall("GetEvaluation")
 	return m.getResp, m.getErr
+}
+
+func (m *mockEvalService) GetCyclePhase(ctx context.Context, cycleID uuid.UUID) (string, error) {
+	m.recordCall("GetCyclePhase")
+	return "cierre", nil
 }
 
 func (m *mockEvalService) GetEmployeeCompetencyRatings(ctx context.Context, employeeID, cycleID uuid.UUID) (*dto.EmployeeCompetencyRatingsResponse, error) {
@@ -114,9 +119,29 @@ func (m *mockEvalService) UpdateGoalComments(ctx context.Context, evaluationID u
 	return m.goalCommentsResp, m.goalCommentsErr
 }
 
-func (m *mockEvalService) GetCompetencyResults(ctx context.Context, cycleID uuid.UUID, query string, scope string, currentUserID uuid.UUID, offset, limit int) (*dto.CompetencyResultsResponse, error) {
+func (m *mockEvalService) GetCompetencyResults(ctx context.Context, cycleID uuid.UUID, phase string, query string, scope string, currentUserID uuid.UUID, offset, limit int) (*dto.CompetencyResultsResponse, error) {
 	m.recordCall("GetCompetencyResults")
 	return nil, nil
+}
+
+func (m *mockEvalService) FilterEvaluationsForViewer(items []dto.EvaluationListItem, viewerID uuid.UUID, viewerRole auth.Role, phase string) []dto.EvaluationListItem {
+	m.recordCall("FilterEvaluationsForViewer")
+	return items
+}
+
+func (m *mockEvalService) AuthorizeEvaluationAccess(viewerID, employeeID uuid.UUID, viewerRole auth.Role, phase string) error {
+	m.recordCall("AuthorizeEvaluationAccess")
+	return nil
+}
+
+func (m *mockEvalService) RedactDetailForSelf(detail *dto.EvaluationDetailResponse, viewerID uuid.UUID, viewerRole auth.Role, phase string) *dto.EvaluationDetailResponse {
+	m.recordCall("RedactDetailForSelf")
+	return detail
+}
+
+func (m *mockEvalService) SuggestEvaluator(ctx context.Context, employeeID uuid.UUID) (uuid.UUID, string, error) {
+	m.recordCall("SuggestEvaluator")
+	return uuid.Nil, "rh", nil
 }
 
 type mockBoxService struct {
@@ -158,6 +183,14 @@ func (m *mockBoxService) ListMatrices(ctx context.Context, cycleID, evaluatorID,
 func (m *mockBoxService) ComputeMatrixView(ctx context.Context, cycleID uuid.UUID, phaseID *uuid.UUID, viewerID uuid.UUID, viewerRole auth.Role) ([]dto.NineBoxMatrixResponse, error) {
 	m.recordCall("ComputeMatrixView")
 	return m.listResp, m.listErr
+}
+
+func (m *mockBoxService) ResolvePhaseID(ctx context.Context, cycleID uuid.UUID, phase string, phaseID *uuid.UUID) (uuid.UUID, error) {
+	m.recordCall("ResolvePhaseID")
+	if phaseID != nil {
+		return *phaseID, nil
+	}
+	return uuid.Nil, nil
 }
 
 func (m *mockBoxService) CreateMatrix(ctx context.Context, cycleID, evaluatorID uuid.UUID) (*dto.NineBoxMatrixResponse, error) {

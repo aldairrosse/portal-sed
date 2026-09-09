@@ -10,8 +10,9 @@ import (
 
 // EvalService defines the evaluation lifecycle operations used by the handler.
 type EvalService interface {
-	ListEvaluations(ctx context.Context, cycleID uuid.UUID, stateFilter string, cursor string, limit int) (*dto.EvaluationListResponse, error)
+	ListEvaluations(ctx context.Context, cycleID uuid.UUID, stateFilter string, phase string, cursor string, limit int) (*dto.EvaluationListResponse, error)
 	GetEvaluation(ctx context.Context, id uuid.UUID) (*dto.EvaluationDetailResponse, error)
+	GetCyclePhase(ctx context.Context, cycleID uuid.UUID) (string, error)
 	GetEmployeeCompetencyRatings(ctx context.Context, employeeID, cycleID uuid.UUID) (*dto.EmployeeCompetencyRatingsResponse, error)
 	ResolveActiveCycleID(ctx context.Context, employeeID uuid.UUID) (uuid.UUID, error)
 	SubmitSelfEvaluation(ctx context.Context, evaluationID uuid.UUID, req dto.SelfEvaluationRequest, idempotencyKey string) (*dto.EvaluationDetailResponse, error)
@@ -19,14 +20,19 @@ type EvalService interface {
 	SubmitRHEvaluation(ctx context.Context, evaluationID uuid.UUID, req dto.RHEvaluationRequest, idempotencyKey string) (*dto.EvaluationDetailResponse, error)
 	UpdateRHEvaluation(ctx context.Context, evaluationID uuid.UUID, req dto.RHEvaluationRequest, ifMatch int) (*dto.EvaluationDetailResponse, error)
 	FinalizeEvaluation(ctx context.Context, evaluationID uuid.UUID, req dto.FinalizeEvaluationRequest) (*dto.EvaluationDetailResponse, error)
-	GetCompetencyResults(ctx context.Context, cycleID uuid.UUID, query string, scope string, currentUserID uuid.UUID, offset, limit int) (*dto.CompetencyResultsResponse, error)
+	GetCompetencyResults(ctx context.Context, cycleID uuid.UUID, phase string, query string, scope string, currentUserID uuid.UUID, offset, limit int) (*dto.CompetencyResultsResponse, error)
 	UpdateGoalState(ctx context.Context, evaluationID uuid.UUID, input dto.GoalStateUpdateInput, ifMatch int) (*dto.EvaluationDetailResponse, error)
 	UpdateGoalComments(ctx context.Context, evaluationID uuid.UUID, input dto.GoalCommentUpdateInput, ifMatch int) (*dto.EvaluationDetailResponse, error)
+	FilterEvaluationsForViewer(items []dto.EvaluationListItem, viewerID uuid.UUID, viewerRole auth.Role, phase string) []dto.EvaluationListItem
+	AuthorizeEvaluationAccess(viewerID, employeeID uuid.UUID, viewerRole auth.Role, phase string) error
+	RedactDetailForSelf(detail *dto.EvaluationDetailResponse, viewerID uuid.UUID, viewerRole auth.Role, phase string) *dto.EvaluationDetailResponse
+	SuggestEvaluator(ctx context.Context, employeeID uuid.UUID) (uuid.UUID, string, error)
 }
 
 // BoxService defines the 9×9 matrix operations used by the handler.
 type BoxService interface {
 	ListMatrices(ctx context.Context, cycleID, evaluatorID, phaseID uuid.UUID) ([]dto.NineBoxMatrixResponse, error)
+	ResolvePhaseID(ctx context.Context, cycleID uuid.UUID, phase string, phaseID *uuid.UUID) (uuid.UUID, error)
 	ComputeMatrixView(ctx context.Context, cycleID uuid.UUID, phaseID *uuid.UUID, viewerID uuid.UUID, viewerRole auth.Role) ([]dto.NineBoxMatrixResponse, error)
 	CreateMatrix(ctx context.Context, cycleID, evaluatorID uuid.UUID) (*dto.NineBoxMatrixResponse, error)
 	GetMatrix(ctx context.Context, matrixID uuid.UUID) (*dto.NineBoxMatrixResponse, error)

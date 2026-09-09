@@ -174,7 +174,9 @@ func (r *EvaluationRepo) GetDetail(ctx context.Context, id uuid.UUID) (*Evaluati
 }
 
 // ListByCycle returns cursor-paginated evaluations for a cycle.
-func (r *EvaluationRepo) ListByCycle(ctx context.Context, cycleID uuid.UUID, state string, cursorStr string, limit int) ([]*EvaluationRow, string, error) {
+// Optional filters: state (exact match) and phase. "avance" and "medio-anio"
+// are interchangeable and match both values (same mid-year phase).
+func (r *EvaluationRepo) ListByCycle(ctx context.Context, cycleID uuid.UUID, state string, phase string, cursorStr string, limit int) ([]*EvaluationRow, string, error) {
 	if limit <= 0 {
 		limit = 20
 	} else if limit > 100 {
@@ -203,6 +205,16 @@ func (r *EvaluationRepo) ListByCycle(ctx context.Context, cycleID uuid.UUID, sta
 	if state != "" {
 		query += ` AND e.state = $` + strconv.Itoa(idx)
 		args = append(args, state)
+		idx++
+	}
+
+	if phase == "avance" || phase == "medio-anio" {
+		query += ` AND e.phase IN ($` + strconv.Itoa(idx) + `, $` + strconv.Itoa(idx+1) + `)`
+		args = append(args, "avance", "medio-anio")
+		idx += 2
+	} else if phase != "" {
+		query += ` AND e.phase = $` + strconv.Itoa(idx)
+		args = append(args, phase)
 		idx++
 	}
 
@@ -517,9 +529,25 @@ type CompetencyResultRow struct {
 // ListCompetencyResults returns paginated competency averages grouped by employee.
 // Starts from employees table with LEFT JOIN to evaluations so employees without
 // evaluation data still appear (status='sin-datos'). Filters: cycleID (required),
+// phase (optional; "avance"/"medio-anio" match both — applied in the JOIN ON
+// clause so employees without phase data keep status='sin-datos'),
 // query (ILIKE on name), managerID (for team scope — filters direct reports),
 // offset/limit for pagination. Ordered by last_name, first_name, e.id.
-func (r *EvaluationRepo) ListCompetencyResults(ctx context.Context, cycleID uuid.UUID, query string, managerID *uuid.UUID, offset, limit int) ([]*CompetencyResultRow, error) {
+func (r *EvaluationRepo) ListCompetencyResults(ctx context.Context, cycleID uuid.UUID, phase string, query string, managerID *uuid.UUID, offset, limit int) ([]*CompetencyResultRow, error) {
+	args := []interface{}{cycleID}
+	idx := 2
+
+	phaseJoin := ""
+	if phase == "avance" || phase == "medio-anio" {
+		phaseJoin = ` AND ev.phase IN ($` + strconv.Itoa(idx) + `, $` + strconv.Itoa(idx+1) + `)`
+		args = append(args, "avance", "medio-anio")
+		idx += 2
+	} else if phase != "" {
+		phaseJoin = ` AND ev.phase = $` + strconv.Itoa(idx)
+		args = append(args, phase)
+		idx++
+	}
+
 	baseQuery := `SELECT e.id,
 		e.first_name || ' ' || e.last_name AS name,
 		COALESCE(ep.name, '') AS profile_name,
@@ -533,11 +561,9 @@ func (r *EvaluationRepo) ListCompetencyResults(ctx context.Context, cycleID uuid
 		END AS status
 	FROM employees e
 	LEFT JOIN evaluation_profiles ep ON ep.id = e.profile_id
-	LEFT JOIN evaluations ev ON ev.employee_id = e.id AND ev.cycle_id = $1
+	LEFT JOIN evaluations ev ON ev.employee_id = e.id AND ev.cycle_id = $1` + phaseJoin + `
 	LEFT JOIN evaluation_competencies ec ON ec.evaluation_id = ev.id
 	WHERE e.is_active = true`
-	args := []interface{}{cycleID}
-	idx := 2
 
 	// scope=team: filter by manager_id (direct reports only)
 	if managerID != nil {
@@ -587,14 +613,27 @@ func (r *EvaluationRepo) ListCompetencyResults(ctx context.Context, cycleID uuid
 
 // CountCompetencyResults returns total count of distinct employees matching
 // the same filters as ListCompetencyResults (no GROUP BY, no AVG columns).
-func (r *EvaluationRepo) CountCompetencyResults(ctx context.Context, cycleID uuid.UUID, query string, managerID *uuid.UUID) (int, error) {
-	baseQuery := `SELECT COUNT(DISTINCT e.id)
-	FROM employees e
-	LEFT JOIN evaluations ev ON ev.employee_id = e.id AND ev.cycle_id = $1
-	LEFT JOIN evaluation_competencies ec ON ec.evaluation_id = ev.id
-	WHERE e.is_active = true`
+// The phase filter lives in the JOIN ON clause, mirroring ListCompetencyResults.
+func (r *EvaluationRepo) CountCompetencyResults(ctx context.Context, cycleID uuid.UUID, phase string, query string, managerID *uuid.UUID) (int, error) {
 	args := []interface{}{cycleID}
 	idx := 2
+
+	phaseJoin := ""
+	if phase == "avance" || phase == "medio-anio" {
+		phaseJoin = ` AND ev.phase IN ($` + strconv.Itoa(idx) + `, $` + strconv.Itoa(idx+1) + `)`
+		args = append(args, "avance", "medio-anio")
+		idx += 2
+	} else if phase != "" {
+		phaseJoin = ` AND ev.phase = $` + strconv.Itoa(idx)
+		args = append(args, phase)
+		idx++
+	}
+
+	baseQuery := `SELECT COUNT(DISTINCT e.id)
+	FROM employees e
+	LEFT JOIN evaluations ev ON ev.employee_id = e.id AND ev.cycle_id = $1` + phaseJoin + `
+	LEFT JOIN evaluation_competencies ec ON ec.evaluation_id = ev.id
+	WHERE e.is_active = true`
 
 	if managerID != nil {
 		baseQuery += ` AND e.manager_id = $` + strconv.Itoa(idx) + ` AND e.id != $` + strconv.Itoa(idx)

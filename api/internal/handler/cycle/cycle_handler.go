@@ -183,6 +183,44 @@ func (h *CycleHandler) GetCycle(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, cycle)
 }
 
+// GetCurrentCycle handles GET /api/v1/cycles/current.
+// Resolves the cycle for the given year, falling back to the active
+// (unfinished) cycle. Must be registered BEFORE /cycles/{id} in routes.
+// Query: organization_id (required, UUID), year (optional, defaults to current year).
+func (h *CycleHandler) GetCurrentCycle(w http.ResponseWriter, r *http.Request) {
+	orgID := r.URL.Query().Get("organization_id")
+	if orgID == "" {
+		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
+			"organization_id query parameter is required", nil))
+		return
+	}
+
+	if _, err := uuid.Parse(orgID); err != nil {
+		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
+			"organization_id must be a valid UUID v4", err))
+		return
+	}
+
+	year := 0
+	if y := r.URL.Query().Get("year"); y != "" {
+		yv, err := strconv.Atoi(y)
+		if err != nil {
+			writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
+				"year must be a valid integer", err))
+			return
+		}
+		year = yv
+	}
+
+	cycle, err := h.svc.GetCurrentCycle(r.Context(), orgID, year)
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, cycle)
+}
+
 // TransitionPhase handles PUT /api/v1/cycles/{id}/transition.
 func (h *CycleHandler) TransitionPhase(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
@@ -237,6 +275,67 @@ func (h *CycleHandler) TransitionPhase(w http.ResponseWriter, r *http.Request) {
 			_ = h.activitySvc.LogActivity(r.Context(), empID, "cycle_configured",
 				"Configuraste el ciclo de evaluación", "Ciclos", metadata)
 		}
+	}
+
+	writeJSON(w, http.StatusOK, result)
+}
+
+// RevertPhase handles POST /api/v1/cycles/{id}/revert.
+// Accepts an optional explicit target phase via ?to_phase= query param or
+// JSON body {"to_phase": "..."}. When to_phase is set, the request is
+// delegated to TransitionPhase (bidirectional, RH trigger); otherwise the
+// cycle moves one step back via RevertPhase.
+func (h *CycleHandler) RevertPhase(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	if id == "" {
+		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
+			"cycle id is required", nil))
+		return
+	}
+
+	if _, err := uuid.Parse(id); err != nil {
+		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
+			"cycle id must be a valid UUID v4", err))
+		return
+	}
+
+	// Optional explicit target: query param takes precedence, else JSON body.
+	toPhase := r.URL.Query().Get("to_phase")
+	if toPhase == "" {
+		var body struct {
+			ToPhase string `json:"to_phase"`
+		}
+		_ = json.NewDecoder(r.Body).Decode(&body)
+		toPhase = body.ToPhase
+	}
+
+	if toPhase != "" {
+		idempotencyKey := middleware.IdempotencyKeyFromContext(r.Context())
+		cycle, err := h.svc.GetCycle(r.Context(), id)
+		if err != nil {
+			writeError(w, err)
+			return
+		}
+		result, err := h.svc.TransitionPhase(r.Context(), svc.TransitionPhaseRequest{
+			CycleID:         id,
+			ExpectedVersion: cycle.Version,
+			Trigger:         "manual_rh",
+			ToPhase:         toPhase,
+			Reason:          "revert to " + toPhase,
+			IdempotencyKey:  idempotencyKey,
+		})
+		if err != nil {
+			writeError(w, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, result)
+		return
+	}
+
+	result, err := h.svc.RevertPhase(r.Context(), id)
+	if err != nil {
+		writeError(w, err)
+		return
 	}
 
 	writeJSON(w, http.StatusOK, result)

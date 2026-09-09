@@ -98,7 +98,8 @@ func (r *CycleRepo) CreateCycle(ctx context.Context, tx *sql.Tx, year int, orgID
 		return nil, err
 	}
 
-	// Create default phase definitions & transitions for this cycle
+	// Create default phase definitions & transitions for this cycle.
+	// Canonical 3 phases: asignacion(1) → avance(2) → cierre(3).
 	pdAsignacion := uuid.New()
 	pdAvance := uuid.New()
 	pdCierre := uuid.New()
@@ -131,6 +132,8 @@ func (r *CycleRepo) CreateCycle(ctx context.Context, tx *sql.Tx, year int, orgID
 	}{
 		{"asignacion", "avance", pdAsignacion, pdAvance},
 		{"avance", "cierre", pdAvance, pdCierre},
+		{"avance", "asignacion", pdAvance, pdAsignacion},
+		{"cierre", "avance", pdCierre, pdAvance},
 	} {
 		_, err = tx.ExecContext(ctx,
 			`INSERT INTO phase_transitions (id, from_phase, to_phase, trigger, created_at, cycle_id, from_phase_id, to_phase_id)
@@ -203,6 +206,40 @@ func (r *CycleRepo) GetCurrentPhaseID(ctx context.Context, cycleID uuid.UUID) (u
 	return phaseID, nil
 }
 
+// GetPhaseID resolves the phase definition ID for a cycle + phase name.
+// "avance" and "medio-anio" fall back to each other when the requested value
+// has no phase definition (legacy cycles only created "avance").
+func (r *CycleRepo) GetPhaseID(ctx context.Context, cycleID uuid.UUID, phase string) (uuid.UUID, error) {
+	var phaseID uuid.UUID
+	err := r.db.QueryRowContext(ctx,
+		`SELECT pd.id FROM phase_definitions pd WHERE pd.cycle_id = $1 AND pd.phase = $2 LIMIT 1`,
+		cycleID, phase,
+	).Scan(&phaseID)
+	if err == nil {
+		return phaseID, nil
+	}
+	if err != sql.ErrNoRows {
+		return uuid.Nil, err
+	}
+	fallback := ""
+	switch phase {
+	case "avance":
+		fallback = "medio-anio"
+	case "medio-anio":
+		fallback = "avance"
+	default:
+		return uuid.Nil, sql.ErrNoRows
+	}
+	err = r.db.QueryRowContext(ctx,
+		`SELECT pd.id FROM phase_definitions pd WHERE pd.cycle_id = $1 AND pd.phase = $2 LIMIT 1`,
+		cycleID, fallback,
+	).Scan(&phaseID)
+	if err != nil {
+		return uuid.Nil, err
+	}
+	return phaseID, nil
+}
+
 // ListCycles returns cycles for an org, ordered by updated_at DESC, id DESC,
 // with cursor-based pagination. Uses raw SQL for full ordering control.
 func (r *CycleRepo) ListCycles(ctx context.Context, orgID uuid.UUID, year *int, phase *cycle.CurrentPhase, cursorID *uuid.UUID, cursorUpdatedAt *time.Time, limit int) ([]*CycleRow, error) {
@@ -235,11 +272,14 @@ func (r *CycleRepo) ListCycles(ctx context.Context, orgID uuid.UUID, year *int, 
 
 // UpdatePhase applies the phase transition using an optimistic-lock UPDATE.
 // Uses raw SQL for atomic version check. Expects a *sql.Tx.
+// Sets finished_at on cierre and clears it when leaving cierre, so the
+// active cycle (finished_at IS NULL) changes when a new year starts.
 // Returns CONCURRENT_UPDATE error if RowsAffected == 0.
 func (r *CycleRepo) UpdatePhase(ctx context.Context, tx *sql.Tx, cycleID uuid.UUID, nextPhase cycle.CurrentPhase, expectedVersion int) error {
 	res, err := tx.ExecContext(ctx,
 		`UPDATE cycles
-		 SET current_phase = $1, version = version + 1, updated_at = NOW()
+		 SET current_phase = $1::phase, version = version + 1, updated_at = NOW(),
+		     finished_at = CASE WHEN $1::text = 'cierre' THEN NOW() ELSE NULL END
 		 WHERE id = $2 AND version = $3`,
 		string(nextPhase), cycleID, expectedVersion,
 	)
@@ -401,6 +441,25 @@ func (r *CycleRepo) GetActive(ctx context.Context) (*CycleRow, error) {
 	return row, nil
 }
 
+// GetCurrent returns the cycle for the given year when it exists, otherwise
+// the most recent unfinished cycle (finished_at IS NULL). Returns nil, nil
+// when neither exists.
+func (r *CycleRepo) GetCurrent(ctx context.Context, orgID uuid.UUID, year int) (*CycleRow, error) {
+	rows, err := r.queryCycles(ctx,
+		`SELECT id, created_at, updated_at, year, current_phase, started_at, finished_at, organization_id, COALESCE(version, 1) as version
+		 FROM cycles WHERE organization_id = $1 AND (year = $2 OR finished_at IS NULL)
+		 ORDER BY CASE WHEN year = $2 THEN 0 ELSE 1 END, created_at DESC LIMIT 1`,
+		orgID, year,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if len(rows) == 0 {
+		return nil, nil
+	}
+	return rows[0], nil
+}
+
 // GetActiveCycleID finds the active (unfinished) cycle for an organization.
 func (r *CycleRepo) GetActiveCycleID(ctx context.Context, orgID uuid.UUID) (uuid.UUID, error) {
 	var id uuid.UUID
@@ -415,6 +474,20 @@ func (r *CycleRepo) GetActiveCycleID(ctx context.Context, orgID uuid.UUID) (uuid
 		return uuid.Nil, err
 	}
 	return id, nil
+}
+
+// ReopenCompletedEvaluations reopens completed evaluations for a cycle.
+// Sets state='en_progreso' where cycle_id matches and state='completada'.
+// Returns the number of rows reopened.
+func (r *CycleRepo) ReopenCompletedEvaluations(ctx context.Context, tx *sql.Tx, cycleID uuid.UUID) (int64, error) {
+	res, err := tx.ExecContext(ctx,
+		`UPDATE evaluations SET state='en_progreso', updated_at = NOW() WHERE cycle_id=$1 AND state='completada'`,
+		cycleID,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return res.RowsAffected()
 }
 
 // BeginTx starts a *sql.Tx for use in transactional operations.

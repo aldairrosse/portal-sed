@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	pkgerrors "github.com/sed-evaluacion-desempeno/api/internal/pkg/errors"
+	"github.com/sed-evaluacion-desempeno/api/internal/pkg/state"
 )
 
 // CyclePhase represents a phase in the evaluation cycle.
@@ -13,7 +14,10 @@ type CyclePhase string
 const (
 	PhaseAsignacion CyclePhase = "asignacion"
 	PhaseAvance     CyclePhase = "avance"
-	PhaseCierre     CyclePhase = "cierre"
+	// PhaseMedioAnio is the mid-year phase; kept compatible with PhaseAvance:
+	// both names refer to the same mid-year phase for write gates.
+	PhaseMedioAnio CyclePhase = "medio-anio"
+	PhaseCierre    CyclePhase = "cierre"
 )
 
 // PhaseChecker provides the current phase for an employee's active cycle.
@@ -41,14 +45,27 @@ func (pc *PhaseCheck) CurrentPhase(ctx context.Context, empID string) (CyclePhas
 	return pc.checker.GetCurrentPhase(ctx, empID)
 }
 
+// isMidPhase reports whether p is the mid-year phase ("avance"/"medio-anio").
+// Delegates to state.IsMidYearPhase (single source of truth).
+func isMidPhase(p CyclePhase) bool {
+	return state.IsMidYearPhase(string(p))
+}
+
+// samePhaseForWrite treats "avance" and "medio-anio" as the same phase.
+// Delegates to state.SamePhaseForWrite (single source of truth).
+func samePhaseForWrite(a, b CyclePhase) bool {
+	return state.SamePhaseForWrite(string(a), string(b))
+}
+
 // Enforce checks that the current phase is one of the allowed phases.
+// "avance" and "medio-anio" are interchangeable.
 func (pc *PhaseCheck) Enforce(ctx context.Context, empID string, allowed ...CyclePhase) error {
 	phase, err := pc.checker.GetCurrentPhase(ctx, empID)
 	if err != nil {
 		return fmt.Errorf("phase check: %w", err)
 	}
 	for _, p := range allowed {
-		if p == phase {
+		if samePhaseForWrite(p, phase) {
 			return nil
 		}
 	}
@@ -72,7 +89,7 @@ func (pc *PhaseCheck) CanDeleteGoal(ctx context.Context, empID string) error {
 
 // CanUpdateProgress checks if the current phase allows progress updates.
 func (pc *PhaseCheck) CanUpdateProgress(ctx context.Context, empID string) error {
-	return pc.Enforce(ctx, empID, PhaseAvance)
+	return pc.Enforce(ctx, empID, PhaseAvance, PhaseMedioAnio)
 }
 
 // CanCreateCategory checks if the current phase allows category creation.
@@ -82,7 +99,7 @@ func (pc *PhaseCheck) CanCreateCategory(ctx context.Context, empID string) error
 
 // CanUpdateCategory checks if the current phase allows category updates.
 func (pc *PhaseCheck) CanUpdateCategory(ctx context.Context, empID string) error {
-	return pc.Enforce(ctx, empID, PhaseAsignacion, PhaseAvance)
+	return pc.Enforce(ctx, empID, PhaseAsignacion, PhaseAvance, PhaseMedioAnio)
 }
 
 // CanUpdateCategoryField checks if a specific field can be updated in the current phase.
@@ -92,10 +109,10 @@ func (pc *PhaseCheck) CanUpdateCategoryField(ctx context.Context, empID string, 
 	if err != nil {
 		return fmt.Errorf("phase check: %w", err)
 	}
-	if phase == PhaseAvance && fieldName != "weight" {
+	if isMidPhase(phase) && fieldName != "weight" {
 		return ErrPhaseRestricted
 	}
-	return pc.Enforce(ctx, empID, PhaseAsignacion, PhaseAvance)
+	return pc.Enforce(ctx, empID, PhaseAsignacion, PhaseAvance, PhaseMedioAnio)
 }
 
 // CanDeleteCategory checks if the current phase allows category deletion.

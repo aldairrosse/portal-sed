@@ -10,6 +10,7 @@ package state
 
 import (
 	"fmt"
+	"strings"
 
 	pkgerrors "github.com/sed-evaluacion-desempeno/api/internal/pkg/errors"
 )
@@ -29,6 +30,17 @@ const (
 	// StateCompleted means the evaluation has been finalized by RH and no
 	// further changes are allowed.
 	StateCompleted EvaluationState = "completada"
+)
+
+// Cycle phase names (mirrors cycles.current_phase enum).
+// Canonical: asignacion, avance, cierre. medio-anio is a read-only alias
+// of avance for legacy cycles.
+const (
+	PhaseAsignacion = "asignacion"
+	PhaseAvance     = "avance"
+	// PhaseMedioAnio is a deprecated read alias of avance (see IsMidYearPhase).
+	PhaseMedioAnio = "medio-anio"
+	PhaseCierre    = "cierre"
 )
 
 // validTransitions defines the allowed state transitions.
@@ -60,10 +72,46 @@ func CanTransition(from, to EvaluationState) bool {
 	return false
 }
 
-// RequiresPhase validates that the current phase is "cierre". Returns an
-// INVALID_PHASE domain error if the phase does not match.
+// normalizePhase lowercases/trims and unifies "medio_anio" → "medio-anio".
+func normalizePhase(p string) string {
+	p = strings.ToLower(strings.TrimSpace(p))
+	return strings.ReplaceAll(p, "_", "-")
+}
+
+// IsMidYearPhase reports whether phase is the mid-year phase.
+// "avance" and "medio-anio" are treated as the same mid-year phase.
+func IsMidYearPhase(phase string) bool {
+	switch normalizePhase(phase) {
+	case PhaseAvance, PhaseMedioAnio:
+		return true
+	default:
+		return false
+	}
+}
+
+// SamePhaseForWrite reports whether two phase names match for write gates,
+// treating "avance" and "medio-anio" as equivalent.
+func SamePhaseForWrite(a, b string) bool {
+	na, nb := normalizePhase(a), normalizePhase(b)
+	if na == nb {
+		return true
+	}
+	return IsMidYearPhase(na) && IsMidYearPhase(nb)
+}
+
+// IsWritablePhase reports whether writes are allowed in the given phase
+// (mid-year avance/medio-anio or cierre).
+func IsWritablePhase(phase string) bool {
+	n := normalizePhase(phase)
+	return n == PhaseCierre || IsMidYearPhase(n)
+}
+
+// RequiresPhase validates that the current phase is "cierre". Returns a
+// PHASE_NOT_ADVANCEABLE domain error if the phase does not match.
+// Kept for cierre-only operations (self/RH/finalize); use WritableInPhase
+// for mid-year writes.
 func RequiresPhase(phase string) error {
-	if phase != "cierre" {
+	if normalizePhase(phase) != PhaseCierre {
 		return pkgerrors.NewDomainError(
 			pkgerrors.PhaseNotAdvanceable,
 			fmt.Sprintf("this operation requires the cycle to be in 'cierre' phase; current phase is '%s'", phase),
@@ -71,6 +119,68 @@ func RequiresPhase(phase string) error {
 		)
 	}
 	return nil
+}
+
+// WritableInPhase validates that the cycle's current phase matches the
+// required phase for a write (mid-year "avance"/"medio-anio" equivalent).
+// Returns a PHASE_NOT_ADVANCEABLE (409) domain error on mismatch.
+// Permission checks (403) are enforced separately by RBAC middleware.
+func WritableInPhase(currentPhase, requiredPhase string) error {
+	if requiredPhase == "" {
+		if !IsWritablePhase(currentPhase) {
+			return pkgerrors.NewDomainError(
+				pkgerrors.PhaseNotAdvanceable,
+				fmt.Sprintf("writes are only allowed in 'avance'/'medio-anio' or 'cierre' phase; current phase is '%s'", currentPhase),
+				nil,
+			)
+		}
+		return nil
+	}
+	if !SamePhaseForWrite(currentPhase, requiredPhase) {
+		return pkgerrors.NewDomainError(
+			pkgerrors.PhaseNotAdvanceable,
+			fmt.Sprintf("this operation requires the cycle to be in '%s' phase; current phase is '%s'", requiredPhase, currentPhase),
+			nil,
+		)
+	}
+	return nil
+}
+
+// CyclePhaseOrder is the canonical intra-cycle phase progression.
+// medio-anio is NOT a step; it reads as avance (see phaseOrderIndex).
+var CyclePhaseOrder = []string{PhaseAsignacion, PhaseAvance, PhaseCierre}
+
+// phaseOrderIndex returns the index of a phase in CyclePhaseOrder, or -1.
+// Legacy "medio-anio" maps to the avance index for read compatibility.
+func phaseOrderIndex(phase string) int {
+	n := normalizePhase(phase)
+	if n == PhaseMedioAnio {
+		n = PhaseAvance
+	}
+	for i, p := range CyclePhaseOrder {
+		if p == n {
+			return i
+		}
+	}
+	return -1
+}
+
+// IsForwardAllowed reports whether toPhase is the immediate next phase after
+// fromPhase within an unfinished active cycle.
+func IsForwardAllowed(fromPhase, toPhase string, cycleActive bool) bool {
+	if !cycleActive {
+		return false
+	}
+	return phaseOrderIndex(toPhase) == phaseOrderIndex(fromPhase)+1
+}
+
+// IsBackwardAllowed reports whether toPhase is the immediate previous phase
+// before fromPhase within an unfinished active cycle.
+func IsBackwardAllowed(fromPhase, toPhase string, cycleActive bool) bool {
+	if !cycleActive {
+		return false
+	}
+	return phaseOrderIndex(toPhase) == phaseOrderIndex(fromPhase)-1
 }
 
 // String returns the string representation of the state.

@@ -28,7 +28,10 @@ type mockService struct {
 	mu                  sync.Mutex
 	createCycleFunc     func(ctx context.Context, req svc.CreateCycleRequest) (*svc.CycleResponse, error)
 	transitionPhaseFunc func(ctx context.Context, req svc.TransitionPhaseRequest) (*svc.CycleResponse, error)
+	advancePhaseFunc    func(ctx context.Context, cycleID string, expectedVersion int, reason string) (*svc.CycleResponse, error)
+	revertPhaseFunc     func(ctx context.Context, cycleID string) (*svc.CycleResponse, error)
 	getCycleFunc        func(ctx context.Context, cycleID string) (*svc.CycleResponse, error)
+	getCurrentCycleFunc func(ctx context.Context, orgID string, year int) (*svc.CycleResponse, error)
 	listCyclesFunc      func(ctx context.Context, req svc.ListCyclesRequest) (*cursor.PaginatedList[*svc.CycleResponse], error)
 }
 
@@ -40,8 +43,29 @@ func (m *mockService) TransitionPhase(ctx context.Context, req svc.TransitionPha
 	return m.transitionPhaseFunc(ctx, req)
 }
 
+func (m *mockService) AdvancePhase(ctx context.Context, cycleID string, expectedVersion int, reason string) (*svc.CycleResponse, error) {
+	if m.advancePhaseFunc == nil {
+		return nil, nil
+	}
+	return m.advancePhaseFunc(ctx, cycleID, expectedVersion, reason)
+}
+
+func (m *mockService) RevertPhase(ctx context.Context, cycleID string) (*svc.CycleResponse, error) {
+	if m.revertPhaseFunc == nil {
+		return nil, nil
+	}
+	return m.revertPhaseFunc(ctx, cycleID)
+}
+
 func (m *mockService) GetCycle(ctx context.Context, cycleID string) (*svc.CycleResponse, error) {
 	return m.getCycleFunc(ctx, cycleID)
+}
+
+func (m *mockService) GetCurrentCycle(ctx context.Context, orgID string, year int) (*svc.CycleResponse, error) {
+	if m.getCurrentCycleFunc == nil {
+		return nil, nil
+	}
+	return m.getCurrentCycleFunc(ctx, orgID, year)
 }
 
 func (m *mockService) ListCycles(ctx context.Context, req svc.ListCyclesRequest) (*cursor.PaginatedList[*svc.CycleResponse], error) {

@@ -116,8 +116,24 @@ func (r *PhaseRepo) GetTransitionsByFromPhase(ctx context.Context, fromPhase str
 		 FROM phase_transitions WHERE from_phase = $1 ORDER BY to_phase ASC`, fromPhase)
 }
 
+// adjacentPhasePairs allows free forward/backward movement inside an active
+// cycle for RH manual transitions, even on legacy cycles seeded without
+// medio-anio or backward rows.
+var adjacentPhasePairs = map[string]bool{
+	"asignacion|avance":  true,
+	"avance|asignacion":  true,
+	"avance|medio-anio":  true,
+	"medio-anio|avance":  true,
+	"medio-anio|cierre":  true,
+	"cierre|medio-anio":  true,
+	"avance|cierre":      true,
+	"cierre|avance":      true,
+}
+
 // ValidateTransition checks if a transition exists for the given (fromPhase, toPhase, trigger) tuple.
-// Returns nil if valid, INVALID_TRANSITION error otherwise.
+// Falls back to adjacentPhasePairs for manual_rh so legacy cycles without
+// backward/medio-anio seed rows can still move freely. Returns nil if valid,
+// INVALID_TRANSITION error otherwise.
 func (r *PhaseRepo) ValidateTransition(ctx context.Context, fromPhase, toPhase, trigger string) error {
 	var count int
 	err := r.db.QueryRowContext(ctx,
@@ -127,14 +143,17 @@ func (r *PhaseRepo) ValidateTransition(ctx context.Context, fromPhase, toPhase, 
 	if err != nil {
 		return err
 	}
-	if count == 0 {
-		return errors.ErrInvalidTransition.WithDetails(
-			"from_phase: " + fromPhase,
-			"to_phase: " + toPhase,
-			"trigger: " + trigger,
-		)
+	if count > 0 {
+		return nil
 	}
-	return nil
+	if trigger == "manual_rh" && adjacentPhasePairs[fromPhase+"|"+toPhase] {
+		return nil
+	}
+	return errors.ErrInvalidTransition.WithDetails(
+		"from_phase: " + fromPhase,
+		"to_phase: " + toPhase,
+		"trigger: " + trigger,
+	)
 }
 
 // queryPhaseDefinitions runs a raw SQL query and scans into PhaseDefinitionRow.

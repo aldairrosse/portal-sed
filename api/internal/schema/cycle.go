@@ -29,6 +29,9 @@ func (Cycle) Fields() []ent.Field {
 			StorageKey("id"),
 		field.Int("year"),
 		field.Enum("current_phase").
+			// Canonical phases only: asignacion, avance, cierre.
+			// "medio-anio" is a read-only alias of "avance" handled in
+			// internal/pkg/state (IsMidYearPhase/SamePhaseForWrite), never persisted.
 			Values("asignacion", "avance", "cierre").
 			SchemaType(map[string]string{
 				dialect.Postgres: "phase",

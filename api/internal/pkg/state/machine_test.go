@@ -65,6 +65,47 @@ func TestCanTransition_CannotGoBack(t *testing.T) {
 		"cannot revert from completed to pending")
 }
 
+func TestIsMidYearPhase(t *testing.T) {
+	tests := []struct {
+		name  string
+		phase string
+		want  bool
+	}{
+		{"avance is mid-year", state.PhaseAvance, true},
+		{"medio-anio is mid-year", state.PhaseMedioAnio, true},
+		{"asignacion is not mid-year", state.PhaseAsignacion, false},
+		{"cierre is not mid-year", state.PhaseCierre, false},
+		{"unknown is not mid-year", "desconocida", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.want, state.IsMidYearPhase(tt.phase))
+		})
+	}
+}
+
+func TestSamePhaseForWrite(t *testing.T) {
+	tests := []struct {
+		name string
+		a, b string
+		want bool
+	}{
+		{"same phase", state.PhaseAsignacion, state.PhaseAsignacion, true},
+		{"avance to medio-anio read-only equivalent", state.PhaseAvance, state.PhaseMedioAnio, true},
+		{"medio-anio to avance read-only equivalent", state.PhaseMedioAnio, state.PhaseAvance, true},
+		{"asignacion vs avance differ", state.PhaseAsignacion, state.PhaseAvance, false},
+		{"avance vs cierre differ", state.PhaseAvance, state.PhaseCierre, false},
+		{"cierre vs asignacion differ", state.PhaseCierre, state.PhaseAsignacion, false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.want, state.SamePhaseForWrite(tt.a, tt.b))
+		})
+	}
+}
+
 func TestBatchTransition_MultipleEvaluations(t *testing.T) {
 	evals := []state.EvaluationState{
 		state.StatePendingEvalFinal,

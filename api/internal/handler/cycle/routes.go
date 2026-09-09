@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/sed-evaluacion-desempeno/api/internal/auth"
 	"github.com/sed-evaluacion-desempeno/api/internal/middleware"
 	repo "github.com/sed-evaluacion-desempeno/api/internal/repository/cycle"
 	authsvc "github.com/sed-evaluacion-desempeno/api/internal/service/auth"
@@ -65,6 +66,14 @@ func RegisterRoutes(r chi.Router, handler *CycleHandler, authSvc *authsvc.AuthSe
 			r.Post("/cycles", handler.CreateCycle)
 		})
 
+		// GET /api/v1/cycles/current — MUST be registered BEFORE /cycles/{id}
+		// so the static segment wins over the {id} param.
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.RateLimit(readRateLimit))
+			r.Use(readReplicaMiddleware)
+			r.Get("/cycles/current", handler.GetCurrentCycle)
+		})
+
 		// GET /api/v1/cycles/{id}
 		r.Group(func(r chi.Router) {
 			r.Use(middleware.RateLimit(readRateLimit))
@@ -85,6 +94,14 @@ func RegisterRoutes(r chi.Router, handler *CycleHandler, authSvc *authsvc.AuthSe
 			r.Use(middleware.RateLimit(writeRateLimit))
 			r.Use(middleware.Idempotency(idempStore, 24*time.Hour))
 			r.Post("/cycles/{id}/assign-all", handler.AssignAllEmployees)
+		})
+
+		// POST /api/v1/cycles/{id}/revert
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.RequirePermission(auth.PermEvalRH))
+			r.Use(middleware.RateLimit(writeRateLimit))
+			r.Use(middleware.Idempotency(idempStore, 24*time.Hour))
+			r.Post("/cycles/{id}/revert", handler.RevertPhase)
 		})
 
 		// --- Phase endpoints ---

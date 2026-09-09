@@ -10,6 +10,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/sed-evaluacion-desempeno/api/internal"
+	"github.com/sed-evaluacion-desempeno/api/internal/auth"
 	"github.com/sed-evaluacion-desempeno/api/internal/cycle"
 	"github.com/sed-evaluacion-desempeno/api/internal/organization"
 	"github.com/sed-evaluacion-desempeno/api/internal/pkg/cursor"
@@ -17,7 +18,9 @@ import (
 	repo "github.com/sed-evaluacion-desempeno/api/internal/repository/cycle"
 )
 
-// CyclePhaseOrder defines the linear phase progression.
+// CyclePhaseOrder defines the canonical phase progression:
+// asignacion (registro metas) → avance (avances+9-box) → cierre (cierre+9-box).
+// medio-anio is a read-only alias of avance, not a step.
 var CyclePhaseOrder = []cycle.CurrentPhase{
 	cycle.CurrentPhaseAsignacion,
 	cycle.CurrentPhaseAvance,
@@ -109,7 +112,10 @@ func rowToResponse(r *repo.CycleRow) *CycleResponse {
 type Service interface {
 	CreateCycle(ctx context.Context, req CreateCycleRequest) (*CycleResponse, error)
 	TransitionPhase(ctx context.Context, req TransitionPhaseRequest) (*CycleResponse, error)
+	AdvancePhase(ctx context.Context, cycleID string, expectedVersion int, reason string) (*CycleResponse, error)
+	RevertPhase(ctx context.Context, cycleID string) (*CycleResponse, error)
 	GetCycle(ctx context.Context, cycleID string) (*CycleResponse, error)
+	GetCurrentCycle(ctx context.Context, orgID string, year int) (*CycleResponse, error)
 	ListCycles(ctx context.Context, req ListCyclesRequest) (*cursor.PaginatedList[*CycleResponse], error)
 }
 
@@ -122,7 +128,9 @@ type CycleRepository interface {
 	LockCycleForUpdate(ctx context.Context, tx *sql.Tx, cycleID uuid.UUID) (*repo.CycleRow, error)
 	UpdatePhase(ctx context.Context, tx *sql.Tx, cycleID uuid.UUID, nextPhase cycle.CurrentPhase, expectedVersion int) error
 	GetCycle(ctx context.Context, id uuid.UUID) (*repo.CycleRow, error)
+	GetCurrent(ctx context.Context, orgID uuid.UUID, year int) (*repo.CycleRow, error)
 	InsertPhaseHistory(ctx context.Context, tx *sql.Tx, cycleID uuid.UUID, fromPhase, toPhase string, triggeredBy uuid.UUID, reason string) error
+	ReopenCompletedEvaluations(ctx context.Context, tx *sql.Tx, cycleID uuid.UUID) (int64, error)
 	ListCycles(ctx context.Context, orgID uuid.UUID, year *int, phase *cycle.CurrentPhase, cursorID *uuid.UUID, cursorUpdatedAt *time.Time, limit int) ([]*repo.CycleRow, error)
 }
 
@@ -302,6 +310,102 @@ func (s *service) TransitionPhase(ctx context.Context, req TransitionPhaseReques
 	return rowToResponse(updatedRow), nil
 }
 
+// AdvancePhase moves a cycle one step forward in CyclePhaseOrder within the
+// active (unfinished) cycle. Wraps TransitionPhase.
+func (s *service) AdvancePhase(ctx context.Context, cycleID string, expectedVersion int, reason string) (*CycleResponse, error) {
+	id, err := uuid.Parse(cycleID)
+	if err != nil {
+		return nil, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
+			"cycle_id must be a valid UUID v4", err)
+	}
+	row, err := s.cycleRepo.GetCycle(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if row.FinishedAt != nil {
+		return nil, pkgerrors.NewDomainError(pkgerrors.PhaseNotAdvanceable,
+			"cycle is finished; create a new cycle for the current year", nil)
+	}
+	next, ok := resolveNextPhase(row.CurrentPhase)
+	if !ok {
+		return nil, pkgerrors.NewDomainError(pkgerrors.InvalidTransition,
+			"the current phase '"+string(row.CurrentPhase)+"' has no next phase", nil)
+	}
+	return s.TransitionPhase(ctx, TransitionPhaseRequest{
+		CycleID: cycleID, ExpectedVersion: expectedVersion,
+		Trigger: "manual_rh", ToPhase: string(next), Reason: reason,
+	})
+}
+
+// RevertPhase moves a cycle one step back in CyclePhaseOrder within the
+// active cycle (alias used by the UI Retroceder button). Finished evaluations
+// are reopened to en_progreso. RH permission is enforced by route middleware;
+// the service re-checks the role as defense in depth.
+func (s *service) RevertPhase(ctx context.Context, cycleID string) (*CycleResponse, error) {
+	id, err := uuid.Parse(cycleID)
+	if err != nil {
+		return nil, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
+			"cycle_id must be a valid UUID v4", err)
+	}
+
+	if role, ok := auth.GetRole(ctx); ok && !auth.HasPermission(role, auth.PermEvalRH) {
+		return nil, pkgerrors.ErrForbidden
+	}
+
+	tx, err := s.cycleRepo.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if tx != nil {
+			_ = tx.Rollback()
+		}
+	}()
+
+	row, err := s.cycleRepo.LockCycleForUpdate(ctx, tx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	idx := phaseIndex(row.CurrentPhase)
+	if idx <= 0 {
+		return nil, pkgerrors.NewDomainError(pkgerrors.PhaseNotAdvanceable,
+			"cycle can only be reverted from a phase after 'asignacion'; current phase is '"+string(row.CurrentPhase)+"'", nil,
+		).WithDetails("current_phase: " + string(row.CurrentPhase))
+	}
+	prev := CyclePhaseOrder[idx-1]
+
+	if err := s.phaseRepo.ValidateTransition(ctx, string(row.CurrentPhase), string(prev), "manual_rh"); err != nil {
+		return nil, err
+	}
+
+	if err := s.cycleRepo.UpdatePhase(ctx, tx, id, prev, row.Version); err != nil {
+		return nil, err
+	}
+
+	if _, err := s.cycleRepo.ReopenCompletedEvaluations(ctx, tx, id); err != nil {
+		return nil, err
+	}
+
+	triggeredBy, _ := auth.GetEmployeeID(ctx)
+	err = s.cycleRepo.InsertPhaseHistory(ctx, tx, id, string(row.CurrentPhase), string(prev), triggeredBy, "revert to "+string(prev))
+	if err != nil {
+		return nil, err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+	tx = nil
+
+	updatedRow, err := s.cycleRepo.GetCycle(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	return rowToResponse(updatedRow), nil
+}
+
 // GetCycle retrieves a single cycle by ID.
 func (s *service) GetCycle(ctx context.Context, cycleID string) (*CycleResponse, error) {
 	id, err := uuid.Parse(cycleID)
@@ -315,6 +419,27 @@ func (s *service) GetCycle(ctx context.Context, cycleID string) (*CycleResponse,
 		return nil, err
 	}
 
+	return rowToResponse(row), nil
+}
+
+// GetCurrentCycle resolves the cycle for the given year, falling back to the
+// active (unfinished) cycle. Returns 404 when neither exists.
+func (s *service) GetCurrentCycle(ctx context.Context, orgID string, year int) (*CycleResponse, error) {
+	oid, err := uuid.Parse(orgID)
+	if err != nil {
+		return nil, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
+			"organization_id must be a valid UUID v4", err)
+	}
+	if year == 0 {
+		year = time.Now().Year()
+	}
+	row, err := s.cycleRepo.GetCurrent(ctx, oid, year)
+	if err != nil {
+		return nil, err
+	}
+	if row == nil {
+		return nil, pkgerrors.ErrCycleNotFound
+	}
 	return rowToResponse(row), nil
 }
 

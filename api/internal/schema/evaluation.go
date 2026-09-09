@@ -28,6 +28,9 @@ func (Evaluation) Fields() []ent.Field {
 			Default(uuid.New).
 			StorageKey("id"),
 		field.Enum("phase").
+			// Canonical phases only: asignacion, avance, cierre.
+			// "medio-anio" is a read-only alias of "avance" handled in
+			// internal/pkg/state (IsMidYearPhase/SamePhaseForWrite), never persisted.
 			Values("asignacion", "avance", "cierre").
 			SchemaType(map[string]string{
 				dialect.Postgres: "phase",
@@ -73,7 +76,7 @@ func (Evaluation) Edges() []ent.Edge {
 
 func (Evaluation) Index() []ent.Index {
 	return []ent.Index{
-		index.Fields("employee_id", "cycle_id").
+		index.Fields("employee_id", "cycle_id", "phase").
 			Unique(),
 		index.Fields("cycle_id", "state"),
 		index.Fields("cycle_id", "phase"),

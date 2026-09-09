@@ -83,6 +83,21 @@ func NewEvaluationHandler(
 }
 
 
+// parsePhaseParam validates the ?phase query param against the cycle phase enum.
+// Empty means "default to the cycle's current_phase" (resolved by the service).
+func parsePhaseParam(raw string) (string, error) {
+	if raw == "" {
+		return "", nil
+	}
+	switch raw {
+	case "asignacion", "avance", "medio-anio", "cierre":
+		return raw, nil
+	default:
+		return "", pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
+			"phase must be one of 'asignacion', 'avance', 'medio-anio', 'cierre'", nil)
+	}
+}
+
 // --- Evaluation Endpoints ---
 
 // ListEvaluations handles GET /api/v1/evaluations
@@ -105,6 +120,17 @@ func (h *EvaluationHandler) ListEvaluations(w http.ResponseWriter, r *http.Reque
 	state := r.URL.Query().Get("state")
 	cursor := r.URL.Query().Get("cursor")
 
+	phase, err := parsePhaseParam(r.URL.Query().Get("phase"))
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+	if phase == "" {
+		if p, perr := h.evalSvc.GetCyclePhase(r.Context(), cycleID); perr == nil {
+			phase = p
+		}
+	}
+
 	limit := 20
 	if l := r.URL.Query().Get("limit"); l != "" {
 		lv, err := strconv.Atoi(l)
@@ -121,10 +147,20 @@ func (h *EvaluationHandler) ListEvaluations(w http.ResponseWriter, r *http.Reque
 		limit = lv
 	}
 
-	result, err := h.evalSvc.ListEvaluations(r.Context(), cycleID, state, cursor, limit)
+	result, err := h.evalSvc.ListEvaluations(r.Context(), cycleID, state, phase, cursor, limit)
 	if err != nil {
 		writeError(w, err)
 		return
+	}
+
+	// Privacy gate: colaborador viewers only see their own evaluations
+	// during avance/medio-anio (best-effort when authenticated).
+	if viewerID, ok := auth.GetEmployeeID(r.Context()); ok {
+		if viewerRole, ok := auth.GetRole(r.Context()); ok {
+			if phase, err := h.evalSvc.GetCyclePhase(r.Context(), cycleID); err == nil {
+				result.Data = h.evalSvc.FilterEvaluationsForViewer(result.Data, viewerID, viewerRole, phase)
+			}
+		}
 	}
 
 	writeJSON(w, http.StatusOK, result)
@@ -144,6 +180,20 @@ func (h *EvaluationHandler) GetEvaluation(w http.ResponseWriter, r *http.Request
 	if err != nil {
 		writeError(w, err)
 		return
+	}
+
+	// Privacy gate: colaborador cannot open others' evaluations
+	// during avance/medio-anio; self viewers get RH timestamps redacted.
+	if viewerID, ok := auth.GetEmployeeID(r.Context()); ok {
+		if viewerRole, ok := auth.GetRole(r.Context()); ok {
+			if phase, err := h.evalSvc.GetCyclePhase(r.Context(), result.CycleID); err == nil {
+				if err := h.evalSvc.AuthorizeEvaluationAccess(viewerID, result.EmployeeID, viewerRole, phase); err != nil {
+					writeError(w, err)
+					return
+				}
+				result = h.evalSvc.RedactDetailForSelf(result, viewerID, viewerRole, phase)
+			}
+		}
 	}
 
 	writeJSON(w, http.StatusOK, result)
@@ -507,7 +557,18 @@ func (h *EvaluationHandler) GetCompetencyResults(w http.ResponseWriter, r *http.
 
 	currentUserID, _ := auth.GetEmployeeID(r.Context())
 
-	result, err := h.evalSvc.GetCompetencyResults(r.Context(), cycleID, q, scope, currentUserID, offset, limit)
+	phase, err := parsePhaseParam(r.URL.Query().Get("phase"))
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+	if phase == "" {
+		if p, perr := h.evalSvc.GetCyclePhase(r.Context(), cycleID); perr == nil {
+			phase = p
+		}
+	}
+
+	result, err := h.evalSvc.GetCompetencyResults(r.Context(), cycleID, phase, q, scope, currentUserID, offset, limit)
 	if err != nil {
 		writeError(w, err)
 		return
@@ -547,8 +608,8 @@ func (h *EvaluationHandler) GetEvaluationSummary(w http.ResponseWriter, r *http.
 // ListMatrices handles GET /api/v1/nine-box/matrices
 // Returns the 9×9 matrix view for the authenticated viewer, scoped by role
 // (via ComputeMatrixView). Supports optional filters: cycle_id, phase_id.
-// phase_id is optional; when empty the service resolves the cycle's current phase.
-// evaluator_id is no longer accepted: scoping is derived from the viewer's role.
+// phase_id (or phase) is required when cycle_id is given; no default to
+// current_phase is applied here.
 func (h *EvaluationHandler) ListMatrices(w http.ResponseWriter, r *http.Request) {
 	var cycleID uuid.UUID
 
@@ -571,6 +632,31 @@ func (h *EvaluationHandler) ListMatrices(w http.ResponseWriter, r *http.Request)
 			return
 		}
 		phaseID = &parsed
+	}
+
+	phase, err := parsePhaseParam(r.URL.Query().Get("phase"))
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+	if cycleID != uuid.Nil && phase == "" && phaseID == nil {
+		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
+			"phase_id is required", nil))
+		return
+	}
+	if cycleID == uuid.Nil {
+		if phase != "" {
+			writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
+				"cycle_id is required when phase is given", nil))
+			return
+		}
+	} else if phase != "" || phaseID != nil {
+		resolved, rerr := h.nineBoxSvc.ResolvePhaseID(r.Context(), cycleID, phase, phaseID)
+		if rerr != nil {
+			writeError(w, rerr)
+			return
+		}
+		phaseID = &resolved
 	}
 
 	viewerID, ok := auth.GetEmployeeID(r.Context())
