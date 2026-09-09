@@ -18,7 +18,7 @@ The `NineBoxEntryDTO` response SHALL include `employeeName` (string) and `profil
 - WHEN `GET /nine-box/matrices/{matrixId}` returns an entry for evaluatee "María García"
 - THEN the entry includes `employeeName: "María García"` and a valid `profileId`
 
-### REQ-NB-001: Enriched NineBoxEntryDTO
+### Requirement: REQ-NB-001: Enriched NineBoxEntryDTO
 
 The `NineBoxEntryDTO` response SHALL include `employeeName` (string) and `profileId` (UUID) populated via JOIN on `employees` table during `toEntryDTO()` mapping.
 
@@ -44,7 +44,7 @@ profileId:    { type: string, format: uuid }
 - THEN `employeeName` falls back to `""` and `profileId` to `uuid.Nil`
 - AND entry still returns (no 500)
 
-### REQ-NB-002: Consistent Scope Resolution via getDescendants()
+### Requirement: REQ-NB-002: Consistent Scope Resolution via getDescendants()
 
 Scope resolution for the 9×9 matrix SHALL use `getDescendants()` instead of `getChildren()` for all profiles. For `jefe` (whose subordinates are leaf collaborators), `getDescendants()` is functionally equivalent to `getChildren()`. For `director` and `director-general`, this includes all indirect reports.
 
@@ -64,7 +64,7 @@ Scope resolution for the 9×9 matrix SHALL use `getDescendants()` instead of `ge
 - THEN `getDescendants(jefeNodeId)` returns 3 collaborators
 - AND result is identical to prior `getChildren()`
 
-### REQ-NB-003: Real Evaluator Resolution in RecomputeMatrix
+### Requirement: REQ-NB-003: Real Evaluator Resolution in RecomputeMatrix
 
 `RecomputeMatrix` SHALL resolve the real evaluator from `org_chart_nodes.manager_id` instead of using the self-evaluator placeholder. Employees SHALL be grouped under their actual manager, not themselves.
 
@@ -84,7 +84,7 @@ Scope resolution for the 9×9 matrix SHALL use `getDescendants()` instead of `ge
 - THEN the employee is skipped for matrix placement (no evaluator to assign to)
 - AND the operation completes without error
 
-### REQ-NB-004: Quadrant Filter on Entries Endpoint
+### Requirement: REQ-NB-004: Quadrant Filter on Entries Endpoint
 
 `GET /nine-box/matrices/{matrixId}/entries` SHALL accept an optional `quadrant` query parameter (integer, 1–9). When provided, the response SHALL include only entries matching that quadrant.
 

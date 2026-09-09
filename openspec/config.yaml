@@ -228,24 +228,23 @@ rules:
     - RBAC en service layer; notificaciones async con idempotencia.
   tasks:
     - Chunks máx ~2h; incluir criterios de aceptación verificables.
-    - Ruta UI-first (aprobada): design/tokens → fixtures → pantallas Svelte → stub OpenAPI → backend → auth.
-    - Ruta API-first (alternativa): OpenAPI → backend → handlers → frontend.
+    - "Ruta UI-first (aprobada): design/tokens → fixtures → pantallas Svelte → stub OpenAPI → backend → auth."
+    - "Ruta API-first (alternativa): OpenAPI → backend → handlers → frontend."
     - Sin código hasta tasks aprobados.
-    - CI: openspec validate, lint (golangci-lint, eslint), tests tabla dominio/handlers, pnpm audit.
+    - "CI: openspec validate, lint (golangci-lint, eslint), tests tabla dominio/handlers, pnpm audit."
   spec:
     - Una spec duradera por bounded context o módulo; nombre kebab-case.
     - Cerrar reglas de negocio abiertas antes de handlers públicos.
     - Incluir checklist security-baseline por change (ver principles/security.md).
   apply:
-    notes:
-      - Follow existing code patterns
-    tdd: false
-    test_command: cd api && go test ./... -v -race -count=1
-    test_command_fe: none
-    test_command_integration: cd api && go test ./integration/... -v -race -count=1 -timeout=60s
+    - "Follow existing code patterns"
+    - "tdd: false"
+    - "test_command: cd api && go test ./... -v -race -count=1"
+    - "test_command_fe: none"
+    - "test_command_integration: cd api && go test ./integration/... -v -race -count=1 -timeout=60s"
   verify:
-    test_command: cd api && go test ./... -v -race -count=1
-    build_command: cd web && pnpm build
-    coverage_threshold: 0
+    - "test_command: cd api && go test ./... -v -race -count=1"
+    - "build_command: cd web && pnpm build"
+    - "coverage_threshold: 0"
   archive:
     - Warn before merging destructive deltas

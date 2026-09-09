@@ -18,7 +18,7 @@
 - WHEN a jefe calls `GET /nine-box/matrices?cycle_id=cycle-2026` without `phase_id`
 - THEN entries reflect live data for the cycle's `current_phase` scoped to the jefe's descendants
 
-### REQ-NBM-001: On-demand matrix computation
+### Requirement: REQ-NBM-001: On-demand matrix computation
 
 `GET /nine-box/matrices?cycle_id={cycleId}` SHALL compute matrix entries on demand from live data (goal progress + competency ratings) instead of reading a stored snapshot. When `phase_id` is omitted, the SHALL use `cycle.current_phase` of the requested cycle.
 
@@ -46,7 +46,7 @@ parameters:
 - THEN the returned entries are computed for cycle-2027
 - AND they do not mix cycle-2026 data
 
-### REQ-NBM-002: Weighted potential from explicit rating source
+### Requirement: REQ-NBM-002: Weighted potential from explicit rating source
 
 `evaluation_competency` SHALL carry a `source` field (`self` | `rh`). `ComputePotentialTier` SHALL compute a weighted average of self and jefe/RH ratings (default weights: rh = 0.8, self = 0.2) before mapping to the 1–3 tier. The weights SHALL be configurable constants with a code note marking them as business-tunable (the final client may change them). Rows created before the migration SHALL be backfilled via the timestamp heuristic; rows created after SHALL set `source` explicitly.
 
@@ -64,7 +64,7 @@ parameters:
 - THEN `source` is set from `evaluations.self_evaluation_completed_at` vs `rh_evaluation_completed_at`
 - AND the row is readable with an explicit source
 
-### REQ-NBM-003: Viewer-scoped reads
+### Requirement: REQ-NBM-003: Viewer-scoped reads
 
 Reads SHALL be scoped to the authenticated viewer:
 - `rh` and `director-general` SHALL see all employees.
@@ -92,7 +92,7 @@ List endpoint (`GET /nine-box/matrices`) SHALL **filter** results to the viewer'
 
 > Note: the 403 on direct matrix access is tracked as `TODO(auth:C7)` in the handler (org-scope resolution not yet wired there); the list filter is implemented.
 
-### REQ-NBM-004: DB index aligned with schema
+### Requirement: REQ-NBM-004: DB index aligned with schema
 
 The nine_box_matrixes unique index SHALL be `(cycle_id, evaluator_id, phase_id)`, matching the Ent schema, so one matrix per evaluator per cycle per phase is possible.
 
@@ -103,7 +103,7 @@ The nine_box_matrixes unique index SHALL be `(cycle_id, evaluator_id, phase_id)`
 - THEN both inserts succeed
 - AND no duplicate-key error
 
-### REQ-NBM-006: 1-hour TTL cache
+### Requirement: REQ-NBM-006: 1-hour TTL cache
 
 Matrix reads SHALL serve the persisted snapshot when it is **fresher than 1 hour** for `(cycle_id, evaluator_id, phase_id)`; otherwise `ComputeMatrixView` SHALL re-derive entries from live data and upsert the cache. Freshness SHALL be determined from the matrix `updated_at`. `POST /nine-box/recompute` SHALL bypass the TTL and force re-derivation.
 
@@ -122,7 +122,7 @@ Matrix reads SHALL serve the persisted snapshot when it is **fresher than 1 hour
 
 ## Modified Capability: manager-9x9
 
-### REQ-NBM-005: DTO exposes raw inputs
+### Requirement: REQ-NBM-005: DTO exposes raw inputs
 
 `NineBoxEntryDTO` SHALL include read-only fields: `goalProgressPercent` (float), `selfRating` (float|null), `hrRating` (float|null), `weights` (`{self, hr}`). Existing fields (`evaluateeId`, `employeeName`, `profileId`, tiers, quadrant) SHALL remain unchanged for backward compatibility.
 
