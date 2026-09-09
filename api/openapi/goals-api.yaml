@@ -906,6 +906,14 @@ paths:
       summary: Create a comment on a goal
       parameters:
         - $ref: '#/components/parameters/GoalId'
+        - name: phase
+          in: query
+          required: false
+          description: "Fase del comentario, default cierre; alias medio-anio solo docs (equivale a avance)."
+          schema:
+            type: string
+            enum: [asignacion, avance, cierre]
+            default: cierre
       requestBody:
         required: true
         content:
@@ -966,6 +974,14 @@ paths:
           schema:
             type: string
             format: uuid
+        - name: phase
+          in: query
+          required: false
+          description: "Fase del comentario, default cierre; alias medio-anio solo docs (equivale a avance)."
+          schema:
+            type: string
+            enum: [asignacion, avance, cierre]
+            default: cierre
       requestBody:
         required: true
         content:
@@ -1021,6 +1037,14 @@ paths:
       summary: Create a comment on an assignment
       parameters:
         - $ref: '#/components/parameters/AssignmentId'
+        - name: phase
+          in: query
+          required: false
+          description: "Fase del comentario, default cierre; alias medio-anio solo docs (equivale a avance)."
+          schema:
+            type: string
+            enum: [asignacion, avance, cierre]
+            default: cierre
       requestBody:
         required: true
         content:
@@ -2284,6 +2308,11 @@ components:
           type: string
         content:
           type: string
+        phase:
+          type: string
+          enum: [asignacion, avance, cierre]
+          default: cierre
+          description: "Fase del comentario; alias medio-anio (docs) equivale a avance y no se envía al backend."
         created_at:
           type: string
 
@@ -2294,6 +2323,11 @@ components:
         content:
           type: string
           minLength: 1
+        phase:
+          type: string
+          enum: [asignacion, avance, cierre]
+          default: cierre
+          description: "Fase del comentario (?phase= query param, default cierre; alias medio-anio solo docs, equivale a avance)."
 
     ChangeRequest:
       type: object

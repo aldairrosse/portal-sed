@@ -8,9 +8,11 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/sed-evaluacion-desempeno/api/internal/auth"
 	dto "github.com/sed-evaluacion-desempeno/api/internal/dto/evaluation"
 	"github.com/sed-evaluacion-desempeno/api/internal/pkg/errors"
 	"github.com/sed-evaluacion-desempeno/api/internal/pkg/state"
@@ -439,7 +441,7 @@ func (s *EvaluationService) UpdateGoalState(ctx context.Context, evaluationID uu
 	if ifMatch > 0 && row.Version != ifMatch {
 		return nil, errors.ErrConcurrentUpdate
 	}
-	if err := s.validatePhase(ctx, row.CycleID); err != nil {
+	if err := s.validateWritePhase(ctx, row.CycleID, ""); err != nil {
 		return nil, err
 	}
 	if row.State == state.StateCompleted.String() {
@@ -487,7 +489,7 @@ func (s *EvaluationService) UpdateGoalComments(ctx context.Context, evaluationID
 	if ifMatch > 0 && row.Version != ifMatch {
 		return nil, errors.ErrConcurrentUpdate
 	}
-	if err := s.validatePhase(ctx, row.CycleID); err != nil {
+	if err := s.validateWritePhase(ctx, row.CycleID, ""); err != nil {
 		return nil, err
 	}
 	if row.State == state.StateCompleted.String() {
@@ -567,9 +569,21 @@ func (s *EvaluationService) GetEmployeeCompetencyRatings(ctx context.Context, em
 	}, nil
 }
 
+// GetCyclePhase exposes the current phase of a cycle for privacy gates.
+func (s *EvaluationService) GetCyclePhase(ctx context.Context, cycleID uuid.UUID) (string, error) {
+	return s.cycleCheck.GetPhase(ctx, cycleID)
+}
+
 // ListEvaluations returns a cursor-paginated list of evaluations for a cycle.
-func (s *EvaluationService) ListEvaluations(ctx context.Context, cycleID uuid.UUID, stateFilter string, cursor string, limit int) (*dto.EvaluationListResponse, error) {
-	rows, nextCursor, err := s.evalRepo.ListByCycle(ctx, cycleID, stateFilter, cursor, limit)
+// phase filters by evaluation phase ("avance"/"medio-anio" are equivalent);
+// empty defaults to the cycle's current_phase.
+func (s *EvaluationService) ListEvaluations(ctx context.Context, cycleID uuid.UUID, stateFilter string, phase string, cursor string, limit int) (*dto.EvaluationListResponse, error) {
+	if phase == "" {
+		if p, err := s.cycleCheck.GetPhase(ctx, cycleID); err == nil && p != "" {
+			phase = p
+		}
+	}
+	rows, nextCursor, err := s.evalRepo.ListByCycle(ctx, cycleID, stateFilter, phase, cursor, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -584,9 +598,9 @@ func (s *EvaluationService) ListEvaluations(ctx context.Context, cycleID uuid.UU
 }
 
 // GetCompetencyResults returns paginated competency averages with optional search
-// and scope=team filter. Starts from employees (not evaluations) so employees
-// without evaluation data still appear with status='sin-datos'.
-func (s *EvaluationService) GetCompetencyResults(ctx context.Context, cycleID uuid.UUID, query string, scope string, currentUserID uuid.UUID, offset, limit int) (*dto.CompetencyResultsResponse, error) {
+// and scope=team filter. phase filters by evaluation phase
+// ("avance"/"medio-anio" are equivalent); empty defaults to the cycle's current_phase.
+func (s *EvaluationService) GetCompetencyResults(ctx context.Context, cycleID uuid.UUID, phase string, query string, scope string, currentUserID uuid.UUID, offset, limit int) (*dto.CompetencyResultsResponse, error) {
 	// Clamp pagination params
 	if limit <= 0 {
 		limit = 50
@@ -596,6 +610,11 @@ func (s *EvaluationService) GetCompetencyResults(ctx context.Context, cycleID uu
 	if offset < 0 {
 		offset = 0
 	}
+	if phase == "" {
+		if p, err := s.cycleCheck.GetPhase(ctx, cycleID); err == nil && p != "" {
+			phase = p
+		}
+	}
 
 	// Resolve managerID for team scope: filter by direct reports of the current user
 	var managerID *uuid.UUID
@@ -603,12 +622,12 @@ func (s *EvaluationService) GetCompetencyResults(ctx context.Context, cycleID uu
 		managerID = &currentUserID
 	}
 
-	total, err := s.evalRepo.CountCompetencyResults(ctx, cycleID, query, managerID)
+	total, err := s.evalRepo.CountCompetencyResults(ctx, cycleID, phase, query, managerID)
 	if err != nil {
 		return nil, err
 	}
 
-	rows, err := s.evalRepo.ListCompetencyResults(ctx, cycleID, query, managerID, offset, limit)
+	rows, err := s.evalRepo.ListCompetencyResults(ctx, cycleID, phase, query, managerID, offset, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -644,6 +663,20 @@ func (s *EvaluationService) validatePhase(ctx context.Context, cycleID uuid.UUID
 		return fmt.Errorf("failed to get cycle phase: %w", err)
 	}
 	return state.RequiresPhase(phase)
+}
+
+// validateWritePhase verifies the cycle is in the required phase for a
+// mid-year write (avance/medio-anio) or cierre. An empty wantPhase allows
+// any writable phase; otherwise the cycle's current phase must match
+// (with "avance"/"medio-anio" treated as the same phase). Saved rows stay
+// editable while the phase is active, including after a revert. Mismatch
+// returns PHASE_NOT_ADVANCEABLE (409); missing permission is 403 via RBAC.
+func (s *EvaluationService) validateWritePhase(ctx context.Context, cycleID uuid.UUID, wantPhase string) error {
+	phase, err := s.cycleCheck.GetPhase(ctx, cycleID)
+	if err != nil {
+		return fmt.Errorf("failed to get cycle phase: %w", err)
+	}
+	return state.WritableInPhase(phase, wantPhase)
 }
 
 func (s *EvaluationService) checkSelfEvalDeadline(ctx context.Context, cycleID uuid.UUID) error {
@@ -688,4 +721,77 @@ func hashRHEvalPayload(req dto.RHEvaluationRequest) string {
 	}
 	h.Write([]byte(req.FinalComments))
 	return hex.EncodeToString(h.Sum(nil))
+}
+
+// --- Colaborador privacy gate (sed-roles-privacidad, punto 5) ---
+
+// selfRestrictedPhase reports whether a colaborador viewer is limited to
+// their own evaluations in the given cycle phase (avance / medio-anio).
+func selfRestrictedPhase(phase string) bool {
+	switch strings.ToLower(strings.TrimSpace(phase)) {
+	case "avance", "medio-anio", "medio_anio":
+		return true
+	default:
+		return false
+	}
+}
+
+// FilterEvaluationsForViewer hides other employees' evaluations from
+// colaborador viewers during avance/medio-anio; manager/rh see everything.
+func (s *EvaluationService) FilterEvaluationsForViewer(items []dto.EvaluationListItem, viewerID uuid.UUID, viewerRole auth.Role, phase string) []dto.EvaluationListItem {
+	if viewerRole != auth.RoleColaborador || !selfRestrictedPhase(phase) {
+		return items
+	}
+	out := make([]dto.EvaluationListItem, 0, len(items))
+	for _, it := range items {
+		if it.EmployeeID == viewerID {
+			out = append(out, it)
+		}
+	}
+	return out
+}
+
+// AuthorizeEvaluationAccess returns ErrForbidden (403) when a colaborador
+// viewer opens someone else's evaluation during avance/medio-anio.
+func (s *EvaluationService) AuthorizeEvaluationAccess(viewerID, employeeID uuid.UUID, viewerRole auth.Role, phase string) error {
+	if viewerRole == auth.RoleColaborador && selfRestrictedPhase(phase) && viewerID != employeeID {
+		return errors.ErrForbidden
+	}
+	return nil
+}
+
+// RedactDetailForSelf hides RH/final data from self (colaborador) viewers.
+// viewerMode=self equals colaborador viewing their own evaluation: nil
+// RHEvalCompletedAt, nil FinalRating per GoalRating, and clear final comments.
+// Keeps manager/RH views untouched.
+func (s *EvaluationService) RedactDetailForSelf(detail *dto.EvaluationDetailResponse, viewerID uuid.UUID, viewerRole auth.Role, phase string) *dto.EvaluationDetailResponse {
+	if detail == nil || viewerRole != auth.RoleColaborador || viewerID != detail.EmployeeID {
+		return detail
+	}
+	if selfRestrictedPhase(phase) {
+		detail.RHEvalCompletedAt = nil
+	}
+	// Self viewers never see final/RH goal outcomes.
+	detail.RHEvalCompletedAt = nil
+	for i := range detail.GoalRatings {
+		detail.GoalRatings[i].FinalRating = nil
+		detail.GoalRatings[i].FinalComments = ""
+	}
+	return detail
+}
+
+// SuggestEvaluator returns the employee's manager (jefe recomendado), with
+// "rh" fallback when the employee has no manager assigned.
+func (s *EvaluationService) SuggestEvaluator(ctx context.Context, employeeID uuid.UUID) (uuid.UUID, string, error) {
+	if s.empRepo == nil {
+		return uuid.Nil, "rh", nil
+	}
+	emp, err := s.empRepo.GetByID(ctx, employeeID)
+	if err != nil {
+		return uuid.Nil, "", err
+	}
+	if emp.ManagerID != nil && *emp.ManagerID != uuid.Nil {
+		return *emp.ManagerID, "jefe", nil
+	}
+	return uuid.Nil, "rh", nil
 }

@@ -26,7 +26,7 @@ export async function GET() {
 	return json(data);
 }
 
-export async function POST({ request }) {
+export async function POST({ request }: { request: Request }) {
 	const body = await request.json();
 	write(body);
 	return json({ ok: true });

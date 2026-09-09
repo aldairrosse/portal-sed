@@ -90,7 +90,7 @@ func (m *mockEvalRepo) GetDetail(ctx context.Context, id uuid.UUID) (*repo.Evalu
 	return &r, m.comps, m.goals, nil
 }
 
-func (m *mockEvalRepo) ListByCycle(ctx context.Context, cycleID uuid.UUID, state string, cursor string, limit int) ([]*repo.EvaluationRow, string, error) {
+func (m *mockEvalRepo) ListByCycle(ctx context.Context, cycleID uuid.UUID, state string, phase string, cursor string, limit int) ([]*repo.EvaluationRow, string, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if m.row == nil {
@@ -128,12 +128,12 @@ func (m *mockEvalRepo) GetSummaryByCycle(ctx context.Context, cycleID uuid.UUID)
 	return m.summary, nil
 }
 
-func (m *mockEvalRepo) ListCompetencyResults(ctx context.Context, cycleID uuid.UUID, query string, managerID *uuid.UUID, offset, limit int) ([]*repo.CompetencyResultRow, error) {
+func (m *mockEvalRepo) ListCompetencyResults(ctx context.Context, cycleID uuid.UUID, phase string, query string, managerID *uuid.UUID, offset, limit int) ([]*repo.CompetencyResultRow, error) {
 	// ponytail: simplified mock — tests use hasMore directly
 	return []*repo.CompetencyResultRow{}, nil
 }
 
-func (m *mockEvalRepo) CountCompetencyResults(ctx context.Context, cycleID uuid.UUID, query string, managerID *uuid.UUID) (int, error) {
+func (m *mockEvalRepo) CountCompetencyResults(ctx context.Context, cycleID uuid.UUID, phase string, query string, managerID *uuid.UUID) (int, error) {
 	return 0, nil
 }
 
@@ -975,7 +975,7 @@ func TestGetCompetencyResults_HasMore_ExactPage(t *testing.T) {
 	checker := &mockCycleChecker{phase: "cierre"}
 	service := svc.NewEvaluationService(mockEval, nil, nil, checker, nil, nil, nil)
 
-	resp, err := service.GetCompetencyResults(context.Background(), cycleID, "", "all", uuid.Nil, 0, 50)
+	resp, err := service.GetCompetencyResults(context.Background(), cycleID, "", "", "all", uuid.Nil, 0, 50)
 	require.NoError(t, err)
 	assert.False(t, resp.Meta.HasMore, "hasMore should be false when offset+len == total")
 	assert.Equal(t, 50, resp.Meta.Total)
@@ -1006,7 +1006,7 @@ func TestGetCompetencyResults_HasMore_OneExtraPage(t *testing.T) {
 	checker := &mockCycleChecker{phase: "cierre"}
 	service := svc.NewEvaluationService(mockEval, nil, nil, checker, nil, nil, nil)
 
-	resp, err := service.GetCompetencyResults(context.Background(), cycleID, "", "all", uuid.Nil, 0, 50)
+	resp, err := service.GetCompetencyResults(context.Background(), cycleID, "", "", "all", uuid.Nil, 0, 50)
 	require.NoError(t, err)
 	assert.True(t, resp.Meta.HasMore, "hasMore should be true when offset+len < total")
 	assert.Equal(t, 51, resp.Meta.Total)
@@ -1035,7 +1035,7 @@ func TestGetCompetencyResults_HasMore_LastPage(t *testing.T) {
 	checker := &mockCycleChecker{phase: "cierre"}
 	service := svc.NewEvaluationService(mockEval, nil, nil, checker, nil, nil, nil)
 
-	resp, err := service.GetCompetencyResults(context.Background(), cycleID, "", "all", uuid.Nil, 50, 50)
+	resp, err := service.GetCompetencyResults(context.Background(), cycleID, "", "", "all", uuid.Nil, 50, 50)
 	require.NoError(t, err)
 	assert.False(t, resp.Meta.HasMore, "hasMore should be false on last page")
 	assert.Equal(t, 51, resp.Meta.Total)
@@ -1073,7 +1073,7 @@ func (m *mockHasMoreEvalRepo) SubmitEval(ctx context.Context, tx *sql.Tx, evalID
 func (m *mockHasMoreEvalRepo) GetDetail(ctx context.Context, id uuid.UUID) (*repo.EvaluationRow, []*internal.EvaluationCompetency, []*internal.EvaluationGoal, error) {
 	return m.row, nil, nil, nil
 }
-func (m *mockHasMoreEvalRepo) ListByCycle(ctx context.Context, cycleID uuid.UUID, state string, cursor string, limit int) ([]*repo.EvaluationRow, string, error) {
+func (m *mockHasMoreEvalRepo) ListByCycle(ctx context.Context, cycleID uuid.UUID, state string, phase string, cursor string, limit int) ([]*repo.EvaluationRow, string, error) {
 	return nil, "", nil
 }
 func (m *mockHasMoreEvalRepo) GetCompetencyRatingsByEmployee(ctx context.Context, employeeID, cycleID, profileID uuid.UUID) ([]repo.EmployeeCompetencyRatingRow, error) {
@@ -1088,10 +1088,10 @@ func (m *mockHasMoreEvalRepo) RefreshSummaryView(ctx context.Context) error {
 func (m *mockHasMoreEvalRepo) GetSummaryByCycle(ctx context.Context, cycleID uuid.UUID) (map[string]int64, error) {
 	return nil, nil
 }
-func (m *mockHasMoreEvalRepo) ListCompetencyResults(ctx context.Context, cycleID uuid.UUID, query string, managerID *uuid.UUID, offset, limit int) ([]*repo.CompetencyResultRow, error) {
+func (m *mockHasMoreEvalRepo) ListCompetencyResults(ctx context.Context, cycleID uuid.UUID, phase string, query string, managerID *uuid.UUID, offset, limit int) ([]*repo.CompetencyResultRow, error) {
 	return m.rows, nil
 }
-func (m *mockHasMoreEvalRepo) CountCompetencyResults(ctx context.Context, cycleID uuid.UUID, query string, managerID *uuid.UUID) (int, error) {
+func (m *mockHasMoreEvalRepo) CountCompetencyResults(ctx context.Context, cycleID uuid.UUID, phase string, query string, managerID *uuid.UUID) (int, error) {
 	return m.totalCount, nil
 }
 

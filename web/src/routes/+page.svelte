@@ -3,7 +3,11 @@
     import { getProfile } from "$lib/stores/devContext.svelte";
     import { getActivePhase } from "$lib/api/cycle.svelte";
     import { getSession } from "$lib/api/session.svelte";
-    import type { CyclePhase } from "$lib/types/evaluation";
+    import type { ApiCyclePhase } from "$lib/types/cycle";
+    import {
+        normalizePhase,
+        API_PHASE_LABELS,
+    } from "$lib/types/cycle";
     import {
         getGoals,
         getCategories,
@@ -26,7 +30,9 @@
 
     const session = $derived(getSession());
     const profile = $derived(getProfile());
-    const phase = $derived(getActivePhase() ?? "inicio-anio");
+    const phase = $derived<ApiCyclePhase>(
+        normalizePhase(getActivePhase() ?? "asignacion"),
+    );
     const user = $derived(session.user);
 
     const assignments = $derived(getAssignments());
@@ -139,58 +145,56 @@
     const year = today.getFullYear();
 
     const phaseTimeSteps = $derived<
-        Record<
-            CyclePhase,
-            { start: Date; end: Date; label: string; index: number }
-        >
+        Record<ApiCyclePhase, { start: Date; end: Date; label: string; index: number }>
     >({
-        "inicio-anio": {
+        asignacion: {
             start: new Date(year, 0, 1),
             end: new Date(year, 3, 30),
-            label: "Inicio de año",
+            label: API_PHASE_LABELS.asignacion,
             index: 1,
         },
-        "medio-anio": {
+        avance: {
             start: new Date(year, 4, 1),
             end: new Date(year, 8, 30),
-            label: "Medio de año",
+            label: API_PHASE_LABELS.avance,
             index: 2,
         },
-        "fin-anio": {
+        cierre: {
             start: new Date(year, 9, 1),
             end: new Date(year, 11, 31),
-            label: "Fin de año",
+            label: API_PHASE_LABELS.cierre,
             index: 3,
         },
     });
 
-    const phaseGuidance = $derived<Record<CyclePhase, string>>({
-        "inicio-anio":
+    const phaseGuidance = $derived<Record<ApiCyclePhase, string>>({
+        asignacion:
             profile === "director-general"
                 ? "Visualiza las metas estratégicas de la organización para el ciclo."
                 : "Fija tus objetivos y KPIs con tu jefe. Define metas claras para el ciclo.",
-        "medio-anio":
+        avance:
             profile === "director-general"
                 ? "Visualiza el avance de los objetivos organizacionales."
                 : "Revisa el avance de tus objetivos. Ajusta lo necesario antes del cierre.",
-        "fin-anio":
+        cierre:
             profile === "director-general"
                 ? "Visualiza el desempeño de la organización."
                 : "Evalúa tu desempeño y completa la autoevaluación.",
     });
 
-    function getPhaseStatus(phase_status: CyclePhase) {
-        const step = phaseTimeSteps[phase_status];
+    function getPhaseStatus(phase_status: string) {
+        const normalizedStatus = normalizePhase(phase_status);
+        const step = phaseTimeSteps[normalizedStatus];
         if (!step) return "Desconocido";
-        if (phase === phase_status) return "Actual";
+        if (phase === normalizedStatus) return "Actual";
         const current_index = phaseTimeSteps[phase].index;
         if (step.index < current_index) return "Completado";
         if (step.index - current_index >= 2) return "Pendiente";
         return "Próximo";
     }
 
-    function isNextPhase(phase_status: CyclePhase): boolean {
-        const step = phaseTimeSteps[phase_status];
+    function isNextPhase(phase_status: string): boolean {
+        const step = phaseTimeSteps[normalizePhase(phase_status)];
         if (!step) return false;
         const current_index = phaseTimeSteps[phase].index;
         return step.index > current_index;
@@ -253,7 +257,7 @@
             <!-- Timeline -->
             <div class="w-full py-3 flex items-center">
                 {#each Object.entries(phaseTimeSteps) as [key, step] (key)}
-                    {@const currentKey = key as CyclePhase}
+                    {@const currentKey = key as ApiCyclePhase}
                     {@const status = getPhaseStatus(currentKey)}
                     {@const isNext = isNextPhase(currentKey)}
                     <div class="flex-1 flex flex-col items-center gap-1">

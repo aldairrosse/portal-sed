@@ -59,7 +59,7 @@ func (EvaluationCompetency) Edges() []ent.Edge {
 
 func (EvaluationCompetency) Index() []ent.Index {
 	return []ent.Index{
-		index.Fields("evaluation_id", "competency_id").
+		index.Fields("evaluation_id", "competency_id", "source").
 			Unique(),
 	}
 }
