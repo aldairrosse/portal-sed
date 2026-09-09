@@ -6,4 +6,4 @@ Coloca aquí especificaciones aprobadas, por ejemplo:
 - `evaluation-lifecycle.md`
 - `catalog-objectives.md`
 
-Crear vía `/opsx:propose` y archivar el change cuando esté estable.
+Crear vía `rtk proxy openspec new <nombre>` y archivar el change cuando esté estable (`rtk proxy openspec archive <nombre> -y`).

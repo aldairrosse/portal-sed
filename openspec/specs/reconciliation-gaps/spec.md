@@ -75,13 +75,13 @@ El sistema SHALL tener un `spec.md` en `openspec/specs/` para cada change que al
 - GIVEN el change `oauth-auth` en `openspec/changes/`
 - WHEN se crea `proposal.md` con: proveedor OIDC elegido, estrategia de provisioning (match by email), preservación de dev-login, decisión single-provider
 - AND se crea `tasks.md` con tareas concretas (OIDCAdapter, handlers, routes, OpenAPI, frontend, wiring, deps, env)
-- THEN el change puede moverse a implementación con `/opsx:apply`
+- THEN el change puede moverse a implementación (ver `AGENTS.md` OpenSpec, `rtk proxy openspec status --change <nombre>`)
 
 #### Scenario: add-pillar-type tiene spec duradera
 
 - GIVEN el change `add-pillar-type` con implementación completada
 - WHEN se crea `openspec/specs/pillar-type/spec.md` (o similar) documentando: modelo de datos, endpoints, DTOs, reglas de validación, comportamiento frontend
-- AND el change se archiva con `/opsx:archive`
+- AND el change se archiva con `rtk proxy openspec archive <nombre> -y`
 - THEN la spec sirve como referencia canónica y el change sale de `openspec/changes/`
 
 ---

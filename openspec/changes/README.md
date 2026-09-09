@@ -5,8 +5,8 @@ Cada carpeta bajo `changes/` representa un cambio propuesto (feature, refactor, 
 Generar con:
 
 ```bash
-# En Cursor
-/opsx:propose "Descripción del cambio"
+# En shell
+rtk proxy openspec new <nombre>
 ```
 
 No implementar código de producción sin spec asociada en el change.

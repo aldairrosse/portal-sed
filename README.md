@@ -32,7 +32,7 @@ sed-evaluacion-desempeno/
 ├── README.md
 ├── principles/            # Decisiones y estándares (sin código de app)
 ├── docs/get-started/      # Guías de arranque
-├── openspec/              # SDD: specs, changes, archive
+├── openspec/              # SDD: specs, changes, changes/archive
 ├── api/                   # Go + Chi + Ent + OpenAPI 3.1 (7 specs)
 │   ├── cmd/               # Entry points (server, import)
 │   ├── internal/          # Lógica de dominio y handlers
@@ -56,10 +56,10 @@ openspec init --tools cursor --force
 
 Flujo sugerido:
 
-1. `/opsx:propose` — nueva capacidad (ej. autenticación, módulo catálogo).
+1. `rtk proxy openspec new <nombre>` — nueva capacidad (ej. autenticación, módulo catálogo).
 2. Revisar artefactos en `openspec/changes/<nombre>/`.
-3. `/opsx:apply` — implementación cuando la spec esté aprobada.
-4. `/opsx:archive` — cerrar cambio completado.
+3. Implementar tasks del change (ver `AGENTS.md` OpenSpec) cuando la spec esté aprobada.
+4. `rtk proxy openspec archive <nombre> -y` — cerrar cambio completado.
 
 Ver `docs/get-started/openspec.md`.
 

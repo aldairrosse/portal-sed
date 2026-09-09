@@ -8,4 +8,4 @@ rtk proxy openspec list --specs
 rtk proxy openspec status
 ```
 
-- **specs/** — verdad duradera por dominio. **changes/** — trabajo en curso. **archive/** — cerrados.
+- **specs/** — verdad duradera por dominio. **changes/** — trabajo en curso. **changes/archive/** — cerrados.
