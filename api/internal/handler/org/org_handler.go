@@ -596,8 +596,9 @@ func (h *OrgHandler) GetAreaMetrics(w http.ResponseWriter, r *http.Request) {
 	}
 
 	cycleID := r.URL.Query().Get("cycleId")
+	phase := r.URL.Query().Get("phase")
 
-	result, err := h.metricsSvc.GetAreaMetrics(r.Context(), nodeID, cycleID)
+	result, err := h.metricsSvc.GetAreaMetrics(r.Context(), nodeID, cycleID, phase)
 	if err != nil {
 		writeError(w, err)
 		return

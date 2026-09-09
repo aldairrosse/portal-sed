@@ -120,11 +120,11 @@ func (m *mockEvaluateeService) BatchLookup(ctx context.Context, ids []string) (*
 }
 
 type mockMetricsService struct {
-	getAreaMetricsFunc func(ctx context.Context, nodeID, cycleID string) (*dto.AreaMetricsResponse, error)
+	getAreaMetricsFunc func(ctx context.Context, nodeID, cycleID, phase string) (*dto.AreaMetricsResponse, error)
 }
 
-func (m *mockMetricsService) GetAreaMetrics(ctx context.Context, nodeID, cycleID string) (*dto.AreaMetricsResponse, error) {
-	return m.getAreaMetricsFunc(ctx, nodeID, cycleID)
+func (m *mockMetricsService) GetAreaMetrics(ctx context.Context, nodeID, cycleID, phase string) (*dto.AreaMetricsResponse, error) {
+	return m.getAreaMetricsFunc(ctx, nodeID, cycleID, phase)
 }
 
 // ---------- helpers ----------
@@ -874,9 +874,10 @@ func TestGetAreaMetrics_Success(t *testing.T) {
 
 	nodeID := uuid.New().String()
 	metricsSvc := &mockMetricsService{
-		getAreaMetricsFunc: func(_ context.Context, nid, cid string) (*dto.AreaMetricsResponse, error) {
+		getAreaMetricsFunc: func(_ context.Context, nid, cid, phase string) (*dto.AreaMetricsResponse, error) {
 			assert.Equal(t, nodeID, nid)
 			assert.Equal(t, "cycle-123", cid)
+			assert.Equal(t, "avance", phase)
 			return &dto.AreaMetricsResponse{
 				NodeID:            nodeID,
 				EmployeeCount:     3,
@@ -892,7 +893,7 @@ func TestGetAreaMetrics_Success(t *testing.T) {
 	}
 
 	h := handler.NewOrgHandler(nil, nil, nil, nil, metricsSvc)
-	req := httptest.NewRequest(http.MethodGet, "/api/v1/org-nodes/"+nodeID+"/area-metrics?cycleId=cycle-123", nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/org-nodes/"+nodeID+"/area-metrics?cycleId=cycle-123&phase=avance", nil)
 	req = withChiParam(req, "nodeId", nodeID)
 	rec := httptest.NewRecorder()
 
@@ -926,7 +927,7 @@ func TestGetAreaMetrics_ServiceError(t *testing.T) {
 
 	nodeID := uuid.New().String()
 	metricsSvc := &mockMetricsService{
-		getAreaMetricsFunc: func(_ context.Context, nid, cid string) (*dto.AreaMetricsResponse, error) {
+		getAreaMetricsFunc: func(_ context.Context, nid, cid string, phase string) (*dto.AreaMetricsResponse, error) {
 			return nil, repo.ErrNodeNotFound
 		},
 	}
@@ -949,9 +950,10 @@ func TestGetAreaMetrics_NoQueryParams(t *testing.T) {
 
 	nodeID := uuid.New().String()
 	metricsSvc := &mockMetricsService{
-		getAreaMetricsFunc: func(_ context.Context, nid, cid string) (*dto.AreaMetricsResponse, error) {
+		getAreaMetricsFunc: func(_ context.Context, nid, cid string, phase string) (*dto.AreaMetricsResponse, error) {
 			assert.Equal(t, nodeID, nid)
 			assert.Empty(t, cid)
+			assert.Empty(t, phase)
 			return &dto.AreaMetricsResponse{
 				NodeID: nodeID, EmployeeCount: 0,
 				Employees: []dto.AreaMetricsEmployee{},

@@ -172,6 +172,8 @@ func setupProfiles(ctx context.Context, tgtDB *sql.DB, dryRun bool) {
 	profiles := []struct{ name, desc string }{
 		{"colaborador", "Colaborador de la organización"},
 		{"jefe", "Jefe de equipo o departamento"},
+		{"gerente", "Gerente con alcance a su equipo"},
+		{"coordinador", "Coordinador con alcance a su equipo"},
 		{"director", "Director de área"},
 		{"director-general", "Director general de la organización"},
 		{"rh", "Recursos humanos"},

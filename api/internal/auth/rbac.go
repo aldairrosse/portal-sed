@@ -2,19 +2,23 @@
 // and context helpers for the SED evaluation platform.
 package auth
 
+import "strings"
+
 // Role represents an evaluation profile with associated permissions.
 type Role string
 
 const (
-	RoleColaborador    Role = "colaborador"
-	RoleJefe           Role = "jefe"
-	RoleVendedor       Role = "vendedor"
-	RoleGerenteTienda  Role = "gerente-tienda"
-	RoleDivisional     Role = "divisional"
-	RoleRegional       Role = "regional"
-	RoleDirector       Role = "director"
+	RoleColaborador     Role = "colaborador"
+	RoleJefe            Role = "jefe"
+	RoleVendedor        Role = "vendedor"
+	RoleGerenteTienda   Role = "gerente-tienda"
+	RoleDivisional      Role = "divisional"
+	RoleRegional        Role = "regional"
+	RoleDirector        Role = "director"
 	RoleDirectorGeneral Role = "director-general"
-	RoleRH             Role = "rh"
+	RoleRH              Role = "rh"
+	RoleGerente         Role = "gerente"
+	RoleCoordinador     Role = "coordinador"
 )
 
 // Permission represents a specific action that can be authorized.
@@ -108,6 +112,20 @@ var RolePermissions = map[Role][]Permission{
 		PermOrgRead, PermOrgWrite,
 		PermAdminAll,
 	},
+	RoleGerente: {
+		PermGoalCreate, PermGoalRead, PermGoalUpdate, PermGoalDelete, PermGoalProgress,
+		PermGoalShared,
+		PermCompetencyRead,
+		PermEval9x9, PermEvalRead,
+		PermCycleRead, PermOrgRead,
+	},
+	RoleCoordinador: {
+		PermGoalCreate, PermGoalRead, PermGoalUpdate, PermGoalDelete, PermGoalProgress,
+		PermGoalShared,
+		PermCompetencyRead,
+		PermEval9x9, PermEvalRead,
+		PermCycleRead, PermOrgRead,
+	},
 	RoleRH: {
 		PermGoalCreate, PermGoalRead, PermGoalUpdate, PermGoalDelete, PermGoalProgress,
 		PermGoalGlobal,
@@ -149,9 +167,11 @@ func RoleSeesAll(role Role) bool {
 }
 
 // ProfileNameToRole maps an evaluation profile name to a Role constant.
-// Returns RoleColaborador as fallback for unknown profiles.
+// Case-insensitive; "gerente"→gerente, "coordinador"→coordinador.
+// Unknown names fall back to jefe to preserve the current jefe selection
+// (user requirement: never demote jefe→colaborador on unmapped titles).
 func ProfileNameToRole(name string) Role {
-	switch name {
+	switch strings.ToLower(strings.TrimSpace(name)) {
 	case "colaborador":
 		return RoleColaborador
 	case "jefe":
@@ -170,7 +190,18 @@ func ProfileNameToRole(name string) Role {
 		return RoleDirectorGeneral
 	case "rh":
 		return RoleRH
+	case "gerente":
+		return RoleGerente
+	case "coordinador":
+		return RoleCoordinador
 	default:
-		return RoleColaborador
+		l := strings.ToLower(strings.TrimSpace(name))
+		if strings.Contains(l, "coordinador") {
+			return RoleCoordinador
+		}
+		if strings.Contains(l, "gerente") {
+			return RoleGerente
+		}
+		return RoleJefe
 	}
 }

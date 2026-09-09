@@ -210,6 +210,51 @@ func (s *Service) fetchMobonet(ctx context.Context) ([]string, error) {
 	return out, nil
 }
 
+// jobTitleToProfileName maps Mobonet job_title to evaluation profile (case-insensitive).
+// Returns "" when there is no direct match; callers apply the fallback chain
+// (manager profile → jefe) via resolveProfileName.
+func jobTitleToProfileName(jobTitle string) string {
+	l := strings.ToLower(strings.TrimSpace(jobTitle))
+	if strings.Contains(l, "coordinador") {
+		return "coordinador"
+	}
+	if strings.Contains(l, "gerente") {
+		return "gerente"
+	}
+	return ""
+}
+
+// resolveProfileName applies the fallback chain: direct title match,
+// then the manager's profile, then "jefe" (preserve current jefe selection;
+// never demote to colaborador on unmapped titles).
+func (s *Service) resolveProfileName(ctx context.Context, m MobonetEmployee) string {
+	if p := jobTitleToProfileName(m.JobTitle); p != "" {
+		return p
+	}
+	if m.ManagerEmail != nil {
+		if mp := s.managerProfileName(ctx, *m.ManagerEmail); mp != "" {
+			return mp
+		}
+	}
+	return "jefe"
+}
+
+// managerProfileName returns the evaluation profile name of the manager
+// identified by email, or "" when unknown.
+func (s *Service) managerProfileName(ctx context.Context, managerEmail string) string {
+	managerEmail = strings.TrimSpace(managerEmail)
+	if managerEmail == "" {
+		return ""
+	}
+	var name string
+	if err := s.db.QueryRowContext(ctx,
+		`SELECT ep.name FROM employees e JOIN evaluation_profiles ep ON ep.id = e.profile_id WHERE e.email = $1 LIMIT 1`,
+		managerEmail).Scan(&name); err != nil {
+		return ""
+	}
+	return name
+}
+
 // Run sincroniza is_active + upsert. Retorna cantidad deshabilitados. Idempotente.
 func (s *Service) Run(ctx context.Context) (disabledCount int, err error) {
 	emps, err := s.fetchMobonetEmployees(ctx)
@@ -324,7 +369,10 @@ func (s *Service) Run(ctx context.Context) (disabledCount int, err error) {
 	var fallbackOrgID uuid.UUID
 	_ = s.db.QueryRowContext(ctx, `SELECT id FROM org_nodes LIMIT 1`).Scan(&fallbackOrgID)
 	var fallbackProfileID uuid.UUID
-	_ = s.db.QueryRowContext(ctx, `SELECT id FROM evaluation_profiles WHERE name='colaborador' LIMIT 1`).Scan(&fallbackProfileID)
+	_ = s.db.QueryRowContext(ctx, `SELECT id FROM evaluation_profiles WHERE name='jefe' LIMIT 1`).Scan(&fallbackProfileID)
+	if fallbackProfileID == uuid.Nil {
+		_ = s.db.QueryRowContext(ctx, `SELECT id FROM evaluation_profiles WHERE name='colaborador' LIMIT 1`).Scan(&fallbackProfileID)
+	}
 	if fallbackProfileID == uuid.Nil {
 		_ = s.db.QueryRowContext(ctx, `SELECT id FROM evaluation_profiles LIMIT 1`).Scan(&fallbackProfileID)
 	}
@@ -336,17 +384,33 @@ func (s *Service) Run(ctx context.Context) (disabledCount int, err error) {
 			m.Email = m.EmployeeNumber + "@mock.local"
 		}
 		if rec, ok := existing[m.EmployeeNumber]; ok {
-			// Existe → refrescar si cambió (UpdateFromMobonet)
+			// Existe → refrescar si cambió. El perfil solo se toca con match
+			// directo de job_title (gerente/coordinador); si no, se respeta la
+			// selección actual (nunca sobrescribir jefe→colaborador).
+			var wantProfile uuid.UUID
+			if jobTitleToProfileName(m.JobTitle) != "" {
+				_ = s.db.QueryRowContext(ctx, `SELECT id FROM evaluation_profiles WHERE LOWER(name)=LOWER($1) LIMIT 1`, s.resolveProfileName(ctx, m)).Scan(&wantProfile)
+			}
 			if rec.email != m.Email || rec.firstName != m.FirstName || rec.lastName != m.LastName || rec.jobTitle != m.JobTitle {
-				_, err := s.db.ExecContext(ctx,
-					`UPDATE employees SET email=$1, first_name=$2, last_name=$3, job_title=$4, updated_at=NOW() WHERE id=$5`,
-					m.Email, m.FirstName, m.LastName, m.JobTitle, rec.id)
-				if err != nil {
-					slog.Error("mobonet_sync: update failed", "employee_number", m.EmployeeNumber, "error", err)
-					continue
+				if wantProfile != uuid.Nil {
+					_, err := s.db.ExecContext(ctx,
+						`UPDATE employees SET email=$1, first_name=$2, last_name=$3, job_title=$4, profile_id=$6, updated_at=NOW() WHERE id=$5`,
+						m.Email, m.FirstName, m.LastName, m.JobTitle, rec.id, wantProfile)
+					if err != nil {
+						slog.Error("mobonet_sync: update failed", "employee_number", m.EmployeeNumber, "error", err)
+						continue
+					}
+				} else {
+					_, err := s.db.ExecContext(ctx,
+						`UPDATE employees SET email=$1, first_name=$2, last_name=$3, job_title=$4, updated_at=NOW() WHERE id=$5`,
+						m.Email, m.FirstName, m.LastName, m.JobTitle, rec.id)
+					if err != nil {
+						slog.Error("mobonet_sync: update failed", "employee_number", m.EmployeeNumber, "error", err)
+						continue
+					}
+					slog.Info("mobonet_sync: empleado actualizado", "employee_number", m.EmployeeNumber)
+					updated++
 				}
-				slog.Info("mobonet_sync: empleado actualizado", "employee_number", m.EmployeeNumber)
-				updated++
 			}
 		} else {
 			// No existe → upsert (INSERT ON CONFLICT id)
@@ -361,6 +425,10 @@ func (s *Service) Run(ctx context.Context) (disabledCount int, err error) {
 				orgID = fallbackOrgID
 			}
 			profileID := fallbackProfileID
+			var pid uuid.UUID
+			if err := s.db.QueryRowContext(ctx, `SELECT id FROM evaluation_profiles WHERE LOWER(name)=LOWER($1) LIMIT 1`, s.resolveProfileName(ctx, m)).Scan(&pid); err == nil {
+				profileID = pid
+			}
 			id := seed.SeedID(m.Email)
 			_, err := s.db.ExecContext(ctx,
 				`INSERT INTO employees (id, email, first_name, last_name, employee_number, job_title, is_active, org_node_id, profile_id, created_by, updated_by, created_at, updated_at)
@@ -405,7 +473,7 @@ func (s *Service) Run(ctx context.Context) (disabledCount int, err error) {
 
 // ── SSO sync interno (reutiliza lógica import/passSSOSeed, best-effort) ──
 var (
-	ssoBaseRe        = regexp.MustCompile(`^(.*?)/realms/[^/]+/?$`)
+	ssoBaseRe         = regexp.MustCompile(`^(.*?)/realms/[^/]+/?$`)
 	ssoUserNotFoundRe = regexp.MustCompile(`Usuario\s+\\?"(-?\d+)\\"?\s+no\s+encontrado`)
 )
 

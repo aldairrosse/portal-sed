@@ -196,6 +196,7 @@ components:
         role:
           type: string
           description: Current user role
+          enum: [colaborador, jefe, gerente, coordinador, rh, admin]
         profile:
           type: object
           properties:

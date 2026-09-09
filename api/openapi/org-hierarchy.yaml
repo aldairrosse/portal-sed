@@ -605,6 +605,13 @@ paths:
             type: string
             format: uuid
           description: Optional cycle to scope metrics to
+        - name: phase
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [asignacion, avance, cierre]
+          description: Optional phase to filter RH ratings. Defaults to the cycle's current_phase when cycleId is set and phase is omitted.
       responses:
         '200':
           description: Successful response

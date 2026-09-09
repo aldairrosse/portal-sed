@@ -68,7 +68,7 @@ func TestEmployeeRepo_Search_ILIKE(t *testing.T) {
 	profileID := uuid.MustParse("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee")
 	now := time.Now()
 
-	mock.ExpectQuery("SELECT id, created_at, updated_at, first_name, last_name, email, employee_number, is_active, org_node_id, manager_id, profile_id, job_title FROM employees WHERE first_name ILIKE \\$1 OR last_name ILIKE \\$1 OR email ILIKE \\$1 OR employee_number ILIKE \\$1 ORDER BY last_name, first_name LIMIT \\$2").
+	mock.ExpectQuery("SELECT id, created_at, updated_at, first_name, last_name, email, employee_number, is_active, org_node_id, manager_id, profile_id, job_title FROM employees WHERE is_active = true AND \\(first_name ILIKE \\$1 OR last_name ILIKE \\$1 OR email ILIKE \\$1 OR employee_number ILIKE \\$1\\) ORDER BY last_name, first_name LIMIT \\$2").
 		WithArgs("%alice%", 20).
 		WillReturnRows(sqlmock.NewRows([]string{
 			"id", "created_at", "updated_at", "first_name", "last_name", "email",
@@ -171,7 +171,7 @@ func TestEmployeeRepo_ConcurrentSearch(t *testing.T) {
 
 	const workers = 20
 	for i := 0; i < workers; i++ {
-		mock.ExpectQuery("SELECT id, created_at, updated_at, first_name, last_name, email, employee_number, is_active, org_node_id, manager_id, profile_id FROM employees WHERE first_name ILIKE \\$1 OR last_name ILIKE \\$1 OR email ILIKE \\$1 OR employee_number ILIKE \\$1 ORDER BY last_name, first_name LIMIT \\$2").
+		mock.ExpectQuery("SELECT id, created_at, updated_at, first_name, last_name, email, employee_number, is_active, org_node_id, manager_id, profile_id FROM employees WHERE is_active = true AND \\(first_name ILIKE \\$1 OR last_name ILIKE \\$1 OR email ILIKE \\$1 OR employee_number ILIKE \\$1\\) ORDER BY last_name, first_name LIMIT \\$2").
 			WithArgs("%query%", 20).
 			WillReturnRows(sqlmock.NewRows([]string{
 				"id", "created_at", "updated_at", "first_name", "last_name", "email",
