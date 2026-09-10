@@ -2,9 +2,10 @@
     import { Loader2, Plus, Trash2, X } from '@lucide/svelte';
     import { untrack } from 'svelte';
     import CustomSelect from '$lib/components/ui/CustomSelect.svelte';
+    import SelectInputDepartments from '$lib/components/goals/SelectInputDepartments.svelte';
     import { createGlobalGoal, updateGlobalGoal, type CreateGlobalGoalRequest, type CreateAssignmentRequest, type CreateRuleRequest } from '$lib/api/globalGoals';
     import { client } from '$lib/api/client';
-    import { load, getRoot, getNodeById, getScopeIds } from '$lib/stores/orgHierarchyStore.svelte';
+    import { load, getRoot } from '$lib/stores/orgHierarchyStore.svelte';
     import { loadFirstPage, search, loadMore, getEmployeeOptions, hasMoreEmployees, isLoadingMore } from '$lib/stores/employeePickerStore.svelte';
     import { getProfiles, load as loadCompetencyData } from '$lib/stores/competencyStore.svelte';
     import { PROFILE_LABELS } from '$lib/types/evaluation';
@@ -48,69 +49,13 @@
 
     const employeeOptions = $derived(getEmployeeOptions());
 
-    function isDeptSelectable(n: OrgNode): boolean {
-        return ((n.children ?? []).length > 0 || !!n.headEmployee);
-    }
-
-    function flattenDeptDFS(node: OrgNode, depth: number, out: { node: OrgNode; depth: number }[]): void {
-        if (node.id !== root?.id && isDeptSelectable(node)) {
-            out.push({ node, depth });
-        }
-        for (const child of node.children ?? []) {
-            flattenDeptDFS(child, depth + 1, out);
-        }
-    }
-
-    function pruneDeptTree(node: OrgNode): OrgNode | null {
-        const prunedChildren = (node.children ?? [])
-            .map((c) => pruneDeptTree(c))
-            .filter((c): c is OrgNode => !!c);
-        if (isDeptSelectable(node) || prunedChildren.length > 0) {
-            return { ...node, children: prunedChildren };
-        }
-        return null;
-    }
-
-    const orderedDeptNodes = $derived.by(() => {
-        if (!root) return [] as { node: OrgNode; depth: number }[];
-        const out: { node: OrgNode; depth: number }[] = [];
-        flattenDeptDFS(root, 0, out);
-        // ponytail: DFS pre-order already equals ltree path order; sort by path when present
-        out.sort((a, b) => {
-            const pa = (a.node as OrgNode & { path?: string }).path ?? '';
-            const pb = (b.node as OrgNode & { path?: string }).path ?? '';
-            if (pa && pb && pa !== pb) return pa < pb ? -1 : 1;
-            return 0;
-        });
-        return out;
-    });
-
-    const departmentOptions = $derived(
-        orderedDeptNodes.map(({ node: n }) => ({ value: n.id, label: n.name }))
-    );
-
     const deptMenuRoots = $derived.by(() => {
         if (!root) return [] as OrgNode[];
-        return (root.children ?? [])
-            .map((c) => pruneDeptTree(c))
-            .filter((c): c is OrgNode => !!c);
+        return root.children ?? [];
     });
-
-    const DEPT_PAGE_SIZE = 6;
-    let deptMenuOpen = $state<number | null>(null);
-    let deptPage = $state(0);
-
-    const deptPageCount = $derived(Math.max(1, Math.ceil(deptMenuRoots.length / DEPT_PAGE_SIZE)));
-    const pagedDeptRoots = $derived(deptMenuRoots.slice(deptPage * DEPT_PAGE_SIZE, deptPage * DEPT_PAGE_SIZE + DEPT_PAGE_SIZE));
-
-    function openDeptMenu(i: number) {
-        deptMenuOpen = i;
-        deptPage = 0;
-    }
 
     function selectDepartment(i: number, deptId: string) {
         rules[i].departmentId = deptId;
-        deptMenuOpen = null;
     }
 
     const profileOptions = $derived(
@@ -247,7 +192,7 @@
     }
 
     function addDepartmentRule() {
-        rules = [...rules, { ruleType: 'department', departmentId: departmentOptions[0]?.value ?? '', minDirectReports: 0, profileId: '', defaultWeight: weight > 0 ? weight : 0, defaultTarget: targetValue }];
+        rules = [...rules, { ruleType: 'department', departmentId: '', minDirectReports: 0, profileId: '', defaultWeight: weight > 0 ? weight : 0, defaultTarget: targetValue }];
     }
 
     function addRoleRule() {
@@ -260,11 +205,6 @@
 
     function removeRule(index: number) {
         rules = rules.filter((_, i) => i !== index);
-    }
-
-    function departmentLabel(deptId: string): string {
-        if (!deptId) return '';
-        return departmentOptions.find(o => o.value === deptId)?.label ?? getNodeById(deptId)?.name ?? '';
     }
 
     function profileLabel(profileId: string): string {
@@ -523,115 +463,14 @@
                         <div class="grid grid-cols-[6rem_minmax(0,1fr)_6rem_7rem_2rem] gap-2 items-center">
                             <span class="badge badge-sm badge-outline justify-self-start">{RULE_TYPE_LABELS[r.ruleType]}</span>
                             {#if r.ruleType === 'department'}
-                                <div class="dropdown w-full">
-                                    <button
-                                        class="btn btn-sm btn-outline w-full justify-between font-normal"
-                                        type="button"
-                                        aria-label="Departamento"
-                                        onclick={() => openDeptMenu(i)}
-                                    >
-                                        <span class="truncate">{departmentLabel(r.departmentId) || 'Seleccionar departamento'}</span>
-                                        <span aria-hidden="true">▾</span>
-                                    </button>
-                                    {#if deptMenuOpen === i}
-                                        <div class="dropdown-content z-10 mt-1 w-full rounded-box border border-base-300 bg-base-100 p-1 shadow">
-                                            {#snippet submenu(nodes: OrgNode[])}
-                                                {#each nodes.slice(0, 8) as child (child.id)}
-                                                    <li>
-                                                        {#if (child.children ?? []).length > 0}
-                                                            <details>
-                                                                <summary class="flex items-center justify-between gap-1">
-                                                                    <span class="truncate">{child.name}</span>
-                                                                </summary>
-                                                                <ul>
-                                                                    <li>
-                                                                        <a
-                                                                            href="#sel"
-                                                                            onclick={(e) => { e.preventDefault(); selectDepartment(i, child.id); }}
-                                                                            class:font-semibold={r.departmentId === child.id}
-                                                                        >
-                                                                            Seleccionar {child.name}
-                                                                        </a>
-                                                                    </li>
-                                                                    {@render submenu(child.children ?? [])}
-                                                                </ul>
-                                                            </details>
-                                                        {:else}
-                                                            <a
-                                                                href="#sel"
-                                                                onclick={(e) => { e.preventDefault(); selectDepartment(i, child.id); }}
-                                                                class:active={r.departmentId === child.id}
-                                                            >
-                                                                {child.name}
-                                                            </a>
-                                                        {/if}
-                                                    </li>
-                                                {/each}
-                                                {#if nodes.length > 8}
-                                                    <li class="menu-title">+{nodes.length - 8} más</li>
-                                                {/if}
-                                            {/snippet}
-                                            <ul class="menu bg-base-200 rounded-box max-h-64 overflow-y-auto">
-                                                {#each pagedDeptRoots as d (d.id)}
-                                                    <li>
-                                                        {#if (d.children ?? []).length > 0}
-                                                            <details open={r.departmentId === d.id}>
-                                                                <summary class="flex items-center justify-between gap-1">
-                                                                    <span class="truncate">{d.name}</span>
-                                                                </summary>
-                                                                <ul>
-                                                                    <li>
-                                                                        <a
-                                                                            href="#sel"
-                                                                            onclick={(e) => { e.preventDefault(); selectDepartment(i, d.id); }}
-                                                                            class:font-semibold={r.departmentId === d.id}
-                                                                        >
-                                                                            Seleccionar {d.name}
-                                                                        </a>
-                                                                    </li>
-                                                                    {@render submenu(d.children ?? [])}
-                                                                </ul>
-                                                            </details>
-                                                        {:else}
-                                                            <a
-                                                                href="#sel"
-                                                                onclick={(e) => { e.preventDefault(); selectDepartment(i, d.id); }}
-                                                                class:active={r.departmentId === d.id}
-                                                            >
-                                                                {d.name}
-                                                            </a>
-                                                        {/if}
-                                                    </li>
-                                                {/each}
-                                            </ul>
-                                            {#if deptPageCount > 1}
-                                                <div class="breadcrumbs py-1 text-xs">
-                                                    <ul>
-                                                        <li>Página {deptPage + 1} de {deptPageCount}</li>
-                                                    </ul>
-                                                </div>
-                                                <div class="join w-full justify-between p-1">
-                                                    <button
-                                                        class="btn btn-xs join-item"
-                                                        type="button"
-                                                        disabled={deptPage === 0}
-                                                        onclick={() => { deptPage = Math.max(0, deptPage - 1); }}
-                                                    >
-                                                        «
-                                                    </button>
-                                                    <button
-                                                        class="btn btn-xs join-item"
-                                                        type="button"
-                                                        disabled={deptPage >= deptPageCount - 1}
-                                                        onclick={() => { deptPage = Math.min(deptPageCount - 1, deptPage + 1); }}
-                                                    >
-                                                        »
-                                                    </button>
-                                                </div>
-                                            {/if}
-                                        </div>
-                                    {/if}
-                                </div>
+                                {#key i}
+                                    <SelectInputDepartments
+                                        nodes={deptMenuRoots}
+                                        selectedId={r.departmentId}
+                                        groupName={`dept-rule-${i}`}
+                                        onchange={(id) => selectDepartment(i, id)}
+                                    />
+                                {/key}
                             {:else if r.ruleType === 'role'}
                                 <CustomSelect
                                     options={profileOptions}
