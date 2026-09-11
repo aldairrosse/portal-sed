@@ -21,8 +21,8 @@
 		picker
 	}: Props = $props();
 
-	const store = picker ?? createEmployeePickerStore();
-	const owned = !picker;
+	const store = $derived(picker ?? createEmployeePickerStore());
+	const owned = $derived(!picker);
 
 	const options = $derived(store.getOptions());
 	const hasMore = $derived(store.hasMoreEmployees());
