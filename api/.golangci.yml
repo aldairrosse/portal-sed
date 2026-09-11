@@ -8,3 +8,5 @@ linters:
     - ineffassign
     - staticcheck
     - unused
+issues:
+  newFromRev: HEAD
