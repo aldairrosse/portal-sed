@@ -28,7 +28,6 @@
 				<div class="skeleton h-3 w-1/2"></div>
 			</div>
 		{/each}
-
 	{:else if variant === 'table'}
 		<div class="overflow-hidden rounded-box border border-base-300">
 			<!-- header skeleton -->
@@ -48,9 +47,11 @@
 				</div>
 			{/each}
 		</div>
-
 	{:else if variant === 'card'}
-		<div class="grid gap-4" style="grid-template-columns: repeat({cardCols}, 1fr)">
+		<div
+			class="grid gap-4"
+			style="grid-template-columns: repeat({cardCols}, 1fr)"
+		>
 			{#each Array(rows) as _, i (i)}
 				<div class="skeleton flex flex-col gap-3 rounded-box p-4">
 					<div class="skeleton h-32 w-full rounded-box"></div>
@@ -59,7 +60,6 @@
 				</div>
 			{/each}
 		</div>
-
 	{:else if variant === 'form'}
 		{#each Array(rows) as _, i (i)}
 			<div class="space-y-1.5">
@@ -67,7 +67,6 @@
 				<div class="skeleton h-9 w-full rounded-input"></div>
 			</div>
 		{/each}
-
 	{:else if variant === 'category'}
 		<div class="space-y-4">
 			{#each Array(rows) as _, i (i)}

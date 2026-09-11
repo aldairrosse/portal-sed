@@ -7,9 +7,17 @@
 		eliminarComentario,
 		exportarComentariosJSON,
 		importarComentariosJSON,
-		hayComentarios
+		hayComentarios,
 	} from '$lib/dev/commentsStore.svelte';
-	import { FileDown, FileUp, FileText, MessageSquare, Trash2, ChevronDown, ChevronRight } from '@lucide/svelte';
+	import {
+		FileDown,
+		FileUp,
+		FileText,
+		MessageSquare,
+		Trash2,
+		ChevronDown,
+		ChevronRight,
+	} from '@lucide/svelte';
 
 	let expandedSections = new SvelteSet(DATA.map((s) => s.seccion));
 	let expandedEntregables = new SvelteSet<number>();
@@ -99,7 +107,7 @@
 			month: '2-digit',
 			year: 'numeric',
 			hour: '2-digit',
-			minute: '2-digit'
+			minute: '2-digit',
 		});
 	}
 
@@ -112,7 +120,7 @@
 				(r) =>
 					r.requerimiento.toLowerCase().includes(q) ||
 					r.notas.toLowerCase().includes(q) ||
-					r.entregables.some((e) => e.item.toLowerCase().includes(q))
+					r.entregables.some((e) => e.item.toLowerCase().includes(q)),
 			);
 			return { ...sec, requisitos: reqs };
 		}).filter((sec) => sec.requisitos.length > 0);
@@ -137,7 +145,9 @@
 	<div class="flex flex-col gap-2">
 		<div class="flex items-center justify-between flex-wrap gap-4">
 			<div>
-				<h1 class="text-2xl font-bold text-base-content flex items-center gap-2">
+				<h1
+					class="text-2xl font-bold text-base-content flex items-center gap-2"
+				>
 					<FileText class="w-6 h-6" />
 					Requisitos del portal
 				</h1>
@@ -146,10 +156,16 @@
 				</p>
 			</div>
 			<div class="flex items-center gap-2 flex-wrap">
-				<button class="btn btn-ghost btn-xs" onclick={() => toggleAllSections(true)}>
+				<button
+					class="btn btn-ghost btn-xs"
+					onclick={() => toggleAllSections(true)}
+				>
 					Expandir todo
 				</button>
-				<button class="btn btn-ghost btn-xs" onclick={() => toggleAllSections(false)}>
+				<button
+					class="btn btn-ghost btn-xs"
+					onclick={() => toggleAllSections(false)}
+				>
 					Colapsar todo
 				</button>
 				<button class="btn btn-outline btn-xs" onclick={handleExport}>
@@ -164,7 +180,14 @@
 		</div>
 
 		<label class="input input-bordered flex items-center gap-2 max-w-md">
-			<svg class="w-4 h-4 opacity-50" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+			<svg
+				class="w-4 h-4 opacity-50"
+				xmlns="http://www.w3.org/2000/svg"
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="currentColor"
+				stroke-width="2"
+			>
 				<circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
 			</svg>
 			<input
@@ -184,8 +207,12 @@
 					onclick={() => toggleSection(seccion.seccion)}
 				>
 					<div>
-						<h2 class="text-lg font-semibold text-base-content">{seccion.seccion}</h2>
-						<p class="text-xs text-base-content/40 mt-0.5">{seccion.descripcion}</p>
+						<h2 class="text-lg font-semibold text-base-content">
+							{seccion.seccion}
+						</h2>
+						<p class="text-xs text-base-content/40 mt-0.5">
+							{seccion.descripcion}
+						</p>
 					</div>
 					{#if expandedSections.has(seccion.seccion)}
 						<ChevronDown class="w-5 h-5 text-base-content/30" />
@@ -198,7 +225,9 @@
 					<div class="overflow-x-auto">
 						<table class="table table-sm table-zebra">
 							<thead>
-								<tr class="text-xs uppercase tracking-wider text-base-content/40">
+								<tr
+									class="text-xs uppercase tracking-wider text-base-content/40"
+								>
 									<th class="w-10 text-center">#</th>
 									<th class="w-[30%] min-w-[200px]">Requerimiento</th>
 									<th class="w-[35%] min-w-[220px]">Entregables realizados</th>
@@ -209,7 +238,9 @@
 							<tbody>
 								{#each seccion.requisitos as req (req.id)}
 									<tr class="align-top">
-										<td class="text-center text-base-content/40 font-mono text-xs">
+										<td
+											class="text-center text-base-content/40 font-mono text-xs"
+										>
 											{req.id}
 										</td>
 										<td class="text-sm font-medium text-base-content">
@@ -218,13 +249,18 @@
 										<td>
 											<div class="flex flex-col gap-1.5">
 												{#each req.entregables as ent (ent.item)}
-													<div class="text-xs text-base-content/70 leading-relaxed">
+													<div
+														class="text-xs text-base-content/70 leading-relaxed"
+													>
 														{ent.item}
 													</div>
 													{#if expandedEntregables.has(req.id) && ent.archivos.length > 0}
 														<div class="flex flex-col gap-0.5 ml-2 mb-1">
 															{#each ent.archivos as archivo (archivo)}
-																<code class="text-[10px] text-base-content/30 font-mono">{archivo}</code>
+																<code
+																	class="text-[10px] text-base-content/30 font-mono"
+																	>{archivo}</code
+																>
 															{/each}
 														</div>
 													{/if}
@@ -234,7 +270,9 @@
 														class="text-[10px] text-primary/60 hover:text-primary flex items-center gap-1 mt-0.5"
 														onclick={() => toggleEntregables(req.id)}
 													>
-														{expandedEntregables.has(req.id) ? 'Ocultar' : 'Ver'} archivos del código
+														{expandedEntregables.has(req.id)
+															? 'Ocultar'
+															: 'Ver'} archivos del código
 													</button>
 												{/if}
 											</div>
@@ -251,19 +289,34 @@
 													onclick={() => toggleComentarios(req.id)}
 												>
 													<MessageSquare class="w-3 h-3" />
-													{hayComentarios(req.id) ? getComentarios(req.id).length : 'Comentar'}
+													{hayComentarios(req.id)
+														? getComentarios(req.id).length
+														: 'Comentar'}
 												</button>
 
 												{#if expandedComentarios.has(req.id)}
 													<div class="flex flex-col gap-2 min-w-[150px]">
 														{#each getComentarios(req.id) as comment (comment.id)}
-															<div class="bg-base-200/50 rounded-lg p-2 text-xs">
-																<p class="text-base-content/70">{comment.texto}</p>
-																<div class="flex items-center justify-between mt-1">
-																	<span class="text-[10px] text-base-content/30">{formatDate(comment.fecha)}</span>
+															<div
+																class="bg-base-200/50 rounded-lg p-2 text-xs"
+															>
+																<p class="text-base-content/70">
+																	{comment.texto}
+																</p>
+																<div
+																	class="flex items-center justify-between mt-1"
+																>
+																	<span class="text-[10px] text-base-content/30"
+																		>{formatDate(comment.fecha)}</span
+																	>
 																	<button
 																		class="text-error/50 hover:text-error"
-																		onclick={async () => { await eliminarComentario(req.id, comment.id); }}
+																		onclick={async () => {
+																			await eliminarComentario(
+																				req.id,
+																				comment.id,
+																			);
+																		}}
 																	>
 																		<Trash2 class="w-3 h-3" />
 																	</button>
@@ -271,14 +324,19 @@
 															</div>
 														{/each}
 														<div class="flex gap-1">
-							<input
-									type="text"
-									class="input input-xs input-bordered flex-1 min-w-0"
-									placeholder="Escribe un comentario..."
-									value={comentarioTexto[req.id] ?? ''}
-									oninput={(e) => setComentarioTexto(req.id, (e.target as HTMLInputElement).value)}
-									onkeydown={(e) => {
-																	if (e.key === 'Enter') handleAgregarComentario(req.id);
+															<input
+																type="text"
+																class="input input-xs input-bordered flex-1 min-w-0"
+																placeholder="Escribe un comentario..."
+																value={comentarioTexto[req.id] ?? ''}
+																oninput={(e) =>
+																	setComentarioTexto(
+																		req.id,
+																		(e.target as HTMLInputElement).value,
+																	)}
+																onkeydown={(e) => {
+																	if (e.key === 'Enter')
+																		handleAgregarComentario(req.id);
 																}}
 															/>
 															<button
@@ -302,16 +360,29 @@
 		{/each}
 	</div>
 
-	<footer class="text-center text-[10px] text-base-content/20 py-4 leading-relaxed">
+	<footer
+		class="text-center text-[10px] text-base-content/20 py-4 leading-relaxed"
+	>
 		Ruta solo visible en desarrollo
 	</footer>
 </div>
 
 {#if showImportModal}
-	
-	<div class="modal modal-open" role="dialog" tabindex="-1" onclick={cancelImport} onkeydown={(e) => e.key === 'Escape' && cancelImport()}>
-	<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-		<div class="modal-box" role="document" tabindex="-1" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()}>
+	<div
+		class="modal modal-open"
+		role="dialog"
+		tabindex="-1"
+		onclick={cancelImport}
+		onkeydown={(e) => e.key === 'Escape' && cancelImport()}
+	>
+		<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+		<div
+			class="modal-box"
+			role="document"
+			tabindex="-1"
+			onclick={(e) => e.stopPropagation()}
+			onkeydown={(e) => e.stopPropagation()}
+		>
 			<h3 class="text-lg font-bold mb-2">Importar comentarios</h3>
 
 			{#if importResult && !importResult.ok}
@@ -324,7 +395,9 @@
 				Seleccioná un archivo JSON con la siguiente estructura:
 			</p>
 
-			<pre class="bg-base-200 rounded-lg p-3 text-xs leading-relaxed overflow-x-auto"><code>{`{
+			<pre
+				class="bg-base-200 rounded-lg p-3 text-xs leading-relaxed overflow-x-auto"><code
+					>{`{
   "comentarios": {
     "7": [
       {
@@ -334,11 +407,15 @@
       }
     ]
   }
-}`}</code></pre>
+}`}</code
+				></pre>
 
 			<p class="text-xs text-base-content/40 mt-3">
-				La clave numérica (ej. <code class="text-base-content/60">"7"</code>) es el ID del requerimiento.
-				IDs disponibles: 1 al 33. Cada comentario requiere <code class="text-base-content/60">id</code>, <code class="text-base-content/60">texto</code> y <code class="text-base-content/60">fecha</code>.
+				La clave numérica (ej. <code class="text-base-content/60">"7"</code>) es
+				el ID del requerimiento. IDs disponibles: 1 al 33. Cada comentario
+				requiere <code class="text-base-content/60">id</code>,
+				<code class="text-base-content/60">texto</code>
+				y <code class="text-base-content/60">fecha</code>.
 			</p>
 
 			<div class="flex items-center gap-3 mt-4">

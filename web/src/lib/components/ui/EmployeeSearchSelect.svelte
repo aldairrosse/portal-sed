@@ -1,7 +1,10 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
 	import CustomSelect from './CustomSelect.svelte';
-	import { createEmployeePickerStore, type EmployeePickerStore } from '$lib/stores/employeePickerStore.svelte';
+	import {
+		createEmployeePickerStore,
+		type EmployeePickerStore,
+	} from '$lib/stores/employeePickerStore.svelte';
 
 	interface Props {
 		value: string;
@@ -18,7 +21,7 @@
 		placeholder = 'Seleccionar empleado',
 		ariaLabel = 'Empleado',
 		class: className = '',
-		picker
+		picker,
 	}: Props = $props();
 
 	const store = $derived(picker ?? createEmployeePickerStore());
@@ -43,15 +46,15 @@
 </script>
 
 <CustomSelect
-	options={options}
-	value={value}
-	onChange={onChange}
-	placeholder={placeholder}
-	ariaLabel={ariaLabel}
+	{options}
+	{value}
+	{onChange}
+	{placeholder}
+	{ariaLabel}
 	class={className}
 	searchable
 	onSearch={store.search}
 	loadMore={store.loadMore}
 	allLoaded={!hasMore}
-	loadingMore={loadingMore}
+	{loadingMore}
 />

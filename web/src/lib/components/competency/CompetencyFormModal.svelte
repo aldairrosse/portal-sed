@@ -19,7 +19,9 @@
 	let error = $state('');
 
 	const isEditing = $derived(competency !== null);
-	const title = $derived(isEditing ? 'Editar competencia' : 'Nueva competencia');
+	const title = $derived(
+		isEditing ? 'Editar competencia' : 'Nueva competencia',
+	);
 
 	$effect(() => {
 		if (!dialogEl) return;
@@ -49,9 +51,11 @@
 		const trimmed = nameVal.trim();
 		const existing = getCompetenciesByPillar(pillarId);
 		const duplicate = existing.find(
-			(c) => c.name.toLowerCase() === trimmed.toLowerCase() && c.id !== idToExclude
+			(c) =>
+				c.name.toLowerCase() === trimmed.toLowerCase() && c.id !== idToExclude,
 		);
-		if (duplicate) return 'Ya existe una competencia con ese nombre en este pilar.';
+		if (duplicate)
+			return 'Ya existe una competencia con ese nombre en este pilar.';
 		return null;
 	}
 
@@ -77,7 +81,12 @@
 >
 	<div class="modal-box">
 		<div class="flex items-center justify-between mb-5">
-			<h3 id="competency-form-title" class="text-lg font-semibold text-base-content">{title}</h3>
+			<h3
+				id="competency-form-title"
+				class="text-lg font-semibold text-base-content"
+			>
+				{title}
+			</h3>
 			<button
 				class="btn btn-ghost btn-square btn-sm"
 				onclick={handleCancel}
@@ -125,7 +134,11 @@
 			</div>
 
 			<div class="modal-action mt-6">
-				<button type="button" class="btn btn-ghost btn-sm" onclick={handleCancel}>Cancelar</button>
+				<button
+					type="button"
+					class="btn btn-ghost btn-sm"
+					onclick={handleCancel}>Cancelar</button
+				>
 				<button type="submit" class="btn btn-primary btn-sm">
 					{isEditing ? 'Guardar cambios' : 'Crear competencia'}
 				</button>

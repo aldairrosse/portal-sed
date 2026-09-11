@@ -1,124 +1,124 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 @plugin "@tailwindcss/typography";
 
 @plugin "daisyui" {
-  themes:
-    sed --default,
-    sed-dark;
+	themes:
+		sed --default,
+		sed-dark;
 }
 
 @plugin "daisyui/theme" {
-  name: "sed";
-  default: true;
-  color-scheme: light;
+	name: 'sed';
+	default: true;
+	color-scheme: light;
 
-  /* SED palette — hex */
-  --color-base: #ffffff;
-  --color-base-100: #f6f8fc;
-  --color-base-200: #eef2f7;
-  --color-base-300: #e2e8f0;
-  --color-base-content: #334155;
+	/* SED palette — hex */
+	--color-base: #ffffff;
+	--color-base-100: #f6f8fc;
+	--color-base-200: #eef2f7;
+	--color-base-300: #e2e8f0;
+	--color-base-content: #334155;
 
-  --color-primary: #2e63e8;
-  --color-primary-content: #ffffff;
+	--color-primary: #2e63e8;
+	--color-primary-content: #ffffff;
 
-  /* Sidebar */
-  --color-sidebar: #0b2455;
-  --color-sidebar-content: #ffffff;
+	/* Sidebar */
+	--color-sidebar: #0b2455;
+	--color-sidebar-content: #ffffff;
 
-  --color-secondary: #4a90a4;
-  --color-secondary-content: #ffffff;
+	--color-secondary: #4a90a4;
+	--color-secondary-content: #ffffff;
 
-  --color-accent: #d97706;
-  --color-accent-content: #ffffff;
+	--color-accent: #d97706;
+	--color-accent-content: #ffffff;
 
-  --color-neutral: #e8eafc;
-  --color-neutral-content: #000000;
+	--color-neutral: #e8eafc;
+	--color-neutral-content: #000000;
 
-  --color-info: #3b82f6;
-  --color-info-content: #ffffff;
+	--color-info: #3b82f6;
+	--color-info-content: #ffffff;
 
-  --color-success: #22c55e;
-  --color-success-content: #ffffff;
+	--color-success: #22c55e;
+	--color-success-content: #ffffff;
 
-  --color-warning: #f59e0b;
-  --color-warning-content: #1e293b;
+	--color-warning: #f59e0b;
+	--color-warning-content: #1e293b;
 
-  --color-error: #ef4444;
-  --color-error-content: #ffffff;
+	--color-error: #ef4444;
+	--color-error-content: #ffffff;
 
-  /* Radius */
-  --radius-selector: 0.75rem;
-  --radius-field: 0.6rem;
-  --radius-box: 1rem;
+	/* Radius */
+	--radius-selector: 0.75rem;
+	--radius-field: 0.6rem;
+	--radius-box: 1rem;
 
-  /* Borders */
-  --border: 1px;
+	/* Borders */
+	--border: 1px;
 
-  /* Radar chart */
-  --color-radar-self: #0d9488;
-  --color-radar-rh: #f59e0b;
-  --color-chart-grid: rgba(0, 0, 0, 0.08);
+	/* Radar chart */
+	--color-radar-self: #0d9488;
+	--color-radar-rh: #f59e0b;
+	--color-chart-grid: rgba(0, 0, 0, 0.08);
 
-  /* Inputs */
-  --color-input-base: #ffffff;
+	/* Inputs */
+	--color-input-base: #ffffff;
 }
 
 @plugin "daisyui/theme" {
-  name: "sed-dark";
-  color-scheme: dark;
+	name: 'sed-dark';
+	color-scheme: dark;
 
-  /* Base — dark slate */
-  --color-base: #000000;
-  --color-base-100: #0f172a;
-  --color-base-200: #1e293b;
-  --color-base-300: #334155;
-  --color-base-content: #e2e8f0;
+	/* Base — dark slate */
+	--color-base: #000000;
+	--color-base-100: #0f172a;
+	--color-base-200: #1e293b;
+	--color-base-300: #334155;
+	--color-base-content: #e2e8f0;
 
-  /* Primary — brighter blue for contrast on dark */
-  --color-primary: #3b82f6;
-  --color-primary-content: #ffffff;
+	/* Primary — brighter blue for contrast on dark */
+	--color-primary: #3b82f6;
+	--color-primary-content: #ffffff;
 
-  /* Sidebar */
-  --color-sidebar: #0b1222;
-  --color-sidebar-content: #e2e8f0;
+	/* Sidebar */
+	--color-sidebar: #0b1222;
+	--color-sidebar-content: #e2e8f0;
 
-  --color-secondary: #5eead4;
-  --color-secondary-content: #0f172a;
+	--color-secondary: #5eead4;
+	--color-secondary-content: #0f172a;
 
-  --color-accent: #fbbf24;
-  --color-accent-content: #0f172a;
+	--color-accent: #fbbf24;
+	--color-accent-content: #0f172a;
 
-  --color-neutral: #1e293b;
-  --color-neutral-content: #e2e8f0;
+	--color-neutral: #1e293b;
+	--color-neutral-content: #e2e8f0;
 
-  --color-info: #60a5fa;
-  --color-info-content: #0f172a;
+	--color-info: #60a5fa;
+	--color-info-content: #0f172a;
 
-  --color-success: #4ade80;
-  --color-success-content: #0f172a;
+	--color-success: #4ade80;
+	--color-success-content: #0f172a;
 
-  --color-warning: #fbbf24;
-  --color-warning-content: #0f172a;
+	--color-warning: #fbbf24;
+	--color-warning-content: #0f172a;
 
-  --color-error: #f87171;
-  --color-error-content: #0f172a;
+	--color-error: #f87171;
+	--color-error-content: #0f172a;
 
-  /* Radius */
-  --radius-selector: 0.75rem;
-  --radius-field: 0.6rem;
-  --radius-box: 1rem;
+	/* Radius */
+	--radius-selector: 0.75rem;
+	--radius-field: 0.6rem;
+	--radius-box: 1rem;
 
-  --border: 1px;
+	--border: 1px;
 
-  /* Radar chart */
-  --color-radar-self: #2dd4bf;
-  --color-radar-rh: #fbbf24;
-  --color-chart-grid: rgba(255, 255, 255, 0.12);
+	/* Radar chart */
+	--color-radar-self: #2dd4bf;
+	--color-radar-rh: #fbbf24;
+	--color-chart-grid: rgba(255, 255, 255, 0.12);
 
-  /* Inputs */
-  --color-input-base: #1e293b;
+	/* Inputs */
+	--color-input-base: #1e293b;
 }
 
 /* === GLOBAL RESETS === */
@@ -126,187 +126,187 @@
 .btn,
 .input,
 .navbar {
-  box-shadow: none !important;
+	box-shadow: none !important;
 }
 
 html {
-  font-family:
-    "Geist",
-    system-ui,
-    -apple-system,
-    sans-serif;
+	font-family:
+		'Geist',
+		system-ui,
+		-apple-system,
+		sans-serif;
 }
 
 body {
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  background-color: var(--color-base-100);
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	background-color: var(--color-base-100);
 }
 
 /* === COMPONENT STYLES === */
 @layer components {
-  /* Timeline left-aligned: override DaisyUI default center */
-  .timeline-vertical.timeline-left > li {
-    justify-items: start;
-    --timeline-col-end: 1fr;
-  }
-  .timeline-vertical.timeline-left > li:has(.timeline-start) {
-    --timeline-col-start: 100px;
-  }
-  .timeline-vertical.timeline-left > li:not(:has(.timeline-start)) {
-    --timeline-col-start: 0;
-  }
-  .timeline-vertical.timeline-left .timeline-start,
-  .timeline-vertical.timeline-left .timeline-end {
-    justify-self: start;
-    width: auto;
-  }
-  .timeline-vertical.timeline-left .timeline-start {
-    text-align: left;
-  }
-  .timeline-vertical.timeline-left .timeline-middle {
-    justify-self: center;
-    place-self: center;
-  }
+	/* Timeline left-aligned: override DaisyUI default center */
+	.timeline-vertical.timeline-left > li {
+		justify-items: start;
+		--timeline-col-end: 1fr;
+	}
+	.timeline-vertical.timeline-left > li:has(.timeline-start) {
+		--timeline-col-start: 100px;
+	}
+	.timeline-vertical.timeline-left > li:not(:has(.timeline-start)) {
+		--timeline-col-start: 0;
+	}
+	.timeline-vertical.timeline-left .timeline-start,
+	.timeline-vertical.timeline-left .timeline-end {
+		justify-self: start;
+		width: auto;
+	}
+	.timeline-vertical.timeline-left .timeline-start {
+		text-align: left;
+	}
+	.timeline-vertical.timeline-left .timeline-middle {
+		justify-self: center;
+		place-self: center;
+	}
 
-  /* Cards: flat by default, no border, no shadow, no padding */
-  .card {
-    border: none !important;
-    box-shadow: none !important;
-    background: transparent;
-  }
+	/* Cards: flat by default, no border, no shadow, no padding */
+	.card {
+		border: none !important;
+		box-shadow: none !important;
+		background: transparent;
+	}
 
-  /* Elevated card: only when emphasis needed */
-  .card-elevated {
-    background-color: var(--color-base-100) !important;
-    box-shadow:
-      0 1px 3px rgba(0, 0, 0, 0.04),
-      0 4px 12px rgba(0, 0, 0, 0.03) !important;
-  }
+	/* Elevated card: only when emphasis needed */
+	.card-elevated {
+		background-color: var(--color-base-100) !important;
+		box-shadow:
+			0 1px 3px rgba(0, 0, 0, 0.04),
+			0 4px 12px rgba(0, 0, 0, 0.03) !important;
+	}
 
-  /* Buttons: flat, no border */
-  .btn {
-    border-radius: var(--radius-field) !important;
-    border: none !important;
-    box-shadow: none !important;
-    font-weight: 500;
-    transition:
-      background-color 0.15s ease,
-      opacity 0.15s ease;
-  }
-  .btn:hover {
-    opacity: 0.9;
-  }
+	/* Buttons: flat, no border */
+	.btn {
+		border-radius: var(--radius-field) !important;
+		border: none !important;
+		box-shadow: none !important;
+		font-weight: 500;
+		transition:
+			background-color 0.15s ease,
+			opacity 0.15s ease;
+	}
+	.btn:hover {
+		opacity: 0.9;
+	}
 
-  /* Inputs: soft bg, no hard border */
-  .input,
-  .textarea {
-    border: 1.5px solid
-      color-mix(in srgb, var(--color-base-content) 12%, transparent) !important;
-    background-color: var(--color-input-base) !important;
-    box-shadow: none !important;
-    transition:
-      border-color 0.15s ease,
-      box-shadow 0.15s ease;
-  }
+	/* Inputs: soft bg, no hard border */
+	.input,
+	.textarea {
+		border: 1.5px solid
+			color-mix(in srgb, var(--color-base-content) 12%, transparent) !important;
+		background-color: var(--color-input-base) !important;
+		box-shadow: none !important;
+		transition:
+			border-color 0.15s ease,
+			box-shadow 0.15s ease;
+	}
 
-  .input:focus,
-  .textarea:focus {
-    border-color: var(--color-primary) !important;
-    box-shadow: 0 0 0 3px
-      color-mix(in srgb, var(--color-primary) 15%, transparent) !important;
-  }
+	.input:focus,
+	.textarea:focus {
+		border-color: var(--color-primary) !important;
+		box-shadow: 0 0 0 3px
+			color-mix(in srgb, var(--color-primary) 15%, transparent) !important;
+	}
 
-  /* Navbar: clean, no border */
-  .navbar {
-    border-bottom: none !important;
-    background-color: var(--color-base-100) !important;
-  }
+	/* Navbar: clean, no border */
+	.navbar {
+		border-bottom: none !important;
+		background-color: var(--color-base-100) !important;
+	}
 
-  /* Headings: darker, cleaner */
-  h1,
-  h2,
-  h3,
-  h4,
-  h5,
-  h6 {
-    color: var(--color-base-content);
-    font-weight: 600;
-  }
+	/* Headings: darker, cleaner */
+	h1,
+	h2,
+	h3,
+	h4,
+	h5,
+	h6 {
+		color: var(--color-base-content);
+		font-weight: 600;
+	}
 }
 
 /* === TYPOGRAPHY === */
 @layer base {
-  h1 {
-    font-size: 1.5rem;
-    line-height: 2rem;
-  }
-  h2 {
-    font-size: 1.25rem;
-    line-height: 1.75rem;
-  }
-  h3 {
-    font-size: 1.125rem;
-    line-height: 1.5rem;
-  }
+	h1 {
+		font-size: 1.5rem;
+		line-height: 2rem;
+	}
+	h2 {
+		font-size: 1.25rem;
+		line-height: 1.75rem;
+	}
+	h3 {
+		font-size: 1.125rem;
+		line-height: 1.5rem;
+	}
 }
 
 /* === UTILITIES === */
 @font-face {
-  font-family: "Binjay";
-  src: url("/fonts/Binjay.woff2") format("woff2");
-  font-display: swap;
+	font-family: 'Binjay';
+	src: url('/fonts/Binjay.woff2') format('woff2');
+	font-display: swap;
 }
 
 @utility font-binjay {
-  font-family:
-    "Binjay",
-    system-ui,
-    -apple-system,
-    sans-serif !important;
+	font-family:
+		'Binjay',
+		system-ui,
+		-apple-system,
+		sans-serif !important;
 }
 
 @utility no-shadow {
-  box-shadow: none !important;
+	box-shadow: none !important;
 }
 
 @utility soft-shadow {
-  box-shadow:
-    0 1px 3px rgba(0, 0, 0, 0.04),
-    0 4px 12px rgba(0, 0, 0, 0.03) !important;
+	box-shadow:
+		0 1px 3px rgba(0, 0, 0, 0.04),
+		0 4px 12px rgba(0, 0, 0, 0.03) !important;
 }
 
 @utility card-shadow {
-  box-shadow:
-    0 1px 3px rgba(0, 0, 0, 0.04),
-    0 8px 24px rgba(0, 0, 0, 0.06) !important;
+	box-shadow:
+		0 1px 3px rgba(0, 0, 0, 0.04),
+		0 8px 24px rgba(0, 0, 0, 0.06) !important;
 }
 
 /* ─── Logo theme visibility (global) ─────────────────────────── */
 .logo-theme-light {
-  display: block;
+	display: block;
 }
 .logo-theme-dark {
-  display: none;
+	display: none;
 }
 
-[data-theme="sed"] .logo-theme-light {
-  display: block;
+[data-theme='sed'] .logo-theme-light {
+	display: block;
 }
-[data-theme="sed"] .logo-theme-dark {
-  display: none;
-}
-
-[data-theme="dark"] .logo-theme-light,
-[data-theme="night"] .logo-theme-light,
-[data-theme="dim"] .logo-theme-light,
-[data-theme="sed-dark"] .logo-theme-light {
-  display: none;
+[data-theme='sed'] .logo-theme-dark {
+	display: none;
 }
 
-[data-theme="dark"] .logo-theme-dark,
-[data-theme="night"] .logo-theme-dark,
-[data-theme="dim"] .logo-theme-dark,
-[data-theme="sed-dark"] .logo-theme-dark {
-  display: block;
+[data-theme='dark'] .logo-theme-light,
+[data-theme='night'] .logo-theme-light,
+[data-theme='dim'] .logo-theme-light,
+[data-theme='sed-dark'] .logo-theme-light {
+	display: none;
+}
+
+[data-theme='dark'] .logo-theme-dark,
+[data-theme='night'] .logo-theme-dark,
+[data-theme='dim'] .logo-theme-dark,
+[data-theme='sed-dark'] .logo-theme-dark {
+	display: block;
 }

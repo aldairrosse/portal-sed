@@ -29,7 +29,9 @@
 		assignment = null,
 	}: Props = $props();
 
-	const resolvedUserId = $derived(currentUserId ?? getSession().user?.employeeId ?? '');
+	const resolvedUserId = $derived(
+		currentUserId ?? getSession().user?.employeeId ?? '',
+	);
 
 	let dialogEl: HTMLDialogElement | undefined = $state();
 	let newComment = $state('');
@@ -71,7 +73,7 @@
 
 	function handleSubmit(e: Event) {
 		e.preventDefault();
-		if(!newComment.trim()) return;
+		if (!newComment.trim()) return;
 		if (entityId) {
 			onAdd(entityId, newComment.trim());
 			newComment = '';
@@ -103,37 +105,54 @@
 		<!-- Header -->
 		<div class="flex items-center gap-2 px-6 py-4">
 			<MessageCircle class="w-5 h-5 text-primary" />
-			<h3 id="comment-modal-title" class="font-semibold text-base-content flex-1">
+			<h3
+				id="comment-modal-title"
+				class="font-semibold text-base-content flex-1"
+			>
 				{modalTitle}
 			</h3>
-			<button class="btn btn-ghost btn-sm btn-circle" aria-label="Actualizar comentarios" onclick={()=> onRefresh?.()}>
+			<button
+				class="btn btn-ghost btn-sm btn-circle"
+				aria-label="Actualizar comentarios"
+				onclick={() => onRefresh?.()}
+			>
 				<RefreshCcw class="w-4 h-4" />
 			</button>
 			<form method="dialog">
-				<button class="btn btn-ghost btn-sm btn-circle" aria-label="Cerrar">✕</button>
+				<button class="btn btn-ghost btn-sm btn-circle" aria-label="Cerrar"
+					>✕</button
+				>
 			</form>
 		</div>
 
 		<!-- Chat messages -->
-		<div bind:this={chatContainer} class="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+		<div
+			bind:this={chatContainer}
+			class="flex-1 overflow-y-auto px-6 py-4 space-y-4"
+		>
 			{#if comments.length === 0}
-				<p class="text-sm text-base-content/50 italic text-center py-8">Sin comentarios aún</p>
+				<p class="text-sm text-base-content/50 italic text-center py-8">
+					Sin comentarios aún
+				</p>
 			{:else}
 				{#each comments as comment (comment.id)}
 					{@const isMe = comment.authorId === resolvedUserId}
 					<div class="chat" class:chat-end={isMe} class:chat-start={!isMe}>
 						<div class="chat-header">
 							{#if isMe}
-								<span class="font-semibold text-primary">{comment.authorName}</span>
+								<span class="font-semibold text-primary"
+									>{comment.authorName}</span
+								>
 							{:else}
 								<span class="font-medium">{comment.authorName}</span>
 							{/if}
-							<time class="text-xs opacity-50">{timeAgo(comment.createdAt)}</time>
+							<time class="text-xs opacity-50"
+								>{timeAgo(comment.createdAt)}</time
+							>
 						</div>
 						<div class="chat-bubble" class:chat-bubble-primary={isMe}>
 							{comment.content}
 						</div>
-	
 					</div>
 				{/each}
 			{/if}

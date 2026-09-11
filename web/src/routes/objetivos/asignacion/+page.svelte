@@ -1,1054 +1,1148 @@
 <script lang="ts">
-    import { page } from "$app/stores";
-    import { goto } from "$app/navigation";
-    import {
-        Save,
-        Plus,
-        Library,
-        FileDown,
-        Target,
-        Trash,
-        MessageCircle,
-    } from "@lucide/svelte";
-    import type {
-        Goal,
-        GoalCategory,
-        GoalUnit,
-        EmployeeAssignment,
-        InstitutionalGoal,
-    } from "$lib/types/goal";
-    import type { ChangeRequest } from "$lib/types/goal";
-    import {
-        getCategories,
-        getGoals,
-        getInstitutionalGoals,
-        getKpis,
-        getGoalsByCategory,
-        getKpisForGoal,
-        addCategory,
-        updateCategory,
-        deleteCategory,
-        addGoal,
-        updateGoal,
-        deleteGoal,
-        isAssignmentValid,
-        linkKpiToGoal,
-        unlinkKpiFromGoal,
-        getAssignments,
-        getAssignmentByEmployee,
-        getCyclePhase,
-        getGoalPermissions,
-        updateGoalProgress,
-        addAssignment,
-        addGoalComment,
-        deleteGoalComment,
-        getGoalComments,
-        addCategoryComment,
-        deleteCategoryComment,
-        getCategoryComments,
-        getWeightedScore,
-        getCategoryProgressAverage,
-        storeState,
-        load,
-        reload,
-        loadForEmployee,
-        loadAllGoalComments,
-        createGoalProposal,
-        acceptGoalProposal,
-        rejectGoalProposal,
-        getAssignmentComments,
-        loadAssignmentComments,
-        refreshAssignmentComments,
-        addAssignmentComment,
-        deleteAssignmentComment,
-        getCycleWeights,
-        getTeamWeights,
-    } from "$lib/stores/goalsStore.svelte";
-    import { effectiveWeightGlobal, effectiveWeightShared } from "$lib/utils/scoring";
-    import { getSession } from "$lib/api/session.svelte";
-    import {
-        load as loadOrgHierarchy,
-        getRoot,
-    } from "$lib/stores/orgHierarchyStore.svelte";
-    import { loadTeam, getTeamMembers } from "$lib/stores/teamStore.svelte";
-    import { load as loadPillars, getPillars } from "$lib/stores/competencyStore.svelte";
-    import WeightIndicator from "$lib/components/goals/WeightIndicator.svelte";
-    import ProgressIndicator from "$lib/components/goals/ProgressIndicator.svelte";
-    import CategoryCard from "$lib/components/goals/CategoryCard.svelte";
-    import ReadOnlyBanner from "$lib/components/goals/ReadOnlyBanner.svelte";
-    import AssigneePicker from "$lib/components/goals/AssigneePicker.svelte";
-    import RequestChangeModal from "$lib/components/goals/RequestChangeModal.svelte";
-    import CommentPopover from "$lib/components/goals/GoalCommentModal.svelte";
-    import PageSkeleton from "$lib/components/ui/PageSkeleton.svelte";
-    import ErrorState from "$lib/components/ui/ErrorState.svelte";
-    import EmptyState from "$lib/components/ui/EmptyState.svelte";
-    import CategoryCreateForm from "$lib/components/goals/CategoryCreateForm.svelte";
-    import ConfirmDialog from "$lib/components/ui/ConfirmDialog.svelte";
-    import ExportCsvModal from "$lib/components/goals/ExportCsvModal.svelte";
-    import { toCsv } from "$lib/utils/export";
-    import * as notifications from "$lib/stores/notifications.svelte";
-    import { loadCycles } from "$lib/stores/cycleStore.svelte";
-    import { SvelteSet } from "svelte/reactivity";
-
-    // ─── Load data ────────────────────────────────────────────────────────────
-
-    $effect(() => {
-        load();
-    });
-    $effect(() => {
-        loadOrgHierarchy();
-    });
-    $effect(() => {
-        loadCycles();
-    });
-    $effect(() => {
-        loadPillars('metas');
-    });
-
-    const pillarOptions = $derived(
-        getPillars().map(p => ({ value: p.id, label: p.name }))
-    );
-
-    // ─── Mode detection ──────────────────────────────────────────────────────
-
-    const session = $derived(getSession());
-    const viewerProfile = $derived(session.user?.profileId ?? "colaborador");
-    const viewerEmployeeId = $derived(session.user?.employeeId ?? "");
-
-    const allAssignments = $derived(getAssignments());
-
-    const ownAssignment = $derived(
-        allAssignments.find((a) => a.employeeId === viewerEmployeeId),
-    );
-
-    const isBoss = $derived(isUserHeadOfAnyNode(viewerEmployeeId));
-
-    // ─── Team members (boss only) ──────────────────────────────────────────
-
-    $effect(() => {
-        if (!viewerEmployeeId || !isBoss) return;
-        loadTeam(viewerEmployeeId);
-    });
-
-    const teamMembers = $derived(getTeamMembers());
-
-    const availableAssignments = $derived.by(() => {
-        const result: EmployeeAssignment[] = [];
-        const seen = new SvelteSet<string>();
-
-        const own = ownAssignment ?? {
-            id: `stub-${viewerEmployeeId}`,
-            employeeId: viewerEmployeeId,
-            employeeName: session.user?.name ?? "",
-            profileId: viewerProfile,
-            managerId: null,
-            goalIds: [],
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-        };
-        result.push({
-            ...own,
-            employeeName: own.employeeName || session.user?.name || "",
-        });
-        seen.add(viewerEmployeeId);
-
-        for (const member of teamMembers) {
-            if (seen.has(member.id)) continue;
-            seen.add(member.id);
-            const memberName = `${member.firstName} ${member.lastName}`;
-            const existing = getAssignmentByEmployee(member.id);
-            if (existing) {
-                result.push({
-                    ...existing,
-                    employeeName: existing.employeeName || memberName,
-                    employeeNumber: member.employeeNumber,
-                });
-            } else {
-                result.push({
-                    id: `stub-${member.id}`,
-                    employeeId: member.id,
-                    employeeName: memberName,
-                    employeeNumber: member.employeeNumber,
-                    profileId: "colaborador",
-                    managerId: null,
-                    goalIds: [],
-                    createdAt: new Date().toISOString(),
-                    updatedAt: new Date().toISOString(),
-                });
-            }
-        }
-
-        return result;
-    });
-
-    const showAssigneePicker = $derived(isBoss);
-
-    let selectedEmployeeId = $state("");
-    let lastHandledUrlEmpId = $state<string | null>(null);
-
-    $effect(() => {
-        const urlEmpId = $page.url.searchParams.get("empId");
-        if (urlEmpId) {
-            if (urlEmpId !== lastHandledUrlEmpId) {
-                lastHandledUrlEmpId = urlEmpId;
-                selectedEmployeeId = urlEmpId;
-                loadForEmployee(urlEmpId);
-            }
-        } else if (!selectedEmployeeId) {
-            selectedEmployeeId = viewerEmployeeId;
-        }
-    });
-
-    const targetAssignment = $derived(
-        availableAssignments.find((a) => a.employeeId === selectedEmployeeId),
-    );
-
-    const targetEmployeeName = $derived(targetAssignment?.employeeName ?? "");
-
-    const mode = $derived<"editor" | "reader">(
-        !targetAssignment || targetAssignment.employeeId === viewerEmployeeId
-            ? "editor"
-            : "reader",
-    );
-
-    // ─── Org hierarchy helpers ───────────────────────────────────────────────
-
-    function isUserHeadOfAnyNode(employeeId: string): boolean {
-        const root = getRoot();
-        if (!root || !employeeId) return false;
-        return searchHeadEmployee(root, employeeId);
-    }
-
-    function searchHeadEmployee(
-        node: import("$lib/types/org-hierarchy").OrgNode,
-        employeeId: string,
-    ): boolean {
-        if (node.headEmployeeId === employeeId) return true;
-        for (const child of node.children ?? []) {
-            if (searchHeadEmployee(child, employeeId)) return true;
-        }
-        return false;
-    }
-
-    // ─── Cycle phase & permissions ──────────────────────────────────────────
-
-    const phase = $derived(getCyclePhase());
-    const isOwner = $derived(mode === "editor");
-    const permissions = $derived(getGoalPermissions(viewerProfile, isOwner));
-
-    // ─── Comment modal state ────────────────────────────────────────────────
-
-    let commentGoal: Goal | null = $state(null);
-    let showCommentModal = $state(false);
-
-    function openComments(goal: Goal) {
-        commentGoal = goal;
-        showCommentModal = true;
-    }
-
-    function handleAddComment(goalId: string, content: string) {
-        addGoalComment(goalId, viewerEmployeeId, session.user?.name ?? "", content);
-    }
-
-    function handleDeleteComment(goalId: string, commentId: string) {
-        deleteGoalComment(goalId, commentId);
-    }
-
-    // ─── Category comment modal state ──────────────────────────────────────
-
-    let commentCategory: { id: string; name: string } | null = $state(null);
-    let showCategoryCommentModal = $state(false);
-
-    function openCategoryComments(category: GoalCategory) {
-        commentCategory = category;
-        showCategoryCommentModal = true;
-    }
-
-    function handleAddCategoryComment(catId: string, content: string) {
-        addCategoryComment(catId, viewerEmployeeId, session.user?.name ?? "", content);
-    }
-
-    function handleDeleteCategoryComment(catId: string, commentId: string) {
-        deleteCategoryComment(catId, commentId);
-    }
-
-    // ─── Assignment comment modal state ────────────────────────────────────
-
-    let showAssignmentCommentModal = $state(false);
-    let assignmentCommentTarget: EmployeeAssignment | null = $state(null);
-
-    $effect(() => {
-        const t = targetAssignment;
-        if (t?.id && !t.id.startsWith('stub-')) {
-            loadAssignmentComments(t.id);
-        }
-    });
-
-    function openAssignmentComments() {
-        if (!targetAssignment) return;
-        if (targetAssignment.id.startsWith('stub-')) return;
-        assignmentCommentTarget = targetAssignment;
-        loadAssignmentComments(targetAssignment.id);
-        showAssignmentCommentModal = true;
-    }
-
-    async function handleAddAssignmentComment(assignmentId: string, content: string) {
-        try {
-            await addAssignmentComment(assignmentId, viewerEmployeeId, session.user?.name ?? "", content);
-        } catch (e) {
-            notifications.error(e instanceof Error ? e.message : "Error al guardar comentario");
-        }
-    }
-
-    async function handleDeleteAssignmentComment(assignmentId: string, commentId: string) {
-        try {
-            await deleteAssignmentComment(assignmentId, commentId);
-        } catch (e) {
-            notifications.error(e instanceof Error ? e.message : "Error al eliminar comentario");
-        }
-    }
-
-    async function handleRefreshComments() {
-        await loadAllGoalComments(viewerEmployeeId);
-        if (targetAssignment?.id && !targetAssignment.id.startsWith("stub-")) {
-            await refreshAssignmentComments(targetAssignment.id);
-        }
-    }
-
-    // ─── Existing page state ─────────────────────────────────────────────────
-
-    let creatingCategory = $state(false);
-    let isAnyInlineEditing = $state(false);
-
-    const categories = $derived(getCategories());
-    const goals = $derived(getGoals());
-    const institutionalGoals = $derived(getInstitutionalGoals());
-    const allKpis = $derived(getKpis());
-    const globalSum = $derived(
-        categories.reduce((sum, c) => sum + c.weight, 0),
-    );
-    const _institutionalSum = $derived(institutionalGoals.reduce((sum, g) => sum + g.weight, 0));
-    const valid = $derived(isAssignmentValid());
-
-    function institutionalProgress(goal: InstitutionalGoal): number {
-        return Math.min(100, Math.max(0, goal.progressPercent ?? 0));
-    }
-
-    function institutionalProgressColor(pct: number): string {
-        return pct < 40 ? 'text-error' : pct < 80 ? 'text-warning' : 'text-success';
-    }
-
-    function effectiveFor(goal: InstitutionalGoal): number | undefined {
-        if (goal.effectiveWeight !== undefined && goal.effectiveWeight !== null) return goal.effectiveWeight;
-        const cw = getCycleWeights();
-        const tw = getTeamWeights();
-        if (goal.source === "global") return effectiveWeightGlobal(goal.weight, cw.pWeight);
-        if (goal.source === "shared") return effectiveWeightShared(goal.weight, cw.pWeight, tw.pjWeight);
-        return undefined;
-    }
-
-
-    // ─── Request change modal state ─────────────────────────────────────────
-
-    let showRequestModal = $state(false);
-    let showDeleteAllConfirm = $state(false);
-    let deletingAll = $state(false);
-    let requestEntityType: ChangeRequest["entityType"] = $state("goal");
-    let requestEntityId = $state("");
-    let requestEntityName = $state("");
-
-    const requestComments = $derived.by(() => {
-        if (requestEntityType === "goal") return getGoalComments(requestEntityId);
-        if (requestEntityType === "category") return getCategoryComments(requestEntityId);
-        return [];
-    });
-
-    function openRequestModal(
-        type: ChangeRequest["entityType"],
-        id: string,
-        name: string,
-    ) {
-        requestEntityType = type;
-        requestEntityId = id;
-        requestEntityName = name;
-        showRequestModal = true;
-    }
-
-    function closeRequestModal() {
-        showRequestModal = false;
-    }
-
-    // ─── Handlers ────────────────────────────────────────────────────────────
-
-    function handleAssigneeSelect(employeeId: string) {
-        selectedEmployeeId = employeeId;
-        if ($page.url.searchParams.has("empId")) {
-            const url = new URL($page.url);
-            url.searchParams.delete("empId");
-            goto(url.pathname + (url.search ? url.search : ""), {
-                replaceState: true,
-                keepFocus: true,
-            });
-        }
-        if (employeeId === viewerEmployeeId) {
-            load();
-        } else {
-            loadForEmployee(employeeId);
-        }
-    }
-
-    function handleExportCsv() {
-        if(!isBoss) {
-            exportCurrent();
-            return;
-        }
-        showExportModal = true;
-    }
-
-    function startCreateCategory() {
-        creatingCategory = true;
-        isAnyInlineEditing = true;
-    }
-
-    async function handleSaveCategory(data: {
-        id?: string;
-        name: string;
-        description: string;
-        weight: number;
-        pillarId?: string;
-    }) {
-        try {
-            if (data.id) {
-                await updateCategory(data.id, {
-                    name: data.name,
-                    description: data.description,
-                    weight: data.weight,
-                    pillarId: data.pillarId,
-                });
-            } else {
-                const newCat: GoalCategory = {
-                    id: `cat-${Date.now()}`,
-                    name: data.name,
-                    description: data.description,
-                    weight: data.weight,
-                    pillarId: data.pillarId,
-                };
-                await addCategory(newCat);
-            }
-            creatingCategory = false;
-            isAnyInlineEditing = false;
-            notifications.success(
-                data.id
-                    ? "Categoría actualizada correctamente."
-                    : "Categoría creada correctamente.",
-            );
-        } catch (e) {
-            notifications.error(
-                e instanceof Error ? e.message : "Error al guardar categoría",
-            );
-        }
-    }
-
-    async function handleDeleteCategory(catId: string) {
-        try {
-            await deleteCategory(catId);
-        } catch (e) {
-            console.error("Error deleting category:", e);
-        }
-    }
-
-    async function handleDeleteGoal(goalId: string) {
-        try {
-            await deleteGoal(goalId);
-        } catch (e) {
-            console.error("Error deleting goal:", e);
-        }
-    }
-
-    async function handleSaveGoal(data: {
-        id?: string;
-        categoryId: string;
-        name: string;
-        description: string;
-        unit: GoalUnit;
-        weight: number;
-        targetValue: number;
-        direction: "ascendente" | "descendente";
-        baselineValue?: number;
-        linkedKpiIds: string[];
-    }) {
-        try {
-            if (data.id) {
-                await updateGoal(data.id, {
-                    name: data.name,
-                    description: data.description,
-                    unit: data.unit,
-                    weight: data.weight,
-                    targetValue: data.targetValue,
-                    direction: data.direction,
-                    baselineValue: data.baselineValue,
-                    version: goals.find((g) => g.id === data.id)?.version ?? 0,
-                });
-                const currentLinked = getKpisForGoal(data.id).map((k) => k.id);
-                const toAdd = data.linkedKpiIds.filter(
-                    (id) => !currentLinked.includes(id),
-                );
-                const toRemove = currentLinked.filter(
-                    (id) => !data.linkedKpiIds.includes(id),
-                );
-                for (const kpiId of toAdd) await linkKpiToGoal(data.id, kpiId);
-                for (const kpiId of toRemove)
-                    await unlinkKpiFromGoal(data.id, kpiId);
-            } else {
-                const newGoal: Goal = {
-                    id: `goal-${Date.now()}`,
-                    name: data.name,
-                    description: data.description,
-                    categoryId: data.categoryId,
-                    weight: data.weight,
-                    unit: data.unit,
-                    targetValue: data.targetValue,
-                    direction: data.direction,
-                    baselineValue: data.baselineValue,
-                    version: 1,
-                };
-                const createdId = await addGoal(newGoal);
-                for (const kpiId of data.linkedKpiIds)
-                    await linkKpiToGoal(createdId, kpiId);
-            }
-            isAnyInlineEditing = false;
-            notifications.success(
-                data.id
-                    ? "Meta actualizada correctamente."
-                    : "Meta creada correctamente.",
-            );
-        } catch (e) {
-            console.error("Error saving goal:", e);
-            notifications.error(
-                e instanceof Error ? e.message : "Error al guardar meta",
-            );
-        }
-    }
-
-    async function handleDeleteAssignment() {
-        showDeleteAllConfirm = true;
-    }
-
-    async function confirmDeleteAll() {
-        if (deletingAll) return;
-        deletingAll = true;
-        try {
-            for (const cat of categories) {
-                await deleteCategory(cat.id, { skipReload: true });
-            }
-            await reload();
-            notifications.success("Asignación borrada correctamente.");
-        } catch (e) {
-            notifications.error(
-                e instanceof Error ? e.message : "Error al borrar la asignación",
-            );
-        } finally {
-            deletingAll = false;
-            showDeleteAllConfirm = false;
-        }
-    }
-
-    async function handleSaveAssignment() {
-        if (!targetAssignment) return;
-        try {
-            await addAssignment({
-                id: targetAssignment.id,
-                employeeId: targetAssignment.employeeId,
-                employeeName: targetAssignment.employeeName,
-                profileId: targetAssignment.profileId,
-                managerId: null,
-                goalIds: [],
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString(),
-            });
-            notifications.success("Asignación enviada correctamente.");
-        } catch (e) {
-            notifications.error(
-                e instanceof Error ? e.message : "Error al enviar asignación",
-            );
-        }
-    }
-
-    function handleRequestChangeCategory(category: GoalCategory) {
-        openRequestModal("category", category.id, category.name);
-    }
-
-    function handleRequestAddComment(entityId: string, content: string) {
-        if (requestEntityType === "goal") {
-            addGoalComment(entityId, viewerEmployeeId, session.user?.name ?? "", content);
-        } else if (requestEntityType === "category") {
-            addCategoryComment(entityId, viewerEmployeeId, session.user?.name ?? "", content);
-        }
-    }
-
-    async function handleUpdateProgress(goalId: string, progress: number) {
-        try {
-            await updateGoalProgress(goalId, progress);
-        } catch (e) {
-            console.error("Error updating progress:", e);
-        }
-    }
-
-    async function handleSaveProposal(goalId: string, data: Parameters<typeof createGoalProposal>[1]) {
-        await createGoalProposal(goalId, data);
-    }
-
-    async function handleAcceptProposal(goalId: string, proposalId: string) {
-        await acceptGoalProposal(goalId, proposalId, viewerEmployeeId);
-    }
-
-    async function handleRejectProposal(goalId: string, proposalId: string) {
-        await rejectGoalProposal(goalId, proposalId);
-    }
-
-    // ─── Export CSV modal ────────────────────────────────────────────────────────
-
-    let showExportModal = $state(false);
-
-    function buildRows(
-        assignment: EmployeeAssignment,
-    ): Record<string, string | number | null>[] {
-        const rows: Record<string, string | number | null>[] = [];
-        const cats = getCategories();
-        for (const cat of cats) {
-            const catGoals = getGoalsByCategory(cat.id);
-            for (const goal of catGoals) {
-                const kpis = getKpisForGoal(goal.id);
-                rows.push({
-                    "No. Empleado": assignment.employeeNumber ?? assignment.employeeId,
-                    Empleado: assignment.employeeName,
-                    Categoría: cat.name,
-                    "Peso categoría %": cat.weight,
-                    Meta: goal.name,
-                    Descripción: goal.description,
-                    Unidad: goal.unit,
-                    "Peso meta %": goal.weight,
-                    "Valor objetivo": formatTarget(goal),
-                    KPIs: kpis.map((k) => k.name).join(", ") || "",
-                });
-            }
-        }
-        return rows;
-    }
-
-    function formatTarget(g: Goal) {
-        return g.unit === "porcentaje" ? `${g.targetValue}%` : g.targetValue;
-    }
-
-    async function exportCurrent() {
-        showExportModal = false;
-        toCsv(buildRows(targetAssignment!), "asignacion-anual.csv");
-    }
-
-    async function exportAll() {
-        showExportModal = false;
-        const allRows: Record<string, string | number | null>[] = [];
-        const originalId = selectedEmployeeId;
-
-        for (const a of availableAssignments) {
-            await loadForEmployee(a.employeeId);
-            allRows.push(...buildRows(a));
-        }
-
-        await loadForEmployee(originalId);
-        toCsv(allRows, "asignacion-anual-todos.csv");
-    }
+	import { page } from '$app/stores';
+	import { goto } from '$app/navigation';
+	import {
+		Save,
+		Plus,
+		Library,
+		FileDown,
+		Target,
+		Trash,
+		MessageCircle,
+	} from '@lucide/svelte';
+	import type {
+		Goal,
+		GoalCategory,
+		GoalUnit,
+		EmployeeAssignment,
+		InstitutionalGoal,
+	} from '$lib/types/goal';
+	import type { ChangeRequest } from '$lib/types/goal';
+	import {
+		getCategories,
+		getGoals,
+		getInstitutionalGoals,
+		getKpis,
+		getGoalsByCategory,
+		getKpisForGoal,
+		addCategory,
+		updateCategory,
+		deleteCategory,
+		addGoal,
+		updateGoal,
+		deleteGoal,
+		isAssignmentValid,
+		linkKpiToGoal,
+		unlinkKpiFromGoal,
+		getAssignments,
+		getAssignmentByEmployee,
+		getCyclePhase,
+		getGoalPermissions,
+		updateGoalProgress,
+		addAssignment,
+		addGoalComment,
+		deleteGoalComment,
+		getGoalComments,
+		addCategoryComment,
+		deleteCategoryComment,
+		getCategoryComments,
+		getWeightedScore,
+		getCategoryProgressAverage,
+		storeState,
+		load,
+		reload,
+		loadForEmployee,
+		loadAllGoalComments,
+		createGoalProposal,
+		acceptGoalProposal,
+		rejectGoalProposal,
+		getAssignmentComments,
+		loadAssignmentComments,
+		refreshAssignmentComments,
+		addAssignmentComment,
+		deleteAssignmentComment,
+		getCycleWeights,
+		getTeamWeights,
+	} from '$lib/stores/goalsStore.svelte';
+	import {
+		effectiveWeightGlobal,
+		effectiveWeightShared,
+	} from '$lib/utils/scoring';
+	import { getSession } from '$lib/api/session.svelte';
+	import {
+		load as loadOrgHierarchy,
+		getRoot,
+	} from '$lib/stores/orgHierarchyStore.svelte';
+	import { loadTeam, getTeamMembers } from '$lib/stores/teamStore.svelte';
+	import {
+		load as loadPillars,
+		getPillars,
+	} from '$lib/stores/competencyStore.svelte';
+	import WeightIndicator from '$lib/components/goals/WeightIndicator.svelte';
+	import ProgressIndicator from '$lib/components/goals/ProgressIndicator.svelte';
+	import CategoryCard from '$lib/components/goals/CategoryCard.svelte';
+	import ReadOnlyBanner from '$lib/components/goals/ReadOnlyBanner.svelte';
+	import AssigneePicker from '$lib/components/goals/AssigneePicker.svelte';
+	import RequestChangeModal from '$lib/components/goals/RequestChangeModal.svelte';
+	import CommentPopover from '$lib/components/goals/GoalCommentModal.svelte';
+	import PageSkeleton from '$lib/components/ui/PageSkeleton.svelte';
+	import ErrorState from '$lib/components/ui/ErrorState.svelte';
+	import EmptyState from '$lib/components/ui/EmptyState.svelte';
+	import CategoryCreateForm from '$lib/components/goals/CategoryCreateForm.svelte';
+	import ConfirmDialog from '$lib/components/ui/ConfirmDialog.svelte';
+	import ExportCsvModal from '$lib/components/goals/ExportCsvModal.svelte';
+	import { toCsv } from '$lib/utils/export';
+	import * as notifications from '$lib/stores/notifications.svelte';
+	import { loadCycles } from '$lib/stores/cycleStore.svelte';
+	import { SvelteSet } from 'svelte/reactivity';
+
+	// ─── Load data ────────────────────────────────────────────────────────────
+
+	$effect(() => {
+		load();
+	});
+	$effect(() => {
+		loadOrgHierarchy();
+	});
+	$effect(() => {
+		loadCycles();
+	});
+	$effect(() => {
+		loadPillars('metas');
+	});
+
+	const pillarOptions = $derived(
+		getPillars().map((p) => ({ value: p.id, label: p.name })),
+	);
+
+	// ─── Mode detection ──────────────────────────────────────────────────────
+
+	const session = $derived(getSession());
+	const viewerProfile = $derived(session.user?.profileId ?? 'colaborador');
+	const viewerEmployeeId = $derived(session.user?.employeeId ?? '');
+
+	const allAssignments = $derived(getAssignments());
+
+	const ownAssignment = $derived(
+		allAssignments.find((a) => a.employeeId === viewerEmployeeId),
+	);
+
+	const isBoss = $derived(isUserHeadOfAnyNode(viewerEmployeeId));
+
+	// ─── Team members (boss only) ──────────────────────────────────────────
+
+	$effect(() => {
+		if (!viewerEmployeeId || !isBoss) return;
+		loadTeam(viewerEmployeeId);
+	});
+
+	const teamMembers = $derived(getTeamMembers());
+
+	const availableAssignments = $derived.by(() => {
+		const result: EmployeeAssignment[] = [];
+		const seen = new SvelteSet<string>();
+
+		const own = ownAssignment ?? {
+			id: `stub-${viewerEmployeeId}`,
+			employeeId: viewerEmployeeId,
+			employeeName: session.user?.name ?? '',
+			profileId: viewerProfile,
+			managerId: null,
+			goalIds: [],
+			createdAt: new Date().toISOString(),
+			updatedAt: new Date().toISOString(),
+		};
+		result.push({
+			...own,
+			employeeName: own.employeeName || session.user?.name || '',
+		});
+		seen.add(viewerEmployeeId);
+
+		for (const member of teamMembers) {
+			if (seen.has(member.id)) continue;
+			seen.add(member.id);
+			const memberName = `${member.firstName} ${member.lastName}`;
+			const existing = getAssignmentByEmployee(member.id);
+			if (existing) {
+				result.push({
+					...existing,
+					employeeName: existing.employeeName || memberName,
+					employeeNumber: member.employeeNumber,
+				});
+			} else {
+				result.push({
+					id: `stub-${member.id}`,
+					employeeId: member.id,
+					employeeName: memberName,
+					employeeNumber: member.employeeNumber,
+					profileId: 'colaborador',
+					managerId: null,
+					goalIds: [],
+					createdAt: new Date().toISOString(),
+					updatedAt: new Date().toISOString(),
+				});
+			}
+		}
+
+		return result;
+	});
+
+	const showAssigneePicker = $derived(isBoss);
+
+	let selectedEmployeeId = $state('');
+	let lastHandledUrlEmpId = $state<string | null>(null);
+
+	$effect(() => {
+		const urlEmpId = $page.url.searchParams.get('empId');
+		if (urlEmpId) {
+			if (urlEmpId !== lastHandledUrlEmpId) {
+				lastHandledUrlEmpId = urlEmpId;
+				selectedEmployeeId = urlEmpId;
+				loadForEmployee(urlEmpId);
+			}
+		} else if (!selectedEmployeeId) {
+			selectedEmployeeId = viewerEmployeeId;
+		}
+	});
+
+	const targetAssignment = $derived(
+		availableAssignments.find((a) => a.employeeId === selectedEmployeeId),
+	);
+
+	const targetEmployeeName = $derived(targetAssignment?.employeeName ?? '');
+
+	const mode = $derived<'editor' | 'reader'>(
+		!targetAssignment || targetAssignment.employeeId === viewerEmployeeId
+			? 'editor'
+			: 'reader',
+	);
+
+	// ─── Org hierarchy helpers ───────────────────────────────────────────────
+
+	function isUserHeadOfAnyNode(employeeId: string): boolean {
+		const root = getRoot();
+		if (!root || !employeeId) return false;
+		return searchHeadEmployee(root, employeeId);
+	}
+
+	function searchHeadEmployee(
+		node: import('$lib/types/org-hierarchy').OrgNode,
+		employeeId: string,
+	): boolean {
+		if (node.headEmployeeId === employeeId) return true;
+		for (const child of node.children ?? []) {
+			if (searchHeadEmployee(child, employeeId)) return true;
+		}
+		return false;
+	}
+
+	// ─── Cycle phase & permissions ──────────────────────────────────────────
+
+	const phase = $derived(getCyclePhase());
+	const isOwner = $derived(mode === 'editor');
+	const permissions = $derived(getGoalPermissions(viewerProfile, isOwner));
+
+	// ─── Comment modal state ────────────────────────────────────────────────
+
+	let commentGoal: Goal | null = $state(null);
+	let showCommentModal = $state(false);
+
+	function openComments(goal: Goal) {
+		commentGoal = goal;
+		showCommentModal = true;
+	}
+
+	function handleAddComment(goalId: string, content: string) {
+		addGoalComment(goalId, viewerEmployeeId, session.user?.name ?? '', content);
+	}
+
+	function handleDeleteComment(goalId: string, commentId: string) {
+		deleteGoalComment(goalId, commentId);
+	}
+
+	// ─── Category comment modal state ──────────────────────────────────────
+
+	let commentCategory: { id: string; name: string } | null = $state(null);
+	let showCategoryCommentModal = $state(false);
+
+	function openCategoryComments(category: GoalCategory) {
+		commentCategory = category;
+		showCategoryCommentModal = true;
+	}
+
+	function handleAddCategoryComment(catId: string, content: string) {
+		addCategoryComment(
+			catId,
+			viewerEmployeeId,
+			session.user?.name ?? '',
+			content,
+		);
+	}
+
+	function handleDeleteCategoryComment(catId: string, commentId: string) {
+		deleteCategoryComment(catId, commentId);
+	}
+
+	// ─── Assignment comment modal state ────────────────────────────────────
+
+	let showAssignmentCommentModal = $state(false);
+	let assignmentCommentTarget: EmployeeAssignment | null = $state(null);
+
+	$effect(() => {
+		const t = targetAssignment;
+		if (t?.id && !t.id.startsWith('stub-')) {
+			loadAssignmentComments(t.id);
+		}
+	});
+
+	function openAssignmentComments() {
+		if (!targetAssignment) return;
+		if (targetAssignment.id.startsWith('stub-')) return;
+		assignmentCommentTarget = targetAssignment;
+		loadAssignmentComments(targetAssignment.id);
+		showAssignmentCommentModal = true;
+	}
+
+	async function handleAddAssignmentComment(
+		assignmentId: string,
+		content: string,
+	) {
+		try {
+			await addAssignmentComment(
+				assignmentId,
+				viewerEmployeeId,
+				session.user?.name ?? '',
+				content,
+			);
+		} catch (e) {
+			notifications.error(
+				e instanceof Error ? e.message : 'Error al guardar comentario',
+			);
+		}
+	}
+
+	async function handleDeleteAssignmentComment(
+		assignmentId: string,
+		commentId: string,
+	) {
+		try {
+			await deleteAssignmentComment(assignmentId, commentId);
+		} catch (e) {
+			notifications.error(
+				e instanceof Error ? e.message : 'Error al eliminar comentario',
+			);
+		}
+	}
+
+	async function handleRefreshComments() {
+		await loadAllGoalComments(viewerEmployeeId);
+		if (targetAssignment?.id && !targetAssignment.id.startsWith('stub-')) {
+			await refreshAssignmentComments(targetAssignment.id);
+		}
+	}
+
+	// ─── Existing page state ─────────────────────────────────────────────────
+
+	let creatingCategory = $state(false);
+	let isAnyInlineEditing = $state(false);
+
+	const categories = $derived(getCategories());
+	const goals = $derived(getGoals());
+	const institutionalGoals = $derived(getInstitutionalGoals());
+	const allKpis = $derived(getKpis());
+	const globalSum = $derived(categories.reduce((sum, c) => sum + c.weight, 0));
+	const _institutionalSum = $derived(
+		institutionalGoals.reduce((sum, g) => sum + g.weight, 0),
+	);
+	const valid = $derived(isAssignmentValid());
+
+	function institutionalProgress(goal: InstitutionalGoal): number {
+		return Math.min(100, Math.max(0, goal.progressPercent ?? 0));
+	}
+
+	function institutionalProgressColor(pct: number): string {
+		return pct < 40 ? 'text-error' : pct < 80 ? 'text-warning' : 'text-success';
+	}
+
+	function effectiveFor(goal: InstitutionalGoal): number | undefined {
+		if (goal.effectiveWeight !== undefined && goal.effectiveWeight !== null)
+			return goal.effectiveWeight;
+		const cw = getCycleWeights();
+		const tw = getTeamWeights();
+		if (goal.source === 'global')
+			return effectiveWeightGlobal(goal.weight, cw.pWeight);
+		if (goal.source === 'shared')
+			return effectiveWeightShared(goal.weight, cw.pWeight, tw.pjWeight);
+		return undefined;
+	}
+
+	// ─── Request change modal state ─────────────────────────────────────────
+
+	let showRequestModal = $state(false);
+	let showDeleteAllConfirm = $state(false);
+	let deletingAll = $state(false);
+	let requestEntityType: ChangeRequest['entityType'] = $state('goal');
+	let requestEntityId = $state('');
+	let requestEntityName = $state('');
+
+	const requestComments = $derived.by(() => {
+		if (requestEntityType === 'goal') return getGoalComments(requestEntityId);
+		if (requestEntityType === 'category')
+			return getCategoryComments(requestEntityId);
+		return [];
+	});
+
+	function openRequestModal(
+		type: ChangeRequest['entityType'],
+		id: string,
+		name: string,
+	) {
+		requestEntityType = type;
+		requestEntityId = id;
+		requestEntityName = name;
+		showRequestModal = true;
+	}
+
+	function closeRequestModal() {
+		showRequestModal = false;
+	}
+
+	// ─── Handlers ────────────────────────────────────────────────────────────
+
+	function handleAssigneeSelect(employeeId: string) {
+		selectedEmployeeId = employeeId;
+		if ($page.url.searchParams.has('empId')) {
+			const url = new URL($page.url);
+			url.searchParams.delete('empId');
+			goto(url.pathname + (url.search ? url.search : ''), {
+				replaceState: true,
+				keepFocus: true,
+			});
+		}
+		if (employeeId === viewerEmployeeId) {
+			load();
+		} else {
+			loadForEmployee(employeeId);
+		}
+	}
+
+	function handleExportCsv() {
+		if (!isBoss) {
+			exportCurrent();
+			return;
+		}
+		showExportModal = true;
+	}
+
+	function startCreateCategory() {
+		creatingCategory = true;
+		isAnyInlineEditing = true;
+	}
+
+	async function handleSaveCategory(data: {
+		id?: string;
+		name: string;
+		description: string;
+		weight: number;
+		pillarId?: string;
+	}) {
+		try {
+			if (data.id) {
+				await updateCategory(data.id, {
+					name: data.name,
+					description: data.description,
+					weight: data.weight,
+					pillarId: data.pillarId,
+				});
+			} else {
+				const newCat: GoalCategory = {
+					id: `cat-${Date.now()}`,
+					name: data.name,
+					description: data.description,
+					weight: data.weight,
+					pillarId: data.pillarId,
+				};
+				await addCategory(newCat);
+			}
+			creatingCategory = false;
+			isAnyInlineEditing = false;
+			notifications.success(
+				data.id
+					? 'Categoría actualizada correctamente.'
+					: 'Categoría creada correctamente.',
+			);
+		} catch (e) {
+			notifications.error(
+				e instanceof Error ? e.message : 'Error al guardar categoría',
+			);
+		}
+	}
+
+	async function handleDeleteCategory(catId: string) {
+		try {
+			await deleteCategory(catId);
+		} catch (e) {
+			console.error('Error deleting category:', e);
+		}
+	}
+
+	async function handleDeleteGoal(goalId: string) {
+		try {
+			await deleteGoal(goalId);
+		} catch (e) {
+			console.error('Error deleting goal:', e);
+		}
+	}
+
+	async function handleSaveGoal(data: {
+		id?: string;
+		categoryId: string;
+		name: string;
+		description: string;
+		unit: GoalUnit;
+		weight: number;
+		targetValue: number;
+		direction: 'ascendente' | 'descendente';
+		baselineValue?: number;
+		linkedKpiIds: string[];
+	}) {
+		try {
+			if (data.id) {
+				await updateGoal(data.id, {
+					name: data.name,
+					description: data.description,
+					unit: data.unit,
+					weight: data.weight,
+					targetValue: data.targetValue,
+					direction: data.direction,
+					baselineValue: data.baselineValue,
+					version: goals.find((g) => g.id === data.id)?.version ?? 0,
+				});
+				const currentLinked = getKpisForGoal(data.id).map((k) => k.id);
+				const toAdd = data.linkedKpiIds.filter(
+					(id) => !currentLinked.includes(id),
+				);
+				const toRemove = currentLinked.filter(
+					(id) => !data.linkedKpiIds.includes(id),
+				);
+				for (const kpiId of toAdd) await linkKpiToGoal(data.id, kpiId);
+				for (const kpiId of toRemove) await unlinkKpiFromGoal(data.id, kpiId);
+			} else {
+				const newGoal: Goal = {
+					id: `goal-${Date.now()}`,
+					name: data.name,
+					description: data.description,
+					categoryId: data.categoryId,
+					weight: data.weight,
+					unit: data.unit,
+					targetValue: data.targetValue,
+					direction: data.direction,
+					baselineValue: data.baselineValue,
+					version: 1,
+				};
+				const createdId = await addGoal(newGoal);
+				for (const kpiId of data.linkedKpiIds)
+					await linkKpiToGoal(createdId, kpiId);
+			}
+			isAnyInlineEditing = false;
+			notifications.success(
+				data.id
+					? 'Meta actualizada correctamente.'
+					: 'Meta creada correctamente.',
+			);
+		} catch (e) {
+			console.error('Error saving goal:', e);
+			notifications.error(
+				e instanceof Error ? e.message : 'Error al guardar meta',
+			);
+		}
+	}
+
+	async function handleDeleteAssignment() {
+		showDeleteAllConfirm = true;
+	}
+
+	async function confirmDeleteAll() {
+		if (deletingAll) return;
+		deletingAll = true;
+		try {
+			for (const cat of categories) {
+				await deleteCategory(cat.id, { skipReload: true });
+			}
+			await reload();
+			notifications.success('Asignación borrada correctamente.');
+		} catch (e) {
+			notifications.error(
+				e instanceof Error ? e.message : 'Error al borrar la asignación',
+			);
+		} finally {
+			deletingAll = false;
+			showDeleteAllConfirm = false;
+		}
+	}
+
+	async function handleSaveAssignment() {
+		if (!targetAssignment) return;
+		try {
+			await addAssignment({
+				id: targetAssignment.id,
+				employeeId: targetAssignment.employeeId,
+				employeeName: targetAssignment.employeeName,
+				profileId: targetAssignment.profileId,
+				managerId: null,
+				goalIds: [],
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
+			});
+			notifications.success('Asignación enviada correctamente.');
+		} catch (e) {
+			notifications.error(
+				e instanceof Error ? e.message : 'Error al enviar asignación',
+			);
+		}
+	}
+
+	function handleRequestChangeCategory(category: GoalCategory) {
+		openRequestModal('category', category.id, category.name);
+	}
+
+	function handleRequestAddComment(entityId: string, content: string) {
+		if (requestEntityType === 'goal') {
+			addGoalComment(
+				entityId,
+				viewerEmployeeId,
+				session.user?.name ?? '',
+				content,
+			);
+		} else if (requestEntityType === 'category') {
+			addCategoryComment(
+				entityId,
+				viewerEmployeeId,
+				session.user?.name ?? '',
+				content,
+			);
+		}
+	}
+
+	async function handleUpdateProgress(goalId: string, progress: number) {
+		try {
+			await updateGoalProgress(goalId, progress);
+		} catch (e) {
+			console.error('Error updating progress:', e);
+		}
+	}
+
+	async function handleSaveProposal(
+		goalId: string,
+		data: Parameters<typeof createGoalProposal>[1],
+	) {
+		await createGoalProposal(goalId, data);
+	}
+
+	async function handleAcceptProposal(goalId: string, proposalId: string) {
+		await acceptGoalProposal(goalId, proposalId, viewerEmployeeId);
+	}
+
+	async function handleRejectProposal(goalId: string, proposalId: string) {
+		await rejectGoalProposal(goalId, proposalId);
+	}
+
+	// ─── Export CSV modal ────────────────────────────────────────────────────────
+
+	let showExportModal = $state(false);
+
+	function buildRows(
+		assignment: EmployeeAssignment,
+	): Record<string, string | number | null>[] {
+		const rows: Record<string, string | number | null>[] = [];
+		const cats = getCategories();
+		for (const cat of cats) {
+			const catGoals = getGoalsByCategory(cat.id);
+			for (const goal of catGoals) {
+				const kpis = getKpisForGoal(goal.id);
+				rows.push({
+					'No. Empleado': assignment.employeeNumber ?? assignment.employeeId,
+					Empleado: assignment.employeeName,
+					Categoría: cat.name,
+					'Peso categoría %': cat.weight,
+					Meta: goal.name,
+					Descripción: goal.description,
+					Unidad: goal.unit,
+					'Peso meta %': goal.weight,
+					'Valor objetivo': formatTarget(goal),
+					KPIs: kpis.map((k) => k.name).join(', ') || '',
+				});
+			}
+		}
+		return rows;
+	}
+
+	function formatTarget(g: Goal) {
+		return g.unit === 'porcentaje' ? `${g.targetValue}%` : g.targetValue;
+	}
+
+	async function exportCurrent() {
+		showExportModal = false;
+		toCsv(buildRows(targetAssignment!), 'asignacion-anual.csv');
+	}
+
+	async function exportAll() {
+		showExportModal = false;
+		const allRows: Record<string, string | number | null>[] = [];
+		const originalId = selectedEmployeeId;
+
+		for (const a of availableAssignments) {
+			await loadForEmployee(a.employeeId);
+			allRows.push(...buildRows(a));
+		}
+
+		await loadForEmployee(originalId);
+		toCsv(allRows, 'asignacion-anual-todos.csv');
+	}
 </script>
 
 <svelte:head>
-    <title>Asignación anual — SED</title>
+	<title>Asignación anual — SED</title>
 </svelte:head>
 
 {#if storeState.loading}
-    <PageSkeleton variant="category" rows={3} />
+	<PageSkeleton variant="category" rows={3} />
 {:else if storeState.error}
-    <ErrorState message={storeState.error} onretry={load} />
+	<ErrorState message={storeState.error} onretry={load} />
 {:else}
-    <div class="space-y-6 max-w-full min-w-0">
-        <!-- Page header -->
-        <div>
-            <div class="flex items-start justify-between gap-4">
-                <div>
-                    <h1
-                        class="text-2xl font-bold text-base-content flex items-center gap-2"
-                    >
-                        <Target class="w-6 h-6" />
-                        Metas
-                    </h1>
-                    <p class="text-sm text-base-content/50 mt-1">
-                        {phase === "medio-anio"
-                            ? "Registre el avance de sus metas o agregue sus comentarios."
-                            : "Defina las categorías y metas para el período de evaluación."}
-                    </p>
-                </div>
-                {#if phase === "inicio-anio"}
-                    <button
-                        class="btn btn-ghost btn-sm"
-                        onclick={() => goto("/objetivos/asignacion/biblioteca")}
-                        aria-label="Biblioteca de KPI"
-                    >
-                        <Library class="w-4 h-4" />
-                        Biblioteca de KPI
-                    </button>
-                {/if}
-            </div>
-            <div class="flex items-center gap-2 mt-3 flex-wrap">
-                {#if showAssigneePicker}
-                    <AssigneePicker
-                        assignments={availableAssignments}
-                        {selectedEmployeeId}
-                        onSelect={handleAssigneeSelect}
-                        currentUserId={viewerEmployeeId}
-                    />
-                {/if}
-                <button
-                    class="btn btn-outline btn-sm"
-                    disabled={categories.length === 0}
-                    onclick={handleExportCsv}
-                >
-                    <FileDown class="w-4 h-4" />
-                    Exportar CSV
-                </button>
-                {#if mode === "editor" && phase !== "medio-anio" && phase !== "fin-anio"}
-                    <div class="flex-1"></div>
-                    <button
-                        class="btn btn-error btn-sm btn-ghost"
-                        disabled={deletingAll}
-                        onclick={handleDeleteAssignment}
-                    >
-                        <Trash class="w-4 h-4" />
-                        Borrar todo
-                    </button>
-                    <button
-                        class="btn btn-primary btn-sm"
-                        disabled={!valid}
-                        onclick={handleSaveAssignment}
-                    >
-                        <Save class="w-4 h-4" />
-                        Enviar asignación
-                    </button>
-                {:else if mode === "reader"}
-                    {@const count = assignmentCommentTarget?.id ? getAssignmentComments(assignmentCommentTarget.id).length : 0}
-                    <button
-                        class="btn btn-primary btn-sm ml-auto"
-                        onclick={openAssignmentComments}
-                        aria-label="Comentar en asignación"
-                    >
-                        <MessageCircle class="w-4 h-4" />
-                        Comentar
-                        {#if count > 0}
-                            <span class="badge badge-sm">{count}</span>
-                        {/if}
-                    </button>
-                {/if}
+	<div class="space-y-6 max-w-full min-w-0">
+		<!-- Page header -->
+		<div>
+			<div class="flex items-start justify-between gap-4">
+				<div>
+					<h1
+						class="text-2xl font-bold text-base-content flex items-center gap-2"
+					>
+						<Target class="w-6 h-6" />
+						Metas
+					</h1>
+					<p class="text-sm text-base-content/50 mt-1">
+						{phase === 'medio-anio'
+							? 'Registre el avance de sus metas o agregue sus comentarios.'
+							: 'Defina las categorías y metas para el período de evaluación.'}
+					</p>
+				</div>
+				{#if phase === 'inicio-anio'}
+					<button
+						class="btn btn-ghost btn-sm"
+						onclick={() => goto('/objetivos/asignacion/biblioteca')}
+						aria-label="Biblioteca de KPI"
+					>
+						<Library class="w-4 h-4" />
+						Biblioteca de KPI
+					</button>
+				{/if}
+			</div>
+			<div class="flex items-center gap-2 mt-3 flex-wrap">
+				{#if showAssigneePicker}
+					<AssigneePicker
+						assignments={availableAssignments}
+						{selectedEmployeeId}
+						onSelect={handleAssigneeSelect}
+						currentUserId={viewerEmployeeId}
+					/>
+				{/if}
+				<button
+					class="btn btn-outline btn-sm"
+					disabled={categories.length === 0}
+					onclick={handleExportCsv}
+				>
+					<FileDown class="w-4 h-4" />
+					Exportar CSV
+				</button>
+				{#if mode === 'editor' && phase !== 'medio-anio' && phase !== 'fin-anio'}
+					<div class="flex-1"></div>
+					<button
+						class="btn btn-error btn-sm btn-ghost"
+						disabled={deletingAll}
+						onclick={handleDeleteAssignment}
+					>
+						<Trash class="w-4 h-4" />
+						Borrar todo
+					</button>
+					<button
+						class="btn btn-primary btn-sm"
+						disabled={!valid}
+						onclick={handleSaveAssignment}
+					>
+						<Save class="w-4 h-4" />
+						Enviar asignación
+					</button>
+				{:else if mode === 'reader'}
+					{@const count = assignmentCommentTarget?.id
+						? getAssignmentComments(assignmentCommentTarget.id).length
+						: 0}
+					<button
+						class="btn btn-primary btn-sm ml-auto"
+						onclick={openAssignmentComments}
+						aria-label="Comentar en asignación"
+					>
+						<MessageCircle class="w-4 h-4" />
+						Comentar
+						{#if count > 0}
+							<span class="badge badge-sm">{count}</span>
+						{/if}
+					</button>
+				{/if}
 
-                {#if mode === "editor" && targetAssignment?.id && !targetAssignment.id.startsWith("stub-")}
-                    {@const count = getAssignmentComments(targetAssignment.id).length}
-                    <button
-                        class="btn btn-ghost btn-sm ml-auto relative"
-                        onclick={openAssignmentComments}
-                        aria-label="Ver comentarios de asignación"
-                    >
-                        <MessageCircle class="w-4 h-4" />
-                        {#if count > 0}
-                            <span class="badge badge-xs badge-primary absolute -top-1.5 -right-1.5">{count}</span>
-                        {/if}
-                    </button>
-                {/if}
-            </div>
-        </div>
+				{#if mode === 'editor' && targetAssignment?.id && !targetAssignment.id.startsWith('stub-')}
+					{@const count = getAssignmentComments(targetAssignment.id).length}
+					<button
+						class="btn btn-ghost btn-sm ml-auto relative"
+						onclick={openAssignmentComments}
+						aria-label="Ver comentarios de asignación"
+					>
+						<MessageCircle class="w-4 h-4" />
+						{#if count > 0}
+							<span
+								class="badge badge-xs badge-primary absolute -top-1.5 -right-1.5"
+								>{count}</span
+							>
+						{/if}
+					</button>
+				{/if}
+			</div>
+		</div>
 
-        <!-- Read-only banner -->
-        {#if mode === "reader"}
-            <ReadOnlyBanner employeeName={targetEmployeeName} {phase} />
-        {/if}
+		<!-- Read-only banner -->
+		{#if mode === 'reader'}
+			<ReadOnlyBanner employeeName={targetEmployeeName} {phase} />
+		{/if}
 
-        <!-- Global weight indicator (sticky) -->
-        <div
-            class="sticky top-2 z-30 bg-base-200/95 backdrop-blur-sm rounded-lg p-4 mt-2 mb-4 border border-base-300 shadow-sm min-w-0"
-        >
-            <p class="text-sm font-semibold text-base-content mb-2">
-                {phase === "medio-anio"
-                    ? "Avance global de metas"
-                    : "Distribución global de metas"}
-            </p>
-            {#if phase === "medio-anio"}
-                {@const avgProgress = (() => {
-                    // Weighted total: personal (cat*goal weights via progressPercent) + institutional Σ(weight/100*pct)
-                    // Use same logic as getWeightedScore but without hierarchical scaling for the bar display
-                    // personal portion already computed inside getWeightedScore, reuse its raw value
-                    const score = getWeightedScore();
-                    return Math.min(100, Math.max(0, score));
-                })()}
-                {@const personalScore = getWeightedScore()}
-                <ProgressIndicator
-                    value={avgProgress}
-                    label="Avance ponderado total (personal + institucional)"
-                    color="primary"
-                    decimals={1}
-                />
-                <p class="text-xs text-base-content/50 mt-1">Puntaje ponderado {personalScore.toFixed(1)}/100 — incluye pesos G/P y J/PJ</p>
-            {:else}
-                <WeightIndicator
-                    current={globalSum}
-                    label="Suma total de categorías e institucionales"
-                />
-                {#if !valid}
-                    <p class="text-xs text-warning mt-1">
-                        La suma de pesos debe ser 100% tanto a nivel global como
-                        en cada categoría.
-                    </p>
-                {/if}
-            {/if}
+		<!-- Global weight indicator (sticky) -->
+		<div
+			class="sticky top-2 z-30 bg-base-200/95 backdrop-blur-sm rounded-lg p-4 mt-2 mb-4 border border-base-300 shadow-sm min-w-0"
+		>
+			<p class="text-sm font-semibold text-base-content mb-2">
+				{phase === 'medio-anio'
+					? 'Avance global de metas'
+					: 'Distribución global de metas'}
+			</p>
+			{#if phase === 'medio-anio'}
+				{@const avgProgress = (() => {
+					// Weighted total: personal (cat*goal weights via progressPercent) + institutional Σ(weight/100*pct)
+					// Use same logic as getWeightedScore but without hierarchical scaling for the bar display
+					// personal portion already computed inside getWeightedScore, reuse its raw value
+					const score = getWeightedScore();
+					return Math.min(100, Math.max(0, score));
+				})()}
+				{@const personalScore = getWeightedScore()}
+				<ProgressIndicator
+					value={avgProgress}
+					label="Avance ponderado total (personal + institucional)"
+					color="primary"
+					decimals={1}
+				/>
+				<p class="text-xs text-base-content/50 mt-1">
+					Puntaje ponderado {personalScore.toFixed(1)}/100 — incluye pesos G/P y
+					J/PJ
+				</p>
+			{:else}
+				<WeightIndicator
+					current={globalSum}
+					label="Suma total de categorías e institucionales"
+				/>
+				{#if !valid}
+					<p class="text-xs text-warning mt-1">
+						La suma de pesos debe ser 100% tanto a nivel global como en cada
+						categoría.
+					</p>
+				{/if}
+			{/if}
 
-            <!-- Weighted score display (only when there's progress data) -->
-            {#if phase === "medio-anio" || phase === "fin-anio"}
-                {@const score = getWeightedScore()}
-                <div class="mt-3 pt-3 border-t border-base-300">
-                    <div class="flex items-center justify-between">
-                        <span class="text-sm font-semibold text-base-content"
-                            >Puntaje ponderado</span
-                        >
-                        <span
-                            class="text-2xl font-bold font-mono text-base-content"
-                        >
-                            {Math.round(score)}
-                            <span
-                                class="text-base font-normal text-base-content/50"
-                                >/100</span
-                            >
-                        </span>
-                    </div>
-                    <details
-                        class="collapse collapse-arrow bg-base-100 border border-base-300 rounded-lg mt-2"
-                    >
-                        <summary
-                            class="collapse-title text-sm font-semibold text-base-content/70 min-h-0 pl-4 pr-8 py-2"
-                        >
-                            Desglose por categoría
-                        </summary>
-                        <div class="collapse-content text-sm px-4">
-                            <div class="space-y-1.5">
-                            {#each categories as cat (cat.id)}
-                                {@const catProgress =
-                                    getCategoryProgressAverage(cat.id)}
-                                <div
-                                    class="flex items-center justify-between text-xs"
-                                >
-                                    <span class="text-base-content/70"
-                                        >{cat.name} ({cat.weight}%)</span
-                                    >
-                                    <span class="font-mono text-base-content"
-                                        >{catProgress.toFixed(1)}%</span
-                                    >
-                                </div>
-                            {/each}
-                            </div>
-                        </div>
-                    </details>
-                </div>
-            {/if}
-        </div>
+			<!-- Weighted score display (only when there's progress data) -->
+			{#if phase === 'medio-anio' || phase === 'fin-anio'}
+				{@const score = getWeightedScore()}
+				<div class="mt-3 pt-3 border-t border-base-300">
+					<div class="flex items-center justify-between">
+						<span class="text-sm font-semibold text-base-content"
+							>Puntaje ponderado</span
+						>
+						<span class="text-2xl font-bold font-mono text-base-content">
+							{Math.round(score)}
+							<span class="text-base font-normal text-base-content/50"
+								>/100</span
+							>
+						</span>
+					</div>
+					<details
+						class="collapse collapse-arrow bg-base-100 border border-base-300 rounded-lg mt-2"
+					>
+						<summary
+							class="collapse-title text-sm font-semibold text-base-content/70 min-h-0 pl-4 pr-8 py-2"
+						>
+							Desglose por categoría
+						</summary>
+						<div class="collapse-content text-sm px-4">
+							<div class="space-y-1.5">
+								{#each categories as cat (cat.id)}
+									{@const catProgress = getCategoryProgressAverage(cat.id)}
+									<div class="flex items-center justify-between text-xs">
+										<span class="text-base-content/70"
+											>{cat.name} ({cat.weight}%)</span
+										>
+										<span class="font-mono text-base-content"
+											>{catProgress.toFixed(1)}%</span
+										>
+									</div>
+								{/each}
+							</div>
+						</div>
+					</details>
+				</div>
+			{/if}
+		</div>
 
-        <details class="collapse collapse-arrow bg-base-100 border border-base-300 rounded-lg" open>
-            <summary class="collapse-title font-semibold">Metas cualitativas</summary>
-            <div class="collapse-content space-y-3">
-                {#each institutionalGoals.filter((g) => g.goalKind === "qualitative") as goal (goal.id)}
-                    <div class="px-0 py-4">
-                        <div class="flex items-start justify-between gap-3">
-                            <div class="min-w-0">
-                                <h3 class="font-semibold flex items-center gap-2">
-                                    {goal.name}
-                                    <span class="badge badge-ghost shrink-0">{goal.weight}%</span>
-                                    {#if effectiveFor(goal) !== undefined}<span class="badge badge-ghost badge-sm font-mono" title="Peso ponderado">{effectiveFor(goal)!.toFixed(1)}%</span>{/if}
-                                </h3>
-                                <p class="text-sm text-base-content/60 mt-1">{goal.description}</p>
-                            </div>
-                            <span class="badge badge-outline shrink-0">{goal.source === "global" ? "Global" : "Compartida"}</span>
-                        </div>
-                        <div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-base-content/60">
-                            <span>Avance: <span class={institutionalProgressColor(institutionalProgress(goal))}>{institutionalProgress(goal).toFixed(1)}%</span></span>
-                            {#if goal.targetValue !== undefined}<span>Objetivo: {goal.targetValue}</span>{/if}
-                        </div>
-                    </div>
-                {:else}
-                    <p class="text-sm text-base-content/50">No hay metas cualitativas institucionales.</p>
-                {/each}
+		<details
+			class="collapse collapse-arrow bg-base-100 border border-base-300 rounded-lg"
+			open
+		>
+			<summary class="collapse-title font-semibold">Metas cualitativas</summary>
+			<div class="collapse-content space-y-3">
+				{#each institutionalGoals.filter((g) => g.goalKind === 'qualitative') as goal (goal.id)}
+					<div class="px-0 py-4">
+						<div class="flex items-start justify-between gap-3">
+							<div class="min-w-0">
+								<h3 class="font-semibold flex items-center gap-2">
+									{goal.name}
+									<span class="badge badge-ghost shrink-0">{goal.weight}%</span>
+									{#if effectiveFor(goal) !== undefined}<span
+											class="badge badge-ghost badge-sm font-mono"
+											title="Peso ponderado"
+											>{effectiveFor(goal)!.toFixed(1)}%</span
+										>{/if}
+								</h3>
+								<p class="text-sm text-base-content/60 mt-1">
+									{goal.description}
+								</p>
+							</div>
+							<span class="badge badge-outline shrink-0"
+								>{goal.source === 'global' ? 'Global' : 'Compartida'}</span
+							>
+						</div>
+						<div
+							class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-base-content/60"
+						>
+							<span
+								>Avance: <span
+									class={institutionalProgressColor(
+										institutionalProgress(goal),
+									)}>{institutionalProgress(goal).toFixed(1)}%</span
+								></span
+							>
+							{#if goal.targetValue !== undefined}<span
+									>Objetivo: {goal.targetValue}</span
+								>{/if}
+						</div>
+					</div>
+				{:else}
+					<p class="text-sm text-base-content/50">
+						No hay metas cualitativas institucionales.
+					</p>
+				{/each}
+			</div>
+		</details>
 
-            </div>
-        </details>
+		<details
+			class="collapse collapse-arrow bg-base-100 border border-base-300 rounded-lg"
+			open
+		>
+			<summary class="collapse-title font-semibold">Metas cuantitativas</summary
+			>
+			<div class="collapse-content space-y-4">
+				{#each institutionalGoals.filter((g) => g.goalKind === 'quantitative') as goal (goal.id)}
+					<div class="px-0 py-4">
+						<div class="flex items-start justify-between gap-3">
+							<div class="min-w-0">
+								<h3 class="font-semibold flex items-center gap-2">
+									{goal.name}
+									<span class="badge badge-ghost shrink-0">{goal.weight}%</span>
+									{#if effectiveFor(goal) !== undefined}<span
+											class="badge badge-ghost badge-sm font-mono"
+											title="Peso ponderado"
+											>{effectiveFor(goal)!.toFixed(1)}%</span
+										>{/if}
+								</h3>
+								<p class="text-sm text-base-content/60 mt-1">
+									{goal.description}
+								</p>
+							</div>
+							<span class="badge badge-outline shrink-0"
+								>{goal.source === 'global' ? 'Global' : 'Compartida'}</span
+							>
+						</div>
+						<div
+							class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-base-content/60"
+						>
+							<span
+								>Avance: <span
+									class={institutionalProgressColor(
+										institutionalProgress(goal),
+									)}>{institutionalProgress(goal).toFixed(1)}%</span
+								></span
+							>
+							{#if goal.targetValue !== undefined}<span
+									>Objetivo: {goal.targetValue}</span
+								>{/if}
+						</div>
+					</div>
+				{/each}
 
-        <details class="collapse collapse-arrow bg-base-100 border border-base-300 rounded-lg" open>
-            <summary class="collapse-title font-semibold">Metas cuantitativas</summary>
-            <div class="collapse-content space-y-4">
-                {#each institutionalGoals.filter((g) => g.goalKind === "quantitative") as goal (goal.id)}
-                    <div class="px-0 py-4">
-                        <div class="flex items-start justify-between gap-3">
-                            <div class="min-w-0">
-                                <h3 class="font-semibold flex items-center gap-2">
-                                    {goal.name}
-                                    <span class="badge badge-ghost shrink-0">{goal.weight}%</span>
-                                    {#if effectiveFor(goal) !== undefined}<span class="badge badge-ghost badge-sm font-mono" title="Peso ponderado">{effectiveFor(goal)!.toFixed(1)}%</span>{/if}
-                                </h3>
-                                <p class="text-sm text-base-content/60 mt-1">{goal.description}</p>
-                            </div>
-                            <span class="badge badge-outline shrink-0">{goal.source === "global" ? "Global" : "Compartida"}</span>
-                        </div>
-                        <div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-base-content/60">
-                            <span>Avance: <span class={institutionalProgressColor(institutionalProgress(goal))}>{institutionalProgress(goal).toFixed(1)}%</span></span>
-                            {#if goal.targetValue !== undefined}<span>Objetivo: {goal.targetValue}</span>{/if}
-                        </div>
-                    </div>
-                {/each}
+				<!-- Existing personal quantitative goals -->
+				{#if categories.length > 0}
+					<div class="space-y-4 min-w-0">
+						{#each categories as cat (cat.id)}
+							<CategoryCard
+								category={cat}
+								goals={getGoalsByCategory(cat.id)}
+								{getKpisForGoal}
+								onSaveCategory={handleSaveCategory}
+								onDeleteCategory={handleDeleteCategory}
+								onSaveGoal={handleSaveGoal}
+								onDeleteGoal={handleDeleteGoal}
+								{mode}
+								pillars={pillarOptions}
+								onRequestChangeCategory={handleRequestChangeCategory}
+								onSaveProposal={handleSaveProposal}
+								onAcceptProposal={handleAcceptProposal}
+								onRejectProposal={handleRejectProposal}
+								{phase}
+								canDelete={permissions.canDelete}
+								canAddGoal={permissions.canDelete}
+								canEditCategory={permissions.canEditWeight}
+								canEditProgress={permissions.canEditProgress}
+								canComment={permissions.canComment}
+								{allKpis}
+								bind:isAnyInlineEditing
+								onUpdateProgress={handleUpdateProgress}
+								onOpenComments={openComments}
+								onOpenCategoryComments={openCategoryComments}
+							/>
+						{/each}
+					</div>
+					{#if !creatingCategory && mode === 'editor' && phase !== 'medio-anio' && phase !== 'fin-anio'}
+						<div class="flex justify-center">
+							<button
+								class="btn btn-outline btn-primary"
+								disabled={isAnyInlineEditing}
+								onclick={startCreateCategory}
+							>
+								<Plus class="w-4 h-4" /> Nueva categoría
+							</button>
+						</div>
+					{/if}
+				{:else if !creatingCategory && mode === 'editor' && phase !== 'medio-anio' && phase !== 'fin-anio'}
+					<EmptyState
+						title="Sin categorías"
+						message="No hay categorías registradas. Cree la primera categoría para comenzar."
+						actionLabel="Nueva categoría"
+						onaction={startCreateCategory}
+					/>
+				{:else if mode === 'reader'}
+					<p class="text-sm text-base-content/50">
+						No hay metas cuantitativas registradas para este colaborador.
+					</p>
+				{/if}
 
-                <!-- Existing personal quantitative goals -->
-                {#if categories.length > 0}
-                    <div class="space-y-4 min-w-0">
-                        {#each categories as cat (cat.id)}
-                            <CategoryCard
-                                category={cat}
-                                goals={getGoalsByCategory(cat.id)}
-                                {getKpisForGoal}
-                                onSaveCategory={handleSaveCategory}
-                                onDeleteCategory={handleDeleteCategory}
-                                onSaveGoal={handleSaveGoal}
-                                onDeleteGoal={handleDeleteGoal}
-                                {mode}
-                                pillars={pillarOptions}
-                                onRequestChangeCategory={handleRequestChangeCategory}
-                                onSaveProposal={handleSaveProposal}
-                                onAcceptProposal={handleAcceptProposal}
-                                onRejectProposal={handleRejectProposal}
-                                {phase}
-                                canDelete={permissions.canDelete}
-                                canAddGoal={permissions.canDelete}
-                                canEditCategory={permissions.canEditWeight}
-                                canEditProgress={permissions.canEditProgress}
-                                canComment={permissions.canComment}
-                                {allKpis}
-                                bind:isAnyInlineEditing
-                                onUpdateProgress={handleUpdateProgress}
-                                onOpenComments={openComments}
-                                onOpenCategoryComments={openCategoryComments}
-                            />
-                        {/each}
-                    </div>
-                    {#if !creatingCategory && mode === "editor" && phase !== "medio-anio" && phase !== "fin-anio"}
-                        <div class="flex justify-center">
-                            <button
-                                class="btn btn-outline btn-primary"
-                                disabled={isAnyInlineEditing}
-                                onclick={startCreateCategory}
-                            >
-                                <Plus class="w-4 h-4" /> Nueva categoría
-                            </button>
-                        </div>
-                    {/if}
-                {:else if !creatingCategory && mode === "editor" && phase !== "medio-anio" && phase !== "fin-anio"}
-                    <EmptyState
-                        title="Sin categorías"
-                        message="No hay categorías registradas. Cree la primera categoría para comenzar."
-                        actionLabel="Nueva categoría"
-                        onaction={startCreateCategory}
-                    />
-                {:else if mode === "reader"}
-                    <p class="text-sm text-base-content/50">No hay metas cuantitativas registradas para este colaborador.</p>
-                {/if}
-
-                {#if creatingCategory && mode === "editor" && phase !== "medio-anio" && phase !== "fin-anio"}
-                    <CategoryCreateForm
-                        mode="create"
-                        pillars={pillarOptions}
-                        onSave={(data) => handleSaveCategory(data)}
-                        onCancel={() => {
-                            creatingCategory = false;
-                            isAnyInlineEditing = false;
-                        }}
-                    />
-                {/if}
-            </div>
-        </details>
-    </div>
+				{#if creatingCategory && mode === 'editor' && phase !== 'medio-anio' && phase !== 'fin-anio'}
+					<CategoryCreateForm
+						mode="create"
+						pillars={pillarOptions}
+						onSave={(data) => handleSaveCategory(data)}
+						onCancel={() => {
+							creatingCategory = false;
+							isAnyInlineEditing = false;
+						}}
+					/>
+				{/if}
+			</div>
+		</details>
+	</div>
 {/if}
 
 {#if targetAssignment}
-    <RequestChangeModal
-        open={showRequestModal}
-        entityType={requestEntityType}
-        entityId={requestEntityId}
-        entityName={requestEntityName}
-        requestedBy={viewerEmployeeId}
-        onClose={closeRequestModal}
-        comments={requestComments}
-        onAddComment={handleRequestAddComment}
-        currentUserId={viewerEmployeeId}
-    />
+	<RequestChangeModal
+		open={showRequestModal}
+		entityType={requestEntityType}
+		entityId={requestEntityId}
+		entityName={requestEntityName}
+		requestedBy={viewerEmployeeId}
+		onClose={closeRequestModal}
+		comments={requestComments}
+		onAddComment={handleRequestAddComment}
+		currentUserId={viewerEmployeeId}
+	/>
 {/if}
 
 {#if showCommentModal && commentGoal}
-    <CommentPopover
-        open={showCommentModal}
-        goal={commentGoal}
-        comments={getGoalComments(commentGoal.id)}
-        onAdd={handleAddComment}
-        onDelete={handleDeleteComment}
-        onClose={() => (showCommentModal = false)}
-        onRefresh={handleRefreshComments}
-        currentUserId={viewerEmployeeId}
-    />
+	<CommentPopover
+		open={showCommentModal}
+		goal={commentGoal}
+		comments={getGoalComments(commentGoal.id)}
+		onAdd={handleAddComment}
+		onDelete={handleDeleteComment}
+		onClose={() => (showCommentModal = false)}
+		onRefresh={handleRefreshComments}
+		currentUserId={viewerEmployeeId}
+	/>
 {/if}
 
 {#if showCategoryCommentModal && commentCategory}
-    <CommentPopover
-        open={showCategoryCommentModal}
-        goal={null}
-        comments={getCategoryComments(commentCategory.id)}
-        onAdd={handleAddCategoryComment}
-        onDelete={handleDeleteCategoryComment}
-        onClose={() => (showCategoryCommentModal = false)}
-        onRefresh={handleRefreshComments}
-        currentUserId={viewerEmployeeId}
-        category={commentCategory}
-    />
+	<CommentPopover
+		open={showCategoryCommentModal}
+		goal={null}
+		comments={getCategoryComments(commentCategory.id)}
+		onAdd={handleAddCategoryComment}
+		onDelete={handleDeleteCategoryComment}
+		onClose={() => (showCategoryCommentModal = false)}
+		onRefresh={handleRefreshComments}
+		currentUserId={viewerEmployeeId}
+		category={commentCategory}
+	/>
 {/if}
 
 {#if showAssignmentCommentModal && assignmentCommentTarget}
-    <CommentPopover
-        open={showAssignmentCommentModal}
-        goal={null}
-        comments={getAssignmentComments(assignmentCommentTarget.id)}
-        onAdd={handleAddAssignmentComment}
-        onDelete={handleDeleteAssignmentComment}
-        onClose={() => (showAssignmentCommentModal = false)}
-        onRefresh={handleRefreshComments}
-        currentUserId={viewerEmployeeId}
-        assignment={{ id: assignmentCommentTarget.id, name: assignmentCommentTarget.employeeName || assignmentCommentTarget.employeeId }}
-    />
+	<CommentPopover
+		open={showAssignmentCommentModal}
+		goal={null}
+		comments={getAssignmentComments(assignmentCommentTarget.id)}
+		onAdd={handleAddAssignmentComment}
+		onDelete={handleDeleteAssignmentComment}
+		onClose={() => (showAssignmentCommentModal = false)}
+		onRefresh={handleRefreshComments}
+		currentUserId={viewerEmployeeId}
+		assignment={{
+			id: assignmentCommentTarget.id,
+			name:
+				assignmentCommentTarget.employeeName ||
+				assignmentCommentTarget.employeeId,
+		}}
+	/>
 {/if}
 
 <ExportCsvModal
-    open={showExportModal}
-    {targetAssignment}
-    {availableAssignments}
-    {isBoss}
-    onExportCurrent={exportCurrent}
-    onExportAll={exportAll}
-    onClose={() => (showExportModal = false)}
+	open={showExportModal}
+	{targetAssignment}
+	{availableAssignments}
+	{isBoss}
+	onExportCurrent={exportCurrent}
+	onExportAll={exportAll}
+	onClose={() => (showExportModal = false)}
 />
 
 <ConfirmDialog
-    open={showDeleteAllConfirm}
-    variant="error"
-    title="Borrar toda la asignación"
-    message="Se eliminarán todas las categorías y sus metas. Esta acción no se puede deshacer."
-    confirmLabel="Sí, borrar todo"
-    cancelLabel="Cancelar"
-    onconfirm={confirmDeleteAll}
-    disabled={deletingAll}
-    oncancel={() => (showDeleteAllConfirm = false)}
+	open={showDeleteAllConfirm}
+	variant="error"
+	title="Borrar toda la asignación"
+	message="Se eliminarán todas las categorías y sus metas. Esta acción no se puede deshacer."
+	confirmLabel="Sí, borrar todo"
+	cancelLabel="Cancelar"
+	onconfirm={confirmDeleteAll}
+	disabled={deletingAll}
+	oncancel={() => (showDeleteAllConfirm = false)}
 />

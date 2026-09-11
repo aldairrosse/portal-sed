@@ -92,7 +92,9 @@
 				{#if inputQuery.trim()}
 					Viendo {items.length} resultado{items.length !== 1 ? 's' : ''}
 				{:else}
-					Viendo {items.length} de {totalCount} empleado{totalCount !== 1 ? 's' : ''}
+					Viendo {items.length} de {totalCount} empleado{totalCount !== 1
+						? 's'
+						: ''}
 				{/if}
 			</span>
 		{/if}
@@ -137,11 +139,19 @@
 				<table class="table table-sm">
 					<thead>
 						<tr>
-							<th class="text-xs font-semibold text-base-content/60">Empleado</th>
+							<th class="text-xs font-semibold text-base-content/60"
+								>Empleado</th
+							>
 							<th class="text-xs font-semibold text-base-content/60">Perfil</th>
-							<th class="text-xs font-semibold text-base-content/60 text-center">Autoevaluación</th>
-							<th class="text-xs font-semibold text-base-content/60 text-center">RH</th>
-							<th class="text-xs font-semibold text-base-content/60 text-center">Estado</th>
+							<th class="text-xs font-semibold text-base-content/60 text-center"
+								>Autoevaluación</th
+							>
+							<th class="text-xs font-semibold text-base-content/60 text-center"
+								>RH</th
+							>
+							<th class="text-xs font-semibold text-base-content/60 text-center"
+								>Estado</th
+							>
 							<th class="w-10"></th>
 						</tr>
 					</thead>
@@ -164,7 +174,9 @@
 									</div>
 								</td>
 								<td>
-									<span class="text-xs text-base-content/50">{titleCase(item.profileName)}</span>
+									<span class="text-xs text-base-content/50"
+										>{titleCase(item.profileName)}</span
+									>
 								</td>
 								<td class="text-center">
 									<span
@@ -185,7 +197,8 @@
 									</span>
 								</td>
 								<td class="text-center">
-									<span class="badge badge-sm {badge.class}">{badge.label}</span>
+									<span class="badge badge-sm {badge.class}">{badge.label}</span
+									>
 								</td>
 								<td>
 									<a

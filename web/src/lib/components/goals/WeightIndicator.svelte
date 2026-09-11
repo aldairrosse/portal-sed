@@ -13,10 +13,10 @@
 	const clamped = $derived(Math.min(100, Math.max(0, current)));
 
 	const barColor = $derived(
-		isExact ? 'bg-success/60' : isOver ? 'bg-error/60' : 'bg-warning/60'
+		isExact ? 'bg-success/60' : isOver ? 'bg-error/60' : 'bg-warning/60',
 	);
 	const badgeColor = $derived(
-		isExact ? 'badge-success' : isOver ? 'badge-error' : 'badge-warning'
+		isExact ? 'badge-success' : isOver ? 'badge-error' : 'badge-warning',
 	);
 </script>
 

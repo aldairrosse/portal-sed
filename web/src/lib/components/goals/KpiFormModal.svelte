@@ -1,7 +1,12 @@
 <script lang="ts">
 	import { X, Plus, Trash2, Save } from '@lucide/svelte';
 	import type { KPI, KpiUnit } from '$lib/types/goal';
-	import { getKpis, addKpi, updateKpi, deleteKpi } from '$lib/stores/goalsStore.svelte';
+	import {
+		getKpis,
+		addKpi,
+		updateKpi,
+		deleteKpi,
+	} from '$lib/stores/goalsStore.svelte';
 	import * as notifications from '$lib/stores/notifications.svelte';
 
 	interface Props {
@@ -23,7 +28,7 @@
 		{ value: 'porcentaje', label: 'Porcentaje (%)' },
 		{ value: 'moneda', label: 'Moneda ($)' },
 		{ value: 'numero', label: 'Número' },
-		{ value: 'binario', label: 'Binario (Sí/No)' }
+		{ value: 'binario', label: 'Binario (Sí/No)' },
 	];
 
 	const kpis = $derived(getKpis());
@@ -91,7 +96,7 @@
 				description: formDescription.trim(),
 				unit: formUnit,
 				direction: formDirection,
-				targetValue: formTargetValue
+				targetValue: formTargetValue,
 			});
 		} else {
 			const newKpi: KPI = {
@@ -100,7 +105,7 @@
 				description: formDescription.trim(),
 				unit: formUnit,
 				direction: formDirection,
-				targetValue: formTargetValue
+				targetValue: formTargetValue,
 			};
 			addKpi(newKpi);
 		}
@@ -125,7 +130,10 @@
 >
 	<div class="modal-box max-w-xl">
 		<div class="flex items-center justify-between mb-5">
-			<h3 id="kpi-library-title" class="text-lg font-semibold text-base-content">
+			<h3
+				id="kpi-library-title"
+				class="text-lg font-semibold text-base-content"
+			>
 				Biblioteca de KPI
 			</h3>
 			<button
@@ -140,15 +148,21 @@
 		{#if kpis.length > 0}
 			<div class="space-y-2 mb-6 max-h-60 overflow-y-auto">
 				{#each kpis as kpi (kpi.id)}
-					<div class="flex items-center justify-between gap-3 p-3 rounded-lg bg-base-200/50">
+					<div
+						class="flex items-center justify-between gap-3 p-3 rounded-lg bg-base-200/50"
+					>
 						<div class="flex-1 min-w-0">
 							<span class="text-sm font-medium block">{kpi.name}</span>
-							<span class="text-xs text-base-content/50 truncate block">{kpi.description}</span>
+							<span class="text-xs text-base-content/50 truncate block"
+								>{kpi.description}</span
+							>
 							<div class="flex gap-2 mt-1">
 								<span class="badge badge-ghost badge-xs">{kpi.unit}</span>
 								<span class="badge badge-ghost badge-xs">{kpi.direction}</span>
 								{#if kpi.targetValue !== undefined && kpi.targetValue !== null}
-									<span class="badge badge-ghost badge-xs">Meta: {kpi.targetValue}</span>
+									<span class="badge badge-ghost badge-xs"
+										>Meta: {kpi.targetValue}</span
+									>
 								{/if}
 							</div>
 						</div>
@@ -172,7 +186,9 @@
 				{/each}
 			</div>
 		{:else}
-			<p class="text-sm text-base-content/50 italic mb-6">No hay KPI registrados.</p>
+			<p class="text-sm text-base-content/50 italic mb-6">
+				No hay KPI registrados.
+			</p>
 		{/if}
 
 		<!-- Form for adding/editing -->
@@ -264,7 +280,11 @@
 							<Save class="w-4 h-4" />
 							Guardar cambios
 						</button>
-						<button type="button" class="btn btn-ghost btn-sm" onclick={cancelEdit}>Cancelar</button>
+						<button
+							type="button"
+							class="btn btn-ghost btn-sm"
+							onclick={cancelEdit}>Cancelar</button
+						>
 					</div>
 				{:else}
 					<button type="submit" class="btn btn-primary btn-sm">

@@ -48,7 +48,8 @@
 		const trimmed = nameVal.trim();
 		const existing = getPillars();
 		const duplicate = existing.find(
-			(p) => p.name.toLowerCase() === trimmed.toLowerCase() && p.id !== idToExclude
+			(p) =>
+				p.name.toLowerCase() === trimmed.toLowerCase() && p.id !== idToExclude,
 		);
 		if (duplicate) return 'Ya existe un pilar con ese nombre.';
 		return null;
@@ -76,7 +77,12 @@
 >
 	<div class="modal-box">
 		<div class="flex items-center justify-between mb-5">
-			<h3 id="pillar-form-title" class="text-lg font-semibold text-base-content">{title}</h3>
+			<h3
+				id="pillar-form-title"
+				class="text-lg font-semibold text-base-content"
+			>
+				{title}
+			</h3>
 			<button
 				class="btn btn-ghost btn-square btn-sm"
 				onclick={handleCancel}
@@ -124,7 +130,11 @@
 			</div>
 
 			<div class="modal-action mt-6">
-				<button type="button" class="btn btn-ghost btn-sm" onclick={handleCancel}>Cancelar</button>
+				<button
+					type="button"
+					class="btn btn-ghost btn-sm"
+					onclick={handleCancel}>Cancelar</button
+				>
 				<button type="submit" class="btn btn-primary btn-sm">
 					{isEditing ? 'Guardar cambios' : 'Crear pilar'}
 				</button>

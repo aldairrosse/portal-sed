@@ -6,7 +6,10 @@
 	import ErrorState from '$lib/components/ui/ErrorState.svelte';
 	import { getActivePhase } from '$lib/api/cycle.svelte';
 	import { getSession } from '$lib/api/session.svelte';
-	import { isFinAnio as isFinAnioPhase, isMedioAnio as isMedioAnioPhase } from '$lib/types/cycle';
+	import {
+		isFinAnio as isFinAnioPhase,
+		isMedioAnio as isMedioAnioPhase,
+	} from '$lib/types/cycle';
 	import {
 		getItems,
 		isLoading,
@@ -24,7 +27,9 @@
 	import { Users, ChevronLeft, ChevronRight } from '@lucide/svelte';
 
 	const items = $derived(getItems());
-	const visibleItems = $derived(items.filter((e: { isActive?: boolean }) => e.isActive !== false));
+	const visibleItems = $derived(
+		items.filter((e: { isActive?: boolean }) => e.isActive !== false),
+	);
 	const loading = $derived(isLoading());
 	const storeError = $derived(getError());
 	const hasMore = $derived(hasMoreItems());
@@ -41,7 +46,7 @@
 			? 'Evaluación formal de competencias y cierre de metas de tu equipo'
 			: isMedioAnio
 				? 'Revisión de avance de objetivos y competencias de tu equipo'
-				: 'Seguimiento de objetivos de tu equipo para el ciclo actual'
+				: 'Seguimiento de objetivos de tu equipo para el ciclo actual',
 	);
 
 	let selectedEmployeeId = $state('');
@@ -67,7 +72,7 @@
 		(() => {
 			const hit = items.find((e) => e.id === selectedEmployeeId);
 			return hit ? `${hit.firstName} ${hit.lastName}`.trim() : '';
-		})()
+		})(),
 	);
 
 	function handleSearch(e: Event) {
@@ -111,7 +116,9 @@
 					{#if inputQuery.trim()}
 						Viendo {items.length} resultado{items.length !== 1 ? 's' : ''}
 					{:else}
-						Viendo {items.length} de {totalCount} empleado{totalCount !== 1 ? 's' : ''}
+						Viendo {items.length} de {totalCount} empleado{totalCount !== 1
+							? 's'
+							: ''}
 					{/if}
 				</span>
 			{/if}
@@ -147,26 +154,26 @@
 		<ErrorState message={storeError} onretry={() => load()} />
 	{:else if items.length === 0 && !loading}
 		<p class="text-sm text-base-content/30 italic text-center py-8">
-			Sin evaluados para mostrar {inputQuery ? `para "${inputQuery}"` : ""}
+			Sin evaluados para mostrar {inputQuery ? `para "${inputQuery}"` : ''}
 		</p>
 	{:else}
 		<EmployeeEvaluationTable
 			mode="manager"
 			rows={visibleItems}
 			onSelect={handleSelect}
-			selectedEmployeeId={selectedEmployeeId}
+			{selectedEmployeeId}
 			disabled={!(isMedioAnio || isFinAnio)}
 		>
 			{#snippet detail()}
-					{#if selectedEmployeeId}
-						<EmployeeEvaluationDetail
-							employeeId={selectedEmployeeId}
-							viewerMode="manager"
-							showBreadcrumb={true}
-							employeeName={selectedEmployeeName}
-							onBack={handleBack}
-						/>
-					{/if}
+				{#if selectedEmployeeId}
+					<EmployeeEvaluationDetail
+						employeeId={selectedEmployeeId}
+						viewerMode="manager"
+						showBreadcrumb={true}
+						employeeName={selectedEmployeeName}
+						onBack={handleBack}
+					/>
+				{/if}
 			{/snippet}
 		</EmployeeEvaluationTable>
 	{/if}

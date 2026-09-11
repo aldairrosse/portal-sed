@@ -74,7 +74,7 @@
 	});
 
 	// Local state to persist open/close across re-renders
-	let isOpen = $derived(initialExpanded)
+	let isOpen = $derived(initialExpanded);
 
 	function handleSummaryClick(_e: MouseEvent) {
 		onNodeSelect(node);
@@ -82,7 +82,9 @@
 
 	function nodeTitle(node: OrgNode) {
 		if (viewType === 'users') {
-			return node.headEmployee ? `${node.headEmployee.firstName} ${node.headEmployee.lastName}` : node.name;
+			return node.headEmployee
+				? `${node.headEmployee.firstName} ${node.headEmployee.lastName}`
+				: node.name;
 		}
 		return node.name;
 	}
@@ -154,8 +156,9 @@
 								onEmployeeSelect(emp);
 							}}
 						>
-						<span class="text-sm font-medium">
-								{emp.firstName} {emp.lastName}
+							<span class="text-sm font-medium">
+								{emp.firstName}
+								{emp.lastName}
 							</span>
 							{#if emp.jobTitle}
 								<span class="truncate text-xs text-base-content/40 ml-auto">

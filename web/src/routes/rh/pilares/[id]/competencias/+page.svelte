@@ -9,7 +9,7 @@
 		deleteCompetency,
 		load,
 		isLoading,
-		getError
+		getError,
 	} from '$lib/stores/competencyStore.svelte';
 	import type { Competency } from '$lib/types/competency';
 	import CompetencyTable from '$lib/components/competency/CompetencyTable.svelte';
@@ -44,13 +44,24 @@
 		editingId = '__new__';
 	}
 
-	async function handleSave(data: { name: string; description: string; id?: string }) {
+	async function handleSave(data: {
+		name: string;
+		description: string;
+		id?: string;
+	}) {
 		if (data.id) {
 			try {
-				await updateCompetency(data.id, { name: data.name, description: data.description });
-				notifications.success(`Competencia "${data.name}" actualizada correctamente.`);
+				await updateCompetency(data.id, {
+					name: data.name,
+					description: data.description,
+				});
+				notifications.success(
+					`Competencia "${data.name}" actualizada correctamente.`,
+				);
 			} catch (e) {
-				notifications.error(e instanceof Error ? e.message : 'Error al actualizar competencia');
+				notifications.error(
+					e instanceof Error ? e.message : 'Error al actualizar competencia',
+				);
 			}
 		} else {
 			const newComp: Competency = {
@@ -58,13 +69,17 @@
 				pillarId,
 				name: data.name,
 				description: data.description,
-				updatedAt: new Date().toISOString()
+				updatedAt: new Date().toISOString(),
 			};
 			try {
 				await addCompetency(newComp);
-				notifications.success(`Competencia "${data.name}" creada correctamente.`);
+				notifications.success(
+					`Competencia "${data.name}" creada correctamente.`,
+				);
 			} catch (e) {
-				notifications.error(e instanceof Error ? e.message : 'Error al crear competencia');
+				notifications.error(
+					e instanceof Error ? e.message : 'Error al crear competencia',
+				);
 			}
 		}
 	}
@@ -80,7 +95,9 @@
 			await deleteCompetency(deletingCompetency.id);
 			notifications.success(`Competencia "${name}" eliminada correctamente.`);
 		} catch (e) {
-			notifications.error(e instanceof Error ? e.message : 'Error al eliminar competencia');
+			notifications.error(
+				e instanceof Error ? e.message : 'Error al eliminar competencia',
+			);
 		}
 		deletingCompetency = null;
 	}
@@ -96,7 +113,10 @@
 
 <div class="max-w-4xl mx-auto">
 	<!-- Back link -->
-	<a href="/rh/pilares" class="link link-hover text-base-content/50 text-sm flex items-center gap-1 mb-4">
+	<a
+		href="/rh/pilares"
+		class="link link-hover text-base-content/50 text-sm flex items-center gap-1 mb-4"
+	>
 		<ArrowLeft class="w-4 h-4" />
 		Volver a pilares
 	</a>
@@ -107,13 +127,20 @@
 				<h1 class="text-2xl font-bold text-base-content">{pillar.name}</h1>
 				<p class="text-base-content/50 text-sm mt-1">{pillar.description}</p>
 			</div>
-			<button class="btn btn-primary btn-sm" onclick={handleNew} disabled={isAnyInlineEditing}>
+			<button
+				class="btn btn-primary btn-sm"
+				onclick={handleNew}
+				disabled={isAnyInlineEditing}
+			>
 				<Plus class="w-4 h-4" />
 				Nueva competencia
 			</button>
 		</div>
 	{:else if !loading}
-		<EmptyState title="Pilar no encontrado" message="El pilar especificado no existe." />
+		<EmptyState
+			title="Pilar no encontrado"
+			message="El pilar especificado no existe."
+		/>
 	{/if}
 
 	{#if loading}
@@ -127,7 +154,7 @@
 		/>
 	{:else if pillar}
 		<CompetencyTable
-			competencies={competencies}
+			{competencies}
 			{pillarId}
 			pillarName={pillar.name}
 			bind:editingId

@@ -20,7 +20,7 @@
 		variant = 'info',
 		onconfirm,
 		oncancel,
-		disabled = false
+		disabled = false,
 	}: Props = $props();
 
 	function handleCancel() {
@@ -66,7 +66,7 @@
 				<button
 					class="btn btn-{variant} btn-sm"
 					onclick={handleConfirm}
-					disabled={disabled}
+					{disabled}
 				>
 					{confirmLabel}
 				</button>

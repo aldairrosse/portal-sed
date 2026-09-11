@@ -9,13 +9,17 @@
 		currentUserId: string;
 	}
 
-	let { assignments, selectedEmployeeId, onSelect, currentUserId }: Props = $props();
+	let { assignments, selectedEmployeeId, onSelect, currentUserId }: Props =
+		$props();
 
 	const options = $derived(
 		assignments.map((a) => ({
 			value: a.employeeId,
-			label: a.employeeId === currentUserId ? `${a.employeeName} (yo)` : a.employeeName
-		}))
+			label:
+				a.employeeId === currentUserId
+					? `${a.employeeName} (yo)`
+					: a.employeeName,
+		})),
 	);
 </script>
 

@@ -4,7 +4,7 @@
 		getProfiles,
 		getPillars,
 		getCompetencies,
-		getCompetencyAcceptanceLevel
+		getCompetencyAcceptanceLevel,
 	} from '$lib/stores/competencyStore.svelte';
 	import { PROFILE_LABELS } from '$lib/types/evaluation';
 	import type { EvaluationProfile } from '$lib/types/evaluation';
@@ -20,7 +20,7 @@
 		regional: 'REG',
 		director: 'DIR',
 		'director-general': 'DGN',
-		rh: 'RH'
+		rh: 'RH',
 	};
 
 	interface Props {
@@ -40,7 +40,10 @@
 		return competencies.filter((c) => c.pillarId === pillarId);
 	}
 
-	function getLevelForCompetency(competencyId: string, profileId: EvaluationProfile): number {
+	function getLevelForCompetency(
+		competencyId: string,
+		profileId: EvaluationProfile,
+	): number {
 		const cal = getCompetencyAcceptanceLevel(competencyId, profileId);
 		return cal?.level ?? 3;
 	}
@@ -89,16 +92,26 @@
 		</div>
 
 		<p class="text-xs text-base-content/50 mb-4">
-			Nivel de aceptación asignado (1–5) para cada competencia según el perfil de evaluación.
+			Nivel de aceptación asignado (1–5) para cada competencia según el perfil
+			de evaluación.
 		</p>
 
 		<div class="overflow-x-auto">
-			<table class="table table-zebra text-sm" aria-label="Nivel de aceptación por competencia y perfil">
+			<table
+				class="table table-zebra text-sm"
+				aria-label="Nivel de aceptación por competencia y perfil"
+			>
 				<thead>
 					<tr>
-						<th class="min-w-[12rem] text-xs tracking-wide font-semibold text-base-content/50">Competencia</th>
+						<th
+							class="min-w-[12rem] text-xs tracking-wide font-semibold text-base-content/50"
+							>Competencia</th
+						>
 						{#each profiles as profile (profile.name)}
-							<th class="text-center min-w-[4rem] text-xs tracking-wide font-semibold text-base-content/50" title={PROFILE_LABELS[profile.name] ?? profile.name}>
+							<th
+								class="text-center min-w-[4rem] text-xs tracking-wide font-semibold text-base-content/50"
+								title={PROFILE_LABELS[profile.name] ?? profile.name}
+							>
 								{PROFILE_ABBREVIATIONS[profile.name] ?? profile.name}
 							</th>
 						{/each}
@@ -111,10 +124,15 @@
 							<tr>
 								<td class="font-medium">
 									{competency.name}
-									<span class="text-xs text-base-content/40 ml-1">{pillar.name}</span>
+									<span class="text-xs text-base-content/40 ml-1"
+										>{pillar.name}</span
+									>
 								</td>
-					{#each profiles as profile (profile.name)}
-									{@const level = getLevelForCompetency(competency.id, profile.name)}
+								{#each profiles as profile (profile.name)}
+									{@const level = getLevelForCompetency(
+										competency.id,
+										profile.name,
+									)}
 									<td class="text-center">
 										<span
 											class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-primary/10 text-primary font-bold text-sm"

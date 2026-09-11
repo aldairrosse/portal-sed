@@ -8,11 +8,21 @@
 		onretry?: () => void;
 	}
 
-	let { title = 'Error de red', message = 'No se pudo conectar con el servidor. Verifica tu conexión e intenta de nuevo.', retryLabel = 'Reintentar', onretry }: Props = $props();
+	let {
+		title = 'Error de red',
+		message = 'No se pudo conectar con el servidor. Verifica tu conexión e intenta de nuevo.',
+		retryLabel = 'Reintentar',
+		onretry,
+	}: Props = $props();
 </script>
 
-<div class="flex flex-col items-center justify-center py-16 text-center" role="alert">
-	<div class="w-16 h-16 rounded-2xl bg-error/8 flex items-center justify-center mb-5">
+<div
+	class="flex flex-col items-center justify-center py-16 text-center"
+	role="alert"
+>
+	<div
+		class="w-16 h-16 rounded-2xl bg-error/8 flex items-center justify-center mb-5"
+	>
 		<AlertTriangle class="w-8 h-8 text-error/50" strokeWidth={1.5} />
 	</div>
 	<h3 class="text-lg font-semibold text-error">{title}</h3>

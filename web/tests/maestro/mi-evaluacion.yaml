@@ -1,7 +1,7 @@
 appId: https://localhost:8088
-name: "Mi Evaluación — debug metas"
+name: 'Mi Evaluación — debug metas'
 env:
-  BASE_URL: "https://localhost:8088"
+  BASE_URL: 'https://localhost:8088'
 tags:
   - debug
   - evaluacion
@@ -13,22 +13,22 @@ tags:
 
 - extendedWaitUntil:
     visible:
-      text: "Acceso demo"
+      text: 'Acceso demo'
     timeout: 10000
 
-- takeScreenshot: "01_login.png"
+- takeScreenshot: '01_login.png'
 
 # 2. Login as Frankil (colaborador)
 - tapOn:
-    text: "Frankil Aldair Pérez Rosales"
-    label: "Dev login as Frankil"
+    text: 'Frankil Aldair Pérez Rosales'
+    label: 'Dev login as Frankil'
 
 - extendedWaitUntil:
     visible:
-      text: "Portal SED"
+      text: 'Portal SED'
     timeout: 15000
 
-- takeScreenshot: "02_home.png"
+- takeScreenshot: '02_home.png'
 
 # 3. Go to mi-evaluacion
 - openLink:
@@ -37,54 +37,54 @@ tags:
 
 - extendedWaitUntil:
     visible:
-      text: "Mi evaluación"
+      text: 'Mi evaluación'
     timeout: 10000
 
 - waitForAnimationToEnd:
     timeout: 3000
 
-- takeScreenshot: "03_mi_evaluacion.png"
+- takeScreenshot: '03_mi_evaluacion.png'
 
 # 4. Check what's on screen — empty state or goals
 - assertVisible:
-    text: "Mi evaluación"
-    label: "Page title visible"
+    text: 'Mi evaluación'
+    label: 'Page title visible'
 
 - assertVisible:
     optional: true
-    text: "Sin asignación de metas"
+    text: 'Sin asignación de metas'
 
 - assertVisible:
     optional: true
-    text: "No hay categorías de metas configuradas"
+    text: 'No hay categorías de metas configuradas'
 
 - assertVisible:
     optional: true
-    text: "Cierre de metas"
+    text: 'Cierre de metas'
 
 - assertVisible:
     optional: true
-    text: "Mis metas"
+    text: 'Mis metas'
 
 - assertVisible:
     optional: true
-    text: "Competencias"
+    text: 'Competencias'
 
-- takeScreenshot: "04_evaluacion_detail.png"
+- takeScreenshot: '04_evaluacion_detail.png'
 
 # 5. Click Metas tab if visible
 - runFlow:
     when:
-      visible: "Metas"
+      visible: 'Metas'
     commands:
       - tapOn:
-          text: "Metas"
-          label: "Switch to Metas tab"
+          text: 'Metas'
+          label: 'Switch to Metas tab'
       - waitForAnimationToEnd:
           timeout: 2000
-      - takeScreenshot: "05_metas_tab.png"
+      - takeScreenshot: '05_metas_tab.png'
 
 # 6. Scroll to see full content
 - scroll
 
-- takeScreenshot: "06_metas_scrolled.png"
+- takeScreenshot: '06_metas_scrolled.png'

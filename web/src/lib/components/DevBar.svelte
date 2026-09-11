@@ -66,7 +66,7 @@
 				method: 'POST',
 				credentials: 'include',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ employee_id: selected })
+				body: JSON.stringify({ employee_id: selected }),
 			});
 			if (!res.ok) {
 				const b = await res.json().catch(() => ({}));
@@ -85,11 +85,24 @@
 <svelte:window onkeydown={handleKeydown} />
 
 {#if enabled && session.user && !hidden}
-	<div class="fixed bottom-4 right-4 z-50 flex items-center gap-2 bg-warning px-3 py-2 text-sm shadow-xl rounded-box border border-warning/20 max-w-sm">
+	<div
+		class="fixed bottom-4 right-4 z-50 flex items-center gap-2 bg-warning px-3 py-2 text-sm shadow-xl rounded-box border border-warning/20 max-w-sm"
+	>
 		<span class="badge badge-sm">DEV</span>
-		<EmployeeSearchSelect picker={picker} value={selected} onChange={(v) => (selected = v)} ariaLabel="Empleado a suplantar" class="flex-1 w-64" />
-		<button class="btn btn-sm btn-neutral" onclick={impersonate} disabled={loading || !selected}>
-			{#if loading}<span class="loading loading-spinner loading-xs"></span>{:else}Suplantar{/if}
+		<EmployeeSearchSelect
+			{picker}
+			value={selected}
+			onChange={(v) => (selected = v)}
+			ariaLabel="Empleado a suplantar"
+			class="flex-1 w-64"
+		/>
+		<button
+			class="btn btn-sm btn-neutral"
+			onclick={impersonate}
+			disabled={loading || !selected}
+		>
+			{#if loading}<span class="loading loading-spinner loading-xs"
+				></span>{:else}Suplantar{/if}
 		</button>
 		{#if error}<span class="text-error text-xs">{error}</span>{/if}
 	</div>

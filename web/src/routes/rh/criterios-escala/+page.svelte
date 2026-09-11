@@ -4,7 +4,12 @@
 	import LevelDefinitionModal from '$lib/components/competency/LevelDefinitionModal.svelte';
 	import PageSkeleton from '$lib/components/ui/PageSkeleton.svelte';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
-	import { load, isLoading, getCompetencies, getPillars } from '$lib/stores/competencyStore.svelte';
+	import {
+		load,
+		isLoading,
+		getCompetencies,
+		getPillars,
+	} from '$lib/stores/competencyStore.svelte';
 
 	const pillars = $derived(getPillars());
 	const competencies = $derived(getCompetencies());
@@ -41,7 +46,8 @@
 				Criterios de escala
 			</h1>
 			<p class="text-base-content/50 text-sm mt-1">
-				Define los criterios de evaluación del nivel 1 al 5 para cada competencia en todos los pilares.
+				Define los criterios de evaluación del nivel 1 al 5 para cada
+				competencia en todos los pilares.
 			</p>
 		</div>
 		<button
@@ -76,5 +82,7 @@
 <LevelDefinitionModal
 	open={showLevelDefModal}
 	onClose={() => (showLevelDefModal = false)}
-	onSaved={() => { showLevelDefModal = false; }}
+	onSaved={() => {
+		showLevelDefModal = false;
+	}}
 />

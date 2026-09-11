@@ -8,11 +8,18 @@
 		advancePhase,
 		revertPhase,
 		hasCycleForYear,
-		assignAll
+		assignAll,
 	} from '$lib/stores/cycleStore.svelte';
 	import { getPhaseLabel, normalizePhase } from '$lib/types/cycle';
 	import type { ApiCyclePhase } from '$lib/types/cycle';
-	import { Calendar, Plus, ArrowRight, CheckCircle2, AlertCircle, Users } from '@lucide/svelte';
+	import {
+		Calendar,
+		Plus,
+		ArrowRight,
+		CheckCircle2,
+		AlertCircle,
+		Users,
+	} from '@lucide/svelte';
 
 	const currentYear = new Date().getFullYear();
 	const cycles = $derived(getCycles());
@@ -22,11 +29,17 @@
 	let newYear = $state(currentYear);
 	let creating = $state(false);
 	let advancingId = $state<string | null>(null);
-	let confirmAdvance = $state<{ id: string; toPhase: ApiCyclePhase } | null>(null);
+	let confirmAdvance = $state<{ id: string; toPhase: ApiCyclePhase } | null>(
+		null,
+	);
 	let localError = $state<string | null>(null);
 	let assigningId = $state<string | null>(null);
 	let confirmAssign = $state<string | null>(null);
-	let assignResult = $state<{ assigned: number; skipped: number; total: number } | null>(null);
+	let assignResult = $state<{
+		assigned: number;
+		skipped: number;
+		total: number;
+	} | null>(null);
 
 	$effect(() => {
 		loadCycles();
@@ -57,12 +70,12 @@
 		return 'badge-neutral';
 	}
 
-	function cycleStatusLabel(cycle: typeof cycles[0]): string {
+	function cycleStatusLabel(cycle: (typeof cycles)[0]): string {
 		if (cycle.finished_at) return 'Cerrado';
 		return 'Activo';
 	}
 
-	function cycleStatusBadgeClass(cycle: typeof cycles[0]): string {
+	function cycleStatusBadgeClass(cycle: (typeof cycles)[0]): string {
 		if (cycle.finished_at) return 'badge-ghost';
 		return 'badge-primary';
 	}
@@ -89,7 +102,9 @@
 		if (!confirmAdvance) return;
 		advancingId = confirmAdvance.id;
 		const cycle = cycles.find((c) => c.id === confirmAdvance!.id);
-		const isRevert = getPrevPhase(cycle?.current_phase ?? 'asignacion') === confirmAdvance.toPhase;
+		const isRevert =
+			getPrevPhase(cycle?.current_phase ?? 'asignacion') ===
+			confirmAdvance.toPhase;
 		if (isRevert) {
 			await revertPhase(confirmAdvance.id);
 		} else {
@@ -165,8 +180,12 @@
 							</span>
 						</div>
 
-						<div class="flex items-center gap-2 mt-2 text-xs text-base-content/50">
-							<span class="badge badge-sm {phaseBadgeClass(cycle.current_phase)}">
+						<div
+							class="flex items-center gap-2 mt-2 text-xs text-base-content/50"
+						>
+							<span
+								class="badge badge-sm {phaseBadgeClass(cycle.current_phase)}"
+							>
 								{getPhaseLabel(cycle.current_phase)}
 							</span>
 							{#if !cycle.finished_at && getNextPhase(cycle.current_phase)}
@@ -181,7 +200,11 @@
 							{#if getPrevPhase(cycle.current_phase)}
 								<button
 									class="btn btn-ghost btn-sm"
-									onclick={() => requestAdvance(cycle.id, getPrevPhase(cycle.current_phase)!)}
+									onclick={() =>
+										requestAdvance(
+											cycle.id,
+											getPrevPhase(cycle.current_phase)!,
+										)}
 									disabled={advancingId === cycle.id}
 								>
 									{#if advancingId === cycle.id}
@@ -208,7 +231,11 @@
 								{/if}
 								<button
 									class="btn btn-primary btn-sm"
-									onclick={() => requestAdvance(cycle.id, getNextPhase(cycle.current_phase)!)}
+									onclick={() =>
+										requestAdvance(
+											cycle.id,
+											getNextPhase(cycle.current_phase)!,
+										)}
 									disabled={advancingId === cycle.id}
 								>
 									{#if advancingId === cycle.id}
@@ -217,8 +244,8 @@
 										Avanzar
 									{/if}
 								</button>
-								{/if}
-							</div>
+							{/if}
+						</div>
 
 						{#if cycle.finished_at}
 							<div class="flex items-center gap-1 mt-1 text-xs text-success/70">
@@ -275,15 +302,22 @@
 
 {#if confirmAdvance}
 	{@const cycle = cycles.find((c) => c.id === confirmAdvance!.id)}
-	{@const isAdvance = getNextPhase(cycle?.current_phase ?? 'asignacion') === confirmAdvance.toPhase}
+	{@const isAdvance =
+		getNextPhase(cycle?.current_phase ?? 'asignacion') ===
+		confirmAdvance.toPhase}
 	<dialog class="modal modal-open">
 		<div class="modal-box">
-			<h3 class="font-bold text-lg">{isAdvance ? 'Avanzar' : 'Retroceder'} fase del ciclo</h3>
+			<h3 class="font-bold text-lg">
+				{isAdvance ? 'Avanzar' : 'Retroceder'} fase del ciclo
+			</h3>
 			<p class="py-4">
 				¿Deseas {isAdvance ? 'avanzar' : 'retroceder'} el ciclo {cycle?.year} de
-				<span class="font-medium">{getPhaseLabel(cycle?.current_phase ?? 'asignacion')}</span>
+				<span class="font-medium"
+					>{getPhaseLabel(cycle?.current_phase ?? 'asignacion')}</span
+				>
 				a
-				<span class="font-medium">{getPhaseLabel(confirmAdvance.toPhase)}</span>?
+				<span class="font-medium">{getPhaseLabel(confirmAdvance.toPhase)}</span
+				>?
 			</p>
 			{#if confirmAdvance.toPhase === 'cierre'}
 				<div class="alert alert-warning text-sm mb-4">
@@ -336,7 +370,9 @@
 			{:else}
 				<h3 class="font-bold text-lg">Asignar empleados al ciclo</h3>
 				<p class="py-4">
-					¿Deseas asignar a todos los empleados activos al ciclo {cycles.find((c) => c.id === confirmAssign)?.year}?
+					¿Deseas asignar a todos los empleados activos al ciclo {cycles.find(
+						(c) => c.id === confirmAssign,
+					)?.year}?
 				</p>
 				<div class="alert alert-info text-sm mb-4">
 					<AlertCircle class="w-4 h-4" />

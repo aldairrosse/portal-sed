@@ -10,19 +10,36 @@
 </script>
 
 <div class="drawer lg:drawer-open">
-	<input id="main-drawer" type="checkbox" class="drawer-toggle" bind:checked={mobileMenuOpen} />
+	<input
+		id="main-drawer"
+		type="checkbox"
+		class="drawer-toggle"
+		bind:checked={mobileMenuOpen}
+	/>
 
 	<div class="drawer-content flex flex-col h-screen overflow-hidden">
 		<!-- Mobile-only header -->
 		<header class="navbar bg-base-100 lg:hidden sticky top-0 z-40 px-4 py-3">
 			<div class="flex-none pr-2">
-				<label for="main-drawer" class="btn btn-ghost btn-square" aria-label="Abrir menú">
+				<label
+					for="main-drawer"
+					class="btn btn-ghost btn-square"
+					aria-label="Abrir menú"
+				>
 					<Menu class="h-5 w-5" strokeWidth={2} />
 				</label>
 			</div>
 			<div class="flex-1 flex items-center">
-				<img src={logoBlack} alt="SED" class="logo-theme-light h-[18px] w-auto max-w-full object-contain" />
-				<img src={logoWhite} alt="SED" class="logo-theme-dark h-[18px] w-auto max-w-full object-contain" />
+				<img
+					src={logoBlack}
+					alt="SED"
+					class="logo-theme-light h-[18px] w-auto max-w-full object-contain"
+				/>
+				<img
+					src={logoWhite}
+					alt="SED"
+					class="logo-theme-dark h-[18px] w-auto max-w-full object-contain"
+				/>
 			</div>
 		</header>
 

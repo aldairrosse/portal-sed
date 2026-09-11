@@ -7,11 +7,21 @@
 		pillarType: 'competencias' | 'metas';
 		pillars: Pillar[];
 		editingId?: string | null;
-		onSave: (data: { name: string; description: string; id?: string }) => Promise<void>;
+		onSave: (data: {
+			name: string;
+			description: string;
+			id?: string;
+		}) => Promise<void>;
 		onDelete: (pillar: Pillar) => void;
 	}
 
-	let { pillarType, pillars, editingId = $bindable(null), onSave, onDelete }: Props = $props();
+	let {
+		pillarType,
+		pillars,
+		editingId = $bindable(null),
+		onSave,
+		onDelete,
+	}: Props = $props();
 
 	let editName = $state('');
 	let editDescription = $state('');
@@ -48,7 +58,8 @@
 		const trimmed = nameVal.trim();
 		const existing = getPillars();
 		const duplicate = existing.find(
-			(p) => p.name.toLowerCase() === trimmed.toLowerCase() && p.id !== idToExclude
+			(p) =>
+				p.name.toLowerCase() === trimmed.toLowerCase() && p.id !== idToExclude,
 		);
 		if (duplicate) return 'Ya existe un pilar con ese nombre.';
 		return null;
@@ -61,7 +72,10 @@
 			return;
 		}
 		try {
-			await onSave({ name: editName.trim(), description: editDescription.trim() });
+			await onSave({
+				name: editName.trim(),
+				description: editDescription.trim(),
+			});
 			editingId = null;
 			localError = '';
 		} catch (e) {
@@ -76,7 +90,11 @@
 			return;
 		}
 		try {
-			await onSave({ name: editName.trim(), description: editDescription.trim(), id });
+			await onSave({
+				name: editName.trim(),
+				description: editDescription.trim(),
+				id,
+			});
 			editingId = null;
 			localError = '';
 		} catch (e) {
@@ -89,9 +107,18 @@
 	<table class="table table-zebra" aria-label="Lista de pilares">
 		<thead>
 			<tr>
-				<th class="w-1/3 text-xs tracking-wide font-semibold text-base-content/50">Nombre</th>
-				<th class="w-1/2 text-xs tracking-wide font-semibold text-base-content/50">Descripción</th>
-				<th class="w-[140px] text-right text-xs tracking-wide font-semibold text-base-content/50">Acciones</th>
+				<th
+					class="w-1/3 text-xs tracking-wide font-semibold text-base-content/50"
+					>Nombre</th
+				>
+				<th
+					class="w-1/2 text-xs tracking-wide font-semibold text-base-content/50"
+					>Descripción</th
+				>
+				<th
+					class="w-[140px] text-right text-xs tracking-wide font-semibold text-base-content/50"
+					>Acciones</th
+				>
 			</tr>
 		</thead>
 		<tbody>
@@ -133,8 +160,13 @@
 									</div>
 								</div>
 								<div class="flex justify-end gap-2 mt-3">
-									<button class="btn btn-ghost btn-sm" onclick={cancel}>Cancelar</button>
-									<button class="btn btn-primary btn-sm" onclick={() => saveEdit(pillar.id)}>
+									<button class="btn btn-ghost btn-sm" onclick={cancel}
+										>Cancelar</button
+									>
+									<button
+										class="btn btn-primary btn-sm"
+										onclick={() => saveEdit(pillar.id)}
+									>
 										<Check class="w-4 h-4" /> Guardar pilar
 									</button>
 								</div>
@@ -145,17 +177,19 @@
 					<!-- Display mode -->
 					<tr>
 						<td class="font-medium">
-						    {#if pillarType === 'competencias'}
+							{#if pillarType === 'competencias'}
 								<a
 									href="/rh/pilares/{pillar.id}/competencias"
 									class="link link-hover text-primary flex items-center gap-1.5"
 								>
 									{pillar.name}
-									<ChevronRight class="w-3.5 h-3.5 flex-shrink-0" strokeWidth={2} />
+									<ChevronRight
+										class="w-3.5 h-3.5 flex-shrink-0"
+										strokeWidth={2}
+									/>
 								</a>
-
 							{:else}
-							{pillar.name}
+								{pillar.name}
 							{/if}
 						</td>
 						<td class="text-base-content/60 text-sm">{pillar.description}</td>
@@ -217,7 +251,9 @@
 								</div>
 							</div>
 							<div class="flex justify-end gap-2 mt-3">
-								<button class="btn btn-ghost btn-sm" onclick={cancel}>Cancelar</button>
+								<button class="btn btn-ghost btn-sm" onclick={cancel}
+									>Cancelar</button
+								>
 								<button class="btn btn-primary btn-sm" onclick={saveNew}>
 									<Check class="w-4 h-4" /> Guardar pilar
 								</button>

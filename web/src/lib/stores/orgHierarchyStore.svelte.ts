@@ -1,10 +1,10 @@
-import type { OrgNode } from "$lib/types/org-hierarchy";
-import { client } from "$lib/api/client";
+import type { OrgNode } from '$lib/types/org-hierarchy';
+import { client } from '$lib/api/client';
 
 // ─── Internal data shape ──────────────────────────────────────────────────────
 
 interface StoreData {
-  root: OrgNode;
+	root: OrgNode;
 }
 
 // ─── Triplete state ───────────────────────────────────────────────────────────
@@ -16,59 +16,59 @@ let error = $state<string | null>(null);
 // ─── Traversal helpers (pure functions, unchanged) ────────────────────────────
 
 function findNode(root: OrgNode, nodeId: string): OrgNode | null {
-  if (root.id === nodeId) return root;
-  const queue: OrgNode[] = [...(root.children ?? [])];
-  while (queue.length > 0) {
-    const node = queue.shift()!;
-    if (node.id === nodeId) return node;
-    queue.push(...(node.children ?? []));
-  }
-  return null;
+	if (root.id === nodeId) return root;
+	const queue: OrgNode[] = [...(root.children ?? [])];
+	while (queue.length > 0) {
+		const node = queue.shift()!;
+		if (node.id === nodeId) return node;
+		queue.push(...(node.children ?? []));
+	}
+	return null;
 }
 
 function dfsDescendants(node: OrgNode): OrgNode[] {
-  const result: OrgNode[] = [];
-  const stack = [...(node.children ?? [])];
-  while (stack.length > 0) {
-    const current = stack.pop()!;
-    result.push(current);
-    stack.push(...(current.children ?? []));
-  }
-  return result;
+	const result: OrgNode[] = [];
+	const stack = [...(node.children ?? [])];
+	while (stack.length > 0) {
+		const current = stack.pop()!;
+		result.push(current);
+		stack.push(...(current.children ?? []));
+	}
+	return result;
 }
 
 function dfsLeafIds(node: OrgNode): string[] {
-  const result: string[] = [];
-  const stack = [...(node.children ?? [])];
-  while (stack.length > 0) {
-    const current = stack.pop()!;
-    if ((current.children ?? []).length === 0) {
-      result.push(current.id);
-    } else {
-      stack.push(...(current.children ?? []));
-    }
-  }
-  return result;
+	const result: string[] = [];
+	const stack = [...(node.children ?? [])];
+	while (stack.length > 0) {
+		const current = stack.pop()!;
+		if ((current.children ?? []).length === 0) {
+			result.push(current.id);
+		} else {
+			stack.push(...(current.children ?? []));
+		}
+	}
+	return result;
 }
 
 function cloneSubtree(node: OrgNode): OrgNode {
-  return {
-    id: node.id,
-    name: node.name,
-    profileId: node.profileId,
-    managerId: node.managerId,
-    headEmployeeId: node.headEmployeeId,
-    headEmployee: node.headEmployee ? { ...node.headEmployee } : undefined,
-    employeeCount: node.employeeCount,
-    children: (node.children ?? []).map((child) => cloneSubtree(child)),
-  };
+	return {
+		id: node.id,
+		name: node.name,
+		profileId: node.profileId,
+		managerId: node.managerId,
+		headEmployeeId: node.headEmployeeId,
+		headEmployee: node.headEmployee ? { ...node.headEmployee } : undefined,
+		employeeCount: node.employeeCount,
+		children: (node.children ?? []).map((child) => cloneSubtree(child)),
+	};
 }
 
 // ─── API error helpers ─────────────────────────────────────────────────────────
 
 function apiErrorMessage(payload: unknown, fallback: string): string {
-  const msg = (payload as { error?: { message?: string } })?.error?.message;
-  return msg ?? fallback;
+	const msg = (payload as { error?: { message?: string } })?.error?.message;
+	return msg ?? fallback;
 }
 
 /**
@@ -78,152 +78,152 @@ function apiErrorMessage(payload: unknown, fallback: string): string {
  * In production / VITE_USE_API=true: fetches from the real API endpoint.
  */
 export async function load(force = false): Promise<void> {
-  // ponytail: skip refetch when already loaded; reload() passes force=true
-  if (!force && data) return;
-  loading = true;
-  error = null;
+	// ponytail: skip refetch when already loaded; reload() passes force=true
+	if (!force && data) return;
+	loading = true;
+	error = null;
 
-  try {
-    // 1. Discover the first corporate tree
-    const treesRes = await client.GET("/org-trees", {
-      params: { query: { type: "corporate" } },
-    });
-    if (!treesRes.data) {
-      throw new Error("Error al cargar árbol organizacional");
-    }
+	try {
+		// 1. Discover the first corporate tree
+		const treesRes = await client.GET('/org-trees', {
+			params: { query: { type: 'corporate' } },
+		});
+		if (!treesRes.data) {
+			throw new Error('Error al cargar árbol organizacional');
+		}
 
-    const trees =
-      (treesRes.data as { data?: Array<{ id?: string }> })?.data ?? [];
-    if (trees.length === 0) {
-      throw new Error("No hay árboles organizacionales disponibles");
-    }
+		const trees =
+			(treesRes.data as { data?: Array<{ id?: string }> })?.data ?? [];
+		if (trees.length === 0) {
+			throw new Error('No hay árboles organizacionales disponibles');
+		}
 
-    const treeId = trees[0].id;
-    if (!treeId) {
-      throw new Error("ID de árbol no disponible");
-    }
+		const treeId = trees[0].id;
+		if (!treeId) {
+			throw new Error('ID de árbol no disponible');
+		}
 
-    // 2. Fetch the full nested tree
-    const nodesRes = await client.GET("/org-trees/{treeId}/nodes", {
-      params: {
-        query: { format: "nested", depth: -1 },
-        path: { treeId },
-      },
-    });
-    if (nodesRes.error) {
-      throw new Error(
-        apiErrorMessage(nodesRes.error, "Error al cargar nodos del árbol"),
-      );
-    }
+		// 2. Fetch the full nested tree
+		const nodesRes = await client.GET('/org-trees/{treeId}/nodes', {
+			params: {
+				query: { format: 'nested', depth: -1 },
+				path: { treeId },
+			},
+		});
+		if (nodesRes.error) {
+			throw new Error(
+				apiErrorMessage(nodesRes.error, 'Error al cargar nodos del árbol'),
+			);
+		}
 
-    const rootNode = (nodesRes.data as { data?: OrgNode })?.data;
-    if (!rootNode) {
-      throw new Error("No se recibieron datos del árbol");
-    }
+		const rootNode = (nodesRes.data as { data?: OrgNode })?.data;
+		if (!rootNode) {
+			throw new Error('No se recibieron datos del árbol');
+		}
 
-    // 3. Store the full tree (no scope filtering)
-    data = { root: structuredClone(rootNode) };
-  } catch (e) {
-    error =
-      e instanceof Error
-        ? e.message
-        : "Error desconocido al cargar árbol organizacional";
-  } finally {
-    loading = false;
-  }
+		// 3. Store the full tree (no scope filtering)
+		data = { root: structuredClone(rootNode) };
+	} catch (e) {
+		error =
+			e instanceof Error
+				? e.message
+				: 'Error desconocido al cargar árbol organizacional';
+	} finally {
+		loading = false;
+	}
 }
 
 /** Force-refetch variant of load(). */
 export function reload(): Promise<void> {
-  return load(true);
+	return load(true);
 }
 
 // ─── Getters ──────────────────────────────────────────────────────────────────
 
 export function getRoot(): OrgNode | null {
-  return data?.root ?? null;
+	return data?.root ?? null;
 }
 
 export function getChildren(nodeId: string): OrgNode[] {
-  if (!data) return [];
-  const node = findNode(data.root, nodeId);
-  return node ? [...(node.children ?? [])] : [];
+	if (!data) return [];
+	const node = findNode(data.root, nodeId);
+	return node ? [...(node.children ?? [])] : [];
 }
 
 export function getDescendants(nodeId: string): OrgNode[] {
-  if (!data) return [];
-  const node = findNode(data.root, nodeId);
-  if (!node) return [];
-  return dfsDescendants(node);
+	if (!data) return [];
+	const node = findNode(data.root, nodeId);
+	if (!node) return [];
+	return dfsDescendants(node);
 }
 
 export function getSubtree(nodeId: string): OrgNode | null {
-  if (!data) return null;
-  const node = findNode(data.root, nodeId);
-  if (!node) return null;
-  return cloneSubtree(node);
+	if (!data) return null;
+	const node = findNode(data.root, nodeId);
+	if (!node) return null;
+	return cloneSubtree(node);
 }
 
 export function getNodeById(nodeId: string): OrgNode | null {
-  if (!data) return null;
-  return findNode(data.root, nodeId);
+	if (!data) return null;
+	return findNode(data.root, nodeId);
 }
 
 export function getScopeIds(nodeId: string): string[] {
-  if (!data) return [];
-  const node = findNode(data.root, nodeId);
-  if (!node) return [];
-  const descendants = dfsDescendants(node);
-  return [node.id, ...descendants.map((n) => n.id)];
+	if (!data) return [];
+	const node = findNode(data.root, nodeId);
+	if (!node) return [];
+	const descendants = dfsDescendants(node);
+	return [node.id, ...descendants.map((n) => n.id)];
 }
 
 export function getDepth(nodeId: string): number {
-  if (!data) return 0;
-  let depth = 0;
-  let currentId: string | null = nodeId;
-  while (currentId && currentId !== data.root.id) {
-    const node = findNode(data.root, currentId);
-    if (!node || !node.managerId) break;
-    depth++;
-    currentId = node.managerId;
-  }
-  return depth;
+	if (!data) return 0;
+	let depth = 0;
+	let currentId: string | null = nodeId;
+	while (currentId && currentId !== data.root.id) {
+		const node = findNode(data.root, currentId);
+		if (!node || !node.managerId) break;
+		depth++;
+		currentId = node.managerId;
+	}
+	return depth;
 }
 
 export function getAllLeafIds(nodeId: string): string[] {
-  if (!data) return [];
-  const node = findNode(data.root, nodeId);
-  if (!node) return [];
-  return dfsLeafIds(node);
+	if (!data) return [];
+	const node = findNode(data.root, nodeId);
+	if (!node) return [];
+	return dfsLeafIds(node);
 }
 
 // ─── Loading / error state accessors ──────────────────────────────────────────
 
 export function isLoading(): boolean {
-  return loading;
+	return loading;
 }
 
 export function getError(): string | null {
-  return error;
+	return error;
 }
 
 // ─── Mutations ────────────────────────────────────────────────────────────────
 
 export function replaceTree(newTree: OrgNode): void {
-  data = { root: structuredClone(newTree) };
+	data = { root: structuredClone(newTree) };
 }
 
 export async function updateEmployeeAssignment(
-  empId: string,
-  profileId: string,
-  orgNodeId: string,
+	empId: string,
+	profileId: string,
+	orgNodeId: string,
 ): Promise<void> {
-  const res = await client.PUT("/employees/{empId}", {
-    params: { path: { empId } },
-    body: { profileId, orgNodeId },
-  });
-  if (res.error) {
-    throw new Error(apiErrorMessage(res.error, "Error al actualizar empleado"));
-  }
-  await reload();
+	const res = await client.PUT('/employees/{empId}', {
+		params: { path: { empId } },
+		body: { profileId, orgNodeId },
+	});
+	if (res.error) {
+		throw new Error(apiErrorMessage(res.error, 'Error al actualizar empleado'));
+	}
+	await reload();
 }

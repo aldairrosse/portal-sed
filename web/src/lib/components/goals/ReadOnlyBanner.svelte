@@ -14,9 +14,11 @@
 	<Eye class="w-4 h-4 shrink-0" aria-hidden="true" />
 	<span>
 		{#if phase === 'medio-anio'}
-			Estás viendo las metas de <strong>{employeeName}</strong>. Puedes editar avances y agregar comentarios.
+			Estás viendo las metas de <strong>{employeeName}</strong>. Puedes editar
+			avances y agregar comentarios.
 		{:else}
-			Estás viendo las metas de <strong>{employeeName}</strong>. Solo puedes solicitar cambios.
+			Estás viendo las metas de <strong>{employeeName}</strong>. Solo puedes
+			solicitar cambios.
 		{/if}
 	</span>
 </div>

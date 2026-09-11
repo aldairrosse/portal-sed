@@ -1,23 +1,23 @@
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-export type NotificationType = "success" | "error" | "warning" | "info";
+export type NotificationType = 'success' | 'error' | 'warning' | 'info';
 export type NotificationPosition =
-  | "top-right"
-  | "top-left"
-  | "bottom-right"
-  | "bottom-left";
+	| 'top-right'
+	| 'top-left'
+	| 'bottom-right'
+	| 'bottom-left';
 
 export interface Notification {
-  id: string;
-  type: NotificationType;
-  message: string;
-  duration?: number; // ms, default 4000, 0 = persistent
-  dismissible?: boolean; // default true
+	id: string;
+	type: NotificationType;
+	message: string;
+	duration?: number; // ms, default 4000, 0 = persistent
+	dismissible?: boolean; // default true
 }
 
 export interface NotificationOptions {
-  duration?: number;
-  dismissible?: boolean;
+	duration?: number;
+	dismissible?: boolean;
 }
 
 // ─── State ───────────────────────────────────────────────────────────────────
@@ -27,63 +27,63 @@ let list = $state<Notification[]>([]);
 // ─── Mutations ───────────────────────────────────────────────────────────────
 
 function addNotification(
-  type: NotificationType,
-  message: string,
-  options?: NotificationOptions,
+	type: NotificationType,
+	message: string,
+	options?: NotificationOptions,
 ): string {
-  const id = crypto.randomUUID();
-  const notification: Notification = {
-    id,
-    type,
-    message,
-    duration: options?.duration ?? 4000,
-    dismissible: options?.dismissible ?? true,
-  };
-  list.push(notification);
-  return id;
+	const id = crypto.randomUUID();
+	const notification: Notification = {
+		id,
+		type,
+		message,
+		duration: options?.duration ?? 4000,
+		dismissible: options?.dismissible ?? true,
+	};
+	list.push(notification);
+	return id;
 }
 
 export function success(
-  message: string,
-  options?: NotificationOptions,
+	message: string,
+	options?: NotificationOptions,
 ): string {
-  return addNotification("success", message, options);
+	return addNotification('success', message, options);
 }
 
 export function error(message: string, options?: NotificationOptions): string {
-  return addNotification("error", message, options);
+	return addNotification('error', message, options);
 }
 
 export function errorWithCode(
-  message: string,
-  code?: string | null,
-  options?: NotificationOptions,
+	message: string,
+	code?: string | null,
+	options?: NotificationOptions,
 ): string {
-  const label = code ? `[${code}] ${message}` : message;
-  return addNotification("error", label, options);
+	const label = code ? `[${code}] ${message}` : message;
+	return addNotification('error', label, options);
 }
 
 export function warning(
-  message: string,
-  options?: NotificationOptions,
+	message: string,
+	options?: NotificationOptions,
 ): string {
-  return addNotification("warning", message, options);
+	return addNotification('warning', message, options);
 }
 
 export function info(message: string, options?: NotificationOptions): string {
-  return addNotification("info", message, options);
+	return addNotification('info', message, options);
 }
 
 export function dismiss(id: string): void {
-  list = list.filter((n) => n.id !== id);
+	list = list.filter((n) => n.id !== id);
 }
 
 export function clear(): void {
-  list = [];
+	list = [];
 }
 
 // ─── Getters ─────────────────────────────────────────────────────────────────
 
 export function getNotifications(): Notification[] {
-  return list;
+	return list;
 }

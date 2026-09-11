@@ -33,7 +33,7 @@
 		onSearch,
 		loadMore,
 		allLoaded = false,
-		loadingMore = false
+		loadingMore = false,
 	}: Props = $props();
 
 	const uid = $props.id();
@@ -49,12 +49,16 @@
 		searchable && !onSearch
 			? query.trim() === ''
 				? options
-				: options.filter((o) => o.label.toLowerCase().includes(query.trim().toLowerCase()))
-			: options
+				: options.filter((o) =>
+						o.label.toLowerCase().includes(query.trim().toLowerCase()),
+					)
+			: options,
 	);
 
 	const selectedLabel = $derived(
-		options.find((o) => o.value === value)?.label ?? initialLabel ?? placeholder
+		options.find((o) => o.value === value)?.label ??
+			initialLabel ??
+			placeholder,
 	);
 
 	function close() {
@@ -77,9 +81,11 @@
 		}
 		requestAnimationFrame(() => {
 			const selected = menuEl?.querySelector<HTMLButtonElement>(
-				'[aria-selected="true"] button'
+				'[aria-selected="true"] button',
 			);
-			const fallback = menuEl?.querySelector<HTMLButtonElement>('[role="option"] button');
+			const fallback = menuEl?.querySelector<HTMLButtonElement>(
+				'[role="option"] button',
+			);
 			const target = selected ?? fallback;
 			if (target) {
 				target.scrollIntoView({ block: 'nearest' });
@@ -104,10 +110,14 @@
 			return;
 		}
 
-		const items = menuEl?.querySelectorAll<HTMLButtonElement>('[role="option"] button');
+		const items = menuEl?.querySelectorAll<HTMLButtonElement>(
+			'[role="option"] button',
+		);
 		if (!items?.length) return;
 
-		const currentIndex = Array.from(items).findIndex((el) => el === document.activeElement);
+		const currentIndex = Array.from(items).findIndex(
+			(el) => el === document.activeElement,
+		);
 
 		if (e.key === 'ArrowDown') {
 			e.preventDefault();
@@ -170,14 +180,21 @@
 				class="input input-bordered input-xs w-full bg-base-100"
 				placeholder="Buscar…"
 				bind:value={query}
-				oninput={(e) => { if (onSearch) onSearch(e.currentTarget.value); }}
+				oninput={(e) => {
+					if (onSearch) onSearch(e.currentTarget.value);
+				}}
 				onkeydown={(e) => e.stopPropagation()}
 				aria-label="Buscar opción"
 			/>
 		</li>
 	{/if}
 	{#each filteredOptions as option (option.value)}
-		<li role="option" aria-selected={option.value === value} data-value={option.value} class="last:mb-0 mb-1">
+		<li
+			role="option"
+			aria-selected={option.value === value}
+			data-value={option.value}
+			class="last:mb-0 mb-1"
+		>
 			<button
 				type="button"
 				class:menu-active={option.value === value}

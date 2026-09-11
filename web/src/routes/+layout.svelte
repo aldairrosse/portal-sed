@@ -32,7 +32,9 @@
 	// Dev unauthenticated view: when /api/v1/dev/status 200 allow unauthenticated shell
 	let devEnabled = $state(false);
 	let devChecked = $state(false);
-	let devBypass = $derived(devChecked && devEnabled && !session.loading && !session.user);
+	let devBypass = $derived(
+		devChecked && devEnabled && !session.loading && !session.user,
+	);
 
 	// Minimum loader time elapsed — prevents flash on fast sessions
 	let minTimeElapsed = $state(false);
@@ -60,7 +62,10 @@
 			// Session resolved with no user, min time passed → redirect
 			// Keep the intended destination for the post-SSO redirect (single use).
 			if (!sessionStorage.getItem('return_to')) {
-				sessionStorage.setItem('return_to', location.pathname + location.search);
+				sessionStorage.setItem(
+					'return_to',
+					location.pathname + location.search,
+				);
 			}
 			goto('/login');
 		}

@@ -24,7 +24,11 @@
 		| 'star'
 		| 'users';
 
-	export type ColorfullIconName = 'insignia' | 'light' | 'notes-check' | 'stats';
+	export type ColorfullIconName =
+		| 'insignia'
+		| 'light'
+		| 'notes-check'
+		| 'stats';
 
 	export type IconName = OutlineIconName | ColorfullIconName;
 
@@ -43,36 +47,47 @@
 	const outlineGlob = import.meta.glob('../../assets/icons/outline/*.svg', {
 		query: '?raw',
 		import: 'default',
-		eager: true
+		eager: true,
 	}) as Record<string, string>;
 
 	const colorfullGlob = import.meta.glob('../../assets/icons/colorfull/*.svg', {
 		query: '?raw',
 		import: 'default',
-		eager: true
+		eager: true,
 	}) as Record<string, string>;
 
 	function toIconName(key: string): string {
-		return key.split('/').pop()!.replace(/\.svg$/, '');
+		return key
+			.split('/')
+			.pop()!
+			.replace(/\.svg$/, '');
 	}
 
 	// ponytail: loose internal maps; the strict union is enforced by the `name` prop type
 	const outlineIcons: Record<string, string> = Object.fromEntries(
-		Object.entries(outlineGlob).map(([key, markup]) => [toIconName(key), markup])
+		Object.entries(outlineGlob).map(([key, markup]) => [
+			toIconName(key),
+			markup,
+		]),
 	);
 
 	const colorfullIcons: Record<string, string> = Object.fromEntries(
-		Object.entries(colorfullGlob).map(([key, markup]) => [toIconName(key), markup])
+		Object.entries(colorfullGlob).map(([key, markup]) => [
+			toIconName(key),
+			markup,
+		]),
 	);
 
 	// Guard against a broken glob path silently rendering nothing.
 	if (import.meta.env.DEV) {
 		if (Object.keys(outlineIcons).length !== 23) {
-			console.warn(`Icon: expected 23 outline icons, found ${Object.keys(outlineIcons).length}`);
+			console.warn(
+				`Icon: expected 23 outline icons, found ${Object.keys(outlineIcons).length}`,
+			);
 		}
 		if (Object.keys(colorfullIcons).length !== 4) {
 			console.warn(
-				`Icon: expected 4 colorfull icons, found ${Object.keys(colorfullIcons).length}`
+				`Icon: expected 4 colorfull icons, found ${Object.keys(colorfullIcons).length}`,
 			);
 		}
 	}
@@ -85,17 +100,21 @@
 		class: className,
 		'aria-label': ariaLabel,
 		role,
-		'aria-hidden': ariaHidden
+		'aria-hidden': ariaHidden,
 	}: Props = $props();
 
-	const icon = $derived(variant === 'colorfull' ? colorfullIcons[name] : outlineIcons[name]);
+	const icon = $derived(
+		variant === 'colorfull' ? colorfullIcons[name] : outlineIcons[name],
+	);
 </script>
 
 <span
 	class="icon icon-{variant} {className ?? ''}"
-	style="display:inline-flex;position:relative;width:{size}px;height:{size}px;{color ? `color:${color};` : ''}"
+	style="display:inline-flex;position:relative;width:{size}px;height:{size}px;{color
+		? `color:${color};`
+		: ''}"
 	aria-label={ariaLabel}
-	role={role}
+	{role}
 	aria-hidden={ariaHidden}
 >
 	{#if icon}

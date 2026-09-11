@@ -1,28 +1,72 @@
 <script lang="ts">
 	import { Pencil, Trash2, Plus, MessageCircle } from '@lucide/svelte';
-	import type { Goal, GoalCategory, GoalUnit, KPI, CyclePhase } from '$lib/types/goal';
+	import type {
+		Goal,
+		GoalCategory,
+		GoalUnit,
+		KPI,
+		CyclePhase,
+	} from '$lib/types/goal';
 	import WeightIndicator from './WeightIndicator.svelte';
 	import ProgressIndicator from './ProgressIndicator.svelte';
 	import GoalRow from './GoalRow.svelte';
 	import GoalForm from './GoalForm.svelte';
 	import CategoryCreateForm from './CategoryCreateForm.svelte';
 	import { effectiveWeightPersonal } from '$lib/utils/scoring';
-	import { getCycleWeights, getTeamWeights } from '$lib/stores/goalsStore.svelte';
+	import {
+		getCycleWeights,
+		getTeamWeights,
+	} from '$lib/stores/goalsStore.svelte';
 
 	interface Props {
 		category: GoalCategory;
 		goals: Goal[];
 		getKpisForGoal: (goalId: string) => KPI[];
-		onSaveCategory: (data: { id?: string; name: string; description: string; weight: number; pillarId?: string }) => void;
+		onSaveCategory: (data: {
+			id?: string;
+			name: string;
+			description: string;
+			weight: number;
+			pillarId?: string;
+		}) => void;
 		onDeleteCategory: (categoryId: string) => void;
-		onSaveGoal: (data: { id?: string; categoryId: string; name: string; description: string; unit: GoalUnit; weight: number; targetValue: number; direction: 'ascendente' | 'descendente'; baselineValue?: number; linkedKpiIds: string[] }) => void;
+		onSaveGoal: (data: {
+			id?: string;
+			categoryId: string;
+			name: string;
+			description: string;
+			unit: GoalUnit;
+			weight: number;
+			targetValue: number;
+			direction: 'ascendente' | 'descendente';
+			baselineValue?: number;
+			linkedKpiIds: string[];
+		}) => void;
 		onDeleteGoal: (goalId: string) => void;
 		mode?: 'editor' | 'reader';
 		pillars?: { value: string; label: string }[];
 		onRequestChangeCategory?: (category: GoalCategory) => void;
-		onSaveProposal?: (goalId: string, data: { name: string; description: string; unit: GoalUnit; weight: number; targetValue: number; direction: 'ascendente' | 'descendente'; baselineValue?: number; kpiIds: string[] }) => void | Promise<void>;
-		onAcceptProposal?: (goalId: string, proposalId: string) => void | Promise<void>;
-		onRejectProposal?: (goalId: string, proposalId: string) => void | Promise<void>;
+		onSaveProposal?: (
+			goalId: string,
+			data: {
+				name: string;
+				description: string;
+				unit: GoalUnit;
+				weight: number;
+				targetValue: number;
+				direction: 'ascendente' | 'descendente';
+				baselineValue?: number;
+				kpiIds: string[];
+			},
+		) => void | Promise<void>;
+		onAcceptProposal?: (
+			goalId: string,
+			proposalId: string,
+		) => void | Promise<void>;
+		onRejectProposal?: (
+			goalId: string,
+			proposalId: string,
+		) => void | Promise<void>;
 		phase?: CyclePhase;
 		canDelete?: boolean;
 		canAddGoal?: boolean;
@@ -63,7 +107,7 @@
 		isAnyInlineEditing = $bindable(false),
 		onUpdateProgress,
 		onOpenComments,
-		onOpenCategoryComments
+		onOpenCategoryComments,
 	}: Props = $props();
 
 	// ─── Category inline edit state ────────────────────────────────────────
@@ -78,7 +122,13 @@
 		isEditingCategory = false;
 	}
 
-	async function handleSaveCategoryInline(data: { id?: string; name: string; description: string; weight: number; pillarId?: string }) {
+	async function handleSaveCategoryInline(data: {
+		id?: string;
+		name: string;
+		description: string;
+		weight: number;
+		pillarId?: string;
+	}) {
 		await onSaveCategory(data);
 		isEditingCategory = false;
 	}
@@ -99,13 +149,21 @@
 	}
 
 	async function handleSaveNewGoal(data: {
-		name: string; description: string; unit: GoalUnit;
-		weight: number; targetValue: number;
+		name: string;
+		description: string;
+		unit: GoalUnit;
+		weight: number;
+		targetValue: number;
 		direction: 'ascendente' | 'descendente';
-		baselineValue?: number; kpiIds: string[];
+		baselineValue?: number;
+		kpiIds: string[];
 	}) {
 		try {
-			await onSaveGoal({ categoryId: category.id, ...data, linkedKpiIds: data.kpiIds });
+			await onSaveGoal({
+				categoryId: category.id,
+				...data,
+				linkedKpiIds: data.kpiIds,
+			});
 			isCreatingGoal = false;
 		} catch (e) {
 			newGoalError = e instanceof Error ? e.message : 'Error al crear meta';
@@ -119,7 +177,10 @@
 		const withProgress = goals.filter((g) => g.progress !== undefined);
 		if (withProgress.length === 0) return 0;
 		const total = withProgress.reduce((acc, g) => {
-			const pct = g.unit === 'porcentaje' ? (g.progress ?? 0) : ((g.progress ?? 0) / (g.targetValue || 1)) * 100;
+			const pct =
+				g.unit === 'porcentaje'
+					? (g.progress ?? 0)
+					: ((g.progress ?? 0) / (g.targetValue || 1)) * 100;
 			return acc + Math.min(pct, 100);
 		}, 0);
 		return total / withProgress.length;
@@ -130,14 +191,27 @@
 	let editingGoalId = $state<string | null>(null);
 
 	let categoryEffective = $derived.by(() => {
-		if (category.effectiveWeight !== undefined && category.effectiveWeight !== null) return category.effectiveWeight;
+		if (
+			category.effectiveWeight !== undefined &&
+			category.effectiveWeight !== null
+		)
+			return category.effectiveWeight;
 		const cw = getCycleWeights();
 		const tw = getTeamWeights();
-		return effectiveWeightPersonal(category.weight ?? 0, cw.pWeight, tw.pjWeight);
+		return effectiveWeightPersonal(
+			category.weight ?? 0,
+			cw.pWeight,
+			tw.pjWeight,
+		);
 	});
-    $effect(() => {
-        console.debug('[CategoryCard]', {weight: category.weight, effective: categoryEffective, cW:getCycleWeights(), tW:getTeamWeights()});
-    });
+	$effect(() => {
+		console.debug('[CategoryCard]', {
+			weight: category.weight,
+			effective: categoryEffective,
+			cW: getCycleWeights(),
+			tW: getTeamWeights(),
+		});
+	});
 </script>
 
 <div class="card bg-base-100 border border-base-300 max-w-full">
@@ -158,36 +232,47 @@
 			{:else}
 				<div class="flex-1 min-w-0">
 					<div class="flex items-center gap-2 mb-1">
-						<h3 class="text-lg font-semibold text-base-content">{category.name}</h3>
+						<h3 class="text-lg font-semibold text-base-content">
+							{category.name}
+						</h3>
 						<span class="badge badge-md font-mono">{category.weight}%</span>
-						<span class="badge badge-ghost badge-sm font-mono" title="Peso ponderado">{categoryEffective.toFixed(2).replace(/\.?0+$/, '')}%</span>
+						<span
+							class="badge badge-ghost badge-sm font-mono"
+							title="Peso ponderado"
+							>{categoryEffective.toFixed(2).replace(/\.?0+$/, '')}%</span
+						>
 					</div>
-					<p class="text-xs text-base-content/50 truncate">{category.description}</p>
+					<p class="text-xs text-base-content/50 truncate">
+						{category.description}
+					</p>
 				</div>
 				<div class="flex items-center gap-1">
 					{#if phase === 'medio-anio' || phase === 'fin-anio'}
 						<!-- No category edit/delete in avance or cierre mode -->
-				{:else if mode === 'editor' && canEditCategory}
-					{#if (category.comments?.length ?? 0) > 0}
+					{:else if mode === 'editor' && canEditCategory}
+						{#if (category.comments?.length ?? 0) > 0}
+							<button
+								class="btn btn-ghost btn-square btn-sm relative"
+								title="Comentarios"
+								onclick={() => onOpenCategoryComments?.(category)}
+								aria-label="Comentarios de categoría {category.name}"
+							>
+								<MessageCircle class="w-4 h-4" />
+								<span
+									class="badge badge-xs badge-primary absolute -top-1.5 -right-1.5"
+									>{category.comments?.length}</span
+								>
+							</button>
+						{/if}
 						<button
-							class="btn btn-ghost btn-square btn-sm relative"
-							title="Comentarios"
-							onclick={() => onOpenCategoryComments?.(category)}
-							aria-label="Comentarios de categoría {category.name}"
+							class="btn btn-ghost btn-square btn-sm"
+							title="Editar"
+							onclick={handleStartEditCategory}
+							disabled={isAnyInlineEditing}
+							aria-label="Editar categoría {category.name}"
 						>
-							<MessageCircle class="w-4 h-4" />
-							<span class="badge badge-xs badge-primary absolute -top-1.5 -right-1.5">{category.comments?.length}</span>
+							<Pencil class="w-4 h-4" />
 						</button>
-					{/if}
-					<button
-						class="btn btn-ghost btn-square btn-sm"
-						title="Editar"
-						onclick={handleStartEditCategory}
-						disabled={isAnyInlineEditing}
-						aria-label="Editar categoría {category.name}"
-					>
-						<Pencil class="w-4 h-4" />
-					</button>
 						{#if canDelete}
 							<button
 								class="btn btn-ghost btn-square btn-sm text-error"
@@ -199,20 +284,23 @@
 								<Trash2 class="w-4 h-4" />
 							</button>
 						{/if}
-				{:else if onOpenCategoryComments}
-					<button
-						class="btn btn-sm relative"
-						title="Comentar"
-						onclick={() => onOpenCategoryComments?.(category)}
-						aria-label="Comentar en categoría {category.name}"
-					>
-						<MessageCircle class="w-4 h-4" />
-						Comentar
-						{#if (category.comments?.length ?? 0) > 0}
-							<span class="badge badge-xs badge-primary absolute -top-2 -right-2">{category.comments?.length}</span>
-						{/if}
-					</button>
-				{/if}
+					{:else if onOpenCategoryComments}
+						<button
+							class="btn btn-sm relative"
+							title="Comentar"
+							onclick={() => onOpenCategoryComments?.(category)}
+							aria-label="Comentar en categoría {category.name}"
+						>
+							<MessageCircle class="w-4 h-4" />
+							Comentar
+							{#if (category.comments?.length ?? 0) > 0}
+								<span
+									class="badge badge-xs badge-primary absolute -top-2 -right-2"
+									>{category.comments?.length}</span
+								>
+							{/if}
+						</button>
+					{/if}
 				</div>
 			{/if}
 		</div>
@@ -232,18 +320,28 @@
 		<!-- Goals table -->
 		{#if goals.length > 0}
 			<div class="w-full max-w-full overflow-x-auto">
-				<table class="table table-sm w-full" aria-label="Metas de {category.name}">
+				<table
+					class="table table-sm w-full"
+					aria-label="Metas de {category.name}"
+				>
 					<thead>
 						<tr>
 							<th class="text-xs font-semibold text-base-content/60">Meta</th>
-							<th class="text-xs font-semibold text-base-content/60">Valor objetivo</th>
+							<th class="text-xs font-semibold text-base-content/60"
+								>Valor objetivo</th
+							>
 							<th class="text-xs font-semibold text-base-content/60">Peso</th>
 							<th class="text-xs font-semibold text-base-content/60">
-								{phase === 'medio-anio' || phase === 'fin-anio' ? 'Avance' : 'KPI'}
+								{phase === 'medio-anio' || phase === 'fin-anio'
+									? 'Avance'
+									: 'KPI'}
 							</th>
 							{#if phase !== 'fin-anio'}
-							<th class="text-xs font-semibold text-base-content/60 text-right">Acciones</th>
-						{/if}
+								<th
+									class="text-xs font-semibold text-base-content/60 text-right"
+									>Acciones</th
+								>
+							{/if}
 						</tr>
 					</thead>
 					<tbody>
@@ -256,11 +354,13 @@
 								{onAcceptProposal}
 								{onRejectProposal}
 								{phase}
-								onSaveGoal={onSaveGoal}
-								onDeleteGoal={onDeleteGoal}
+								{onSaveGoal}
+								{onDeleteGoal}
 								{allKpis}
 								{editingGoalId}
-								onEditingChange={(id) => { editingGoalId = id; }}
+								onEditingChange={(id) => {
+									editingGoalId = id;
+								}}
 								{canEditProgress}
 								{canEditAvance}
 								{canEditCierre}
@@ -292,7 +392,11 @@
 			/>
 		{:else if mode === 'editor' && canAddGoal && phase !== 'medio-anio' && phase !== 'fin-anio'}
 			<div class="mt-3">
-				<button class="btn btn-outline btn-primary btn-sm" disabled={isAnyInlineEditing || isEditingCategory} onclick={handleStartCreateGoal}>
+				<button
+					class="btn btn-outline btn-primary btn-sm"
+					disabled={isAnyInlineEditing || isEditingCategory}
+					onclick={handleStartCreateGoal}
+				>
 					<Plus class="w-4 h-4" /> Nueva meta
 				</button>
 			</div>

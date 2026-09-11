@@ -11,7 +11,10 @@
 		entityName: string;
 		requestedBy: string;
 		onClose: () => void;
-		onCreated?: (entityType: ChangeRequest['entityType'], entityId: string) => void;
+		onCreated?: (
+			entityType: ChangeRequest['entityType'],
+			entityId: string,
+		) => void;
 		comments?: GoalComment[];
 		onAddComment?: (entityId: string, content: string) => void;
 		currentUserId?: string;
@@ -38,7 +41,7 @@
 			? 'Solicitar cambio en categoría'
 			: entityType === 'assignment'
 				? 'Solicitar cambio en asignación'
-				: 'Solicitar cambio en meta'
+				: 'Solicitar cambio en meta',
 	);
 
 	$effect(() => {
@@ -52,8 +55,12 @@
 		}
 	});
 
-	function handleCancel() { onClose(); }
-	function handleBackdropClick(e: MouseEvent) { if (e.target === dialogEl) handleCancel(); }
+	function handleCancel() {
+		onClose();
+	}
+	function handleBackdropClick(e: MouseEvent) {
+		if (e.target === dialogEl) handleCancel();
+	}
 
 	function timeAgo(dateStr: string): string {
 		const diff = Date.now() - new Date(dateStr).getTime();
@@ -87,11 +94,14 @@
 				reason: message.trim(),
 				requestedBy,
 				requestedAt: new Date().toISOString(),
-				status: 'pending'
+				status: 'pending',
 			});
 			submitted = true;
 			if (onCreated) {
-				setTimeout(() => { onClose(); onCreated(entityType, entityId); }, 800);
+				setTimeout(() => {
+					onClose();
+					onCreated(entityType, entityId);
+				}, 800);
 			} else {
 				setTimeout(() => onClose(), 2000);
 			}
@@ -117,8 +127,17 @@
 			</div>
 		{:else}
 			<div class="flex items-center justify-between mb-4">
-				<h3 id="request-change-title" class="text-lg font-semibold text-base-content">{title}</h3>
-				<button class="btn btn-ghost btn-square btn-sm" onclick={handleCancel} aria-label="Cerrar">
+				<h3
+					id="request-change-title"
+					class="text-lg font-semibold text-base-content"
+				>
+					{title}
+				</h3>
+				<button
+					class="btn btn-ghost btn-square btn-sm"
+					onclick={handleCancel}
+					aria-label="Cerrar"
+				>
 					<X class="w-4 h-4" />
 				</button>
 			</div>
@@ -130,14 +149,18 @@
 			<!-- Comment history -->
 			<div class="max-h-52 overflow-y-auto space-y-2 mb-4">
 				{#if comments.length === 0}
-					<p class="text-sm text-base-content/40 italic text-center py-3">Sin mensajes aún</p>
+					<p class="text-sm text-base-content/40 italic text-center py-3">
+						Sin mensajes aún
+					</p>
 				{:else}
 					{#each comments as comment (comment.id)}
 						<div class="bg-base-200 rounded-lg p-2.5 space-y-0.5">
 							<div class="flex items-center gap-2">
 								<MessageCircle class="w-3 h-3 text-base-content/40" />
 								<span class="text-xs font-medium">{comment.authorName}</span>
-								<span class="text-xs text-base-content/30">{timeAgo(comment.createdAt)}</span>
+								<span class="text-xs text-base-content/30"
+									>{timeAgo(comment.createdAt)}</span
+								>
 							</div>
 							<p class="text-sm text-base-content/70">{comment.content}</p>
 						</div>
@@ -159,8 +182,14 @@
 				</div>
 
 				<div class="modal-action">
-					<button type="button" class="btn btn-ghost btn-sm" onclick={handleCancel}>Cancelar</button>
-					<button type="submit" class="btn btn-warning btn-sm">Enviar solicitud</button>
+					<button
+						type="button"
+						class="btn btn-ghost btn-sm"
+						onclick={handleCancel}>Cancelar</button
+					>
+					<button type="submit" class="btn btn-warning btn-sm"
+						>Enviar solicitud</button
+					>
 				</div>
 			</form>
 		{/if}

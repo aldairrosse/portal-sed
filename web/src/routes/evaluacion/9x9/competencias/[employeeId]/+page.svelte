@@ -7,7 +7,7 @@
 	import { getSession } from '$lib/api/session.svelte';
 	import PageSkeleton from '$lib/components/ui/PageSkeleton.svelte';
 	import { Network, Table, Briefcase } from '@lucide/svelte';
-    import { titleCase } from '$lib/utils/text';
+	import { titleCase } from '$lib/utils/text';
 	import { getProfile } from '$lib/stores/devContext.svelte';
 
 	const employeeId = $derived($page.params.employeeId);
@@ -18,21 +18,31 @@
 			? '/rh/evaluaciones'
 			: viewerProfile === 'colaborador' || viewerProfile === 'vendedor'
 				? '/mi-evaluacion'
-				: '/mis-evaluados'
+				: '/mis-evaluados',
 	);
 	const backLabel = $derived(
 		viewerProfile === 'rh'
 			? 'Evaluaciones'
 			: viewerProfile === 'colaborador' || viewerProfile === 'vendedor'
 				? 'Mi evaluación'
-				: 'Mis evaluados'
+				: 'Mis evaluados',
 	);
 
-	let employeeData = $state<{ firstName: string; lastName: string; jobTitle: string; profileName: string } | null>(null);
+	let employeeData = $state<{
+		firstName: string;
+		lastName: string;
+		jobTitle: string;
+		profileName: string;
+	} | null>(null);
 	const employeeName = $derived(
-		employeeData ? `${employeeData.firstName} ${employeeData.lastName}`.trim() || 'Empleado' : 'Empleado'
+		employeeData
+			? `${employeeData.firstName} ${employeeData.lastName}`.trim() ||
+					'Empleado'
+			: 'Empleado',
 	);
-	const avatarInitial = $derived((employeeName.trim().charAt(0) || '—').toUpperCase());
+	const avatarInitial = $derived(
+		(employeeName.trim().charAt(0) || '—').toUpperCase(),
+	);
 
 	let activeTab: 'radar' | 'table' = $state('radar');
 
@@ -50,14 +60,15 @@
 			// cycle_id is optional — backend resolves the active cycle automatically
 			load(employeeId);
 			// Fetch employee details for header
-			client.GET('/employees/{empId}', { params: { path: { empId: employeeId } } })
+			client
+				.GET('/employees/{empId}', { params: { path: { empId: employeeId } } })
 				.then(({ data }) => {
 					if (data?.data) {
 						employeeData = {
 							firstName: data.data.firstName ?? '',
 							lastName: data.data.lastName ?? '',
 							jobTitle: data.data.jobTitle ?? '',
-							profileName: data.data.profileName ?? ''
+							profileName: data.data.profileName ?? '',
 						};
 					}
 				});
@@ -79,7 +90,9 @@
 				</a>
 			</li>
 			<li class="text-base-content/70">
-				<span class="font-medium">{titleCase(employeeData?.profileName ?? 'Colaborador')}</span>
+				<span class="font-medium"
+					>{titleCase(employeeData?.profileName ?? 'Colaborador')}</span
+				>
 			</li>
 		</ul>
 	</nav>
@@ -88,7 +101,9 @@
 	<div class="flex items-center justify-between flex-wrap gap-3">
 		<div class="flex items-center gap-3">
 			<div class="avatar placeholder">
-				<div class="bg-primary text-primary-content w-10 rounded-full flex items-center justify-center">
+				<div
+					class="bg-primary text-primary-content w-10 rounded-full flex items-center justify-center"
+				>
 					<span class="text-sm font-bold">
 						{avatarInitial}
 					</span>
@@ -96,33 +111,45 @@
 			</div>
 			<div>
 				<h1 class="text-xl font-bold text-base-content">{employeeName}</h1>
-				<p class="text-sm text-base-content/50 flex items-center gap-1.5 mt-0.5">
+				<p
+					class="text-sm text-base-content/50 flex items-center gap-1.5 mt-0.5"
+				>
 					<Briefcase class="w-3.5 h-3.5" />
 					{employeeData?.jobTitle ?? 'Empleado'}
 				</p>
 			</div>
 		</div>
 
-		<div class="tabs tabs-box" role="tablist" aria-label="Selector de vista" onkeydown={handleTabKeydown} tabindex="0">
-			<button role="tab"
+		<div
+			class="tabs tabs-box"
+			role="tablist"
+			aria-label="Selector de vista"
+			onkeydown={handleTabKeydown}
+			tabindex="0"
+		>
+			<button
+				role="tab"
 				id="view-radar"
 				class="tab"
 				class:tab-active={activeTab === 'radar'}
 				aria-selected={activeTab === 'radar'}
 				aria-controls="panel-radar"
 				tabindex={activeTab === 'radar' ? 0 : -1}
-				onclick={() => activeTab = 'radar'}>
+				onclick={() => (activeTab = 'radar')}
+			>
 				<Network class="w-4 h-4" />
 				Radar
 			</button>
-			<button role="tab"
+			<button
+				role="tab"
 				id="view-table"
 				class="tab"
 				class:tab-active={activeTab === 'table'}
 				aria-selected={activeTab === 'table'}
 				aria-controls="panel-table"
 				tabindex={activeTab === 'table' ? 0 : -1}
-				onclick={() => activeTab = 'table'}>
+				onclick={() => (activeTab = 'table')}
+			>
 				<Table class="w-4 h-4" />
 				Tabla
 			</button>

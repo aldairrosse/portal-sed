@@ -5,7 +5,10 @@
 	import PageSkeleton from '$lib/components/ui/PageSkeleton.svelte';
 	import ErrorState from '$lib/components/ui/ErrorState.svelte';
 	import { getActivePhase } from '$lib/api/cycle.svelte';
-	import { isFinAnio as isFinAnioPhase, isMedioAnio as isMedioAnioPhase } from '$lib/types/cycle';
+	import {
+		isFinAnio as isFinAnioPhase,
+		isMedioAnio as isMedioAnioPhase,
+	} from '$lib/types/cycle';
 	import {
 		getItems,
 		isLoading,
@@ -39,7 +42,7 @@
 			? 'Evaluación formal de competencias y cierre de metas'
 			: isMedioAnio
 				? 'Revisión de avance de objetivos y competencias de todos los empleados'
-				: 'Seguimiento de objetivos de todos los empleados para el ciclo actual'
+				: 'Seguimiento de objetivos de todos los empleados para el ciclo actual',
 	);
 
 	let selectedEmployeeId = $state('');
@@ -61,7 +64,7 @@
 		(() => {
 			const hit = items.find((e) => e.id === selectedEmployeeId);
 			return hit ? `${hit.firstName} ${hit.lastName}`.trim() : '';
-		})()
+		})(),
 	);
 
 	function handleSearch(e: Event) {
@@ -105,7 +108,9 @@
 					{#if inputQuery.trim()}
 						Viendo {items.length} resultado{items.length !== 1 ? 's' : ''}
 					{:else}
-						Viendo {items.length} de {totalCount} empleado{totalCount !== 1 ? 's' : ''}
+						Viendo {items.length} de {totalCount} empleado{totalCount !== 1
+							? 's'
+							: ''}
 					{/if}
 				</span>
 			{/if}
@@ -141,26 +146,26 @@
 		<ErrorState message={storeError} onretry={() => load()} />
 	{:else if items.length === 0 && !loading}
 		<p class="text-sm text-base-content/30 italic text-center py-8">
-			Sin empleados para mostrar {inputQuery ? `para "${inputQuery}"` : ""}
+			Sin empleados para mostrar {inputQuery ? `para "${inputQuery}"` : ''}
 		</p>
 	{:else}
 		<EmployeeEvaluationTable
 			mode="rh"
 			rows={items}
 			onSelect={handleSelect}
-			selectedEmployeeId={selectedEmployeeId}
+			{selectedEmployeeId}
 			disabled={!(isMedioAnio || isFinAnio)}
 		>
 			{#snippet detail()}
-					{#if selectedEmployeeId}
-						<EmployeeEvaluationDetail
-							employeeId={selectedEmployeeId}
-							viewerMode="rh"
-							showBreadcrumb={true}
-							employeeName={selectedEmployeeName}
-							onBack={handleBack}
-						/>
-					{/if}
+				{#if selectedEmployeeId}
+					<EmployeeEvaluationDetail
+						employeeId={selectedEmployeeId}
+						viewerMode="rh"
+						showBreadcrumb={true}
+						employeeName={selectedEmployeeName}
+						onBack={handleBack}
+					/>
+				{/if}
 			{/snippet}
 		</EmployeeEvaluationTable>
 	{/if}

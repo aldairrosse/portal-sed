@@ -2,7 +2,7 @@
 	import { X, Plus, Trash2, Save } from '@lucide/svelte';
 	import {
 		getScaleCriteriaForCell,
-		replaceScaleCriteria
+		replaceScaleCriteria,
 	} from '$lib/stores/competencyStore.svelte';
 
 	interface Props {
@@ -15,7 +15,15 @@
 		onCancel: () => void;
 	}
 
-	let { open, competencyName, pillarName, competencyId, pillarId, onSave, onCancel }: Props = $props();
+	let {
+		open,
+		competencyName,
+		pillarName,
+		competencyId,
+		pillarId,
+		onSave,
+		onCancel,
+	}: Props = $props();
 
 	let dialogEl: HTMLDialogElement | undefined = $state();
 	let tempIdCounter = $state(0);
@@ -23,7 +31,12 @@
 	const levels = [1, 2, 3, 4, 5] as const;
 
 	// Each entry: { localId: string, serverId?: string, level: number, description: string }
-	let entries: Array<{ localId: string; serverId: string | null; level: number; description: string }> = $state([]);
+	let entries: Array<{
+		localId: string;
+		serverId: string | null;
+		level: number;
+		description: string;
+	}> = $state([]);
 
 	$effect(() => {
 		if (!dialogEl) return;
@@ -33,7 +46,7 @@
 				localId: c.id,
 				serverId: c.id,
 				level: c.level,
-				description: c.description
+				description: c.description,
 			}));
 			tempIdCounter = 0;
 			dialogEl.showModal();
@@ -50,7 +63,12 @@
 		tempIdCounter++;
 		entries = [
 			...entries,
-			{ localId: `new-${tempIdCounter}`, serverId: null, level, description: '' }
+			{
+				localId: `new-${tempIdCounter}`,
+				serverId: null,
+				level,
+				description: '',
+			},
 		];
 	}
 
@@ -59,7 +77,9 @@
 	}
 
 	function updateEntry(localId: string, description: string) {
-		entries = entries.map((e) => (e.localId === localId ? { ...e, description } : e));
+		entries = entries.map((e) =>
+			e.localId === localId ? { ...e, description } : e,
+		);
 	}
 
 	function handleCancel() {
@@ -80,7 +100,7 @@
 			if (entry.description.trim()) {
 				finalCriteria.push({
 					level: entry.level as 1 | 2 | 3 | 4 | 5,
-					description: entry.description.trim()
+					description: entry.description.trim(),
 				});
 			}
 		}
@@ -101,7 +121,10 @@
 >
 	<div class="modal-box max-w-2xl">
 		<div class="flex items-center justify-between mb-2">
-			<h3 id="scale-criterion-title" class="text-lg font-semibold text-base-content">
+			<h3
+				id="scale-criterion-title"
+				class="text-lg font-semibold text-base-content"
+			>
 				Criterios de escala
 			</h3>
 			<button
@@ -122,10 +145,14 @@
 				{#each levels as level (level)}
 					{@const levelEntries = getEntriesByLevel(level)}
 					<fieldset class="rounded-lg border border-base-300 p-4">
-						<legend class="text-sm font-semibold text-base-content px-1">Nivel {level}</legend>
+						<legend class="text-sm font-semibold text-base-content px-1"
+							>Nivel {level}</legend
+						>
 
 						{#if levelEntries.length === 0}
-							<p class="text-xs text-base-content/30 italic mb-3">Sin criterios definidos</p>
+							<p class="text-xs text-base-content/30 italic mb-3">
+								Sin criterios definidos
+							</p>
 						{/if}
 
 						<div class="space-y-3">
@@ -135,7 +162,11 @@
 										class="textarea textarea-bordered w-full text-sm"
 										rows={2}
 										value={entry.description}
-										oninput={(e) => updateEntry(entry.localId, (e.target as HTMLTextAreaElement).value)}
+										oninput={(e) =>
+											updateEntry(
+												entry.localId,
+												(e.target as HTMLTextAreaElement).value,
+											)}
 										placeholder="Describe el comportamiento esperado en este nivel"
 										aria-label="Descripción nivel {level}"
 									></textarea>
@@ -164,7 +195,11 @@
 			</div>
 
 			<div class="modal-action mt-6">
-				<button type="button" class="btn btn-ghost btn-sm" onclick={handleCancel}>Cancelar</button>
+				<button
+					type="button"
+					class="btn btn-ghost btn-sm"
+					onclick={handleCancel}>Cancelar</button
+				>
 				<button type="submit" class="btn btn-primary btn-sm">
 					<Save class="w-4 h-4" />
 					Guardar cambios

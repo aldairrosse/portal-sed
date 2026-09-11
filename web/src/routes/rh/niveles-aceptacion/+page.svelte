@@ -8,7 +8,9 @@
 	let loaded = $state(false);
 
 	$effect(() => {
-		load().then(() => { loaded = true; });
+		load().then(() => {
+			loaded = true;
+		});
 	});
 </script>
 
@@ -23,7 +25,8 @@
 			Niveles de aceptación
 		</h1>
 		<p class="text-base-content/50 text-sm mt-1">
-			Asigna el nivel de aceptación (1 al 5) para cada competencia según el perfil. Las definiciones de nivel son globales.
+			Asigna el nivel de aceptación (1 al 5) para cada competencia según el
+			perfil. Las definiciones de nivel son globales.
 		</p>
 	</div>
 

@@ -8,7 +8,13 @@
 		mode?: 'create' | 'edit';
 		category?: GoalCategory;
 		pillars: { value: string; label: string }[];
-		onSave: (data: { id?: string; name: string; description: string; weight: number; pillarId?: string }) => void;
+		onSave: (data: {
+			id?: string;
+			name: string;
+			description: string;
+			weight: number;
+			pillarId?: string;
+		}) => void;
 		onCancel: () => void;
 		error?: string;
 		submitLabel?: string;
@@ -20,7 +26,7 @@
 		onSave,
 		onCancel,
 		error: externalError = '',
-		submitLabel = 'Guardar categoría'
+		submitLabel = 'Guardar categoría',
 	}: Props = $props();
 
 	// svelte-ignore state_referenced_locally (intentional: form state seeded once from prop)
@@ -37,12 +43,17 @@
 
 	const pillarOptions = $derived([
 		{ value: '', label: 'Sin pilar' },
-		...pillars
+		...pillars,
 	]);
 
 	function handleSubmit(e: Event) {
 		e.preventDefault();
-		const err = validateCategory({ name, description, weight, categoryId: category?.id });
+		const err = validateCategory({
+			name,
+			description,
+			weight,
+			categoryId: category?.id,
+		});
 		if (err) {
 			localError = err;
 			return;
@@ -52,7 +63,7 @@
 			name: name.trim(),
 			description: description.trim(),
 			weight,
-			pillarId: pillarId || undefined
+			pillarId: pillarId || undefined,
 		});
 	}
 </script>
@@ -114,7 +125,9 @@
 				<CustomSelect
 					options={pillarOptions}
 					value={pillarId}
-					onChange={(v) => { pillarId = v; }}
+					onChange={(v) => {
+						pillarId = v;
+					}}
 					placeholder="Sin pilar"
 					ariaLabel="Pilar"
 				/>
@@ -125,7 +138,8 @@
 				Cancelar
 			</button>
 			<button type="submit" class="btn btn-primary btn-sm">
-				<Check class="w-4 h-4" /> {submitLabel}
+				<Check class="w-4 h-4" />
+				{submitLabel}
 			</button>
 		</div>
 	</form>

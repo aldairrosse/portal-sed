@@ -18,10 +18,7 @@
 
 	const HEX_REGEX = /^#[0-9A-Fa-f]{6}$/;
 
-	let isValid = $derived(
-		title.trim().length > 0 &&
-		HEX_REGEX.test(colorHex)
-	);
+	let isValid = $derived(title.trim().length > 0 && HEX_REGEX.test(colorHex));
 
 	async function handleSave() {
 		if (!isValid) return;
@@ -33,7 +30,7 @@
 			await updateQuadrantDef(quadrantDef.quadrant, {
 				title: title.trim(),
 				description: description.trim(),
-				colorHex: colorHex.trim()
+				colorHex: colorHex.trim(),
 			});
 			onClose();
 		} catch (e) {
@@ -48,11 +45,20 @@
 	}
 </script>
 
-<svelte:window onkeydown={(e) => {
+<svelte:window
+	onkeydown={(e) => {
 		if (e.key === 'Escape') onClose();
-	}} />
+	}}
+/>
 
-<dialog class="modal" open aria-modal="true" aria-label="Configurar cuadrante" onclose={onClose} onclick={handleBackdropClick}>
+<dialog
+	class="modal"
+	open
+	aria-modal="true"
+	aria-label="Configurar cuadrante"
+	onclose={onClose}
+	onclick={handleBackdropClick}
+>
 	<div class="modal-box max-w-md">
 		<!-- Header -->
 		<div class="flex items-start justify-between gap-2 mb-4">
@@ -65,7 +71,11 @@
 				</p>
 			</div>
 			<form method="dialog">
-				<button type="submit" class="btn btn-ghost btn-sm btn-square" aria-label="Cerrar">
+				<button
+					type="submit"
+					class="btn btn-ghost btn-sm btn-square"
+					aria-label="Cerrar"
+				>
 					<X class="w-4 h-4" />
 				</button>
 			</form>
@@ -120,7 +130,9 @@
 					/>
 				</div>
 				{#if colorHex && !HEX_REGEX.test(colorHex)}
-					<p class="text-xs text-error mt-1" role="alert">Formato inválido. Usá #RRGGBB.</p>
+					<p class="text-xs text-error mt-1" role="alert">
+						Formato inválido. Usá #RRGGBB.
+					</p>
 				{/if}
 			</div>
 

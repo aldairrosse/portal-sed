@@ -8,11 +8,22 @@
 		pillarId: string;
 		pillarName: string;
 		editingId?: string | null;
-		onSave: (data: { name: string; description: string; id?: string }) => Promise<void>;
+		onSave: (data: {
+			name: string;
+			description: string;
+			id?: string;
+		}) => Promise<void>;
 		onDelete: (competency: Competency) => void;
 	}
 
-	let { competencies, pillarId, pillarName, editingId = $bindable(null), onSave, onDelete }: Props = $props();
+	let {
+		competencies,
+		pillarId,
+		pillarName,
+		editingId = $bindable(null),
+		onSave,
+		onDelete,
+	}: Props = $props();
 
 	let editName = $state('');
 	let editDescription = $state('');
@@ -49,9 +60,11 @@
 		const trimmed = nameVal.trim();
 		const existing = getCompetenciesByPillar(pillarId);
 		const duplicate = existing.find(
-			(c) => c.name.toLowerCase() === trimmed.toLowerCase() && c.id !== idToExclude
+			(c) =>
+				c.name.toLowerCase() === trimmed.toLowerCase() && c.id !== idToExclude,
 		);
-		if (duplicate) return 'Ya existe una competencia con ese nombre en este pilar.';
+		if (duplicate)
+			return 'Ya existe una competencia con ese nombre en este pilar.';
 		return null;
 	}
 
@@ -62,7 +75,10 @@
 			return;
 		}
 		try {
-			await onSave({ name: editName.trim(), description: editDescription.trim() });
+			await onSave({
+				name: editName.trim(),
+				description: editDescription.trim(),
+			});
 			editingId = null;
 			localError = '';
 		} catch (e) {
@@ -77,7 +93,11 @@
 			return;
 		}
 		try {
-			await onSave({ name: editName.trim(), description: editDescription.trim(), id });
+			await onSave({
+				name: editName.trim(),
+				description: editDescription.trim(),
+				id,
+			});
 			editingId = null;
 			localError = '';
 		} catch (e) {
@@ -90,9 +110,18 @@
 	<table class="table table-zebra" aria-label="Competencias de {pillarName}">
 		<thead>
 			<tr>
-				<th class="w-1/3 text-xs tracking-wide font-semibold text-base-content/50">Nombre</th>
-				<th class="w-1/2 text-xs tracking-wide font-semibold text-base-content/50">Descripción</th>
-				<th class="w-[140px] text-right text-xs tracking-wide font-semibold text-base-content/50">Acciones</th>
+				<th
+					class="w-1/3 text-xs tracking-wide font-semibold text-base-content/50"
+					>Nombre</th
+				>
+				<th
+					class="w-1/2 text-xs tracking-wide font-semibold text-base-content/50"
+					>Descripción</th
+				>
+				<th
+					class="w-[140px] text-right text-xs tracking-wide font-semibold text-base-content/50"
+					>Acciones</th
+				>
 			</tr>
 		</thead>
 		<tbody>
@@ -134,8 +163,13 @@
 									</div>
 								</div>
 								<div class="flex justify-end gap-2 mt-3">
-									<button class="btn btn-ghost btn-sm" onclick={cancel}>Cancelar</button>
-									<button class="btn btn-primary btn-sm" onclick={() => saveEdit(competency.id)}>
+									<button class="btn btn-ghost btn-sm" onclick={cancel}
+										>Cancelar</button
+									>
+									<button
+										class="btn btn-primary btn-sm"
+										onclick={() => saveEdit(competency.id)}
+									>
 										<Check class="w-4 h-4" /> Guardar competencia
 									</button>
 								</div>
@@ -146,7 +180,9 @@
 					<!-- Display mode -->
 					<tr>
 						<td class="font-medium">{competency.name}</td>
-						<td class="text-base-content/60 text-sm">{competency.description}</td>
+						<td class="text-base-content/60 text-sm"
+							>{competency.description}</td
+						>
 						<td class="text-right">
 							<button
 								class="btn btn-ghost btn-square btn-sm"
@@ -205,7 +241,9 @@
 								</div>
 							</div>
 							<div class="flex justify-end gap-2 mt-3">
-								<button class="btn btn-ghost btn-sm" onclick={cancel}>Cancelar</button>
+								<button class="btn btn-ghost btn-sm" onclick={cancel}
+									>Cancelar</button
+								>
 								<button class="btn btn-primary btn-sm" onclick={saveNew}>
 									<Check class="w-4 h-4" /> Guardar competencia
 								</button>

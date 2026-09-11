@@ -4,410 +4,410 @@
  */
 
 export interface paths {
-  "/auth/sso-login": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /**
-     * Redirect to Keycloak SSO
-     * @description Redirects the browser to the Keycloak authorization endpoint. Sets an httpOnly sso_state cookie for CSRF protection.
-     */
-    get: operations["ssoLogin"];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/auth/sso-step-up": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /**
-     * Solicitar autenticación de segundo factor
-     * @description Redirects the browser to Keycloak with acr_values=mobo-2fa to complete LoA 2 authentication.
-     */
-    get: operations["ssoStepUp"];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/auth/sso-callback": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /**
-     * Handle OIDC callback from Keycloak
-     * @description Exchanges the authorization code for tokens, validates the id_token via JWKS, checks resource_access for the "access" role, looks up the employee by employee_number (preferred_username), creates a local session, and redirects to the frontend.
-     */
-    get: operations["ssoCallback"];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/auth/logout": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /**
-     * End local session and redirect to SSO logout
-     * @description Revokes the current session, clears the session_token cookie, and redirects the browser to Keycloak's end-session endpoint. The browser follows the redirect chain and eventually lands at /login?logout=true.
-     */
-    get: operations["logout"];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/auth/logout-complete": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /**
-     * Redirect to frontend login after SSO logout
-     * @description After Keycloak logout completes and redirects back, this endpoint redirects the browser to the frontend login page.
-     */
-    get: operations["logoutComplete"];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/auth/refresh": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    /**
-     * Extend session expiry
-     * @description Extends the current session's expiry time by 24 hours.
-     */
-    post: operations["refreshSession"];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/auth/me": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /**
-     * Get current user information
-     * @description Returns the authenticated employee's details, role, and profile.
-     */
-    get: operations["getCurrentUser"];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/auth/admin/revoke-employee/{empId}": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    /**
-     * Revoke all sessions for an employee
-     * @description Administrative endpoint that revokes both SSO tokens and local sessions for a given employee. Requires a valid admin key in the X-Admin-Revoke-Key header.
-     */
-    post: operations["adminRevokeEmployeeSessions"];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
+	'/auth/sso-login': {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		/**
+		 * Redirect to Keycloak SSO
+		 * @description Redirects the browser to the Keycloak authorization endpoint. Sets an httpOnly sso_state cookie for CSRF protection.
+		 */
+		get: operations['ssoLogin'];
+		put?: never;
+		post?: never;
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
+	'/auth/sso-step-up': {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		/**
+		 * Solicitar autenticación de segundo factor
+		 * @description Redirects the browser to Keycloak with acr_values=mobo-2fa to complete LoA 2 authentication.
+		 */
+		get: operations['ssoStepUp'];
+		put?: never;
+		post?: never;
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
+	'/auth/sso-callback': {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		/**
+		 * Handle OIDC callback from Keycloak
+		 * @description Exchanges the authorization code for tokens, validates the id_token via JWKS, checks resource_access for the "access" role, looks up the employee by employee_number (preferred_username), creates a local session, and redirects to the frontend.
+		 */
+		get: operations['ssoCallback'];
+		put?: never;
+		post?: never;
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
+	'/auth/logout': {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		/**
+		 * End local session and redirect to SSO logout
+		 * @description Revokes the current session, clears the session_token cookie, and redirects the browser to Keycloak's end-session endpoint. The browser follows the redirect chain and eventually lands at /login?logout=true.
+		 */
+		get: operations['logout'];
+		put?: never;
+		post?: never;
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
+	'/auth/logout-complete': {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		/**
+		 * Redirect to frontend login after SSO logout
+		 * @description After Keycloak logout completes and redirects back, this endpoint redirects the browser to the frontend login page.
+		 */
+		get: operations['logoutComplete'];
+		put?: never;
+		post?: never;
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
+	'/auth/refresh': {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		get?: never;
+		put?: never;
+		/**
+		 * Extend session expiry
+		 * @description Extends the current session's expiry time by 24 hours.
+		 */
+		post: operations['refreshSession'];
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
+	'/auth/me': {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		/**
+		 * Get current user information
+		 * @description Returns the authenticated employee's details, role, and profile.
+		 */
+		get: operations['getCurrentUser'];
+		put?: never;
+		post?: never;
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
+	'/auth/admin/revoke-employee/{empId}': {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		get?: never;
+		put?: never;
+		/**
+		 * Revoke all sessions for an employee
+		 * @description Administrative endpoint that revokes both SSO tokens and local sessions for a given employee. Requires a valid admin key in the X-Admin-Revoke-Key header.
+		 */
+		post: operations['adminRevokeEmployeeSessions'];
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
 }
 export type webhooks = Record<string, never>;
 export interface components {
-  schemas: {
-    MeResponse: {
-      employee: {
-        /** Format: uuid */
-        id?: string;
-        first_name?: string;
-        last_name?: string;
-        /** Format: email */
-        email?: string;
-      };
-      /**
-       * @description Current user role
-       * @enum {string}
-       */
-      role: "colaborador" | "jefe" | "gerente" | "coordinador" | "rh" | "admin";
-      profile: {
-        /** Format: uuid */
-        id?: string;
-        name?: string;
-      };
-    };
-    Error: {
-      error?: {
-        code?: string;
-        message?: string;
-        details?: string[];
-        trace_id?: string;
-      };
-    };
-  };
-  responses: {
-    /** @description Bad request */
-    BadRequest: {
-      headers: {
-        [name: string]: unknown;
-      };
-      content: {
-        "application/json": components["schemas"]["Error"];
-      };
-    };
-    /** @description Unauthorized */
-    Unauthorized: {
-      headers: {
-        [name: string]: unknown;
-      };
-      content: {
-        "application/json": components["schemas"]["Error"];
-      };
-    };
-    /** @description Resource not found */
-    NotFound: {
-      headers: {
-        [name: string]: unknown;
-      };
-      content: {
-        "application/json": components["schemas"]["Error"];
-      };
-    };
-  };
-  parameters: never;
-  requestBodies: never;
-  headers: never;
-  pathItems: never;
+	schemas: {
+		MeResponse: {
+			employee: {
+				/** Format: uuid */
+				id?: string;
+				first_name?: string;
+				last_name?: string;
+				/** Format: email */
+				email?: string;
+			};
+			/**
+			 * @description Current user role
+			 * @enum {string}
+			 */
+			role: 'colaborador' | 'jefe' | 'gerente' | 'coordinador' | 'rh' | 'admin';
+			profile: {
+				/** Format: uuid */
+				id?: string;
+				name?: string;
+			};
+		};
+		Error: {
+			error?: {
+				code?: string;
+				message?: string;
+				details?: string[];
+				trace_id?: string;
+			};
+		};
+	};
+	responses: {
+		/** @description Bad request */
+		BadRequest: {
+			headers: {
+				[name: string]: unknown;
+			};
+			content: {
+				'application/json': components['schemas']['Error'];
+			};
+		};
+		/** @description Unauthorized */
+		Unauthorized: {
+			headers: {
+				[name: string]: unknown;
+			};
+			content: {
+				'application/json': components['schemas']['Error'];
+			};
+		};
+		/** @description Resource not found */
+		NotFound: {
+			headers: {
+				[name: string]: unknown;
+			};
+			content: {
+				'application/json': components['schemas']['Error'];
+			};
+		};
+	};
+	parameters: never;
+	requestBodies: never;
+	headers: never;
+	pathItems: never;
 }
 export type $defs = Record<string, never>;
 export interface operations {
-  ssoLogin: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Redirect to Keycloak login */
-      302: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content?: never;
-      };
-    };
-  };
-  ssoStepUp: {
-    parameters: {
-      query?: {
-        return_to?: string;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Redirect to Keycloak for step-up authentication */
-      302: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content?: never;
-      };
-    };
-  };
-  ssoCallback: {
-    parameters: {
-      query: {
-        code: string;
-        state: string;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Redirect to frontend (root on success, /login?sso_error= on failure) */
-      302: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content?: never;
-      };
-    };
-  };
-  logout: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Redirect to Keycloak end-session endpoint */
-      302: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content?: never;
-      };
-    };
-  };
-  logoutComplete: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Redirect to frontend /login */
-      302: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content?: never;
-      };
-    };
-  };
-  refreshSession: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Session refreshed successfully */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": {
-            /** @example Sesión actualizada */
-            message?: string;
-            /**
-             * Format: date-time
-             * @example 2026-06-06T15:00:00Z
-             */
-            expires_at?: string;
-          };
-        };
-      };
-      401: components["responses"]["Unauthorized"];
-    };
-  };
-  getCurrentUser: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Current user information */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["MeResponse"];
-        };
-      };
-      401: components["responses"]["Unauthorized"];
-    };
-  };
-  adminRevokeEmployeeSessions: {
-    parameters: {
-      query?: never;
-      header: {
-        "X-Admin-Revoke-Key": string;
-      };
-      path: {
-        empId: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Sessions revoked successfully */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": {
-            /** @example Sesiones revocadas */
-            message?: string;
-            /** Format: uuid */
-            employee_id?: string;
-            /** @example 3 */
-            sessions_count?: string;
-          };
-        };
-      };
-      403: components["responses"]["Unauthorized"];
-    };
-  };
+	ssoLogin: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description Redirect to Keycloak login */
+			302: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+		};
+	};
+	ssoStepUp: {
+		parameters: {
+			query?: {
+				return_to?: string;
+			};
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description Redirect to Keycloak for step-up authentication */
+			302: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+		};
+	};
+	ssoCallback: {
+		parameters: {
+			query: {
+				code: string;
+				state: string;
+			};
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description Redirect to frontend (root on success, /login?sso_error= on failure) */
+			302: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+		};
+	};
+	logout: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description Redirect to Keycloak end-session endpoint */
+			302: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+		};
+	};
+	logoutComplete: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description Redirect to frontend /login */
+			302: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+		};
+	};
+	refreshSession: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description Session refreshed successfully */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': {
+						/** @example Sesión actualizada */
+						message?: string;
+						/**
+						 * Format: date-time
+						 * @example 2026-06-06T15:00:00Z
+						 */
+						expires_at?: string;
+					};
+				};
+			};
+			401: components['responses']['Unauthorized'];
+		};
+	};
+	getCurrentUser: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description Current user information */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': components['schemas']['MeResponse'];
+				};
+			};
+			401: components['responses']['Unauthorized'];
+		};
+	};
+	adminRevokeEmployeeSessions: {
+		parameters: {
+			query?: never;
+			header: {
+				'X-Admin-Revoke-Key': string;
+			};
+			path: {
+				empId: string;
+			};
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description Sessions revoked successfully */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': {
+						/** @example Sesiones revocadas */
+						message?: string;
+						/** Format: uuid */
+						employee_id?: string;
+						/** @example 3 */
+						sessions_count?: string;
+					};
+				};
+			};
+			403: components['responses']['Unauthorized'];
+		};
+	};
 }

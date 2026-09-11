@@ -1,8 +1,15 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { client } from '$lib/api/client';
-	import { getProfiles, load as loadCompetencyData } from '$lib/stores/competencyStore.svelte';
-	import { getRoot, updateEmployeeAssignment, load as loadOrgHierarchy } from '$lib/stores/orgHierarchyStore.svelte';
+	import {
+		getProfiles,
+		load as loadCompetencyData,
+	} from '$lib/stores/competencyStore.svelte';
+	import {
+		getRoot,
+		updateEmployeeAssignment,
+		load as loadOrgHierarchy,
+	} from '$lib/stores/orgHierarchyStore.svelte';
 	import { titleCase } from '$lib/utils/text';
 	import CustomSelect from '$lib/components/ui/CustomSelect.svelte';
 	import OrgHierarchyTree from '$lib/components/org-hierarchy/OrgHierarchyTree.svelte';
@@ -21,11 +28,7 @@
 		onclose: () => void;
 	}
 
-	let {
-		employeeId,
-		onsave = () => {},
-		onclose = () => {},
-	}: Props = $props();
+	let { employeeId, onsave = () => {}, onclose = () => {} }: Props = $props();
 
 	let loading = $state(true);
 	let saving = $state(false);
@@ -62,15 +65,18 @@
 			initialProfileId = data.profileId;
 			initialOrgNodeId = data.orgNodeId;
 		} catch (e) {
-			error = e instanceof Error ? e.message : 'Error al cargar datos del empleado';
+			error =
+				e instanceof Error ? e.message : 'Error al cargar datos del empleado';
 		} finally {
 			loading = false;
 		}
 	});
 
 	const hasChanges = $derived(
-		selectedProfileId !== '' && selectedOrgNodeId !== '' &&
-		(selectedProfileId !== initialProfileId || selectedOrgNodeId !== initialOrgNodeId),
+		selectedProfileId !== '' &&
+			selectedOrgNodeId !== '' &&
+			(selectedProfileId !== initialProfileId ||
+				selectedOrgNodeId !== initialOrgNodeId),
 	);
 
 	async function handleSave() {
@@ -78,7 +84,11 @@
 		saving = true;
 		error = null;
 		try {
-			await updateEmployeeAssignment(employeeId, selectedProfileId, selectedOrgNodeId);
+			await updateEmployeeAssignment(
+				employeeId,
+				selectedProfileId,
+				selectedOrgNodeId,
+			);
 			onsave();
 		} catch (e) {
 			error = e instanceof Error ? e.message : 'Error al guardar cambios';
@@ -97,13 +107,14 @@
 		</div>
 	</dialog>
 {:else}
-	<dialog class="modal modal-open" onclick={(e) => { if (e.target === e.currentTarget) onclose(); }}>
-		<div
-			class="modal-box max-w-lg"
-		>
-			<h3 class="font-bold text-lg mb-4">
-				Cambiar departamento y perfil
-			</h3>
+	<dialog
+		class="modal modal-open"
+		onclick={(e) => {
+			if (e.target === e.currentTarget) onclose();
+		}}
+	>
+		<div class="modal-box max-w-lg">
+			<h3 class="font-bold text-lg mb-4">Cambiar departamento y perfil</h3>
 			<p class="text-sm text-base-content/30">
 				{employeeName}
 			</p>
@@ -131,7 +142,9 @@
 						>Departamento</span
 					>
 					{#if rootNode}
-						<div class="border border-base-300 rounded-box max-h-64 overflow-y-auto">
+						<div
+							class="border border-base-300 rounded-box max-h-64 overflow-y-auto"
+						>
 							<OrgHierarchyTree
 								node={rootNode}
 								viewType="departments"
@@ -142,7 +155,9 @@
 							/>
 						</div>
 					{:else}
-						<p class="text-sm text-base-content/30 italic">Cargando árbol organizacional...</p>
+						<p class="text-sm text-base-content/30 italic">
+							Cargando árbol organizacional...
+						</p>
 					{/if}
 				</div>
 			</div>

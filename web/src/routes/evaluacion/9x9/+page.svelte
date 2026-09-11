@@ -9,9 +9,13 @@
 		isLoading,
 		getError,
 		reload,
-		markReady
+		markReady,
 	} from '$lib/stores/nineBoxStore.svelte';
-	import { loadCycles, getActiveCycle, getError as cycleError } from '$lib/stores/cycleStore.svelte';
+	import {
+		loadCycles,
+		getActiveCycle,
+		getError as cycleError,
+	} from '$lib/stores/cycleStore.svelte';
 	import { loadPhases, getPhaseId } from '$lib/stores/phaseStore.svelte';
 	import { type EvaluationProfile } from '$lib/types/evaluation';
 	import type { NineBoxEntry, NineBoxTier } from '$lib/types/nine-box';
@@ -24,8 +28,18 @@
 	// ─── Phase options ─────────────────────────────────────────────────────────
 
 	const NINEBOX_PHASES = [
-		{ id: 'medio-anio', phaseEnum: 'avance', label: 'Avance medio año', shortLabel: 'Avance' },
-		{ id: 'fin-anio', phaseEnum: 'cierre', label: 'Cierre fin de año', shortLabel: 'Evaluación' }
+		{
+			id: 'medio-anio',
+			phaseEnum: 'avance',
+			label: 'Avance medio año',
+			shortLabel: 'Avance',
+		},
+		{
+			id: 'fin-anio',
+			phaseEnum: 'cierre',
+			label: 'Cierre fin de año',
+			shortLabel: 'Evaluación',
+		},
 	] as const;
 
 	type NineBoxPhaseId = (typeof NINEBOX_PHASES)[number]['id'];
@@ -36,7 +50,7 @@
 		'jefe',
 		'director',
 		'director-general',
-		'rh'
+		'rh',
 	];
 
 	const profile = $derived(getProfile());
@@ -48,9 +62,11 @@
 	// Resolve UUIDs for cycle and phase
 	const activeCycle = $derived(getActiveCycle());
 	const selectedPhaseEnum = $derived(
-		NINEBOX_PHASES.find((p) => p.id === selectedPhase)?.phaseEnum
+		NINEBOX_PHASES.find((p) => p.id === selectedPhase)?.phaseEnum,
 	);
-	const phaseUUID = $derived(selectedPhaseEnum ? getPhaseId(selectedPhaseEnum) : undefined);
+	const phaseUUID = $derived(
+		selectedPhaseEnum ? getPhaseId(selectedPhaseEnum) : undefined,
+	);
 
 	// Load prerequisite data once, then nine-box data when UUIDs are ready
 	$effect(() => {
@@ -86,7 +102,7 @@
 	const prereqError = $derived(cycleError());
 
 	const phaseLabel = $derived(
-		NINEBOX_PHASES.find((p) => p.id === selectedPhase)?.shortLabel ?? ''
+		NINEBOX_PHASES.find((p) => p.id === selectedPhase)?.shortLabel ?? '',
 	);
 
 	// ─── Cell modal state ────────────────────────────────────────────────────
@@ -95,7 +111,11 @@
 	let modalPerfTier = $state<NineBoxTier>(2);
 	let modalPotTier = $state<NineBoxTier>(2);
 
-	function handleCellClick(cellEntries: NineBoxEntry[], perfTier: NineBoxTier, potTier: NineBoxTier) {
+	function handleCellClick(
+		cellEntries: NineBoxEntry[],
+		perfTier: NineBoxTier,
+		potTier: NineBoxTier,
+	) {
 		modalEntries = cellEntries;
 		modalPerfTier = perfTier;
 		modalPotTier = potTier;
@@ -130,9 +150,7 @@
 				<Grid3x3 class="w-6 h-6" />
 				Matriz 9-Box
 			</h1>
-			<p class="text-sm text-base-content/50 mt-1">
-				Desempeño vs Potencial
-			</p>
+			<p class="text-sm text-base-content/50 mt-1">Desempeño vs Potencial</p>
 		</div>
 		<!-- Phase selector -->
 		<div role="tablist" class="tabs tabs-box gap-0">
@@ -141,7 +159,9 @@
 					role="tab"
 					type="button"
 					class="tab {selectedPhase === phase.id ? 'tab-active' : ''}"
-					onclick={() => { selectedPhase = phase.id; }}
+					onclick={() => {
+						selectedPhase = phase.id;
+					}}
 				>
 					{phase.label}
 				</button>
@@ -157,7 +177,9 @@
 			actionHref="/"
 		/>
 	{:else}
-		<span class="badge badge-ghost badge-sm mx-auto">{matrixEntries.length} empleados</span>
+		<span class="badge badge-ghost badge-sm mx-auto"
+			>{matrixEntries.length} empleados</span
+		>
 
 		<!-- Warning banners (non-blocking) -->
 		{#if prereqError}
@@ -168,7 +190,8 @@
 		{#if error}
 			<div class="alert alert-error">
 				<span>{error}</span>
-				<button class="btn btn-xs btn-ghost" onclick={reload}>Reintentar</button>
+				<button class="btn btn-xs btn-ghost" onclick={reload}>Reintentar</button
+				>
 			</div>
 		{/if}
 		{#if loading}
@@ -206,9 +229,6 @@
 {#if isRH && configQuadrant !== null}
 	{@const qDef = getQuadrantDef(configQuadrant)}
 	{#if qDef}
-		<NineBoxCellConfig
-			quadrantDef={qDef}
-			onClose={handleCloseConfig}
-		/>
+		<NineBoxCellConfig quadrantDef={qDef} onClose={handleCloseConfig} />
 	{/if}
 {/if}

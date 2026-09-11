@@ -14,7 +14,7 @@
 		ratings,
 		competencies,
 		acceptanceLevels,
-		showRhColumn = true
+		showRhColumn = true,
 	}: Props = $props();
 
 	function getRating(competencyId: string): CompetencyRating | undefined {
@@ -23,42 +23,51 @@
 
 	function weightedScore(
 		selfRating: number | undefined,
-		rhRating: number | undefined
+		rhRating: number | undefined,
 	): number | undefined {
-		if (selfRating !== undefined && rhRating !== undefined) return selfRating * 0.2 + rhRating * 0.8;
+		if (selfRating !== undefined && rhRating !== undefined)
+			return selfRating * 0.2 + rhRating * 0.8;
 		return rhRating ?? selfRating;
 	}
 
 	function getGapClass(
 		selfRating: number | undefined,
 		rhRating: number | undefined,
-		acceptanceLevel: number
+		acceptanceLevel: number,
 	): string {
 		const weighted = weightedScore(selfRating, rhRating);
 		if (weighted === undefined) return 'badge-ghost';
 
 		const meetsExpected = weighted >= acceptanceLevel;
-		const rhDiff = rhRating !== undefined && selfRating !== undefined ? Math.abs(rhRating - selfRating) : 0;
+		const rhDiff =
+			rhRating !== undefined && selfRating !== undefined
+				? Math.abs(rhRating - selfRating)
+				: 0;
 
 		if (!meetsExpected) return 'badge-error';
-		if (showRhColumn && rhRating !== undefined && rhDiff >= 2) return 'badge-warning';
+		if (showRhColumn && rhRating !== undefined && rhDiff >= 2)
+			return 'badge-warning';
 		return 'badge-success';
 	}
 
 	function getGapLabel(
 		selfRating: number | undefined,
 		rhRating: number | undefined,
-		acceptanceLevel: number
+		acceptanceLevel: number,
 	): string {
 		const weighted = weightedScore(selfRating, rhRating);
 		if (weighted === undefined) return '—';
 
 		const rounded = Math.round(weighted * 10) / 10;
 		const diff = Math.round((weighted - acceptanceLevel) * 10) / 10;
-		const rhDiff = rhRating !== undefined && selfRating !== undefined ? Math.abs(rhRating - selfRating) : 0;
+		const rhDiff =
+			rhRating !== undefined && selfRating !== undefined
+				? Math.abs(rhRating - selfRating)
+				: 0;
 
 		if (diff < 0) return `${diff} (por debajo)`;
-		if (showRhColumn && rhRating !== undefined && rhDiff >= 2) return `brecha RH ${rhDiff}`;
+		if (showRhColumn && rhRating !== undefined && rhDiff >= 2)
+			return `brecha RH ${rhDiff}`;
 		if (diff === 0) return '0 (cumple)';
 		return `+${diff} (supera · ${rounded})`;
 	}
@@ -69,12 +78,20 @@
 		<thead>
 			<tr>
 				<th class="text-xs font-semibold text-base-content/60">Competencia</th>
-				<th class="text-xs font-semibold text-base-content/60 text-center">Autoevaluación</th>
+				<th class="text-xs font-semibold text-base-content/60 text-center"
+					>Autoevaluación</th
+				>
 				{#if showRhColumn}
-					<th class="text-xs font-semibold text-base-content/60 text-center">Evaluación</th>
+					<th class="text-xs font-semibold text-base-content/60 text-center"
+						>Evaluación</th
+					>
 				{/if}
-				<th class="text-xs font-semibold text-base-content/60 text-center">Nivel esperado</th>
-				<th class="text-xs font-semibold text-base-content/60 text-center">Brecha</th>
+				<th class="text-xs font-semibold text-base-content/60 text-center"
+					>Nivel esperado</th
+				>
+				<th class="text-xs font-semibold text-base-content/60 text-center"
+					>Brecha</th
+				>
 			</tr>
 		</thead>
 		<tbody>
@@ -86,7 +103,9 @@
 				{@const gapClass = getGapClass(selfVal, rhVal, acceptance)}
 				{@const gapLabel = getGapLabel(selfVal, rhVal, acceptance)}
 				<tr>
-					<td class="text-sm font-medium text-base-content">{competency.name}</td>
+					<td class="text-sm font-medium text-base-content"
+						>{competency.name}</td
+					>
 					<td class="text-center">
 						{#if selfVal}
 							<span class="badge badge-sm">{selfVal}</span>

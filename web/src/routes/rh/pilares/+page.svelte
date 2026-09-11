@@ -7,7 +7,7 @@
 		deletePillar,
 		load,
 		isLoading,
-		getError
+		getError,
 	} from '$lib/stores/competencyStore.svelte';
 	import type { Pillar } from '$lib/types/competency';
 	import PillarTable from '$lib/components/competency/PillarTable.svelte';
@@ -39,21 +39,40 @@
 		editingId = '__new__';
 	}
 
-	async function handlePillarSave(data: { name: string; description: string; id?: string }) {
+	async function handlePillarSave(data: {
+		name: string;
+		description: string;
+		id?: string;
+	}) {
 		if (data.id) {
 			try {
-				await updatePillar(data.id, { name: data.name, description: data.description });
-				notifications.success(`Pilar "${data.name}" actualizado correctamente.`);
+				await updatePillar(data.id, {
+					name: data.name,
+					description: data.description,
+				});
+				notifications.success(
+					`Pilar "${data.name}" actualizado correctamente.`,
+				);
 			} catch (e) {
-				notifications.error(e instanceof Error ? e.message : 'Error al actualizar pilar');
+				notifications.error(
+					e instanceof Error ? e.message : 'Error al actualizar pilar',
+				);
 			}
 		} else {
-			const newPillar: Pillar = { id: generateId(), name: data.name, description: data.description, type: selectedType, updatedAt: new Date().toISOString() };
+			const newPillar: Pillar = {
+				id: generateId(),
+				name: data.name,
+				description: data.description,
+				type: selectedType,
+				updatedAt: new Date().toISOString(),
+			};
 			try {
 				await addPillar(newPillar);
 				notifications.success(`Pilar "${data.name}" creado correctamente.`);
 			} catch (e) {
-				notifications.error(e instanceof Error ? e.message : 'Error al crear pilar');
+				notifications.error(
+					e instanceof Error ? e.message : 'Error al crear pilar',
+				);
 			}
 		}
 	}
@@ -69,7 +88,9 @@
 			await deletePillar(deletingPillar.id);
 			notifications.success(`Pilar "${name}" eliminado correctamente.`);
 		} catch (e) {
-			notifications.error(e instanceof Error ? e.message : 'Error al eliminar pilar');
+			notifications.error(
+				e instanceof Error ? e.message : 'Error al eliminar pilar',
+			);
 		}
 		deletingPillar = null;
 	}
@@ -93,7 +114,11 @@
 			<p class="text-base-content/50 text-sm mt-1">
 				Gestiona los pilares del marco de competencias y metas.
 			</p>
-			<button class="btn btn-primary btn-sm mt-4" onclick={handleNew} disabled={isAnyInlineEditing}>
+			<button
+				class="btn btn-primary btn-sm mt-4"
+				onclick={handleNew}
+				disabled={isAnyInlineEditing}
+			>
 				<Plus class="w-4 h-4" />
 				Nuevo pilar
 			</button>
@@ -103,7 +128,9 @@
 				role="tab"
 				type="button"
 				class="tab {selectedType === 'competencias' ? 'tab-active' : ''}"
-				onclick={() => { selectedType = 'competencias'; }}
+				onclick={() => {
+					selectedType = 'competencias';
+				}}
 			>
 				Competencias
 			</button>
@@ -111,7 +138,9 @@
 				role="tab"
 				type="button"
 				class="tab {selectedType === 'metas' ? 'tab-active' : ''}"
-				onclick={() => { selectedType = 'metas'; }}
+				onclick={() => {
+					selectedType = 'metas';
+				}}
 			>
 				Metas
 			</button>
@@ -125,10 +154,18 @@
 	{:else if pillarlen === 0 && editingId !== '__new__'}
 		<EmptyState
 			title="Sin pilares"
-			message="Aún no hay pilares de {selectedType === 'competencias' ? 'competencias' : 'metas'} creados. Crea el primer pilar para comenzar."
+			message="Aún no hay pilares de {selectedType === 'competencias'
+				? 'competencias'
+				: 'metas'} creados. Crea el primer pilar para comenzar."
 		/>
 	{:else}
-		<PillarTable pillarType={selectedType} {pillars} bind:editingId onSave={handlePillarSave} onDelete={handleDelete} />
+		<PillarTable
+			pillarType={selectedType}
+			{pillars}
+			bind:editingId
+			onSave={handlePillarSave}
+			onDelete={handleDelete}
+		/>
 	{/if}
 </div>
 

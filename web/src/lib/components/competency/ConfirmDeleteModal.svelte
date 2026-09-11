@@ -16,7 +16,7 @@
 		message,
 		itemName,
 		onConfirm,
-		onCancel
+		onCancel,
 	}: Props = $props();
 
 	let dialogEl: HTMLDialogElement | undefined = $state();
@@ -56,17 +56,24 @@
 >
 	<div class="modal-box">
 		<div class="flex items-start gap-3">
-			<div class="w-10 h-10 rounded-full bg-error/10 flex items-center justify-center flex-shrink-0">
+			<div
+				class="w-10 h-10 rounded-full bg-error/10 flex items-center justify-center flex-shrink-0"
+			>
 				<AlertTriangle class="w-5 h-5 text-error" strokeWidth={2} />
 			</div>
 			<div class="flex-1 min-w-0">
-				<h3 id="delete-confirm-title" class="text-lg font-semibold text-base-content">
+				<h3
+					id="delete-confirm-title"
+					class="text-lg font-semibold text-base-content"
+				>
 					{title}
 				</h3>
 				<p class="text-base-content/60 mt-2 text-sm">
 					{message ?? 'Esta acción no se puede deshacer.'}
 				</p>
-				<div class="mt-3 px-3 py-2 rounded-lg bg-base-200 text-sm font-medium text-base-content">
+				<div
+					class="mt-3 px-3 py-2 rounded-lg bg-base-200 text-sm font-medium text-base-content"
+				>
 					{itemName}
 				</div>
 			</div>
@@ -80,8 +87,12 @@
 		</div>
 
 		<div class="modal-action mt-6">
-			<button class="btn btn-ghost btn-sm" onclick={handleCancel}>Cancelar</button>
-			<button class="btn btn-error btn-sm" onclick={handleConfirm}>Eliminar</button>
+			<button class="btn btn-ghost btn-sm" onclick={handleCancel}
+				>Cancelar</button
+			>
+			<button class="btn btn-error btn-sm" onclick={handleConfirm}
+				>Eliminar</button
+			>
 		</div>
 	</div>
 </dialog>

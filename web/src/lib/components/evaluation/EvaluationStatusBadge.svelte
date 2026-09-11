@@ -10,16 +10,19 @@
 	const classMap: Record<EvaluationStatus, string> = {
 		pending: 'badge-ghost',
 		'in-progress': 'badge-warning',
-		completed: 'badge-success'
+		completed: 'badge-success',
 	};
 
 	const labelMap: Record<EvaluationStatus, string> = {
 		pending: 'Pendiente',
 		'in-progress': 'En progreso',
-		completed: 'Completada'
+		completed: 'Completada',
 	};
 </script>
 
-<span class="badge badge-sm {classMap[status]}" aria-label="Estado: {labelMap[status]}">
+<span
+	class="badge badge-sm {classMap[status]}"
+	aria-label="Estado: {labelMap[status]}"
+>
 	{labelMap[status]}
 </span>

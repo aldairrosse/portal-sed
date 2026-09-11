@@ -1,7 +1,10 @@
 <script lang="ts">
 	import { Save, X } from '@lucide/svelte';
 	import { untrack } from 'svelte';
-	import { getLevelDefinitions, updateLevelDefinition } from '$lib/stores/competencyStore.svelte';
+	import {
+		getLevelDefinitions,
+		updateLevelDefinition,
+	} from '$lib/stores/competencyStore.svelte';
 	import * as notifications from '$lib/stores/notifications.svelte';
 
 	interface Props {
@@ -52,8 +55,8 @@
 		levels.filter(
 			(l) =>
 				editLabels[l].trim() !== originalLabels[l].trim() ||
-				editDescriptions[l].trim() !== originalDescriptions[l].trim()
-		)
+				editDescriptions[l].trim() !== originalDescriptions[l].trim(),
+		),
 	);
 
 	const hasChanges = $derived(changedLevels.length > 0);
@@ -83,7 +86,7 @@
 				await updateLevelDefinition(
 					level,
 					editLabels[level].trim(),
-					editDescriptions[level].trim()
+					editDescriptions[level].trim(),
 				);
 			}
 			// Refresh the original snapshot so the button disables after save.
@@ -94,13 +97,13 @@
 			notifications.success(
 				toSave.length === 1
 					? `Nivel ${toSave[0]} guardado correctamente.`
-					: `${toSave.length} niveles guardados correctamente.`
+					: `${toSave.length} niveles guardados correctamente.`,
 			);
 			onSaved?.();
 		} catch (err) {
 			console.error('[LevelDef] Save failed:', err);
 			notifications.error(
-				`Error al guardar: ${err instanceof Error ? err.message : String(err)}`
+				`Error al guardar: ${err instanceof Error ? err.message : String(err)}`,
 			);
 		} finally {
 			saving = false;
@@ -146,8 +149,8 @@
 		</p>
 
 		<div class="overflow-y-auto flex-1 pr-1 space-y-5 py-2 px-1">
-		{#each levels as level (level)}
-			<div class="flex items-start gap-3">
+			{#each levels as level (level)}
+				<div class="flex items-start gap-3">
 					<div
 						class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-1"
 					>
