@@ -4,14 +4,35 @@
 	import { load, isLoading } from '$lib/stores/evaluationStore.svelte';
 	import { load as loadCompetencies } from '$lib/stores/competencyStore.svelte';
 	import { client } from '$lib/api/client';
+	import { getSession } from '$lib/api/session.svelte';
 	import PageSkeleton from '$lib/components/ui/PageSkeleton.svelte';
 	import { Network, Table, Briefcase } from '@lucide/svelte';
     import { titleCase } from '$lib/utils/text';
+	import { getProfile } from '$lib/stores/devContext.svelte';
 
 	const employeeId = $derived($page.params.employeeId);
+	const isSelf = $derived(employeeId === getSession().user?.employeeId);
+	const viewerProfile = $derived(getProfile());
+	const backHref = $derived(
+		viewerProfile === 'rh'
+			? '/rh/evaluaciones'
+			: viewerProfile === 'colaborador' || viewerProfile === 'vendedor'
+				? '/mi-evaluacion'
+				: '/mis-evaluados'
+	);
+	const backLabel = $derived(
+		viewerProfile === 'rh'
+			? 'Evaluaciones'
+			: viewerProfile === 'colaborador' || viewerProfile === 'vendedor'
+				? 'Mi evaluación'
+				: 'Mis evaluados'
+	);
 
 	let employeeData = $state<{ firstName: string; lastName: string; jobTitle: string; profileName: string } | null>(null);
-	const employeeName = $derived(employeeData ? `${employeeData.firstName} ${employeeData.lastName}` : 'Empleado');
+	const employeeName = $derived(
+		employeeData ? `${employeeData.firstName} ${employeeData.lastName}`.trim() || 'Empleado' : 'Empleado'
+	);
+	const avatarInitial = $derived((employeeName.trim().charAt(0) || '—').toUpperCase());
 
 	let activeTab: 'radar' | 'table' = $state('radar');
 
@@ -53,9 +74,9 @@
 	<nav class="breadcrumbs text-sm" aria-label="Navegación">
 		<ul>
 			<li>
-				<button onclick={() => window.history.back()} class="link link-hover text-base-content/50">
-					Evaluaciones
-				</button>
+				<a href={backHref} class="link link-hover text-base-content/50">
+					{backLabel}
+				</a>
 			</li>
 			<li class="text-base-content/70">
 				<span class="font-medium">{titleCase(employeeData?.profileName ?? 'Colaborador')}</span>
@@ -69,7 +90,7 @@
 			<div class="avatar placeholder">
 				<div class="bg-primary text-primary-content w-10 rounded-full flex items-center justify-center">
 					<span class="text-sm font-bold">
-						{employeeName.charAt(0).toUpperCase()}
+						{avatarInitial}
 					</span>
 				</div>
 			</div>
@@ -113,6 +134,6 @@
 		<PageSkeleton variant="card" rows={3} avatar />
 	{:else}
 		<!-- Competency view -->
-		<CompetencyNetworkView {employeeId} {employeeName} {activeTab} />
+		<CompetencyNetworkView {employeeId} {employeeName} {activeTab} {isSelf} />
 	{/if}
 </div>

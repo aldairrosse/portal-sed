@@ -1,15 +1,23 @@
 <script lang="ts">
     import { onMount } from 'svelte';
     import EmployeeEvaluationDetail from "$lib/components/evaluation/EmployeeEvaluationDetail.svelte";
+    import { getSession } from "$lib/api/session.svelte";
     import { getProfile } from "$lib/stores/devContext.svelte";
     import { getAssignmentsByProfile, load as loadGoals, isLoading as goalsLoading } from "$lib/stores/goalsStore.svelte";
     import PageSkeleton from '$lib/components/ui/PageSkeleton.svelte';
+    import EmptyState from '$lib/components/ui/EmptyState.svelte';
     import { ClipboardCheck } from "@lucide/svelte";
 
     const profile = $derived(getProfile());
     const assignments = $derived(getAssignmentsByProfile(profile));
-    const employeeId = $derived(assignments[0]?.employeeId ?? "");
+    const assignment = $derived(assignments[0]);
+    const assignmentStatus = $derived(assignment?.status);
+    const employeeId = $derived(assignment?.employeeId ?? "");
+    const employeeName = $derived(getSession().user?.name ?? getSession().user?.profileName ?? '');
     const loading = $derived(goalsLoading());
+    const showEmptyGate = $derived(
+        !employeeId || assignmentStatus === 'no_iniciado' || assignmentStatus === undefined
+    );
 
     onMount(() => {
         loadGoals();
@@ -33,21 +41,14 @@
 
     {#if loading}
         <PageSkeleton variant="card" rows={3} />
-    {:else if employeeId}
-        <EmployeeEvaluationDetail {employeeId} viewerMode="self" showBreadcrumb={false} />
+    {:else if employeeId && !showEmptyGate}
+        <EmployeeEvaluationDetail {employeeId} viewerMode="self" showBreadcrumb={false} {employeeName} />
     {:else}
-        <div class="flex flex-col items-center justify-center py-16 text-center">
-            <div class="w-16 h-16 rounded-2xl bg-base-200 flex items-center justify-center mb-5">
-                <ClipboardCheck class="w-8 h-8 text-base-content/30" strokeWidth={1.5} />
-            </div>
-            <h3 class="text-lg font-semibold text-base-content/70">Sin asignación de metas</h3>
-            <p class="text-base-content/40 mt-1.5 max-w-sm">
-                Aún no tienes metas asignadas para este ciclo.
-                Crea tus categorías y objetivos para empezar.
-            </p>
-            <a href="/objetivos/asignacion" class="btn btn-primary btn-sm mt-5 px-6">
-                Ir a metas
-            </a>
-        </div>
+        <EmptyState
+            title="Sin asignación de metas"
+            message="Aún no tienes metas asignadas para este ciclo. Crea tus categorías y objetivos para empezar."
+            actionLabel="Ir a metas"
+            actionHref="/objetivos/asignacion"
+        />
     {/if}
 </div>

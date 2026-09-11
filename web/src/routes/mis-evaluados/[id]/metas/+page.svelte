@@ -3,7 +3,6 @@
 	import { client } from '$lib/api/client';
 	import {
 		getCategories,
-		getGoals,
 		getGoalsByCategory,
 		getInstitutionalGoals,
 		loadForEmployee,

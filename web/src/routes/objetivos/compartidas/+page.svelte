@@ -46,7 +46,7 @@
             const teamId = getSession().user?.orgNodeId ?? undefined;
             const w = await getTeamWeightConfig(teamId);
             jWeight = w.j_weight ?? 0;
-        } catch {}
+        } catch { /* keep default weight */ }
     }
     function onJInput(e: Event) {
         const v = Number((e.target as HTMLInputElement).value);

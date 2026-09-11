@@ -5,6 +5,7 @@
 	import PageSkeleton from '$lib/components/ui/PageSkeleton.svelte';
 	import ErrorState from '$lib/components/ui/ErrorState.svelte';
 	import { getActivePhase } from '$lib/api/cycle.svelte';
+	import { isFinAnio as isFinAnioPhase, isMedioAnio as isMedioAnioPhase } from '$lib/types/cycle';
 	import {
 		getItems,
 		isLoading,
@@ -30,8 +31,8 @@
 	const totalCount = $derived(getTotalCount());
 
 	const phase = $derived(getActivePhase() ?? 'inicio-anio');
-	const isFinAnio = $derived(phase === 'fin-anio');
-	const isMedioAnio = $derived(phase === 'medio-anio');
+	const isFinAnio = $derived(isFinAnioPhase(phase));
+	const isMedioAnio = $derived(isMedioAnioPhase(phase));
 
 	const phaseDescription = $derived(
 		isFinAnio
@@ -55,6 +56,13 @@
 	function handleBack() {
 		selectedEmployeeId = '';
 	}
+
+	const selectedEmployeeName = $derived(
+		(() => {
+			const hit = items.find((e) => e.id === selectedEmployeeId);
+			return hit ? `${hit.firstName} ${hit.lastName}`.trim() : '';
+		})()
+	);
 
 	function handleSearch(e: Event) {
 		const val = (e.target as HTMLInputElement).value;
@@ -141,17 +149,18 @@
 			rows={items}
 			onSelect={handleSelect}
 			selectedEmployeeId={selectedEmployeeId}
-			disabled={!isFinAnio}
+			disabled={!(isMedioAnio || isFinAnio)}
 		>
 			{#snippet detail()}
-				{#if selectedEmployeeId}
-					<EmployeeEvaluationDetail
-						employeeId={selectedEmployeeId}
-						viewerMode="rh"
-						showBreadcrumb={true}
-						onBack={handleBack}
-					/>
-				{/if}
+					{#if selectedEmployeeId}
+						<EmployeeEvaluationDetail
+							employeeId={selectedEmployeeId}
+							viewerMode="rh"
+							showBreadcrumb={true}
+							employeeName={selectedEmployeeName}
+							onBack={handleBack}
+						/>
+					{/if}
 			{/snippet}
 		</EmployeeEvaluationTable>
 	{/if}

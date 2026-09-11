@@ -327,7 +327,7 @@
     const globalSum = $derived(
         categories.reduce((sum, c) => sum + c.weight, 0),
     );
-    const institutionalSum = $derived(institutionalGoals.reduce((sum, g) => sum + g.weight, 0));
+    const _institutionalSum = $derived(institutionalGoals.reduce((sum, g) => sum + g.weight, 0));
     const valid = $derived(isAssignmentValid());
 
     function institutionalProgress(goal: InstitutionalGoal): number {

@@ -6,6 +6,7 @@
 		getError,
 		createCycle,
 		advancePhase,
+		revertPhase,
 		hasCycleForYear,
 		assignAll
 	} from '$lib/stores/cycleStore.svelte';
@@ -87,13 +88,15 @@
 	async function confirmAdvanceAction() {
 		if (!confirmAdvance) return;
 		advancingId = confirmAdvance.id;
-		localError = null;
-		const ok = await advancePhase(confirmAdvance.id, confirmAdvance.toPhase);
+		const cycle = cycles.find((c) => c.id === confirmAdvance!.id);
+		const isRevert = getPrevPhase(cycle?.current_phase ?? 'asignacion') === confirmAdvance.toPhase;
+		if (isRevert) {
+			await revertPhase(confirmAdvance.id);
+		} else {
+			await advancePhase(confirmAdvance.id, confirmAdvance.toPhase);
+		}
 		advancingId = null;
 		confirmAdvance = null;
-		if (!ok) {
-			localError = getError();
-		}
 	}
 
 	function requestAssignAll(cycleId: string) {
@@ -109,14 +112,12 @@
 	async function confirmAssignAction() {
 		if (!confirmAssign) return;
 		assigningId = confirmAssign;
-		localError = null;
 		assignResult = null;
 		const result = await assignAll(confirmAssign);
 		assigningId = null;
 		if (result) {
 			assignResult = result;
 		} else {
-			localError = getError();
 			confirmAssign = null;
 		}
 	}
@@ -138,13 +139,6 @@
 			</p>
 		</div>
 	</div>
-
-	{#if localError}
-		<div class="alert alert-error">
-			<AlertCircle class="w-5 h-5" />
-			<span>{localError}</span>
-		</div>
-	{/if}
 
 	{#if loading && cycles.length === 0}
 		<div class="flex justify-center py-12">
@@ -271,6 +265,9 @@
 						{/if}
 					</button>
 				</div>
+				{#if localError}
+					<p class="text-error text-xs mt-2">{localError}</p>
+				{/if}
 			</div>
 		</div>
 	{/if}

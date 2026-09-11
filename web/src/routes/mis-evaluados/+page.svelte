@@ -6,6 +6,7 @@
 	import ErrorState from '$lib/components/ui/ErrorState.svelte';
 	import { getActivePhase } from '$lib/api/cycle.svelte';
 	import { getSession } from '$lib/api/session.svelte';
+	import { isFinAnio as isFinAnioPhase, isMedioAnio as isMedioAnioPhase } from '$lib/types/cycle';
 	import {
 		getItems,
 		isLoading,
@@ -23,7 +24,7 @@
 	import { Users, ChevronLeft, ChevronRight } from '@lucide/svelte';
 
 	const items = $derived(getItems());
-	const visibleItems = $derived(items.filter((e: any) => e.isActive !== false));
+	const visibleItems = $derived(items.filter((e: { isActive?: boolean }) => e.isActive !== false));
 	const loading = $derived(isLoading());
 	const storeError = $derived(getError());
 	const hasMore = $derived(hasMoreItems());
@@ -32,8 +33,8 @@
 	const totalCount = $derived(getTotalCount());
 
 	const phase = $derived(getActivePhase() ?? 'inicio-anio');
-	const isFinAnio = $derived(phase === 'fin-anio');
-	const isMedioAnio = $derived(phase === 'medio-anio');
+	const isFinAnio = $derived(isFinAnioPhase(phase));
+	const isMedioAnio = $derived(isMedioAnioPhase(phase));
 
 	const phaseDescription = $derived(
 		isFinAnio
@@ -61,6 +62,13 @@
 	function handleBack() {
 		selectedEmployeeId = '';
 	}
+
+	const selectedEmployeeName = $derived(
+		(() => {
+			const hit = items.find((e) => e.id === selectedEmployeeId);
+			return hit ? `${hit.firstName} ${hit.lastName}`.trim() : '';
+		})()
+	);
 
 	function handleSearch(e: Event) {
 		const val = (e.target as HTMLInputElement).value;
@@ -147,17 +155,18 @@
 			rows={visibleItems}
 			onSelect={handleSelect}
 			selectedEmployeeId={selectedEmployeeId}
-			disabled={!isFinAnio}
+			disabled={!(isMedioAnio || isFinAnio)}
 		>
 			{#snippet detail()}
-				{#if selectedEmployeeId}
-					<EmployeeEvaluationDetail
-						employeeId={selectedEmployeeId}
-						viewerMode="manager"
-						showBreadcrumb={true}
-						onBack={handleBack}
-					/>
-				{/if}
+					{#if selectedEmployeeId}
+						<EmployeeEvaluationDetail
+							employeeId={selectedEmployeeId}
+							viewerMode="manager"
+							showBreadcrumb={true}
+							employeeName={selectedEmployeeName}
+							onBack={handleBack}
+						/>
+					{/if}
 			{/snippet}
 		</EmployeeEvaluationTable>
 	{/if}
