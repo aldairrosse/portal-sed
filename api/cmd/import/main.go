@@ -37,11 +37,6 @@ var ssoUserNotFoundRe = regexp.MustCompile(`Usuario\s+\\?"(-?\d+)\\"?\s+no\s+enc
 type reasons map[string]int
 
 func (r reasons) add(key string) { r[key]++ }
-func (r reasons) merge(other reasons) {
-	for k, v := range other {
-		r[k] += v
-	}
-}
 func (r reasons) String() string {
 	if len(r) == 0 {
 		return "(none)"

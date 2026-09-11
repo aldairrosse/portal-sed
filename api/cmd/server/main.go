@@ -71,14 +71,6 @@ import (
 // Stub implementations for interfaces without production providers at bootstrap.
 // ---------------------------------------------------------------------------
 
-// nopPhaseChecker implements goalsvc.PhaseChecker for goal services.
-// Always returns "asignacion" as the current phase.
-type nopPhaseChecker struct{}
-
-func (nopPhaseChecker) GetCurrentPhase(_ context.Context, _ string) (goalsvc.CyclePhase, error) {
-	return goalsvc.PhaseAsignacion, nil
-}
-
 // evalCyclePhaseCheck implements evalsvc.CyclePhaseChecker backed by the cycle repo.
 type evalCyclePhaseCheck struct {
 	cycleRepo *repocycle.CycleRepo

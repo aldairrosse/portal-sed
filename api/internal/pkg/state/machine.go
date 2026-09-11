@@ -95,11 +95,6 @@ func NormalizePhase(phase string) string {
 	}
 }
 
-// normalizePhase kept as thin wrapper (single source: NormalizePhase).
-func normalizePhase(p string) string {
-	return NormalizePhase(p)
-}
-
 // IsMidYearPhase reports whether phase is the mid-year phase.
 // "avance" and "medio-anio" are treated as the same mid-year phase.
 func IsMidYearPhase(phase string) bool {

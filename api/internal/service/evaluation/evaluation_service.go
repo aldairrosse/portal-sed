@@ -841,7 +841,7 @@ func hashSelfEvalPayload(req dto.SelfEvaluationRequest) string {
 	for _, c := range req.Competencies {
 		h.Write([]byte(c.CompetencyID.String()))
 		h.Write([]byte{0})
-		h.Write([]byte(fmt.Sprintf("%d", c.Rating)))
+		fmt.Fprintf(h, "%d", c.Rating)
 		h.Write([]byte{0})
 		h.Write([]byte(c.Comments))
 		h.Write([]byte{0})
@@ -860,7 +860,7 @@ func hashRHEvalPayload(req dto.RHEvaluationRequest) string {
 	for _, c := range req.Competencies {
 		h.Write([]byte(c.CompetencyID.String()))
 		h.Write([]byte{0})
-		h.Write([]byte(fmt.Sprintf("%d", c.Rating)))
+		fmt.Fprintf(h, "%d", c.Rating)
 		h.Write([]byte{0})
 		h.Write([]byte(c.Comments))
 		h.Write([]byte{0})

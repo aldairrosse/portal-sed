@@ -364,7 +364,6 @@ func (h *Handler) ListChangeRequests(w http.ResponseWriter, r *http.Request) {
 	if entityID != "" {
 		query += ` AND entity_id = $` + itoa(argIdx)
 		args = append(args, entityID)
-		argIdx++
 	}
 	query += ` ORDER BY created_at DESC`
 

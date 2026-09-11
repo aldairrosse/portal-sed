@@ -83,11 +83,6 @@ func NewPhaseRepo(client *internal.Client, db *sql.DB) *PhaseRepo {
 	return &PhaseRepo{client: client, db: db}
 }
 
-// clientFor returns the appropriate client based on context db role hint.
-func (r *PhaseRepo) clientFor(ctx context.Context) *internal.Client {
-	return r.client
-}
-
 // GetPhaseDefinitions returns all phase definitions ordered by "order" ascending.
 func (r *PhaseRepo) GetPhaseDefinitions(ctx context.Context) ([]*PhaseDefinitionRow, error) {
 	return r.queryPhaseDefinitions(ctx,

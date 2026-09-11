@@ -130,8 +130,7 @@ func (r *competencyRepo) Update(ctx context.Context, id string, name, descriptio
 		updater = updater.SetPillarID(uuid.MustParse(pillarID))
 	}
 
-	updated, err := updater.Save(ctx)
-	if err != nil {
+	if _, err := updater.Save(ctx); err != nil {
 		if internal.IsConstraintError(err) {
 			return nil, pkgerrors.NewDomainError("DUPLICATE_NAME",
 				"a competency with this name already exists", err)
@@ -140,7 +139,7 @@ func (r *competencyRepo) Update(ctx context.Context, id string, name, descriptio
 	}
 
 	// Re-fetch with eager loading for the response
-	updated, err = r.client.Competency.Query().
+	updated, err := r.client.Competency.Query().
 		Where(competency.IDEQ(uuid.MustParse(id))).
 		WithScaleCriteria().
 		Only(ctx)

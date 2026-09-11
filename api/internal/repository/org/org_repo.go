@@ -75,11 +75,6 @@ func NewOrgTreeRepo(client *internal.Client, db *sql.DB) *OrgTreeRepo {
 	return &OrgTreeRepo{client: client, db: db}
 }
 
-// readClient returns the appropriate client based on context db role hint.
-func (r *OrgTreeRepo) readClient() *internal.Client {
-	return r.client
-}
-
 // List returns all organizations that have at least one org_node (i.e., trees).
 // If treeType is non-empty, filters by node type.
 func (r *OrgTreeRepo) List(ctx context.Context, treeType string) ([]*OrgTreeRow, error) {
@@ -175,11 +170,6 @@ func NewOrgNodeRepo(client *internal.Client, db *sql.DB) *OrgNodeRepo {
 	return &OrgNodeRepo{client: client, db: db}
 }
 
-// readClient returns the appropriate client based on context db role hint.
-func (r *OrgNodeRepo) readClient() *internal.Client {
-	return r.client
-}
-
 // Create inserts a new org node, computing the ltree path from its parent.
 func (r *OrgNodeRepo) Create(ctx context.Context, orgID uuid.UUID, parentID *uuid.UUID, name, nodeType, code string, metadata map[string]interface{}) (*OrgNodeRow, error) {
 	now := time.Now()
@@ -251,7 +241,6 @@ func (r *OrgNodeRepo) UpdateWithVersion(ctx context.Context, nodeID uuid.UUID, v
 		metaJSON, _ := json.Marshal(metadata)
 		sets = append(sets, "metadata = $"+itoa(idx)+"::jsonb")
 		args = append(args, string(metaJSON))
-		idx++
 	}
 
 	if len(sets) == 0 {

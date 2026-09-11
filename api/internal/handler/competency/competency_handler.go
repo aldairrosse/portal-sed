@@ -8,7 +8,6 @@
 package competency
 
 import (
-	"context"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -25,11 +24,6 @@ import (
 	activitysvc "github.com/sed-evaluacion-desempeno/api/internal/service/activity"
 	svc "github.com/sed-evaluacion-desempeno/api/internal/service/competency"
 )
-
-// contextKey for handler-specific values.
-type contextKey struct{ name string }
-
-var idempCtxKey = &contextKey{"idempotency-key"}
 
 // Handler holds all handler dependencies for the competency API.
 type Handler struct {
@@ -161,15 +155,6 @@ func parseIfMatch(r *http.Request) (time.Time, error) {
 			"If-Match must be an RFC3339Nano timestamp", err)
 	}
 	return t, nil
-}
-
-// getIdempotencyKey extracts the Idempotency-Key from context (set by middleware).
-func getIdempotencyKey(ctx context.Context) string {
-	v := ctx.Value(idempCtxKey)
-	if v == nil {
-		return ""
-	}
-	return v.(string)
 }
 
 // ---------------------------------------------------------------------------

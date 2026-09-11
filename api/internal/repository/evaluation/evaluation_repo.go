@@ -406,7 +406,6 @@ func (r *EvaluationRepo) SubmitEval(ctx context.Context, tx *sql.Tx, evalID uuid
 		if setRHCompleted {
 			query += fmt.Sprintf(`, $%d`, argIdx)
 			args = append(args, c.Rating)
-			argIdx++
 		}
 		query += `) ON CONFLICT (evaluation_id, competency_id, source) DO UPDATE SET ` + setClauses
 
@@ -510,21 +509,6 @@ func (r *EvaluationRepo) RefreshSummaryView(ctx context.Context) error {
 // BeginTx starts a database transaction.
 func (r *EvaluationRepo) BeginTx(ctx context.Context, opts *sql.TxOptions) (*sql.Tx, error) {
 	return r.db.BeginTx(ctx, opts)
-}
-
-// getVersion retrieves the current version for an evaluation.
-func (r *EvaluationRepo) getVersion(ctx context.Context, evalID uuid.UUID) (int, error) {
-	var version int
-	err := r.db.QueryRowContext(ctx,
-		`SELECT version FROM evaluations WHERE id = $1`, evalID,
-	).Scan(&version)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return 0, nil
-		}
-		return 0, err
-	}
-	return version, nil
 }
 
 // upsertVersion increments the version on the evaluations row.
@@ -734,7 +718,6 @@ func (r *EvaluationRepo) CountCompetencyResults(ctx context.Context, cycleID uui
 	if query != "" {
 		baseQuery += ` AND (e.first_name ILIKE $` + strconv.Itoa(idx) + ` OR e.last_name ILIKE $` + strconv.Itoa(idx) + `)`
 		args = append(args, "%"+query+"%")
-		idx++
 	}
 
 	var total int

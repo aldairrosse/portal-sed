@@ -10,26 +10,6 @@ import (
 )
 
 // ============================================================================
-// Mocks
-// ============================================================================
-
-type mockPillarRepo struct {
-	pillars map[uuid.UUID]struct {
-		Name        string
-		Description string
-	}
-}
-
-func newMockPillarRepo() *mockPillarRepo {
-	return &mockPillarRepo{
-		pillars: make(map[uuid.UUID]struct {
-			Name        string
-			Description string
-		}),
-	}
-}
-
-// ============================================================================
 // Pillar Service Tests
 // ============================================================================
 

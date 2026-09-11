@@ -226,7 +226,6 @@ func (r *EmployeeRepo) CountWithProfiles(ctx context.Context, filter EmployeeFil
 			` OR e.email ILIKE $`+itoa(idx)+
 			` OR e.employee_number ILIKE $`+itoa(idx)+`)`)
 		args = append(args, "%"+filter.Query+"%")
-		idx++
 	}
 
 	fullQuery := query + " " + strings.Join(joins, " ")

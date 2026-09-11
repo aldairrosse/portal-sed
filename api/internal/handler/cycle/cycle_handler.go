@@ -21,11 +21,6 @@ import (
 	svc "github.com/sed-evaluacion-desempeno/api/internal/service/cycle"
 )
 
-// contextKey for handler-specific context values.
-type contextKey struct{ name string }
-
-var idempCtxKey = &contextKey{"idempotency-key"}
-
 // generateTraceID generates a short trace ID for error responses.
 func generateTraceID() string {
 	id := uuid.New().String()

@@ -25,7 +25,6 @@ import (
 // ---------------------------------------------------------------------------
 
 type mockService struct {
-	mu                  sync.Mutex
 	createCycleFunc     func(ctx context.Context, req svc.CreateCycleRequest) (*svc.CycleResponse, error)
 	transitionPhaseFunc func(ctx context.Context, req svc.TransitionPhaseRequest) (*svc.CycleResponse, error)
 	advancePhaseFunc    func(ctx context.Context, cycleID string, expectedVersion int, reason string) (*svc.CycleResponse, error)

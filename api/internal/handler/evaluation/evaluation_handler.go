@@ -24,9 +24,6 @@ import (
 	activitysvc "github.com/sed-evaluacion-desempeno/api/internal/service/activity"
 )
 
-// contextKey for handler-specific context values.
-type contextKey struct{ name string }
-
 // generateTraceID creates a short trace ID for error responses.
 func generateTraceID() string {
 	id := uuid.New().String()

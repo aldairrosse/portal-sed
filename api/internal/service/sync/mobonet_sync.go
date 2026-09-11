@@ -197,19 +197,6 @@ func mapToMobonetEmployee(m map[string]interface{}) MobonetEmployee {
 	}
 }
 
-// fetchMobonet lista employee_number activos (compat legacy).
-func (s *Service) fetchMobonet(ctx context.Context) ([]string, error) {
-	emps, err := s.fetchMobonetEmployees(ctx)
-	if err != nil {
-		return nil, err
-	}
-	out := make([]string, 0, len(emps))
-	for _, e := range emps {
-		out = append(out, e.EmployeeNumber)
-	}
-	return out, nil
-}
-
 // jobTitleToProfileName maps Mobonet job_title to evaluation profile (case-insensitive).
 // Returns "" when there is no direct match; callers apply the fallback chain
 // (manager profile → jefe) via resolveProfileName.

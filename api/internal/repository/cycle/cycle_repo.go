@@ -78,11 +78,6 @@ func NewCycleRepo(client *internal.Client, db *sql.DB) *CycleRepo {
 	return &CycleRepo{client: client, db: db}
 }
 
-// clientFor returns the appropriate client based on context db role hint.
-func (r *CycleRepo) clientFor(ctx context.Context) *internal.Client {
-	return r.client
-}
-
 // CreateCycle inserts a new cycle with version=1 and current_phase='asignacion',
 // plus the default phase definitions and transitions for it.
 func (r *CycleRepo) CreateCycle(ctx context.Context, tx *sql.Tx, year int, orgID uuid.UUID) (*CycleRow, error) {
@@ -345,18 +340,6 @@ func (r *CycleRepo) LockCycleForUpdate(ctx context.Context, tx *sql.Tx, cycleID 
 	}
 
 	return row, nil
-}
-
-// fetchVersion retrieves the version field for a cycle.
-func (r *CycleRepo) fetchVersion(ctx context.Context, id uuid.UUID) (int, error) {
-	var version int
-	err := r.db.QueryRowContext(ctx,
-		`SELECT COALESCE(version, 1) FROM cycles WHERE id = $1`, id,
-	).Scan(&version)
-	if err != nil {
-		return 0, err
-	}
-	return version, nil
 }
 
 // queryCycles runs a raw SQL query and scans results into CycleRow values.
