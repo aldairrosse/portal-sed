@@ -11,6 +11,8 @@ api/tmp/
 # Go
 api/bin/
 api/dev/
+api/server
+api/import
 *.exe
 *.test
 
