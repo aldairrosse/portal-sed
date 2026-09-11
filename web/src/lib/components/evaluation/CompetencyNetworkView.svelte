@@ -17,9 +17,10 @@
 		employeeId: string;
 		employeeName?: string;
 		activeTab: 'radar' | 'table';
+		isSelf?: boolean;
 	}
 
-	let { employeeId, employeeName = '', activeTab }: Props = $props();
+	let { employeeId, employeeName = '', activeTab, isSelf = false }: Props = $props();
 
 	// ─── Derived data ──────────────────────────────────────────────────────
 
@@ -77,7 +78,7 @@
 							competencies={pillarCompetencies}
 							acceptanceLevels={acceptanceLevels}
 							{levelDefinitions}
-							showRhColumn={true}
+							showRhColumn={!isSelf}
 						/>
 					</section>
 				{/if}
@@ -91,7 +92,7 @@
 		</div>
 	{:else}
 		<div id="panel-radar" role="tabpanel" aria-labelledby="view-radar">
-			<RadarChart pillarGroups={pillarGroups} employeeName={displayName} />
+			<RadarChart pillarGroups={pillarGroups} employeeName={displayName} {isSelf} />
 		</div>
 	{/if}
 </div>

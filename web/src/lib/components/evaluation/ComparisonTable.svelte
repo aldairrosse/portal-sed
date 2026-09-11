@@ -21,17 +21,26 @@
 		return ratings.find((r) => r.competencyId === competencyId);
 	}
 
+	function weightedScore(
+		selfRating: number | undefined,
+		rhRating: number | undefined
+	): number | undefined {
+		if (selfRating !== undefined && rhRating !== undefined) return selfRating * 0.2 + rhRating * 0.8;
+		return rhRating ?? selfRating;
+	}
+
 	function getGapClass(
 		selfRating: number | undefined,
 		rhRating: number | undefined,
 		acceptanceLevel: number
 	): string {
-		if (selfRating === undefined) return 'badge-ghost';
+		const weighted = weightedScore(selfRating, rhRating);
+		if (weighted === undefined) return 'badge-ghost';
 
-		const selfVsAcceptance = selfRating >= acceptanceLevel;
-		const rhDiff = rhRating !== undefined ? Math.abs(rhRating - selfRating) : 0;
+		const meetsExpected = weighted >= acceptanceLevel;
+		const rhDiff = rhRating !== undefined && selfRating !== undefined ? Math.abs(rhRating - selfRating) : 0;
 
-		if (!selfVsAcceptance) return 'badge-error';
+		if (!meetsExpected) return 'badge-error';
 		if (showRhColumn && rhRating !== undefined && rhDiff >= 2) return 'badge-warning';
 		return 'badge-success';
 	}
@@ -41,15 +50,17 @@
 		rhRating: number | undefined,
 		acceptanceLevel: number
 	): string {
-		if (selfRating === undefined) return '—';
+		const weighted = weightedScore(selfRating, rhRating);
+		if (weighted === undefined) return '—';
 
-		const diff = selfRating - acceptanceLevel;
-		const rhDiff = rhRating !== undefined ? Math.abs(rhRating - selfRating) : 0;
+		const rounded = Math.round(weighted * 10) / 10;
+		const diff = Math.round((weighted - acceptanceLevel) * 10) / 10;
+		const rhDiff = rhRating !== undefined && selfRating !== undefined ? Math.abs(rhRating - selfRating) : 0;
 
 		if (diff < 0) return `${diff} (por debajo)`;
 		if (showRhColumn && rhRating !== undefined && rhDiff >= 2) return `brecha RH ${rhDiff}`;
 		if (diff === 0) return '0 (cumple)';
-		return `+${diff} (supera)`;
+		return `+${diff} (supera · ${rounded})`;
 	}
 </script>
 
@@ -60,7 +71,7 @@
 				<th class="text-xs font-semibold text-base-content/60">Competencia</th>
 				<th class="text-xs font-semibold text-base-content/60 text-center">Autoevaluación</th>
 				{#if showRhColumn}
-					<th class="text-xs font-semibold text-base-content/60 text-center">RH</th>
+					<th class="text-xs font-semibold text-base-content/60 text-center">Evaluación</th>
 				{/if}
 				<th class="text-xs font-semibold text-base-content/60 text-center">Nivel esperado</th>
 				<th class="text-xs font-semibold text-base-content/60 text-center">Brecha</th>

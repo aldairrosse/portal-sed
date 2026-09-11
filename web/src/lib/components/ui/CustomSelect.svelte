@@ -147,7 +147,7 @@
 	class="input input-bordered input-sm text-left flex items-center justify-between gap-2 cursor-pointer h-8 min-h-0 text-xs truncate {className}"
 >
 	<span class="truncate">{selectedLabel}</span>
-	<span class="flex-shrink-0 transition-transform" class:rotate-180={open}>
+	<span class="shrink-0 transition-transform" class:rotate-180={open}>
 		<ChevronDown class="w-3.5 h-3.5" />
 	</span>
 </button>

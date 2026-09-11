@@ -46,6 +46,8 @@
         onRejectProposal?: (goalId: string, proposalId: string) => void | Promise<void>;
         phase?: CyclePhase;
         canEditProgress?: boolean;
+        canEditAvance?: boolean;
+        canEditCierre?: boolean;
         canComment?: boolean;
         canDelete?: boolean;
         canClose?: boolean;
@@ -67,6 +69,8 @@
         onRejectProposal,
         phase = "inicio-anio",
         canEditProgress = false,
+        canEditAvance,
+        canEditCierre,
         canComment = false,
         canDelete = true,
         canClose = false,
@@ -76,6 +80,10 @@
         onUpdateProgress,
         onOpenComments,
     }: Props = $props();
+
+    // R4: flags por fase; por defecto heredan canEditProgress (sin cambio de conducta).
+    let canEditAvanceEff = $derived(canEditAvance ?? canEditProgress);
+    let canEditCierreEff = $derived(canEditCierre ?? canEditProgress ?? true);
 
     // svelte-ignore state_referenced_locally (intentional: form state seeded once from prop)
     // eslint-disable-next-line svelte/prefer-writable-derived
@@ -244,6 +252,7 @@
                                 : goal.targetValue}
                             oninput={handleProgressInput}
                             aria-label="Avance final de {goal.name}"
+                            readonly={!canEditCierreEff}
                         />
                     {/if}
                     <ProgressIndicator
@@ -267,7 +276,7 @@
                         max={goal.unit === "porcentaje" ? 100 : undefined}
                         oninput={handleProgressInput}
                         aria-label="Avance de {goal.name}"
-                        readonly={!canEditProgress}
+                        readonly={!canEditAvanceEff}
                     />
                     {#if goal.unit === "porcentaje"}
                         <ProgressIndicator

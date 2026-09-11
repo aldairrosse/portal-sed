@@ -300,7 +300,7 @@
                     {#each rows as row (row.id)}
                         {@const cr = competencyRatings?.get(row.id)}
                         {@const rowStatus = getAssignmentStatus(row.id)}
-                        {@const isDraft = isDraftOrBeginning(row.id)}
+                        {@const _isDraft = isDraftOrBeginning(row.id)}
                         {@const _badge = assignmentBadge(rowStatus)}
                         <tr class="hover:bg-base-200">
                             <td>

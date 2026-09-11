@@ -28,6 +28,8 @@
 		canAddGoal?: boolean;
 		canEditCategory?: boolean;
 		canEditProgress?: boolean;
+		canEditAvance?: boolean;
+		canEditCierre?: boolean;
 		canComment?: boolean;
 		allKpis: KPI[];
 		isAnyInlineEditing?: boolean;
@@ -54,6 +56,8 @@
 		canAddGoal = true,
 		canEditCategory = true,
 		canEditProgress = false,
+		canEditAvance,
+		canEditCierre,
 		canComment = false,
 		allKpis,
 		isAnyInlineEditing = $bindable(false),
@@ -258,6 +262,8 @@
 								{editingGoalId}
 								onEditingChange={(id) => { editingGoalId = id; }}
 								{canEditProgress}
+								{canEditAvance}
+								{canEditCierre}
 								{canComment}
 								{canDelete}
 								{onUpdateProgress}

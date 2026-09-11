@@ -14,7 +14,7 @@
 
 	const STORAGE_KEY = 'devbar:hidden';
 	const picker = createEmployeePickerStore();
-	const options = $derived(picker.getOptions());
+	const _options = $derived(picker.getOptions());
 
 	$effect(() => {
 		if (enabled && session.user) {

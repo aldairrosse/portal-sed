@@ -18,16 +18,17 @@
 	interface Props {
 		pillarGroups: RadarPillarGroup[];
 		employeeName?: string;
+		isSelf?: boolean;
 	}
 
-	let { pillarGroups, employeeName = 'Empleado' }: Props = $props();
+	let { pillarGroups, employeeName = 'Empleado', isSelf = false }: Props = $props();
 
 	let canvas: HTMLCanvasElement = $state() as HTMLCanvasElement;
 	let chart: Chart<'radar'> | undefined;
 
 	const allCompetencies = $derived(pillarGroups.flatMap((g) => g.competencies));
 	const hasSelf = $derived(allCompetencies.some((c) => c.selfRating !== null));
-	const hasRh = $derived(allCompetencies.some((c) => c.rhRating !== null));
+	const showRh = $derived(!isSelf && allCompetencies.some((c) => c.rhRating !== null));
 	const hasAcceptance = $derived(allCompetencies.some((c) => c.acceptanceLevel !== null));
 
 	// ─── Theme-aware colors ─────────────────────────────────────
@@ -68,9 +69,9 @@
 				pointRadius: 3
 			});
 		}
-		if (hasRh) {
+		if (showRh) {
 			target.push({
-				label: 'RH',
+				label: 'Evaluación',
 				data: allCompetencies.map((c) => c.rhRating),
 				fill: true,
 				backgroundColor: colors.rhBg,
@@ -200,7 +201,7 @@
 	<canvas bind:this={canvas} class="w-full h-full max-h-[400px]"></canvas>
 </div>
 
-{#if hasSelf || hasRh || hasAcceptance}
+{#if hasSelf || showRh || hasAcceptance}
 	<div class="flex justify-center gap-6 mt-4 text-sm" aria-label="Leyenda del radar">
 		{#if hasSelf}
 			<span class="flex items-center gap-2">
@@ -211,13 +212,13 @@
 				Autoevaluación
 			</span>
 		{/if}
-		{#if hasRh}
+		{#if showRh}
 			<span class="flex items-center gap-2">
 				<span
 					class="w-3 h-3 rounded-full"
 					style="background-color: {colors.rh}"
 				></span>
-				RH
+				Evaluación
 			</span>
 		{/if}
 		{#if hasAcceptance}
