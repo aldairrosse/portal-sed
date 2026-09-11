@@ -279,6 +279,23 @@ export function getScaleCriteriaForCell(
     );
 }
 
+export function getCriteriaText(
+    competencyId: string,
+    pillarId: string,
+    level: 1 | 2 | 3 | 4 | 5,
+): string {
+    const texts = (data?.scaleCriteria ?? [])
+        .filter(
+            (sc) =>
+                sc.competencyId === competencyId &&
+                sc.pillarId === pillarId &&
+                sc.level === level,
+        )
+        .map((sc) => sc.description);
+    if (texts.length > 0) return texts.join("\n");
+    return getLevelDefinition(level)?.description ?? "";
+}
+
 // ─── Getters: Acceptance Levels (deprecated) ──────────────────────────────────
 
 /**

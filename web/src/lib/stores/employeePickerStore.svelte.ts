@@ -1,3 +1,4 @@
+import { SvelteURLSearchParams } from 'svelte/reactivity';
 import { client } from '$lib/api/client';
 
 interface EmployeeOption {
@@ -33,7 +34,7 @@ async function fetchEmployees(query: string | undefined, offset: number): Promis
 }
 
 async function fetchDevEmployees(query: string | undefined, offset: number): Promise<EmployeesBody> {
-	const params = new URLSearchParams();
+	const params = new SvelteURLSearchParams();
 	if (query) params.set('q', query);
 	params.set('offset', String(offset));
 	params.set('limit', String(PAGE_SIZE));

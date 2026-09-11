@@ -381,8 +381,8 @@ async function _doLoad(empIdOverride?: string): Promise<void> {
 		const empId = empIdOverride ?? getEmployeeId();
 
 		const fetchWeights = async () => {
-			try { const c = await getCycleWeightConfig(); setCycleWeights(c.g_weight, c.p_weight); } catch {}
-			try { const t = await getTeamWeightConfig(); setTeamWeights(t.j_weight, t.pj_weight); } catch {}
+			try { const c = await getCycleWeightConfig(); setCycleWeights(c.g_weight, c.p_weight); } catch { /* defaults kept */ }
+			try { const t = await getTeamWeightConfig(); setTeamWeights(t.j_weight, t.pj_weight); } catch { /* defaults kept */ }
 		};
 		const fetchWeightsPromise = fetchWeights();
 
@@ -403,7 +403,7 @@ async function _doLoad(empIdOverride?: string): Promise<void> {
 			);
 		}
 
-		let apiAssignment = (assignmentRes.data as
+		const apiAssignment = (assignmentRes.data as
 			| {
 					id?: string;
 					employee_id?: string;
@@ -1107,13 +1107,14 @@ export async function updateGoalProgress(goalId: string, progress: number): Prom
 
 export async function addGoalComment(
 	goalId: string,
-	authorId: string,
-	authorName: string,
-	content: string
+	_authorId: string,
+	_authorName: string,
+	content: string,
+	phase: 'asignacion' | 'avance' | 'cierre' = 'cierre'
 ): Promise<void> {
 	const { data, error: apiError } = await client.POST('/goals/{goalId}/comments', {
-		params: { path: { goalId } },
-		body: { content, author_id: authorId, author_name: authorName }
+		params: { path: { goalId }, query: { phase } },
+		body: { content, phase }
 	});
 	if (apiError) throw new Error('Error al guardar comentario');
 	if (data) {
@@ -1150,13 +1151,14 @@ export function getCategoryComments(categoryId: string): GoalComment[] {
 
 export async function addCategoryComment(
 	categoryId: string,
-	authorId: string,
-	authorName: string,
-	content: string
+	_authorId: string,
+	_authorName: string,
+	content: string,
+	phase: 'asignacion' | 'avance' | 'cierre' = 'cierre'
 ): Promise<void> {
 	const { data, error: apiError } = await client.POST('/categories/{catId}/comments', {
-		params: { path: { catId: categoryId } },
-		body: { content, author_id: authorId, author_name: authorName }
+		params: { path: { catId: categoryId }, query: { phase } },
+		body: { content, phase }
 	});
 	if (apiError) throw new Error('Error al guardar comentario');
 	if (data) {
@@ -1216,13 +1218,14 @@ async function fetchAndSetAssignmentComments(assignmentId: string): Promise<void
 
 export async function addAssignmentComment(
 	assignmentId: string,
-	authorId: string,
-	authorName: string,
-	content: string
+	_authorId: string,
+	_authorName: string,
+	content: string,
+	phase: 'asignacion' | 'avance' | 'cierre' = 'cierre'
 ): Promise<void> {
 	const { data, error: apiError } = await client.POST('/assignments/{assignId}/comments', {
-		params: { path: { assignId: assignmentId } },
-		body: { content, author_id: authorId, author_name: authorName }
+		params: { path: { assignId: assignmentId }, query: { phase } },
+		body: { content, phase }
 	});
 	if (apiError) throw new Error('Error al guardar comentario');
 	if (data) {

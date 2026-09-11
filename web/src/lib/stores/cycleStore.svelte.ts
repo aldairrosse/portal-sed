@@ -1,6 +1,7 @@
 import { client } from '$lib/api/client';
 import { getSession } from '$lib/api/session.svelte';
 import { loadCycle } from '$lib/api/cycle.svelte';
+import * as notifications from '$lib/stores/notifications.svelte';
 import type { Cycle, PhaseTransition, ApiCyclePhase } from '$lib/types/cycle';
 import { normalizePhase } from '$lib/types/cycle';
 import type { components } from '$lib/api/schemas/cycle';
@@ -206,6 +207,62 @@ export async function advancePhase(cycleId: string, toPhase: ApiCyclePhase): Pro
 		return true;
 	} catch (e) {
 		error = e instanceof Error ? e.message : 'Error al avanzar fase';
+		return false;
+	}
+}
+
+/** Extracts { message, code, trace } from a cycles API error body. */
+function revertErrorDetails(apiError: unknown): {
+	message: string;
+	code: string | null;
+	trace: string | null;
+} {
+	const body = (apiError as { error?: { code?: unknown; message?: unknown; trace_id?: unknown } })
+		?.error;
+	const message =
+		typeof body?.message === 'string' ? body.message : JSON.stringify(apiError);
+	const code = typeof body?.code === 'string' ? body.code : null;
+	const trace = typeof body?.trace_id === 'string' ? body.trace_id : null;
+	return { message, code, trace };
+}
+
+export async function revertPhase(cycleId: string): Promise<boolean> {
+	try {
+		const { data, error: apiError } = await client.POST('/cycles/{id}/revert', {
+			params: {
+				path: { id: cycleId },
+				header: { 'Idempotency-Key': crypto.randomUUID() }
+			}
+		});
+
+		if (apiError) {
+			const { message, code, trace } = revertErrorDetails(apiError);
+			const err = new Error(message);
+			(err as Error & { code?: string | null; trace?: string | null }).code = code;
+			(err as Error & { code?: string | null; trace?: string | null }).trace = trace;
+			throw err;
+		}
+
+		const raw = data as components['schemas']['Cycle'];
+		cycles = cycles.map((c) =>
+			c.id === cycleId
+				? {
+						...c,
+						current_phase: normalizePhase(raw.current_phase),
+						version: raw.version,
+						finished_at: raw.finished_at ?? null,
+						updated_at: raw.updated_at
+					}
+				: c
+		);
+		// sync getActivePhase() consumers (cycle.svelte.ts)
+		loadCycle();
+		return true;
+	} catch (e) {
+		const err = e as Error & { code?: string | null; trace?: string | null };
+		const base = err instanceof Error && err.message ? err.message : 'Error al retroceder fase';
+		const withTrace = err.trace ? `${base} (trace: ${err.trace})` : base;
+		notifications.errorWithCode(withTrace, err.code ?? null);
 		return false;
 	}
 }

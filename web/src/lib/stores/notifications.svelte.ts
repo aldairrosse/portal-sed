@@ -47,6 +47,11 @@ export function error(message: string, options?: NotificationOptions): string {
 	return addNotification('error', message, options);
 }
 
+export function errorWithCode(message: string, code?: string | null, options?: NotificationOptions): string {
+	const label = code ? `[${code}] ${message}` : message;
+	return addNotification('error', label, options);
+}
+
 export function warning(message: string, options?: NotificationOptions): string {
 	return addNotification('warning', message, options);
 }

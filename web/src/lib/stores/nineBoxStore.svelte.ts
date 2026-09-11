@@ -114,7 +114,7 @@ export async function load(cycleId?: string, phaseId?: string): Promise<void> {
 				params: {
 					query: {
 						cycle_id: currentCycleId,
-						phase_id: currentPhaseId || undefined
+						phase_id: currentPhaseId
 					}
 				}
 			}),
