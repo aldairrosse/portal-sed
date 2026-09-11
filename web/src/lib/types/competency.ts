@@ -1,26 +1,26 @@
-import type { EvaluationProfile } from './evaluation';
+import type { EvaluationProfile } from "./evaluation";
 
 /**
  * A pillar (pilar) groups related competencies.
  * Examples: Liderazgo, Técnico, Comportamental.
  */
 export interface Pillar {
-	id: string;
-	name: string;
-	description: string;
-	type: 'competencias' | 'metas';
-	updatedAt: string;
+  id: string;
+  name: string;
+  description: string;
+  type: "competencias" | "metas";
+  updatedAt: string;
 }
 
 /**
  * A competency belongs to exactly one pillar.
  */
 export interface Competency {
-	id: string;
-	name: string;
-	description: string;
-	pillarId: string;
-	updatedAt: string;
+  id: string;
+  name: string;
+  description: string;
+  pillarId: string;
+  updatedAt: string;
 }
 
 /**
@@ -28,11 +28,11 @@ export interface Competency {
  * for a given competency within a pillar.
  */
 export interface ScaleCriterion {
-	id: string;
-	competencyId: string;
-	pillarId: string;
-	level: 1 | 2 | 3 | 4 | 5;
-	description: string;
+  id: string;
+  competencyId: string;
+  pillarId: string;
+  level: 1 | 2 | 3 | 4 | 5;
+  description: string;
 }
 
 /**
@@ -44,19 +44,19 @@ export interface ScaleCriterion {
  * levels are assigned per competency per profile.
  */
 export interface AcceptanceLevel {
-	profileId: EvaluationProfile;
-	level: 1 | 2 | 3 | 4 | 5;
-	label: string;
-	description: string;
+  profileId: EvaluationProfile;
+  level: 1 | 2 | 3 | 4 | 5;
+  label: string;
+  description: string;
 }
 
 /**
  * Global level definition — same label and description across all profiles.
  */
 export interface LevelDefinition {
-	level: 1 | 2 | 3 | 4 | 5;
-	label: string;
-	description: string;
+  level: 1 | 2 | 3 | 4 | 5;
+  label: string;
+  description: string;
 }
 
 /**
@@ -65,9 +65,9 @@ export interface LevelDefinition {
  * from the DB UUID at load time via the profiles lookup map.
  */
 export interface CompetencyAcceptanceLevel {
-	competencyId: string;
-	profileId: EvaluationProfile;
-	level: 1 | 2 | 3 | 4 | 5;
+  competencyId: string;
+  profileId: EvaluationProfile;
+  level: 1 | 2 | 3 | 4 | 5;
 }
 
 /**
@@ -75,7 +75,7 @@ export interface CompetencyAcceptanceLevel {
  * Maps DB UUID ↔ frontend slug.
  */
 export interface Profile {
-	id: string; // UUID from DB
-	name: EvaluationProfile; // slug like 'colaborador'
-	description?: string;
+  id: string; // UUID from DB
+  name: EvaluationProfile; // slug like 'colaborador'
+  description?: string;
 }

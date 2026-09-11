@@ -21,26 +21,26 @@
  * @returns Progress percentage clamped to 0–100.
  */
 export function progressPercent(
-	current: number,
-	target: number,
-	baseline: number | undefined,
-	direction: 'ascendente' | 'descendente'
+  current: number,
+  target: number,
+  baseline: number | undefined,
+  direction: "ascendente" | "descendente",
 ): number {
-	let pct: number;
+  let pct: number;
 
-	if (direction === 'ascendente') {
-		// Guard: division by zero
-		if (target === 0) return 0;
-		pct = (current / target) * 100;
-	} else {
-		// descendente requires a baseline
-		if (baseline === undefined) return 0;
-		const range = baseline - target;
-		if (range === 0) return 0;
-		pct = ((baseline - current) / range) * 100;
-	}
+  if (direction === "ascendente") {
+    // Guard: division by zero
+    if (target === 0) return 0;
+    pct = (current / target) * 100;
+  } else {
+    // descendente requires a baseline
+    if (baseline === undefined) return 0;
+    const range = baseline - target;
+    if (range === 0) return 0;
+    pct = ((baseline - current) / range) * 100;
+  }
 
-	return Math.min(Math.max(pct, 0), 100);
+  return Math.min(Math.max(pct, 0), 100);
 }
 
 /**
@@ -56,22 +56,20 @@ export function progressPercent(
  * @returns Object with numeric `value` and display `type`.
  */
 export function deltaIndicator(
-	current: number,
-	target: number,
-	baseline: number | undefined,
-	direction: 'ascendente' | 'descendente'
-): { value: number; type: 'positive' | 'negative' | 'neutral' } {
-	const delta =
-		direction === 'ascendente'
-			? current - target
-			: (baseline ?? 0) - current;
+  current: number,
+  target: number,
+  baseline: number | undefined,
+  direction: "ascendente" | "descendente",
+): { value: number; type: "positive" | "negative" | "neutral" } {
+  const delta =
+    direction === "ascendente" ? current - target : (baseline ?? 0) - current;
 
-	let type: 'positive' | 'negative' | 'neutral';
-	if (delta > 0) type = 'positive';
-	else if (delta < 0) type = 'negative';
-	else type = 'neutral';
+  let type: "positive" | "negative" | "neutral";
+  if (delta > 0) type = "positive";
+  else if (delta < 0) type = "negative";
+  else type = "neutral";
 
-	return { value: delta, type };
+  return { value: delta, type };
 }
 
 /**
@@ -82,38 +80,50 @@ export function deltaIndicator(
  * @returns Formatted string: `"+15"`, `"-8"`, or `""`.
  */
 export function formatDelta(
-	delta: number,
-	type: 'positive' | 'negative' | 'neutral'
+  delta: number,
+  type: "positive" | "negative" | "neutral",
 ): string {
-	if (type === 'neutral') return '';
-	if (type === 'positive') return `+${delta}`;
-	return `${delta}`;
+  if (type === "neutral") return "";
+  if (type === "positive") return `+${delta}`;
+  return `${delta}`;
 }
 
 /**
  * Hierarchical weighted score: personal * P/100 * PJ/100 with fallback 100.
  * Mirrors backend scoring.HierarchicalScore.
  */
-export function hierarchicalScore(personalScore: number, pWeight = 100, pjWeight = 100): number {
-	if (pWeight === 0) pWeight = 100;
-	if (pjWeight === 0) pjWeight = 100;
-	const r = personalScore * (pWeight / 100) * (pjWeight / 100);
-	return Math.min(Math.max(r, 0), 100);
+export function hierarchicalScore(
+  personalScore: number,
+  pWeight = 100,
+  pjWeight = 100,
+): number {
+  if (pWeight === 0) pWeight = 100;
+  if (pjWeight === 0) pjWeight = 100;
+  const r = personalScore * (pWeight / 100) * (pjWeight / 100);
+  return Math.min(Math.max(r, 0), 100);
 }
 
-export function effectiveWeightPersonal(w: number, pWeight = 100, pjWeight = 100): number {
-	if (!pWeight) pWeight = 100;
-	if (!pjWeight) pjWeight = 100;
-	return w * (pWeight / 100) * (pjWeight / 100);
+export function effectiveWeightPersonal(
+  w: number,
+  pWeight = 100,
+  pjWeight = 100,
+): number {
+  if (!pWeight) pWeight = 100;
+  if (!pjWeight) pjWeight = 100;
+  return w * (pWeight / 100) * (pjWeight / 100);
 }
 export function effectiveWeightGlobal(w: number, pWeight = 100): number {
-	if (!pWeight) pWeight = 100;
-	const g = 100 - pWeight;
-	return w * (Math.max(0, g) / 100);
+  if (!pWeight) pWeight = 100;
+  const g = 100 - pWeight;
+  return w * (Math.max(0, g) / 100);
 }
-export function effectiveWeightShared(w: number, pWeight = 100, pjWeight = 100): number {
-	if (!pWeight) pWeight = 100;
-	if (!pjWeight) pjWeight = 100;
-	const j = 100 - pjWeight;
-	return w * (Math.max(0, j) / 100) * (pWeight / 100);
+export function effectiveWeightShared(
+  w: number,
+  pWeight = 100,
+  pjWeight = 100,
+): number {
+  if (!pWeight) pWeight = 100;
+  if (!pjWeight) pjWeight = 100;
+  const j = 100 - pjWeight;
+  return w * (Math.max(0, j) / 100) * (pWeight / 100);
 }

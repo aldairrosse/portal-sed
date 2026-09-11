@@ -1,104 +1,142 @@
-import type { EvaluationProfile, CyclePhase } from '$lib/types/evaluation';
+import type { EvaluationProfile, CyclePhase } from "$lib/types/evaluation";
 
 export interface MenuItem {
-	label: string;
-	href: string;
-	icon: string;
-	profiles: EvaluationProfile[];
-	phases?: CyclePhase[];
+  label: string;
+  href: string;
+  icon: string;
+  profiles: EvaluationProfile[];
+  phases?: CyclePhase[];
 }
 
 export const MENU_ITEMS: MenuItem[] = [
-	{
-		label: 'Inicio',
-		href: '/',
-		icon: 'Home',
-		profiles: ['colaborador', 'jefe', 'vendedor', 'gerente-tienda', 'divisional', 'regional', 'director', 'director-general', 'rh']
-	},
-	{
-		label: 'Metas',
-		href: '/objetivos/asignacion',
-		icon: 'Target',
-		profiles: ['colaborador', 'jefe', 'vendedor', 'gerente-tienda', 'divisional', 'regional', 'director', 'rh']
-	},
-	{
-		label: 'Objetivos globales',
-		href: '/objetivos/globales',
-		icon: 'Target',
-		profiles: ['rh']
-	},
-	{
-		label: 'Metas compartidas',
-		href: '/objetivos/compartidas',
-		icon: 'Users',
-		profiles: ['jefe', 'gerente-tienda', 'divisional', 'regional', 'director']
-	},
-	{
-		label: 'Mi evaluación',
-		href: '/mi-evaluacion',
-		icon: 'ClipboardCheck',
-		profiles: ['colaborador', 'jefe', 'vendedor', 'gerente-tienda', 'divisional', 'regional', 'director', 'rh']
-	},
-	{
-		label: 'Mis evaluados',
-		href: '/mis-evaluados',
-		icon: 'Users',
-		profiles: ['jefe', 'gerente-tienda', 'divisional', 'regional', 'director', 'rh']
-	},
-	{
-		label: 'Matriz 9-Box',
-		href: '/evaluacion/9x9',
-		icon: 'Grid3x3',
-		profiles: ['jefe', 'director', 'director-general', 'rh']
-	},
-	{
-		label: 'Jerarquía',
-		href: '/evaluacion/9x9/jerarquia',
-		icon: 'Network',
-		profiles: ['director', 'director-general']
-	},
-	{
-		label: 'Pilares',
-		href: '/rh/pilares',
-		icon: 'Award',
-		profiles: ['rh']
-	},
-	{
-		label: 'Criterios escala',
-		href: '/rh/criterios-escala',
-		icon: 'Grid3x3',
-		profiles: ['rh']
-	},
-	{
-		label: 'Niveles aceptación',
-		href: '/rh/niveles-aceptacion',
-		icon: 'FileText',
-		profiles: ['rh']
-	},
-	{
-		label: 'Ciclos',
-		href: '/rh/ciclos',
-		icon: 'Calendar',
-		profiles: ['rh']
-	},
-	{
-		label: 'Evaluaciones',
-		href: '/rh/evaluaciones',
-		icon: 'ClipboardList',
-		profiles: ['rh']
-	},
-	{
-		label: 'Jerarquía',
-		href: '/rh/jerarquia',
-		icon: 'Network',
-		profiles: ['rh']
-	}
+  {
+    label: "Inicio",
+    href: "/",
+    icon: "Home",
+    profiles: [
+      "colaborador",
+      "jefe",
+      "vendedor",
+      "gerente-tienda",
+      "divisional",
+      "regional",
+      "director",
+      "director-general",
+      "rh",
+    ],
+  },
+  {
+    label: "Metas",
+    href: "/objetivos/asignacion",
+    icon: "Target",
+    profiles: [
+      "colaborador",
+      "jefe",
+      "vendedor",
+      "gerente-tienda",
+      "divisional",
+      "regional",
+      "director",
+      "rh",
+    ],
+  },
+  {
+    label: "Objetivos globales",
+    href: "/objetivos/globales",
+    icon: "Target",
+    profiles: ["rh"],
+  },
+  {
+    label: "Metas compartidas",
+    href: "/objetivos/compartidas",
+    icon: "Users",
+    profiles: ["jefe", "gerente-tienda", "divisional", "regional", "director"],
+  },
+  {
+    label: "Mi evaluación",
+    href: "/mi-evaluacion",
+    icon: "ClipboardCheck",
+    profiles: [
+      "colaborador",
+      "jefe",
+      "vendedor",
+      "gerente-tienda",
+      "divisional",
+      "regional",
+      "director",
+      "rh",
+    ],
+  },
+  {
+    label: "Mis evaluados",
+    href: "/mis-evaluados",
+    icon: "Users",
+    profiles: [
+      "jefe",
+      "gerente-tienda",
+      "divisional",
+      "regional",
+      "director",
+      "rh",
+    ],
+  },
+  {
+    label: "Matriz 9-Box",
+    href: "/evaluacion/9x9",
+    icon: "Grid3x3",
+    profiles: ["jefe", "director", "director-general", "rh"],
+  },
+  {
+    label: "Jerarquía",
+    href: "/evaluacion/9x9/jerarquia",
+    icon: "Network",
+    profiles: ["director", "director-general"],
+  },
+  {
+    label: "Pilares",
+    href: "/rh/pilares",
+    icon: "Award",
+    profiles: ["rh"],
+  },
+  {
+    label: "Criterios escala",
+    href: "/rh/criterios-escala",
+    icon: "Grid3x3",
+    profiles: ["rh"],
+  },
+  {
+    label: "Niveles aceptación",
+    href: "/rh/niveles-aceptacion",
+    icon: "FileText",
+    profiles: ["rh"],
+  },
+  {
+    label: "Ciclos",
+    href: "/rh/ciclos",
+    icon: "Calendar",
+    profiles: ["rh"],
+  },
+  {
+    label: "Evaluaciones",
+    href: "/rh/evaluaciones",
+    icon: "ClipboardList",
+    profiles: ["rh"],
+  },
+  {
+    label: "Jerarquía",
+    href: "/rh/jerarquia",
+    icon: "Network",
+    profiles: ["rh"],
+  },
 ];
 
-export function getVisibleMenuItems(profile: EvaluationProfile, phase: CyclePhase): MenuItem[] {
-	return MENU_ITEMS.filter((item) => {
-		if (!item.profiles.includes(profile)) return false;
-		if (item.phases && !item.phases.includes(phase)) return false;
-		return true;
-	});
+export function getVisibleMenuItems(
+  profile: EvaluationProfile,
+  phase: CyclePhase,
+): MenuItem[] {
+  return MENU_ITEMS.filter((item) => {
+    if (!item.profiles.includes(profile)) return false;
+    if (item.phases && !item.phases.includes(phase)) return false;
+    return true;
+  });
 }

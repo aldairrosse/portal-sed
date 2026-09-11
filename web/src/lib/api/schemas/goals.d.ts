@@ -4,2695 +4,2695 @@
  */
 
 export interface paths {
-    "/employees/{empId}/categories": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List categories with nested goals
-         * @description Retorna categorías y objetivos del empleado. Solo objetivos de empleados activos (is_active=true) se listan; inactivos excluidos por sync Mobonet nocturno (filtro implícito is_active).
-         */
-        get: operations["listCategories"];
-        put?: never;
-        /** Create a goal category */
-        post: operations["createCategory"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+  "/employees/{empId}/categories": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/employees/{empId}/categories/{catId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /** Update a goal category */
-        put: operations["updateCategory"];
-        post?: never;
-        /** Delete a goal category */
-        delete: operations["deleteCategory"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /**
+     * List categories with nested goals
+     * @description Retorna categorías y objetivos del empleado. Solo objetivos de empleados activos (is_active=true) se listan; inactivos excluidos por sync Mobonet nocturno (filtro implícito is_active).
+     */
+    get: operations["listCategories"];
+    put?: never;
+    /** Create a goal category */
+    post: operations["createCategory"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/employees/{empId}/categories/{catId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/employees/{empId}/categories/{catId}/goals": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Create a goal in a category */
-        post: operations["createGoal"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    /** Update a goal category */
+    put: operations["updateCategory"];
+    post?: never;
+    /** Delete a goal category */
+    delete: operations["deleteCategory"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/employees/{empId}/categories/{catId}/goals": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/goals/{goalId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /** Update a goal */
-        put: operations["updateGoal"];
-        post?: never;
-        /** Delete a goal */
-        delete: operations["deleteGoal"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    put?: never;
+    /** Create a goal in a category */
+    post: operations["createGoal"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/goals/{goalId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/goals/{goalId}/progress": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /**
-         * Update goal progress (currentValue + phase snapshot)
-         * @description Escribe current_value y el snapshot directo de la fase activa (avance→avance_progress, cierre→cierre_progress). Sync: current_value = cierre_progress ?? avance_progress.
-         */
-        patch: operations["updateGoalProgress"];
-        trace?: never;
+    get?: never;
+    /** Update a goal */
+    put: operations["updateGoal"];
+    post?: never;
+    /** Delete a goal */
+    delete: operations["deleteGoal"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/goals/{goalId}/progress": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/goals/batch": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Atomically create or update multiple goals */
-        post: operations["batchGoals"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    /**
+     * Update goal progress (currentValue + phase snapshot)
+     * @description Escribe current_value y el snapshot directo de la fase activa (avance→avance_progress, cierre→cierre_progress). Sync: current_value = cierre_progress ?? avance_progress.
+     */
+    patch: operations["updateGoalProgress"];
+    trace?: never;
+  };
+  "/goals/batch": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/employees/{empId}/validate-weights": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Validate Double 100% weight rule */
-        post: operations["validateWeights"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    put?: never;
+    /** Atomically create or update multiple goals */
+    post: operations["batchGoals"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/employees/{empId}/validate-weights": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/weights/cycle-config": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get hierarchical cycle weights G% / P% for active cycle */
-        get: operations["getCycleWeightConfig"];
-        /** Save hierarchical cycle weights G% (P = 100 - G) for active cycle */
-        put: operations["putCycleWeightConfig"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    put?: never;
+    /** Validate Double 100% weight rule */
+    post: operations["validateWeights"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/weights/cycle-config": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/weights/team-config": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get hierarchical team weights J% / PJ% for active cycle and team */
-        get: operations["getTeamWeightConfig"];
-        /** Save hierarchical team weights J% (PJ = 100 - J) for active cycle and team */
-        put: operations["putTeamWeightConfig"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /** Get hierarchical cycle weights G% / P% for active cycle */
+    get: operations["getCycleWeightConfig"];
+    /** Save hierarchical cycle weights G% (P = 100 - G) for active cycle */
+    put: operations["putCycleWeightConfig"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/weights/team-config": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/kpis": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List KPIs
-         * @description Returns the KPIs of the caller's department plus global KPIs (org_node_id null). The department is derived from the authenticated user's org node.
-         */
-        get: operations["listKPIs"];
-        put?: never;
-        /**
-         * Create a KPI
-         * @description Creates a KPI. The owning department (org_node_id) is derived from the authenticated creator's org node: the node directly below the organization root, or the top-level node when it does not match the explicit org root. No org_node_id is accepted from the client; null means a global KPI.
-         */
-        post: operations["createKPI"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /** Get hierarchical team weights J% / PJ% for active cycle and team */
+    get: operations["getTeamWeightConfig"];
+    /** Save hierarchical team weights J% (PJ = 100 - J) for active cycle and team */
+    put: operations["putTeamWeightConfig"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/kpis": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/kpis/{kpiId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /** Update a KPI */
-        put: operations["updateKPI"];
-        post?: never;
-        /** Delete a KPI */
-        delete: operations["deleteKPI"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /**
+     * List KPIs
+     * @description Returns the KPIs of the caller's department plus global KPIs (org_node_id null). The department is derived from the authenticated user's org node.
+     */
+    get: operations["listKPIs"];
+    put?: never;
+    /**
+     * Create a KPI
+     * @description Creates a KPI. The owning department (org_node_id) is derived from the authenticated creator's org node: the node directly below the organization root, or the top-level node when it does not match the explicit org root. No org_node_id is accepted from the client; null means a global KPI.
+     */
+    post: operations["createKPI"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/kpis/{kpiId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/kpis/{kpiId}/value": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /**
-         * Update a KPI's current value
-         * @description Updates only the current_value field of a KPI. Used for progress tracking.
-         */
-        patch: operations["updateKPIValue"];
-        trace?: never;
+    get?: never;
+    /** Update a KPI */
+    put: operations["updateKPI"];
+    post?: never;
+    /** Delete a KPI */
+    delete: operations["deleteKPI"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/kpis/{kpiId}/value": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/goals/{goalId}/kpis": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Link a KPI to a goal */
-        post: operations["linkKPI"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    /**
+     * Update a KPI's current value
+     * @description Updates only the current_value field of a KPI. Used for progress tracking.
+     */
+    patch: operations["updateKPIValue"];
+    trace?: never;
+  };
+  "/goals/{goalId}/kpis": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/goals/{goalId}/kpis/{kpiId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** Unlink a KPI from a goal */
-        delete: operations["unlinkKPI"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    put?: never;
+    /** Link a KPI to a goal */
+    post: operations["linkKPI"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/goals/{goalId}/kpis/{kpiId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/goals/{goalId}/proposals": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List proposals for a goal
-         * @description Returns all proposals (pending, accepted, rejected) for audit trail.
-         */
-        get: operations["listGoalProposals"];
-        put?: never;
-        /**
-         * Create a proposal for a goal
-         * @description Proposes changes to a goal's values (name, weight, target, KPIs) for manager review.
-         */
-        post: operations["createGoalProposal"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Unlink a KPI from a goal */
+    delete: operations["unlinkKPI"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/goals/{goalId}/proposals": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/goals/{goalId}/proposals/{propId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /**
-         * Accept or reject a goal proposal
-         * @description Manager accepts or rejects a pending proposal. Accepting applies the proposed changes to the goal.
-         */
-        patch: operations["updateGoalProposal"];
-        trace?: never;
+    /**
+     * List proposals for a goal
+     * @description Returns all proposals (pending, accepted, rejected) for audit trail.
+     */
+    get: operations["listGoalProposals"];
+    put?: never;
+    /**
+     * Create a proposal for a goal
+     * @description Proposes changes to a goal's values (name, weight, target, KPIs) for manager review.
+     */
+    post: operations["createGoalProposal"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/goals/{goalId}/proposals/{propId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/goals/global": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List global goals */
-        get: operations["listGlobalGoals"];
-        put?: never;
-        /** Create a global goal */
-        post: operations["createGlobalGoal"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    /**
+     * Accept or reject a goal proposal
+     * @description Manager accepts or rejects a pending proposal. Accepting applies the proposed changes to the goal.
+     */
+    patch: operations["updateGoalProposal"];
+    trace?: never;
+  };
+  "/goals/global": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/goals/global/{goalId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get a global goal */
-        get: operations["getGlobalGoal"];
-        /** Update a global goal */
-        put: operations["updateGlobalGoal"];
-        post?: never;
-        /** Delete a global goal */
-        delete: operations["deleteGlobalGoal"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /** List global goals */
+    get: operations["listGlobalGoals"];
+    put?: never;
+    /** Create a global goal */
+    post: operations["createGlobalGoal"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/goals/global/{goalId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/goals/global/{goalId}/execute-rules": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Execute mass assignment rules for a global goal */
-        post: operations["executeGlobalGoalRules"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /** Get a global goal */
+    get: operations["getGlobalGoal"];
+    /** Update a global goal */
+    put: operations["updateGlobalGoal"];
+    post?: never;
+    /** Delete a global goal */
+    delete: operations["deleteGlobalGoal"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/goals/global/{goalId}/execute-rules": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/goals/shared": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List shared goals
-         * @description Retorna objetivos compartidos. Solo objetivos de empleados activos (is_active=true) se listan; inactivos excluidos por sync Mobonet nocturno (filtro implícito is_active).
-         */
-        get: operations["listSharedGoals"];
-        put?: never;
-        /** Create a shared goal */
-        post: operations["createSharedGoal"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    put?: never;
+    /** Execute mass assignment rules for a global goal */
+    post: operations["executeGlobalGoalRules"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/goals/shared": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/goals/shared/{goalId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get a shared goal */
-        get: operations["getSharedGoal"];
-        /** Update a shared goal */
-        put: operations["updateSharedGoal"];
-        post?: never;
-        /** Delete a shared goal */
-        delete: operations["deleteSharedGoal"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /**
+     * List shared goals
+     * @description Retorna objetivos compartidos. Solo objetivos de empleados activos (is_active=true) se listan; inactivos excluidos por sync Mobonet nocturno (filtro implícito is_active).
+     */
+    get: operations["listSharedGoals"];
+    put?: never;
+    /** Create a shared goal */
+    post: operations["createSharedGoal"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/goals/shared/{goalId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/goals/shared/{goalId}/members": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Add a member to a shared goal */
-        post: operations["addSharedGoalMember"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /** Get a shared goal */
+    get: operations["getSharedGoal"];
+    /** Update a shared goal */
+    put: operations["updateSharedGoal"];
+    post?: never;
+    /** Delete a shared goal */
+    delete: operations["deleteSharedGoal"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/goals/shared/{goalId}/members": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/goals/shared/{goalId}/members/{employeeId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** Remove a member from a shared goal */
-        delete: operations["removeSharedGoalMember"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    put?: never;
+    /** Add a member to a shared goal */
+    post: operations["addSharedGoalMember"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/goals/shared/{goalId}/members/{employeeId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/goals/shared/{goalId}/progress/{employeeId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /** Update progress for a shared goal member */
-        put: operations["updateSharedGoalMemberProgress"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Remove a member from a shared goal */
+    delete: operations["removeSharedGoalMember"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/goals/shared/{goalId}/progress/{employeeId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/employees/{empId}/assignments": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get the employee's current goal assignment */
-        get: operations["getAssignment"];
-        put?: never;
-        /** Create a goal assignment for the employee */
-        post: operations["createAssignment"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    /** Update progress for a shared goal member */
+    put: operations["updateSharedGoalMemberProgress"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/employees/{empId}/assignments": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/employees/{empId}/score": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get the employee's weighted score
-         * @description Returns the overall weighted score (0-100) based on category weights and goal progress percentages.
-         */
-        get: operations["getEmployeeScore"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /** Get the employee's current goal assignment */
+    get: operations["getAssignment"];
+    put?: never;
+    /** Create a goal assignment for the employee */
+    post: operations["createAssignment"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/employees/{empId}/score": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/goals/{goalId}/comments": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List comments for a goal */
-        get: operations["listGoalComments"];
-        put?: never;
-        /** Create a comment on a goal */
-        post: operations["createGoalComment"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /**
+     * Get the employee's weighted score
+     * @description Returns the overall weighted score (0-100) based on category weights and goal progress percentages.
+     */
+    get: operations["getEmployeeScore"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/goals/{goalId}/comments": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/goals/{goalId}/comments/{commentId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** Delete a comment */
-        delete: operations["deleteGoalComment"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /** List comments for a goal */
+    get: operations["listGoalComments"];
+    put?: never;
+    /** Create a comment on a goal */
+    post: operations["createGoalComment"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/goals/{goalId}/comments/{commentId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/categories/{catId}/comments": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List comments for a category */
-        get: operations["listCategoryComments"];
-        put?: never;
-        /** Create a comment on a category */
-        post: operations["createCategoryComment"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Delete a comment */
+    delete: operations["deleteGoalComment"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/categories/{catId}/comments": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/categories/{catId}/comments/{commentId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** Delete a comment */
-        delete: operations["deleteCategoryComment"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /** List comments for a category */
+    get: operations["listCategoryComments"];
+    put?: never;
+    /** Create a comment on a category */
+    post: operations["createCategoryComment"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/categories/{catId}/comments/{commentId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/assignments/{assignId}/comments": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List comments for an assignment */
-        get: operations["listAssignmentComments"];
-        put?: never;
-        /** Create a comment on an assignment */
-        post: operations["createAssignmentComment"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Delete a comment */
+    delete: operations["deleteCategoryComment"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/assignments/{assignId}/comments": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/assignments/{assignId}/comments/{commentId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** Delete a comment */
-        delete: operations["deleteAssignmentComment"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /** List comments for an assignment */
+    get: operations["listAssignmentComments"];
+    put?: never;
+    /** Create a comment on an assignment */
+    post: operations["createAssignmentComment"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/assignments/{assignId}/comments/{commentId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/change-requests": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List change requests */
-        get: operations["listChangeRequests"];
-        put?: never;
-        /** Create a change request */
-        post: operations["createChangeRequest"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Delete a comment */
+    delete: operations["deleteAssignmentComment"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/change-requests": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/change-requests/{crId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /** Approve or reject a change request */
-        patch: operations["updateChangeRequest"];
-        trace?: never;
+    /** List change requests */
+    get: operations["listChangeRequests"];
+    put?: never;
+    /** Create a change request */
+    post: operations["createChangeRequest"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/change-requests/{crId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    /** Approve or reject a change request */
+    patch: operations["updateChangeRequest"];
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
-    schemas: {
-        Error: {
-            error?: {
-                code?: string;
-                message?: string;
-                details?: string[];
-                trace_id?: string;
-            };
-        };
-        CreateCategoryRequest: {
-            name: string;
-            description?: string;
-            weight: number;
-        };
-        UpdateCategoryRequest: {
-            name: string;
-            description?: string;
-            weight: number;
-        };
-        CategoryResponse: {
-            /** Format: uuid */
-            id?: string;
-            /** Format: uuid */
-            employee_id?: string;
-            name?: string;
-            description?: string;
-            weight?: number;
-            goals?: components["schemas"]["GoalResponse"][];
-            /** Format: date-time */
-            created_at?: string;
-            /** Format: date-time */
-            updated_at?: string;
-        };
-        CategoryListResponse: {
-            items?: components["schemas"]["CategoryResponse"][];
-            next_cursor?: string | null;
-        };
-        CreateGoalRequest: {
-            name: string;
-            description?: string;
-            /** @enum {string} */
-            unit: "porcentaje" | "moneda" | "numero" | "binario";
-            weight: number;
-            /** @description 0 permitido solo si unit=binario o direction=descendente; en otros casos debe ser >0 */
-            target_value: number;
-            /**
-             * @default ascendente
-             * @enum {string}
-             */
-            direction: "ascendente" | "descendente";
-            /** @description Required when direction is descendente; must be > target_value */
-            baseline_value?: number | null;
-            kpi_ids?: string[];
-        };
-        UpdateGoalRequest: {
-            name: string;
-            description?: string;
-            /** @enum {string} */
-            unit: "porcentaje" | "moneda" | "numero" | "binario";
-            weight: number;
-            /** @description 0 permitido solo si unit=binario o direction=descendente; en otros casos debe ser >0 */
-            target_value: number;
-            /**
-             * @default ascendente
-             * @enum {string}
-             */
-            direction: "ascendente" | "descendente";
-            /** @description Required when direction is descendente; must be > target_value */
-            baseline_value?: number | null;
-            version: number;
-            kpi_ids?: string[];
-        };
-        GoalResponse: {
-            /** Format: uuid */
-            id?: string;
-            /** Format: uuid */
-            category_id?: string;
-            name?: string;
-            description?: string;
-            unit?: string;
-            weight?: number;
-            target_value?: number;
-            current_value?: number;
-            /** @enum {string} */
-            direction?: "ascendente" | "descendente";
-            baseline_value?: number | null;
-            progress_percent?: number;
-            /** @enum {string} */
-            state?: "borrador" | "fijada" | "en_seguimiento" | "evaluada" | "cerrada";
-            version?: number;
-            kpis?: components["schemas"]["KpiResponse"][];
-            pending_proposal?: components["schemas"]["GoalProposalResponse"];
-            /** Format: date-time */
-            created_at?: string;
-            /** Format: date-time */
-            updated_at?: string;
-        };
-        UpdateProgressRequest: {
-            current_value: number;
-            /**
-             * @description Fase del avance; solo avance y cierre aceptan progreso (alias medio-anio solo docs, equivale a avance).
-             * @enum {string}
-             */
-            phase?: "avance" | "cierre";
-        };
-        KpiUpdateValueRequest: {
-            current_value: number;
-        };
-        CreateGoalProposalRequest: {
-            name: string;
-            description?: string;
-            /** @enum {string} */
-            unit: "porcentaje" | "moneda" | "numero" | "binario";
-            weight: number;
-            /** @description 0 permitido solo si unit=binario o direction=descendente; en otros casos debe ser >0 */
-            target_value: number;
-            /**
-             * @default ascendente
-             * @enum {string}
-             */
-            direction: "ascendente" | "descendente";
-            /** @description Required when direction is descendente; must be > target_value */
-            baseline_value?: number | null;
-            kpi_ids?: string[];
-        };
-        GoalProposalResponse: {
-            /** Format: uuid */
-            id?: string;
-            /** Format: uuid */
-            goal_id?: string;
-            requested_by?: string;
-            name?: string;
-            description?: string;
-            unit?: string;
-            weight?: number;
-            target_value?: number;
-            /** @enum {string} */
-            direction?: "ascendente" | "descendente";
-            baseline_value?: number | null;
-            kpi_ids?: string[];
-            status?: string;
-            reviewed_by?: string | null;
-            /** Format: date-time */
-            reviewed_at?: string | null;
-            /** Format: date-time */
-            created_at?: string;
-            /** Format: date-time */
-            updated_at?: string;
-        };
-        UpdateGoalProposalRequest: {
-            /** @enum {string} */
-            status: "accepted" | "rejected";
-            reviewed_by: string;
-        };
-        BatchGoalItem: {
-            /** @enum {string} */
-            operation: "create" | "update";
-            /** Format: uuid */
-            category_id?: string;
-            /** Format: uuid */
-            goal_id?: string;
-            goal: components["schemas"]["CreateGoalRequest"];
-        };
-        BatchGoalRequest: {
-            items: components["schemas"]["BatchGoalItem"][];
-        };
-        BatchGoalResponse: {
-            items?: components["schemas"]["GoalResponse"][];
-        };
-        /** @description Category sum solo personales (excluye globales/compartidas) */
-        WeightValidationResponse: {
-            valid?: boolean;
-            /** @description Category sum solo personales (excluye globales/compartidas) */
-            category_sum?: number;
-            expected_sum?: number;
-            deficit?: number;
-            /** @description Category sum solo personales (excluye globales/compartidas) */
-            goal_sums?: components["schemas"]["CategoryGoalSum"][];
-        };
-        /** @description Category sum solo personales (excluye globales/compartidas) */
-        CategoryGoalSum: {
-            /** Format: uuid */
-            category_id?: string;
-            category_name?: string;
-            /** @description Category sum solo personales (excluye globales/compartidas) */
-            sum?: number;
-            expected_sum?: number;
-            deficit?: number;
-        };
-        /** @description Hierarchical L1 RH weights G+P=100 (fallback P=100) */
-        CycleWeights: {
-            g_weight: number;
-            p_weight: number;
-        };
-        CycleWeightConfig: components["schemas"]["CycleWeights"] & unknown;
-        /** @description Hierarchical L2 Jefe weights J+PJ=100 within P (fallback PJ=100) */
-        TeamWeights: {
-            j_weight: number;
-            pj_weight: number;
-        };
-        TeamWeightConfig: components["schemas"]["TeamWeights"] & unknown;
-        CreateKpiRequest: {
-            name: string;
-            /** @enum {string} */
-            unit: "porcentaje" | "moneda" | "numero" | "binario";
-            description?: string;
-            /**
-             * @default ascendente
-             * @enum {string}
-             */
-            direction: "ascendente" | "descendente";
-        };
-        UpdateKpiRequest: {
-            name: string;
-            /** @enum {string} */
-            unit: "porcentaje" | "moneda" | "numero" | "binario";
-            description?: string;
-            /**
-             * @default ascendente
-             * @enum {string}
-             */
-            direction: "ascendente" | "descendente";
-        };
-        KpiResponse: {
-            /** Format: uuid */
-            id?: string;
-            name?: string;
-            unit?: string;
-            description?: string;
-            /** @enum {string} */
-            direction?: "ascendente" | "descendente";
-            /**
-             * Format: uuid
-             * @description Org node (department) that owns the KPI; null means a global KPI visible across the organization.
-             */
-            org_node_id?: string | null;
-            current_value?: number | null;
-            progress_percent?: number;
-            /** Format: date-time */
-            created_at?: string;
-            /** Format: date-time */
-            updated_at?: string;
-        };
-        KpiListResponse: {
-            items?: components["schemas"]["KpiResponse"][];
-            next_cursor?: string | null;
-        };
-        LinkKpiRequest: {
-            /** Format: uuid */
-            kpi_id: string;
-        };
-        GlobalRule: {
-            /** Format: uuid */
-            id?: string;
-            /** Format: uuid */
-            goal_id?: string;
-            /** @enum {string} */
-            rule_type?: "department" | "min_direct_reports" | "role";
-            /** Format: uuid */
-            department_id?: string | null;
-            min_direct_reports?: number | null;
-            /** Format: uuid */
-            profile_id?: string | null;
-            default_weight?: number;
-            /** @default 100 */
-            default_target: number;
-        };
-        CreateGlobalGoalRequest: {
-            name: string;
-            description?: string;
-            /** @enum {string} */
-            unit: "porcentaje" | "moneda" | "numero" | "binario";
-            weight: number;
-            /** @description 0 permitido solo si unit=binario o direction=descendente; en otros casos debe ser >0 */
-            target_value: number;
-            /**
-             * @default ascendente
-             * @enum {string}
-             */
-            direction: "ascendente" | "descendente";
-            baseline_value?: number | null;
-            goal_kind?: string;
-            /**
-             * Format: uuid
-             * @description Optional; global goals typically have no category.
-             */
-            category_id?: string | null;
-            assignments?: components["schemas"]["GlobalAssignmentRequest"][];
-            rules?: components["schemas"]["GlobalRuleRequest"][];
-        };
-        UpdateGlobalGoalRequest: {
-            name: string;
-            description?: string;
-            /** @enum {string} */
-            unit: "porcentaje" | "moneda" | "numero" | "binario";
-            weight: number;
-            /** @description 0 permitido solo si unit=binario o direction=descendente; en otros casos debe ser >0 */
-            target_value: number;
-            /**
-             * @default ascendente
-             * @enum {string}
-             */
-            direction: "ascendente" | "descendente";
-            baseline_value?: number | null;
-            goal_kind?: string;
-            /**
-             * Format: uuid
-             * @description Optional; global goals typically have no category.
-             */
-            category_id?: string | null;
-        };
-        GlobalAssignmentRequest: {
-            /** Format: uuid */
-            employee_id: string;
-            weight: number;
-            /** @description 0 permitido solo si unit=binario o direction=descendente; en otros casos debe ser >0 */
-            target_value: number;
-            baseline_value?: number | null;
-        };
-        GlobalRuleRequest: {
-            /** @enum {string} */
-            rule_type: "department" | "min_direct_reports" | "role";
-            /** Format: uuid */
-            department_id?: string | null;
-            min_direct_reports?: number | null;
-            /** Format: uuid */
-            profile_id?: string | null;
-            default_weight: number;
-            default_target: number;
-        };
-        GlobalGoalResponse: {
-            /** Format: uuid */
-            id?: string;
-            name?: string;
-            description?: string;
-            unit?: string;
-            direction?: string;
-            weight?: number;
-            target_value?: number;
-            current_value?: number;
-            goal_kind?: string;
-            state?: string;
-            /** Format: uuid */
-            created_by?: string;
-            /** Format: date-time */
-            created_at?: string;
-            /** Format: date-time */
-            updated_at?: string;
-            assignments?: components["schemas"]["GlobalAssignmentResponse"][];
-            rules?: components["schemas"]["GlobalRule"][];
-        };
-        GlobalAssignmentResponse: {
-            /** Format: uuid */
-            id?: string;
-            /** Format: uuid */
-            goal_id?: string;
-            /** Format: uuid */
-            employee_id?: string;
-            weight?: number;
-            target_value?: number;
-            baseline_value?: number | null;
-        };
-        GlobalGoalListResponse: {
-            items?: components["schemas"]["GlobalGoalResponse"][];
-        };
-        CreateSharedGoalRequest: {
-            name: string;
-            description?: string;
-            /** @enum {string} */
-            unit: "porcentaje" | "moneda" | "numero" | "binario";
-            weight: number;
-            /** @description 0 permitido solo si unit=binario o direction=descendente; en otros casos debe ser >0 */
-            target_value: number;
-            /**
-             * @default ascendente
-             * @enum {string}
-             */
-            direction: "ascendente" | "descendente";
-            baseline_value?: number | null;
-            goal_kind?: string;
-            /**
-             * Format: uuid
-             * @description Optional; shared goals typically have no category.
-             */
-            category_id?: string | null;
-            group_name?: string;
-            group_description?: string;
-            members?: components["schemas"]["SharedMemberRequest"][];
-        };
-        UpdateSharedGoalRequest: {
-            name: string;
-            description?: string;
-            /** @enum {string} */
-            unit: "porcentaje" | "moneda" | "numero" | "binario";
-            weight: number;
-            /** @description 0 permitido solo si unit=binario o direction=descendente; en otros casos debe ser >0 */
-            target_value: number;
-            /**
-             * @default ascendente
-             * @enum {string}
-             */
-            direction: "ascendente" | "descendente";
-            baseline_value?: number | null;
-            goal_kind?: string;
-            /**
-             * Format: uuid
-             * @description Optional; shared goals typically have no category.
-             */
-            category_id?: string | null;
-            /** @description Optional; when present, replaces group members (delete+recreate). Omit to leave unchanged. */
-            members?: components["schemas"]["SharedMemberRequest"][];
-        };
-        SharedMemberRequest: {
-            /** Format: uuid */
-            employee_id: string;
-            weight: number;
-            /** @description 0 permitido solo si unit=binario o direction=descendente; en otros casos debe ser >0 */
-            target_value: number;
-            baseline_value?: number | null;
-        };
-        AddMemberRequest: {
-            /** Format: uuid */
-            employee_id: string;
-            weight: number;
-            /** @description 0 permitido solo si unit=binario o direction=descendente; en otros casos debe ser >0 */
-            target_value: number;
-            baseline_value?: number | null;
-        };
-        UpdateMemberProgressRequest: {
-            current_value: number;
-        };
-        SharedGoalResponse: {
-            /** Format: uuid */
-            id?: string;
-            name?: string;
-            description?: string;
-            unit?: string;
-            direction?: string;
-            weight?: number;
-            target_value?: number;
-            current_value?: number;
-            goal_kind?: string;
-            state?: string;
-            /** Format: uuid */
-            created_by?: string;
-            /** Format: date-time */
-            created_at?: string;
-            /** Format: date-time */
-            updated_at?: string;
-            group?: components["schemas"]["SharedGroupResponse"];
-            members?: components["schemas"]["SharedMemberResponse"][];
-        };
-        SharedGroupResponse: {
-            /** Format: uuid */
-            id?: string;
-            /** Format: uuid */
-            goal_id?: string;
-            /** Format: uuid */
-            created_by?: string;
-            name?: string;
-            description?: string;
-        };
-        SharedMemberResponse: {
-            /** Format: uuid */
-            id?: string;
-            /** Format: uuid */
-            group_id?: string;
-            /** Format: uuid */
-            employee_id?: string;
-            weight?: number;
-            target_value?: number;
-            baseline_value?: number | null;
-        };
-        SharedGoalListResponse: {
-            items?: components["schemas"]["SharedGoalResponse"][];
-        };
-        AssignmentResponse: {
-            /** Format: uuid */
-            id?: string;
-            /** Format: uuid */
-            employee_id?: string;
-            /** Format: uuid */
-            cycle_id?: string;
-            /**
-             * @description Estado actual de la asignación de metas
-             * @enum {string}
-             */
-            status?: "borrador" | "enviada";
-            /**
-             * Format: date-time
-             * @description Fecha y hora en que la asignación fue enviada formalmente
-             */
-            submitted_at?: string | null;
-            categories?: components["schemas"]["CategoryResponse"][];
-            global_goals?: components["schemas"]["AssignedGoalResponse"][];
-            shared_goals?: components["schemas"]["AssignedGoalResponse"][];
-            /** Format: date-time */
-            created_at?: string;
-        };
-        CreateAssignmentRequest: {
-            /** Format: uuid */
-            cycle_id: string;
-        };
-        AssignedGoalResponse: {
-            /** Format: uuid */
-            id?: string;
-            name?: string;
-            description?: string;
-            unit?: string;
-            direction?: string;
-            goal_kind?: string;
-            weight?: number;
-            target_value?: number;
-            baseline_value?: number | null;
-            current_value?: number;
-            progress_percent?: number;
-            state?: string;
-            /** @enum {string} */
-            source?: "global" | "shared";
-        };
-        GoalComment: {
-            /** Format: uuid */
-            id?: string;
-            /** Format: uuid */
-            goal_id?: string | null;
-            /** Format: uuid */
-            category_id?: string | null;
-            /** Format: uuid */
-            assignment_id?: string | null;
-            /** Format: uuid */
-            author_id?: string;
-            author_name?: string;
-            content?: string;
-            /**
-             * @description Fase del comentario; alias medio-anio (docs) equivale a avance y no se envía al backend.
-             * @default cierre
-             * @enum {string}
-             */
-            phase: "asignacion" | "avance" | "cierre";
-            created_at?: string;
-        };
-        CreateCommentRequest: {
-            content: string;
-            /**
-             * @description Fase del comentario (?phase= query param, default cierre; alias medio-anio solo docs, equivale a avance).
-             * @default cierre
-             * @enum {string}
-             */
-            phase: "asignacion" | "avance" | "cierre";
-        };
-        ChangeRequest: {
-            /** Format: uuid */
-            id?: string;
-            entity_type?: string;
-            /** Format: uuid */
-            entity_id?: string;
-            /** Format: uuid */
-            requested_by?: string;
-            /** @enum {string} */
-            status?: "pending" | "approved" | "rejected";
-            /** Format: uuid */
-            approved_by?: string | null;
-            approved_at?: string | null;
-            created_at?: string;
-        };
-        CreateChangeRequestRequest: {
-            entity_type: string;
-            /** Format: uuid */
-            entity_id: string;
-            /** Format: uuid */
-            requested_by: string;
-        };
-        UpdateChangeRequestRequest: {
-            /** @enum {string} */
-            status: "pending" | "approved" | "rejected";
-            /** Format: uuid */
-            approved_by?: string;
-        };
+  schemas: {
+    Error: {
+      error?: {
+        code?: string;
+        message?: string;
+        details?: string[];
+        trace_id?: string;
+      };
     };
-    responses: {
-        /** @description Operation not allowed in current cycle phase */
-        PhaseRestricted: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": components["schemas"]["Error"];
-            };
-        };
-        /** @description Weight validation failed (Double 100% rule) */
-        WeightInvalid: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": components["schemas"]["Error"];
-            };
-        };
-        /** @description Category name already exists for employee */
-        DuplicateCategoryName: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": components["schemas"]["Error"];
-            };
-        };
-        /** @description Optimistic locking version mismatch */
-        ConcurrentModification: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": components["schemas"]["Error"];
-            };
-        };
-        /** @description KPI cannot be deleted because it is linked to goals */
-        KpiLinked: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": components["schemas"]["Error"];
-            };
-        };
-        /** @description Rate limit exceeded */
-        RateLimit: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": components["schemas"]["Error"];
-            };
-        };
-        /** @description Weight must be between 0 and 100 */
-        InvalidWeightRange: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": components["schemas"]["Error"];
-            };
-        };
-        /** @description Invalid request parameters */
-        InvalidRequest: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": components["schemas"]["Error"];
-            };
-        };
-        /** @description Category not found */
-        CategoryNotFound: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": components["schemas"]["Error"];
-            };
-        };
-        /** @description Goal not found */
-        GoalNotFound: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": components["schemas"]["Error"];
-            };
-        };
-        /** @description KPI not found */
-        KpiNotFound: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": components["schemas"]["Error"];
-            };
-        };
-        /** @description Invalid goal request (weight, target, unit, etc.) */
-        InvalidGoalRequest: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": components["schemas"]["Error"];
-            };
-        };
-        /** @description Batch size exceeds maximum allowed (50) */
-        BatchSizeExceeded: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": components["schemas"]["Error"];
-            };
-        };
-        /** @description A goal cannot have more than 5 linked KPIs */
-        KpiLinkLimitExceeded: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": components["schemas"]["Error"];
-            };
-        };
+    CreateCategoryRequest: {
+      name: string;
+      description?: string;
+      weight: number;
     };
-    parameters: {
-        EmpId: string;
-        CatId: string;
-        GoalId: string;
-        EmployeeId: string;
-        AssignmentId: string;
-        KpiId: string;
-        PropId: string;
-        Cursor: string;
-        Limit: number;
+    UpdateCategoryRequest: {
+      name: string;
+      description?: string;
+      weight: number;
     };
-    requestBodies: never;
-    headers: never;
-    pathItems: never;
+    CategoryResponse: {
+      /** Format: uuid */
+      id?: string;
+      /** Format: uuid */
+      employee_id?: string;
+      name?: string;
+      description?: string;
+      weight?: number;
+      goals?: components["schemas"]["GoalResponse"][];
+      /** Format: date-time */
+      created_at?: string;
+      /** Format: date-time */
+      updated_at?: string;
+    };
+    CategoryListResponse: {
+      items?: components["schemas"]["CategoryResponse"][];
+      next_cursor?: string | null;
+    };
+    CreateGoalRequest: {
+      name: string;
+      description?: string;
+      /** @enum {string} */
+      unit: "porcentaje" | "moneda" | "numero" | "binario";
+      weight: number;
+      /** @description 0 permitido solo si unit=binario o direction=descendente; en otros casos debe ser >0 */
+      target_value: number;
+      /**
+       * @default ascendente
+       * @enum {string}
+       */
+      direction: "ascendente" | "descendente";
+      /** @description Required when direction is descendente; must be > target_value */
+      baseline_value?: number | null;
+      kpi_ids?: string[];
+    };
+    UpdateGoalRequest: {
+      name: string;
+      description?: string;
+      /** @enum {string} */
+      unit: "porcentaje" | "moneda" | "numero" | "binario";
+      weight: number;
+      /** @description 0 permitido solo si unit=binario o direction=descendente; en otros casos debe ser >0 */
+      target_value: number;
+      /**
+       * @default ascendente
+       * @enum {string}
+       */
+      direction: "ascendente" | "descendente";
+      /** @description Required when direction is descendente; must be > target_value */
+      baseline_value?: number | null;
+      version: number;
+      kpi_ids?: string[];
+    };
+    GoalResponse: {
+      /** Format: uuid */
+      id?: string;
+      /** Format: uuid */
+      category_id?: string;
+      name?: string;
+      description?: string;
+      unit?: string;
+      weight?: number;
+      target_value?: number;
+      current_value?: number;
+      /** @enum {string} */
+      direction?: "ascendente" | "descendente";
+      baseline_value?: number | null;
+      progress_percent?: number;
+      /** @enum {string} */
+      state?: "borrador" | "fijada" | "en_seguimiento" | "evaluada" | "cerrada";
+      version?: number;
+      kpis?: components["schemas"]["KpiResponse"][];
+      pending_proposal?: components["schemas"]["GoalProposalResponse"];
+      /** Format: date-time */
+      created_at?: string;
+      /** Format: date-time */
+      updated_at?: string;
+    };
+    UpdateProgressRequest: {
+      current_value: number;
+      /**
+       * @description Fase del avance; solo avance y cierre aceptan progreso (alias medio-anio solo docs, equivale a avance).
+       * @enum {string}
+       */
+      phase?: "avance" | "cierre";
+    };
+    KpiUpdateValueRequest: {
+      current_value: number;
+    };
+    CreateGoalProposalRequest: {
+      name: string;
+      description?: string;
+      /** @enum {string} */
+      unit: "porcentaje" | "moneda" | "numero" | "binario";
+      weight: number;
+      /** @description 0 permitido solo si unit=binario o direction=descendente; en otros casos debe ser >0 */
+      target_value: number;
+      /**
+       * @default ascendente
+       * @enum {string}
+       */
+      direction: "ascendente" | "descendente";
+      /** @description Required when direction is descendente; must be > target_value */
+      baseline_value?: number | null;
+      kpi_ids?: string[];
+    };
+    GoalProposalResponse: {
+      /** Format: uuid */
+      id?: string;
+      /** Format: uuid */
+      goal_id?: string;
+      requested_by?: string;
+      name?: string;
+      description?: string;
+      unit?: string;
+      weight?: number;
+      target_value?: number;
+      /** @enum {string} */
+      direction?: "ascendente" | "descendente";
+      baseline_value?: number | null;
+      kpi_ids?: string[];
+      status?: string;
+      reviewed_by?: string | null;
+      /** Format: date-time */
+      reviewed_at?: string | null;
+      /** Format: date-time */
+      created_at?: string;
+      /** Format: date-time */
+      updated_at?: string;
+    };
+    UpdateGoalProposalRequest: {
+      /** @enum {string} */
+      status: "accepted" | "rejected";
+      reviewed_by: string;
+    };
+    BatchGoalItem: {
+      /** @enum {string} */
+      operation: "create" | "update";
+      /** Format: uuid */
+      category_id?: string;
+      /** Format: uuid */
+      goal_id?: string;
+      goal: components["schemas"]["CreateGoalRequest"];
+    };
+    BatchGoalRequest: {
+      items: components["schemas"]["BatchGoalItem"][];
+    };
+    BatchGoalResponse: {
+      items?: components["schemas"]["GoalResponse"][];
+    };
+    /** @description Category sum solo personales (excluye globales/compartidas) */
+    WeightValidationResponse: {
+      valid?: boolean;
+      /** @description Category sum solo personales (excluye globales/compartidas) */
+      category_sum?: number;
+      expected_sum?: number;
+      deficit?: number;
+      /** @description Category sum solo personales (excluye globales/compartidas) */
+      goal_sums?: components["schemas"]["CategoryGoalSum"][];
+    };
+    /** @description Category sum solo personales (excluye globales/compartidas) */
+    CategoryGoalSum: {
+      /** Format: uuid */
+      category_id?: string;
+      category_name?: string;
+      /** @description Category sum solo personales (excluye globales/compartidas) */
+      sum?: number;
+      expected_sum?: number;
+      deficit?: number;
+    };
+    /** @description Hierarchical L1 RH weights G+P=100 (fallback P=100) */
+    CycleWeights: {
+      g_weight: number;
+      p_weight: number;
+    };
+    CycleWeightConfig: components["schemas"]["CycleWeights"] & unknown;
+    /** @description Hierarchical L2 Jefe weights J+PJ=100 within P (fallback PJ=100) */
+    TeamWeights: {
+      j_weight: number;
+      pj_weight: number;
+    };
+    TeamWeightConfig: components["schemas"]["TeamWeights"] & unknown;
+    CreateKpiRequest: {
+      name: string;
+      /** @enum {string} */
+      unit: "porcentaje" | "moneda" | "numero" | "binario";
+      description?: string;
+      /**
+       * @default ascendente
+       * @enum {string}
+       */
+      direction: "ascendente" | "descendente";
+    };
+    UpdateKpiRequest: {
+      name: string;
+      /** @enum {string} */
+      unit: "porcentaje" | "moneda" | "numero" | "binario";
+      description?: string;
+      /**
+       * @default ascendente
+       * @enum {string}
+       */
+      direction: "ascendente" | "descendente";
+    };
+    KpiResponse: {
+      /** Format: uuid */
+      id?: string;
+      name?: string;
+      unit?: string;
+      description?: string;
+      /** @enum {string} */
+      direction?: "ascendente" | "descendente";
+      /**
+       * Format: uuid
+       * @description Org node (department) that owns the KPI; null means a global KPI visible across the organization.
+       */
+      org_node_id?: string | null;
+      current_value?: number | null;
+      progress_percent?: number;
+      /** Format: date-time */
+      created_at?: string;
+      /** Format: date-time */
+      updated_at?: string;
+    };
+    KpiListResponse: {
+      items?: components["schemas"]["KpiResponse"][];
+      next_cursor?: string | null;
+    };
+    LinkKpiRequest: {
+      /** Format: uuid */
+      kpi_id: string;
+    };
+    GlobalRule: {
+      /** Format: uuid */
+      id?: string;
+      /** Format: uuid */
+      goal_id?: string;
+      /** @enum {string} */
+      rule_type?: "department" | "min_direct_reports" | "role";
+      /** Format: uuid */
+      department_id?: string | null;
+      min_direct_reports?: number | null;
+      /** Format: uuid */
+      profile_id?: string | null;
+      default_weight?: number;
+      /** @default 100 */
+      default_target: number;
+    };
+    CreateGlobalGoalRequest: {
+      name: string;
+      description?: string;
+      /** @enum {string} */
+      unit: "porcentaje" | "moneda" | "numero" | "binario";
+      weight: number;
+      /** @description 0 permitido solo si unit=binario o direction=descendente; en otros casos debe ser >0 */
+      target_value: number;
+      /**
+       * @default ascendente
+       * @enum {string}
+       */
+      direction: "ascendente" | "descendente";
+      baseline_value?: number | null;
+      goal_kind?: string;
+      /**
+       * Format: uuid
+       * @description Optional; global goals typically have no category.
+       */
+      category_id?: string | null;
+      assignments?: components["schemas"]["GlobalAssignmentRequest"][];
+      rules?: components["schemas"]["GlobalRuleRequest"][];
+    };
+    UpdateGlobalGoalRequest: {
+      name: string;
+      description?: string;
+      /** @enum {string} */
+      unit: "porcentaje" | "moneda" | "numero" | "binario";
+      weight: number;
+      /** @description 0 permitido solo si unit=binario o direction=descendente; en otros casos debe ser >0 */
+      target_value: number;
+      /**
+       * @default ascendente
+       * @enum {string}
+       */
+      direction: "ascendente" | "descendente";
+      baseline_value?: number | null;
+      goal_kind?: string;
+      /**
+       * Format: uuid
+       * @description Optional; global goals typically have no category.
+       */
+      category_id?: string | null;
+    };
+    GlobalAssignmentRequest: {
+      /** Format: uuid */
+      employee_id: string;
+      weight: number;
+      /** @description 0 permitido solo si unit=binario o direction=descendente; en otros casos debe ser >0 */
+      target_value: number;
+      baseline_value?: number | null;
+    };
+    GlobalRuleRequest: {
+      /** @enum {string} */
+      rule_type: "department" | "min_direct_reports" | "role";
+      /** Format: uuid */
+      department_id?: string | null;
+      min_direct_reports?: number | null;
+      /** Format: uuid */
+      profile_id?: string | null;
+      default_weight: number;
+      default_target: number;
+    };
+    GlobalGoalResponse: {
+      /** Format: uuid */
+      id?: string;
+      name?: string;
+      description?: string;
+      unit?: string;
+      direction?: string;
+      weight?: number;
+      target_value?: number;
+      current_value?: number;
+      goal_kind?: string;
+      state?: string;
+      /** Format: uuid */
+      created_by?: string;
+      /** Format: date-time */
+      created_at?: string;
+      /** Format: date-time */
+      updated_at?: string;
+      assignments?: components["schemas"]["GlobalAssignmentResponse"][];
+      rules?: components["schemas"]["GlobalRule"][];
+    };
+    GlobalAssignmentResponse: {
+      /** Format: uuid */
+      id?: string;
+      /** Format: uuid */
+      goal_id?: string;
+      /** Format: uuid */
+      employee_id?: string;
+      weight?: number;
+      target_value?: number;
+      baseline_value?: number | null;
+    };
+    GlobalGoalListResponse: {
+      items?: components["schemas"]["GlobalGoalResponse"][];
+    };
+    CreateSharedGoalRequest: {
+      name: string;
+      description?: string;
+      /** @enum {string} */
+      unit: "porcentaje" | "moneda" | "numero" | "binario";
+      weight: number;
+      /** @description 0 permitido solo si unit=binario o direction=descendente; en otros casos debe ser >0 */
+      target_value: number;
+      /**
+       * @default ascendente
+       * @enum {string}
+       */
+      direction: "ascendente" | "descendente";
+      baseline_value?: number | null;
+      goal_kind?: string;
+      /**
+       * Format: uuid
+       * @description Optional; shared goals typically have no category.
+       */
+      category_id?: string | null;
+      group_name?: string;
+      group_description?: string;
+      members?: components["schemas"]["SharedMemberRequest"][];
+    };
+    UpdateSharedGoalRequest: {
+      name: string;
+      description?: string;
+      /** @enum {string} */
+      unit: "porcentaje" | "moneda" | "numero" | "binario";
+      weight: number;
+      /** @description 0 permitido solo si unit=binario o direction=descendente; en otros casos debe ser >0 */
+      target_value: number;
+      /**
+       * @default ascendente
+       * @enum {string}
+       */
+      direction: "ascendente" | "descendente";
+      baseline_value?: number | null;
+      goal_kind?: string;
+      /**
+       * Format: uuid
+       * @description Optional; shared goals typically have no category.
+       */
+      category_id?: string | null;
+      /** @description Optional; when present, replaces group members (delete+recreate). Omit to leave unchanged. */
+      members?: components["schemas"]["SharedMemberRequest"][];
+    };
+    SharedMemberRequest: {
+      /** Format: uuid */
+      employee_id: string;
+      weight: number;
+      /** @description 0 permitido solo si unit=binario o direction=descendente; en otros casos debe ser >0 */
+      target_value: number;
+      baseline_value?: number | null;
+    };
+    AddMemberRequest: {
+      /** Format: uuid */
+      employee_id: string;
+      weight: number;
+      /** @description 0 permitido solo si unit=binario o direction=descendente; en otros casos debe ser >0 */
+      target_value: number;
+      baseline_value?: number | null;
+    };
+    UpdateMemberProgressRequest: {
+      current_value: number;
+    };
+    SharedGoalResponse: {
+      /** Format: uuid */
+      id?: string;
+      name?: string;
+      description?: string;
+      unit?: string;
+      direction?: string;
+      weight?: number;
+      target_value?: number;
+      current_value?: number;
+      goal_kind?: string;
+      state?: string;
+      /** Format: uuid */
+      created_by?: string;
+      /** Format: date-time */
+      created_at?: string;
+      /** Format: date-time */
+      updated_at?: string;
+      group?: components["schemas"]["SharedGroupResponse"];
+      members?: components["schemas"]["SharedMemberResponse"][];
+    };
+    SharedGroupResponse: {
+      /** Format: uuid */
+      id?: string;
+      /** Format: uuid */
+      goal_id?: string;
+      /** Format: uuid */
+      created_by?: string;
+      name?: string;
+      description?: string;
+    };
+    SharedMemberResponse: {
+      /** Format: uuid */
+      id?: string;
+      /** Format: uuid */
+      group_id?: string;
+      /** Format: uuid */
+      employee_id?: string;
+      weight?: number;
+      target_value?: number;
+      baseline_value?: number | null;
+    };
+    SharedGoalListResponse: {
+      items?: components["schemas"]["SharedGoalResponse"][];
+    };
+    AssignmentResponse: {
+      /** Format: uuid */
+      id?: string;
+      /** Format: uuid */
+      employee_id?: string;
+      /** Format: uuid */
+      cycle_id?: string;
+      /**
+       * @description Estado actual de la asignación de metas
+       * @enum {string}
+       */
+      status?: "borrador" | "enviada";
+      /**
+       * Format: date-time
+       * @description Fecha y hora en que la asignación fue enviada formalmente
+       */
+      submitted_at?: string | null;
+      categories?: components["schemas"]["CategoryResponse"][];
+      global_goals?: components["schemas"]["AssignedGoalResponse"][];
+      shared_goals?: components["schemas"]["AssignedGoalResponse"][];
+      /** Format: date-time */
+      created_at?: string;
+    };
+    CreateAssignmentRequest: {
+      /** Format: uuid */
+      cycle_id: string;
+    };
+    AssignedGoalResponse: {
+      /** Format: uuid */
+      id?: string;
+      name?: string;
+      description?: string;
+      unit?: string;
+      direction?: string;
+      goal_kind?: string;
+      weight?: number;
+      target_value?: number;
+      baseline_value?: number | null;
+      current_value?: number;
+      progress_percent?: number;
+      state?: string;
+      /** @enum {string} */
+      source?: "global" | "shared";
+    };
+    GoalComment: {
+      /** Format: uuid */
+      id?: string;
+      /** Format: uuid */
+      goal_id?: string | null;
+      /** Format: uuid */
+      category_id?: string | null;
+      /** Format: uuid */
+      assignment_id?: string | null;
+      /** Format: uuid */
+      author_id?: string;
+      author_name?: string;
+      content?: string;
+      /**
+       * @description Fase del comentario; alias medio-anio (docs) equivale a avance y no se envía al backend.
+       * @default cierre
+       * @enum {string}
+       */
+      phase: "asignacion" | "avance" | "cierre";
+      created_at?: string;
+    };
+    CreateCommentRequest: {
+      content: string;
+      /**
+       * @description Fase del comentario (?phase= query param, default cierre; alias medio-anio solo docs, equivale a avance).
+       * @default cierre
+       * @enum {string}
+       */
+      phase: "asignacion" | "avance" | "cierre";
+    };
+    ChangeRequest: {
+      /** Format: uuid */
+      id?: string;
+      entity_type?: string;
+      /** Format: uuid */
+      entity_id?: string;
+      /** Format: uuid */
+      requested_by?: string;
+      /** @enum {string} */
+      status?: "pending" | "approved" | "rejected";
+      /** Format: uuid */
+      approved_by?: string | null;
+      approved_at?: string | null;
+      created_at?: string;
+    };
+    CreateChangeRequestRequest: {
+      entity_type: string;
+      /** Format: uuid */
+      entity_id: string;
+      /** Format: uuid */
+      requested_by: string;
+    };
+    UpdateChangeRequestRequest: {
+      /** @enum {string} */
+      status: "pending" | "approved" | "rejected";
+      /** Format: uuid */
+      approved_by?: string;
+    };
+  };
+  responses: {
+    /** @description Operation not allowed in current cycle phase */
+    PhaseRestricted: {
+      headers: {
+        [name: string]: unknown;
+      };
+      content: {
+        "application/json": components["schemas"]["Error"];
+      };
+    };
+    /** @description Weight validation failed (Double 100% rule) */
+    WeightInvalid: {
+      headers: {
+        [name: string]: unknown;
+      };
+      content: {
+        "application/json": components["schemas"]["Error"];
+      };
+    };
+    /** @description Category name already exists for employee */
+    DuplicateCategoryName: {
+      headers: {
+        [name: string]: unknown;
+      };
+      content: {
+        "application/json": components["schemas"]["Error"];
+      };
+    };
+    /** @description Optimistic locking version mismatch */
+    ConcurrentModification: {
+      headers: {
+        [name: string]: unknown;
+      };
+      content: {
+        "application/json": components["schemas"]["Error"];
+      };
+    };
+    /** @description KPI cannot be deleted because it is linked to goals */
+    KpiLinked: {
+      headers: {
+        [name: string]: unknown;
+      };
+      content: {
+        "application/json": components["schemas"]["Error"];
+      };
+    };
+    /** @description Rate limit exceeded */
+    RateLimit: {
+      headers: {
+        [name: string]: unknown;
+      };
+      content: {
+        "application/json": components["schemas"]["Error"];
+      };
+    };
+    /** @description Weight must be between 0 and 100 */
+    InvalidWeightRange: {
+      headers: {
+        [name: string]: unknown;
+      };
+      content: {
+        "application/json": components["schemas"]["Error"];
+      };
+    };
+    /** @description Invalid request parameters */
+    InvalidRequest: {
+      headers: {
+        [name: string]: unknown;
+      };
+      content: {
+        "application/json": components["schemas"]["Error"];
+      };
+    };
+    /** @description Category not found */
+    CategoryNotFound: {
+      headers: {
+        [name: string]: unknown;
+      };
+      content: {
+        "application/json": components["schemas"]["Error"];
+      };
+    };
+    /** @description Goal not found */
+    GoalNotFound: {
+      headers: {
+        [name: string]: unknown;
+      };
+      content: {
+        "application/json": components["schemas"]["Error"];
+      };
+    };
+    /** @description KPI not found */
+    KpiNotFound: {
+      headers: {
+        [name: string]: unknown;
+      };
+      content: {
+        "application/json": components["schemas"]["Error"];
+      };
+    };
+    /** @description Invalid goal request (weight, target, unit, etc.) */
+    InvalidGoalRequest: {
+      headers: {
+        [name: string]: unknown;
+      };
+      content: {
+        "application/json": components["schemas"]["Error"];
+      };
+    };
+    /** @description Batch size exceeds maximum allowed (50) */
+    BatchSizeExceeded: {
+      headers: {
+        [name: string]: unknown;
+      };
+      content: {
+        "application/json": components["schemas"]["Error"];
+      };
+    };
+    /** @description A goal cannot have more than 5 linked KPIs */
+    KpiLinkLimitExceeded: {
+      headers: {
+        [name: string]: unknown;
+      };
+      content: {
+        "application/json": components["schemas"]["Error"];
+      };
+    };
+  };
+  parameters: {
+    EmpId: string;
+    CatId: string;
+    GoalId: string;
+    EmployeeId: string;
+    AssignmentId: string;
+    KpiId: string;
+    PropId: string;
+    Cursor: string;
+    Limit: number;
+  };
+  requestBodies: never;
+  headers: never;
+  pathItems: never;
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    listCategories: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                empId: components["parameters"]["EmpId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description List of categories */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CategoryListResponse"];
-                };
-            };
-            429: components["responses"]["RateLimit"];
-        };
+  listCategories: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        empId: components["parameters"]["EmpId"];
+      };
+      cookie?: never;
     };
-    createCategory: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                empId: components["parameters"]["EmpId"];
-            };
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description List of categories */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateCategoryRequest"];
-            };
+        content: {
+          "application/json": components["schemas"]["CategoryListResponse"];
         };
-        responses: {
-            /** @description Created category */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CategoryResponse"];
-                };
-            };
-            400: components["responses"]["InvalidWeightRange"];
-            403: components["responses"]["PhaseRestricted"];
-            409: components["responses"]["DuplicateCategoryName"];
-            429: components["responses"]["RateLimit"];
-        };
+      };
+      429: components["responses"]["RateLimit"];
     };
-    updateCategory: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                empId: components["parameters"]["EmpId"];
-                catId: components["parameters"]["CatId"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateCategoryRequest"];
-            };
-        };
-        responses: {
-            /** @description Updated category */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CategoryResponse"];
-                };
-            };
-            400: components["responses"]["InvalidWeightRange"];
-            403: components["responses"]["PhaseRestricted"];
-            404: components["responses"]["CategoryNotFound"];
-            409: components["responses"]["DuplicateCategoryName"];
-        };
+  };
+  createCategory: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        empId: components["parameters"]["EmpId"];
+      };
+      cookie?: never;
     };
-    deleteCategory: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                empId: components["parameters"]["EmpId"];
-                catId: components["parameters"]["CatId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Category deleted */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            403: components["responses"]["PhaseRestricted"];
-            404: components["responses"]["CategoryNotFound"];
-        };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CreateCategoryRequest"];
+      };
     };
-    createGoal: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                empId: components["parameters"]["EmpId"];
-                catId: components["parameters"]["CatId"];
-            };
-            cookie?: never;
+    responses: {
+      /** @description Created category */
+      201: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateGoalRequest"];
-            };
+        content: {
+          "application/json": components["schemas"]["CategoryResponse"];
         };
-        responses: {
-            /** @description Created goal */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GoalResponse"];
-                };
-            };
-            400: components["responses"]["InvalidGoalRequest"];
-            403: components["responses"]["PhaseRestricted"];
-            404: components["responses"]["CategoryNotFound"];
-            422: components["responses"]["WeightInvalid"];
-            429: components["responses"]["RateLimit"];
-        };
+      };
+      400: components["responses"]["InvalidWeightRange"];
+      403: components["responses"]["PhaseRestricted"];
+      409: components["responses"]["DuplicateCategoryName"];
+      429: components["responses"]["RateLimit"];
     };
-    updateGoal: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                goalId: components["parameters"]["GoalId"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateGoalRequest"];
-            };
-        };
-        responses: {
-            /** @description Updated goal */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GoalResponse"];
-                };
-            };
-            400: components["responses"]["InvalidGoalRequest"];
-            403: components["responses"]["PhaseRestricted"];
-            404: components["responses"]["GoalNotFound"];
-            409: components["responses"]["ConcurrentModification"];
-            422: components["responses"]["WeightInvalid"];
-        };
+  };
+  updateCategory: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        empId: components["parameters"]["EmpId"];
+        catId: components["parameters"]["CatId"];
+      };
+      cookie?: never;
     };
-    deleteGoal: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                goalId: components["parameters"]["GoalId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Goal deleted */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            403: components["responses"]["PhaseRestricted"];
-            404: components["responses"]["GoalNotFound"];
-        };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["UpdateCategoryRequest"];
+      };
     };
-    updateGoalProgress: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                goalId: components["parameters"]["GoalId"];
-            };
-            cookie?: never;
+    responses: {
+      /** @description Updated category */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateProgressRequest"];
-            };
+        content: {
+          "application/json": components["schemas"]["CategoryResponse"];
         };
-        responses: {
-            /** @description Updated progress */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GoalResponse"];
-                };
-            };
-            400: components["responses"]["InvalidRequest"];
-            403: components["responses"]["PhaseRestricted"];
-            404: components["responses"]["GoalNotFound"];
-        };
+      };
+      400: components["responses"]["InvalidWeightRange"];
+      403: components["responses"]["PhaseRestricted"];
+      404: components["responses"]["CategoryNotFound"];
+      409: components["responses"]["DuplicateCategoryName"];
     };
-    batchGoals: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BatchGoalRequest"];
-            };
-        };
-        responses: {
-            /** @description Batch processed */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BatchGoalResponse"];
-                };
-            };
-            400: components["responses"]["BatchSizeExceeded"];
-            403: components["responses"]["PhaseRestricted"];
-            422: components["responses"]["WeightInvalid"];
-        };
+  };
+  deleteCategory: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        empId: components["parameters"]["EmpId"];
+        catId: components["parameters"]["CatId"];
+      };
+      cookie?: never;
     };
-    validateWeights: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                empId: components["parameters"]["EmpId"];
-            };
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description Category deleted */
+      204: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description Validation result */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["WeightValidationResponse"];
-                };
-            };
-        };
+        content?: never;
+      };
+      403: components["responses"]["PhaseRestricted"];
+      404: components["responses"]["CategoryNotFound"];
     };
-    getCycleWeightConfig: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Cycle weights */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CycleWeightConfig"];
-                };
-            };
-        };
+  };
+  createGoal: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        empId: components["parameters"]["EmpId"];
+        catId: components["parameters"]["CatId"];
+      };
+      cookie?: never;
     };
-    putCycleWeightConfig: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    g_weight?: number;
-                    g?: number;
-                };
-            };
-        };
-        responses: {
-            /** @description Updated cycle weights */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CycleWeightConfig"];
-                };
-            };
-        };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CreateGoalRequest"];
+      };
     };
-    getTeamWeightConfig: {
-        parameters: {
-            query?: {
-                team_id?: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
+    responses: {
+      /** @description Created goal */
+      201: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description Team weights */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TeamWeightConfig"];
-                };
-            };
+        content: {
+          "application/json": components["schemas"]["GoalResponse"];
         };
+      };
+      400: components["responses"]["InvalidGoalRequest"];
+      403: components["responses"]["PhaseRestricted"];
+      404: components["responses"]["CategoryNotFound"];
+      422: components["responses"]["WeightInvalid"];
+      429: components["responses"]["RateLimit"];
     };
-    putTeamWeightConfig: {
-        parameters: {
-            query?: {
-                team_id?: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    j_weight?: number;
-                    j?: number;
-                };
-            };
-        };
-        responses: {
-            /** @description Updated team weights */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TeamWeightConfig"];
-                };
-            };
-        };
+  };
+  updateGoal: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        goalId: components["parameters"]["GoalId"];
+      };
+      cookie?: never;
     };
-    listKPIs: {
-        parameters: {
-            query?: {
-                cursor?: components["parameters"]["Cursor"];
-                limit?: components["parameters"]["Limit"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description KPI list */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["KpiListResponse"];
-                };
-            };
-        };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["UpdateGoalRequest"];
+      };
     };
-    createKPI: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
+    responses: {
+      /** @description Updated goal */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateKpiRequest"];
-            };
+        content: {
+          "application/json": components["schemas"]["GoalResponse"];
         };
-        responses: {
-            /** @description Created KPI */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["KpiResponse"];
-                };
-            };
-            400: components["responses"]["InvalidRequest"];
-        };
+      };
+      400: components["responses"]["InvalidGoalRequest"];
+      403: components["responses"]["PhaseRestricted"];
+      404: components["responses"]["GoalNotFound"];
+      409: components["responses"]["ConcurrentModification"];
+      422: components["responses"]["WeightInvalid"];
     };
-    updateKPI: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                kpiId: components["parameters"]["KpiId"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateKpiRequest"];
-            };
-        };
-        responses: {
-            /** @description Updated KPI */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["KpiResponse"];
-                };
-            };
-            400: components["responses"]["InvalidRequest"];
-            404: components["responses"]["KpiNotFound"];
-        };
+  };
+  deleteGoal: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        goalId: components["parameters"]["GoalId"];
+      };
+      cookie?: never;
     };
-    deleteKPI: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                kpiId: components["parameters"]["KpiId"];
-            };
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description Goal deleted */
+      204: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description KPI deleted */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            404: components["responses"]["KpiNotFound"];
-            409: components["responses"]["KpiLinked"];
-        };
+        content?: never;
+      };
+      403: components["responses"]["PhaseRestricted"];
+      404: components["responses"]["GoalNotFound"];
     };
-    updateKPIValue: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                kpiId: components["parameters"]["KpiId"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["KpiUpdateValueRequest"];
-            };
-        };
-        responses: {
-            /** @description Updated KPI */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["KpiResponse"];
-                };
-            };
-            400: components["responses"]["InvalidRequest"];
-            404: components["responses"]["KpiNotFound"];
-        };
+  };
+  updateGoalProgress: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        goalId: components["parameters"]["GoalId"];
+      };
+      cookie?: never;
     };
-    linkKPI: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                goalId: components["parameters"]["GoalId"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["LinkKpiRequest"];
-            };
-        };
-        responses: {
-            /** @description KPI linked to goal */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GoalResponse"];
-                };
-            };
-            400: components["responses"]["KpiLinkLimitExceeded"];
-            403: components["responses"]["PhaseRestricted"];
-            404: components["responses"]["GoalNotFound"];
-        };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["UpdateProgressRequest"];
+      };
     };
-    unlinkKPI: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                goalId: components["parameters"]["GoalId"];
-                kpiId: components["parameters"]["KpiId"];
-            };
-            cookie?: never;
+    responses: {
+      /** @description Updated progress */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description KPI unlinked */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            403: components["responses"]["PhaseRestricted"];
-            404: components["responses"]["GoalNotFound"];
+        content: {
+          "application/json": components["schemas"]["GoalResponse"];
         };
+      };
+      400: components["responses"]["InvalidRequest"];
+      403: components["responses"]["PhaseRestricted"];
+      404: components["responses"]["GoalNotFound"];
     };
-    listGoalProposals: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                goalId: components["parameters"]["GoalId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description List of proposals */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        items?: components["schemas"]["GoalProposalResponse"][];
-                    };
-                };
-            };
-            404: components["responses"]["GoalNotFound"];
-        };
+  };
+  batchGoals: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    createGoalProposal: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                goalId: components["parameters"]["GoalId"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateGoalProposalRequest"];
-            };
-        };
-        responses: {
-            /** @description Created proposal */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GoalProposalResponse"];
-                };
-            };
-            400: components["responses"]["InvalidGoalRequest"];
-            403: components["responses"]["PhaseRestricted"];
-            404: components["responses"]["GoalNotFound"];
-            429: components["responses"]["RateLimit"];
-        };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["BatchGoalRequest"];
+      };
     };
-    updateGoalProposal: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                goalId: components["parameters"]["GoalId"];
-                propId: components["parameters"]["PropId"];
-            };
-            cookie?: never;
+    responses: {
+      /** @description Batch processed */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateGoalProposalRequest"];
-            };
+        content: {
+          "application/json": components["schemas"]["BatchGoalResponse"];
         };
-        responses: {
-            /** @description Updated proposal or goal (on accept) */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GoalProposalResponse"];
-                };
-            };
-            400: components["responses"]["InvalidRequest"];
-            403: components["responses"]["PhaseRestricted"];
-            404: components["responses"]["GoalNotFound"];
-        };
+      };
+      400: components["responses"]["BatchSizeExceeded"];
+      403: components["responses"]["PhaseRestricted"];
+      422: components["responses"]["WeightInvalid"];
     };
-    listGlobalGoals: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description List of global goals */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GlobalGoalListResponse"];
-                };
-            };
-            429: components["responses"]["RateLimit"];
-        };
+  };
+  validateWeights: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        empId: components["parameters"]["EmpId"];
+      };
+      cookie?: never;
     };
-    createGlobalGoal: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description Validation result */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateGlobalGoalRequest"];
-            };
+        content: {
+          "application/json": components["schemas"]["WeightValidationResponse"];
         };
-        responses: {
-            /** @description Created global goal */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GlobalGoalResponse"];
-                };
-            };
-            400: components["responses"]["InvalidGoalRequest"];
-            429: components["responses"]["RateLimit"];
-        };
+      };
     };
-    getGlobalGoal: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                goalId: components["parameters"]["GoalId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Global goal detail */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GlobalGoalResponse"];
-                };
-            };
-            404: components["responses"]["GoalNotFound"];
-        };
+  };
+  getCycleWeightConfig: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    updateGlobalGoal: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                goalId: components["parameters"]["GoalId"];
-            };
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description Cycle weights */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateGlobalGoalRequest"];
-            };
+        content: {
+          "application/json": components["schemas"]["CycleWeightConfig"];
         };
-        responses: {
-            /** @description Updated global goal */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GlobalGoalResponse"];
-                };
-            };
-            400: components["responses"]["InvalidGoalRequest"];
-            404: components["responses"]["GoalNotFound"];
-        };
+      };
     };
-    deleteGlobalGoal: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                goalId: components["parameters"]["GoalId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Global goal deleted */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            404: components["responses"]["GoalNotFound"];
-        };
+  };
+  putCycleWeightConfig: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    executeGlobalGoalRules: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                goalId: components["parameters"]["GoalId"];
-            };
-            cookie?: never;
+    requestBody: {
+      content: {
+        "application/json": {
+          g_weight?: number;
+          g?: number;
         };
-        requestBody?: never;
-        responses: {
-            /** @description Assignment result */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        assigned?: number;
-                    };
-                };
-            };
-            404: components["responses"]["GoalNotFound"];
-        };
+      };
     };
-    listSharedGoals: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
+    responses: {
+      /** @description Updated cycle weights */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description List of shared goals */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SharedGoalListResponse"];
-                };
-            };
-            429: components["responses"]["RateLimit"];
+        content: {
+          "application/json": components["schemas"]["CycleWeightConfig"];
         };
+      };
     };
-    createSharedGoal: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateSharedGoalRequest"];
-            };
-        };
-        responses: {
-            /** @description Created shared goal */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SharedGoalResponse"];
-                };
-            };
-            400: components["responses"]["InvalidGoalRequest"];
-            429: components["responses"]["RateLimit"];
-        };
+  };
+  getTeamWeightConfig: {
+    parameters: {
+      query?: {
+        team_id?: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    getSharedGoal: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                goalId: components["parameters"]["GoalId"];
-            };
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description Team weights */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description Shared goal detail */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SharedGoalResponse"];
-                };
-            };
-            404: components["responses"]["GoalNotFound"];
+        content: {
+          "application/json": components["schemas"]["TeamWeightConfig"];
         };
+      };
     };
-    updateSharedGoal: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                goalId: components["parameters"]["GoalId"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateSharedGoalRequest"];
-            };
-        };
-        responses: {
-            /** @description Updated shared goal */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SharedGoalResponse"];
-                };
-            };
-            400: components["responses"]["InvalidGoalRequest"];
-            404: components["responses"]["GoalNotFound"];
-        };
+  };
+  putTeamWeightConfig: {
+    parameters: {
+      query?: {
+        team_id?: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    deleteSharedGoal: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                goalId: components["parameters"]["GoalId"];
-            };
-            cookie?: never;
+    requestBody: {
+      content: {
+        "application/json": {
+          j_weight?: number;
+          j?: number;
         };
-        requestBody?: never;
-        responses: {
-            /** @description Shared goal deleted */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            404: components["responses"]["GoalNotFound"];
-        };
+      };
     };
-    addSharedGoalMember: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                goalId: components["parameters"]["GoalId"];
-            };
-            cookie?: never;
+    responses: {
+      /** @description Updated team weights */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AddMemberRequest"];
-            };
+        content: {
+          "application/json": components["schemas"]["TeamWeightConfig"];
         };
-        responses: {
-            /** @description Member added */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SharedMemberResponse"];
-                };
-            };
-            400: components["responses"]["InvalidRequest"];
-            404: components["responses"]["GoalNotFound"];
-        };
+      };
     };
-    removeSharedGoalMember: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                goalId: components["parameters"]["GoalId"];
-                employeeId: components["parameters"]["EmployeeId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Member removed */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            404: components["responses"]["GoalNotFound"];
-        };
+  };
+  listKPIs: {
+    parameters: {
+      query?: {
+        cursor?: components["parameters"]["Cursor"];
+        limit?: components["parameters"]["Limit"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    updateSharedGoalMemberProgress: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                goalId: components["parameters"]["GoalId"];
-                employeeId: components["parameters"]["EmployeeId"];
-            };
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description KPI list */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateMemberProgressRequest"];
-            };
+        content: {
+          "application/json": components["schemas"]["KpiListResponse"];
         };
-        responses: {
-            /** @description Progress updated */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            400: components["responses"]["InvalidRequest"];
-            404: components["responses"]["GoalNotFound"];
-        };
+      };
     };
-    getAssignment: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                empId: components["parameters"]["EmpId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Assignment data */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AssignmentResponse"];
-                };
-            };
-            404: components["responses"]["GoalNotFound"];
-        };
+  };
+  createKPI: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    createAssignment: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                empId: components["parameters"]["EmpId"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateAssignmentRequest"];
-            };
-        };
-        responses: {
-            /** @description Created assignment */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AssignmentResponse"];
-                };
-            };
-            403: components["responses"]["PhaseRestricted"];
-        };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CreateKpiRequest"];
+      };
     };
-    getEmployeeScore: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                empId: components["parameters"]["EmpId"];
-            };
-            cookie?: never;
+    responses: {
+      /** @description Created KPI */
+      201: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description Weighted score */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        score: number;
-                    };
-                };
-            };
-            404: components["responses"]["GoalNotFound"];
+        content: {
+          "application/json": components["schemas"]["KpiResponse"];
         };
+      };
+      400: components["responses"]["InvalidRequest"];
     };
-    listGoalComments: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                goalId: components["parameters"]["GoalId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description List of comments */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GoalComment"][];
-                };
-            };
-        };
+  };
+  updateKPI: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        kpiId: components["parameters"]["KpiId"];
+      };
+      cookie?: never;
     };
-    createGoalComment: {
-        parameters: {
-            query?: {
-                /** @description Fase del comentario, default cierre; alias medio-anio solo docs (equivale a avance). */
-                phase?: "asignacion" | "avance" | "cierre";
-            };
-            header?: never;
-            path: {
-                goalId: components["parameters"]["GoalId"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateCommentRequest"];
-            };
-        };
-        responses: {
-            /** @description Comment created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GoalComment"];
-                };
-            };
-        };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["UpdateKpiRequest"];
+      };
     };
-    deleteGoalComment: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                goalId: components["parameters"]["GoalId"];
-                commentId: string;
-            };
-            cookie?: never;
+    responses: {
+      /** @description Updated KPI */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description Comment deleted */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
+        content: {
+          "application/json": components["schemas"]["KpiResponse"];
         };
+      };
+      400: components["responses"]["InvalidRequest"];
+      404: components["responses"]["KpiNotFound"];
     };
-    listCategoryComments: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                catId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description List of comments */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GoalComment"][];
-                };
-            };
-        };
+  };
+  deleteKPI: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        kpiId: components["parameters"]["KpiId"];
+      };
+      cookie?: never;
     };
-    createCategoryComment: {
-        parameters: {
-            query?: {
-                /** @description Fase del comentario, default cierre; alias medio-anio solo docs (equivale a avance). */
-                phase?: "asignacion" | "avance" | "cierre";
-            };
-            header?: never;
-            path: {
-                catId: string;
-            };
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description KPI deleted */
+      204: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateCommentRequest"];
-            };
-        };
-        responses: {
-            /** @description Comment created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GoalComment"];
-                };
-            };
-        };
+        content?: never;
+      };
+      404: components["responses"]["KpiNotFound"];
+      409: components["responses"]["KpiLinked"];
     };
-    deleteCategoryComment: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                catId: string;
-                commentId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Comment deleted */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
+  };
+  updateKPIValue: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        kpiId: components["parameters"]["KpiId"];
+      };
+      cookie?: never;
     };
-    listAssignmentComments: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                assignId: components["parameters"]["AssignmentId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description List of comments */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GoalComment"][];
-                };
-            };
-        };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["KpiUpdateValueRequest"];
+      };
     };
-    createAssignmentComment: {
-        parameters: {
-            query?: {
-                /** @description Fase del comentario, default cierre; alias medio-anio solo docs (equivale a avance). */
-                phase?: "asignacion" | "avance" | "cierre";
-            };
-            header?: never;
-            path: {
-                assignId: components["parameters"]["AssignmentId"];
-            };
-            cookie?: never;
+    responses: {
+      /** @description Updated KPI */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateCommentRequest"];
-            };
+        content: {
+          "application/json": components["schemas"]["KpiResponse"];
         };
-        responses: {
-            /** @description Comment created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GoalComment"];
-                };
-            };
-        };
+      };
+      400: components["responses"]["InvalidRequest"];
+      404: components["responses"]["KpiNotFound"];
     };
-    deleteAssignmentComment: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                assignId: components["parameters"]["AssignmentId"];
-                commentId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Comment deleted */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
+  };
+  linkKPI: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        goalId: components["parameters"]["GoalId"];
+      };
+      cookie?: never;
     };
-    listChangeRequests: {
-        parameters: {
-            query?: {
-                status?: "pending" | "approved" | "rejected";
-                entity_type?: string;
-                limit?: number;
-                offset?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description List of change requests */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ChangeRequest"][];
-                };
-            };
-        };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["LinkKpiRequest"];
+      };
     };
-    createChangeRequest: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
+    responses: {
+      /** @description KPI linked to goal */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateChangeRequestRequest"];
-            };
+        content: {
+          "application/json": components["schemas"]["GoalResponse"];
         };
-        responses: {
-            /** @description Change request created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ChangeRequest"];
-                };
-            };
-        };
+      };
+      400: components["responses"]["KpiLinkLimitExceeded"];
+      403: components["responses"]["PhaseRestricted"];
+      404: components["responses"]["GoalNotFound"];
     };
-    updateChangeRequest: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                crId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateChangeRequestRequest"];
-            };
-        };
-        responses: {
-            /** @description Updated change request */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ChangeRequest"];
-                };
-            };
-        };
+  };
+  unlinkKPI: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        goalId: components["parameters"]["GoalId"];
+        kpiId: components["parameters"]["KpiId"];
+      };
+      cookie?: never;
     };
+    requestBody?: never;
+    responses: {
+      /** @description KPI unlinked */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      403: components["responses"]["PhaseRestricted"];
+      404: components["responses"]["GoalNotFound"];
+    };
+  };
+  listGoalProposals: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        goalId: components["parameters"]["GoalId"];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of proposals */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            items?: components["schemas"]["GoalProposalResponse"][];
+          };
+        };
+      };
+      404: components["responses"]["GoalNotFound"];
+    };
+  };
+  createGoalProposal: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        goalId: components["parameters"]["GoalId"];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CreateGoalProposalRequest"];
+      };
+    };
+    responses: {
+      /** @description Created proposal */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["GoalProposalResponse"];
+        };
+      };
+      400: components["responses"]["InvalidGoalRequest"];
+      403: components["responses"]["PhaseRestricted"];
+      404: components["responses"]["GoalNotFound"];
+      429: components["responses"]["RateLimit"];
+    };
+  };
+  updateGoalProposal: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        goalId: components["parameters"]["GoalId"];
+        propId: components["parameters"]["PropId"];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["UpdateGoalProposalRequest"];
+      };
+    };
+    responses: {
+      /** @description Updated proposal or goal (on accept) */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["GoalProposalResponse"];
+        };
+      };
+      400: components["responses"]["InvalidRequest"];
+      403: components["responses"]["PhaseRestricted"];
+      404: components["responses"]["GoalNotFound"];
+    };
+  };
+  listGlobalGoals: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of global goals */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["GlobalGoalListResponse"];
+        };
+      };
+      429: components["responses"]["RateLimit"];
+    };
+  };
+  createGlobalGoal: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CreateGlobalGoalRequest"];
+      };
+    };
+    responses: {
+      /** @description Created global goal */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["GlobalGoalResponse"];
+        };
+      };
+      400: components["responses"]["InvalidGoalRequest"];
+      429: components["responses"]["RateLimit"];
+    };
+  };
+  getGlobalGoal: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        goalId: components["parameters"]["GoalId"];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Global goal detail */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["GlobalGoalResponse"];
+        };
+      };
+      404: components["responses"]["GoalNotFound"];
+    };
+  };
+  updateGlobalGoal: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        goalId: components["parameters"]["GoalId"];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["UpdateGlobalGoalRequest"];
+      };
+    };
+    responses: {
+      /** @description Updated global goal */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["GlobalGoalResponse"];
+        };
+      };
+      400: components["responses"]["InvalidGoalRequest"];
+      404: components["responses"]["GoalNotFound"];
+    };
+  };
+  deleteGlobalGoal: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        goalId: components["parameters"]["GoalId"];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Global goal deleted */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      404: components["responses"]["GoalNotFound"];
+    };
+  };
+  executeGlobalGoalRules: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        goalId: components["parameters"]["GoalId"];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Assignment result */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            assigned?: number;
+          };
+        };
+      };
+      404: components["responses"]["GoalNotFound"];
+    };
+  };
+  listSharedGoals: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of shared goals */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SharedGoalListResponse"];
+        };
+      };
+      429: components["responses"]["RateLimit"];
+    };
+  };
+  createSharedGoal: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CreateSharedGoalRequest"];
+      };
+    };
+    responses: {
+      /** @description Created shared goal */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SharedGoalResponse"];
+        };
+      };
+      400: components["responses"]["InvalidGoalRequest"];
+      429: components["responses"]["RateLimit"];
+    };
+  };
+  getSharedGoal: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        goalId: components["parameters"]["GoalId"];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Shared goal detail */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SharedGoalResponse"];
+        };
+      };
+      404: components["responses"]["GoalNotFound"];
+    };
+  };
+  updateSharedGoal: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        goalId: components["parameters"]["GoalId"];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["UpdateSharedGoalRequest"];
+      };
+    };
+    responses: {
+      /** @description Updated shared goal */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SharedGoalResponse"];
+        };
+      };
+      400: components["responses"]["InvalidGoalRequest"];
+      404: components["responses"]["GoalNotFound"];
+    };
+  };
+  deleteSharedGoal: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        goalId: components["parameters"]["GoalId"];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Shared goal deleted */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      404: components["responses"]["GoalNotFound"];
+    };
+  };
+  addSharedGoalMember: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        goalId: components["parameters"]["GoalId"];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["AddMemberRequest"];
+      };
+    };
+    responses: {
+      /** @description Member added */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SharedMemberResponse"];
+        };
+      };
+      400: components["responses"]["InvalidRequest"];
+      404: components["responses"]["GoalNotFound"];
+    };
+  };
+  removeSharedGoalMember: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        goalId: components["parameters"]["GoalId"];
+        employeeId: components["parameters"]["EmployeeId"];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Member removed */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      404: components["responses"]["GoalNotFound"];
+    };
+  };
+  updateSharedGoalMemberProgress: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        goalId: components["parameters"]["GoalId"];
+        employeeId: components["parameters"]["EmployeeId"];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["UpdateMemberProgressRequest"];
+      };
+    };
+    responses: {
+      /** @description Progress updated */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      400: components["responses"]["InvalidRequest"];
+      404: components["responses"]["GoalNotFound"];
+    };
+  };
+  getAssignment: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        empId: components["parameters"]["EmpId"];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Assignment data */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AssignmentResponse"];
+        };
+      };
+      404: components["responses"]["GoalNotFound"];
+    };
+  };
+  createAssignment: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        empId: components["parameters"]["EmpId"];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CreateAssignmentRequest"];
+      };
+    };
+    responses: {
+      /** @description Created assignment */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AssignmentResponse"];
+        };
+      };
+      403: components["responses"]["PhaseRestricted"];
+    };
+  };
+  getEmployeeScore: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        empId: components["parameters"]["EmpId"];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Weighted score */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            score: number;
+          };
+        };
+      };
+      404: components["responses"]["GoalNotFound"];
+    };
+  };
+  listGoalComments: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        goalId: components["parameters"]["GoalId"];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of comments */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["GoalComment"][];
+        };
+      };
+    };
+  };
+  createGoalComment: {
+    parameters: {
+      query?: {
+        /** @description Fase del comentario, default cierre; alias medio-anio solo docs (equivale a avance). */
+        phase?: "asignacion" | "avance" | "cierre";
+      };
+      header?: never;
+      path: {
+        goalId: components["parameters"]["GoalId"];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CreateCommentRequest"];
+      };
+    };
+    responses: {
+      /** @description Comment created */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["GoalComment"];
+        };
+      };
+    };
+  };
+  deleteGoalComment: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        goalId: components["parameters"]["GoalId"];
+        commentId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Comment deleted */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  listCategoryComments: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        catId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of comments */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["GoalComment"][];
+        };
+      };
+    };
+  };
+  createCategoryComment: {
+    parameters: {
+      query?: {
+        /** @description Fase del comentario, default cierre; alias medio-anio solo docs (equivale a avance). */
+        phase?: "asignacion" | "avance" | "cierre";
+      };
+      header?: never;
+      path: {
+        catId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CreateCommentRequest"];
+      };
+    };
+    responses: {
+      /** @description Comment created */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["GoalComment"];
+        };
+      };
+    };
+  };
+  deleteCategoryComment: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        catId: string;
+        commentId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Comment deleted */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  listAssignmentComments: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        assignId: components["parameters"]["AssignmentId"];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of comments */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["GoalComment"][];
+        };
+      };
+    };
+  };
+  createAssignmentComment: {
+    parameters: {
+      query?: {
+        /** @description Fase del comentario, default cierre; alias medio-anio solo docs (equivale a avance). */
+        phase?: "asignacion" | "avance" | "cierre";
+      };
+      header?: never;
+      path: {
+        assignId: components["parameters"]["AssignmentId"];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CreateCommentRequest"];
+      };
+    };
+    responses: {
+      /** @description Comment created */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["GoalComment"];
+        };
+      };
+    };
+  };
+  deleteAssignmentComment: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        assignId: components["parameters"]["AssignmentId"];
+        commentId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Comment deleted */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  listChangeRequests: {
+    parameters: {
+      query?: {
+        status?: "pending" | "approved" | "rejected";
+        entity_type?: string;
+        limit?: number;
+        offset?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of change requests */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ChangeRequest"][];
+        };
+      };
+    };
+  };
+  createChangeRequest: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CreateChangeRequestRequest"];
+      };
+    };
+    responses: {
+      /** @description Change request created */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ChangeRequest"];
+        };
+      };
+    };
+  };
+  updateChangeRequest: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        crId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["UpdateChangeRequestRequest"];
+      };
+    };
+    responses: {
+      /** @description Updated change request */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ChangeRequest"];
+        };
+      };
+    };
+  };
 }

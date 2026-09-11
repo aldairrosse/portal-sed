@@ -1,6 +1,6 @@
 // API client for shared goals
 
-const API_BASE = '/api/v1';
+const API_BASE = "/api/v1";
 
 export interface SharedGoal {
   id: string;
@@ -86,17 +86,19 @@ export interface UpdateProgressRequest {
 async function fetchJSON<T>(url: string, options?: RequestInit): Promise<T> {
   const response = await fetch(url, {
     ...options,
-    credentials: 'include',
+    credentials: "include",
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
       ...options?.headers,
     },
   });
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: 'Unknown error' }));
+    const error = await response
+      .json()
+      .catch(() => ({ error: "Unknown error" }));
     const msg =
-      (typeof error.error === 'string' ? error.error : error.error?.message) ||
+      (typeof error.error === "string" ? error.error : error.error?.message) ||
       error.message ||
       `HTTP ${response.status}`;
     throw new Error(msg);
@@ -109,10 +111,12 @@ async function fetchJSON<T>(url: string, options?: RequestInit): Promise<T> {
   return response.json();
 }
 
-export async function listSharedGoals(view?: 'creator' | 'member'): Promise<SharedGoal[]> {
+export async function listSharedGoals(
+  view?: "creator" | "member",
+): Promise<SharedGoal[]> {
   const params = new URLSearchParams();
-  if (view) params.set('view', view);
-  const url = `${API_BASE}/goals/shared${params.toString() ? '?' + params.toString() : ''}`;
+  if (view) params.set("view", view);
+  const url = `${API_BASE}/goals/shared${params.toString() ? "?" + params.toString() : ""}`;
   return fetchJSON<SharedGoal[]>(url);
 }
 
@@ -120,42 +124,63 @@ export async function getSharedGoal(goalId: string): Promise<SharedGoal> {
   return fetchJSON<SharedGoal>(`${API_BASE}/goals/shared/${goalId}`);
 }
 
-export async function createSharedGoal(request: CreateSharedGoalRequest): Promise<SharedGoal> {
+export async function createSharedGoal(
+  request: CreateSharedGoalRequest,
+): Promise<SharedGoal> {
   return fetchJSON<SharedGoal>(`${API_BASE}/goals/shared`, {
-    method: 'POST',
+    method: "POST",
     body: JSON.stringify(request),
   });
 }
 
-export async function updateSharedGoal(goalId: string, request: UpdateSharedGoalRequest): Promise<SharedGoal> {
+export async function updateSharedGoal(
+  goalId: string,
+  request: UpdateSharedGoalRequest,
+): Promise<SharedGoal> {
   return fetchJSON<SharedGoal>(`${API_BASE}/goals/shared/${goalId}`, {
-    method: 'PUT',
+    method: "PUT",
     body: JSON.stringify(request),
   });
 }
 
 export async function deleteSharedGoal(goalId: string): Promise<void> {
   return fetchJSON<void>(`${API_BASE}/goals/shared/${goalId}`, {
-    method: 'DELETE',
+    method: "DELETE",
   });
 }
 
-export async function addMember(goalId: string, request: AddMemberRequest): Promise<SharedMember> {
+export async function addMember(
+  goalId: string,
+  request: AddMemberRequest,
+): Promise<SharedMember> {
   return fetchJSON<SharedMember>(`${API_BASE}/goals/shared/${goalId}/members`, {
-    method: 'POST',
+    method: "POST",
     body: JSON.stringify(request),
   });
 }
 
-export async function removeMember(goalId: string, employeeId: string): Promise<void> {
-  return fetchJSON<void>(`${API_BASE}/goals/shared/${goalId}/members/${employeeId}`, {
-    method: 'DELETE',
-  });
+export async function removeMember(
+  goalId: string,
+  employeeId: string,
+): Promise<void> {
+  return fetchJSON<void>(
+    `${API_BASE}/goals/shared/${goalId}/members/${employeeId}`,
+    {
+      method: "DELETE",
+    },
+  );
 }
 
-export async function updateProgress(goalId: string, employeeId: string, request: UpdateProgressRequest): Promise<{ status: string }> {
-  return fetchJSON<{ status: string }>(`${API_BASE}/goals/shared/${goalId}/progress/${employeeId}`, {
-    method: 'PUT',
-    body: JSON.stringify(request),
-  });
+export async function updateProgress(
+  goalId: string,
+  employeeId: string,
+  request: UpdateProgressRequest,
+): Promise<{ status: string }> {
+  return fetchJSON<{ status: string }>(
+    `${API_BASE}/goals/shared/${goalId}/progress/${employeeId}`,
+    {
+      method: "PUT",
+      body: JSON.stringify(request),
+    },
+  );
 }

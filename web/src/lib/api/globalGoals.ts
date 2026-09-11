@@ -1,6 +1,6 @@
 // API client for global goals
 
-const API_BASE = '/api/v1';
+const API_BASE = "/api/v1";
 
 export interface GlobalGoal {
   id: string;
@@ -87,17 +87,19 @@ export interface UpdateGlobalGoalRequest {
 async function fetchJSON<T>(url: string, options?: RequestInit): Promise<T> {
   const response = await fetch(url, {
     ...options,
-    credentials: 'include',
+    credentials: "include",
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
       ...options?.headers,
     },
   });
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: 'Unknown error' }));
+    const error = await response
+      .json()
+      .catch(() => ({ error: "Unknown error" }));
     const msg =
-      (typeof error.error === 'string' ? error.error : error.error?.message) ||
+      (typeof error.error === "string" ? error.error : error.error?.message) ||
       error.message ||
       `HTTP ${response.status}`;
     throw new Error(msg);
@@ -112,8 +114,8 @@ async function fetchJSON<T>(url: string, options?: RequestInit): Promise<T> {
 
 export async function listGlobalGoals(cycleId?: string): Promise<GlobalGoal[]> {
   const params = new URLSearchParams();
-  if (cycleId) params.set('cycleId', cycleId);
-  const url = `${API_BASE}/goals/global${params.toString() ? '?' + params.toString() : ''}`;
+  if (cycleId) params.set("cycleId", cycleId);
+  const url = `${API_BASE}/goals/global${params.toString() ? "?" + params.toString() : ""}`;
   return fetchJSON<GlobalGoal[]>(url);
 }
 
@@ -121,28 +123,38 @@ export async function getGlobalGoal(goalId: string): Promise<GlobalGoal> {
   return fetchJSON<GlobalGoal>(`${API_BASE}/goals/global/${goalId}`);
 }
 
-export async function createGlobalGoal(request: CreateGlobalGoalRequest): Promise<GlobalGoal> {
+export async function createGlobalGoal(
+  request: CreateGlobalGoalRequest,
+): Promise<GlobalGoal> {
   return fetchJSON<GlobalGoal>(`${API_BASE}/goals/global`, {
-    method: 'POST',
+    method: "POST",
     body: JSON.stringify(request),
   });
 }
 
-export async function updateGlobalGoal(goalId: string, request: UpdateGlobalGoalRequest): Promise<GlobalGoal> {
+export async function updateGlobalGoal(
+  goalId: string,
+  request: UpdateGlobalGoalRequest,
+): Promise<GlobalGoal> {
   return fetchJSON<GlobalGoal>(`${API_BASE}/goals/global/${goalId}`, {
-    method: 'PUT',
+    method: "PUT",
     body: JSON.stringify(request),
   });
 }
 
 export async function deleteGlobalGoal(goalId: string): Promise<void> {
   return fetchJSON<void>(`${API_BASE}/goals/global/${goalId}`, {
-    method: 'DELETE',
+    method: "DELETE",
   });
 }
 
-export async function executeRules(goalId: string): Promise<{ assignments_created: number }> {
-  return fetchJSON<{ assignments_created: number }>(`${API_BASE}/goals/global/${goalId}/execute-rules`, {
-    method: 'POST',
-  });
+export async function executeRules(
+  goalId: string,
+): Promise<{ assignments_created: number }> {
+  return fetchJSON<{ assignments_created: number }>(
+    `${API_BASE}/goals/global/${goalId}/execute-rules`,
+    {
+      method: "POST",
+    },
+  );
 }

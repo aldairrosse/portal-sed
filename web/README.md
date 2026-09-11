@@ -30,27 +30,27 @@ pnpm test:watch       # Vitest watch mode
 
 ## Rutas implementadas (`src/routes/`)
 
-| Ruta | Descripción |
-|------|-------------|
-| `/` | Dashboard / landing |
-| `/login` | Autenticación (SSO/OIDC) |
-| `/mis-evaluados` | Lista y gestión de evaluados |
-| `/mi-evaluacion` | Consulta de evaluación propia |
-| `/objetivos/asignacion` | Asignación de objetivos |
-| `/objetivos/asignacion/biblioteca` | Catálogo/biblioteca de objetivos |
-| `/objetivos/avance` | Seguimiento de avance |
-| `/evaluacion/9x9` | Matriz 9x9 (desempeño × potencial) |
-| `/evaluacion/9x9/competencias` | Competencias en matriz 9x9 |
-| `/evaluacion/9x9/jerarquia` | Vista jerárquica 9x9 |
-| `/perfil` | Perfil de usuario |
-| `/rh/ciclos` | Gestión de ciclos (RRHH) |
-| `/rh/pilares` | Pilares de competencias |
-| `/rh/pilares/[id]/competencias` | Competencias por pilar |
-| `/rh/criterios-escala` | Criterios y escalas |
-| `/rh/niveles-aceptacion` | Niveles de aceptación |
-| `/rh/evaluaciones` | Gestión de evaluaciones (RRHH) |
-| `/rh/jerarquia` | Jerarquía organizacional |
-| `/dev/requisitos` | Dev tools (solo `import.meta.env.DEV`) |
+| Ruta                               | Descripción                            |
+| ---------------------------------- | -------------------------------------- |
+| `/`                                | Dashboard / landing                    |
+| `/login`                           | Autenticación (SSO/OIDC)               |
+| `/mis-evaluados`                   | Lista y gestión de evaluados           |
+| `/mi-evaluacion`                   | Consulta de evaluación propia          |
+| `/objetivos/asignacion`            | Asignación de objetivos                |
+| `/objetivos/asignacion/biblioteca` | Catálogo/biblioteca de objetivos       |
+| `/objetivos/avance`                | Seguimiento de avance                  |
+| `/evaluacion/9x9`                  | Matriz 9x9 (desempeño × potencial)     |
+| `/evaluacion/9x9/competencias`     | Competencias en matriz 9x9             |
+| `/evaluacion/9x9/jerarquia`        | Vista jerárquica 9x9                   |
+| `/perfil`                          | Perfil de usuario                      |
+| `/rh/ciclos`                       | Gestión de ciclos (RRHH)               |
+| `/rh/pilares`                      | Pilares de competencias                |
+| `/rh/pilares/[id]/competencias`    | Competencias por pilar                 |
+| `/rh/criterios-escala`             | Criterios y escalas                    |
+| `/rh/niveles-aceptacion`           | Niveles de aceptación                  |
+| `/rh/evaluaciones`                 | Gestión de evaluaciones (RRHH)         |
+| `/rh/jerarquia`                    | Jerarquía organizacional               |
+| `/dev/requisitos`                  | Dev tools (solo `import.meta.env.DEV`) |
 
 ## Generación de cliente API
 
@@ -59,6 +59,7 @@ pnpm gen:api
 ```
 
 Lee los 7 specs en `../api/openapi/` y genera tipos en `src/lib/api/schemas/`:
+
 - `auth.d.ts`
 - `cycle.d.ts`
 - `goals.d.ts`

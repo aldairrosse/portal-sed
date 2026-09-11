@@ -4,637 +4,637 @@
  */
 
 export interface paths {
-    "/cycles": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List evaluation cycles
-         * @description Returns a paginated list of cycles for an organization.
-         */
-        get: operations["listCycles"];
-        put?: never;
-        /**
-         * Create a new evaluation cycle
-         * @description Creates a new cycle in the 'asignacion' phase.
-         */
-        post: operations["createCycle"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+  "/cycles": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/cycles/current": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get the current cycle
-         * @description Resolves the cycle for the given year, falling back to the active (unfinished) cycle. Must be matched before /cycles/{id}.
-         */
-        get: operations["getCurrentCycle"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /**
+     * List evaluation cycles
+     * @description Returns a paginated list of cycles for an organization.
+     */
+    get: operations["listCycles"];
+    put?: never;
+    /**
+     * Create a new evaluation cycle
+     * @description Creates a new cycle in the 'asignacion' phase.
+     */
+    post: operations["createCycle"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/cycles/current": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/cycles/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get a cycle by ID
-         * @description Returns the full cycle details.
-         */
-        get: operations["getCycle"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /**
+     * Get the current cycle
+     * @description Resolves the cycle for the given year, falling back to the active (unfinished) cycle. Must be matched before /cycles/{id}.
+     */
+    get: operations["getCurrentCycle"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/cycles/{id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/cycles/{id}/transition": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /**
-         * Transition a cycle's phase
-         * @description Advances the cycle to the next phase with optimistic locking.
-         */
-        put: operations["transitionPhase"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /**
+     * Get a cycle by ID
+     * @description Returns the full cycle details.
+     */
+    get: operations["getCycle"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/cycles/{id}/transition": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/phases": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get phase definitions catalog
-         * @description Returns the static catalog of phase definitions with ETag caching.
-         */
-        get: operations["getPhaseDefinitions"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    /**
+     * Transition a cycle's phase
+     * @description Advances the cycle to the next phase with optimistic locking.
+     */
+    put: operations["transitionPhase"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/phases": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/cycles/{id}/assign-all": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Assign all eligible employees to a cycle
-         * @description Creates evaluations for all active employees in the organization for the given cycle. Idempotent operation.
-         */
-        post: operations["assignAllEmployees"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /**
+     * Get phase definitions catalog
+     * @description Returns the static catalog of phase definitions with ETag caching.
+     */
+    get: operations["getPhaseDefinitions"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/cycles/{id}/assign-all": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/cycles/{id}/transitions": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get available transitions for a cycle
-         * @description Returns transitions available from the cycle's current phase.
-         */
-        get: operations["getAvailableTransitions"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    put?: never;
+    /**
+     * Assign all eligible employees to a cycle
+     * @description Creates evaluations for all active employees in the organization for the given cycle. Idempotent operation.
+     */
+    post: operations["assignAllEmployees"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/cycles/{id}/transitions": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/cycles/{id}/revert": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Revert a cycle to the previous phase
-         * @description Reverts the cycle to the previous phase. RBAC: RH only. Empty body.
-         */
-        post: operations["revertPhase"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /**
+     * Get available transitions for a cycle
+     * @description Returns transitions available from the cycle's current phase.
+     */
+    get: operations["getAvailableTransitions"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/cycles/{id}/revert": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
+    get?: never;
+    put?: never;
+    /**
+     * Revert a cycle to the previous phase
+     * @description Reverts the cycle to the previous phase. RBAC: RH only. Empty body.
+     */
+    post: operations["revertPhase"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
-    schemas: {
-        Cycle: {
-            /**
-             * Format: uuid
-             * @description Unique cycle identifier
-             */
-            id: string;
-            /** @description Evaluation year */
-            year: number;
-            /**
-             * Format: uuid
-             * @description Organization owning this cycle
-             */
-            organization_id: string;
-            /**
-             * @description Current cycle phase
-             * @enum {string}
-             */
-            current_phase: "asignacion" | "avance" | "cierre";
-            /** @description Optimistic locking version */
-            version: number;
-            /**
-             * Format: date-time
-             * @description When the cycle started
-             */
-            started_at?: string | null;
-            /**
-             * Format: date-time
-             * @description When the cycle finished
-             */
-            finished_at?: string | null;
-            /**
-             * Format: date-time
-             * @description Creation timestamp
-             */
-            created_at: string;
-            /**
-             * Format: date-time
-             * @description Last update timestamp
-             */
-            updated_at: string;
-        };
-        CycleLight: {
-            /** Format: uuid */
-            id: string;
-            year: number;
-            /** @enum {string} */
-            current_phase: "asignacion" | "avance" | "cierre";
-            /** Format: uuid */
-            organization_id: string;
-            /** @description Optimistic locking version */
-            version: number;
-            /** Format: date-time */
-            created_at: string;
-            /** Format: date-time */
-            updated_at: string;
-        };
-        CreateCycleRequest: {
-            /** @description Evaluation year */
-            year: number;
-            /**
-             * Format: uuid
-             * @description Organization UUID
-             */
-            organization_id: string;
-        };
-        TransitionPhaseRequest: {
-            /**
-             * @description Transition trigger type
-             * @default manual_rh
-             * @enum {string}
-             */
-            trigger: "auto" | "manual_rh";
-            /**
-             * @description Target phase for the transition
-             * @enum {string}
-             */
-            to_phase?: "asignacion" | "avance" | "cierre";
-            /** @description Reason for the transition */
-            reason?: string;
-        };
-        PhaseDefinition: {
-            /**
-             * Format: uuid
-             * @description Unique phase definition identifier
-             */
-            id: string;
-            /** @enum {string} */
-            phase: "asignacion" | "avance" | "cierre";
-            label: string;
-            order: number;
-            allowed_actors?: string[];
-            allowed_actions?: string[];
-            blocked_actions?: string[];
-        };
-        PhaseTransition: {
-            /** @enum {string} */
-            from_phase: "asignacion" | "avance" | "cierre";
-            /** @enum {string} */
-            to_phase: "asignacion" | "avance" | "cierre";
-            /** @enum {string} */
-            trigger: "auto" | "manual_rh";
-            conditions?: {
-                [key: string]: unknown;
-            };
-        };
-        CursorPagination: {
-            /** @description Cursor for the next page (null if no more results) */
-            next_cursor?: string | null;
-            /** @description Whether there are more results */
-            has_more?: boolean;
-        };
-        Error: {
-            error: {
-                /** @description Machine-readable error code */
-                code: string;
-                /** @description Human-readable error description */
-                message: string;
-                /** @description Additional error details */
-                details?: string[];
-                /** @description Request trace ID for debugging */
-                trace_id?: string;
-            };
-        };
+  schemas: {
+    Cycle: {
+      /**
+       * Format: uuid
+       * @description Unique cycle identifier
+       */
+      id: string;
+      /** @description Evaluation year */
+      year: number;
+      /**
+       * Format: uuid
+       * @description Organization owning this cycle
+       */
+      organization_id: string;
+      /**
+       * @description Current cycle phase
+       * @enum {string}
+       */
+      current_phase: "asignacion" | "avance" | "cierre";
+      /** @description Optimistic locking version */
+      version: number;
+      /**
+       * Format: date-time
+       * @description When the cycle started
+       */
+      started_at?: string | null;
+      /**
+       * Format: date-time
+       * @description When the cycle finished
+       */
+      finished_at?: string | null;
+      /**
+       * Format: date-time
+       * @description Creation timestamp
+       */
+      created_at: string;
+      /**
+       * Format: date-time
+       * @description Last update timestamp
+       */
+      updated_at: string;
     };
-    responses: {
-        /** @description Bad Request */
-        BadRequest: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": components["schemas"]["Error"];
-            };
-        };
-        /** @description Not Found */
-        NotFound: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": components["schemas"]["Error"];
-            };
-        };
-        /** @description Conflict */
-        Conflict: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": components["schemas"]["Error"];
-            };
-        };
-        /** @description Forbidden */
-        Forbidden: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": components["schemas"]["Error"];
-            };
-        };
-        /** @description Precondition Required */
-        PreconditionRequired: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": components["schemas"]["Error"];
-            };
-        };
-        /** @description Rate Limit Exceeded */
-        RateLimit: {
-            headers: {
-                "X-RateLimit-Limit"?: number;
-                "X-RateLimit-Remaining"?: number;
-                "X-RateLimit-Reset"?: number;
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": components["schemas"]["Error"];
-            };
-        };
+    CycleLight: {
+      /** Format: uuid */
+      id: string;
+      year: number;
+      /** @enum {string} */
+      current_phase: "asignacion" | "avance" | "cierre";
+      /** Format: uuid */
+      organization_id: string;
+      /** @description Optimistic locking version */
+      version: number;
+      /** Format: date-time */
+      created_at: string;
+      /** Format: date-time */
+      updated_at: string;
     };
-    parameters: never;
-    requestBodies: never;
-    headers: never;
-    pathItems: never;
+    CreateCycleRequest: {
+      /** @description Evaluation year */
+      year: number;
+      /**
+       * Format: uuid
+       * @description Organization UUID
+       */
+      organization_id: string;
+    };
+    TransitionPhaseRequest: {
+      /**
+       * @description Transition trigger type
+       * @default manual_rh
+       * @enum {string}
+       */
+      trigger: "auto" | "manual_rh";
+      /**
+       * @description Target phase for the transition
+       * @enum {string}
+       */
+      to_phase?: "asignacion" | "avance" | "cierre";
+      /** @description Reason for the transition */
+      reason?: string;
+    };
+    PhaseDefinition: {
+      /**
+       * Format: uuid
+       * @description Unique phase definition identifier
+       */
+      id: string;
+      /** @enum {string} */
+      phase: "asignacion" | "avance" | "cierre";
+      label: string;
+      order: number;
+      allowed_actors?: string[];
+      allowed_actions?: string[];
+      blocked_actions?: string[];
+    };
+    PhaseTransition: {
+      /** @enum {string} */
+      from_phase: "asignacion" | "avance" | "cierre";
+      /** @enum {string} */
+      to_phase: "asignacion" | "avance" | "cierre";
+      /** @enum {string} */
+      trigger: "auto" | "manual_rh";
+      conditions?: {
+        [key: string]: unknown;
+      };
+    };
+    CursorPagination: {
+      /** @description Cursor for the next page (null if no more results) */
+      next_cursor?: string | null;
+      /** @description Whether there are more results */
+      has_more?: boolean;
+    };
+    Error: {
+      error: {
+        /** @description Machine-readable error code */
+        code: string;
+        /** @description Human-readable error description */
+        message: string;
+        /** @description Additional error details */
+        details?: string[];
+        /** @description Request trace ID for debugging */
+        trace_id?: string;
+      };
+    };
+  };
+  responses: {
+    /** @description Bad Request */
+    BadRequest: {
+      headers: {
+        [name: string]: unknown;
+      };
+      content: {
+        "application/json": components["schemas"]["Error"];
+      };
+    };
+    /** @description Not Found */
+    NotFound: {
+      headers: {
+        [name: string]: unknown;
+      };
+      content: {
+        "application/json": components["schemas"]["Error"];
+      };
+    };
+    /** @description Conflict */
+    Conflict: {
+      headers: {
+        [name: string]: unknown;
+      };
+      content: {
+        "application/json": components["schemas"]["Error"];
+      };
+    };
+    /** @description Forbidden */
+    Forbidden: {
+      headers: {
+        [name: string]: unknown;
+      };
+      content: {
+        "application/json": components["schemas"]["Error"];
+      };
+    };
+    /** @description Precondition Required */
+    PreconditionRequired: {
+      headers: {
+        [name: string]: unknown;
+      };
+      content: {
+        "application/json": components["schemas"]["Error"];
+      };
+    };
+    /** @description Rate Limit Exceeded */
+    RateLimit: {
+      headers: {
+        "X-RateLimit-Limit"?: number;
+        "X-RateLimit-Remaining"?: number;
+        "X-RateLimit-Reset"?: number;
+        [name: string]: unknown;
+      };
+      content: {
+        "application/json": components["schemas"]["Error"];
+      };
+    };
+  };
+  parameters: never;
+  requestBodies: never;
+  headers: never;
+  pathItems: never;
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    listCycles: {
-        parameters: {
-            query: {
-                /** @description Organization UUID */
-                organization_id: string;
-                /** @description Filter by year */
-                year?: number;
-                /** @description Filter by current phase */
-                current_phase?: "asignacion" | "avance" | "cierre";
-                /** @description Cursor for pagination (base64-encoded JSON) */
-                cursor?: string;
-                /** @description Maximum number of results per page */
-                limit?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Paginated list of cycles */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        data?: components["schemas"]["CycleLight"][];
-                        pagination?: components["schemas"]["CursorPagination"];
-                    };
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            429: components["responses"]["RateLimit"];
-        };
+  listCycles: {
+    parameters: {
+      query: {
+        /** @description Organization UUID */
+        organization_id: string;
+        /** @description Filter by year */
+        year?: number;
+        /** @description Filter by current phase */
+        current_phase?: "asignacion" | "avance" | "cierre";
+        /** @description Cursor for pagination (base64-encoded JSON) */
+        cursor?: string;
+        /** @description Maximum number of results per page */
+        limit?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    createCycle: {
-        parameters: {
-            query?: never;
-            header: {
-                /** @description Unique idempotency key (UUID v4) */
-                "Idempotency-Key": string;
-            };
-            path?: never;
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description Paginated list of cycles */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateCycleRequest"];
-            };
+        content: {
+          "application/json": {
+            data?: components["schemas"]["CycleLight"][];
+            pagination?: components["schemas"]["CursorPagination"];
+          };
         };
-        responses: {
-            /** @description Cycle created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Cycle"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            409: components["responses"]["Conflict"];
-            429: components["responses"]["RateLimit"];
-        };
+      };
+      400: components["responses"]["BadRequest"];
+      429: components["responses"]["RateLimit"];
     };
-    getCurrentCycle: {
-        parameters: {
-            query: {
-                /** @description Organization UUID */
-                organization_id: string;
-                /** @description Evaluation year (defaults to current year) */
-                year?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Current cycle */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Cycle"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            404: components["responses"]["NotFound"];
-        };
+  };
+  createCycle: {
+    parameters: {
+      query?: never;
+      header: {
+        /** @description Unique idempotency key (UUID v4) */
+        "Idempotency-Key": string;
+      };
+      path?: never;
+      cookie?: never;
     };
-    getCycle: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Cycle UUID */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Cycle details */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Cycle"];
-                };
-            };
-            404: components["responses"]["NotFound"];
-        };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CreateCycleRequest"];
+      };
     };
-    transitionPhase: {
-        parameters: {
-            query?: never;
-            header: {
-                /** @description Current version number for optimistic locking */
-                "If-Match": string;
-                /** @description Unique idempotency key (UUID v4) */
-                "Idempotency-Key": string;
-            };
-            path: {
-                /** @description Cycle UUID */
-                id: string;
-            };
-            cookie?: never;
+    responses: {
+      /** @description Cycle created */
+      201: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: {
-            content: {
-                "application/json": components["schemas"]["TransitionPhaseRequest"];
-            };
+        content: {
+          "application/json": components["schemas"]["Cycle"];
         };
-        responses: {
-            /** @description Phase transitioned successfully */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Cycle"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            404: components["responses"]["NotFound"];
-            409: components["responses"]["Conflict"];
-            428: components["responses"]["PreconditionRequired"];
-            429: components["responses"]["RateLimit"];
-        };
+      };
+      400: components["responses"]["BadRequest"];
+      409: components["responses"]["Conflict"];
+      429: components["responses"]["RateLimit"];
     };
-    getPhaseDefinitions: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Phase definitions */
-            200: {
-                headers: {
-                    /** @description Entity tag for caching */
-                    ETag?: string;
-                    "Cache-Control"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        data?: components["schemas"]["PhaseDefinition"][];
-                    };
-                };
-            };
-            /** @description Not Modified (ETag match) */
-            304: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
+  };
+  getCurrentCycle: {
+    parameters: {
+      query: {
+        /** @description Organization UUID */
+        organization_id: string;
+        /** @description Evaluation year (defaults to current year) */
+        year?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    assignAllEmployees: {
-        parameters: {
-            query?: never;
-            header: {
-                /** @description Unique idempotency key (UUID v4) */
-                "Idempotency-Key": string;
-            };
-            path: {
-                /** @description Cycle UUID */
-                id: string;
-            };
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description Current cycle */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description Assignment completed */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /** @example Assigned 150 employees */
-                        message?: string;
-                        /** @example 150 */
-                        assigned_count?: number;
-                    };
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            404: components["responses"]["NotFound"];
-            409: components["responses"]["Conflict"];
-            429: components["responses"]["RateLimit"];
+        content: {
+          "application/json": components["schemas"]["Cycle"];
         };
+      };
+      400: components["responses"]["BadRequest"];
+      404: components["responses"]["NotFound"];
     };
-    getAvailableTransitions: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Cycle UUID */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Available transitions */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        data?: components["schemas"]["PhaseTransition"][];
-                    };
-                };
-            };
-            404: components["responses"]["NotFound"];
-        };
+  };
+  getCycle: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Cycle UUID */
+        id: string;
+      };
+      cookie?: never;
     };
-    revertPhase: {
-        parameters: {
-            query?: never;
-            header: {
-                /** @description Unique idempotency key (UUID v4) */
-                "Idempotency-Key": string;
-            };
-            path: {
-                /** @description Cycle UUID */
-                id: string;
-            };
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description Cycle details */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description Phase reverted successfully */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Cycle"];
-                };
-            };
-            403: components["responses"]["Forbidden"];
-            409: components["responses"]["Conflict"];
+        content: {
+          "application/json": components["schemas"]["Cycle"];
         };
+      };
+      404: components["responses"]["NotFound"];
     };
+  };
+  transitionPhase: {
+    parameters: {
+      query?: never;
+      header: {
+        /** @description Current version number for optimistic locking */
+        "If-Match": string;
+        /** @description Unique idempotency key (UUID v4) */
+        "Idempotency-Key": string;
+      };
+      path: {
+        /** @description Cycle UUID */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: {
+      content: {
+        "application/json": components["schemas"]["TransitionPhaseRequest"];
+      };
+    };
+    responses: {
+      /** @description Phase transitioned successfully */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Cycle"];
+        };
+      };
+      400: components["responses"]["BadRequest"];
+      404: components["responses"]["NotFound"];
+      409: components["responses"]["Conflict"];
+      428: components["responses"]["PreconditionRequired"];
+      429: components["responses"]["RateLimit"];
+    };
+  };
+  getPhaseDefinitions: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Phase definitions */
+      200: {
+        headers: {
+          /** @description Entity tag for caching */
+          ETag?: string;
+          "Cache-Control"?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            data?: components["schemas"]["PhaseDefinition"][];
+          };
+        };
+      };
+      /** @description Not Modified (ETag match) */
+      304: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  assignAllEmployees: {
+    parameters: {
+      query?: never;
+      header: {
+        /** @description Unique idempotency key (UUID v4) */
+        "Idempotency-Key": string;
+      };
+      path: {
+        /** @description Cycle UUID */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Assignment completed */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /** @example Assigned 150 employees */
+            message?: string;
+            /** @example 150 */
+            assigned_count?: number;
+          };
+        };
+      };
+      400: components["responses"]["BadRequest"];
+      404: components["responses"]["NotFound"];
+      409: components["responses"]["Conflict"];
+      429: components["responses"]["RateLimit"];
+    };
+  };
+  getAvailableTransitions: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Cycle UUID */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Available transitions */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            data?: components["schemas"]["PhaseTransition"][];
+          };
+        };
+      };
+      404: components["responses"]["NotFound"];
+    };
+  };
+  revertPhase: {
+    parameters: {
+      query?: never;
+      header: {
+        /** @description Unique idempotency key (UUID v4) */
+        "Idempotency-Key": string;
+      };
+      path: {
+        /** @description Cycle UUID */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Phase reverted successfully */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Cycle"];
+        };
+      };
+      403: components["responses"]["Forbidden"];
+      409: components["responses"]["Conflict"];
+    };
+  };
 }
