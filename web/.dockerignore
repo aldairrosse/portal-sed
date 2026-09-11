@@ -5,3 +5,5 @@ dist
 .git
 .vscode
 *.md
+src/**/*.js
+src/**/*.js.map
