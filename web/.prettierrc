@@ -1,0 +1,10 @@
+{
+  "singleQuote": true,
+  "semi": true,
+  "printWidth": 80,
+  "overrides": [
+    {"files": "*.svelte", "options": {"useTabs": true, "singleQuote": true}},
+    {"files": "*.{ts,js,json,css,md}", "options": {"useTabs": false, "singleQuote": false}}
+  ],
+  "plugins": ["prettier-plugin-svelte"]
+}
