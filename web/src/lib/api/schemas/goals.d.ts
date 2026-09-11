@@ -11,7 +11,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List categories with nested goals */
+        /**
+         * List categories with nested goals
+         * @description Retorna categorías y objetivos del empleado. Solo objetivos de empleados activos (is_active=true) se listan; inactivos excluidos por sync Mobonet nocturno (filtro implícito is_active).
+         */
         get: operations["listCategories"];
         put?: never;
         /** Create a goal category */
@@ -88,7 +91,10 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        /** Update goal progress (currentValue) */
+        /**
+         * Update goal progress (currentValue + phase snapshot)
+         * @description Escribe current_value y el snapshot directo de la fase activa (avance→avance_progress, cierre→cierre_progress). Sync: current_value = cierre_progress ?? avance_progress.
+         */
         patch: operations["updateGoalProgress"];
         trace?: never;
     };
@@ -120,6 +126,42 @@ export interface paths {
         put?: never;
         /** Validate Double 100% weight rule */
         post: operations["validateWeights"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/weights/cycle-config": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get hierarchical cycle weights G% / P% for active cycle */
+        get: operations["getCycleWeightConfig"];
+        /** Save hierarchical cycle weights G% (P = 100 - G) for active cycle */
+        put: operations["putCycleWeightConfig"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/weights/team-config": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get hierarchical team weights J% / PJ% for active cycle and team */
+        get: operations["getTeamWeightConfig"];
+        /** Save hierarchical team weights J% (PJ = 100 - J) for active cycle and team */
+        put: operations["putTeamWeightConfig"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -327,7 +369,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List shared goals */
+        /**
+         * List shared goals
+         * @description Retorna objetivos compartidos. Solo objetivos de empleados activos (is_active=true) se listan; inactivos excluidos por sync Mobonet nocturno (filtro implícito is_active).
+         */
         get: operations["listSharedGoals"];
         put?: never;
         /** Create a shared goal */
@@ -632,6 +677,7 @@ export interface components {
             /** @enum {string} */
             unit: "porcentaje" | "moneda" | "numero" | "binario";
             weight: number;
+            /** @description 0 permitido solo si unit=binario o direction=descendente; en otros casos debe ser >0 */
             target_value: number;
             /**
              * @default ascendente
@@ -648,6 +694,7 @@ export interface components {
             /** @enum {string} */
             unit: "porcentaje" | "moneda" | "numero" | "binario";
             weight: number;
+            /** @description 0 permitido solo si unit=binario o direction=descendente; en otros casos debe ser >0 */
             target_value: number;
             /**
              * @default ascendente
@@ -686,6 +733,11 @@ export interface components {
         };
         UpdateProgressRequest: {
             current_value: number;
+            /**
+             * @description Fase del avance; solo avance y cierre aceptan progreso (alias medio-anio solo docs, equivale a avance).
+             * @enum {string}
+             */
+            phase?: "avance" | "cierre";
         };
         KpiUpdateValueRequest: {
             current_value: number;
@@ -696,6 +748,7 @@ export interface components {
             /** @enum {string} */
             unit: "porcentaje" | "moneda" | "numero" | "binario";
             weight: number;
+            /** @description 0 permitido solo si unit=binario o direction=descendente; en otros casos debe ser >0 */
             target_value: number;
             /**
              * @default ascendente
@@ -750,17 +803,22 @@ export interface components {
         BatchGoalResponse: {
             items?: components["schemas"]["GoalResponse"][];
         };
+        /** @description Category sum solo personales (excluye globales/compartidas) */
         WeightValidationResponse: {
             valid?: boolean;
+            /** @description Category sum solo personales (excluye globales/compartidas) */
             category_sum?: number;
             expected_sum?: number;
             deficit?: number;
+            /** @description Category sum solo personales (excluye globales/compartidas) */
             goal_sums?: components["schemas"]["CategoryGoalSum"][];
         };
+        /** @description Category sum solo personales (excluye globales/compartidas) */
         CategoryGoalSum: {
             /** Format: uuid */
             category_id?: string;
             category_name?: string;
+            /** @description Category sum solo personales (excluye globales/compartidas) */
             sum?: number;
             expected_sum?: number;
             deficit?: number;
@@ -770,11 +828,13 @@ export interface components {
             g_weight: number;
             p_weight: number;
         };
+        CycleWeightConfig: components["schemas"]["CycleWeights"] & unknown;
         /** @description Hierarchical L2 Jefe weights J+PJ=100 within P (fallback PJ=100) */
         TeamWeights: {
             j_weight: number;
             pj_weight: number;
         };
+        TeamWeightConfig: components["schemas"]["TeamWeights"] & unknown;
         CreateKpiRequest: {
             name: string;
             /** @enum {string} */
@@ -847,6 +907,7 @@ export interface components {
             /** @enum {string} */
             unit: "porcentaje" | "moneda" | "numero" | "binario";
             weight: number;
+            /** @description 0 permitido solo si unit=binario o direction=descendente; en otros casos debe ser >0 */
             target_value: number;
             /**
              * @default ascendente
@@ -869,6 +930,7 @@ export interface components {
             /** @enum {string} */
             unit: "porcentaje" | "moneda" | "numero" | "binario";
             weight: number;
+            /** @description 0 permitido solo si unit=binario o direction=descendente; en otros casos debe ser >0 */
             target_value: number;
             /**
              * @default ascendente
@@ -887,6 +949,7 @@ export interface components {
             /** Format: uuid */
             employee_id: string;
             weight: number;
+            /** @description 0 permitido solo si unit=binario o direction=descendente; en otros casos debe ser >0 */
             target_value: number;
             baseline_value?: number | null;
         };
@@ -942,6 +1005,7 @@ export interface components {
             /** @enum {string} */
             unit: "porcentaje" | "moneda" | "numero" | "binario";
             weight: number;
+            /** @description 0 permitido solo si unit=binario o direction=descendente; en otros casos debe ser >0 */
             target_value: number;
             /**
              * @default ascendente
@@ -955,7 +1019,7 @@ export interface components {
              * @description Optional; shared goals typically have no category.
              */
             category_id?: string | null;
-            group_name: string;
+            group_name?: string;
             group_description?: string;
             members?: components["schemas"]["SharedMemberRequest"][];
         };
@@ -965,6 +1029,7 @@ export interface components {
             /** @enum {string} */
             unit: "porcentaje" | "moneda" | "numero" | "binario";
             weight: number;
+            /** @description 0 permitido solo si unit=binario o direction=descendente; en otros casos debe ser >0 */
             target_value: number;
             /**
              * @default ascendente
@@ -978,11 +1043,14 @@ export interface components {
              * @description Optional; shared goals typically have no category.
              */
             category_id?: string | null;
+            /** @description Optional; when present, replaces group members (delete+recreate). Omit to leave unchanged. */
+            members?: components["schemas"]["SharedMemberRequest"][];
         };
         SharedMemberRequest: {
             /** Format: uuid */
             employee_id: string;
             weight: number;
+            /** @description 0 permitido solo si unit=binario o direction=descendente; en otros casos debe ser >0 */
             target_value: number;
             baseline_value?: number | null;
         };
@@ -990,6 +1058,7 @@ export interface components {
             /** Format: uuid */
             employee_id: string;
             weight: number;
+            /** @description 0 permitido solo si unit=binario o direction=descendente; en otros casos debe ser >0 */
             target_value: number;
             baseline_value?: number | null;
         };
@@ -1098,10 +1167,22 @@ export interface components {
             author_id?: string;
             author_name?: string;
             content?: string;
+            /**
+             * @description Fase del comentario; alias medio-anio (docs) equivale a avance y no se envía al backend.
+             * @default cierre
+             * @enum {string}
+             */
+            phase: "asignacion" | "avance" | "cierre";
             created_at?: string;
         };
         CreateCommentRequest: {
             content: string;
+            /**
+             * @description Fase del comentario (?phase= query param, default cierre; alias medio-anio solo docs, equivale a avance).
+             * @default cierre
+             * @enum {string}
+             */
+            phase: "asignacion" | "avance" | "cierre";
         };
         ChangeRequest: {
             /** Format: uuid */
@@ -1543,6 +1624,104 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["WeightValidationResponse"];
+                };
+            };
+        };
+    };
+    getCycleWeightConfig: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Cycle weights */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CycleWeightConfig"];
+                };
+            };
+        };
+    };
+    putCycleWeightConfig: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    g_weight?: number;
+                    g?: number;
+                };
+            };
+        };
+        responses: {
+            /** @description Updated cycle weights */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CycleWeightConfig"];
+                };
+            };
+        };
+    };
+    getTeamWeightConfig: {
+        parameters: {
+            query?: {
+                team_id?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Team weights */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TeamWeightConfig"];
+                };
+            };
+        };
+    };
+    putTeamWeightConfig: {
+        parameters: {
+            query?: {
+                team_id?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    j_weight?: number;
+                    j?: number;
+                };
+            };
+        };
+        responses: {
+            /** @description Updated team weights */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TeamWeightConfig"];
                 };
             };
         };
@@ -2249,7 +2428,10 @@ export interface operations {
     };
     createGoalComment: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Fase del comentario, default cierre; alias medio-anio solo docs (equivale a avance). */
+                phase?: "asignacion" | "avance" | "cierre";
+            };
             header?: never;
             path: {
                 goalId: components["parameters"]["GoalId"];
@@ -2318,7 +2500,10 @@ export interface operations {
     };
     createCategoryComment: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Fase del comentario, default cierre; alias medio-anio solo docs (equivale a avance). */
+                phase?: "asignacion" | "avance" | "cierre";
+            };
             header?: never;
             path: {
                 catId: string;
@@ -2387,7 +2572,10 @@ export interface operations {
     };
     createAssignmentComment: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Fase del comentario, default cierre; alias medio-anio solo docs (equivale a avance). */
+                phase?: "asignacion" | "avance" | "cierre";
+            };
             header?: never;
             path: {
                 assignId: components["parameters"]["AssignmentId"];

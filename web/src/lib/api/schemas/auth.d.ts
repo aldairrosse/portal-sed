@@ -177,8 +177,11 @@ export interface components {
                 /** Format: email */
                 email?: string;
             };
-            /** @description Current user role */
-            role: string;
+            /**
+             * @description Current user role
+             * @enum {string}
+             */
+            role: "colaborador" | "jefe" | "gerente" | "coordinador" | "rh" | "admin";
             profile: {
                 /** Format: uuid */
                 id?: string;

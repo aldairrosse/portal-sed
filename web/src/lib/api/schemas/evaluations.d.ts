@@ -46,9 +46,15 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** Update self-evaluation */
+        /**
+         * Update self-evaluation
+         * @description Actualiza la autoevaluación en fase avance/medio-anio o cierre; responde 409 PHASE_NOT_ADVANCEABLE solo fuera de fases escribibles. Submit/Finalize siguen siendo solo cierre.
+         */
         put: operations["updateSelfEvaluation"];
-        /** Submit self-evaluation */
+        /**
+         * Submit self-evaluation
+         * @description Solo fase cierre; responde 409 fuera de cierre.
+         */
         post: operations["submitSelfEvaluation"];
         delete?: never;
         options?: never;
@@ -64,9 +70,15 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** Update RH evaluation */
+        /**
+         * Update RH evaluation
+         * @description Actualiza la evaluación RH en fase avance/medio-anio o cierre; responde 409 PHASE_NOT_ADVANCEABLE solo fuera de fases escribibles. Submit/Finalize siguen siendo solo cierre. Escritura autorizada solo a RH (permiso eval:rh) o al jefe asignado (manager del evaluado); sin sesión responde 401, no autorizado responde 403.
+         */
         put: operations["updateRHEvaluation"];
-        /** Submit RH evaluation */
+        /**
+         * Submit RH evaluation
+         * @description Solo fase cierre; responde 409 fuera de cierre. Escritura autorizada solo a RH (permiso eval:rh) o al jefe asignado (manager del evaluado); sin sesión responde 401, no autorizado responde 403.
+         */
         post: operations["submitRHEvaluation"];
         delete?: never;
         options?: never;
@@ -151,7 +163,7 @@ export interface paths {
         };
         /**
          * Get competency results with pagination
-         * @description Returns paginated competency ratings across evaluations for a cycle.
+         * @description Returns paginated competency ratings across evaluations for a cycle. Doble 9-box por phase: avance y medio-anio generan vistas independientes; use phase para filtrar.
          */
         get: operations["getCompetencyResults"];
         put?: never;
@@ -186,7 +198,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List 9×9 matrices, optionally filtered by cycle, phase, and/or evaluator */
+        /**
+         * List 9×9 matrices, optionally filtered by cycle, phase, and/or evaluator
+         * @description Snapshot 9-box solo en avance y cierre (doble 9-box por phase); phase_id es obligatorio cuando cycle_id está presente (400 si falta).
+         */
         get: operations["listMatrices"];
         put?: never;
         /** Create a 9×9 matrix */
@@ -316,6 +331,8 @@ export interface components {
             selfRating?: number | null;
             rhRating?: number | null;
             comments?: string;
+            /** @example Buen liderazgo, mejorar delegación */
+            managerComment?: string | null;
         };
         EvaluationListResponse: {
             data?: components["schemas"]["EvaluationListItem"][];
@@ -359,12 +376,23 @@ export interface components {
             competencyId?: string;
             rating?: number;
             comments?: string;
+            /** @example Buen liderazgo, mejorar delegación */
+            managerComment?: string | null;
         };
         GoalRatingDTO: {
             /** Format: uuid */
             goalId?: string;
+            /** @description Solo cuando se envía un rating explícito; el progreso NO deriva rating. */
             finalRating?: number | null;
+            /** @description Valor directo de cierre en la unidad propia de la meta (porcentaje/moneda/numero/binario). */
+            finalProgress?: number | null;
+            /** @description Snapshot directo de la fase avance (medio-anio equivale a avance). */
+            avanceProgress?: number | null;
+            /** @description Snapshot directo de la fase cierre. */
+            cierreProgress?: number | null;
             finalComments?: string;
+            rhAssessment?: string;
+            managerComment?: string;
         };
         SelfEvaluationRequest: {
             competencies: components["schemas"]["CompetencyRatingInput"][];
@@ -383,6 +411,18 @@ export interface components {
             competencyId: string;
             rating: number;
             comments?: string;
+            /** @example Buen liderazgo, mejorar delegación */
+            managerComment?: string | null;
+            /**
+             * @description Origen de la valoración: self o rh.
+             * @enum {string}
+             */
+            source?: "self" | "rh";
+            /**
+             * @description Fase de la valoración; alias medio-anio solo docs (equivale a avance).
+             * @enum {string}
+             */
+            phase?: "asignacion" | "avance" | "cierre";
         };
         GoalCommentInput: {
             /** Format: uuid */
@@ -403,6 +443,11 @@ export interface components {
                 [key: string]: number;
             };
         };
+        /**
+         * @description Fase válida para snapshot 9-box; alias medio-anio solo docs (equivale a avance).
+         * @enum {string}
+         */
+        NineBoxPhase: "avance" | "cierre";
         NineBoxMatrixResponse: {
             /** Format: uuid */
             id?: string;
@@ -412,7 +457,7 @@ export interface components {
             evaluatorId?: string;
             /** Format: uuid */
             phaseId?: string;
-            phaseLabel?: string;
+            phaseLabel?: components["schemas"]["NineBoxPhase"];
             entries?: components["schemas"]["NineBoxEntryDTO"][];
             /** Format: date-time */
             createdAt?: string;
@@ -485,7 +530,15 @@ export interface components {
         GoalStateUpdateInput: {
             /** Format: uuid */
             goalId: string;
+            /** @description Valor directo en la unidad propia de la meta; se guarda en el snapshot de phase (default: fase de la evaluación/ciclo) y sincroniza current_value. */
             finalProgress?: number | null;
+            /** @description Solo se escribe cuando es explícito; sin él, final_rating queda NULL. */
+            finalRating?: number | null;
+            /**
+             * @description Snapshot destino; alias medio-anio solo docs (equivale a avance). Default: fase de la evaluación/ciclo.
+             * @enum {string}
+             */
+            phase?: "avance" | "cierre";
             selfAssessment?: string | null;
             rhAssessment?: string | null;
         };
@@ -584,6 +637,8 @@ export interface operations {
             query: {
                 cycle_id: string;
                 state?: string;
+                /** @description Filtra por fase, default current_phase. 'medio-anio' es alias frontend deprecado, mapear a 'avance'. */
+                phase?: "asignacion" | "avance" | "cierre";
                 cursor?: string;
                 limit?: number;
             };
@@ -630,7 +685,13 @@ export interface operations {
     };
     updateSelfEvaluation: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Upsert de diagnóstico: si el {id} no existe, crea/reutiliza la evaluación para employee_id+cycle_id. */
+                employee_id?: string;
+                cycle_id?: string;
+                /** @description Fase para el upsert; por defecto la current_phase del ciclo. */
+                phase?: "asignacion" | "avance" | "cierre";
+            };
             header: {
                 "If-Match": number;
             };
@@ -689,7 +750,13 @@ export interface operations {
     };
     updateRHEvaluation: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Upsert de diagnóstico: si el {id} no existe, crea/reutiliza la evaluación para employee_id+cycle_id. */
+                employee_id?: string;
+                cycle_id?: string;
+                /** @description Fase para el upsert; por defecto la current_phase del ciclo. */
+                phase?: "asignacion" | "avance" | "cierre";
+            };
             header: {
                 "If-Match": number;
             };
@@ -713,6 +780,14 @@ export interface operations {
                     "application/json": components["schemas"]["EvaluationDetailResponse"];
                 };
             };
+            /** @description Missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            403: components["responses"]["Forbidden"];
             409: components["responses"]["Conflict"];
         };
     };
@@ -742,6 +817,14 @@ export interface operations {
                     "application/json": components["schemas"]["EvaluationDetailResponse"];
                 };
             };
+            /** @description Missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            403: components["responses"]["Forbidden"];
             409: components["responses"]["Conflict"];
             429: components["responses"]["RateLimit"];
         };
@@ -776,7 +859,13 @@ export interface operations {
     };
     updateGoalState: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Upsert de diagnóstico: si el {id} no existe, crea/reutiliza la evaluación para employee_id+cycle_id. */
+                employee_id?: string;
+                cycle_id?: string;
+                /** @description Fase para el upsert; por defecto la current_phase del ciclo. */
+                phase?: "asignacion" | "avance" | "cierre";
+            };
             header: {
                 "If-Match": number;
             };
@@ -808,7 +897,13 @@ export interface operations {
     };
     updateGoalComments: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Upsert de diagnóstico: si el {id} no existe, crea/reutiliza la evaluación para employee_id+cycle_id. */
+                employee_id?: string;
+                cycle_id?: string;
+                /** @description Fase para el upsert; por defecto la current_phase del ciclo. */
+                phase?: "asignacion" | "avance" | "cierre";
+            };
             header: {
                 "If-Match": number;
             };
@@ -868,6 +963,8 @@ export interface operations {
         parameters: {
             query: {
                 cycle_id: string;
+                /** @description Filtra por fase, default current_phase. 'medio-anio' es alias frontend deprecado, mapear a 'avance'. */
+                phase?: "asignacion" | "avance" | "cierre";
                 cursor?: string;
                 limit?: number;
             };
@@ -919,8 +1016,12 @@ export interface operations {
         parameters: {
             query: {
                 cycle_id: string;
-                /** @description defaults to cycle.current_phase */
-                phase_id?: string;
+                /** @description Filtra por fase. 'medio-anio' es alias frontend deprecado, mapear a 'avance'. */
+                phase?: "asignacion" | "avance" | "cierre";
+                /** @description Obligatorio cuando cycle_id está presente; sin default a current_phase */
+                phase_id: string;
+                /** @description Modo de vista: self (colaborador ve solo lo propio, redactado) u otro rol */
+                viewerMode?: "self" | "manager" | "rh";
                 evaluator_id?: string;
             };
             header?: never;
@@ -938,6 +1039,7 @@ export interface operations {
                     "application/json": components["schemas"]["NineBoxMatrixResponse"][];
                 };
             };
+            400: components["responses"]["BadRequest"];
             403: components["responses"]["Forbidden"];
         };
     };

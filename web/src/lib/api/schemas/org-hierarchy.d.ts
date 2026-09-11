@@ -161,7 +161,7 @@ export interface paths {
         };
         /**
          * List employees
-         * @description Returns a cursor-paginated list of employees with optional filters.
+         * @description Returns a cursor-paginated list of employees with optional filters. Solo empleados activos (is_active=true) se listan; inactivos excluidos por sync Mobonet nocturno.
          */
         get: operations["listEmployees"];
         put?: never;
@@ -205,7 +205,7 @@ export interface paths {
         };
         /**
          * Get my evaluatees
-         * @description Returns direct reports (active only) for the given evaluator. Each item includes assignment_status for the active cycle (or cycleId if provided).
+         * @description Returns direct reports (active only) for the given evaluator. Each item includes assignment_status for the active cycle (or cycleId if provided). Solo empleados activos (is_active=true) se listan; inactivos excluidos por sync Mobonet nocturno.
          */
         get: operations["getMyEvaluatees"];
         put?: never;
@@ -225,7 +225,7 @@ export interface paths {
         };
         /**
          * Get team members by org node
-         * @description Returns all active employees in org nodes where the given employee is head_employee.
+         * @description Returns all active employees in org nodes where the given employee is head_employee. Solo empleados activos (is_active=true) se listan; inactivos excluidos por sync Mobonet nocturno.
          */
         get: operations["getTeam"];
         put?: never;
@@ -1133,6 +1133,8 @@ export interface operations {
             query?: {
                 /** @description Optional cycle to scope metrics to */
                 cycleId?: string;
+                /** @description Optional phase to filter RH ratings. Defaults to the cycle's current_phase when cycleId is set and phase is omitted. */
+                phase?: "asignacion" | "avance" | "cierre";
             };
             header?: never;
             path: {

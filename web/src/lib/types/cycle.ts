@@ -37,28 +37,48 @@ export const CANONICAL_TO_ALIAS: Record<ApiCyclePhase, CyclePhaseAlias> = {
 	cierre: 'fin-anio'
 };
 
-/** Normaliza alias legacy a fase canónica. */
+/** Normaliza alias legacy a fase canónica (case-insensitive, acepta _ como -). */
 export function normalizePhase(phase: string): ApiCyclePhase {
-	if (phase === 'asignacion' || phase === 'avance' || phase === 'cierre') return phase;
+	const n = phase.toLowerCase().trim().replace(/_/g, '-');
+	if (n === 'asignacion' || n === 'avance' || n === 'cierre') return n;
+	if (n === 'inicio-anio' || n === 'medio-anio' || n === 'fin-anio') {
+		return ALIAS_TO_CANONICAL[n as CyclePhaseAlias];
+	}
 	const mapped = (ALIAS_TO_CANONICAL as Record<string, ApiCyclePhase>)[phase];
 	return mapped ?? 'asignacion';
 }
 
-/** True si la fase es medio-año (avance o alias medio-anio solo-lectura). */
+/** True si la fase es medio-año (avance ≡ medio-anio). Acepta canónica o alias. */
 export function isMidYearPhase(phase: string): boolean {
-	const n = phase.toLowerCase().trim().replace(/_/g, '-');
-	return n === 'avance' || n === 'medio-anio';
+	return normalizePhase(phase) === 'avance';
 }
+
+/** True si la fase es avance o su alias medio-anio. */
+export function isAvance(phase: string): boolean {
+	return normalizePhase(phase) === 'avance';
+}
+
+/** True si la fase es cierre o su alias fin-anio. */
+export function isCierre(phase: string): boolean {
+	return normalizePhase(phase) === 'cierre';
+}
+
+/** True si la fase es asignación o su alias inicio-anio. */
+export function isAsignacion(phase: string): boolean {
+	return normalizePhase(phase) === 'asignacion';
+}
+
+/** Aliases UI: medio-anio ≡ avance, fin-anio ≡ cierre, inicio-anio ≡ asignacion. */
+export const isMedioAnio = isAvance;
+export const isFinAnio = isCierre;
+export const isInicioAnio = isAsignacion;
 
 /** Alias PascalCase para compatibilidad con spec. */
 export const IsMidYearPhase = isMidYearPhase;
 
-/** True si dos fases coinciden para escritura (avance ≡ medio-anio). */
+/** True si dos fases coinciden para escritura (avance ≡ medio-anio, cierre ≡ fin-anio). */
 export function samePhaseForWrite(a: string, b: string): boolean {
-	const na = a.toLowerCase().trim().replace(/_/g, '-');
-	const nb = b.toLowerCase().trim().replace(/_/g, '-');
-	if (na === nb) return true;
-	return isMidYearPhase(na) && isMidYearPhase(nb);
+	return normalizePhase(a) === normalizePhase(b);
 }
 
 /** Aliases PascalCase para compatibilidad con spec. */
@@ -78,3 +98,9 @@ export const API_PHASE_LABELS: Record<ApiCyclePhase, string> = {
 	avance: 'Medio año',
 	cierre: 'Fin de año'
 };
+
+/** R4: ciclo editable si está activo (sin finished_at) o su año es el actual. */
+export function isCycleActive(cycle: Pick<Cycle, 'year'> & { finished_at?: string | null }): boolean {
+	if (cycle.finished_at === null || cycle.finished_at === undefined) return true;
+	return cycle.year === new Date().getFullYear();
+}
