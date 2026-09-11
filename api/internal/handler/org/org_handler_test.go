@@ -15,8 +15,8 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	dto "github.com/sed-evaluacion-desempeno/api/internal/dto/org"
-	repo "github.com/sed-evaluacion-desempeno/api/internal/repository/org"
 	handler "github.com/sed-evaluacion-desempeno/api/internal/handler/org"
+	repo "github.com/sed-evaluacion-desempeno/api/internal/repository/org"
 	svc "github.com/sed-evaluacion-desempeno/api/internal/service/org"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -89,12 +89,12 @@ func (m *mockEmployeeService) SearchEmployees(ctx context.Context, query string,
 }
 
 type mockEvaluateeService struct {
-	getMyEvaluateesFunc           func(ctx context.Context, evaluatorID string) (*dto.EmployeeListResponse, error)
-	getMyEvaluateesPaginatedFunc  func(ctx context.Context, evaluatorID, query string, offset, limit int, cycleID string) (*dto.EmployeeListResponse, error)
-	getTeamMembersFunc            func(ctx context.Context, headEmployeeID string) (*dto.EmployeeListResponse, error)
-	getManagerFunc                func(ctx context.Context, empID string) (*dto.EmployeeDetailResponse, error)
-	getChainOfCommandFunc         func(ctx context.Context, empID string) (*dto.AncestorChainResponse, error)
-	batchLookupFunc               func(ctx context.Context, ids []string) (*dto.EmployeeListResponse, error)
+	getMyEvaluateesFunc          func(ctx context.Context, evaluatorID string) (*dto.EmployeeListResponse, error)
+	getMyEvaluateesPaginatedFunc func(ctx context.Context, evaluatorID, query string, offset, limit int, cycleID string) (*dto.EmployeeListResponse, error)
+	getTeamMembersFunc           func(ctx context.Context, headEmployeeID string) (*dto.EmployeeListResponse, error)
+	getManagerFunc               func(ctx context.Context, empID string) (*dto.EmployeeDetailResponse, error)
+	getChainOfCommandFunc        func(ctx context.Context, empID string) (*dto.AncestorChainResponse, error)
+	batchLookupFunc              func(ctx context.Context, ids []string) (*dto.EmployeeListResponse, error)
 }
 
 func (m *mockEvaluateeService) GetMyEvaluatees(ctx context.Context, evaluatorID string) (*dto.EmployeeListResponse, error) {
@@ -371,13 +371,13 @@ func TestListEmployees_Success(t *testing.T) {
 				Data: []dto.EmployeeListItem{
 					{ID: uuid.New().String(), FirstName: "Alice"},
 				},
-			Meta: struct {
-				HasMore    bool   `json:"hasMore"`
-				Limit      int    `json:"limit"`
-				Offset     int    `json:"offset"`
-				Total      int    `json:"total"`
-			}{HasMore: false, Limit: 25},
-		}, nil
+				Meta: struct {
+					HasMore bool `json:"hasMore"`
+					Limit   int  `json:"limit"`
+					Offset  int  `json:"offset"`
+					Total   int  `json:"total"`
+				}{HasMore: false, Limit: 25},
+			}, nil
 		},
 	}
 
@@ -423,7 +423,7 @@ func TestGetMyEvaluatees_Success(t *testing.T) {
 
 	empID := uuid.New().String()
 	empUUID := empID
-		evalSvc := &mockEvaluateeService{
+	evalSvc := &mockEvaluateeService{
 		getMyEvaluateesPaginatedFunc: func(_ context.Context, id, query string, offset, limit int, _ string) (*dto.EmployeeListResponse, error) {
 			assert.Equal(t, empUUID, id)
 			assert.Equal(t, "", query)
@@ -434,10 +434,10 @@ func TestGetMyEvaluatees_Success(t *testing.T) {
 					{ID: uuid.New().String(), FirstName: "Carol"},
 				},
 				Meta: struct {
-					HasMore    bool   `json:"hasMore"`
-					Limit      int    `json:"limit"`
-					Offset     int    `json:"offset"`
-					Total      int    `json:"total"`
+					HasMore bool `json:"hasMore"`
+					Limit   int  `json:"limit"`
+					Offset  int  `json:"offset"`
+					Total   int  `json:"total"`
 				}{Limit: 1, HasMore: false},
 			}, nil
 		},
@@ -501,12 +501,12 @@ func TestBatchResolve_Success(t *testing.T) {
 					{ID: id1, FirstName: "Dan"},
 					{ID: id2, FirstName: "Dana"},
 				},
-			Meta: struct {
-				HasMore    bool   `json:"hasMore"`
-				Limit      int    `json:"limit"`
-				Offset     int    `json:"offset"`
-				Total      int    `json:"total"`
-			}{Limit: 2, HasMore: false},
+				Meta: struct {
+					HasMore bool `json:"hasMore"`
+					Limit   int  `json:"limit"`
+					Offset  int  `json:"offset"`
+					Total   int  `json:"total"`
+				}{Limit: 2, HasMore: false},
 			}, nil
 		},
 	}
@@ -535,12 +535,12 @@ func TestSearchEmployees_Success(t *testing.T) {
 				Data: []dto.EmployeeListItem{
 					{ID: uuid.New().String(), FirstName: "Alice"},
 				},
-			Meta: struct {
-				HasMore    bool   `json:"hasMore"`
-				Limit      int    `json:"limit"`
-				Offset     int    `json:"offset"`
-				Total      int    `json:"total"`
-			}{Limit: 20, HasMore: false},
+				Meta: struct {
+					HasMore bool `json:"hasMore"`
+					Limit   int  `json:"limit"`
+					Offset  int  `json:"offset"`
+					Total   int  `json:"total"`
+				}{Limit: 20, HasMore: false},
 			}, nil
 		},
 	}
@@ -668,12 +668,12 @@ func TestBatchResolve_TooManyIDs(t *testing.T) {
 			received = idList
 			return &dto.EmployeeListResponse{
 				Data: []dto.EmployeeListItem{},
-			Meta: struct {
-				HasMore    bool   `json:"hasMore"`
-				Limit      int    `json:"limit"`
-				Offset     int    `json:"offset"`
-				Total      int    `json:"total"`
-			}{Limit: len(idList), HasMore: false},
+				Meta: struct {
+					HasMore bool `json:"hasMore"`
+					Limit   int  `json:"limit"`
+					Offset  int  `json:"offset"`
+					Total   int  `json:"total"`
+				}{Limit: len(idList), HasMore: false},
 			}, nil
 		},
 	}
@@ -879,12 +879,12 @@ func TestGetAreaMetrics_Success(t *testing.T) {
 			assert.Equal(t, "cycle-123", cid)
 			assert.Equal(t, "avance", phase)
 			return &dto.AreaMetricsResponse{
-				NodeID:            nodeID,
-				EmployeeCount:     3,
+				NodeID:             nodeID,
+				EmployeeCount:      3,
 				EmployeesWithGoals: 2,
-				CompletedGoals:    4,
-				PendingGoals:      2,
-				RatingsCount:      3,
+				CompletedGoals:     4,
+				PendingGoals:       2,
+				RatingsCount:       3,
 				Employees: []dto.AreaMetricsEmployee{
 					{ID: uuid.New().String(), FirstName: "Alice", LastName: "Smith", ProfileID: uuid.New().String()},
 				},
@@ -1055,12 +1055,12 @@ func TestGetMyEvaluatees_WithQueryParams(t *testing.T) {
 				Data: []dto.EmployeeListItem{
 					{ID: uuid.New().String(), FirstName: "John"},
 				},
-			Meta: struct {
-				HasMore    bool   `json:"hasMore"`
-				Limit      int    `json:"limit"`
-				Offset     int    `json:"offset"`
-				Total      int    `json:"total"`
-			}{Limit: 25, Offset: 10, HasMore: false},
+				Meta: struct {
+					HasMore bool `json:"hasMore"`
+					Limit   int  `json:"limit"`
+					Offset  int  `json:"offset"`
+					Total   int  `json:"total"`
+				}{Limit: 25, Offset: 10, HasMore: false},
 			}, nil
 		},
 	}

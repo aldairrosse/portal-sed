@@ -477,11 +477,13 @@ func (r *CycleRepo) GetActiveCycleID(ctx context.Context, orgID uuid.UUID) (uuid
 }
 
 // ReopenCompletedEvaluations reopens completed evaluations for a cycle.
-// Sets state='en_progreso' where cycle_id matches and state='completada'.
+// Sets state='pendiente_avance' where cycle_id matches and state='completada':
+// a revert lands the cycle back in 'avance', so reopened evaluations must be
+// in the avance-phase state, not the cierre intermediate 'en_progreso'.
 // Returns the number of rows reopened.
 func (r *CycleRepo) ReopenCompletedEvaluations(ctx context.Context, tx *sql.Tx, cycleID uuid.UUID) (int64, error) {
 	res, err := tx.ExecContext(ctx,
-		`UPDATE evaluations SET state='en_progreso', updated_at = NOW() WHERE cycle_id=$1 AND state='completada'`,
+		`UPDATE evaluations SET state='pendiente_avance', updated_at = NOW() WHERE cycle_id=$1 AND state='completada'`,
 		cycleID,
 	)
 	if err != nil {

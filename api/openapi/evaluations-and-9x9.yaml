@@ -26,10 +26,10 @@ paths:
         - name: phase
           in: query
           required: false
-          description: "Filtra por fase, default current_phase, avance==medio-anio"
+          description: "Filtra por fase, default current_phase. 'medio-anio' es alias frontend deprecado, mapear a 'avance'."
           schema:
             type: string
-            enum: [asignacion, avance, medio-anio, cierre]
+            enum: [asignacion, avance, cierre]
         - name: cursor
           in: query
           schema: { type: string }
@@ -65,6 +65,7 @@ paths:
     post:
       operationId: submitSelfEvaluation
       summary: Submit self-evaluation
+      description: "Solo fase cierre; responde 409 fuera de cierre."
       parameters:
         - name: id
           in: path
@@ -90,6 +91,7 @@ paths:
     put:
       operationId: updateSelfEvaluation
       summary: Update self-evaluation
+      description: "Actualiza la autoevaluación en fase avance/medio-anio o cierre; responde 409 PHASE_NOT_ADVANCEABLE solo fuera de fases escribibles. Submit/Finalize siguen siendo solo cierre."
       parameters:
         - name: id
           in: path
@@ -99,6 +101,22 @@ paths:
           in: header
           required: true
           schema: { type: integer }
+        - name: employee_id
+          in: query
+          required: false
+          description: "Upsert de diagnóstico: si el {id} no existe, crea/reutiliza la evaluación para employee_id+cycle_id."
+          schema: { type: string, format: uuid }
+        - name: cycle_id
+          in: query
+          required: false
+          schema: { type: string, format: uuid }
+        - name: phase
+          in: query
+          required: false
+          description: "Fase para el upsert; por defecto la current_phase del ciclo."
+          schema:
+            type: string
+            enum: [asignacion, avance, cierre]
       requestBody:
         required: true
         content:
@@ -116,6 +134,7 @@ paths:
     post:
       operationId: submitRHEvaluation
       summary: Submit RH evaluation
+      description: "Solo fase cierre; responde 409 fuera de cierre. Escritura autorizada solo a RH (permiso eval:rh) o al jefe asignado (manager del evaluado); sin sesión responde 401, no autorizado responde 403."
       parameters:
         - name: id
           in: path
@@ -138,9 +157,13 @@ paths:
               schema: { $ref: "#/components/schemas/EvaluationDetailResponse" }
         "409": { $ref: "#/components/responses/Conflict" }
         "429": { $ref: "#/components/responses/RateLimit" }
+        "401":
+          description: Missing or invalid session
+        "403": { $ref: "#/components/responses/Forbidden" }
     put:
       operationId: updateRHEvaluation
       summary: Update RH evaluation
+      description: "Actualiza la evaluación RH en fase avance/medio-anio o cierre; responde 409 PHASE_NOT_ADVANCEABLE solo fuera de fases escribibles. Submit/Finalize siguen siendo solo cierre. Escritura autorizada solo a RH (permiso eval:rh) o al jefe asignado (manager del evaluado); sin sesión responde 401, no autorizado responde 403."
       parameters:
         - name: id
           in: path
@@ -150,11 +173,27 @@ paths:
           in: header
           required: true
           schema: { type: integer }
+        - name: employee_id
+          in: query
+          required: false
+          description: "Upsert de diagnóstico: si el {id} no existe, crea/reutiliza la evaluación para employee_id+cycle_id."
+          schema: { type: string, format: uuid }
+        - name: cycle_id
+          in: query
+          required: false
+          schema: { type: string, format: uuid }
+        - name: phase
+          in: query
+          required: false
+          description: "Fase para el upsert; por defecto la current_phase del ciclo."
+          schema:
+            type: string
+            enum: [asignacion, avance, cierre]
       requestBody:
         required: true
         content:
           application/json:
-            schema: { $ref: "#/components/schemas/RHEvaluationRequest" }
+              schema: { $ref: "#/components/schemas/RHEvaluationRequest" }
       responses:
         "200":
           description: Updated evaluation
@@ -162,6 +201,9 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/EvaluationDetailResponse" }
         "409": { $ref: "#/components/responses/Conflict" }
+        "401":
+          description: Missing or invalid session
+        "403": { $ref: "#/components/responses/Forbidden" }
 
   /evaluations/{id}/finalize:
     post:
@@ -198,6 +240,22 @@ paths:
           in: header
           required: true
           schema: { type: integer }
+        - name: employee_id
+          in: query
+          required: false
+          description: "Upsert de diagnóstico: si el {id} no existe, crea/reutiliza la evaluación para employee_id+cycle_id."
+          schema: { type: string, format: uuid }
+        - name: cycle_id
+          in: query
+          required: false
+          schema: { type: string, format: uuid }
+        - name: phase
+          in: query
+          required: false
+          description: "Fase para el upsert; por defecto la current_phase del ciclo."
+          schema:
+            type: string
+            enum: [asignacion, avance, cierre]
       requestBody:
         required: true
         content:
@@ -227,6 +285,22 @@ paths:
           in: header
           required: true
           schema: { type: integer }
+        - name: employee_id
+          in: query
+          required: false
+          description: "Upsert de diagnóstico: si el {id} no existe, crea/reutiliza la evaluación para employee_id+cycle_id."
+          schema: { type: string, format: uuid }
+        - name: cycle_id
+          in: query
+          required: false
+          schema: { type: string, format: uuid }
+        - name: phase
+          in: query
+          required: false
+          description: "Fase para el upsert; por defecto la current_phase del ciclo."
+          schema:
+            type: string
+            enum: [asignacion, avance, cierre]
       requestBody:
         required: true
         content:
@@ -280,10 +354,10 @@ paths:
         - name: phase
           in: query
           required: false
-          description: "Filtra por fase, default current_phase, avance==medio-anio"
+          description: "Filtra por fase, default current_phase. 'medio-anio' es alias frontend deprecado, mapear a 'avance'."
           schema:
             type: string
-            enum: [asignacion, avance, medio-anio, cierre]
+            enum: [asignacion, avance, cierre]
         - name: cursor
           in: query
           required: false
@@ -335,7 +409,7 @@ paths:
     get:
       operationId: listMatrices
       summary: List 9×9 matrices, optionally filtered by cycle, phase, and/or evaluator
-      description: "Doble 9-box por phase: avance y medio-anio generan matrices independientes; phase_id es obligatorio cuando cycle_id está presente (400 si falta)."
+      description: "Snapshot 9-box solo en avance y cierre (doble 9-box por phase); phase_id es obligatorio cuando cycle_id está presente (400 si falta)."
       parameters:
         - name: cycle_id
           in: query
@@ -344,10 +418,10 @@ paths:
         - name: phase
           in: query
           required: false
-          description: "Filtra por fase, avance==medio-anio (alias solo docs)"
+          description: "Filtra por fase. 'medio-anio' es alias frontend deprecado, mapear a 'avance'."
           schema:
             type: string
-            enum: [asignacion, avance, medio-anio, cierre]
+            enum: [asignacion, avance, cierre]
         - name: phase_id
           in: query
           required: true
@@ -528,6 +602,9 @@ components:
         selfRating: { type: integer, minimum: 1, maximum: 5, nullable: true }
         rhRating: { type: integer, minimum: 1, maximum: 5, nullable: true }
         comments: { type: string }
+        selfComment: { type: string, nullable: true }
+        rhComment: { type: string, nullable: true }
+        managerComment: { type: string, nullable: true, example: "Buen liderazgo, mejorar delegación" }
     EvaluationListResponse:
       type: object
       properties:
@@ -571,13 +648,38 @@ components:
         competencyId: { type: string, format: uuid }
         rating: { type: integer, minimum: 1, maximum: 5 }
         comments: { type: string }
+        managerComment: { type: string, nullable: true, example: "Buen liderazgo, mejorar delegación" }
 
     GoalRatingDTO:
       type: object
       properties:
         goalId: { type: string, format: uuid }
-        finalRating: { type: integer, minimum: 1, maximum: 5, nullable: true }
+        finalRating:
+          type: integer
+          minimum: 1
+          maximum: 5
+          nullable: true
+          description: "Solo cuando se envía un rating explícito; el progreso NO deriva rating."
+        finalProgress:
+          type: number
+          nullable: true
+          description: "Valor directo de cierre en la unidad propia de la meta (porcentaje/moneda/numero/binario)."
+        avanceProgress:
+          type: number
+          nullable: true
+          description: "Snapshot directo de la fase avance (medio-anio equivale a avance)."
+        cierreProgress:
+          type: number
+          nullable: true
+          description: "Snapshot directo de la fase cierre."
         finalComments: { type: string }
+        rhAssessment: { type: string }
+        managerComment: { type: string }
+        authorName: { type: string, nullable: true, description: "Best-effort; empty when unknown." }
+        createdAt: { type: string, format: date-time, nullable: true }
+        updatedAt: { type: string, format: date-time, nullable: true }
+        managerCommentAuthor: { type: string, nullable: true }
+        managerCommentCreatedAt: { type: string, format: date-time, nullable: true }
 
     SelfEvaluationRequest:
       type: object
@@ -607,6 +709,7 @@ components:
         competencyId: { type: string, format: uuid }
         rating: { type: integer, minimum: 1, maximum: 5 }
         comments: { type: string }
+        managerComment: { type: string, nullable: true, example: "Buen liderazgo, mejorar delegación" }
         source:
           type: string
           enum: [self, rh]
@@ -646,6 +749,11 @@ components:
           type: object
           additionalProperties: { type: integer }
 
+    NineBoxPhase:
+      type: string
+      enum: [avance, cierre]
+      description: "Fase válida para snapshot 9-box; alias medio-anio solo docs (equivale a avance)."
+
     NineBoxMatrixResponse:
       type: object
       properties:
@@ -653,7 +761,7 @@ components:
         cycleId: { type: string, format: uuid }
         evaluatorId: { type: string, format: uuid }
         phaseId: { type: string, format: uuid }
-        phaseLabel: { type: string }
+        phaseLabel: { $ref: "#/components/schemas/NineBoxPhase" }
         entries:
           type: array
           items: { $ref: "#/components/schemas/NineBoxEntryDTO" }
@@ -735,7 +843,20 @@ components:
       required: [goalId]
       properties:
         goalId: { type: string, format: uuid }
-        finalProgress: { type: number, nullable: true }
+        finalProgress:
+          type: number
+          nullable: true
+          description: "Valor directo en la unidad propia de la meta; se guarda en el snapshot de phase (default: fase de la evaluación/ciclo) y sincroniza current_value."
+        finalRating:
+          type: integer
+          minimum: 1
+          maximum: 5
+          nullable: true
+          description: "Solo se escribe cuando es explícito; sin él, final_rating queda NULL."
+        phase:
+          type: string
+          enum: [avance, cierre]
+          description: "Snapshot destino; alias medio-anio solo docs (equivale a avance). Default: fase de la evaluación/ciclo."
         selfAssessment: { type: string, nullable: true }
         rhAssessment: { type: string, nullable: true }
 

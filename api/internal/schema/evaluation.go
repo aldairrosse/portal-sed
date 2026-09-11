@@ -36,7 +36,7 @@ func (Evaluation) Fields() []ent.Field {
 				dialect.Postgres: "phase",
 			}),
 		field.Enum("state").
-			Values("pendiente_asignacion", "pendiente_avance", "pendiente_evaluacion_final", "completada").
+			Values("pendiente_asignacion", "pendiente_avance", "pendiente_evaluacion_final", "en_progreso", "completada").
 			SchemaType(map[string]string{
 				dialect.Postgres: "evaluation_state",
 			}),

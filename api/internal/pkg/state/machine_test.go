@@ -85,6 +85,37 @@ func TestIsMidYearPhase(t *testing.T) {
 	}
 }
 
+func TestNormalizePhase(t *testing.T) {
+	tests := []struct {
+		name  string
+		phase string
+		want  string
+	}{
+		{"avance canonical", "avance", state.PhaseAvance},
+		{"cierre canonical", "cierre", state.PhaseCierre},
+		{"asignacion canonical", "asignacion", state.PhaseAsignacion},
+		{"medio-anio alias", "medio-anio", state.PhaseAvance},
+		{"medio_anio alias", "medio_anio", state.PhaseAvance},
+		{"medioanio alias", "medioanio", state.PhaseAvance},
+		{"fin-anio alias", "fin-anio", state.PhaseCierre},
+		{"fin_anio alias", "fin_anio", state.PhaseCierre},
+		{"finanio alias", "finanio", state.PhaseCierre},
+		{"inicio-anio alias", "inicio-anio", state.PhaseAsignacion},
+		{"inicio_anio alias", "inicio_anio", state.PhaseAsignacion},
+		{"case-insensitive", "MEDIO-ANIO", state.PhaseAvance},
+		{"case-insensitive avance", "AVANCE", state.PhaseAvance},
+		{"trim spaces", "  avance  ", state.PhaseAvance},
+		{"trim + case alias", "  Medio_Anio ", state.PhaseAvance},
+		{"unknown passthrough", "desconocida", "desconocida"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.want, state.NormalizePhase(tt.phase))
+		})
+	}
+}
+
 func TestSamePhaseForWrite(t *testing.T) {
 	tests := []struct {
 		name string
@@ -97,6 +128,13 @@ func TestSamePhaseForWrite(t *testing.T) {
 		{"asignacion vs avance differ", state.PhaseAsignacion, state.PhaseAvance, false},
 		{"avance vs cierre differ", state.PhaseAvance, state.PhaseCierre, false},
 		{"cierre vs asignacion differ", state.PhaseCierre, state.PhaseAsignacion, false},
+		{"medio_anio to avance alias", "medio_anio", state.PhaseAvance, true},
+		{"medioanio to avance alias", "medioanio", state.PhaseAvance, true},
+		{"fin-anio to cierre alias", "fin-anio", state.PhaseCierre, true},
+		{"finanio to cierre alias", "finanio", state.PhaseCierre, true},
+		{"inicio-anio to asignacion alias", "inicio-anio", state.PhaseAsignacion, true},
+		{"case-insensitive match", "AVANCE", "medio-anio", true},
+		{"trimmed match", "  avance  ", "medio_anio", true},
 	}
 
 	for _, tt := range tests {

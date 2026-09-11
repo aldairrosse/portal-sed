@@ -44,6 +44,8 @@ type Tx struct {
 	GoalAssignment *GoalAssignmentClient
 	// GoalCategory is the client for interacting with the GoalCategory builders.
 	GoalCategory *GoalCategoryClient
+	// GoalComment is the client for interacting with the GoalComment builders.
+	GoalComment *GoalCommentClient
 	// GoalKpiLink is the client for interacting with the GoalKpiLink builders.
 	GoalKpiLink *GoalKpiLinkClient
 	// GoalTemplate is the client for interacting with the GoalTemplate builders.
@@ -227,6 +229,7 @@ func (tx *Tx) init() {
 	tx.Goal = NewGoalClient(tx.config)
 	tx.GoalAssignment = NewGoalAssignmentClient(tx.config)
 	tx.GoalCategory = NewGoalCategoryClient(tx.config)
+	tx.GoalComment = NewGoalCommentClient(tx.config)
 	tx.GoalKpiLink = NewGoalKpiLinkClient(tx.config)
 	tx.GoalTemplate = NewGoalTemplateClient(tx.config)
 	tx.GoalTemplateKpiLink = NewGoalTemplateKpiLinkClient(tx.config)

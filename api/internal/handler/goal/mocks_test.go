@@ -253,6 +253,10 @@ func (m *mockGoalRepo) ListGoalsByCategory(ctx context.Context, catID uuid.UUID)
 	return nil, nil
 }
 
+func (m *mockGoalRepo) UpsertProgressSnapshot(ctx context.Context, evalID, goalID uuid.UUID, phase string, value float64) error {
+	return nil
+}
+
 type mockKpiRepo struct{}
 
 func (m *mockKpiRepo) ListKPIs(ctx context.Context, orgNodeID *uuid.UUID) ([]*repogoal.KpiRow, error) {
@@ -293,8 +297,8 @@ func (m *mockLinkRepo) ListLinksByGoal(ctx context.Context, goalID uuid.UUID) ([
 }
 
 type mockAssignmentRepo struct {
-	getFunc    func(ctx context.Context, empID uuid.UUID) (*repogoal.AssignmentRow, error)
-	createFunc func(ctx context.Context, empID, cycleID uuid.UUID) (*repogoal.AssignmentRow, error)
+	getFunc          func(ctx context.Context, empID uuid.UUID) (*repogoal.AssignmentRow, error)
+	createFunc       func(ctx context.Context, empID, cycleID uuid.UUID) (*repogoal.AssignmentRow, error)
 	updateStatusFunc func(ctx context.Context, empID, cycleID uuid.UUID, status string, submittedAt *time.Time) (*repogoal.AssignmentRow, error)
 }
 

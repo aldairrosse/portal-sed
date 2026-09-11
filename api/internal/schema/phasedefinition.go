@@ -24,18 +24,18 @@ func (PhaseDefinition) Fields() []ent.Field {
 		field.UUID("id", uuid.UUID{}).
 			Default(uuid.New).
 			StorageKey("id"),
-	field.Enum("phase").
-		// Canonical phases only: asignacion, avance, cierre.
-		// "medio-anio" is a read-only alias of "avance" handled in
-		// internal/pkg/state (IsMidYearPhase/SamePhaseForWrite), never persisted.
-		Values("asignacion", "avance", "cierre").
+		field.Enum("phase").
+			// Canonical phases only: asignacion, avance, cierre.
+			// "medio-anio" is a read-only alias of "avance" handled in
+			// internal/pkg/state (IsMidYearPhase/SamePhaseForWrite), never persisted.
+			Values("asignacion", "avance", "cierre").
 			SchemaType(map[string]string{
 				dialect.Postgres: "phase",
 			}),
 		field.String("label").
 			NotEmpty(),
-	field.Int("order").
-		Range(1, 3),
+		field.Int("order").
+			Range(1, 3),
 		field.JSON("allowed_actors", []string{}).
 			Optional(),
 		field.JSON("allowed_actions", []string{}).

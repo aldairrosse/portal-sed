@@ -6,8 +6,8 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
-	servicegoal "github.com/sed-evaluacion-desempeno/api/internal/service/goal"
 	"github.com/sed-evaluacion-desempeno/api/internal/pkg/errors"
+	servicegoal "github.com/sed-evaluacion-desempeno/api/internal/service/goal"
 )
 
 // GlobalGoalHandler handles HTTP requests for global goals.

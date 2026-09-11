@@ -12,6 +12,7 @@ import (
 	dto "github.com/sed-evaluacion-desempeno/api/internal/dto/evaluation"
 	pkgerrors "github.com/sed-evaluacion-desempeno/api/internal/pkg/errors"
 	"github.com/sed-evaluacion-desempeno/api/internal/pkg/quadrant"
+	"github.com/sed-evaluacion-desempeno/api/internal/pkg/state"
 	cyclerepo "github.com/sed-evaluacion-desempeno/api/internal/repository/cycle"
 	repo "github.com/sed-evaluacion-desempeno/api/internal/repository/evaluation"
 	orgrepo "github.com/sed-evaluacion-desempeno/api/internal/repository/org"
@@ -206,7 +207,7 @@ func (s *NineBoxService) RecomputeMatrix(ctx context.Context, cycleID, phaseID u
 			if err != nil {
 				return err
 			}
-			potTier := quadrant.ComputePotentialTier(selfRating, hrRating)
+			potTier := weightedPotentialTier(selfRating, hrRating)
 
 			// 3c. Compute quadrant
 			q := quadrant.ComputeQuadrantFromTiers(perfTier, potTier)
@@ -299,10 +300,27 @@ func (s *NineBoxService) ComputeMatrixView(ctx context.Context, cycleID uuid.UUI
 	return results, nil
 }
 
+// isNineBoxPhase reports whether phase is valid for 9-box matrices:
+// only avance (mid-year) and cierre (year-end). All legacy aliases
+// (medio-anio/medio_anio/medioanio, fin-anio/fin_anio/finanio) are unified
+// via state.NormalizePhase before the check.
+func isNineBoxPhase(phase string) bool {
+	switch state.NormalizePhase(phase) {
+	case state.PhaseAvance, state.PhaseCierre:
+		return true
+	default:
+		return false
+	}
+}
+
 // ResolvePhaseID resolves a phase name and/or explicit phase ID to a phase ID.
 // When both are given they must match, else an InvalidRequest (400) error is
 // returned. Empty inputs resolve to the cycle's current phase.
 func (s *NineBoxService) ResolvePhaseID(ctx context.Context, cycleID uuid.UUID, phase string, phaseID *uuid.UUID) (uuid.UUID, error) {
+	if phase != "" && !isNineBoxPhase(phase) {
+		return uuid.Nil, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
+			fmt.Sprintf("phase must be one of 'avance', 'medio-anio', 'cierre'; got %q", phase), nil)
+	}
 	if phase == "" {
 		return s.resolvePhase(ctx, cycleID, phaseID)
 	}
@@ -429,10 +447,7 @@ func (s *NineBoxService) deriveMatrix(ctx context.Context, cycleID, evaluatorID,
 		if err != nil {
 			return dto.NineBoxMatrixResponse{}, err
 		}
-		potTier := quadrant.ComputeWeightedPotentialTier(
-			ratingOrZero(selfRating), ratingOrZero(hrRating),
-			quadrant.DefaultWeightSelf, quadrant.DefaultWeightRH,
-		)
+		potTier := weightedPotentialTier(selfRating, hrRating)
 		q := quadrant.ComputeQuadrantFromTiers(perfTier, potTier)
 
 		entry, err := s.nineBoxRepo.UpsertEntryByTiers(ctx, tx, matrix.ID, evaluateeID, perfTier, potTier, q, "", &avgProgress, selfRating, hrRating)
@@ -498,12 +513,20 @@ func (s *NineBoxService) matrixResponse(ctx context.Context, matrix *internal.Ni
 	return resp
 }
 
-// ratingOrZero dereferences a rating pointer, defaulting to 0 when nil.
-func ratingOrZero(r *float64) float64 {
-	if r == nil {
-		return 0
+// weightedPotentialTier maps self/RH competency ratings to a tier 1–3 per
+// REQ-NBM-002: weighted 0.8*RH + 0.2*self. Nil handling avoids 0-bias: both
+// nil → 2 (unknown), single non-nil → that value alone.
+func weightedPotentialTier(selfRating, hrRating *float64) int {
+	if selfRating == nil && hrRating == nil {
+		return 2
 	}
-	return *r
+	if selfRating == nil || hrRating == nil {
+		return quadrant.ComputePotentialTier(selfRating, hrRating)
+	}
+	return quadrant.ComputeWeightedPotentialTier(
+		*selfRating, *hrRating,
+		quadrant.DefaultWeightSelf, quadrant.DefaultWeightRH,
+	)
 }
 
 // GetMatrixEntriesFiltered returns matrix entries, optionally filtered by quadrant.

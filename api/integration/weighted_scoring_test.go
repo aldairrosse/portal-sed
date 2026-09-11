@@ -329,14 +329,14 @@ func TestUpdateGoal_BlocksDirectionChangeInAvance(t *testing.T) {
 
 	// Try to change direction (should be blocked in avance)
 	updatePayload := map[string]interface{}{
-		"name":         "Goal for avance test",
-		"description":  "Trying to change direction",
-		"unit":         "numero",
-		"weight":       10.0,
-		"target_value": 100.0,
-		"direction":    "descendente",
+		"name":           "Goal for avance test",
+		"description":    "Trying to change direction",
+		"unit":           "numero",
+		"weight":         10.0,
+		"target_value":   100.0,
+		"direction":      "descendente",
 		"baseline_value": 200.0,
-		"version":      int(version),
+		"version":        int(version),
 	}
 	body2, _ := json.Marshal(updatePayload)
 	req2 := httptest.NewRequest(http.MethodPut,

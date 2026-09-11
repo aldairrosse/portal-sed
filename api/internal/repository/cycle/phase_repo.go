@@ -120,14 +120,14 @@ func (r *PhaseRepo) GetTransitionsByFromPhase(ctx context.Context, fromPhase str
 // cycle for RH manual transitions, even on legacy cycles seeded without
 // medio-anio or backward rows.
 var adjacentPhasePairs = map[string]bool{
-	"asignacion|avance":  true,
-	"avance|asignacion":  true,
-	"avance|medio-anio":  true,
-	"medio-anio|avance":  true,
-	"medio-anio|cierre":  true,
-	"cierre|medio-anio":  true,
-	"avance|cierre":      true,
-	"cierre|avance":      true,
+	"asignacion|avance": true,
+	"avance|asignacion": true,
+	"avance|medio-anio": true,
+	"medio-anio|avance": true,
+	"medio-anio|cierre": true,
+	"cierre|medio-anio": true,
+	"avance|cierre":     true,
+	"cierre|avance":     true,
 }
 
 // ValidateTransition checks if a transition exists for the given (fromPhase, toPhase, trigger) tuple.
@@ -150,9 +150,9 @@ func (r *PhaseRepo) ValidateTransition(ctx context.Context, fromPhase, toPhase, 
 		return nil
 	}
 	return errors.ErrInvalidTransition.WithDetails(
-		"from_phase: " + fromPhase,
-		"to_phase: " + toPhase,
-		"trigger: " + trigger,
+		"from_phase: "+fromPhase,
+		"to_phase: "+toPhase,
+		"trigger: "+trigger,
 	)
 }
 

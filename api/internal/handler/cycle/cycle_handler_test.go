@@ -4,15 +4,15 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"github.com/google/uuid"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"net/http"
 	"net/http/httptest"
 	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
-	"github.com/google/uuid"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 
 	handler "github.com/sed-evaluacion-desempeno/api/internal/handler/cycle"
 	"github.com/sed-evaluacion-desempeno/api/internal/pkg/cursor"
@@ -603,11 +603,11 @@ func TestTransitionPhase_Concurrent(t *testing.T) {
 			// Simulate that only the first transition succeeds
 			if successCount.CompareAndSwap(0, 1) {
 				return &svc.CycleResponse{
-					ID:             cycleID,
-					CurrentPhase:   "avance",
-					Version:        2,
-					CreatedAt:      time.Now().Format(time.RFC3339),
-					UpdatedAt:      time.Now().Format(time.RFC3339),
+					ID:           cycleID,
+					CurrentPhase: "avance",
+					Version:      2,
+					CreatedAt:    time.Now().Format(time.RFC3339),
+					UpdatedAt:    time.Now().Format(time.RFC3339),
 				}, nil
 			}
 			conflictCount.Add(1)

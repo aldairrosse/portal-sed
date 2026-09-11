@@ -21,7 +21,7 @@ type cacheEntry struct {
 type CatalogRepo struct {
 	client *internal.Client
 
-	mu       sync.RWMutex
+	mu        sync.RWMutex
 	quadrants *cacheEntry
 	scales    *cacheEntry
 }

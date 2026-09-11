@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/sed-evaluacion-desempeno/api/internal"
 	dtogoal "github.com/sed-evaluacion-desempeno/api/internal/dto/goal"
+	repoeval "github.com/sed-evaluacion-desempeno/api/internal/repository/evaluation"
 	repogoal "github.com/sed-evaluacion-desempeno/api/internal/repository/goal"
 )
 
@@ -33,6 +34,16 @@ type GoalRepository interface {
 	DeleteGoal(ctx context.Context, goalID uuid.UUID) error
 	UpdateGoalCurrentValue(ctx context.Context, goalID uuid.UUID, currentValue float64, createdBy *uuid.UUID) (*repogoal.GoalRow, error)
 	ListGoalsByCategory(ctx context.Context, catID uuid.UUID) ([]*repogoal.GoalRow, error)
+	// UpsertProgressSnapshot writes the direct value into the active-phase
+	// snapshot column (avance_progress/cierre_progress) of evaluation_goals.
+	UpsertProgressSnapshot(ctx context.Context, evalID, goalID uuid.UUID, phase string, value float64) error
+}
+
+// EvaluationLookup resolves the evaluation for employee+cycle via the
+// existing evaluation repo (FindByEmployeeCycle). Implemented by
+// *repoeval.EvaluationRepo; kept as an interface for tests.
+type EvaluationLookup interface {
+	FindByEmployeeCycle(ctx context.Context, employeeID, cycleID uuid.UUID) (*repoeval.EvaluationRow, error)
 }
 
 // KPIRepository defines the storage contract for KPIs.

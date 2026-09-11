@@ -74,6 +74,10 @@ func (m *mockGoalRepoForValidation) ListGoalsByCategory(ctx context.Context, cat
 	return m.goals[catID], m.err
 }
 
+func (m *mockGoalRepoForValidation) UpsertProgressSnapshot(ctx context.Context, evalID, goalID uuid.UUID, phase string, value float64) error {
+	return nil
+}
+
 func newValidationService(cats []*repogoal.CategoryRow, goals map[uuid.UUID][]*repogoal.GoalRow) *WeightValidationService {
 	catRepo := &mockCategoryRepoForValidation{cats: cats}
 	goalRepo := &mockGoalRepoForValidation{goals: goals}

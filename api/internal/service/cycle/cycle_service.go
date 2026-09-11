@@ -66,11 +66,11 @@ type TransitionPhaseRequest struct {
 
 // ListCyclesRequest is the DTO for listing cycles.
 type ListCyclesRequest struct {
-	OrganizationID string `json:"organization_id"`
-	Year           *int   `json:"year,omitempty"`
+	OrganizationID string  `json:"organization_id"`
+	Year           *int    `json:"year,omitempty"`
 	CurrentPhase   *string `json:"current_phase,omitempty"`
-	Cursor         string `json:"cursor,omitempty"`
-	Limit          int    `json:"limit"`
+	Cursor         string  `json:"cursor,omitempty"`
+	Limit          int     `json:"limit"`
 }
 
 // CycleResponse is the API response for a cycle.
@@ -257,8 +257,8 @@ func (s *service) TransitionPhase(ctx context.Context, req TransitionPhaseReques
 	// Step 2: Validate optimistic lock
 	if row.Version != req.ExpectedVersion {
 		return nil, pkgerrors.ErrConcurrentUpdate.WithDetails(
-			"expected_version: " + itoa(req.ExpectedVersion),
-			"actual_version: " + itoa(row.Version),
+			"expected_version: "+itoa(req.ExpectedVersion),
+			"actual_version: "+itoa(row.Version),
 		)
 	}
 
@@ -339,7 +339,7 @@ func (s *service) AdvancePhase(ctx context.Context, cycleID string, expectedVers
 
 // RevertPhase moves a cycle one step back in CyclePhaseOrder within the
 // active cycle (alias used by the UI Retroceder button). Finished evaluations
-// are reopened to en_progreso. RH permission is enforced by route middleware;
+// are reopened to pendiente_avance. RH permission is enforced by route middleware;
 // the service re-checks the role as defense in depth.
 func (s *service) RevertPhase(ctx context.Context, cycleID string) (*CycleResponse, error) {
 	id, err := uuid.Parse(cycleID)

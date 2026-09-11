@@ -7,6 +7,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log"
 	"strconv"
 	"time"
 
@@ -41,40 +42,54 @@ func DBRoleFromContext(ctx context.Context) string {
 
 // Domain error codes.
 const (
-	ErrCodeEvaluationNotFound     pkgerrors.DomainCode = "EVALUATION_NOT_FOUND"
-	ErrCodeMatrixNotFound         pkgerrors.DomainCode = "MATRIX_NOT_FOUND"
-	ErrCodeEntryNotFound          pkgerrors.DomainCode = "ENTRY_NOT_FOUND"
-	ErrCodeEvaluationFinalized    pkgerrors.DomainCode = "EVALUATION_ALREADY_FINALIZED"
-	ErrCodeSelfEvalDeadlinePassed pkgerrors.DomainCode = "SELF_EVAL_DEADLINE_PASSED"
-	ErrCodeQuadrantOutOfRange     pkgerrors.DomainCode = "QUADRANT_OUT_OF_RANGE"
-	ErrCodeUnauthorizedEvaluator  pkgerrors.DomainCode = "UNAUTHORIZED_EVALUATOR"
+	ErrCodeEvaluationNotFound       pkgerrors.DomainCode = "EVALUATION_NOT_FOUND"
+	ErrCodeMatrixNotFound           pkgerrors.DomainCode = "MATRIX_NOT_FOUND"
+	ErrCodeEntryNotFound            pkgerrors.DomainCode = "ENTRY_NOT_FOUND"
+	ErrCodeEvaluationFinalized      pkgerrors.DomainCode = "EVALUATION_ALREADY_FINALIZED"
+	ErrCodeSelfEvalDeadlinePassed   pkgerrors.DomainCode = "SELF_EVAL_DEADLINE_PASSED"
+	ErrCodeQuadrantOutOfRange       pkgerrors.DomainCode = "QUADRANT_OUT_OF_RANGE"
+	ErrCodeUnauthorizedEvaluator    pkgerrors.DomainCode = "UNAUTHORIZED_EVALUATOR"
+	ErrCodeEvaluationProfileMissing pkgerrors.DomainCode = "EVALUATION_PROFILE_NOT_FOUND"
+	ErrCodeInvalidCompetencySource  pkgerrors.DomainCode = "INVALID_COMPETENCY_SOURCE"
 )
 
 // Sentinel errors.
 var (
-	ErrEvaluationNotFound     = pkgerrors.NewDomainError(ErrCodeEvaluationNotFound, "The requested evaluation was not found.", nil)
-	ErrMatrixNotFound         = pkgerrors.NewDomainError(ErrCodeMatrixNotFound, "The requested 9×9 matrix was not found.", nil)
-	ErrEntryNotFound          = pkgerrors.NewDomainError(ErrCodeEntryNotFound, "The requested matrix entry was not found.", nil)
-	ErrEvaluationFinalized    = pkgerrors.NewDomainError(ErrCodeEvaluationFinalized, "The evaluation has already been finalized; no further changes allowed.", nil)
-	ErrSelfEvalDeadlinePassed = pkgerrors.NewDomainError(ErrCodeSelfEvalDeadlinePassed, "The self-evaluation deadline has passed for this cycle.", nil)
-	ErrQuadrantOutOfRange     = pkgerrors.NewDomainError(ErrCodeQuadrantOutOfRange, "Performance and potential tiers must be between 1 and 3.", nil)
-	ErrUnauthorizedEvaluator  = pkgerrors.NewDomainError(ErrCodeUnauthorizedEvaluator, "The authenticated user is not the evaluator for this matrix.", nil)
+	ErrEvaluationNotFound       = pkgerrors.NewDomainError(ErrCodeEvaluationNotFound, "The requested evaluation was not found.", nil)
+	ErrMatrixNotFound           = pkgerrors.NewDomainError(ErrCodeMatrixNotFound, "The requested 9×9 matrix was not found.", nil)
+	ErrEntryNotFound            = pkgerrors.NewDomainError(ErrCodeEntryNotFound, "The requested matrix entry was not found.", nil)
+	ErrEvaluationFinalized      = pkgerrors.NewDomainError(ErrCodeEvaluationFinalized, "The evaluation has already been finalized; no further changes allowed.", nil)
+	ErrSelfEvalDeadlinePassed   = pkgerrors.NewDomainError(ErrCodeSelfEvalDeadlinePassed, "The self-evaluation deadline has passed for this cycle.", nil)
+	ErrQuadrantOutOfRange       = pkgerrors.NewDomainError(ErrCodeQuadrantOutOfRange, "Performance and potential tiers must be between 1 and 3.", nil)
+	ErrUnauthorizedEvaluator    = pkgerrors.NewDomainError(ErrCodeUnauthorizedEvaluator, "The authenticated user is not the evaluator for this matrix.", nil)
+	ErrEvaluationProfileMissing = pkgerrors.NewDomainError(ErrCodeEvaluationProfileMissing, "The employee has no evaluation profile; cannot rate competencies.", nil)
+	ErrInvalidCompetencySource  = pkgerrors.NewDomainError(ErrCodeInvalidCompetencySource, "Competency source must be self or rh.", nil)
 )
 
 // CompetencyUpsert is a repository-level DTO for upserting a competency rating.
+// IsManager distinguishes the jefe write path on the shared rh row: when true,
+// ManagerComment is written to manager_comment and comments is left untouched;
+// otherwise Comments is written to comments. Rating is always shared.
 type CompetencyUpsert struct {
-	CompetencyID uuid.UUID
-	Rating       int
-	Comments     string
+	CompetencyID   uuid.UUID
+	Rating         int
+	Comments       string
+	ManagerComment string
+	IsManager      bool
 }
 
 // EmployeeCompetencyRatingRow is a repository-level DTO for competency ratings
-// returned from the employee + cycle query. Includes self/rh ratings from migration 000008.
+// returned from the employee + cycle query. Rows in evaluation_competencies are
+// per (evaluation_id, competency_id, source), so self/rh rating+comments are
+// aggregated by source; Comments is legacy compat (rh preferred, else self).
 type EmployeeCompetencyRatingRow struct {
 	CompetencyID    uuid.UUID
 	SelfRating      *int
 	RhRating        *int
 	Comments        *string
+	SelfComment     *string
+	RhComment       *string
+	ManagerComment  *string
 	AcceptanceLevel *int
 }
 
@@ -86,11 +101,23 @@ type GoalCommentUpsert struct {
 
 // GoalStateUpsert is a repository-level DTO for per-goal state updates.
 // Nil pointer fields are left unchanged; non-nil values overwrite.
+// FinalProgress is the DIRECT goal value in its own unit (never int(FP*5)).
+// Phase selects the snapshot column (avance/medio-anio -> avance_progress,
+// cierre/fin-anio -> cierre_progress, unknown defaults to avance_progress). FinalRating is only written when explicit.
 type GoalStateUpsert struct {
 	GoalID         uuid.UUID
 	FinalProgress  *float64
+	FinalRating    *int
+	Phase          string
 	SelfAssessment *string
 	RhAssessment   *string
+}
+
+// GoalProgressSnapshot carries the per-phase direct-value snapshots.
+type GoalProgressSnapshot struct {
+	GoalID         uuid.UUID
+	AvanceProgress *float64
+	CierreProgress *float64
 }
 
 // EntryUpsert is a repository-level DTO for upserting a nine-box entry.
@@ -314,7 +341,7 @@ func (r *EvaluationRepo) LockEvalForUpdate(ctx context.Context, tx *sql.Tx, eval
 // It upserts competencies, updates goal comments, sets state and timestamps.
 // Dual-write: when setSelfCompleted, rating is also written to self_rating;
 // when setRHCompleted, rating is also written to rh_rating.
-func (r *EvaluationRepo) SubmitEval(ctx context.Context, tx *sql.Tx, evalID uuid.UUID, comps []CompetencyUpsert, goals []GoalCommentUpsert, newState string, setSelfCompleted, setRHCompleted bool) error {
+func (r *EvaluationRepo) SubmitEval(ctx context.Context, tx *sql.Tx, evalID uuid.UUID, profileID uuid.UUID, comps []CompetencyUpsert, goals []GoalCommentUpsert, newState string, setSelfCompleted, setRHCompleted bool) error {
 	// 1. Lock row and validate state
 	row, err := r.LockEvalForUpdate(ctx, tx, evalID)
 	if err != nil {
@@ -323,15 +350,42 @@ func (r *EvaluationRepo) SubmitEval(ctx context.Context, tx *sql.Tx, evalID uuid
 	if row.State == "completada" {
 		return ErrEvaluationFinalized
 	}
+	if profileID == uuid.Nil {
+		return ErrEvaluationProfileMissing
+	}
 
 	now := time.Now()
 
-	// 2. Bulk upsert competencies with dual-write for self_rating/rh_rating
+	// 2. Bulk upsert competencies with dual-write for self_rating/rh_rating.
+	// Rows are per (evaluation_id, competency_id, source) — constraint
+	// idx_eval_comp_eval_comp_source — so source is set explicitly from the
+	// submit path (self vs rh) and is part of the conflict target.
+	source := "rh"
+	if setSelfCompleted {
+		source = "self"
+	}
+	if source != "self" && source != "rh" {
+		return ErrInvalidCompetencySource
+	}
 	for _, c := range comps {
-		query := `INSERT INTO evaluation_competencies (id, created_at, updated_at, evaluation_id, competency_id, rating, comments, profile_id`
-		args := []interface{}{uuid.New(), now, now, evalID, c.CompetencyID, c.Rating, c.Comments, uuid.Nil}
+		// Jefe path on the shared rh row: rating shared, manager_comment only.
+		if c.IsManager {
+			_, err = tx.ExecContext(ctx,
+				`INSERT INTO evaluation_competencies (id, created_at, updated_at, evaluation_id, competency_id, rating, comments, profile_id, source, manager_comment)
+				 VALUES ($1, $2, $3, $4, $5, $6, '', $7, $8, $9)
+				 ON CONFLICT (evaluation_id, competency_id, source) DO UPDATE
+				 SET rating = EXCLUDED.rating, manager_comment = EXCLUDED.manager_comment, updated_at = EXCLUDED.updated_at`,
+				uuid.New(), now, now, evalID, c.CompetencyID, c.Rating, profileID, source, c.ManagerComment,
+			)
+			if err != nil {
+				return err
+			}
+			continue
+		}
+		query := `INSERT INTO evaluation_competencies (id, created_at, updated_at, evaluation_id, competency_id, rating, comments, profile_id, source`
+		args := []interface{}{uuid.New(), now, now, evalID, c.CompetencyID, c.Rating, c.Comments, profileID, source}
 		setClauses := `rating = EXCLUDED.rating, comments = EXCLUDED.comments, updated_at = EXCLUDED.updated_at`
-		argIdx := 9
+		argIdx := 10
 
 		if setSelfCompleted {
 			query += `, self_rating`
@@ -342,7 +396,7 @@ func (r *EvaluationRepo) SubmitEval(ctx context.Context, tx *sql.Tx, evalID uuid
 			setClauses += `, rh_rating = EXCLUDED.rh_rating`
 		}
 
-		query += `) VALUES ($1, $2, $3, $4, $5, $6, $7, $8`
+		query += `) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9`
 		// Build dynamic placeholders for self_rating/rh_rating
 		if setSelfCompleted {
 			query += fmt.Sprintf(`, $%d`, argIdx)
@@ -354,7 +408,7 @@ func (r *EvaluationRepo) SubmitEval(ctx context.Context, tx *sql.Tx, evalID uuid
 			args = append(args, c.Rating)
 			argIdx++
 		}
-		query += `) ON CONFLICT (evaluation_id, competency_id) DO UPDATE SET ` + setClauses
+		query += `) ON CONFLICT (evaluation_id, competency_id, source) DO UPDATE SET ` + setClauses
 
 		_, err = tx.ExecContext(ctx, query, args...)
 		if err != nil {
@@ -483,14 +537,23 @@ func (r *EvaluationRepo) upsertVersion(ctx context.Context, tx *sql.Tx, evalID u
 }
 
 // GetCompetencyRatingsByEmployee fetches ALL competencies for an employee's profile in a cycle,
-// LEFT JOINed with evaluation_competencies to get self/rh ratings (or null if not yet evaluated).
+// LEFT JOINed with evaluation_competencies aggregated by source to get self/rh
+// rating+comments (or null if not yet evaluated). GROUP BY collapses the two
+// source rows per competency into one; manager_comment is source-independent.
 func (r *EvaluationRepo) GetCompetencyRatingsByEmployee(ctx context.Context, employeeID, cycleID, profileID uuid.UUID) ([]EmployeeCompetencyRatingRow, error) {
-	query := `SELECT c.id AS competency_id, ec.self_rating, ec.rh_rating, ec.comments,
+	query := `SELECT c.id AS competency_id,
+	       MAX(CASE WHEN ec.source = 'self' THEN ec.rating END) AS self_rating,
+	       MAX(CASE WHEN ec.source = 'rh' THEN ec.rating END) AS rh_rating,
+	       COALESCE(MAX(CASE WHEN ec.source = 'rh' THEN ec.comments END), MAX(CASE WHEN ec.source = 'self' THEN ec.comments END)) AS comments,
+	       MAX(CASE WHEN ec.source = 'self' THEN ec.comments END) AS self_comment,
+	       MAX(CASE WHEN ec.source = 'rh' THEN ec.comments END) AS rh_comment,
+	       MAX(ec.manager_comment) AS manager_comment,
 	       cal.level AS acceptance_level
 		FROM competencies c
 		LEFT JOIN competency_acceptance_levels cal ON cal.competency_id = c.id AND cal.profile_id = $3
 		LEFT JOIN evaluations ev ON ev.employee_id = $1 AND ev.cycle_id = $2
 		LEFT JOIN evaluation_competencies ec ON ec.evaluation_id = ev.id AND ec.competency_id = c.id
+		GROUP BY c.id, cal.level
 		ORDER BY c.id`
 
 	rows, err := r.db.QueryContext(ctx, query, employeeID, cycleID, profileID)
@@ -502,7 +565,7 @@ func (r *EvaluationRepo) GetCompetencyRatingsByEmployee(ctx context.Context, emp
 	var results []EmployeeCompetencyRatingRow
 	for rows.Next() {
 		var row EmployeeCompetencyRatingRow
-		if err := rows.Scan(&row.CompetencyID, &row.SelfRating, &row.RhRating, &row.Comments, &row.AcceptanceLevel); err != nil {
+		if err := rows.Scan(&row.CompetencyID, &row.SelfRating, &row.RhRating, &row.Comments, &row.SelfComment, &row.RhComment, &row.ManagerComment, &row.AcceptanceLevel); err != nil {
 			return nil, err
 		}
 		results = append(results, row)
@@ -514,6 +577,33 @@ func (r *EvaluationRepo) GetCompetencyRatingsByEmployee(ctx context.Context, emp
 		results = []EmployeeCompetencyRatingRow{}
 	}
 	return results, nil
+}
+
+// GetCompetencyManagerComments returns manager_comment per competency for an
+// evaluation (keyed by competency_id string). Missing column (drift without
+// regen/migration) yields an empty map and nil error so reads stay safe.
+func (r *EvaluationRepo) GetCompetencyManagerComments(ctx context.Context, evalID uuid.UUID) (map[string]string, error) {
+	out := map[string]string{}
+	if r.db == nil {
+		return out, nil
+	}
+	rows, err := r.db.QueryContext(ctx,
+		`SELECT competency_id, manager_comment FROM evaluation_competencies WHERE evaluation_id = $1`, evalID)
+	if err != nil {
+		return out, nil
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var compID uuid.UUID
+		var mc sql.NullString
+		if err := rows.Scan(&compID, &mc); err != nil {
+			return out, nil
+		}
+		if mc.Valid && mc.String != "" {
+			out[compID.String()] = mc.String
+		}
+	}
+	return out, nil
 }
 
 // CompetencyResultRow is a repository-level DTO for paginated competency results.
@@ -653,6 +743,78 @@ func (r *EvaluationRepo) CountCompetencyResults(ctx context.Context, cycleID uui
 		return 0, err
 	}
 	return total, nil
+}
+
+// FindByEmployeeCycle returns the evaluation for an employee+cycle,
+// preferring the avance-phase row when several phases exist.
+func (r *EvaluationRepo) FindByEmployeeCycle(ctx context.Context, employeeID, cycleID uuid.UUID) (*EvaluationRow, error) {
+	ev, err := r.client.Evaluation.Query().
+		Where(evaluation.And(
+			evaluation.EmployeeID(employeeID),
+			evaluation.CycleID(cycleID),
+			evaluation.PhaseEQ(evaluation.PhaseAvance),
+		)).
+		Order(evaluation.ByCreatedAt()).
+		First(ctx)
+	if err == nil {
+		log.Printf("[evalId] found employee=%s cycle=%s eval=%s", employeeID, cycleID, ev.ID)
+		return rowFromEnt(ev, ev.Version), nil
+	}
+	if !internal.IsNotFound(err) {
+		return nil, err
+	}
+	ev, err = r.client.Evaluation.Query().
+		Where(evaluation.And(
+			evaluation.EmployeeID(employeeID),
+			evaluation.CycleID(cycleID),
+		)).
+		Order(evaluation.ByCreatedAt()).
+		First(ctx)
+	if err != nil {
+		if internal.IsNotFound(err) {
+			return nil, ErrEvaluationNotFound
+		}
+		return nil, err
+	}
+	log.Printf("[evalId] found employee=%s cycle=%s eval=%s", employeeID, cycleID, ev.ID)
+	return rowFromEnt(ev, ev.Version), nil
+}
+
+// EnsureEvaluation finds the evaluation for employee+cycle or creates it.
+// phase is the cycle's current phase ("avance"/"medio-anio" or "cierre");
+// actorID is used for created_by/updated_by (falls back to employeeID).
+func (r *EvaluationRepo) EnsureEvaluation(ctx context.Context, employeeID, cycleID uuid.UUID, phase string, actorID uuid.UUID) (*EvaluationRow, error) {
+	if row, err := r.FindByEmployeeCycle(ctx, employeeID, cycleID); err == nil {
+		return row, nil
+	} else if err != ErrEvaluationNotFound {
+		return nil, err
+	}
+	entPhase := evaluation.PhaseAvance
+	entState := evaluation.StatePendienteAvance
+	if phase == "cierre" || phase == "fin-anio" {
+		entPhase = evaluation.PhaseCierre
+		entState = evaluation.StatePendienteEvaluacionFinal
+	}
+	if actorID == uuid.Nil {
+		actorID = employeeID
+	}
+	ev, err := r.client.Evaluation.Create().
+		SetPhase(entPhase).
+		SetState(entState).
+		SetEmployeeID(employeeID).
+		SetCycleID(cycleID).
+		SetCreatedBy(actorID).
+		SetUpdatedBy(actorID).
+		Save(ctx)
+	if err != nil {
+		// Concurrent creation won the race: re-read the winner.
+		if row, ferr := r.FindByEmployeeCycle(ctx, employeeID, cycleID); ferr == nil {
+			return row, nil
+		}
+		return nil, err
+	}
+	log.Printf("[evalId] upserted employee=%s cycle=%s eval=%s phase=%s", employeeID, cycleID, ev.ID, entPhase)
+	return rowFromEnt(ev, ev.Version), nil
 }
 
 // rowFromEnt converts an Ent Evaluation to an EvaluationRow.

@@ -76,6 +76,26 @@ func FinalComments(v string) predicate.EvaluationGoal {
 	return predicate.EvaluationGoal(sql.FieldEQ(FieldFinalComments, v))
 }
 
+// RhAssessment applies equality check predicate on the "rh_assessment" field. It's identical to RhAssessmentEQ.
+func RhAssessment(v string) predicate.EvaluationGoal {
+	return predicate.EvaluationGoal(sql.FieldEQ(FieldRhAssessment, v))
+}
+
+// ManagerComment applies equality check predicate on the "manager_comment" field. It's identical to ManagerCommentEQ.
+func ManagerComment(v string) predicate.EvaluationGoal {
+	return predicate.EvaluationGoal(sql.FieldEQ(FieldManagerComment, v))
+}
+
+// AvanceProgress applies equality check predicate on the "avance_progress" field. It's identical to AvanceProgressEQ.
+func AvanceProgress(v float64) predicate.EvaluationGoal {
+	return predicate.EvaluationGoal(sql.FieldEQ(FieldAvanceProgress, v))
+}
+
+// CierreProgress applies equality check predicate on the "cierre_progress" field. It's identical to CierreProgressEQ.
+func CierreProgress(v float64) predicate.EvaluationGoal {
+	return predicate.EvaluationGoal(sql.FieldEQ(FieldCierreProgress, v))
+}
+
 // EvaluationID applies equality check predicate on the "evaluation_id" field. It's identical to EvaluationIDEQ.
 func EvaluationID(v uuid.UUID) predicate.EvaluationGoal {
 	return predicate.EvaluationGoal(sql.FieldEQ(FieldEvaluationID, v))
@@ -289,6 +309,256 @@ func FinalCommentsEqualFold(v string) predicate.EvaluationGoal {
 // FinalCommentsContainsFold applies the ContainsFold predicate on the "final_comments" field.
 func FinalCommentsContainsFold(v string) predicate.EvaluationGoal {
 	return predicate.EvaluationGoal(sql.FieldContainsFold(FieldFinalComments, v))
+}
+
+// RhAssessmentEQ applies the EQ predicate on the "rh_assessment" field.
+func RhAssessmentEQ(v string) predicate.EvaluationGoal {
+	return predicate.EvaluationGoal(sql.FieldEQ(FieldRhAssessment, v))
+}
+
+// RhAssessmentNEQ applies the NEQ predicate on the "rh_assessment" field.
+func RhAssessmentNEQ(v string) predicate.EvaluationGoal {
+	return predicate.EvaluationGoal(sql.FieldNEQ(FieldRhAssessment, v))
+}
+
+// RhAssessmentIn applies the In predicate on the "rh_assessment" field.
+func RhAssessmentIn(vs ...string) predicate.EvaluationGoal {
+	return predicate.EvaluationGoal(sql.FieldIn(FieldRhAssessment, vs...))
+}
+
+// RhAssessmentNotIn applies the NotIn predicate on the "rh_assessment" field.
+func RhAssessmentNotIn(vs ...string) predicate.EvaluationGoal {
+	return predicate.EvaluationGoal(sql.FieldNotIn(FieldRhAssessment, vs...))
+}
+
+// RhAssessmentGT applies the GT predicate on the "rh_assessment" field.
+func RhAssessmentGT(v string) predicate.EvaluationGoal {
+	return predicate.EvaluationGoal(sql.FieldGT(FieldRhAssessment, v))
+}
+
+// RhAssessmentGTE applies the GTE predicate on the "rh_assessment" field.
+func RhAssessmentGTE(v string) predicate.EvaluationGoal {
+	return predicate.EvaluationGoal(sql.FieldGTE(FieldRhAssessment, v))
+}
+
+// RhAssessmentLT applies the LT predicate on the "rh_assessment" field.
+func RhAssessmentLT(v string) predicate.EvaluationGoal {
+	return predicate.EvaluationGoal(sql.FieldLT(FieldRhAssessment, v))
+}
+
+// RhAssessmentLTE applies the LTE predicate on the "rh_assessment" field.
+func RhAssessmentLTE(v string) predicate.EvaluationGoal {
+	return predicate.EvaluationGoal(sql.FieldLTE(FieldRhAssessment, v))
+}
+
+// RhAssessmentContains applies the Contains predicate on the "rh_assessment" field.
+func RhAssessmentContains(v string) predicate.EvaluationGoal {
+	return predicate.EvaluationGoal(sql.FieldContains(FieldRhAssessment, v))
+}
+
+// RhAssessmentHasPrefix applies the HasPrefix predicate on the "rh_assessment" field.
+func RhAssessmentHasPrefix(v string) predicate.EvaluationGoal {
+	return predicate.EvaluationGoal(sql.FieldHasPrefix(FieldRhAssessment, v))
+}
+
+// RhAssessmentHasSuffix applies the HasSuffix predicate on the "rh_assessment" field.
+func RhAssessmentHasSuffix(v string) predicate.EvaluationGoal {
+	return predicate.EvaluationGoal(sql.FieldHasSuffix(FieldRhAssessment, v))
+}
+
+// RhAssessmentIsNil applies the IsNil predicate on the "rh_assessment" field.
+func RhAssessmentIsNil() predicate.EvaluationGoal {
+	return predicate.EvaluationGoal(sql.FieldIsNull(FieldRhAssessment))
+}
+
+// RhAssessmentNotNil applies the NotNil predicate on the "rh_assessment" field.
+func RhAssessmentNotNil() predicate.EvaluationGoal {
+	return predicate.EvaluationGoal(sql.FieldNotNull(FieldRhAssessment))
+}
+
+// RhAssessmentEqualFold applies the EqualFold predicate on the "rh_assessment" field.
+func RhAssessmentEqualFold(v string) predicate.EvaluationGoal {
+	return predicate.EvaluationGoal(sql.FieldEqualFold(FieldRhAssessment, v))
+}
+
+// RhAssessmentContainsFold applies the ContainsFold predicate on the "rh_assessment" field.
+func RhAssessmentContainsFold(v string) predicate.EvaluationGoal {
+	return predicate.EvaluationGoal(sql.FieldContainsFold(FieldRhAssessment, v))
+}
+
+// ManagerCommentEQ applies the EQ predicate on the "manager_comment" field.
+func ManagerCommentEQ(v string) predicate.EvaluationGoal {
+	return predicate.EvaluationGoal(sql.FieldEQ(FieldManagerComment, v))
+}
+
+// ManagerCommentNEQ applies the NEQ predicate on the "manager_comment" field.
+func ManagerCommentNEQ(v string) predicate.EvaluationGoal {
+	return predicate.EvaluationGoal(sql.FieldNEQ(FieldManagerComment, v))
+}
+
+// ManagerCommentIn applies the In predicate on the "manager_comment" field.
+func ManagerCommentIn(vs ...string) predicate.EvaluationGoal {
+	return predicate.EvaluationGoal(sql.FieldIn(FieldManagerComment, vs...))
+}
+
+// ManagerCommentNotIn applies the NotIn predicate on the "manager_comment" field.
+func ManagerCommentNotIn(vs ...string) predicate.EvaluationGoal {
+	return predicate.EvaluationGoal(sql.FieldNotIn(FieldManagerComment, vs...))
+}
+
+// ManagerCommentGT applies the GT predicate on the "manager_comment" field.
+func ManagerCommentGT(v string) predicate.EvaluationGoal {
+	return predicate.EvaluationGoal(sql.FieldGT(FieldManagerComment, v))
+}
+
+// ManagerCommentGTE applies the GTE predicate on the "manager_comment" field.
+func ManagerCommentGTE(v string) predicate.EvaluationGoal {
+	return predicate.EvaluationGoal(sql.FieldGTE(FieldManagerComment, v))
+}
+
+// ManagerCommentLT applies the LT predicate on the "manager_comment" field.
+func ManagerCommentLT(v string) predicate.EvaluationGoal {
+	return predicate.EvaluationGoal(sql.FieldLT(FieldManagerComment, v))
+}
+
+// ManagerCommentLTE applies the LTE predicate on the "manager_comment" field.
+func ManagerCommentLTE(v string) predicate.EvaluationGoal {
+	return predicate.EvaluationGoal(sql.FieldLTE(FieldManagerComment, v))
+}
+
+// ManagerCommentContains applies the Contains predicate on the "manager_comment" field.
+func ManagerCommentContains(v string) predicate.EvaluationGoal {
+	return predicate.EvaluationGoal(sql.FieldContains(FieldManagerComment, v))
+}
+
+// ManagerCommentHasPrefix applies the HasPrefix predicate on the "manager_comment" field.
+func ManagerCommentHasPrefix(v string) predicate.EvaluationGoal {
+	return predicate.EvaluationGoal(sql.FieldHasPrefix(FieldManagerComment, v))
+}
+
+// ManagerCommentHasSuffix applies the HasSuffix predicate on the "manager_comment" field.
+func ManagerCommentHasSuffix(v string) predicate.EvaluationGoal {
+	return predicate.EvaluationGoal(sql.FieldHasSuffix(FieldManagerComment, v))
+}
+
+// ManagerCommentIsNil applies the IsNil predicate on the "manager_comment" field.
+func ManagerCommentIsNil() predicate.EvaluationGoal {
+	return predicate.EvaluationGoal(sql.FieldIsNull(FieldManagerComment))
+}
+
+// ManagerCommentNotNil applies the NotNil predicate on the "manager_comment" field.
+func ManagerCommentNotNil() predicate.EvaluationGoal {
+	return predicate.EvaluationGoal(sql.FieldNotNull(FieldManagerComment))
+}
+
+// ManagerCommentEqualFold applies the EqualFold predicate on the "manager_comment" field.
+func ManagerCommentEqualFold(v string) predicate.EvaluationGoal {
+	return predicate.EvaluationGoal(sql.FieldEqualFold(FieldManagerComment, v))
+}
+
+// ManagerCommentContainsFold applies the ContainsFold predicate on the "manager_comment" field.
+func ManagerCommentContainsFold(v string) predicate.EvaluationGoal {
+	return predicate.EvaluationGoal(sql.FieldContainsFold(FieldManagerComment, v))
+}
+
+// AvanceProgressEQ applies the EQ predicate on the "avance_progress" field.
+func AvanceProgressEQ(v float64) predicate.EvaluationGoal {
+	return predicate.EvaluationGoal(sql.FieldEQ(FieldAvanceProgress, v))
+}
+
+// AvanceProgressNEQ applies the NEQ predicate on the "avance_progress" field.
+func AvanceProgressNEQ(v float64) predicate.EvaluationGoal {
+	return predicate.EvaluationGoal(sql.FieldNEQ(FieldAvanceProgress, v))
+}
+
+// AvanceProgressIn applies the In predicate on the "avance_progress" field.
+func AvanceProgressIn(vs ...float64) predicate.EvaluationGoal {
+	return predicate.EvaluationGoal(sql.FieldIn(FieldAvanceProgress, vs...))
+}
+
+// AvanceProgressNotIn applies the NotIn predicate on the "avance_progress" field.
+func AvanceProgressNotIn(vs ...float64) predicate.EvaluationGoal {
+	return predicate.EvaluationGoal(sql.FieldNotIn(FieldAvanceProgress, vs...))
+}
+
+// AvanceProgressGT applies the GT predicate on the "avance_progress" field.
+func AvanceProgressGT(v float64) predicate.EvaluationGoal {
+	return predicate.EvaluationGoal(sql.FieldGT(FieldAvanceProgress, v))
+}
+
+// AvanceProgressGTE applies the GTE predicate on the "avance_progress" field.
+func AvanceProgressGTE(v float64) predicate.EvaluationGoal {
+	return predicate.EvaluationGoal(sql.FieldGTE(FieldAvanceProgress, v))
+}
+
+// AvanceProgressLT applies the LT predicate on the "avance_progress" field.
+func AvanceProgressLT(v float64) predicate.EvaluationGoal {
+	return predicate.EvaluationGoal(sql.FieldLT(FieldAvanceProgress, v))
+}
+
+// AvanceProgressLTE applies the LTE predicate on the "avance_progress" field.
+func AvanceProgressLTE(v float64) predicate.EvaluationGoal {
+	return predicate.EvaluationGoal(sql.FieldLTE(FieldAvanceProgress, v))
+}
+
+// AvanceProgressIsNil applies the IsNil predicate on the "avance_progress" field.
+func AvanceProgressIsNil() predicate.EvaluationGoal {
+	return predicate.EvaluationGoal(sql.FieldIsNull(FieldAvanceProgress))
+}
+
+// AvanceProgressNotNil applies the NotNil predicate on the "avance_progress" field.
+func AvanceProgressNotNil() predicate.EvaluationGoal {
+	return predicate.EvaluationGoal(sql.FieldNotNull(FieldAvanceProgress))
+}
+
+// CierreProgressEQ applies the EQ predicate on the "cierre_progress" field.
+func CierreProgressEQ(v float64) predicate.EvaluationGoal {
+	return predicate.EvaluationGoal(sql.FieldEQ(FieldCierreProgress, v))
+}
+
+// CierreProgressNEQ applies the NEQ predicate on the "cierre_progress" field.
+func CierreProgressNEQ(v float64) predicate.EvaluationGoal {
+	return predicate.EvaluationGoal(sql.FieldNEQ(FieldCierreProgress, v))
+}
+
+// CierreProgressIn applies the In predicate on the "cierre_progress" field.
+func CierreProgressIn(vs ...float64) predicate.EvaluationGoal {
+	return predicate.EvaluationGoal(sql.FieldIn(FieldCierreProgress, vs...))
+}
+
+// CierreProgressNotIn applies the NotIn predicate on the "cierre_progress" field.
+func CierreProgressNotIn(vs ...float64) predicate.EvaluationGoal {
+	return predicate.EvaluationGoal(sql.FieldNotIn(FieldCierreProgress, vs...))
+}
+
+// CierreProgressGT applies the GT predicate on the "cierre_progress" field.
+func CierreProgressGT(v float64) predicate.EvaluationGoal {
+	return predicate.EvaluationGoal(sql.FieldGT(FieldCierreProgress, v))
+}
+
+// CierreProgressGTE applies the GTE predicate on the "cierre_progress" field.
+func CierreProgressGTE(v float64) predicate.EvaluationGoal {
+	return predicate.EvaluationGoal(sql.FieldGTE(FieldCierreProgress, v))
+}
+
+// CierreProgressLT applies the LT predicate on the "cierre_progress" field.
+func CierreProgressLT(v float64) predicate.EvaluationGoal {
+	return predicate.EvaluationGoal(sql.FieldLT(FieldCierreProgress, v))
+}
+
+// CierreProgressLTE applies the LTE predicate on the "cierre_progress" field.
+func CierreProgressLTE(v float64) predicate.EvaluationGoal {
+	return predicate.EvaluationGoal(sql.FieldLTE(FieldCierreProgress, v))
+}
+
+// CierreProgressIsNil applies the IsNil predicate on the "cierre_progress" field.
+func CierreProgressIsNil() predicate.EvaluationGoal {
+	return predicate.EvaluationGoal(sql.FieldIsNull(FieldCierreProgress))
+}
+
+// CierreProgressNotNil applies the NotNil predicate on the "cierre_progress" field.
+func CierreProgressNotNil() predicate.EvaluationGoal {
+	return predicate.EvaluationGoal(sql.FieldNotNull(FieldCierreProgress))
 }
 
 // EvaluationIDEQ applies the EQ predicate on the "evaluation_id" field.

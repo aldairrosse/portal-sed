@@ -28,6 +28,14 @@ type EvaluationGoal struct {
 	FinalRating *int `json:"final_rating,omitempty"`
 	// FinalComments holds the value of the "final_comments" field.
 	FinalComments string `json:"final_comments,omitempty"`
+	// RhAssessment holds the value of the "rh_assessment" field.
+	RhAssessment string `json:"rh_assessment,omitempty"`
+	// ManagerComment holds the value of the "manager_comment" field.
+	ManagerComment string `json:"manager_comment,omitempty"`
+	// AvanceProgress holds the value of the "avance_progress" field.
+	AvanceProgress *float64 `json:"avance_progress,omitempty"`
+	// CierreProgress holds the value of the "cierre_progress" field.
+	CierreProgress *float64 `json:"cierre_progress,omitempty"`
 	// EvaluationID holds the value of the "evaluation_id" field.
 	EvaluationID uuid.UUID `json:"evaluation_id,omitempty"`
 	// GoalID holds the value of the "goal_id" field.
@@ -76,9 +84,11 @@ func (*EvaluationGoal) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case evaluationgoal.FieldAvanceProgress, evaluationgoal.FieldCierreProgress:
+			values[i] = new(sql.NullFloat64)
 		case evaluationgoal.FieldFinalRating:
 			values[i] = new(sql.NullInt64)
-		case evaluationgoal.FieldFinalComments:
+		case evaluationgoal.FieldFinalComments, evaluationgoal.FieldRhAssessment, evaluationgoal.FieldManagerComment:
 			values[i] = new(sql.NullString)
 		case evaluationgoal.FieldCreatedAt, evaluationgoal.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -129,6 +139,32 @@ func (_m *EvaluationGoal) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field final_comments", values[i])
 			} else if value.Valid {
 				_m.FinalComments = value.String
+			}
+		case evaluationgoal.FieldRhAssessment:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field rh_assessment", values[i])
+			} else if value.Valid {
+				_m.RhAssessment = value.String
+			}
+		case evaluationgoal.FieldManagerComment:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field manager_comment", values[i])
+			} else if value.Valid {
+				_m.ManagerComment = value.String
+			}
+		case evaluationgoal.FieldAvanceProgress:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field avance_progress", values[i])
+			} else if value.Valid {
+				_m.AvanceProgress = new(float64)
+				*_m.AvanceProgress = value.Float64
+			}
+		case evaluationgoal.FieldCierreProgress:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field cierre_progress", values[i])
+			} else if value.Valid {
+				_m.CierreProgress = new(float64)
+				*_m.CierreProgress = value.Float64
 			}
 		case evaluationgoal.FieldEvaluationID:
 			if value, ok := values[i].(*uuid.UUID); !ok {
@@ -201,6 +237,22 @@ func (_m *EvaluationGoal) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("final_comments=")
 	builder.WriteString(_m.FinalComments)
+	builder.WriteString(", ")
+	builder.WriteString("rh_assessment=")
+	builder.WriteString(_m.RhAssessment)
+	builder.WriteString(", ")
+	builder.WriteString("manager_comment=")
+	builder.WriteString(_m.ManagerComment)
+	builder.WriteString(", ")
+	if v := _m.AvanceProgress; v != nil {
+		builder.WriteString("avance_progress=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.CierreProgress; v != nil {
+		builder.WriteString("cierre_progress=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
 	builder.WriteString(", ")
 	builder.WriteString("evaluation_id=")
 	builder.WriteString(fmt.Sprintf("%v", _m.EvaluationID))

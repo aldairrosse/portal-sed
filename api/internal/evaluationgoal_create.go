@@ -79,6 +79,62 @@ func (_c *EvaluationGoalCreate) SetNillableFinalComments(v *string) *EvaluationG
 	return _c
 }
 
+// SetRhAssessment sets the "rh_assessment" field.
+func (_c *EvaluationGoalCreate) SetRhAssessment(v string) *EvaluationGoalCreate {
+	_c.mutation.SetRhAssessment(v)
+	return _c
+}
+
+// SetNillableRhAssessment sets the "rh_assessment" field if the given value is not nil.
+func (_c *EvaluationGoalCreate) SetNillableRhAssessment(v *string) *EvaluationGoalCreate {
+	if v != nil {
+		_c.SetRhAssessment(*v)
+	}
+	return _c
+}
+
+// SetManagerComment sets the "manager_comment" field.
+func (_c *EvaluationGoalCreate) SetManagerComment(v string) *EvaluationGoalCreate {
+	_c.mutation.SetManagerComment(v)
+	return _c
+}
+
+// SetNillableManagerComment sets the "manager_comment" field if the given value is not nil.
+func (_c *EvaluationGoalCreate) SetNillableManagerComment(v *string) *EvaluationGoalCreate {
+	if v != nil {
+		_c.SetManagerComment(*v)
+	}
+	return _c
+}
+
+// SetAvanceProgress sets the "avance_progress" field.
+func (_c *EvaluationGoalCreate) SetAvanceProgress(v float64) *EvaluationGoalCreate {
+	_c.mutation.SetAvanceProgress(v)
+	return _c
+}
+
+// SetNillableAvanceProgress sets the "avance_progress" field if the given value is not nil.
+func (_c *EvaluationGoalCreate) SetNillableAvanceProgress(v *float64) *EvaluationGoalCreate {
+	if v != nil {
+		_c.SetAvanceProgress(*v)
+	}
+	return _c
+}
+
+// SetCierreProgress sets the "cierre_progress" field.
+func (_c *EvaluationGoalCreate) SetCierreProgress(v float64) *EvaluationGoalCreate {
+	_c.mutation.SetCierreProgress(v)
+	return _c
+}
+
+// SetNillableCierreProgress sets the "cierre_progress" field if the given value is not nil.
+func (_c *EvaluationGoalCreate) SetNillableCierreProgress(v *float64) *EvaluationGoalCreate {
+	if v != nil {
+		_c.SetCierreProgress(*v)
+	}
+	return _c
+}
+
 // SetEvaluationID sets the "evaluation_id" field.
 func (_c *EvaluationGoalCreate) SetEvaluationID(v uuid.UUID) *EvaluationGoalCreate {
 	_c.mutation.SetEvaluationID(v)
@@ -239,6 +295,22 @@ func (_c *EvaluationGoalCreate) createSpec() (*EvaluationGoal, *sqlgraph.CreateS
 	if value, ok := _c.mutation.FinalComments(); ok {
 		_spec.SetField(evaluationgoal.FieldFinalComments, field.TypeString, value)
 		_node.FinalComments = value
+	}
+	if value, ok := _c.mutation.RhAssessment(); ok {
+		_spec.SetField(evaluationgoal.FieldRhAssessment, field.TypeString, value)
+		_node.RhAssessment = value
+	}
+	if value, ok := _c.mutation.ManagerComment(); ok {
+		_spec.SetField(evaluationgoal.FieldManagerComment, field.TypeString, value)
+		_node.ManagerComment = value
+	}
+	if value, ok := _c.mutation.AvanceProgress(); ok {
+		_spec.SetField(evaluationgoal.FieldAvanceProgress, field.TypeFloat64, value)
+		_node.AvanceProgress = &value
+	}
+	if value, ok := _c.mutation.CierreProgress(); ok {
+		_spec.SetField(evaluationgoal.FieldCierreProgress, field.TypeFloat64, value)
+		_node.CierreProgress = &value
 	}
 	if nodes := _c.mutation.EvaluationIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

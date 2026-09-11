@@ -45,27 +45,27 @@ import (
 
 	// Repositories
 	repoactivity "github.com/sed-evaluacion-desempeno/api/internal/repository/activity"
-	repogoal "github.com/sed-evaluacion-desempeno/api/internal/repository/goal"
-	repocycle "github.com/sed-evaluacion-desempeno/api/internal/repository/cycle"
 	repocompetency "github.com/sed-evaluacion-desempeno/api/internal/repository/competency"
+	repocycle "github.com/sed-evaluacion-desempeno/api/internal/repository/cycle"
 	repoeval "github.com/sed-evaluacion-desempeno/api/internal/repository/evaluation"
+	repogoal "github.com/sed-evaluacion-desempeno/api/internal/repository/goal"
 	repoorganization "github.com/sed-evaluacion-desempeno/api/internal/repository/org"
 
 	// Services
 	activitysvc "github.com/sed-evaluacion-desempeno/api/internal/service/activity"
-	goalsvc "github.com/sed-evaluacion-desempeno/api/internal/service/goal"
-	cyclesvc "github.com/sed-evaluacion-desempeno/api/internal/service/cycle"
-	compsvc "github.com/sed-evaluacion-desempeno/api/internal/service/competency"
-	evalsvc "github.com/sed-evaluacion-desempeno/api/internal/service/evaluation"
-	orgsvc "github.com/sed-evaluacion-desempeno/api/internal/service/org"
 	authsvc "github.com/sed-evaluacion-desempeno/api/internal/service/auth"
+	compsvc "github.com/sed-evaluacion-desempeno/api/internal/service/competency"
+	cyclesvc "github.com/sed-evaluacion-desempeno/api/internal/service/cycle"
+	evalsvc "github.com/sed-evaluacion-desempeno/api/internal/service/evaluation"
+	goalsvc "github.com/sed-evaluacion-desempeno/api/internal/service/goal"
+	orgsvc "github.com/sed-evaluacion-desempeno/api/internal/service/org"
 
 	// Handlers
 	authhandler "github.com/sed-evaluacion-desempeno/api/internal/handler/auth"
-	goalhandler "github.com/sed-evaluacion-desempeno/api/internal/handler/goal"
-	cyclehandler "github.com/sed-evaluacion-desempeno/api/internal/handler/cycle"
 	comphandler "github.com/sed-evaluacion-desempeno/api/internal/handler/competency"
+	cyclehandler "github.com/sed-evaluacion-desempeno/api/internal/handler/cycle"
 	evalhandler "github.com/sed-evaluacion-desempeno/api/internal/handler/evaluation"
+	goalhandler "github.com/sed-evaluacion-desempeno/api/internal/handler/goal"
 	orghandler "github.com/sed-evaluacion-desempeno/api/internal/handler/org"
 
 	"github.com/sed-evaluacion-desempeno/api/internal/auth"
@@ -253,8 +253,8 @@ func setupTestServerWithPhaseChecker(t *testing.T, phaseChecker goalsvc.PhaseChe
 	phaseCheck := goalsvc.NewPhaseCheck(phaseChecker)
 	catSvc := goalsvc.NewCategoryService(catRepo, pillarRepo, phaseCheck, assignRepo, cycleRepo)
 	goalSvc := goalsvc.NewGoalService(goalRepo, catRepo, kpiRepo, linkRepo, weightQ, phaseCheck)
-	progressSvc := goalsvc.NewProgressService(goalRepo, catRepo, phaseCheck)
- 	kpiSvc := goalsvc.NewKPIService(kpiRepo, linkRepo, goalRepo, catRepo, phaseCheck, orgNodeRepo, orgTreeRepo, employeeRepo)
+	progressSvc := goalsvc.NewProgressService(goalRepo, catRepo, phaseCheck, evalRepo)
+	kpiSvc := goalsvc.NewKPIService(kpiRepo, linkRepo, goalRepo, catRepo, phaseCheck, orgNodeRepo, orgTreeRepo, employeeRepo)
 	scoringSvc := goalsvc.NewScoringService(catRepo, goalRepo)
 	weightSvc := goalsvc.NewWeightValidationService(catRepo, goalRepo)
 	batchSvc := goalsvc.NewBatchService(goalRepo, catRepo, kpiRepo, linkRepo, weightQ, phaseCheck)

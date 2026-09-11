@@ -471,5 +471,3 @@ func (h *CycleHandler) AssignAllEmployees(w http.ResponseWriter, r *http.Request
 		"total":    len(employees),
 	})
 }
-
-

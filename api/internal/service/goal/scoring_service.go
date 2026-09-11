@@ -14,9 +14,9 @@ type WeightResolver interface {
 
 // ScoringService handles employee score calculation.
 type ScoringService struct {
-	catRepo     CategoryRepository
-	goalRepo    GoalRepository
-	weightSvc   WeightResolver
+	catRepo   CategoryRepository
+	goalRepo  GoalRepository
+	weightSvc WeightResolver
 }
 
 // NewScoringService creates a new ScoringService.

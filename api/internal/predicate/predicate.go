@@ -54,6 +54,9 @@ type GoalAssignment func(*sql.Selector)
 // GoalCategory is the predicate function for goalcategory builders.
 type GoalCategory func(*sql.Selector)
 
+// GoalComment is the predicate function for goalcomment builders.
+type GoalComment func(*sql.Selector)
+
 // GoalKpiLink is the predicate function for goalkpilink builders.
 type GoalKpiLink func(*sql.Selector)
 

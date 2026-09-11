@@ -15,23 +15,23 @@ import (
 //
 // Endpoint catalog (12 endpoints):
 //
-//   GET    /api/v1/org-trees                       → ListOrgTrees
-//   GET    /api/v1/org-trees/{treeId}              → GetOrgTree
-//   GET    /api/v1/org-trees/{treeId}/nodes         → GetOrgTreeNodes
-//   GET    /api/v1/org-trees/{treeId}/export        → ExportOrgTree
-//   GET    /api/v1/org-nodes/{nodeId}               → GetOrgNode
-//   POST   /api/v1/org-nodes                       → CreateOrgNode
-//   PUT    /api/v1/org-nodes/{nodeId}               → UpdateOrgNode
-//   DELETE /api/v1/org-nodes/{nodeId}               → DeleteOrgNode
-//   POST   /api/v1/org-nodes/{nodeId}/move          → MoveOrgNode
-//   GET    /api/v1/employees                        → ListEmployees
-//   GET    /api/v1/employees/{empId}                → GetEmployee
-//   GET    /api/v1/employees/{empId}/evaluatees     → GetMyEvaluatees
-//   GET    /api/v1/employees/{empId}/team            → GetTeam
-//   GET    /api/v1/employees/{empId}/manager        → GetManager
-//   GET    /api/v1/employees/{empId}/ancestors      → GetAncestors
-//   POST   /api/v1/employees/batch                 → BatchLookupEmployees
-//   GET    /api/v1/employees/search                → SearchEmployees
+//	GET    /api/v1/org-trees                       → ListOrgTrees
+//	GET    /api/v1/org-trees/{treeId}              → GetOrgTree
+//	GET    /api/v1/org-trees/{treeId}/nodes         → GetOrgTreeNodes
+//	GET    /api/v1/org-trees/{treeId}/export        → ExportOrgTree
+//	GET    /api/v1/org-nodes/{nodeId}               → GetOrgNode
+//	POST   /api/v1/org-nodes                       → CreateOrgNode
+//	PUT    /api/v1/org-nodes/{nodeId}               → UpdateOrgNode
+//	DELETE /api/v1/org-nodes/{nodeId}               → DeleteOrgNode
+//	POST   /api/v1/org-nodes/{nodeId}/move          → MoveOrgNode
+//	GET    /api/v1/employees                        → ListEmployees
+//	GET    /api/v1/employees/{empId}                → GetEmployee
+//	GET    /api/v1/employees/{empId}/evaluatees     → GetMyEvaluatees
+//	GET    /api/v1/employees/{empId}/team            → GetTeam
+//	GET    /api/v1/employees/{empId}/manager        → GetManager
+//	GET    /api/v1/employees/{empId}/ancestors      → GetAncestors
+//	POST   /api/v1/employees/batch                 → BatchLookupEmployees
+//	GET    /api/v1/employees/search                → SearchEmployees
 func NewRouter(handler *OrgHandler, authSvc *authsvc.AuthService) chi.Router {
 	r := chi.NewRouter()
 	RegisterRoutes(r, handler, authSvc)

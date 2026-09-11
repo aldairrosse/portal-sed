@@ -149,7 +149,6 @@ func allRoutes() []routeTestCase {
 		{"GET", "/api/v1/employees/" + empID + "/ancestors", "GetAncestors", authOK},
 		{"POST", "/api/v1/employees/batch", "BatchLookupEmployees", authOK},
 		{"GET", "/api/v1/employees/search?q=Perez", "SearchEmployees", authOK},
-
 	}
 }
 

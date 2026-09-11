@@ -14,22 +14,22 @@ import (
 
 // Session represents an authenticated user session stored in the database.
 type Session struct {
-	ID                uuid.UUID
-	EmployeeID        uuid.UUID
-	TokenHash         string
-	IPAddress         *string
-	UserAgent         *string
-	ExpiresAt         time.Time
-	CreatedAt         time.Time
-	LastActiveAt      time.Time
-	IsRevoked         bool
-	IDToken           string
-	AccessToken       string
-	RefreshToken      string
-	ACR               string
-	Requires2FA       bool
-	TokenExpiresAt    time.Time
-	RefreshExpiresAt  time.Time
+	ID               uuid.UUID
+	EmployeeID       uuid.UUID
+	TokenHash        string
+	IPAddress        *string
+	UserAgent        *string
+	ExpiresAt        time.Time
+	CreatedAt        time.Time
+	LastActiveAt     time.Time
+	IsRevoked        bool
+	IDToken          string
+	AccessToken      string
+	RefreshToken     string
+	ACR              string
+	Requires2FA      bool
+	TokenExpiresAt   time.Time
+	RefreshExpiresAt time.Time
 }
 
 // SessionStore provides database operations for session management.
@@ -63,22 +63,22 @@ func (s *SessionStore) Create(ctx context.Context, employeeID uuid.UUID, ip, ua,
 	}
 
 	session := &Session{
-		ID:                uuid.New(),
-		EmployeeID:        employeeID,
-		TokenHash:         tokenHash,
-		IPAddress:         ipPtr,
-		UserAgent:         uaPtr,
-		ExpiresAt:         expiresAt,
-		CreatedAt:         now,
-		LastActiveAt:      now,
-		IsRevoked:         false,
-		IDToken:           idToken,
-		AccessToken:       accessToken,
-		RefreshToken:      refreshToken,
-		ACR:               acr,
-		Requires2FA:       requires2FA,
-		TokenExpiresAt:    tokenExpiresAt,
-		RefreshExpiresAt:  refreshExpiresAt,
+		ID:               uuid.New(),
+		EmployeeID:       employeeID,
+		TokenHash:        tokenHash,
+		IPAddress:        ipPtr,
+		UserAgent:        uaPtr,
+		ExpiresAt:        expiresAt,
+		CreatedAt:        now,
+		LastActiveAt:     now,
+		IsRevoked:        false,
+		IDToken:          idToken,
+		AccessToken:      accessToken,
+		RefreshToken:     refreshToken,
+		ACR:              acr,
+		Requires2FA:      requires2FA,
+		TokenExpiresAt:   tokenExpiresAt,
+		RefreshExpiresAt: refreshExpiresAt,
 	}
 
 	_, err = s.db.ExecContext(ctx,

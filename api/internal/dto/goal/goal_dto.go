@@ -68,6 +68,9 @@ type UpdateGoalRequest struct {
 // UpdateProgressRequest is the request body for updating goal progress.
 type UpdateProgressRequest struct {
 	CurrentValue float64 `json:"current_value"`
+	// Phase optionally pins the snapshot phase (avance/cierre, medio-anio =
+	// avance). Empty defaults to the cycle's current phase.
+	Phase *string `json:"phase,omitempty"`
 }
 
 // GoalResponse is the response body for a single goal.

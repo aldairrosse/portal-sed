@@ -84,6 +84,100 @@ func (_u *EvaluationGoalUpdate) ClearFinalComments() *EvaluationGoalUpdate {
 	return _u
 }
 
+// SetRhAssessment sets the "rh_assessment" field.
+func (_u *EvaluationGoalUpdate) SetRhAssessment(v string) *EvaluationGoalUpdate {
+	_u.mutation.SetRhAssessment(v)
+	return _u
+}
+
+// SetNillableRhAssessment sets the "rh_assessment" field if the given value is not nil.
+func (_u *EvaluationGoalUpdate) SetNillableRhAssessment(v *string) *EvaluationGoalUpdate {
+	if v != nil {
+		_u.SetRhAssessment(*v)
+	}
+	return _u
+}
+
+// ClearRhAssessment clears the value of the "rh_assessment" field.
+func (_u *EvaluationGoalUpdate) ClearRhAssessment() *EvaluationGoalUpdate {
+	_u.mutation.ClearRhAssessment()
+	return _u
+}
+
+// SetManagerComment sets the "manager_comment" field.
+func (_u *EvaluationGoalUpdate) SetManagerComment(v string) *EvaluationGoalUpdate {
+	_u.mutation.SetManagerComment(v)
+	return _u
+}
+
+// SetNillableManagerComment sets the "manager_comment" field if the given value is not nil.
+func (_u *EvaluationGoalUpdate) SetNillableManagerComment(v *string) *EvaluationGoalUpdate {
+	if v != nil {
+		_u.SetManagerComment(*v)
+	}
+	return _u
+}
+
+// ClearManagerComment clears the value of the "manager_comment" field.
+func (_u *EvaluationGoalUpdate) ClearManagerComment() *EvaluationGoalUpdate {
+	_u.mutation.ClearManagerComment()
+	return _u
+}
+
+// SetAvanceProgress sets the "avance_progress" field.
+func (_u *EvaluationGoalUpdate) SetAvanceProgress(v float64) *EvaluationGoalUpdate {
+	_u.mutation.ResetAvanceProgress()
+	_u.mutation.SetAvanceProgress(v)
+	return _u
+}
+
+// SetNillableAvanceProgress sets the "avance_progress" field if the given value is not nil.
+func (_u *EvaluationGoalUpdate) SetNillableAvanceProgress(v *float64) *EvaluationGoalUpdate {
+	if v != nil {
+		_u.SetAvanceProgress(*v)
+	}
+	return _u
+}
+
+// AddAvanceProgress adds value to the "avance_progress" field.
+func (_u *EvaluationGoalUpdate) AddAvanceProgress(v float64) *EvaluationGoalUpdate {
+	_u.mutation.AddAvanceProgress(v)
+	return _u
+}
+
+// ClearAvanceProgress clears the value of the "avance_progress" field.
+func (_u *EvaluationGoalUpdate) ClearAvanceProgress() *EvaluationGoalUpdate {
+	_u.mutation.ClearAvanceProgress()
+	return _u
+}
+
+// SetCierreProgress sets the "cierre_progress" field.
+func (_u *EvaluationGoalUpdate) SetCierreProgress(v float64) *EvaluationGoalUpdate {
+	_u.mutation.ResetCierreProgress()
+	_u.mutation.SetCierreProgress(v)
+	return _u
+}
+
+// SetNillableCierreProgress sets the "cierre_progress" field if the given value is not nil.
+func (_u *EvaluationGoalUpdate) SetNillableCierreProgress(v *float64) *EvaluationGoalUpdate {
+	if v != nil {
+		_u.SetCierreProgress(*v)
+	}
+	return _u
+}
+
+// AddCierreProgress adds value to the "cierre_progress" field.
+func (_u *EvaluationGoalUpdate) AddCierreProgress(v float64) *EvaluationGoalUpdate {
+	_u.mutation.AddCierreProgress(v)
+	return _u
+}
+
+// ClearCierreProgress clears the value of the "cierre_progress" field.
+func (_u *EvaluationGoalUpdate) ClearCierreProgress() *EvaluationGoalUpdate {
+	_u.mutation.ClearCierreProgress()
+	return _u
+}
+
 // SetEvaluationID sets the "evaluation_id" field.
 func (_u *EvaluationGoalUpdate) SetEvaluationID(v uuid.UUID) *EvaluationGoalUpdate {
 	_u.mutation.SetEvaluationID(v)
@@ -221,6 +315,36 @@ func (_u *EvaluationGoalUpdate) sqlSave(ctx context.Context) (_node int, err err
 	if _u.mutation.FinalCommentsCleared() {
 		_spec.ClearField(evaluationgoal.FieldFinalComments, field.TypeString)
 	}
+	if value, ok := _u.mutation.RhAssessment(); ok {
+		_spec.SetField(evaluationgoal.FieldRhAssessment, field.TypeString, value)
+	}
+	if _u.mutation.RhAssessmentCleared() {
+		_spec.ClearField(evaluationgoal.FieldRhAssessment, field.TypeString)
+	}
+	if value, ok := _u.mutation.ManagerComment(); ok {
+		_spec.SetField(evaluationgoal.FieldManagerComment, field.TypeString, value)
+	}
+	if _u.mutation.ManagerCommentCleared() {
+		_spec.ClearField(evaluationgoal.FieldManagerComment, field.TypeString)
+	}
+	if value, ok := _u.mutation.AvanceProgress(); ok {
+		_spec.SetField(evaluationgoal.FieldAvanceProgress, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedAvanceProgress(); ok {
+		_spec.AddField(evaluationgoal.FieldAvanceProgress, field.TypeFloat64, value)
+	}
+	if _u.mutation.AvanceProgressCleared() {
+		_spec.ClearField(evaluationgoal.FieldAvanceProgress, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.CierreProgress(); ok {
+		_spec.SetField(evaluationgoal.FieldCierreProgress, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedCierreProgress(); ok {
+		_spec.AddField(evaluationgoal.FieldCierreProgress, field.TypeFloat64, value)
+	}
+	if _u.mutation.CierreProgressCleared() {
+		_spec.ClearField(evaluationgoal.FieldCierreProgress, field.TypeFloat64)
+	}
 	if _u.mutation.EvaluationCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -349,6 +473,100 @@ func (_u *EvaluationGoalUpdateOne) SetNillableFinalComments(v *string) *Evaluati
 // ClearFinalComments clears the value of the "final_comments" field.
 func (_u *EvaluationGoalUpdateOne) ClearFinalComments() *EvaluationGoalUpdateOne {
 	_u.mutation.ClearFinalComments()
+	return _u
+}
+
+// SetRhAssessment sets the "rh_assessment" field.
+func (_u *EvaluationGoalUpdateOne) SetRhAssessment(v string) *EvaluationGoalUpdateOne {
+	_u.mutation.SetRhAssessment(v)
+	return _u
+}
+
+// SetNillableRhAssessment sets the "rh_assessment" field if the given value is not nil.
+func (_u *EvaluationGoalUpdateOne) SetNillableRhAssessment(v *string) *EvaluationGoalUpdateOne {
+	if v != nil {
+		_u.SetRhAssessment(*v)
+	}
+	return _u
+}
+
+// ClearRhAssessment clears the value of the "rh_assessment" field.
+func (_u *EvaluationGoalUpdateOne) ClearRhAssessment() *EvaluationGoalUpdateOne {
+	_u.mutation.ClearRhAssessment()
+	return _u
+}
+
+// SetManagerComment sets the "manager_comment" field.
+func (_u *EvaluationGoalUpdateOne) SetManagerComment(v string) *EvaluationGoalUpdateOne {
+	_u.mutation.SetManagerComment(v)
+	return _u
+}
+
+// SetNillableManagerComment sets the "manager_comment" field if the given value is not nil.
+func (_u *EvaluationGoalUpdateOne) SetNillableManagerComment(v *string) *EvaluationGoalUpdateOne {
+	if v != nil {
+		_u.SetManagerComment(*v)
+	}
+	return _u
+}
+
+// ClearManagerComment clears the value of the "manager_comment" field.
+func (_u *EvaluationGoalUpdateOne) ClearManagerComment() *EvaluationGoalUpdateOne {
+	_u.mutation.ClearManagerComment()
+	return _u
+}
+
+// SetAvanceProgress sets the "avance_progress" field.
+func (_u *EvaluationGoalUpdateOne) SetAvanceProgress(v float64) *EvaluationGoalUpdateOne {
+	_u.mutation.ResetAvanceProgress()
+	_u.mutation.SetAvanceProgress(v)
+	return _u
+}
+
+// SetNillableAvanceProgress sets the "avance_progress" field if the given value is not nil.
+func (_u *EvaluationGoalUpdateOne) SetNillableAvanceProgress(v *float64) *EvaluationGoalUpdateOne {
+	if v != nil {
+		_u.SetAvanceProgress(*v)
+	}
+	return _u
+}
+
+// AddAvanceProgress adds value to the "avance_progress" field.
+func (_u *EvaluationGoalUpdateOne) AddAvanceProgress(v float64) *EvaluationGoalUpdateOne {
+	_u.mutation.AddAvanceProgress(v)
+	return _u
+}
+
+// ClearAvanceProgress clears the value of the "avance_progress" field.
+func (_u *EvaluationGoalUpdateOne) ClearAvanceProgress() *EvaluationGoalUpdateOne {
+	_u.mutation.ClearAvanceProgress()
+	return _u
+}
+
+// SetCierreProgress sets the "cierre_progress" field.
+func (_u *EvaluationGoalUpdateOne) SetCierreProgress(v float64) *EvaluationGoalUpdateOne {
+	_u.mutation.ResetCierreProgress()
+	_u.mutation.SetCierreProgress(v)
+	return _u
+}
+
+// SetNillableCierreProgress sets the "cierre_progress" field if the given value is not nil.
+func (_u *EvaluationGoalUpdateOne) SetNillableCierreProgress(v *float64) *EvaluationGoalUpdateOne {
+	if v != nil {
+		_u.SetCierreProgress(*v)
+	}
+	return _u
+}
+
+// AddCierreProgress adds value to the "cierre_progress" field.
+func (_u *EvaluationGoalUpdateOne) AddCierreProgress(v float64) *EvaluationGoalUpdateOne {
+	_u.mutation.AddCierreProgress(v)
+	return _u
+}
+
+// ClearCierreProgress clears the value of the "cierre_progress" field.
+func (_u *EvaluationGoalUpdateOne) ClearCierreProgress() *EvaluationGoalUpdateOne {
+	_u.mutation.ClearCierreProgress()
 	return _u
 }
 
@@ -518,6 +736,36 @@ func (_u *EvaluationGoalUpdateOne) sqlSave(ctx context.Context) (_node *Evaluati
 	}
 	if _u.mutation.FinalCommentsCleared() {
 		_spec.ClearField(evaluationgoal.FieldFinalComments, field.TypeString)
+	}
+	if value, ok := _u.mutation.RhAssessment(); ok {
+		_spec.SetField(evaluationgoal.FieldRhAssessment, field.TypeString, value)
+	}
+	if _u.mutation.RhAssessmentCleared() {
+		_spec.ClearField(evaluationgoal.FieldRhAssessment, field.TypeString)
+	}
+	if value, ok := _u.mutation.ManagerComment(); ok {
+		_spec.SetField(evaluationgoal.FieldManagerComment, field.TypeString, value)
+	}
+	if _u.mutation.ManagerCommentCleared() {
+		_spec.ClearField(evaluationgoal.FieldManagerComment, field.TypeString)
+	}
+	if value, ok := _u.mutation.AvanceProgress(); ok {
+		_spec.SetField(evaluationgoal.FieldAvanceProgress, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedAvanceProgress(); ok {
+		_spec.AddField(evaluationgoal.FieldAvanceProgress, field.TypeFloat64, value)
+	}
+	if _u.mutation.AvanceProgressCleared() {
+		_spec.ClearField(evaluationgoal.FieldAvanceProgress, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.CierreProgress(); ok {
+		_spec.SetField(evaluationgoal.FieldCierreProgress, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedCierreProgress(); ok {
+		_spec.AddField(evaluationgoal.FieldCierreProgress, field.TypeFloat64, value)
+	}
+	if _u.mutation.CierreProgressCleared() {
+		_spec.ClearField(evaluationgoal.FieldCierreProgress, field.TypeFloat64)
 	}
 	if _u.mutation.EvaluationCleared() {
 		edge := &sqlgraph.EdgeSpec{

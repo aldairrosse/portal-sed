@@ -13,20 +13,20 @@ import (
 
 // EmployeeRow is a read model for employee queries.
 type EmployeeRow struct {
-	ID             uuid.UUID  `json:"id"`
-	CreatedAt      time.Time  `json:"created_at"`
-	UpdatedAt      time.Time  `json:"updated_at"`
-	FirstName      string     `json:"first_name"`
-	LastName       string     `json:"last_name"`
-	Email          string     `json:"email"`
-	EmployeeNumber string     `json:"employee_number"`
-	IsActive       bool       `json:"is_active"`
-	OrgNodeID      uuid.UUID  `json:"org_node_id"`
-	ManagerID      *uuid.UUID `json:"manager_id,omitempty"`
-	ProfileID      uuid.UUID  `json:"profile_id"`
-	ProfileName    string     `json:"profile_name"`
-	ProfileDescription string `json:"profile_description"`
-	JobTitle       string     `json:"job_title"`
+	ID                 uuid.UUID  `json:"id"`
+	CreatedAt          time.Time  `json:"created_at"`
+	UpdatedAt          time.Time  `json:"updated_at"`
+	FirstName          string     `json:"first_name"`
+	LastName           string     `json:"last_name"`
+	Email              string     `json:"email"`
+	EmployeeNumber     string     `json:"employee_number"`
+	IsActive           bool       `json:"is_active"`
+	OrgNodeID          uuid.UUID  `json:"org_node_id"`
+	ManagerID          *uuid.UUID `json:"manager_id,omitempty"`
+	ProfileID          uuid.UUID  `json:"profile_id"`
+	ProfileName        string     `json:"profile_name"`
+	ProfileDescription string     `json:"profile_description"`
+	JobTitle           string     `json:"job_title"`
 }
 
 // EmployeeDetailRow extends EmployeeRow with nested org node and manager info.

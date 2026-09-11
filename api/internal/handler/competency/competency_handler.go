@@ -33,12 +33,12 @@ var idempCtxKey = &contextKey{"idempotency-key"}
 
 // Handler holds all handler dependencies for the competency API.
 type Handler struct {
-	pillarSvc      svc.PillarService
-	competencySvc  svc.CompetencyService
-	scaleSvc       svc.ScaleService
-	catalogSvc     svc.CatalogService
-	acceptanceSvc  svc.AcceptanceService
-	activitySvc    activitysvc.Service
+	pillarSvc     svc.PillarService
+	competencySvc svc.CompetencyService
+	scaleSvc      svc.ScaleService
+	catalogSvc    svc.CatalogService
+	acceptanceSvc svc.AcceptanceService
+	activitySvc   activitysvc.Service
 }
 
 // NewHandler creates a new Handler.

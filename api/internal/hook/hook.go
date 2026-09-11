@@ -201,6 +201,18 @@ func (f GoalCategoryFunc) Mutate(ctx context.Context, m internal.Mutation) (inte
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *internal.GoalCategoryMutation", m)
 }
 
+// The GoalCommentFunc type is an adapter to allow the use of ordinary
+// function as GoalComment mutator.
+type GoalCommentFunc func(context.Context, *internal.GoalCommentMutation) (internal.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f GoalCommentFunc) Mutate(ctx context.Context, m internal.Mutation) (internal.Value, error) {
+	if mv, ok := m.(*internal.GoalCommentMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *internal.GoalCommentMutation", m)
+}
+
 // The GoalKpiLinkFunc type is an adapter to allow the use of ordinary
 // function as GoalKpiLink mutator.
 type GoalKpiLinkFunc func(context.Context, *internal.GoalKpiLinkMutation) (internal.Value, error)

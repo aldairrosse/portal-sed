@@ -18,10 +18,10 @@ import (
 )
 
 type exportData struct {
-	Organizations     []*internal.Organization `json:"organizations"`
-	OrgNodes          []*internal.OrgNode      `json:"org_nodes"`
+	Organizations      []*internal.Organization      `json:"organizations"`
+	OrgNodes           []*internal.OrgNode           `json:"org_nodes"`
 	EvaluationProfiles []*internal.EvaluationProfile `json:"evaluation_profiles"`
-	Employees         []*internal.Employee     `json:"employees"`
+	Employees          []*internal.Employee          `json:"employees"`
 }
 
 func main() {

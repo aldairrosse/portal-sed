@@ -46,9 +46,9 @@ func (SharedGoalGroup) Edges() []ent.Edge {
 			Required().
 			Field("created_by"),
 		edge.To("members", SharedGoalMember.Type).
-		Annotations(entsql.Annotation{
-			OnDelete: entsql.Cascade,
-		}),
+			Annotations(entsql.Annotation{
+				OnDelete: entsql.Cascade,
+			}),
 	}
 }
 

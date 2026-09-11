@@ -49,15 +49,15 @@ type CreateMemberRequest struct {
 
 // UpdateSharedGoalRequest is the request body for updating a shared goal.
 type UpdateSharedGoalRequest struct {
-	Name          string                `json:"name" validate:"required"`
-	Description   string                `json:"description"`
-	Unit          string                `json:"unit" validate:"required,oneof=porcentaje moneda numero binario"`
-	Direction     string                `json:"direction" validate:"required,oneof=ascendente descendente"`
-	GoalKind      string                `json:"goal_kind" validate:"required,oneof=qualitative quantitative"`
-	Weight        float64               `json:"weight" validate:"required,gte=0.01,max=100"`
-	TargetValue   float64               `json:"target_value" validate:"required,gte=0"`
-	BaselineValue *float64              `json:"baseline_value,omitempty"`
-	CurrentValue  *float64              `json:"current_value,omitempty"`
+	Name          string                 `json:"name" validate:"required"`
+	Description   string                 `json:"description"`
+	Unit          string                 `json:"unit" validate:"required,oneof=porcentaje moneda numero binario"`
+	Direction     string                 `json:"direction" validate:"required,oneof=ascendente descendente"`
+	GoalKind      string                 `json:"goal_kind" validate:"required,oneof=qualitative quantitative"`
+	Weight        float64                `json:"weight" validate:"required,gte=0.01,max=100"`
+	TargetValue   float64                `json:"target_value" validate:"required,gte=0"`
+	BaselineValue *float64               `json:"baseline_value,omitempty"`
+	CurrentValue  *float64               `json:"current_value,omitempty"`
 	Members       *[]CreateMemberRequest `json:"members,omitempty"`
 }
 

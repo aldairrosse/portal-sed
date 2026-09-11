@@ -8,8 +8,8 @@ import (
 )
 
 // GoalComment holds the schema definition for comments on goals.
-// Table is managed via SQL migrations (see 000010 and 000044);
-// this schema documents the phase column for future codegen.
+// Table is managed via SQL migrations (see 000010, 000012, 000014, 000022
+// and 000044); this schema documents the phase column for future codegen.
 type GoalComment struct {
 	ent.Schema
 }
@@ -28,6 +28,12 @@ func (GoalComment) Fields() []ent.Field {
 		field.UUID("goal_id", uuid.UUID{}).
 			Optional().
 			Nillable(),
+		field.String("author_id").
+			NotEmpty(),
+		field.String("author_name").
+			NotEmpty(),
+		field.Text("content").
+			NotEmpty(),
 		field.Enum("phase").
 			Values("asignacion", "avance", "cierre").
 			Default("cierre"),

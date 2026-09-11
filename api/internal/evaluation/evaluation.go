@@ -151,6 +151,7 @@ const (
 	StatePendienteAsignacion      State = "pendiente_asignacion"
 	StatePendienteAvance          State = "pendiente_avance"
 	StatePendienteEvaluacionFinal State = "pendiente_evaluacion_final"
+	StateEnProgreso               State = "en_progreso"
 	StateCompletada               State = "completada"
 )
 
@@ -161,7 +162,7 @@ func (s State) String() string {
 // StateValidator is a validator for the "state" field enum values. It is called by the builders before save.
 func StateValidator(s State) error {
 	switch s {
-	case StatePendienteAsignacion, StatePendienteAvance, StatePendienteEvaluacionFinal, StateCompletada:
+	case StatePendienteAsignacion, StatePendienteAvance, StatePendienteEvaluacionFinal, StateEnProgreso, StateCompletada:
 		return nil
 	default:
 		return fmt.Errorf("evaluation: invalid enum value for state field: %q", s)

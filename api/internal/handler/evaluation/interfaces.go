@@ -15,6 +15,8 @@ type EvalService interface {
 	GetCyclePhase(ctx context.Context, cycleID uuid.UUID) (string, error)
 	GetEmployeeCompetencyRatings(ctx context.Context, employeeID, cycleID uuid.UUID) (*dto.EmployeeCompetencyRatingsResponse, error)
 	ResolveActiveCycleID(ctx context.Context, employeeID uuid.UUID) (uuid.UUID, error)
+	ResolveEvaluationID(ctx context.Context, employeeID, cycleID uuid.UUID) (uuid.UUID, error)
+	EnsureEvaluation(ctx context.Context, employeeID, cycleID uuid.UUID, phase string) (uuid.UUID, error)
 	SubmitSelfEvaluation(ctx context.Context, evaluationID uuid.UUID, req dto.SelfEvaluationRequest, idempotencyKey string) (*dto.EvaluationDetailResponse, error)
 	UpdateSelfEvaluation(ctx context.Context, evaluationID uuid.UUID, req dto.SelfEvaluationRequest, ifMatch int) (*dto.EvaluationDetailResponse, error)
 	SubmitRHEvaluation(ctx context.Context, evaluationID uuid.UUID, req dto.RHEvaluationRequest, idempotencyKey string) (*dto.EvaluationDetailResponse, error)
@@ -25,6 +27,7 @@ type EvalService interface {
 	UpdateGoalComments(ctx context.Context, evaluationID uuid.UUID, input dto.GoalCommentUpdateInput, ifMatch int) (*dto.EvaluationDetailResponse, error)
 	FilterEvaluationsForViewer(items []dto.EvaluationListItem, viewerID uuid.UUID, viewerRole auth.Role, phase string) []dto.EvaluationListItem
 	AuthorizeEvaluationAccess(viewerID, employeeID uuid.UUID, viewerRole auth.Role, phase string) error
+	AuthorizeRHEvaluationWrite(ctx context.Context, evaluationID uuid.UUID) error
 	RedactDetailForSelf(detail *dto.EvaluationDetailResponse, viewerID uuid.UUID, viewerRole auth.Role, phase string) *dto.EvaluationDetailResponse
 	SuggestEvaluator(ctx context.Context, employeeID uuid.UUID) (uuid.UUID, string, error)
 }

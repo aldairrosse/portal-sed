@@ -13,9 +13,10 @@ import (
 
 // CompetencyRatingInput is the request body for rating a single competency.
 type CompetencyRatingInput struct {
-	CompetencyID uuid.UUID `json:"competencyId" validate:"required"`
-	Rating       int       `json:"rating" validate:"min=1,max=5"`
-	Comments     string    `json:"comments,omitempty"`
+	CompetencyID   uuid.UUID `json:"competencyId" validate:"required"`
+	Rating         int       `json:"rating" validate:"min=1,max=5"`
+	Comments       string    `json:"comments,omitempty"`
+	ManagerComment string    `json:"managerComment,omitempty"`
 }
 
 // GoalCommentInput is the request body for adding comments to a goal.
@@ -26,9 +27,14 @@ type GoalCommentInput struct {
 
 // GoalStateUpdateInput is the request body for PUT /evaluations/{id}/goal-state.
 // All fields except GoalID are optional; only the provided ones are updated.
+// FinalProgress is the DIRECT goal value in its own unit (porcentaje/moneda/
+// numero/binario), stored in the snapshot of Phase (default: evaluation/cycle
+// phase). FinalRating is only written when explicit; otherwise NULL.
 type GoalStateUpdateInput struct {
 	GoalID         uuid.UUID `json:"goalId" validate:"required"`
 	FinalProgress  *float64  `json:"finalProgress,omitempty"`
+	FinalRating    *int      `json:"finalRating,omitempty"`
+	Phase          *string   `json:"phase,omitempty"`
 	SelfAssessment *string   `json:"selfAssessment,omitempty"`
 	RhAssessment   *string   `json:"rhAssessment,omitempty"`
 }
@@ -59,16 +65,34 @@ type FinalizeEvaluationRequest struct {
 
 // CompetencyRatingDTO is the response DTO for a competency rating.
 type CompetencyRatingDTO struct {
-	CompetencyID uuid.UUID `json:"competencyId"`
-	Rating       int       `json:"rating"`
-	Comments     string    `json:"comments,omitempty"`
+	CompetencyID   uuid.UUID `json:"competencyId"`
+	Rating         int       `json:"rating"`
+	Comments       string    `json:"comments,omitempty"`
+	ManagerComment string    `json:"managerComment,omitempty"`
 }
 
 // GoalRatingDTO is the response DTO for a goal rating.
+// FinalProgress is the direct closing value in the goal's own unit.
+// AvanceProgress/CierreProgress are the per-phase snapshots (nil when absent).
+// FinalRating is only set when an explicit rating was provided.
 type GoalRatingDTO struct {
-	GoalID        uuid.UUID `json:"goalId"`
-	FinalRating   *int      `json:"finalRating,omitempty"`
-	FinalComments string    `json:"finalComments,omitempty"`
+	GoalID         uuid.UUID `json:"goalId"`
+	FinalRating    *int      `json:"finalRating,omitempty"`
+	FinalProgress  *float64  `json:"finalProgress,omitempty"`
+	AvanceProgress *float64  `json:"avanceProgress,omitempty"`
+	CierreProgress *float64  `json:"cierreProgress,omitempty"`
+	FinalComments  string    `json:"finalComments,omitempty"`
+	RhAssessment   string    `json:"rhAssessment,omitempty"`
+	ManagerComment string    `json:"managerComment,omitempty"`
+	// F2: row-level metadata shared by self/rh/manager comments
+	// (evaluation_goals has no per-comment author column; AuthorName is
+	// best-effort and empty when unknown — UI falls back to generic label).
+	AuthorName string     `json:"authorName,omitempty"`
+	CreatedAt  *time.Time `json:"createdAt,omitempty"`
+	UpdatedAt  *time.Time `json:"updatedAt,omitempty"`
+	// Aliases kept for compat with web store (managerCommentAuthor/CreatedAt).
+	ManagerCommentAuthor    string     `json:"managerCommentAuthor,omitempty"`
+	ManagerCommentCreatedAt *time.Time `json:"managerCommentCreatedAt,omitempty"`
 }
 
 // EvaluationListItem is the lightweight DTO for evaluation list responses.
@@ -83,17 +107,17 @@ type EvaluationListItem struct {
 
 // EvaluationDetailResponse is the full DTO for a single evaluation.
 type EvaluationDetailResponse struct {
-	ID                      uuid.UUID             `json:"id"`
-	EmployeeID              uuid.UUID             `json:"employeeId"`
-	CycleID                 uuid.UUID             `json:"cycleId"`
-	State                   string                `json:"state"`
-	SelfEvalCompletedAt     *time.Time            `json:"selfEvaluationCompletedAt,omitempty"`
-	RHEvalCompletedAt       *time.Time            `json:"rhEvaluationCompletedAt,omitempty"`
-	CompetencyRatings       []CompetencyRatingDTO `json:"competencies"`
-	GoalRatings             []GoalRatingDTO       `json:"goals"`
-	Version                 int                   `json:"version"`
-	CreatedAt               time.Time             `json:"createdAt"`
-	UpdatedAt               time.Time             `json:"updatedAt"`
+	ID                  uuid.UUID             `json:"id"`
+	EmployeeID          uuid.UUID             `json:"employeeId"`
+	CycleID             uuid.UUID             `json:"cycleId"`
+	State               string                `json:"state"`
+	SelfEvalCompletedAt *time.Time            `json:"selfEvaluationCompletedAt,omitempty"`
+	RHEvalCompletedAt   *time.Time            `json:"rhEvaluationCompletedAt,omitempty"`
+	CompetencyRatings   []CompetencyRatingDTO `json:"competencies"`
+	GoalRatings         []GoalRatingDTO       `json:"goals"`
+	Version             int                   `json:"version"`
+	CreatedAt           time.Time             `json:"createdAt"`
+	UpdatedAt           time.Time             `json:"updatedAt"`
 }
 
 // EvaluationListResponse is the paginated list response.
@@ -137,11 +161,16 @@ type PaginationMeta struct {
 // --- Employee Competency Ratings DTOs ---
 
 // EmployeeCompetencyRatingDTO is a single competency rating in the employee response.
+// SelfComment/RhComment carry the per-source comments; Comments is kept for
+// backward compatibility (legacy single-comment readers).
 type EmployeeCompetencyRatingDTO struct {
 	CompetencyID    uuid.UUID `json:"competencyId"`
 	SelfRating      *int      `json:"selfRating,omitempty"`
 	RhRating        *int      `json:"rhRating,omitempty"`
 	Comments        *string   `json:"comments,omitempty"`
+	SelfComment     *string   `json:"selfComment,omitempty"`
+	RhComment       *string   `json:"rhComment,omitempty"`
+	ManagerComment  *string   `json:"managerComment,omitempty"`
 	AcceptanceLevel *int      `json:"acceptanceLevel,omitempty"`
 }
 
@@ -166,20 +195,20 @@ type NineBoxMatrixResponse struct {
 
 // NineBoxEntryDTO is the response DTO for a matrix entry (tier-based).
 type NineBoxEntryDTO struct {
-	ID                  uuid.UUID         `json:"id"`
-	EvaluateeID         uuid.UUID         `json:"evaluateeId"`
-	EmployeeName        string            `json:"employeeName"`
-	ProfileID           uuid.UUID         `json:"profileId"`
-	PerformanceTier     int               `json:"performanceTier"` // was performanceScore
-	PotentialTier       int               `json:"potentialTier"`   // was potentialScore
-	Quadrant            int               `json:"quadrant"`
-	QuadrantLabel       string            `json:"quadrantLabel"`
-	QuadrantColor       string            `json:"quadrantColor"` // now uses colorHex from quadrant
-	Comments            string            `json:"comments,omitempty"`
-	Version             int               `json:"version"`
-	GoalProgressPercent float64           `json:"goalProgressPercent,omitempty"`
-	SelfRating          *float64          `json:"selfRating,omitempty"`
-	HrRating            *float64          `json:"hrRating,omitempty"`
+	ID                  uuid.UUID          `json:"id"`
+	EvaluateeID         uuid.UUID          `json:"evaluateeId"`
+	EmployeeName        string             `json:"employeeName"`
+	ProfileID           uuid.UUID          `json:"profileId"`
+	PerformanceTier     int                `json:"performanceTier"` // was performanceScore
+	PotentialTier       int                `json:"potentialTier"`   // was potentialScore
+	Quadrant            int                `json:"quadrant"`
+	QuadrantLabel       string             `json:"quadrantLabel"`
+	QuadrantColor       string             `json:"quadrantColor"` // now uses colorHex from quadrant
+	Comments            string             `json:"comments,omitempty"`
+	Version             int                `json:"version"`
+	GoalProgressPercent float64            `json:"goalProgressPercent,omitempty"`
+	SelfRating          *float64           `json:"selfRating,omitempty"`
+	HrRating            *float64           `json:"hrRating,omitempty"`
 	Weights             *NineBoxWeightsDTO `json:"weights,omitempty"`
 }
 
@@ -195,7 +224,7 @@ type NineBoxEntryInput struct {
 	EvaluateeID      uuid.UUID `json:"evaluateeId" validate:"required"`
 	PerformanceScore int       `json:"performanceScore" validate:"min=1,max=9"`
 	PotentialScore   int       `json:"potentialScore" validate:"min=1,max=9"`
-	Comments        *string   `json:"comments,omitempty"`
+	Comments         *string   `json:"comments,omitempty"`
 }
 
 // NineBoxBatchRequest is the request DTO for batch submission.

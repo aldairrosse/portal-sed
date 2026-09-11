@@ -56,9 +56,9 @@ func (s *orgTreeService) GetTrees(ctx context.Context, treeType string) (*org.Or
 	}
 	for i, r := range rows {
 		resp.Data[i] = org.OrgTreeResponse{
-			ID:   r.ID.String(),
-			Name: r.Name,
-			Type: r.Type,
+			ID:        r.ID.String(),
+			Name:      r.Name,
+			Type:      r.Type,
 			NodeCount: r.NodeCount,
 		}
 	}
@@ -78,9 +78,9 @@ func (s *orgTreeService) GetTree(ctx context.Context, treeID string) (*org.OrgTr
 
 	return &org.OrgTreeDetailResponse{
 		Data: org.OrgTreeResponse{
-			ID:   row.ID.String(),
-			Name: row.Name,
-			Type: row.Type,
+			ID:        row.ID.String(),
+			Name:      row.Name,
+			Type:      row.Type,
 			NodeCount: row.NodeCount,
 		},
 	}, nil

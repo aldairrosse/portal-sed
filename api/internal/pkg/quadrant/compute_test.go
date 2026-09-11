@@ -174,10 +174,10 @@ func TestComputePotentialTier_BothProvided(t *testing.T) {
 
 func TestComputePotentialTier_Boundaries(t *testing.T) {
 	tests := []struct {
-		name      string
-		self      *float64
-		hr        *float64
-		want      int
+		name string
+		self *float64
+		hr   *float64
+		want int
 	}{
 		{"both 1.0 → tier 1", ptr(1.0), ptr(1.0), 1},
 		{"both 2.33 → tier 1", ptr(2.33), ptr(2.33), 1},
@@ -248,6 +248,7 @@ func TestComputeWeightedPotentialTier_RHWeighted(t *testing.T) {
 	// 5*0.2 + 3*0.8 = 1.0 + 2.4 = 3.4 → tier 2 (≤ 3.66)
 	got := quadrant.ComputeWeightedPotentialTier(5, 3, 0.2, 0.8)
 	assert.Equal(t, 2, got, "weighted avg 3.4 → tier 2")
+	assert.Equal(t, 5, quadrant.ComputeQuadrantFromTiers(2, got), "perf 2 + pot 2 → quadrant 5")
 }
 
 // --- NEW: ComputeQuadrantFromTiers ---

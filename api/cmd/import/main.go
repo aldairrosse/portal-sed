@@ -17,8 +17,8 @@ import (
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
-	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/google/uuid"
+	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/joho/godotenv"
 
 	"github.com/sed-evaluacion-desempeno/api/internal/seed"
@@ -36,8 +36,12 @@ var ssoUserNotFoundRe = regexp.MustCompile(`Usuario\s+\\?"(-?\d+)\\"?\s+no\s+enc
 
 type reasons map[string]int
 
-func (r reasons) add(key string)      { r[key]++ }
-func (r reasons) merge(other reasons) { for k, v := range other { r[k] += v } }
+func (r reasons) add(key string) { r[key]++ }
+func (r reasons) merge(other reasons) {
+	for k, v := range other {
+		r[k] += v
+	}
+}
 func (r reasons) String() string {
 	if len(r) == 0 {
 		return "(none)"
@@ -372,8 +376,8 @@ func passEmployees(
 	pr := passResult{label: "employees", sourceTotal: srcTotal, reasons: make(reasons)}
 	empIDMap := make(map[string]uuid.UUID)
 	managerMap := make(map[string]*string)
-	seenEmails := make(map[string]bool)    // tracks original emails already used
-	emailAlias := make(map[string]string)  // original → aliased (for duplicates)
+	seenEmails := make(map[string]bool)   // tracks original emails already used
+	emailAlias := make(map[string]string) // original → aliased (for duplicates)
 	logged := 0
 
 	rows, err := extDB.QueryContext(ctx, `

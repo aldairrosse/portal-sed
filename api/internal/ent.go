@@ -28,6 +28,7 @@ import (
 	"github.com/sed-evaluacion-desempeno/api/internal/goal"
 	"github.com/sed-evaluacion-desempeno/api/internal/goalassignment"
 	"github.com/sed-evaluacion-desempeno/api/internal/goalcategory"
+	"github.com/sed-evaluacion-desempeno/api/internal/goalcomment"
 	"github.com/sed-evaluacion-desempeno/api/internal/goalkpilink"
 	"github.com/sed-evaluacion-desempeno/api/internal/goaltemplate"
 	"github.com/sed-evaluacion-desempeno/api/internal/goaltemplatekpilink"
@@ -122,6 +123,7 @@ func checkColumn(t, c string) error {
 			goal.Table:                      goal.ValidColumn,
 			goalassignment.Table:            goalassignment.ValidColumn,
 			goalcategory.Table:              goalcategory.ValidColumn,
+			goalcomment.Table:               goalcomment.ValidColumn,
 			goalkpilink.Table:               goalkpilink.ValidColumn,
 			goaltemplate.Table:              goaltemplate.ValidColumn,
 			goaltemplatekpilink.Table:       goaltemplatekpilink.ValidColumn,

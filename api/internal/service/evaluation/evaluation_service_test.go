@@ -14,6 +14,7 @@ import (
 	dto "github.com/sed-evaluacion-desempeno/api/internal/dto/evaluation"
 	pkgerrors "github.com/sed-evaluacion-desempeno/api/internal/pkg/errors"
 	repo "github.com/sed-evaluacion-desempeno/api/internal/repository/evaluation"
+	orgrepo "github.com/sed-evaluacion-desempeno/api/internal/repository/org"
 	svc "github.com/sed-evaluacion-desempeno/api/internal/service/evaluation"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -21,21 +22,34 @@ import (
 
 func ptr[T any](v T) *T { return &v }
 
+// stubEmployeeWithProfile stubs EmployeeRepo.GetByID so service profile
+// resolution returns a real profileID (employeeColumns lives in
+// authorize_rh_test.go, same package).
+func stubEmployeeWithProfile(mock sqlmock.Sqlmock, empID, profileID uuid.UUID) {
+	now := time.Now()
+	mock.ExpectQuery("FROM employees WHERE id").
+		WithArgs(empID).
+		WillReturnRows(sqlmock.NewRows(employeeColumns).AddRow(
+			empID, now, now, "Ana", "Perez", "ana@example.com",
+			"E-001", true, uuid.New(), nil, profileID, "vendedor",
+		))
+}
+
 // ---------- Mock Repositories ----------
 
 type mockEvalRepo struct {
-	db        *sql.DB
-	sqlmock   sqlmock.Sqlmock
-	row       *repo.EvaluationRow
-	detailRow *repo.EvaluationRow
-	comps     []*internal.EvaluationCompetency
-	goals     []*internal.EvaluationGoal
-	summary   map[string]int64
-	submitErr error
+	db          *sql.DB
+	sqlmock     sqlmock.Sqlmock
+	row         *repo.EvaluationRow
+	detailRow   *repo.EvaluationRow
+	comps       []*internal.EvaluationCompetency
+	goals       []*internal.EvaluationGoal
+	summary     map[string]int64
+	submitErr   error
 	finalizeErr error
 	refreshErr  error
-	state     string
-	mu        sync.Mutex
+	state       string
+	mu          sync.Mutex
 }
 
 func (m *mockEvalRepo) GetByID(ctx context.Context, id uuid.UUID) (*repo.EvaluationRow, error) {
@@ -64,9 +78,12 @@ func (m *mockEvalRepo) LockEvalForUpdate(ctx context.Context, tx *sql.Tx, evalID
 	return &r, nil
 }
 
-func (m *mockEvalRepo) SubmitEval(ctx context.Context, tx *sql.Tx, evalID uuid.UUID, comps []repo.CompetencyUpsert, goals []repo.GoalCommentUpsert, newState string, setSelfCompleted, setRHCompleted bool) error {
+func (m *mockEvalRepo) SubmitEval(ctx context.Context, tx *sql.Tx, evalID uuid.UUID, profileID uuid.UUID, comps []repo.CompetencyUpsert, goals []repo.GoalCommentUpsert, newState string, setSelfCompleted, setRHCompleted bool) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
+	if profileID == uuid.Nil {
+		return repo.ErrEvaluationProfileMissing
+	}
 	m.state = newState
 	if setSelfCompleted {
 		now := time.Now()
@@ -135,6 +152,28 @@ func (m *mockEvalRepo) ListCompetencyResults(ctx context.Context, cycleID uuid.U
 
 func (m *mockEvalRepo) CountCompetencyResults(ctx context.Context, cycleID uuid.UUID, phase string, query string, managerID *uuid.UUID) (int, error) {
 	return 0, nil
+}
+
+func (m *mockEvalRepo) FindByEmployeeCycle(ctx context.Context, employeeID, cycleID uuid.UUID) (*repo.EvaluationRow, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.row == nil {
+		return nil, repo.ErrEvaluationNotFound
+	}
+	r := *m.row
+	r.State = m.state
+	return &r, nil
+}
+
+func (m *mockEvalRepo) EnsureEvaluation(ctx context.Context, employeeID, cycleID uuid.UUID, phase string, actorID uuid.UUID) (*repo.EvaluationRow, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.row == nil {
+		return nil, repo.ErrEvaluationNotFound
+	}
+	r := *m.row
+	r.State = m.state
+	return &r, nil
 }
 
 // ---------- Mock Cycle Phase Checker ----------
@@ -405,15 +444,18 @@ func TestEvaluationService_SubmitSelfEvaluation_Success(t *testing.T) {
 	cycleID := uuid.New()
 	evalID := uuid.New()
 	compID := uuid.New()
+	empID := uuid.New()
+	profileID := uuid.New()
 	now := time.Now()
 
 	row := &repo.EvaluationRow{
-		ID:        evalID,
-		CycleID:   cycleID,
-		State:     "pendiente_evaluacion_final",
-		Version:   1,
-		CreatedAt: now,
-		UpdatedAt: now,
+		ID:         evalID,
+		EmployeeID: empID,
+		CycleID:    cycleID,
+		State:      "pendiente_evaluacion_final",
+		Version:    1,
+		CreatedAt:  now,
+		UpdatedAt:  now,
 	}
 
 	mockRepo := &mockEvalRepo{
@@ -429,11 +471,12 @@ func TestEvaluationService_SubmitSelfEvaluation_Success(t *testing.T) {
 	}
 
 	mock.ExpectBegin()
+	stubEmployeeWithProfile(mock, empID, profileID)
 	mock.ExpectCommit()
 
 	checker := &mockCycleChecker{phase: "cierre"}
 	idem := &mockIdemCache{entries: make(map[string]*svc.IdempotencyCacheEntry)}
-	service := svc.NewEvaluationService(mockRepo, nil, nil, checker, idem, nil, nil)
+	service := svc.NewEvaluationService(mockRepo, nil, nil, checker, idem, orgrepo.NewEmployeeRepo(nil, db), nil)
 
 	req := dto.SelfEvaluationRequest{
 		Competencies: []dto.CompetencyRatingInput{
@@ -490,15 +533,18 @@ func TestEvaluationService_SubmitRHEvaluation_Success(t *testing.T) {
 	cycleID := uuid.New()
 	evalID := uuid.New()
 	compID := uuid.New()
+	empID := uuid.New()
+	profileID := uuid.New()
 	now := time.Now()
 
 	row := &repo.EvaluationRow{
-		ID:        evalID,
-		CycleID:   cycleID,
-		State:     "en_progreso",
-		Version:   2,
-		CreatedAt: now,
-		UpdatedAt: now,
+		ID:         evalID,
+		EmployeeID: empID,
+		CycleID:    cycleID,
+		State:      "en_progreso",
+		Version:    2,
+		CreatedAt:  now,
+		UpdatedAt:  now,
 	}
 
 	mockRepo := &mockEvalRepo{
@@ -514,11 +560,12 @@ func TestEvaluationService_SubmitRHEvaluation_Success(t *testing.T) {
 	}
 
 	mock.ExpectBegin()
+	stubEmployeeWithProfile(mock, empID, profileID)
 	mock.ExpectCommit()
 
 	checker := &mockCycleChecker{phase: "cierre"}
 	idem := &mockIdemCache{entries: make(map[string]*svc.IdempotencyCacheEntry)}
-	service := svc.NewEvaluationService(mockRepo, nil, nil, checker, idem, nil, nil)
+	service := svc.NewEvaluationService(mockRepo, nil, nil, checker, idem, orgrepo.NewEmployeeRepo(nil, db), nil)
 
 	req := dto.RHEvaluationRequest{
 		Competencies: []dto.CompetencyRatingInput{
@@ -625,15 +672,18 @@ func TestEvaluationService_ConcurrentSubmission(t *testing.T) {
 	evalID := uuid.New()
 	cycleID := uuid.New()
 	compID := uuid.New()
+	empID := uuid.New()
+	profileID := uuid.New()
 	now := time.Now()
 
 	row := &repo.EvaluationRow{
-		ID:        evalID,
-		CycleID:   cycleID,
-		State:     "pendiente_evaluacion_final",
-		Version:   1,
-		CreatedAt: now,
-		UpdatedAt: now,
+		ID:         evalID,
+		EmployeeID: empID,
+		CycleID:    cycleID,
+		State:      "pendiente_evaluacion_final",
+		Version:    1,
+		CreatedAt:  now,
+		UpdatedAt:  now,
 	}
 
 	mockRepo := &mockEvalRepo{
@@ -650,12 +700,13 @@ func TestEvaluationService_ConcurrentSubmission(t *testing.T) {
 
 	checker := &mockCycleChecker{phase: "cierre"}
 	idem := &mockIdemCache{entries: make(map[string]*svc.IdempotencyCacheEntry)}
-	service := svc.NewEvaluationService(mockRepo, nil, nil, checker, idem, nil, nil)
+	service := svc.NewEvaluationService(mockRepo, nil, nil, checker, idem, orgrepo.NewEmployeeRepo(nil, db), nil)
 
 	const goroutines = 100
 	mock.MatchExpectationsInOrder(false)
 	for i := 0; i < goroutines; i++ {
 		mock.ExpectBegin()
+		stubEmployeeWithProfile(mock, empID, profileID)
 		mock.ExpectCommit()
 	}
 
@@ -1067,7 +1118,7 @@ func (m *mockHasMoreEvalRepo) BeginTx(ctx context.Context, opts *sql.TxOptions) 
 func (m *mockHasMoreEvalRepo) LockEvalForUpdate(ctx context.Context, tx *sql.Tx, evalID uuid.UUID) (*repo.EvaluationRow, error) {
 	return m.row, nil
 }
-func (m *mockHasMoreEvalRepo) SubmitEval(ctx context.Context, tx *sql.Tx, evalID uuid.UUID, comps []repo.CompetencyUpsert, goals []repo.GoalCommentUpsert, newState string, setSelfCompleted, setRHCompleted bool) error {
+func (m *mockHasMoreEvalRepo) SubmitEval(ctx context.Context, tx *sql.Tx, evalID uuid.UUID, profileID uuid.UUID, comps []repo.CompetencyUpsert, goals []repo.GoalCommentUpsert, newState string, setSelfCompleted, setRHCompleted bool) error {
 	return nil
 }
 func (m *mockHasMoreEvalRepo) GetDetail(ctx context.Context, id uuid.UUID) (*repo.EvaluationRow, []*internal.EvaluationCompetency, []*internal.EvaluationGoal, error) {
@@ -1093,6 +1144,116 @@ func (m *mockHasMoreEvalRepo) ListCompetencyResults(ctx context.Context, cycleID
 }
 func (m *mockHasMoreEvalRepo) CountCompetencyResults(ctx context.Context, cycleID uuid.UUID, phase string, query string, managerID *uuid.UUID) (int, error) {
 	return m.totalCount, nil
+}
+
+func (m *mockHasMoreEvalRepo) FindByEmployeeCycle(ctx context.Context, employeeID, cycleID uuid.UUID) (*repo.EvaluationRow, error) {
+	return m.row, nil
+}
+
+func (m *mockHasMoreEvalRepo) EnsureEvaluation(ctx context.Context, employeeID, cycleID uuid.UUID, phase string, actorID uuid.UUID) (*repo.EvaluationRow, error) {
+	return m.row, nil
+}
+
+func TestEvaluationService_UpdateCompetencyWritePhase(t *testing.T) {
+	cases := []struct {
+		name     string
+		phase    string
+		wantErr  bool
+		wantCode pkgerrors.DomainCode
+	}{
+		{name: "avance OK", phase: "avance"},
+		{name: "medio-anio OK", phase: "medio-anio"},
+		{name: "cierre OK", phase: "cierre"},
+		{name: "asignacion 409", phase: "asignacion", wantErr: true, wantCode: pkgerrors.PhaseNotAdvanceable},
+	}
+
+	for _, tc := range cases {
+		t.Run("self/"+tc.name, func(t *testing.T) {
+			db, mock, err := sqlmock.New()
+			require.NoError(t, err)
+			defer db.Close()
+
+			evalID := uuid.New()
+			cycleID := uuid.New()
+			compID := uuid.New()
+			empID := uuid.New()
+			profileID := uuid.New()
+			now := time.Now()
+			row := &repo.EvaluationRow{
+				ID: evalID, EmployeeID: empID, CycleID: cycleID,
+				State: "en_progreso", Version: 3,
+				CreatedAt: now, UpdatedAt: now,
+			}
+			mockRepo := &mockEvalRepo{
+				db: db, sqlmock: mock, row: row, detailRow: row,
+				comps: []*internal.EvaluationCompetency{{CompetencyID: compID, Rating: 4}},
+				goals: []*internal.EvaluationGoal{},
+				state: "en_progreso",
+			}
+			if !tc.wantErr {
+				mock.ExpectBegin()
+				stubEmployeeWithProfile(mock, empID, profileID)
+				mock.ExpectCommit()
+			}
+			service := svc.NewEvaluationService(mockRepo, nil, nil, &mockCycleChecker{phase: tc.phase}, nil, orgrepo.NewEmployeeRepo(nil, db), nil)
+			req := dto.SelfEvaluationRequest{
+				Competencies: []dto.CompetencyRatingInput{{CompetencyID: compID, Rating: 4}},
+			}
+			resp, err := service.UpdateSelfEvaluation(context.Background(), evalID, req, 3)
+			if tc.wantErr {
+				require.Error(t, err)
+				var de *pkgerrors.DomainError
+				require.True(t, pkgerrors.AsDomainError(err, &de))
+				assert.Equal(t, tc.wantCode, de.Code)
+				return
+			}
+			require.NoError(t, err)
+			assert.Equal(t, evalID, resp.ID)
+		})
+
+		t.Run("rh/"+tc.name, func(t *testing.T) {
+			db, mock, err := sqlmock.New()
+			require.NoError(t, err)
+			defer db.Close()
+
+			evalID := uuid.New()
+			cycleID := uuid.New()
+			compID := uuid.New()
+			empID := uuid.New()
+			profileID := uuid.New()
+			now := time.Now()
+			row := &repo.EvaluationRow{
+				ID: evalID, EmployeeID: empID, CycleID: cycleID,
+				State: "en_progreso", Version: 3,
+				CreatedAt: now, UpdatedAt: now,
+			}
+			mockRepo := &mockEvalRepo{
+				db: db, sqlmock: mock, row: row, detailRow: row,
+				comps: []*internal.EvaluationCompetency{{CompetencyID: compID, Rating: 5}},
+				goals: []*internal.EvaluationGoal{},
+				state: "en_progreso",
+			}
+			if !tc.wantErr {
+				mock.ExpectBegin()
+				stubEmployeeWithProfile(mock, empID, profileID)
+				mock.ExpectCommit()
+			}
+			service := svc.NewEvaluationService(mockRepo, nil, nil, &mockCycleChecker{phase: tc.phase}, nil, orgrepo.NewEmployeeRepo(nil, db), nil)
+			req := dto.RHEvaluationRequest{
+				Competencies: []dto.CompetencyRatingInput{{CompetencyID: compID, Rating: 5}},
+			}
+			resp, err := service.UpdateRHEvaluation(context.Background(), evalID, req, 3)
+			if tc.wantErr {
+				require.Error(t, err)
+				var de *pkgerrors.DomainError
+				require.True(t, pkgerrors.AsDomainError(err, &de))
+				assert.Equal(t, tc.wantCode, de.Code)
+				return
+			}
+			require.NoError(t, err)
+			assert.Equal(t, evalID, resp.ID)
+		})
+	}
 }
 
 // ---------- Tests: DashboardService ----------

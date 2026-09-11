@@ -98,11 +98,11 @@ func TestEmployeeScore(t *testing.T) {
 
 func TestHierarchicalScore(t *testing.T) {
 	tests := []struct {
-		name         string
+		name          string
 		personalScore float64
-		pWeight      float64
-		pjWeight     float64
-		want         float64
+		pWeight       float64
+		pjWeight      float64
+		want          float64
 	}{
 		{name: "G+P=100 P=70 PJ=100 sin compartidas", personalScore: 80, pWeight: 70, pjWeight: 100, want: 56},
 		{name: "G+P=100 P fallback 100 cuando 0", personalScore: 80, pWeight: 0, pjWeight: 100, want: 80},

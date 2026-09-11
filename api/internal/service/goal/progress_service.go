@@ -2,6 +2,7 @@ package goal
 
 import (
 	"context"
+	"log"
 
 	"github.com/google/uuid"
 	dtogoal "github.com/sed-evaluacion-desempeno/api/internal/dto/goal"
@@ -14,23 +15,28 @@ type ProgressService struct {
 	goalRepo   GoalRepository
 	catRepo    CategoryRepository
 	phaseCheck *PhaseCheck
+	evalLookup EvaluationLookup
 }
 
 // NewProgressService creates a new ProgressService.
+// evalLookup may be nil (snapshot write is best-effort and skipped).
 func NewProgressService(
 	goalRepo GoalRepository,
 	catRepo CategoryRepository,
 	phaseCheck *PhaseCheck,
+	evalLookup EvaluationLookup,
 ) *ProgressService {
 	return &ProgressService{
 		goalRepo:   goalRepo,
 		catRepo:    catRepo,
 		phaseCheck: phaseCheck,
+		evalLookup: evalLookup,
 	}
 }
 
-// UpdateGoalProgress updates the currentValue of a goal.
-// Only allowed in the "avance" phase.
+// UpdateGoalProgress updates the currentValue of a goal and the snapshot of
+// the active phase (avance/medio-anio -> avance_progress, cierre -> cierre_progress).
+// Only allowed in "avance" (mid-year) and "cierre" (year-end) phases.
 func (s *ProgressService) UpdateGoalProgress(ctx context.Context, empID, goalID uuid.UUID, req dtogoal.UpdateProgressRequest) (*repogoal.GoalRow, error) {
 	if err := s.phaseCheck.CanUpdateProgress(ctx, empID.String()); err != nil {
 		return nil, err
@@ -60,7 +66,37 @@ func (s *ProgressService) UpdateGoalProgress(ctx context.Context, empID, goalID 
 		return nil, err
 	}
 
-	return s.goalRepo.UpdateGoalCurrentValue(ctx, goalID, req.CurrentValue, &empID)
+	// Sync core: goals.current_value always tracks the latest written value.
+	row, err := s.goalRepo.UpdateGoalCurrentValue(ctx, goalID, req.CurrentValue, &empID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Snapshot of the active phase (best-effort: never fails the progress write).
+	// Phase resolution: explicit request phase wins, then cycles.current_phase,
+	// then the evaluation's own phase. Missing evaluation skips with a log.
+	if s.evalLookup != nil {
+		phase := ""
+		if p, perr := s.phaseCheck.CurrentPhase(ctx, empID.String()); perr == nil {
+			phase = string(p)
+		}
+		if req.Phase != nil && *req.Phase != "" {
+			phase = *req.Phase
+		}
+		cycleID, cerr := s.phaseCheck.ActiveCycleID(ctx, empID.String())
+		if cerr != nil {
+			log.Printf("[progress] skip snapshot goal=%s: no active cycle: %v", goalID, cerr)
+		} else if evalRow, ferr := s.evalLookup.FindByEmployeeCycle(ctx, empID, cycleID); ferr != nil || evalRow == nil {
+			log.Printf("[progress] skip snapshot goal=%s: no evaluation for cycle=%s: %v", goalID, cycleID, ferr)
+		} else {
+			if phase == "" {
+				phase = evalRow.Phase
+			}
+			_ = s.goalRepo.UpsertProgressSnapshot(ctx, evalRow.ID, goalID, phase, req.CurrentValue)
+		}
+	}
+
+	return row, nil
 }
 
 // validateProgressValue validates a current_value update for a goal.

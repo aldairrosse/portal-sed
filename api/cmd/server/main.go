@@ -329,7 +329,7 @@ func main() {
 
 	catSvc := goalsvc.NewCategoryService(catRepo, pillarRepo, phaseCheck, assignRepo, cycleRepo)
 	goalSvc := goalsvc.NewGoalService(goalRepo, catRepo, kpiRepo, linkRepo, weightQ, phaseCheck)
-	progressSvc := goalsvc.NewProgressService(goalRepo, catRepo, phaseCheck)
+	progressSvc := goalsvc.NewProgressService(goalRepo, catRepo, phaseCheck, evalRepo)
 	kpiSvc := goalsvc.NewKPIService(kpiRepo, linkRepo, goalRepo, catRepo, phaseCheck, orgNodeRepo, orgTreeRepo, employeeRepo)
 	weightRepo := repoweight.NewRepo(client, db)
 	hierarchicalWeightSvc := weightsvc.NewService(weightRepo, cycleRepo, db)

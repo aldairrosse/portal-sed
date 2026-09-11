@@ -115,19 +115,19 @@ type MoveOrgNodeRequest struct {
 
 // EmployeeListItem is a light employee projection for lists.
 type EmployeeListItem struct {
-	ID             string `json:"id"`
-	FirstName      string `json:"firstName"`
-	LastName       string `json:"lastName"`
-	Email          string `json:"email"`
-	EmployeeNumber string `json:"employeeNumber"`
-	OrgNodeID      string `json:"orgNodeId"`
-	ManagerID      string `json:"managerId,omitempty"`
-	ProfileID      string `json:"profileId"`
-	ProfileName    string `json:"profileName"`
+	ID                 string `json:"id"`
+	FirstName          string `json:"firstName"`
+	LastName           string `json:"lastName"`
+	Email              string `json:"email"`
+	EmployeeNumber     string `json:"employeeNumber"`
+	OrgNodeID          string `json:"orgNodeId"`
+	ManagerID          string `json:"managerId,omitempty"`
+	ProfileID          string `json:"profileId"`
+	ProfileName        string `json:"profileName"`
 	ProfileDescription string `json:"profileDescription"`
-	JobTitle       string `json:"jobTitle"`
-	IsActive       bool   `json:"isActive"`
-	AssignmentStatus string `json:"assignmentStatus,omitempty"`
+	JobTitle           string `json:"jobTitle"`
+	IsActive           bool   `json:"isActive"`
+	AssignmentStatus   string `json:"assignmentStatus,omitempty"`
 }
 
 // EmployeeDetail is the detailed employee response with nested orgNode and manager.
@@ -159,10 +159,10 @@ type EmployeeDetail struct {
 type EmployeeListResponse struct {
 	Data []EmployeeListItem `json:"data"`
 	Meta struct {
-		HasMore bool   `json:"hasMore"`
-		Limit   int    `json:"limit"`
-		Offset  int    `json:"offset"`
-		Total   int    `json:"total"`
+		HasMore bool `json:"hasMore"`
+		Limit   int  `json:"limit"`
+		Offset  int  `json:"offset"`
+		Total   int  `json:"total"`
 	} `json:"meta"`
 }
 
@@ -204,5 +204,3 @@ type AncestorItem struct {
 	Depth    int    `json:"depth"`
 	Relation string `json:"relation"` // self | direct_manager | director | vp | ceo
 }
-
-

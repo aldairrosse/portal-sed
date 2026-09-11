@@ -21,15 +21,15 @@ func (PhaseTransition) Fields() []ent.Field {
 		field.UUID("id", uuid.UUID{}).
 			Default(uuid.New).
 			StorageKey("id"),
-	field.Enum("from_phase").
-		// Canonical only: asignacion, avance, cierre ("medio-anio" read alias of avance, never persisted).
-		Values("asignacion", "avance", "cierre").
+		field.Enum("from_phase").
+			// Canonical only: asignacion, avance, cierre ("medio-anio" read alias of avance, never persisted).
+			Values("asignacion", "avance", "cierre").
 			SchemaType(map[string]string{
 				dialect.Postgres: "phase",
 			}),
-	field.Enum("to_phase").
-		// Canonical only: asignacion, avance, cierre ("medio-anio" read alias of avance, never persisted).
-		Values("asignacion", "avance", "cierre").
+		field.Enum("to_phase").
+			// Canonical only: asignacion, avance, cierre ("medio-anio" read alias of avance, never persisted).
+			Values("asignacion", "avance", "cierre").
 			SchemaType(map[string]string{
 				dialect.Postgres: "phase",
 			}),

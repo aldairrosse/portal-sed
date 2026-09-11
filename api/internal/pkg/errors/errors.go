@@ -11,19 +11,19 @@ import (
 type DomainCode string
 
 const (
-	CycleNotFound        DomainCode = "CYCLE_NOT_FOUND"
-	InvalidTransition    DomainCode = "INVALID_TRANSITION"
-	CycleAlreadyActive   DomainCode = "CYCLE_ALREADY_ACTIVE"
-	PhaseNotAdvanceable  DomainCode = "PHASE_NOT_ADVANCEABLE"
-	ConcurrentUpdate     DomainCode = "CONCURRENT_UPDATE"
+	CycleNotFound          DomainCode = "CYCLE_NOT_FOUND"
+	InvalidTransition      DomainCode = "INVALID_TRANSITION"
+	CycleAlreadyActive     DomainCode = "CYCLE_ALREADY_ACTIVE"
+	PhaseNotAdvanceable    DomainCode = "PHASE_NOT_ADVANCEABLE"
+	ConcurrentUpdate       DomainCode = "CONCURRENT_UPDATE"
 	IdempotencyKeyConflict DomainCode = "IDEMPOTENCY_KEY_CONFLICT"
-	RateLimitExceeded    DomainCode = "RATE_LIMIT_EXCEEDED"
-	InvalidRequest       DomainCode = "INVALID_REQUEST"
-	MissingIfMatch       DomainCode = "MISSING_IF_MATCH"
-	InvalidIfMatch       DomainCode = "INVALID_IF_MATCH"
-	RequestTimeout       DomainCode = "REQUEST_TIMEOUT"
-	OTPRequired          DomainCode = "OTP_REQUIRED"
-	NotAuthenticated     DomainCode = "NOT_AUTHENTICATED"
+	RateLimitExceeded      DomainCode = "RATE_LIMIT_EXCEEDED"
+	InvalidRequest         DomainCode = "INVALID_REQUEST"
+	MissingIfMatch         DomainCode = "MISSING_IF_MATCH"
+	InvalidIfMatch         DomainCode = "INVALID_IF_MATCH"
+	RequestTimeout         DomainCode = "REQUEST_TIMEOUT"
+	OTPRequired            DomainCode = "OTP_REQUIRED"
+	NotAuthenticated       DomainCode = "NOT_AUTHENTICATED"
 
 	// Códigos de error de dominio específicos de objetivos
 	CategoryNotFound        DomainCode = "CATEGORY_NOT_FOUND"
@@ -51,10 +51,10 @@ const (
 	EmployeeNotFound     DomainCode = "EMPLOYEE_NOT_FOUND"
 	OrganizationNotFound DomainCode = "ORGANIZATION_NOT_FOUND"
 	NodeHasChildren      DomainCode = "NODE_HAS_CHILDREN"
-	InvalidParent       DomainCode = "INVALID_PARENT"
-	StaleVersion        DomainCode = "STALE_VERSION"
-	InvalidTreeType     DomainCode = "INVALID_TREE_TYPE"
-	ScopeNotFound       DomainCode = "SCOPE_NOT_FOUND"
+	InvalidParent        DomainCode = "INVALID_PARENT"
+	StaleVersion         DomainCode = "STALE_VERSION"
+	InvalidTreeType      DomainCode = "INVALID_TREE_TYPE"
+	ScopeNotFound        DomainCode = "SCOPE_NOT_FOUND"
 )
 
 // DomainError is the standard error type for domain-level errors.
@@ -89,17 +89,17 @@ func (e *DomainError) WithDetails(details ...string) *DomainError {
 
 // Sentinel error values for switch/type-assertion checks.
 var (
-	ErrCycleNotFound        = &DomainError{Code: CycleNotFound, Message: "El ciclo solicitado no fue encontrado."}
-	ErrInvalidTransition    = &DomainError{Code: InvalidTransition, Message: "La transición de fase solicitada no es válida desde la fase actual."}
-	ErrCycleAlreadyActive   = &DomainError{Code: CycleAlreadyActive, Message: "Ya existe un ciclo para esta organización y año."}
-	ErrPhaseNotAdvanceable  = &DomainError{Code: PhaseNotAdvanceable, Message: "La fase actual no se puede avanzar; condiciones no cumplidas."}
-	ErrConcurrentUpdate     = &DomainError{Code: ConcurrentUpdate, Message: "El recurso fue modificado por otra solicitud; reintente con la versión más reciente."}
-	ErrIdempotencyConflict  = &DomainError{Code: IdempotencyKeyConflict, Message: "La clave de idempotencia ya fue usada con un payload diferente."}
-	ErrRateLimitExceeded    = &DomainError{Code: RateLimitExceeded, Message: "Límite de velocidad excedido para esta organización."}
-	ErrInvalidRequest       = &DomainError{Code: InvalidRequest, Message: "La solicitud contiene parámetros inválidos."}
-	ErrMissingIfMatch       = &DomainError{Code: MissingIfMatch, Message: "El encabezado If-Match es requerido para esta operación."}
-	ErrInvalidIfMatch       = &DomainError{Code: InvalidIfMatch, Message: "El encabezado If-Match está malformado; se esperaba una versión entera."}
-	ErrRequestTimeout       = &DomainError{Code: RequestTimeout, Message: "La solicitud expiró antes de completarse."}
+	ErrCycleNotFound       = &DomainError{Code: CycleNotFound, Message: "El ciclo solicitado no fue encontrado."}
+	ErrInvalidTransition   = &DomainError{Code: InvalidTransition, Message: "La transición de fase solicitada no es válida desde la fase actual."}
+	ErrCycleAlreadyActive  = &DomainError{Code: CycleAlreadyActive, Message: "Ya existe un ciclo para esta organización y año."}
+	ErrPhaseNotAdvanceable = &DomainError{Code: PhaseNotAdvanceable, Message: "La fase actual no se puede avanzar; condiciones no cumplidas."}
+	ErrConcurrentUpdate    = &DomainError{Code: ConcurrentUpdate, Message: "El recurso fue modificado por otra solicitud; reintente con la versión más reciente."}
+	ErrIdempotencyConflict = &DomainError{Code: IdempotencyKeyConflict, Message: "La clave de idempotencia ya fue usada con un payload diferente."}
+	ErrRateLimitExceeded   = &DomainError{Code: RateLimitExceeded, Message: "Límite de velocidad excedido para esta organización."}
+	ErrInvalidRequest      = &DomainError{Code: InvalidRequest, Message: "La solicitud contiene parámetros inválidos."}
+	ErrMissingIfMatch      = &DomainError{Code: MissingIfMatch, Message: "El encabezado If-Match es requerido para esta operación."}
+	ErrInvalidIfMatch      = &DomainError{Code: InvalidIfMatch, Message: "El encabezado If-Match está malformado; se esperaba una versión entera."}
+	ErrRequestTimeout      = &DomainError{Code: RequestTimeout, Message: "La solicitud expiró antes de completarse."}
 
 	// Goal-specific sentinel errors
 	ErrCategoryNotFound        = &DomainError{Code: CategoryNotFound, Message: "La categoría solicitada no fue encontrada."}
@@ -117,9 +117,9 @@ var (
 	ErrConcurrentModification  = &DomainError{Code: ConcurrentModification, Message: "El recurso fue modificado por otra solicitud; reintente con la versión más reciente."}
 	ErrBatchSizeExceeded       = &DomainError{Code: BatchSizeExceeded, Message: "El tamaño del lote excede el máximo permitido (50)."}
 	ErrKpiLinkLimitExceeded    = &DomainError{Code: KpiLinkLimitExceeded, Message: "Un objetivo no puede tener más de 5 KPIs vinculados."}
-	ErrInvalidBaselineValue = &DomainError{Code: InvalidBaselineValue, Message: "El valor base debe ser mayor que el valor objetivo para objetivos descendentes."}
-	ErrInvalidDirection     = &DomainError{Code: InvalidDirection, Message: "La dirección debe ser 'ascendente' o 'descendente'."}
-	ErrInvalidQuadrant      = &DomainError{Code: InvalidQuadrant, Message: "El cuadrante debe ser un entero entre 1 y 9."}
+	ErrInvalidBaselineValue    = &DomainError{Code: InvalidBaselineValue, Message: "El valor base debe ser mayor que el valor objetivo para objetivos descendentes."}
+	ErrInvalidDirection        = &DomainError{Code: InvalidDirection, Message: "La dirección debe ser 'ascendente' o 'descendente'."}
+	ErrInvalidQuadrant         = &DomainError{Code: InvalidQuadrant, Message: "El cuadrante debe ser un entero entre 1 y 9."}
 
 	// Forbidden
 	ErrForbidden = &DomainError{Code: "FORBIDDEN", Message: "No tiene permiso para acceder a este recurso."}
@@ -130,10 +130,10 @@ var (
 	ErrEmployeeNotFound     = &DomainError{Code: EmployeeNotFound, Message: "El empleado no fue encontrado."}
 	ErrOrganizationNotFound = &DomainError{Code: OrganizationNotFound, Message: "La organización no fue encontrada."}
 	ErrNodeHasChildren      = &DomainError{Code: NodeHasChildren, Message: "No se puede eliminar un nodo con hijos."}
-	ErrInvalidParent    = &DomainError{Code: InvalidParent, Message: "Padre inválido: crearía un ciclo."}
-	ErrStaleVersion     = &DomainError{Code: StaleVersion, Message: "El bloqueo optimista falló; discordancia de versión."}
-	ErrInvalidTreeType  = &DomainError{Code: InvalidTreeType, Message: "El tipo de árbol debe ser 'corporate' o 'retail'."}
-	ErrScopeNotFound    = &DomainError{Code: ScopeNotFound, Message: "El ámbito del evaluador no fue encontrado."}
+	ErrInvalidParent        = &DomainError{Code: InvalidParent, Message: "Padre inválido: crearía un ciclo."}
+	ErrStaleVersion         = &DomainError{Code: StaleVersion, Message: "El bloqueo optimista falló; discordancia de versión."}
+	ErrInvalidTreeType      = &DomainError{Code: InvalidTreeType, Message: "El tipo de árbol debe ser 'corporate' o 'retail'."}
+	ErrScopeNotFound        = &DomainError{Code: ScopeNotFound, Message: "El ámbito del evaluador no fue encontrado."}
 )
 
 // HTTPStatus returns the HTTP status code for a domain error.
@@ -203,7 +203,7 @@ func AsDomainError(err error, target **DomainError) bool {
 
 // APIError is the JSON-serialisable error body returned to the client.
 type APIError struct {
-	Error   APIErrorBody `json:"error"`
+	Error APIErrorBody `json:"error"`
 }
 
 // APIErrorBody holds the fields of an API error response.

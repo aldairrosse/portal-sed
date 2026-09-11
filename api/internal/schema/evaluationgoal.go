@@ -30,6 +30,16 @@ func (EvaluationGoal) Fields() []ent.Field {
 			Nillable(),
 		field.Text("final_comments").
 			Optional(),
+		field.Text("rh_assessment").
+			Optional(),
+		field.Text("manager_comment").
+			Optional(),
+		field.Float("avance_progress").
+			Optional().
+			Nillable(),
+		field.Float("cierre_progress").
+			Optional().
+			Nillable(),
 		field.UUID("evaluation_id", uuid.UUID{}),
 		field.UUID("goal_id", uuid.UUID{}),
 	}

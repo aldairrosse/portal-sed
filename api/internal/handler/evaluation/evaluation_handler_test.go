@@ -14,9 +14,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/sed-evaluacion-desempeno/api/internal/auth"
 	dto "github.com/sed-evaluacion-desempeno/api/internal/dto/evaluation"
+	handler "github.com/sed-evaluacion-desempeno/api/internal/handler/evaluation"
 	pkgerrors "github.com/sed-evaluacion-desempeno/api/internal/pkg/errors"
 	repo "github.com/sed-evaluacion-desempeno/api/internal/repository/evaluation"
-	handler "github.com/sed-evaluacion-desempeno/api/internal/handler/evaluation"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -24,27 +24,28 @@ import (
 // ---------- Mock Services ----------
 
 type mockEvalService struct {
-	listResp       *dto.EvaluationListResponse
-	listErr        error
-	getResp        *dto.EvaluationDetailResponse
-	getErr         error
-	submitSelfResp *dto.EvaluationDetailResponse
-	submitSelfErr  error
-	updateSelfResp *dto.EvaluationDetailResponse
-	updateSelfErr  error
-	submitRHResp   *dto.EvaluationDetailResponse
-	submitRHErr    error
-	updateRHResp   *dto.EvaluationDetailResponse
-	updateRHErr    error
-	finalizeResp   *dto.EvaluationDetailResponse
-	finalizeErr    error
-	goalStateResp  *dto.EvaluationDetailResponse
-	goalStateErr   error
+	listResp         *dto.EvaluationListResponse
+	listErr          error
+	getResp          *dto.EvaluationDetailResponse
+	getErr           error
+	submitSelfResp   *dto.EvaluationDetailResponse
+	submitSelfErr    error
+	updateSelfResp   *dto.EvaluationDetailResponse
+	updateSelfErr    error
+	submitRHResp     *dto.EvaluationDetailResponse
+	submitRHErr      error
+	updateRHResp     *dto.EvaluationDetailResponse
+	updateRHErr      error
+	authorizeRHErr   error
+	finalizeResp     *dto.EvaluationDetailResponse
+	finalizeErr      error
+	goalStateResp    *dto.EvaluationDetailResponse
+	goalStateErr     error
 	goalCommentsResp *dto.EvaluationDetailResponse
 	goalCommentsErr  error
-	mu             sync.Mutex
-	callCount      map[string]int
-	delay          time.Duration
+	mu               sync.Mutex
+	callCount        map[string]int
+	delay            time.Duration
 }
 
 func (m *mockEvalService) recordCall(name string) {
@@ -58,6 +59,16 @@ func (m *mockEvalService) recordCall(name string) {
 
 func (m *mockEvalService) ResolveActiveCycleID(ctx context.Context, empID uuid.UUID) (uuid.UUID, error) {
 	m.recordCall("ResolveActiveCycleID")
+	return uuid.Nil, nil
+}
+
+func (m *mockEvalService) ResolveEvaluationID(ctx context.Context, employeeID, cycleID uuid.UUID) (uuid.UUID, error) {
+	m.recordCall("ResolveEvaluationID")
+	return uuid.Nil, nil
+}
+
+func (m *mockEvalService) EnsureEvaluation(ctx context.Context, employeeID, cycleID uuid.UUID, phase string) (uuid.UUID, error) {
+	m.recordCall("EnsureEvaluation")
 	return uuid.Nil, nil
 }
 
@@ -102,6 +113,11 @@ func (m *mockEvalService) SubmitRHEvaluation(ctx context.Context, evaluationID u
 func (m *mockEvalService) UpdateRHEvaluation(ctx context.Context, evaluationID uuid.UUID, req dto.RHEvaluationRequest, ifMatch int) (*dto.EvaluationDetailResponse, error) {
 	m.recordCall("UpdateRHEvaluation")
 	return m.updateRHResp, m.updateRHErr
+}
+
+func (m *mockEvalService) AuthorizeRHEvaluationWrite(ctx context.Context, evaluationID uuid.UUID) error {
+	m.recordCall("AuthorizeRHEvaluationWrite")
+	return m.authorizeRHErr
 }
 
 func (m *mockEvalService) FinalizeEvaluation(ctx context.Context, evaluationID uuid.UUID, req dto.FinalizeEvaluationRequest) (*dto.EvaluationDetailResponse, error) {
@@ -804,4 +820,66 @@ func TestSubmitSelfEvaluation_Concurrent(t *testing.T) {
 	assert.GreaterOrEqual(t, mockEval.callCount["SubmitSelfEvaluation"], 100, "all 100 goroutines should call the service")
 }
 
+// ---------- RHEvaluation AuthZ Tests ----------
 
+func TestSubmitRHEvaluation_AuthZ(t *testing.T) {
+	evalID := uuid.New()
+	compID := uuid.New()
+	unauthErr := pkgerrors.NewDomainError(pkgerrors.NotAuthenticated, "no authenticated session", nil)
+
+	tests := []struct {
+		name          string
+		role          auth.Role
+		authenticated bool
+		authorizeErr  error
+		wantStatus    int
+		wantSubmit    bool
+	}{
+		{name: "rh permitido", role: auth.RoleRH, authenticated: true, authorizeErr: nil, wantStatus: http.StatusOK, wantSubmit: true},
+		{name: "jefe asignado permitido", role: auth.RoleJefe, authenticated: true, authorizeErr: nil, wantStatus: http.StatusOK, wantSubmit: true},
+		{name: "jefe no asignado 403", role: auth.RoleJefe, authenticated: true, authorizeErr: pkgerrors.ErrForbidden, wantStatus: http.StatusForbidden, wantSubmit: false},
+		{name: "sin sesion 401", role: auth.RoleJefe, authenticated: false, authorizeErr: unauthErr, wantStatus: http.StatusUnauthorized, wantSubmit: false},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			mockEval := &mockEvalService{
+				submitRHResp:   &dto.EvaluationDetailResponse{ID: evalID, State: "en_progreso"},
+				authorizeRHErr: tc.authorizeErr,
+			}
+			h, r := setupHandler(t, mockEval, nil, nil)
+			r.Post("/evaluations/{id}/rh-evaluation", h.SubmitRHEvaluation)
+
+			reqBody, _ := json.Marshal(dto.RHEvaluationRequest{
+				Competencies: []dto.CompetencyRatingInput{{CompetencyID: compID, Rating: 5}},
+			})
+			var rec *httptest.ResponseRecorder
+			if tc.authenticated {
+				rec = doRequestAs(t, r, http.MethodPost, "/evaluations/"+evalID.String()+"/rh-evaluation", reqBody, "", tc.role)
+			} else {
+				rec = doRequest(t, r, http.MethodPost, "/evaluations/"+evalID.String()+"/rh-evaluation", reqBody, "")
+			}
+			assert.Equal(t, tc.wantStatus, rec.Code)
+			if tc.wantSubmit {
+				assert.Equal(t, 1, mockEval.callCount["SubmitRHEvaluation"])
+			} else {
+				assert.Equal(t, 0, mockEval.callCount["SubmitRHEvaluation"])
+			}
+		})
+	}
+}
+
+func TestUpdateRHEvaluation_ForbiddenWhenNotAssigned(t *testing.T) {
+	evalID := uuid.New()
+	compID := uuid.New()
+	mockEval := &mockEvalService{authorizeRHErr: pkgerrors.ErrForbidden}
+	h, r := setupHandler(t, mockEval, nil, nil)
+	r.Put("/evaluations/{id}/rh-evaluation", h.UpdateRHEvaluation)
+
+	reqBody, _ := json.Marshal(dto.RHEvaluationRequest{
+		Competencies: []dto.CompetencyRatingInput{{CompetencyID: compID, Rating: 3}},
+	})
+	rec := doRequestAs(t, r, http.MethodPut, "/evaluations/"+evalID.String()+"/rh-evaluation", reqBody, "", auth.RoleJefe)
+	assert.Equal(t, http.StatusForbidden, rec.Code)
+	assert.Equal(t, 0, mockEval.callCount["UpdateRHEvaluation"])
+}

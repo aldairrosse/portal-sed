@@ -21,19 +21,43 @@ func NewCompetencyRatingRepo(client *internal.Client) *CompetencyRatingRepo {
 }
 
 // BulkUpsert performs an atomic upsert of multiple competency ratings within a transaction.
-func (r *CompetencyRatingRepo) BulkUpsert(ctx context.Context, tx *sql.Tx, evalID uuid.UUID, comps []CompetencyUpsert) error {
+// Rows are per (evaluation_id, competency_id, source) — constraint
+// idx_eval_comp_eval_comp_source — so the caller passes source ("self" or "rh").
+// profileID must be the employee's evaluation profile (employees.profile_id);
+// uuid.Nil is rejected instead of inserting an FK-violating row.
+func (r *CompetencyRatingRepo) BulkUpsert(ctx context.Context, tx *sql.Tx, evalID uuid.UUID, profileID uuid.UUID, source string, comps []CompetencyUpsert) error {
 	if len(comps) == 0 {
 		return nil
+	}
+	if profileID == uuid.Nil {
+		return ErrEvaluationProfileMissing
+	}
+	if source != "self" && source != "rh" {
+		return ErrInvalidCompetencySource
 	}
 
 	now := time.Now()
 	for _, c := range comps {
+		// Jefe path: shared rating, manager_comment only; preserve RH comments.
+		if c.IsManager {
+			_, err := tx.ExecContext(ctx,
+				`INSERT INTO evaluation_competencies (id, created_at, updated_at, evaluation_id, competency_id, rating, comments, profile_id, source, manager_comment)
+				 VALUES ($1, $2, $3, $4, $5, $6, '', $7, $8, $9)
+				 ON CONFLICT (evaluation_id, competency_id, source) DO UPDATE
+				 SET rating = EXCLUDED.rating, manager_comment = EXCLUDED.manager_comment, updated_at = EXCLUDED.updated_at`,
+				uuid.New(), now, now, evalID, c.CompetencyID, c.Rating, profileID, source, c.ManagerComment,
+			)
+			if err != nil {
+				return err
+			}
+			continue
+		}
 		_, err := tx.ExecContext(ctx,
-			`INSERT INTO evaluation_competencies (id, created_at, updated_at, evaluation_id, competency_id, rating, comments, profile_id)
-			 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-			 ON CONFLICT (evaluation_id, competency_id) DO UPDATE
+			`INSERT INTO evaluation_competencies (id, created_at, updated_at, evaluation_id, competency_id, rating, comments, profile_id, source)
+			 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+			 ON CONFLICT (evaluation_id, competency_id, source) DO UPDATE
 			 SET rating = EXCLUDED.rating, comments = EXCLUDED.comments, updated_at = EXCLUDED.updated_at`,
-			uuid.New(), now, now, evalID, c.CompetencyID, c.Rating, c.Comments, uuid.Nil,
+			uuid.New(), now, now, evalID, c.CompetencyID, c.Rating, c.Comments, profileID, source,
 		)
 		if err != nil {
 			return err

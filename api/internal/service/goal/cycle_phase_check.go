@@ -5,8 +5,8 @@ import (
 
 	"github.com/google/uuid"
 	pkgerrors "github.com/sed-evaluacion-desempeno/api/internal/pkg/errors"
-	repoorg "github.com/sed-evaluacion-desempeno/api/internal/repository/org"
 	repocycle "github.com/sed-evaluacion-desempeno/api/internal/repository/cycle"
+	repoorg "github.com/sed-evaluacion-desempeno/api/internal/repository/org"
 )
 
 // cyclePhaseCheck implements PhaseChecker backed by the cycle repository.
@@ -58,4 +58,22 @@ func (c *cyclePhaseCheck) GetCurrentPhase(ctx context.Context, empID string) (Cy
 	}
 
 	return CyclePhase(row.CurrentPhase), nil
+}
+
+// ActiveCycleID resolves the employee's active cycle ID (cycles.current_phase
+// owner). Used by ProgressService to resolve evaluation_id for snapshots.
+func (c *cyclePhaseCheck) ActiveCycleID(ctx context.Context, empID string) (uuid.UUID, error) {
+	eid, err := uuid.Parse(empID)
+	if err != nil {
+		return uuid.Nil, pkgerrors.ErrInvalidRequest
+	}
+	emp, err := c.employeeRepo.GetByID(ctx, eid)
+	if err != nil {
+		return uuid.Nil, err
+	}
+	node, err := c.orgNodeRepo.GetByID(ctx, emp.OrgNodeID)
+	if err != nil {
+		return uuid.Nil, err
+	}
+	return c.cycleRepo.GetActiveCycleID(ctx, node.OrganizationID)
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/google/uuid"
 	pkgerrors "github.com/sed-evaluacion-desempeno/api/internal/pkg/errors"
 	"github.com/sed-evaluacion-desempeno/api/internal/pkg/state"
 )
@@ -45,6 +46,19 @@ func (pc *PhaseCheck) CurrentPhase(ctx context.Context, empID string) (CyclePhas
 	return pc.checker.GetCurrentPhase(ctx, empID)
 }
 
+// ActiveCycleID resolves the employee's active cycle ID when the underlying
+// checker supports it (cyclePhaseCheck). Otherwise returns an error and the
+// caller must skip the phase-snapshot write (best-effort).
+func (pc *PhaseCheck) ActiveCycleID(ctx context.Context, empID string) (uuid.UUID, error) {
+	type activeCycleProvider interface {
+		ActiveCycleID(ctx context.Context, empID string) (uuid.UUID, error)
+	}
+	if p, ok := pc.checker.(activeCycleProvider); ok {
+		return p.ActiveCycleID(ctx, empID)
+	}
+	return uuid.Nil, pkgerrors.ErrInvalidRequest
+}
+
 // isMidPhase reports whether p is the mid-year phase ("avance"/"medio-anio").
 // Delegates to state.IsMidYearPhase (single source of truth).
 func isMidPhase(p CyclePhase) bool {
@@ -55,6 +69,23 @@ func isMidPhase(p CyclePhase) bool {
 // Delegates to state.SamePhaseForWrite (single source of truth).
 func samePhaseForWrite(a, b CyclePhase) bool {
 	return state.SamePhaseForWrite(string(a), string(b))
+}
+
+// ParsePhaseParam normalizes a raw phase query param via state.NormalizePhase
+// and validates it against the canonical enum [asignacion, avance, cierre].
+// Empty means "default to the cycle's current phase".
+func ParsePhaseParam(raw string) (CyclePhase, error) {
+	if raw == "" {
+		return "", nil
+	}
+	n := state.NormalizePhase(raw)
+	switch n {
+	case state.PhaseAsignacion, state.PhaseAvance, state.PhaseCierre:
+		return CyclePhase(n), nil
+	default:
+		return "", pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
+			fmt.Sprintf("phase must be one of 'asignacion', 'avance', 'cierre'; got %q", raw), nil)
+	}
 }
 
 // Enforce checks that the current phase is one of the allowed phases.
@@ -88,8 +119,9 @@ func (pc *PhaseCheck) CanDeleteGoal(ctx context.Context, empID string) error {
 }
 
 // CanUpdateProgress checks if the current phase allows progress updates.
+// Allowed in avance (incl. medio-anio alias) and cierre; blocked in asignacion.
 func (pc *PhaseCheck) CanUpdateProgress(ctx context.Context, empID string) error {
-	return pc.Enforce(ctx, empID, PhaseAvance, PhaseMedioAnio)
+	return pc.Enforce(ctx, empID, PhaseAvance, PhaseMedioAnio, PhaseCierre)
 }
 
 // CanCreateCategory checks if the current phase allows category creation.

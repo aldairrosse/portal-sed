@@ -74,9 +74,28 @@ func (r *GoalRatingRepo) VerifyGoalsExist(ctx context.Context, evalID uuid.UUID,
 	return nil
 }
 
-// UpsertGoalState updates final_progress, self_assessment and rh_assessment for a goal.
-// Only non-nil fields are touched. final_progress maps to final_rating (int 1-5 or NULL);
-// self_assessment maps to final_comments. rh_assessment uses the new column.
+// SnapshotColumnForPhase maps a cycle/evaluation phase to its snapshot column.
+// "avance"/"medio-anio"/"medio_anio" -> avance_progress;
+// "cierre"/"fin-anio"/"fin_anio" -> cierre_progress.
+// Unknown or empty phase defaults to avance_progress (mid-year is the safe
+// default: avance writes never clobber the closing snapshot).
+func SnapshotColumnForPhase(phase string) string {
+	switch strings.ToLower(strings.TrimSpace(phase)) {
+	case "avance", "medio-anio", "medio_anio":
+		return "avance_progress"
+	case "cierre", "fin-anio", "fin_anio":
+		return "cierre_progress"
+	default:
+		return "avance_progress"
+	}
+}
+
+// UpsertGoalState writes the DIRECT goal value (in the goal's own unit:
+// porcentaje/moneda/numero/binario) into the active-phase snapshot column,
+// syncs goals.current_value = cierre_progress ?? avance_progress, and leaves
+// final_rating NULL unless an explicit rating is provided (no int(FP*5)).
+// final_comments/rh_assessment are only overwritten with non-empty values;
+// empty strings are treated as not-sent (F3: no destructive ” writes).
 func (r *GoalRatingRepo) UpsertGoalState(ctx context.Context, tx *sql.Tx, evalID uuid.UUID, input GoalStateUpsert) error {
 	now := time.Now()
 	// Ensure the goal row exists for this evaluation (idempotent insert).
@@ -95,30 +114,27 @@ func (r *GoalRatingRepo) UpsertGoalState(ctx context.Context, tx *sql.Tx, evalID
 	idx := 2
 
 	if input.FinalProgress != nil {
-		// Map progress 0.0-1.0 to final_rating 1-5; store NULL if zero.
-		if *input.FinalProgress == 0 {
-			setClauses = append(setClauses, "final_rating = NULL")
-		} else {
-			rating := int(*input.FinalProgress * 5)
-			if rating < 1 {
-				rating = 1
-			}
-			if rating > 5 {
-				rating = 5
-			}
-			setClauses = append(setClauses, "final_rating = $"+strconv.Itoa(idx))
-			args = append(args, rating)
-			idx++
-		}
+		// Direct value into the closing-phase snapshot (never int(FP*5)).
+		col := SnapshotColumnForPhase(input.Phase)
+		setClauses = append(setClauses, col+" = $"+strconv.Itoa(idx))
+		args = append(args, *input.FinalProgress)
+		idx++
 	}
-	if input.SelfAssessment != nil {
+	if input.SelfAssessment != nil && *input.SelfAssessment != "" {
 		setClauses = append(setClauses, "final_comments = $"+strconv.Itoa(idx))
 		args = append(args, *input.SelfAssessment)
 		idx++
 	}
-	if input.RhAssessment != nil {
+	if input.RhAssessment != nil && *input.RhAssessment != "" {
 		setClauses = append(setClauses, "rh_assessment = $"+strconv.Itoa(idx))
 		args = append(args, *input.RhAssessment)
+		idx++
+	}
+	// F3: final_rating is only written when explicitly provided (non-nil).
+	// Never NULL it implicitly: progress-only saves must preserve prior ratings/comments.
+	if input.FinalRating != nil {
+		setClauses = append(setClauses, "final_rating = $"+strconv.Itoa(idx))
+		args = append(args, *input.FinalRating)
 		idx++
 	}
 
@@ -127,6 +143,29 @@ func (r *GoalRatingRepo) UpsertGoalState(ctx context.Context, tx *sql.Tx, evalID
 		" WHERE evaluation_id = $" + strconv.Itoa(idx) + " AND goal_id = $" + strconv.Itoa(idx+1)
 	if _, err := tx.ExecContext(ctx, query, args...); err != nil {
 		return err
+	}
+	if input.FinalProgress != nil {
+		// Sync: goals.current_value = cierre_progress ?? avance_progress.
+		var avance, cierre sql.NullFloat64
+		if err := tx.QueryRowContext(ctx,
+			`SELECT avance_progress, cierre_progress FROM evaluation_goals WHERE evaluation_id = $1 AND goal_id = $2`,
+			evalID, input.GoalID,
+		).Scan(&avance, &cierre); err != nil {
+			return err
+		}
+		current := *input.FinalProgress
+		switch {
+		case cierre.Valid:
+			current = cierre.Float64
+		case avance.Valid:
+			current = avance.Float64
+		}
+		if _, err := tx.ExecContext(ctx,
+			`UPDATE goals SET current_value = $1, updated_at = $2 WHERE id = $3`,
+			current, now, input.GoalID,
+		); err != nil {
+			return err
+		}
 	}
 	return nil
 }

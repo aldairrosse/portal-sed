@@ -32,6 +32,7 @@ import (
 	"github.com/sed-evaluacion-desempeno/api/internal/goal"
 	"github.com/sed-evaluacion-desempeno/api/internal/goalassignment"
 	"github.com/sed-evaluacion-desempeno/api/internal/goalcategory"
+	"github.com/sed-evaluacion-desempeno/api/internal/goalcomment"
 	"github.com/sed-evaluacion-desempeno/api/internal/goalkpilink"
 	"github.com/sed-evaluacion-desempeno/api/internal/goaltemplate"
 	"github.com/sed-evaluacion-desempeno/api/internal/goaltemplatekpilink"
@@ -89,6 +90,8 @@ type Client struct {
 	GoalAssignment *GoalAssignmentClient
 	// GoalCategory is the client for interacting with the GoalCategory builders.
 	GoalCategory *GoalCategoryClient
+	// GoalComment is the client for interacting with the GoalComment builders.
+	GoalComment *GoalCommentClient
 	// GoalKpiLink is the client for interacting with the GoalKpiLink builders.
 	GoalKpiLink *GoalKpiLinkClient
 	// GoalTemplate is the client for interacting with the GoalTemplate builders.
@@ -152,6 +155,7 @@ func (c *Client) init() {
 	c.Goal = NewGoalClient(c.config)
 	c.GoalAssignment = NewGoalAssignmentClient(c.config)
 	c.GoalCategory = NewGoalCategoryClient(c.config)
+	c.GoalComment = NewGoalCommentClient(c.config)
 	c.GoalKpiLink = NewGoalKpiLinkClient(c.config)
 	c.GoalTemplate = NewGoalTemplateClient(c.config)
 	c.GoalTemplateKpiLink = NewGoalTemplateKpiLinkClient(c.config)
@@ -278,6 +282,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Goal:                      NewGoalClient(cfg),
 		GoalAssignment:            NewGoalAssignmentClient(cfg),
 		GoalCategory:              NewGoalCategoryClient(cfg),
+		GoalComment:               NewGoalCommentClient(cfg),
 		GoalKpiLink:               NewGoalKpiLinkClient(cfg),
 		GoalTemplate:              NewGoalTemplateClient(cfg),
 		GoalTemplateKpiLink:       NewGoalTemplateKpiLinkClient(cfg),
@@ -331,6 +336,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Goal:                      NewGoalClient(cfg),
 		GoalAssignment:            NewGoalAssignmentClient(cfg),
 		GoalCategory:              NewGoalCategoryClient(cfg),
+		GoalComment:               NewGoalCommentClient(cfg),
 		GoalKpiLink:               NewGoalKpiLinkClient(cfg),
 		GoalTemplate:              NewGoalTemplateClient(cfg),
 		GoalTemplateKpiLink:       NewGoalTemplateKpiLinkClient(cfg),
@@ -382,11 +388,11 @@ func (c *Client) Use(hooks ...Hook) {
 		c.CycleConfig, c.Employee, c.Evaluation, c.EvaluationCompetency,
 		c.EvaluationGoal, c.EvaluationProfile, c.EvaluatorScope,
 		c.GlobalGoalAssignment, c.GlobalGoalRule, c.Goal, c.GoalAssignment,
-		c.GoalCategory, c.GoalKpiLink, c.GoalTemplate, c.GoalTemplateKpiLink, c.KPI,
-		c.LevelDefinition, c.NineBoxEntry, c.NineBoxMatrix, c.NineBoxQuadrant,
-		c.NineBoxScale, c.OrgNode, c.Organization, c.PhaseDefinition,
-		c.PhaseTransition, c.Pillar, c.ScaleCriterion, c.SharedGoalGroup,
-		c.SharedGoalMember, c.TeamWeightConfig,
+		c.GoalCategory, c.GoalComment, c.GoalKpiLink, c.GoalTemplate,
+		c.GoalTemplateKpiLink, c.KPI, c.LevelDefinition, c.NineBoxEntry,
+		c.NineBoxMatrix, c.NineBoxQuadrant, c.NineBoxScale, c.OrgNode, c.Organization,
+		c.PhaseDefinition, c.PhaseTransition, c.Pillar, c.ScaleCriterion,
+		c.SharedGoalGroup, c.SharedGoalMember, c.TeamWeightConfig,
 	} {
 		n.Use(hooks...)
 	}
@@ -400,11 +406,11 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.CycleConfig, c.Employee, c.Evaluation, c.EvaluationCompetency,
 		c.EvaluationGoal, c.EvaluationProfile, c.EvaluatorScope,
 		c.GlobalGoalAssignment, c.GlobalGoalRule, c.Goal, c.GoalAssignment,
-		c.GoalCategory, c.GoalKpiLink, c.GoalTemplate, c.GoalTemplateKpiLink, c.KPI,
-		c.LevelDefinition, c.NineBoxEntry, c.NineBoxMatrix, c.NineBoxQuadrant,
-		c.NineBoxScale, c.OrgNode, c.Organization, c.PhaseDefinition,
-		c.PhaseTransition, c.Pillar, c.ScaleCriterion, c.SharedGoalGroup,
-		c.SharedGoalMember, c.TeamWeightConfig,
+		c.GoalCategory, c.GoalComment, c.GoalKpiLink, c.GoalTemplate,
+		c.GoalTemplateKpiLink, c.KPI, c.LevelDefinition, c.NineBoxEntry,
+		c.NineBoxMatrix, c.NineBoxQuadrant, c.NineBoxScale, c.OrgNode, c.Organization,
+		c.PhaseDefinition, c.PhaseTransition, c.Pillar, c.ScaleCriterion,
+		c.SharedGoalGroup, c.SharedGoalMember, c.TeamWeightConfig,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -445,6 +451,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.GoalAssignment.mutate(ctx, m)
 	case *GoalCategoryMutation:
 		return c.GoalCategory.mutate(ctx, m)
+	case *GoalCommentMutation:
+		return c.GoalComment.mutate(ctx, m)
 	case *GoalKpiLinkMutation:
 		return c.GoalKpiLink.mutate(ctx, m)
 	case *GoalTemplateMutation:
@@ -3638,6 +3646,139 @@ func (c *GoalCategoryClient) mutate(ctx context.Context, m *GoalCategoryMutation
 	}
 }
 
+// GoalCommentClient is a client for the GoalComment schema.
+type GoalCommentClient struct {
+	config
+}
+
+// NewGoalCommentClient returns a client for the GoalComment from the given config.
+func NewGoalCommentClient(c config) *GoalCommentClient {
+	return &GoalCommentClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `goalcomment.Hooks(f(g(h())))`.
+func (c *GoalCommentClient) Use(hooks ...Hook) {
+	c.hooks.GoalComment = append(c.hooks.GoalComment, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `goalcomment.Intercept(f(g(h())))`.
+func (c *GoalCommentClient) Intercept(interceptors ...Interceptor) {
+	c.inters.GoalComment = append(c.inters.GoalComment, interceptors...)
+}
+
+// Create returns a builder for creating a GoalComment entity.
+func (c *GoalCommentClient) Create() *GoalCommentCreate {
+	mutation := newGoalCommentMutation(c.config, OpCreate)
+	return &GoalCommentCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of GoalComment entities.
+func (c *GoalCommentClient) CreateBulk(builders ...*GoalCommentCreate) *GoalCommentCreateBulk {
+	return &GoalCommentCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *GoalCommentClient) MapCreateBulk(slice any, setFunc func(*GoalCommentCreate, int)) *GoalCommentCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &GoalCommentCreateBulk{err: fmt.Errorf("calling to GoalCommentClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*GoalCommentCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &GoalCommentCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for GoalComment.
+func (c *GoalCommentClient) Update() *GoalCommentUpdate {
+	mutation := newGoalCommentMutation(c.config, OpUpdate)
+	return &GoalCommentUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *GoalCommentClient) UpdateOne(_m *GoalComment) *GoalCommentUpdateOne {
+	mutation := newGoalCommentMutation(c.config, OpUpdateOne, withGoalComment(_m))
+	return &GoalCommentUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *GoalCommentClient) UpdateOneID(id uuid.UUID) *GoalCommentUpdateOne {
+	mutation := newGoalCommentMutation(c.config, OpUpdateOne, withGoalCommentID(id))
+	return &GoalCommentUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for GoalComment.
+func (c *GoalCommentClient) Delete() *GoalCommentDelete {
+	mutation := newGoalCommentMutation(c.config, OpDelete)
+	return &GoalCommentDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *GoalCommentClient) DeleteOne(_m *GoalComment) *GoalCommentDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *GoalCommentClient) DeleteOneID(id uuid.UUID) *GoalCommentDeleteOne {
+	builder := c.Delete().Where(goalcomment.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &GoalCommentDeleteOne{builder}
+}
+
+// Query returns a query builder for GoalComment.
+func (c *GoalCommentClient) Query() *GoalCommentQuery {
+	return &GoalCommentQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeGoalComment},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a GoalComment entity by its id.
+func (c *GoalCommentClient) Get(ctx context.Context, id uuid.UUID) (*GoalComment, error) {
+	return c.Query().Where(goalcomment.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *GoalCommentClient) GetX(ctx context.Context, id uuid.UUID) *GoalComment {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *GoalCommentClient) Hooks() []Hook {
+	return c.hooks.GoalComment
+}
+
+// Interceptors returns the client interceptors.
+func (c *GoalCommentClient) Interceptors() []Interceptor {
+	return c.inters.GoalComment
+}
+
+func (c *GoalCommentClient) mutate(ctx context.Context, m *GoalCommentMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&GoalCommentCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&GoalCommentUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&GoalCommentUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&GoalCommentDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("internal: unknown GoalComment mutation op: %q", m.Op())
+	}
+}
+
 // GoalKpiLinkClient is a client for the GoalKpiLink schema.
 type GoalKpiLinkClient struct {
 	config
@@ -6742,7 +6883,7 @@ type (
 		ActivityLog, Competency, CompetencyAcceptanceLevel, Cycle, CycleConfig,
 		Employee, Evaluation, EvaluationCompetency, EvaluationGoal, EvaluationProfile,
 		EvaluatorScope, GlobalGoalAssignment, GlobalGoalRule, Goal, GoalAssignment,
-		GoalCategory, GoalKpiLink, GoalTemplate, GoalTemplateKpiLink, KPI,
+		GoalCategory, GoalComment, GoalKpiLink, GoalTemplate, GoalTemplateKpiLink, KPI,
 		LevelDefinition, NineBoxEntry, NineBoxMatrix, NineBoxQuadrant, NineBoxScale,
 		OrgNode, Organization, PhaseDefinition, PhaseTransition, Pillar,
 		ScaleCriterion, SharedGoalGroup, SharedGoalMember, TeamWeightConfig []ent.Hook
@@ -6751,7 +6892,7 @@ type (
 		ActivityLog, Competency, CompetencyAcceptanceLevel, Cycle, CycleConfig,
 		Employee, Evaluation, EvaluationCompetency, EvaluationGoal, EvaluationProfile,
 		EvaluatorScope, GlobalGoalAssignment, GlobalGoalRule, Goal, GoalAssignment,
-		GoalCategory, GoalKpiLink, GoalTemplate, GoalTemplateKpiLink, KPI,
+		GoalCategory, GoalComment, GoalKpiLink, GoalTemplate, GoalTemplateKpiLink, KPI,
 		LevelDefinition, NineBoxEntry, NineBoxMatrix, NineBoxQuadrant, NineBoxScale,
 		OrgNode, Organization, PhaseDefinition, PhaseTransition, Pillar,
 		ScaleCriterion, SharedGoalGroup, SharedGoalMember,

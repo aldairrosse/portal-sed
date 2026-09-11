@@ -6,8 +6,8 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
-	servicegoal "github.com/sed-evaluacion-desempeno/api/internal/service/goal"
 	"github.com/sed-evaluacion-desempeno/api/internal/pkg/errors"
+	servicegoal "github.com/sed-evaluacion-desempeno/api/internal/service/goal"
 )
 
 // SharedGoalHandler handles HTTP requests for shared goals.
@@ -54,7 +54,7 @@ func (h *SharedGoalHandler) Create(w http.ResponseWriter, r *http.Request) {
 // List handles GET /api/v1/goals/shared
 func (h *SharedGoalHandler) List(w http.ResponseWriter, r *http.Request) {
 	viewType := r.URL.Query().Get("view")
-	
+
 	goals := make([]interface{}, 0)
 	var err error
 

@@ -25,9 +25,9 @@ type IdempotencyStore interface {
 
 // IdempotencyEntry holds the cached response for an idempotency key.
 type IdempotencyEntry struct {
-	StatusCode   int    `json:"status_code"`
-	Body         []byte `json:"body"`
-	PayloadHash  string `json:"payload_hash"` // SHA256 of the request body
+	StatusCode  int    `json:"status_code"`
+	Body        []byte `json:"body"`
+	PayloadHash string `json:"payload_hash"` // SHA256 of the request body
 }
 
 // InMemoryIdempotencyStore is a simple in-memory store for testing/dev.

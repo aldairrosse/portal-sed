@@ -23,6 +23,14 @@ const (
 	FieldFinalRating = "final_rating"
 	// FieldFinalComments holds the string denoting the final_comments field in the database.
 	FieldFinalComments = "final_comments"
+	// FieldRhAssessment holds the string denoting the rh_assessment field in the database.
+	FieldRhAssessment = "rh_assessment"
+	// FieldManagerComment holds the string denoting the manager_comment field in the database.
+	FieldManagerComment = "manager_comment"
+	// FieldAvanceProgress holds the string denoting the avance_progress field in the database.
+	FieldAvanceProgress = "avance_progress"
+	// FieldCierreProgress holds the string denoting the cierre_progress field in the database.
+	FieldCierreProgress = "cierre_progress"
 	// FieldEvaluationID holds the string denoting the evaluation_id field in the database.
 	FieldEvaluationID = "evaluation_id"
 	// FieldGoalID holds the string denoting the goal_id field in the database.
@@ -56,6 +64,10 @@ var Columns = []string{
 	FieldUpdatedAt,
 	FieldFinalRating,
 	FieldFinalComments,
+	FieldRhAssessment,
+	FieldManagerComment,
+	FieldAvanceProgress,
+	FieldCierreProgress,
 	FieldEvaluationID,
 	FieldGoalID,
 }
@@ -109,6 +121,26 @@ func ByFinalRating(opts ...sql.OrderTermOption) OrderOption {
 // ByFinalComments orders the results by the final_comments field.
 func ByFinalComments(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldFinalComments, opts...).ToFunc()
+}
+
+// ByRhAssessment orders the results by the rh_assessment field.
+func ByRhAssessment(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRhAssessment, opts...).ToFunc()
+}
+
+// ByManagerComment orders the results by the manager_comment field.
+func ByManagerComment(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldManagerComment, opts...).ToFunc()
+}
+
+// ByAvanceProgress orders the results by the avance_progress field.
+func ByAvanceProgress(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAvanceProgress, opts...).ToFunc()
+}
+
+// ByCierreProgress orders the results by the cierre_progress field.
+func ByCierreProgress(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCierreProgress, opts...).ToFunc()
 }
 
 // ByEvaluationID orders the results by the evaluation_id field.

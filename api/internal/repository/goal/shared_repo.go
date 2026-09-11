@@ -33,22 +33,22 @@ func deleteSharedDeps(ctx context.Context, tx *internal.Tx, goalID uuid.UUID) er
 
 // SharedGoalRow is the full representation of a shared goal with its group and members.
 type SharedGoalRow struct {
-	ID           uuid.UUID          `json:"id"`
-	Name         string             `json:"name"`
-	Description  string             `json:"description"`
-	Unit         string             `json:"unit"`
-	Direction    string             `json:"direction"`
-	Weight       float64            `json:"weight"`
-	TargetValue  float64            `json:"target_value"`
-	BaselineValue *float64          `json:"baseline_value,omitempty"`
-	CurrentValue float64            `json:"current_value"`
-	GoalKind     string             `json:"goal_kind"`
-	State        string             `json:"state"`
-	CreatedBy    uuid.UUID          `json:"created_by"`
-	CreatedAt    time.Time          `json:"created_at"`
-	UpdatedAt    time.Time          `json:"updated_at"`
-	Group        *SharedGroupRow    `json:"group"`
-	Members      []*SharedMemberRow `json:"members"`
+	ID            uuid.UUID          `json:"id"`
+	Name          string             `json:"name"`
+	Description   string             `json:"description"`
+	Unit          string             `json:"unit"`
+	Direction     string             `json:"direction"`
+	Weight        float64            `json:"weight"`
+	TargetValue   float64            `json:"target_value"`
+	BaselineValue *float64           `json:"baseline_value,omitempty"`
+	CurrentValue  float64            `json:"current_value"`
+	GoalKind      string             `json:"goal_kind"`
+	State         string             `json:"state"`
+	CreatedBy     uuid.UUID          `json:"created_by"`
+	CreatedAt     time.Time          `json:"created_at"`
+	UpdatedAt     time.Time          `json:"updated_at"`
+	Group         *SharedGroupRow    `json:"group"`
+	Members       []*SharedMemberRow `json:"members"`
 }
 
 // SharedGroupRow represents the group for a shared goal.

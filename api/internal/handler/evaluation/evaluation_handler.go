@@ -82,7 +82,6 @@ func NewEvaluationHandler(
 	}
 }
 
-
 // parsePhaseParam validates the ?phase query param against the cycle phase enum.
 // Empty means "default to the cycle's current_phase" (resolved by the service).
 func parsePhaseParam(raw string) (string, error) {
@@ -96,6 +95,50 @@ func parsePhaseParam(raw string) (string, error) {
 		return "", pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
 			"phase must be one of 'asignacion', 'avance', 'medio-anio', 'cierre'", nil)
 	}
+}
+
+// parseEmployeeCycleQuery resolves ?employee_id & cycle_id for 404-retry upsert.
+func parseEmployeeCycleQuery(r *http.Request) (uuid.UUID, uuid.UUID, bool) {
+	empStr := r.URL.Query().Get("employee_id")
+	cycStr := r.URL.Query().Get("cycle_id")
+	if empStr == "" || cycStr == "" {
+		return uuid.Nil, uuid.Nil, false
+	}
+	empID, err1 := uuid.Parse(empStr)
+	cycID, err2 := uuid.Parse(cycStr)
+	if err1 != nil || err2 != nil {
+		return uuid.Nil, uuid.Nil, false
+	}
+	return empID, cycID, true
+}
+
+func isNotFoundErr(err error) bool {
+	return err != nil && pkgerrors.HTTPStatus(err) == http.StatusNotFound
+}
+
+// ensureUpsertID creates-or-finds the evaluation for ?employee_id & cycle_id.
+func (h *EvaluationHandler) ensureUpsertID(r *http.Request) (uuid.UUID, bool) {
+	empID, cycID, ok := parseEmployeeCycleQuery(r)
+	if !ok {
+		log.Printf("[eval] upsert method=%s path=%s employee_id=%s cycle_id=%s ok=false (sin query upsert)",
+			r.Method, r.URL.Path, r.URL.Query().Get("employee_id"), r.URL.Query().Get("cycle_id"))
+		return uuid.Nil, false
+	}
+	phase, _ := parsePhaseParam(r.URL.Query().Get("phase"))
+	if phase == "" {
+		if p, err := h.evalSvc.GetCyclePhase(r.Context(), cycID); err == nil {
+			phase = p
+		}
+	}
+	id, err := h.evalSvc.EnsureEvaluation(r.Context(), empID, cycID, phase)
+	if err != nil {
+		log.Printf("[eval] upsert method=%s path=%s employee_id=%s cycle_id=%s error=%v",
+			r.Method, r.URL.Path, empID, cycID, err)
+		return uuid.Nil, false
+	}
+	log.Printf("[eval] upsert method=%s path=%s employee_id=%s cycle_id=%s evaluationId=%s",
+		r.Method, r.URL.Path, empID, cycID, id)
+	return id, true
 }
 
 // --- Evaluation Endpoints ---
@@ -291,6 +334,8 @@ func (h *EvaluationHandler) SubmitSelfEvaluation(w http.ResponseWriter, r *http.
 // UpdateSelfEvaluation handles PUT /api/v1/evaluations/{id}/self-evaluation
 // TODO(auth:C7): Restrict to evaluation owner.
 func (h *EvaluationHandler) UpdateSelfEvaluation(w http.ResponseWriter, r *http.Request) {
+	log.Printf("[eval] PUT path=%s employee_id=%s cycle_id=%s phase=%s",
+		r.URL.Path, r.URL.Query().Get("employee_id"), r.URL.Query().Get("cycle_id"), r.URL.Query().Get("phase"))
 	id, err := uuid.Parse(chi.URLParam(r, "id"))
 	if err != nil {
 		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
@@ -314,6 +359,12 @@ func (h *EvaluationHandler) UpdateSelfEvaluation(w http.ResponseWriter, r *http.
 	}
 
 	result, err := h.evalSvc.UpdateSelfEvaluation(r.Context(), id, req, ifMatch)
+	if isNotFoundErr(err) {
+		if newID, ok := h.ensureUpsertID(r); ok {
+			id = newID
+			result, err = h.evalSvc.UpdateSelfEvaluation(r.Context(), id, req, ifMatch)
+		}
+	}
 	if err != nil {
 		writeError(w, err)
 		return
@@ -323,12 +374,18 @@ func (h *EvaluationHandler) UpdateSelfEvaluation(w http.ResponseWriter, r *http.
 }
 
 // SubmitRHEvaluation handles POST /api/v1/evaluations/{id}/rh-evaluation
-// TODO(auth:C7): Restrict to rh, admin roles.
+// Allowed for RH holders or the assigned manager of the evaluated employee
+// (server-side ownership check); everyone else gets 401/403.
 func (h *EvaluationHandler) SubmitRHEvaluation(w http.ResponseWriter, r *http.Request) {
 	id, err := uuid.Parse(chi.URLParam(r, "id"))
 	if err != nil {
 		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
 			"evaluation id must be a valid UUID v4", err))
+		return
+	}
+
+	if err := h.evalSvc.AuthorizeRHEvaluationWrite(r.Context(), id); err != nil {
+		writeError(w, err)
 		return
 	}
 
@@ -357,12 +414,20 @@ func (h *EvaluationHandler) SubmitRHEvaluation(w http.ResponseWriter, r *http.Re
 }
 
 // UpdateRHEvaluation handles PUT /api/v1/evaluations/{id}/rh-evaluation
-// TODO(auth:C7): Restrict to rh, admin roles.
+// Allowed for RH holders or the assigned manager of the evaluated employee
+// (server-side ownership check); everyone else gets 401/403.
 func (h *EvaluationHandler) UpdateRHEvaluation(w http.ResponseWriter, r *http.Request) {
+	log.Printf("[eval] PUT path=%s employee_id=%s cycle_id=%s phase=%s",
+		r.URL.Path, r.URL.Query().Get("employee_id"), r.URL.Query().Get("cycle_id"), r.URL.Query().Get("phase"))
 	id, err := uuid.Parse(chi.URLParam(r, "id"))
 	if err != nil {
 		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
 			"evaluation id must be a valid UUID v4", err))
+		return
+	}
+
+	if err := h.evalSvc.AuthorizeRHEvaluationWrite(r.Context(), id); err != nil {
+		writeError(w, err)
 		return
 	}
 
@@ -382,6 +447,12 @@ func (h *EvaluationHandler) UpdateRHEvaluation(w http.ResponseWriter, r *http.Re
 	}
 
 	result, err := h.evalSvc.UpdateRHEvaluation(r.Context(), id, req, ifMatch)
+	if isNotFoundErr(err) {
+		if newID, ok := h.ensureUpsertID(r); ok {
+			id = newID
+			result, err = h.evalSvc.UpdateRHEvaluation(r.Context(), id, req, ifMatch)
+		}
+	}
 	if err != nil {
 		writeError(w, err)
 		return
@@ -393,6 +464,8 @@ func (h *EvaluationHandler) UpdateRHEvaluation(w http.ResponseWriter, r *http.Re
 // UpdateGoalState handles PUT /api/v1/evaluations/{id}/goal-state.
 // TODO(auth:C7): Restrict to evaluation owner, rh roles.
 func (h *EvaluationHandler) UpdateGoalState(w http.ResponseWriter, r *http.Request) {
+	log.Printf("[eval] PUT path=%s employee_id=%s cycle_id=%s phase=%s",
+		r.URL.Path, r.URL.Query().Get("employee_id"), r.URL.Query().Get("cycle_id"), r.URL.Query().Get("phase"))
 	id, err := uuid.Parse(chi.URLParam(r, "id"))
 	if err != nil {
 		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
@@ -421,7 +494,20 @@ func (h *EvaluationHandler) UpdateGoalState(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	// ?phase= fills the snapshot phase when the body omits it.
+	if req.Phase == nil {
+		if ph := r.URL.Query().Get("phase"); ph != "" {
+			req.Phase = &ph
+		}
+	}
+
 	result, err := h.evalSvc.UpdateGoalState(r.Context(), id, req, ifMatch)
+	if isNotFoundErr(err) {
+		if newID, ok := h.ensureUpsertID(r); ok {
+			id = newID
+			result, err = h.evalSvc.UpdateGoalState(r.Context(), id, req, ifMatch)
+		}
+	}
 	if err != nil {
 		writeError(w, err)
 		return
@@ -433,6 +519,8 @@ func (h *EvaluationHandler) UpdateGoalState(w http.ResponseWriter, r *http.Reque
 // UpdateGoalComments handles PUT /api/v1/evaluations/{id}/goal-comments.
 // TODO(auth:C7): Restrict to manager, rh roles.
 func (h *EvaluationHandler) UpdateGoalComments(w http.ResponseWriter, r *http.Request) {
+	log.Printf("[eval] PUT path=%s employee_id=%s cycle_id=%s phase=%s",
+		r.URL.Path, r.URL.Query().Get("employee_id"), r.URL.Query().Get("cycle_id"), r.URL.Query().Get("phase"))
 	id, err := uuid.Parse(chi.URLParam(r, "id"))
 	if err != nil {
 		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
@@ -462,6 +550,12 @@ func (h *EvaluationHandler) UpdateGoalComments(w http.ResponseWriter, r *http.Re
 	}
 
 	result, err := h.evalSvc.UpdateGoalComments(r.Context(), id, req, ifMatch)
+	if isNotFoundErr(err) {
+		if newID, ok := h.ensureUpsertID(r); ok {
+			id = newID
+			result, err = h.evalSvc.UpdateGoalComments(r.Context(), id, req, ifMatch)
+		}
+	}
 	if err != nil {
 		writeError(w, err)
 		return

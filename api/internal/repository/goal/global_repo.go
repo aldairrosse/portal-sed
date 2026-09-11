@@ -31,22 +31,22 @@ func deleteGlobalDeps(ctx context.Context, tx *internal.Tx, goalID uuid.UUID) er
 
 // GlobalGoalRow is the full representation of a global goal with its assignments.
 type GlobalGoalRow struct {
-	ID           uuid.UUID              `json:"id"`
-	Name         string                 `json:"name"`
-	Description  string                 `json:"description"`
-	Unit         string                 `json:"unit"`
-	Direction    string                 `json:"direction"`
-	Weight       float64                `json:"weight"`
-	TargetValue  float64                `json:"target_value"`
-	BaselineValue *float64              `json:"baseline_value,omitempty"`
-	CurrentValue float64                `json:"current_value"`
-	GoalKind     string                 `json:"goal_kind"`
-	State        string                 `json:"state"`
-	CreatedBy    uuid.UUID              `json:"created_by"`
-	CreatedAt    time.Time              `json:"created_at"`
-	UpdatedAt    time.Time              `json:"updated_at"`
-	Assignments  []*GlobalAssignmentRow `json:"assignments"`
-	Rules        []*GlobalRuleRow       `json:"rules"`
+	ID            uuid.UUID              `json:"id"`
+	Name          string                 `json:"name"`
+	Description   string                 `json:"description"`
+	Unit          string                 `json:"unit"`
+	Direction     string                 `json:"direction"`
+	Weight        float64                `json:"weight"`
+	TargetValue   float64                `json:"target_value"`
+	BaselineValue *float64               `json:"baseline_value,omitempty"`
+	CurrentValue  float64                `json:"current_value"`
+	GoalKind      string                 `json:"goal_kind"`
+	State         string                 `json:"state"`
+	CreatedBy     uuid.UUID              `json:"created_by"`
+	CreatedAt     time.Time              `json:"created_at"`
+	UpdatedAt     time.Time              `json:"updated_at"`
+	Assignments   []*GlobalAssignmentRow `json:"assignments"`
+	Rules         []*GlobalRuleRow       `json:"rules"`
 }
 
 func goalKindValue(value *goal.GoalKind) string {
@@ -209,13 +209,13 @@ func goalRowFromEnt(g *internal.Goal) *GlobalGoalRow {
 		TargetValue:   g.TargetValue,
 		BaselineValue: g.BaselineValue,
 		CurrentValue:  g.CurrentValue,
-		GoalKind:    goalKindValue(g.GoalKind),
-		State:       string(g.State),
-		CreatedBy:   g.CreatedBy,
-		CreatedAt:   g.CreatedAt,
-		UpdatedAt:   g.UpdatedAt,
-		Assignments: make([]*GlobalAssignmentRow, 0),
-		Rules:       make([]*GlobalRuleRow, 0),
+		GoalKind:      goalKindValue(g.GoalKind),
+		State:         string(g.State),
+		CreatedBy:     g.CreatedBy,
+		CreatedAt:     g.CreatedAt,
+		UpdatedAt:     g.UpdatedAt,
+		Assignments:   make([]*GlobalAssignmentRow, 0),
+		Rules:         make([]*GlobalRuleRow, 0),
 	}
 
 	for _, a := range g.Edges.GlobalAssignments {

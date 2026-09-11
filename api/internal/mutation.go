@@ -28,6 +28,7 @@ import (
 	"github.com/sed-evaluacion-desempeno/api/internal/goal"
 	"github.com/sed-evaluacion-desempeno/api/internal/goalassignment"
 	"github.com/sed-evaluacion-desempeno/api/internal/goalcategory"
+	"github.com/sed-evaluacion-desempeno/api/internal/goalcomment"
 	"github.com/sed-evaluacion-desempeno/api/internal/goalkpilink"
 	"github.com/sed-evaluacion-desempeno/api/internal/goaltemplate"
 	"github.com/sed-evaluacion-desempeno/api/internal/goaltemplatekpilink"
@@ -74,6 +75,7 @@ const (
 	TypeGoal                      = "Goal"
 	TypeGoalAssignment            = "GoalAssignment"
 	TypeGoalCategory              = "GoalCategory"
+	TypeGoalComment               = "GoalComment"
 	TypeGoalKpiLink               = "GoalKpiLink"
 	TypeGoalTemplate              = "GoalTemplate"
 	TypeGoalTemplateKpiLink       = "GoalTemplateKpiLink"
@@ -8936,22 +8938,28 @@ func (m *EvaluationCompetencyMutation) ResetEdge(name string) error {
 // EvaluationGoalMutation represents an operation that mutates the EvaluationGoal nodes in the graph.
 type EvaluationGoalMutation struct {
 	config
-	op                Op
-	typ               string
-	id                *uuid.UUID
-	created_at        *time.Time
-	updated_at        *time.Time
-	final_rating      *int
-	addfinal_rating   *int
-	final_comments    *string
-	clearedFields     map[string]struct{}
-	evaluation        *uuid.UUID
-	clearedevaluation bool
-	goal              *uuid.UUID
-	clearedgoal       bool
-	done              bool
-	oldValue          func(context.Context) (*EvaluationGoal, error)
-	predicates        []predicate.EvaluationGoal
+	op                 Op
+	typ                string
+	id                 *uuid.UUID
+	created_at         *time.Time
+	updated_at         *time.Time
+	final_rating       *int
+	addfinal_rating    *int
+	final_comments     *string
+	rh_assessment      *string
+	manager_comment    *string
+	avance_progress    *float64
+	addavance_progress *float64
+	cierre_progress    *float64
+	addcierre_progress *float64
+	clearedFields      map[string]struct{}
+	evaluation         *uuid.UUID
+	clearedevaluation  bool
+	goal               *uuid.UUID
+	clearedgoal        bool
+	done               bool
+	oldValue           func(context.Context) (*EvaluationGoal, error)
+	predicates         []predicate.EvaluationGoal
 }
 
 var _ ent.Mutation = (*EvaluationGoalMutation)(nil)
@@ -9249,6 +9257,244 @@ func (m *EvaluationGoalMutation) ResetFinalComments() {
 	delete(m.clearedFields, evaluationgoal.FieldFinalComments)
 }
 
+// SetRhAssessment sets the "rh_assessment" field.
+func (m *EvaluationGoalMutation) SetRhAssessment(s string) {
+	m.rh_assessment = &s
+}
+
+// RhAssessment returns the value of the "rh_assessment" field in the mutation.
+func (m *EvaluationGoalMutation) RhAssessment() (r string, exists bool) {
+	v := m.rh_assessment
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRhAssessment returns the old "rh_assessment" field's value of the EvaluationGoal entity.
+// If the EvaluationGoal object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EvaluationGoalMutation) OldRhAssessment(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRhAssessment is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRhAssessment requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRhAssessment: %w", err)
+	}
+	return oldValue.RhAssessment, nil
+}
+
+// ClearRhAssessment clears the value of the "rh_assessment" field.
+func (m *EvaluationGoalMutation) ClearRhAssessment() {
+	m.rh_assessment = nil
+	m.clearedFields[evaluationgoal.FieldRhAssessment] = struct{}{}
+}
+
+// RhAssessmentCleared returns if the "rh_assessment" field was cleared in this mutation.
+func (m *EvaluationGoalMutation) RhAssessmentCleared() bool {
+	_, ok := m.clearedFields[evaluationgoal.FieldRhAssessment]
+	return ok
+}
+
+// ResetRhAssessment resets all changes to the "rh_assessment" field.
+func (m *EvaluationGoalMutation) ResetRhAssessment() {
+	m.rh_assessment = nil
+	delete(m.clearedFields, evaluationgoal.FieldRhAssessment)
+}
+
+// SetManagerComment sets the "manager_comment" field.
+func (m *EvaluationGoalMutation) SetManagerComment(s string) {
+	m.manager_comment = &s
+}
+
+// ManagerComment returns the value of the "manager_comment" field in the mutation.
+func (m *EvaluationGoalMutation) ManagerComment() (r string, exists bool) {
+	v := m.manager_comment
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldManagerComment returns the old "manager_comment" field's value of the EvaluationGoal entity.
+// If the EvaluationGoal object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EvaluationGoalMutation) OldManagerComment(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldManagerComment is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldManagerComment requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldManagerComment: %w", err)
+	}
+	return oldValue.ManagerComment, nil
+}
+
+// ClearManagerComment clears the value of the "manager_comment" field.
+func (m *EvaluationGoalMutation) ClearManagerComment() {
+	m.manager_comment = nil
+	m.clearedFields[evaluationgoal.FieldManagerComment] = struct{}{}
+}
+
+// ManagerCommentCleared returns if the "manager_comment" field was cleared in this mutation.
+func (m *EvaluationGoalMutation) ManagerCommentCleared() bool {
+	_, ok := m.clearedFields[evaluationgoal.FieldManagerComment]
+	return ok
+}
+
+// ResetManagerComment resets all changes to the "manager_comment" field.
+func (m *EvaluationGoalMutation) ResetManagerComment() {
+	m.manager_comment = nil
+	delete(m.clearedFields, evaluationgoal.FieldManagerComment)
+}
+
+// SetAvanceProgress sets the "avance_progress" field.
+func (m *EvaluationGoalMutation) SetAvanceProgress(f float64) {
+	m.avance_progress = &f
+	m.addavance_progress = nil
+}
+
+// AvanceProgress returns the value of the "avance_progress" field in the mutation.
+func (m *EvaluationGoalMutation) AvanceProgress() (r float64, exists bool) {
+	v := m.avance_progress
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAvanceProgress returns the old "avance_progress" field's value of the EvaluationGoal entity.
+// If the EvaluationGoal object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EvaluationGoalMutation) OldAvanceProgress(ctx context.Context) (v *float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAvanceProgress is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAvanceProgress requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAvanceProgress: %w", err)
+	}
+	return oldValue.AvanceProgress, nil
+}
+
+// AddAvanceProgress adds f to the "avance_progress" field.
+func (m *EvaluationGoalMutation) AddAvanceProgress(f float64) {
+	if m.addavance_progress != nil {
+		*m.addavance_progress += f
+	} else {
+		m.addavance_progress = &f
+	}
+}
+
+// AddedAvanceProgress returns the value that was added to the "avance_progress" field in this mutation.
+func (m *EvaluationGoalMutation) AddedAvanceProgress() (r float64, exists bool) {
+	v := m.addavance_progress
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearAvanceProgress clears the value of the "avance_progress" field.
+func (m *EvaluationGoalMutation) ClearAvanceProgress() {
+	m.avance_progress = nil
+	m.addavance_progress = nil
+	m.clearedFields[evaluationgoal.FieldAvanceProgress] = struct{}{}
+}
+
+// AvanceProgressCleared returns if the "avance_progress" field was cleared in this mutation.
+func (m *EvaluationGoalMutation) AvanceProgressCleared() bool {
+	_, ok := m.clearedFields[evaluationgoal.FieldAvanceProgress]
+	return ok
+}
+
+// ResetAvanceProgress resets all changes to the "avance_progress" field.
+func (m *EvaluationGoalMutation) ResetAvanceProgress() {
+	m.avance_progress = nil
+	m.addavance_progress = nil
+	delete(m.clearedFields, evaluationgoal.FieldAvanceProgress)
+}
+
+// SetCierreProgress sets the "cierre_progress" field.
+func (m *EvaluationGoalMutation) SetCierreProgress(f float64) {
+	m.cierre_progress = &f
+	m.addcierre_progress = nil
+}
+
+// CierreProgress returns the value of the "cierre_progress" field in the mutation.
+func (m *EvaluationGoalMutation) CierreProgress() (r float64, exists bool) {
+	v := m.cierre_progress
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCierreProgress returns the old "cierre_progress" field's value of the EvaluationGoal entity.
+// If the EvaluationGoal object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EvaluationGoalMutation) OldCierreProgress(ctx context.Context) (v *float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCierreProgress is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCierreProgress requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCierreProgress: %w", err)
+	}
+	return oldValue.CierreProgress, nil
+}
+
+// AddCierreProgress adds f to the "cierre_progress" field.
+func (m *EvaluationGoalMutation) AddCierreProgress(f float64) {
+	if m.addcierre_progress != nil {
+		*m.addcierre_progress += f
+	} else {
+		m.addcierre_progress = &f
+	}
+}
+
+// AddedCierreProgress returns the value that was added to the "cierre_progress" field in this mutation.
+func (m *EvaluationGoalMutation) AddedCierreProgress() (r float64, exists bool) {
+	v := m.addcierre_progress
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearCierreProgress clears the value of the "cierre_progress" field.
+func (m *EvaluationGoalMutation) ClearCierreProgress() {
+	m.cierre_progress = nil
+	m.addcierre_progress = nil
+	m.clearedFields[evaluationgoal.FieldCierreProgress] = struct{}{}
+}
+
+// CierreProgressCleared returns if the "cierre_progress" field was cleared in this mutation.
+func (m *EvaluationGoalMutation) CierreProgressCleared() bool {
+	_, ok := m.clearedFields[evaluationgoal.FieldCierreProgress]
+	return ok
+}
+
+// ResetCierreProgress resets all changes to the "cierre_progress" field.
+func (m *EvaluationGoalMutation) ResetCierreProgress() {
+	m.cierre_progress = nil
+	m.addcierre_progress = nil
+	delete(m.clearedFields, evaluationgoal.FieldCierreProgress)
+}
+
 // SetEvaluationID sets the "evaluation_id" field.
 func (m *EvaluationGoalMutation) SetEvaluationID(u uuid.UUID) {
 	m.evaluation = &u
@@ -9409,7 +9655,7 @@ func (m *EvaluationGoalMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *EvaluationGoalMutation) Fields() []string {
-	fields := make([]string, 0, 6)
+	fields := make([]string, 0, 10)
 	if m.created_at != nil {
 		fields = append(fields, evaluationgoal.FieldCreatedAt)
 	}
@@ -9421,6 +9667,18 @@ func (m *EvaluationGoalMutation) Fields() []string {
 	}
 	if m.final_comments != nil {
 		fields = append(fields, evaluationgoal.FieldFinalComments)
+	}
+	if m.rh_assessment != nil {
+		fields = append(fields, evaluationgoal.FieldRhAssessment)
+	}
+	if m.manager_comment != nil {
+		fields = append(fields, evaluationgoal.FieldManagerComment)
+	}
+	if m.avance_progress != nil {
+		fields = append(fields, evaluationgoal.FieldAvanceProgress)
+	}
+	if m.cierre_progress != nil {
+		fields = append(fields, evaluationgoal.FieldCierreProgress)
 	}
 	if m.evaluation != nil {
 		fields = append(fields, evaluationgoal.FieldEvaluationID)
@@ -9444,6 +9702,14 @@ func (m *EvaluationGoalMutation) Field(name string) (ent.Value, bool) {
 		return m.FinalRating()
 	case evaluationgoal.FieldFinalComments:
 		return m.FinalComments()
+	case evaluationgoal.FieldRhAssessment:
+		return m.RhAssessment()
+	case evaluationgoal.FieldManagerComment:
+		return m.ManagerComment()
+	case evaluationgoal.FieldAvanceProgress:
+		return m.AvanceProgress()
+	case evaluationgoal.FieldCierreProgress:
+		return m.CierreProgress()
 	case evaluationgoal.FieldEvaluationID:
 		return m.EvaluationID()
 	case evaluationgoal.FieldGoalID:
@@ -9465,6 +9731,14 @@ func (m *EvaluationGoalMutation) OldField(ctx context.Context, name string) (ent
 		return m.OldFinalRating(ctx)
 	case evaluationgoal.FieldFinalComments:
 		return m.OldFinalComments(ctx)
+	case evaluationgoal.FieldRhAssessment:
+		return m.OldRhAssessment(ctx)
+	case evaluationgoal.FieldManagerComment:
+		return m.OldManagerComment(ctx)
+	case evaluationgoal.FieldAvanceProgress:
+		return m.OldAvanceProgress(ctx)
+	case evaluationgoal.FieldCierreProgress:
+		return m.OldCierreProgress(ctx)
 	case evaluationgoal.FieldEvaluationID:
 		return m.OldEvaluationID(ctx)
 	case evaluationgoal.FieldGoalID:
@@ -9506,6 +9780,34 @@ func (m *EvaluationGoalMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetFinalComments(v)
 		return nil
+	case evaluationgoal.FieldRhAssessment:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRhAssessment(v)
+		return nil
+	case evaluationgoal.FieldManagerComment:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetManagerComment(v)
+		return nil
+	case evaluationgoal.FieldAvanceProgress:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAvanceProgress(v)
+		return nil
+	case evaluationgoal.FieldCierreProgress:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCierreProgress(v)
+		return nil
 	case evaluationgoal.FieldEvaluationID:
 		v, ok := value.(uuid.UUID)
 		if !ok {
@@ -9531,6 +9833,12 @@ func (m *EvaluationGoalMutation) AddedFields() []string {
 	if m.addfinal_rating != nil {
 		fields = append(fields, evaluationgoal.FieldFinalRating)
 	}
+	if m.addavance_progress != nil {
+		fields = append(fields, evaluationgoal.FieldAvanceProgress)
+	}
+	if m.addcierre_progress != nil {
+		fields = append(fields, evaluationgoal.FieldCierreProgress)
+	}
 	return fields
 }
 
@@ -9541,6 +9849,10 @@ func (m *EvaluationGoalMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
 	case evaluationgoal.FieldFinalRating:
 		return m.AddedFinalRating()
+	case evaluationgoal.FieldAvanceProgress:
+		return m.AddedAvanceProgress()
+	case evaluationgoal.FieldCierreProgress:
+		return m.AddedCierreProgress()
 	}
 	return nil, false
 }
@@ -9557,6 +9869,20 @@ func (m *EvaluationGoalMutation) AddField(name string, value ent.Value) error {
 		}
 		m.AddFinalRating(v)
 		return nil
+	case evaluationgoal.FieldAvanceProgress:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddAvanceProgress(v)
+		return nil
+	case evaluationgoal.FieldCierreProgress:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddCierreProgress(v)
+		return nil
 	}
 	return fmt.Errorf("unknown EvaluationGoal numeric field %s", name)
 }
@@ -9570,6 +9896,18 @@ func (m *EvaluationGoalMutation) ClearedFields() []string {
 	}
 	if m.FieldCleared(evaluationgoal.FieldFinalComments) {
 		fields = append(fields, evaluationgoal.FieldFinalComments)
+	}
+	if m.FieldCleared(evaluationgoal.FieldRhAssessment) {
+		fields = append(fields, evaluationgoal.FieldRhAssessment)
+	}
+	if m.FieldCleared(evaluationgoal.FieldManagerComment) {
+		fields = append(fields, evaluationgoal.FieldManagerComment)
+	}
+	if m.FieldCleared(evaluationgoal.FieldAvanceProgress) {
+		fields = append(fields, evaluationgoal.FieldAvanceProgress)
+	}
+	if m.FieldCleared(evaluationgoal.FieldCierreProgress) {
+		fields = append(fields, evaluationgoal.FieldCierreProgress)
 	}
 	return fields
 }
@@ -9591,6 +9929,18 @@ func (m *EvaluationGoalMutation) ClearField(name string) error {
 	case evaluationgoal.FieldFinalComments:
 		m.ClearFinalComments()
 		return nil
+	case evaluationgoal.FieldRhAssessment:
+		m.ClearRhAssessment()
+		return nil
+	case evaluationgoal.FieldManagerComment:
+		m.ClearManagerComment()
+		return nil
+	case evaluationgoal.FieldAvanceProgress:
+		m.ClearAvanceProgress()
+		return nil
+	case evaluationgoal.FieldCierreProgress:
+		m.ClearCierreProgress()
+		return nil
 	}
 	return fmt.Errorf("unknown EvaluationGoal nullable field %s", name)
 }
@@ -9610,6 +9960,18 @@ func (m *EvaluationGoalMutation) ResetField(name string) error {
 		return nil
 	case evaluationgoal.FieldFinalComments:
 		m.ResetFinalComments()
+		return nil
+	case evaluationgoal.FieldRhAssessment:
+		m.ResetRhAssessment()
+		return nil
+	case evaluationgoal.FieldManagerComment:
+		m.ResetManagerComment()
+		return nil
+	case evaluationgoal.FieldAvanceProgress:
+		m.ResetAvanceProgress()
+		return nil
+	case evaluationgoal.FieldCierreProgress:
+		m.ResetCierreProgress()
 		return nil
 	case evaluationgoal.FieldEvaluationID:
 		m.ResetEvaluationID()
@@ -16823,6 +17185,522 @@ func (m *GoalCategoryMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown GoalCategory edge %s", name)
+}
+
+// GoalCommentMutation represents an operation that mutates the GoalComment nodes in the graph.
+type GoalCommentMutation struct {
+	config
+	op            Op
+	typ           string
+	id            *uuid.UUID
+	created_at    *time.Time
+	updated_at    *time.Time
+	goal_id       *uuid.UUID
+	phase         *goalcomment.Phase
+	clearedFields map[string]struct{}
+	done          bool
+	oldValue      func(context.Context) (*GoalComment, error)
+	predicates    []predicate.GoalComment
+}
+
+var _ ent.Mutation = (*GoalCommentMutation)(nil)
+
+// goalcommentOption allows management of the mutation configuration using functional options.
+type goalcommentOption func(*GoalCommentMutation)
+
+// newGoalCommentMutation creates new mutation for the GoalComment entity.
+func newGoalCommentMutation(c config, op Op, opts ...goalcommentOption) *GoalCommentMutation {
+	m := &GoalCommentMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeGoalComment,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withGoalCommentID sets the ID field of the mutation.
+func withGoalCommentID(id uuid.UUID) goalcommentOption {
+	return func(m *GoalCommentMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *GoalComment
+		)
+		m.oldValue = func(ctx context.Context) (*GoalComment, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().GoalComment.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withGoalComment sets the old GoalComment of the mutation.
+func withGoalComment(node *GoalComment) goalcommentOption {
+	return func(m *GoalCommentMutation) {
+		m.oldValue = func(context.Context) (*GoalComment, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m GoalCommentMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m GoalCommentMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("internal: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of GoalComment entities.
+func (m *GoalCommentMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *GoalCommentMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *GoalCommentMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().GoalComment.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *GoalCommentMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *GoalCommentMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the GoalComment entity.
+// If the GoalComment object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GoalCommentMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *GoalCommentMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *GoalCommentMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *GoalCommentMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the GoalComment entity.
+// If the GoalComment object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GoalCommentMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *GoalCommentMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetGoalID sets the "goal_id" field.
+func (m *GoalCommentMutation) SetGoalID(u uuid.UUID) {
+	m.goal_id = &u
+}
+
+// GoalID returns the value of the "goal_id" field in the mutation.
+func (m *GoalCommentMutation) GoalID() (r uuid.UUID, exists bool) {
+	v := m.goal_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldGoalID returns the old "goal_id" field's value of the GoalComment entity.
+// If the GoalComment object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GoalCommentMutation) OldGoalID(ctx context.Context) (v *uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldGoalID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldGoalID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldGoalID: %w", err)
+	}
+	return oldValue.GoalID, nil
+}
+
+// ClearGoalID clears the value of the "goal_id" field.
+func (m *GoalCommentMutation) ClearGoalID() {
+	m.goal_id = nil
+	m.clearedFields[goalcomment.FieldGoalID] = struct{}{}
+}
+
+// GoalIDCleared returns if the "goal_id" field was cleared in this mutation.
+func (m *GoalCommentMutation) GoalIDCleared() bool {
+	_, ok := m.clearedFields[goalcomment.FieldGoalID]
+	return ok
+}
+
+// ResetGoalID resets all changes to the "goal_id" field.
+func (m *GoalCommentMutation) ResetGoalID() {
+	m.goal_id = nil
+	delete(m.clearedFields, goalcomment.FieldGoalID)
+}
+
+// SetPhase sets the "phase" field.
+func (m *GoalCommentMutation) SetPhase(_go goalcomment.Phase) {
+	m.phase = &_go
+}
+
+// Phase returns the value of the "phase" field in the mutation.
+func (m *GoalCommentMutation) Phase() (r goalcomment.Phase, exists bool) {
+	v := m.phase
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPhase returns the old "phase" field's value of the GoalComment entity.
+// If the GoalComment object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GoalCommentMutation) OldPhase(ctx context.Context) (v goalcomment.Phase, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPhase is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPhase requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPhase: %w", err)
+	}
+	return oldValue.Phase, nil
+}
+
+// ResetPhase resets all changes to the "phase" field.
+func (m *GoalCommentMutation) ResetPhase() {
+	m.phase = nil
+}
+
+// Where appends a list predicates to the GoalCommentMutation builder.
+func (m *GoalCommentMutation) Where(ps ...predicate.GoalComment) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the GoalCommentMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *GoalCommentMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.GoalComment, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *GoalCommentMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *GoalCommentMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (GoalComment).
+func (m *GoalCommentMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *GoalCommentMutation) Fields() []string {
+	fields := make([]string, 0, 4)
+	if m.created_at != nil {
+		fields = append(fields, goalcomment.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, goalcomment.FieldUpdatedAt)
+	}
+	if m.goal_id != nil {
+		fields = append(fields, goalcomment.FieldGoalID)
+	}
+	if m.phase != nil {
+		fields = append(fields, goalcomment.FieldPhase)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *GoalCommentMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case goalcomment.FieldCreatedAt:
+		return m.CreatedAt()
+	case goalcomment.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case goalcomment.FieldGoalID:
+		return m.GoalID()
+	case goalcomment.FieldPhase:
+		return m.Phase()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *GoalCommentMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case goalcomment.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case goalcomment.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case goalcomment.FieldGoalID:
+		return m.OldGoalID(ctx)
+	case goalcomment.FieldPhase:
+		return m.OldPhase(ctx)
+	}
+	return nil, fmt.Errorf("unknown GoalComment field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *GoalCommentMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case goalcomment.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case goalcomment.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case goalcomment.FieldGoalID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetGoalID(v)
+		return nil
+	case goalcomment.FieldPhase:
+		v, ok := value.(goalcomment.Phase)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPhase(v)
+		return nil
+	}
+	return fmt.Errorf("unknown GoalComment field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *GoalCommentMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *GoalCommentMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *GoalCommentMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown GoalComment numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *GoalCommentMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(goalcomment.FieldGoalID) {
+		fields = append(fields, goalcomment.FieldGoalID)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *GoalCommentMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *GoalCommentMutation) ClearField(name string) error {
+	switch name {
+	case goalcomment.FieldGoalID:
+		m.ClearGoalID()
+		return nil
+	}
+	return fmt.Errorf("unknown GoalComment nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *GoalCommentMutation) ResetField(name string) error {
+	switch name {
+	case goalcomment.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case goalcomment.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case goalcomment.FieldGoalID:
+		m.ResetGoalID()
+		return nil
+	case goalcomment.FieldPhase:
+		m.ResetPhase()
+		return nil
+	}
+	return fmt.Errorf("unknown GoalComment field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *GoalCommentMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *GoalCommentMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *GoalCommentMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *GoalCommentMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *GoalCommentMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *GoalCommentMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *GoalCommentMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown GoalComment unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *GoalCommentMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown GoalComment edge %s", name)
 }
 
 // GoalKpiLinkMutation represents an operation that mutates the GoalKpiLink nodes in the graph.

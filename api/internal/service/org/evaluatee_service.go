@@ -8,9 +8,9 @@ import (
 	"github.com/sed-evaluacion-desempeno/api/internal"
 	"github.com/sed-evaluacion-desempeno/api/internal/dto/org"
 	"github.com/sed-evaluacion-desempeno/api/internal/pkg/errors"
-	repo "github.com/sed-evaluacion-desempeno/api/internal/repository/org"
 	repocycle "github.com/sed-evaluacion-desempeno/api/internal/repository/cycle"
 	repogoal "github.com/sed-evaluacion-desempeno/api/internal/repository/goal"
+	repo "github.com/sed-evaluacion-desempeno/api/internal/repository/org"
 )
 
 // EvaluateeService defines the interface for evaluatee and chain-of-command operations.
@@ -444,5 +444,3 @@ func buildEmployeeDetailResponse(detail *repo.EmployeeDetailRow) *org.EmployeeDe
 
 	return resp
 }
-
-

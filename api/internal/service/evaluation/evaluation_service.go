@@ -8,6 +8,7 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"fmt"
+	"log"
 	"strings"
 	"time"
 
@@ -72,6 +73,24 @@ func NewEvaluationService(
 	}
 }
 
+// resolveCompetencyProfileID returns the employee's evaluation profile
+// (employees.profile_id, FK target of evaluation_competencies.profile_id).
+// A missing employee, missing repo, or uuid.Nil profile yields a clear
+// domain error instead of an FK-violating insert.
+func (s *EvaluationService) resolveCompetencyProfileID(ctx context.Context, employeeID uuid.UUID) (uuid.UUID, error) {
+	if s.empRepo == nil {
+		return uuid.Nil, repo.ErrEvaluationProfileMissing
+	}
+	emp, err := s.empRepo.GetByID(ctx, employeeID)
+	if err != nil {
+		return uuid.Nil, err
+	}
+	if emp.ProfileID == uuid.Nil {
+		return uuid.Nil, repo.ErrEvaluationProfileMissing
+	}
+	return emp.ProfileID, nil
+}
+
 // SubmitSelfEvaluation handles employee self-evaluation submission.
 func (s *EvaluationService) SubmitSelfEvaluation(ctx context.Context, evaluationID uuid.UUID, req dto.SelfEvaluationRequest, idempotencyKey string) (*dto.EvaluationDetailResponse, error) {
 	row, err := s.evalRepo.GetByID(ctx, evaluationID)
@@ -125,7 +144,12 @@ func (s *EvaluationService) SubmitSelfEvaluation(ctx context.Context, evaluation
 		}
 	}
 
-	if err := s.evalRepo.SubmitEval(ctx, tx, evaluationID, comps, goals, newState, true, false); err != nil {
+	profileID, err := s.resolveCompetencyProfileID(ctx, lockedRow.EmployeeID)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := s.evalRepo.SubmitEval(ctx, tx, evaluationID, profileID, comps, goals, newState, true, false); err != nil {
 		return nil, err
 	}
 
@@ -149,7 +173,7 @@ func (s *EvaluationService) UpdateSelfEvaluation(ctx context.Context, evaluation
 	if err != nil {
 		return nil, err
 	}
-	if err := s.validatePhase(ctx, row.CycleID); err != nil {
+	if err := s.validateWritePhase(ctx, row.CycleID, ""); err != nil {
 		return nil, err
 	}
 	if row.State == state.StateCompleted.String() {
@@ -193,7 +217,12 @@ func (s *EvaluationService) UpdateSelfEvaluation(ctx context.Context, evaluation
 		}
 	}
 
-	if err := s.evalRepo.SubmitEval(ctx, tx, evaluationID, comps, goals, lockedRow.State, true, false); err != nil {
+	profileID, err := s.resolveCompetencyProfileID(ctx, lockedRow.EmployeeID)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := s.evalRepo.SubmitEval(ctx, tx, evaluationID, profileID, comps, goals, lockedRow.State, true, false); err != nil {
 		return nil, err
 	}
 
@@ -203,6 +232,39 @@ func (s *EvaluationService) UpdateSelfEvaluation(ctx context.Context, evaluation
 	tx = nil
 
 	return s.GetEvaluation(ctx, evaluationID)
+}
+
+// buildRHCompetencyUpserts maps request competencies to repo upserts, splitting
+// the write path by caller role: RH (PermEvalRH) writes comments,
+// jefe (allowed via AuthorizeRHEvaluationWrite, no PermEvalRH) writes
+// manager_comment without touching comments. Rating is always shared.
+// Missing role defaults to the RH path to preserve existing behavior.
+func buildRHCompetencyUpserts(ctx context.Context, in []dto.CompetencyRatingInput) []repo.CompetencyUpsert {
+	isManager := isManagerCompetencyWrite(ctx)
+	comps := make([]repo.CompetencyUpsert, len(in))
+	for i, c := range in {
+		comps[i] = repo.CompetencyUpsert{
+			CompetencyID: c.CompetencyID,
+			Rating:       c.Rating,
+			IsManager:    isManager,
+		}
+		if isManager {
+			comps[i].ManagerComment = c.ManagerComment
+		} else {
+			comps[i].Comments = c.Comments
+		}
+	}
+	return comps
+}
+
+// isManagerCompetencyWrite reports whether the caller writes competencies via
+// the jefe path: any authenticated role without PermEvalRH.
+func isManagerCompetencyWrite(ctx context.Context) bool {
+	role, ok := auth.GetRole(ctx)
+	if !ok {
+		return false
+	}
+	return !auth.HasPermission(role, auth.PermEvalRH)
 }
 
 // SubmitRHEvaluation handles RH evaluation submission.
@@ -238,16 +300,14 @@ func (s *EvaluationService) SubmitRHEvaluation(ctx context.Context, evaluationID
 		newState = state.StateInProgress.String()
 	}
 
-	comps := make([]repo.CompetencyUpsert, len(req.Competencies))
-	for i, c := range req.Competencies {
-		comps[i] = repo.CompetencyUpsert{
-			CompetencyID: c.CompetencyID,
-			Rating:       c.Rating,
-			Comments:     c.Comments,
-		}
+	comps := buildRHCompetencyUpserts(ctx, req.Competencies)
+
+	profileID, err := s.resolveCompetencyProfileID(ctx, lockedRow.EmployeeID)
+	if err != nil {
+		return nil, err
 	}
 
-	if err := s.evalRepo.SubmitEval(ctx, tx, evaluationID, comps, nil, newState, false, true); err != nil {
+	if err := s.evalRepo.SubmitEval(ctx, tx, evaluationID, profileID, comps, nil, newState, false, true); err != nil {
 		return nil, err
 	}
 
@@ -271,7 +331,7 @@ func (s *EvaluationService) UpdateRHEvaluation(ctx context.Context, evaluationID
 	if err != nil {
 		return nil, err
 	}
-	if err := s.validatePhase(ctx, row.CycleID); err != nil {
+	if err := s.validateWritePhase(ctx, row.CycleID, ""); err != nil {
 		return nil, err
 	}
 	if row.State == state.StateCompleted.String() {
@@ -299,16 +359,14 @@ func (s *EvaluationService) UpdateRHEvaluation(ctx context.Context, evaluationID
 		)
 	}
 
-	comps := make([]repo.CompetencyUpsert, len(req.Competencies))
-	for i, c := range req.Competencies {
-		comps[i] = repo.CompetencyUpsert{
-			CompetencyID: c.CompetencyID,
-			Rating:       c.Rating,
-			Comments:     c.Comments,
-		}
+	comps := buildRHCompetencyUpserts(ctx, req.Competencies)
+
+	profileID, err := s.resolveCompetencyProfileID(ctx, lockedRow.EmployeeID)
+	if err != nil {
+		return nil, err
 	}
 
-	if err := s.evalRepo.SubmitEval(ctx, tx, evaluationID, comps, nil, lockedRow.State, false, true); err != nil {
+	if err := s.evalRepo.SubmitEval(ctx, tx, evaluationID, profileID, comps, nil, lockedRow.State, false, true); err != nil {
 		return nil, err
 	}
 
@@ -412,12 +470,43 @@ func (s *EvaluationService) GetEvaluation(ctx context.Context, id uuid.UUID) (*d
 			Comments:     c.Comments,
 		}
 	}
+	// Jefe comments live in the manager_comment sidecar (ent model has no such
+	// field); overlay them without touching the interface so test fakes
+	// without the sidecar keep compiling (assertion fails → skip).
+	if r, ok := s.evalRepo.(interface {
+		GetCompetencyManagerComments(context.Context, uuid.UUID) (map[string]string, error)
+	}); ok {
+		if mc, err := r.GetCompetencyManagerComments(ctx, id); err == nil && len(mc) > 0 {
+			for i := range resp.CompetencyRatings {
+				if v, ok := mc[resp.CompetencyRatings[i].CompetencyID.String()]; ok {
+					resp.CompetencyRatings[i].ManagerComment = v
+				}
+			}
+		}
+	}
 	resp.GoalRatings = make([]dto.GoalRatingDTO, len(goals))
 	for i, g := range goals {
+		// Direct closing value: cierre ?? avance (never a derived 1-5 rating).
+		var finalProgress *float64
+		if g.CierreProgress != nil {
+			finalProgress = g.CierreProgress
+		} else if g.AvanceProgress != nil {
+			finalProgress = g.AvanceProgress
+		}
 		resp.GoalRatings[i] = dto.GoalRatingDTO{
-			GoalID:        g.GoalID,
-			FinalRating:   g.FinalRating,
-			FinalComments: g.FinalComments,
+			GoalID:         g.GoalID,
+			FinalRating:    g.FinalRating,
+			FinalProgress:  finalProgress,
+			AvanceProgress: g.AvanceProgress,
+			CierreProgress: g.CierreProgress,
+			FinalComments:  g.FinalComments,
+			RhAssessment:   g.RhAssessment,
+			ManagerComment: g.ManagerComment,
+			// F2: row timestamps cover self/rh/manager comments alike
+			// (no per-comment author column; AuthorName stays empty).
+			CreatedAt:               &g.CreatedAt,
+			UpdatedAt:               &g.UpdatedAt,
+			ManagerCommentCreatedAt: &g.UpdatedAt,
 		}
 	}
 	if resp.CompetencyRatings == nil {
@@ -462,11 +551,35 @@ func (s *EvaluationService) UpdateGoalState(ctx context.Context, evaluationID uu
 		return nil, err
 	}
 
+	// Resolve the closing phase: explicit request phase wins, then the
+	// evaluation's own phase, then the cycle's current phase.
+	phase := ""
+	if input.Phase != nil && *input.Phase != "" {
+		phase = *input.Phase
+	} else if row.Phase != "" {
+		phase = row.Phase
+	} else if p, err := s.cycleCheck.GetPhase(ctx, row.CycleID); err == nil {
+		phase = p
+	}
+
+	// F3: nil = not sent (leave unchanged); empty string is also treated as
+	// not-sent — there is no intentional-clear path yet, so never blank comments.
+	selfAssessment := input.SelfAssessment
+	if selfAssessment != nil && *selfAssessment == "" {
+		selfAssessment = nil
+	}
+	rhAssessment := input.RhAssessment
+	if rhAssessment != nil && *rhAssessment == "" {
+		rhAssessment = nil
+	}
+
 	if err := s.goalRepo.UpsertGoalState(ctx, tx, evaluationID, repo.GoalStateUpsert{
 		GoalID:         input.GoalID,
 		FinalProgress:  input.FinalProgress,
-		SelfAssessment: input.SelfAssessment,
-		RhAssessment:   input.RhAssessment,
+		FinalRating:    input.FinalRating,
+		Phase:          phase,
+		SelfAssessment: selfAssessment,
+		RhAssessment:   rhAssessment,
 	}); err != nil {
 		return nil, err
 	}
@@ -525,6 +638,36 @@ func (s *EvaluationService) UpdateGoalComments(ctx context.Context, evaluationID
 	return s.GetEvaluation(ctx, evaluationID)
 }
 
+// ResolveEvaluationID resolves the evaluation ID for employee+cycle via FindByEmployeeCycle.
+func (s *EvaluationService) ResolveEvaluationID(ctx context.Context, employeeID, cycleID uuid.UUID) (uuid.UUID, error) {
+	row, err := s.evalRepo.FindByEmployeeCycle(ctx, employeeID, cycleID)
+	if err != nil {
+		return uuid.Nil, err
+	}
+	log.Printf("[evalId] resolved employee=%s cycle=%s eval=%s", employeeID, cycleID, row.ID)
+	return row.ID, nil
+}
+
+// EnsureEvaluation finds or creates the evaluation for employee+cycle.
+// Empty phase defaults to the cycle's current phase.
+func (s *EvaluationService) EnsureEvaluation(ctx context.Context, employeeID, cycleID uuid.UUID, phase string) (uuid.UUID, error) {
+	if phase == "" {
+		if p, err := s.cycleCheck.GetPhase(ctx, cycleID); err == nil && p != "" {
+			phase = p
+		}
+	}
+	actorID, _ := auth.GetEmployeeID(ctx)
+	if actorID == uuid.Nil {
+		actorID = employeeID
+	}
+	row, err := s.evalRepo.EnsureEvaluation(ctx, employeeID, cycleID, phase, actorID)
+	if err != nil {
+		return uuid.Nil, err
+	}
+	log.Printf("[evalId] ensured employee=%s cycle=%s eval=%s phase=%s", employeeID, cycleID, row.ID, phase)
+	return row.ID, nil
+}
+
 // ResolveActiveCycleID resolves the active (unfinished) cycle for an employee's organization.
 func (s *EvaluationService) ResolveActiveCycleID(ctx context.Context, employeeID uuid.UUID) (uuid.UUID, error) {
 	emp, err := s.empRepo.GetByID(ctx, employeeID)
@@ -558,6 +701,9 @@ func (s *EvaluationService) GetEmployeeCompetencyRatings(ctx context.Context, em
 			SelfRating:      r.SelfRating,
 			RhRating:        r.RhRating,
 			Comments:        r.Comments,
+			SelfComment:     r.SelfComment,
+			RhComment:       r.RhComment,
+			ManagerComment:  r.ManagerComment,
 			AcceptanceLevel: r.AcceptanceLevel,
 		}
 	}
@@ -718,6 +864,8 @@ func hashRHEvalPayload(req dto.RHEvaluationRequest) string {
 		h.Write([]byte{0})
 		h.Write([]byte(c.Comments))
 		h.Write([]byte{0})
+		h.Write([]byte(c.ManagerComment))
+		h.Write([]byte{0})
 	}
 	h.Write([]byte(req.FinalComments))
 	return hex.EncodeToString(h.Sum(nil))
@@ -760,9 +908,57 @@ func (s *EvaluationService) AuthorizeEvaluationAccess(viewerID, employeeID uuid.
 	return nil
 }
 
-// RedactDetailForSelf hides RH/final data from self (colaborador) viewers.
-// viewerMode=self equals colaborador viewing their own evaluation: nil
-// RHEvalCompletedAt, nil FinalRating per GoalRating, and clear final comments.
+// canWriteRHEvaluation is the pure ownership rule for rh-evaluation writes:
+// RH (PermEvalRH) may write any evaluation; otherwise only the assigned
+// manager (ManagerID == actor) may write. No session data is read here so the
+// rule stays table-testable; AuthorizeRHEvaluationWrite resolves the inputs.
+func canWriteRHEvaluation(role auth.Role, actorID uuid.UUID, managerID *uuid.UUID) bool {
+	if auth.HasPermission(role, auth.PermEvalRH) {
+		return true
+	}
+	if managerID == nil || *managerID == uuid.Nil || actorID == uuid.Nil {
+		return false
+	}
+	return *managerID == actorID
+}
+
+// AuthorizeRHEvaluationWrite allows rh-evaluation writes for RH holders or the
+// assigned manager (jefe directo) of the evaluated employee, validated
+// server-side via employees.manager_id. Missing session → 401
+// NOT_AUTHENTICATED; anyone else → 403 ErrForbidden. It never grants the
+// eval:rh permission itself, so unrelated jefes stay rejected.
+func (s *EvaluationService) AuthorizeRHEvaluationWrite(ctx context.Context, evaluationID uuid.UUID) error {
+	role, ok := auth.GetRole(ctx)
+	if !ok {
+		return errors.NewDomainError(errors.NotAuthenticated, "no authenticated session", nil)
+	}
+	actorID, ok := auth.GetEmployeeID(ctx)
+	if !ok || actorID == uuid.Nil {
+		return errors.NewDomainError(errors.NotAuthenticated, "no authenticated session", nil)
+	}
+	if auth.HasPermission(role, auth.PermEvalRH) {
+		return nil
+	}
+	row, err := s.evalRepo.GetByID(ctx, evaluationID)
+	if err != nil {
+		return err
+	}
+	if s.empRepo == nil {
+		return errors.ErrForbidden
+	}
+	emp, err := s.empRepo.GetByID(ctx, row.EmployeeID)
+	if err != nil {
+		return err
+	}
+	if canWriteRHEvaluation(role, actorID, emp.ManagerID) {
+		return nil
+	}
+	return errors.ErrForbidden
+}
+
+// RedactDetailForSelf hides completion timestamps from self (colaborador)
+// viewers. F2: goal comments (self/rh/manager) stay visible for every
+// viewerMode — only timestamps are redacted, never the comment text.
 // Keeps manager/RH views untouched.
 func (s *EvaluationService) RedactDetailForSelf(detail *dto.EvaluationDetailResponse, viewerID uuid.UUID, viewerRole auth.Role, phase string) *dto.EvaluationDetailResponse {
 	if detail == nil || viewerRole != auth.RoleColaborador || viewerID != detail.EmployeeID {
@@ -771,12 +967,8 @@ func (s *EvaluationService) RedactDetailForSelf(detail *dto.EvaluationDetailResp
 	if selfRestrictedPhase(phase) {
 		detail.RHEvalCompletedAt = nil
 	}
-	// Self viewers never see final/RH goal outcomes.
+	// Self viewers never see RH completion timestamp; own progress stays.
 	detail.RHEvalCompletedAt = nil
-	for i := range detail.GoalRatings {
-		detail.GoalRatings[i].FinalRating = nil
-		detail.GoalRatings[i].FinalComments = ""
-	}
 	return detail
 }
 

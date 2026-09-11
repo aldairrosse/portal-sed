@@ -5,9 +5,9 @@ import (
 	"context"
 	"embed"
 	"fmt"
+	"html/template"
 	"log"
 	"net/smtp"
-	"html/template"
 	"time"
 )
 

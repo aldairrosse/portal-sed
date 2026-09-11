@@ -193,7 +193,7 @@ var (
 		{Name: "updated_by", Type: field.TypeUUID},
 		{Name: "version", Type: field.TypeInt, Default: 1},
 		{Name: "phase", Type: field.TypeEnum, Enums: []string{"asignacion", "avance", "cierre"}, SchemaType: map[string]string{"postgres": "phase"}},
-		{Name: "state", Type: field.TypeEnum, Enums: []string{"pendiente_asignacion", "pendiente_avance", "pendiente_evaluacion_final", "completada"}, SchemaType: map[string]string{"postgres": "evaluation_state"}},
+		{Name: "state", Type: field.TypeEnum, Enums: []string{"pendiente_asignacion", "pendiente_avance", "pendiente_evaluacion_final", "en_progreso", "completada"}, SchemaType: map[string]string{"postgres": "evaluation_state"}},
 		{Name: "self_evaluation_completed_at", Type: field.TypeTime, Nullable: true},
 		{Name: "rh_evaluation_completed_at", Type: field.TypeTime, Nullable: true},
 		{Name: "cycle_id", Type: field.TypeUUID},
@@ -264,6 +264,10 @@ var (
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "final_rating", Type: field.TypeInt, Nullable: true},
 		{Name: "final_comments", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "rh_assessment", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "manager_comment", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "avance_progress", Type: field.TypeFloat64, Nullable: true},
+		{Name: "cierre_progress", Type: field.TypeFloat64, Nullable: true},
 		{Name: "evaluation_id", Type: field.TypeUUID},
 		{Name: "goal_id", Type: field.TypeUUID},
 	}
@@ -275,13 +279,13 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "evaluation_goals_evaluations_goal_ratings",
-				Columns:    []*schema.Column{EvaluationGoalsColumns[5]},
+				Columns:    []*schema.Column{EvaluationGoalsColumns[9]},
 				RefColumns: []*schema.Column{EvaluationsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "evaluation_goals_goals_evaluation_goals",
-				Columns:    []*schema.Column{EvaluationGoalsColumns[6]},
+				Columns:    []*schema.Column{EvaluationGoalsColumns[10]},
 				RefColumns: []*schema.Column{GoalsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -494,6 +498,27 @@ var (
 				Columns:    []*schema.Column{GoalCategoriesColumns[9]},
 				RefColumns: []*schema.Column{PillarsColumns[0]},
 				OnDelete:   schema.SetNull,
+			},
+		},
+	}
+	// GoalCommentsColumns holds the columns for the "goal_comments" table.
+	GoalCommentsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "goal_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "phase", Type: field.TypeEnum, Enums: []string{"asignacion", "avance", "cierre"}, Default: "cierre"},
+	}
+	// GoalCommentsTable holds the schema information for the "goal_comments" table.
+	GoalCommentsTable = &schema.Table{
+		Name:       "goal_comments",
+		Columns:    GoalCommentsColumns,
+		PrimaryKey: []*schema.Column{GoalCommentsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "goalcomment_goal_id_phase",
+				Unique:  false,
+				Columns: []*schema.Column{GoalCommentsColumns[3], GoalCommentsColumns[4]},
 			},
 		},
 	}
@@ -1013,6 +1038,7 @@ var (
 		GoalsTable,
 		GoalAssignmentsTable,
 		GoalCategoriesTable,
+		GoalCommentsTable,
 		GoalKpiLinksTable,
 		GoalTemplatesTable,
 		GoalTemplateKpiLinksTable,

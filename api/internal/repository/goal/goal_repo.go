@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -293,4 +294,27 @@ func (r *GoalRepo) fetchVersion(ctx context.Context, id uuid.UUID) (int, error) 
 		return 0, err
 	}
 	return version, nil
+}
+
+// UpsertProgressSnapshot writes the direct value into the active-phase
+// snapshot column (avance_progress/cierre_progress) of evaluation_goals.
+// "avance"/"medio-anio"/"medio_anio" -> avance_progress;
+// "cierre"/"fin-anio"/"fin_anio" -> cierre_progress; unknown defaults to
+// avance_progress so mid-year writes never clobber the closing snapshot.
+func (r *GoalRepo) UpsertProgressSnapshot(ctx context.Context, evalID, goalID uuid.UUID, phase string, value float64) error {
+	col := "avance_progress"
+	switch strings.ToLower(strings.TrimSpace(phase)) {
+	case "cierre", "fin-anio", "fin_anio":
+		col = "cierre_progress"
+	case "avance", "medio-anio", "medio_anio", "":
+		col = "avance_progress"
+	}
+	_, err := r.db.ExecContext(ctx,
+		`INSERT INTO evaluation_goals (id, created_at, updated_at, evaluation_id, goal_id, `+col+`)
+		 VALUES (gen_random_uuid(), NOW(), NOW(), $1, $2, $3)
+		 ON CONFLICT (evaluation_id, goal_id) DO UPDATE
+		 SET `+col+` = EXCLUDED.`+col+`, updated_at = NOW()`,
+		evalID, goalID, value,
+	)
+	return err
 }

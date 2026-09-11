@@ -28,6 +28,12 @@ func (EvaluationCompetency) Fields() []ent.Field {
 			Range(1, 5),
 		field.Text("comments").
 			Optional(),
+		// manager_comment holds the jefe's comment on the shared rh row.
+		// Drift: entc.yaml target is ./ent, so generated code under
+		// api/internal is stale until regen; raw SQL reads/writes it.
+		field.Text("manager_comment").
+			Optional().
+			Nillable(),
 		field.Enum("source").
 			Values("self", "rh").
 			Default("rh"),

@@ -41,6 +41,10 @@ const (
 	// PhaseMedioAnio is a deprecated read alias of avance (see IsMidYearPhase).
 	PhaseMedioAnio = "medio-anio"
 	PhaseCierre    = "cierre"
+	// PhaseFinAnio is a deprecated read alias of cierre.
+	PhaseFinAnio = "fin-anio"
+	// PhaseInicioAnio is a deprecated read alias of asignacion.
+	PhaseInicioAnio = "inicio-anio"
 )
 
 // validTransitions defines the allowed state transitions.
@@ -72,16 +76,34 @@ func CanTransition(from, to EvaluationState) bool {
 	return false
 }
 
-// normalizePhase lowercases/trims and unifies "medio_anio" → "medio-anio".
+// NormalizePhase lowercases/trims and maps legacy aliases to the canonical
+// phase: medio-anio/medio_anio/medioanio → avance,
+// fin-anio/fin_anio/finanio → cierre, inicio-anio/inicio_anio → asignacion.
+// Canonical avance/cierre/asignacion pass through; anything else returns the
+// lower-trimmed input.
+func NormalizePhase(phase string) string {
+	n := strings.ToLower(strings.TrimSpace(phase))
+	switch n {
+	case "medio-anio", "medio_anio", "medioanio", PhaseAvance:
+		return PhaseAvance
+	case "fin-anio", "fin_anio", "finanio", PhaseCierre:
+		return PhaseCierre
+	case "inicio-anio", "inicio_anio", PhaseAsignacion:
+		return PhaseAsignacion
+	default:
+		return n
+	}
+}
+
+// normalizePhase kept as thin wrapper (single source: NormalizePhase).
 func normalizePhase(p string) string {
-	p = strings.ToLower(strings.TrimSpace(p))
-	return strings.ReplaceAll(p, "_", "-")
+	return NormalizePhase(p)
 }
 
 // IsMidYearPhase reports whether phase is the mid-year phase.
 // "avance" and "medio-anio" are treated as the same mid-year phase.
 func IsMidYearPhase(phase string) bool {
-	switch normalizePhase(phase) {
+	switch NormalizePhase(phase) {
 	case PhaseAvance, PhaseMedioAnio:
 		return true
 	default:
@@ -90,19 +112,15 @@ func IsMidYearPhase(phase string) bool {
 }
 
 // SamePhaseForWrite reports whether two phase names match for write gates,
-// treating "avance" and "medio-anio" as equivalent.
+// comparing canonical phases (aliases unified via NormalizePhase).
 func SamePhaseForWrite(a, b string) bool {
-	na, nb := normalizePhase(a), normalizePhase(b)
-	if na == nb {
-		return true
-	}
-	return IsMidYearPhase(na) && IsMidYearPhase(nb)
+	return NormalizePhase(a) == NormalizePhase(b)
 }
 
 // IsWritablePhase reports whether writes are allowed in the given phase
 // (mid-year avance/medio-anio or cierre).
 func IsWritablePhase(phase string) bool {
-	n := normalizePhase(phase)
+	n := NormalizePhase(phase)
 	return n == PhaseCierre || IsMidYearPhase(n)
 }
 
@@ -111,7 +129,7 @@ func IsWritablePhase(phase string) bool {
 // Kept for cierre-only operations (self/RH/finalize); use WritableInPhase
 // for mid-year writes.
 func RequiresPhase(phase string) error {
-	if normalizePhase(phase) != PhaseCierre {
+	if NormalizePhase(phase) != PhaseCierre {
 		return pkgerrors.NewDomainError(
 			pkgerrors.PhaseNotAdvanceable,
 			fmt.Sprintf("this operation requires the cycle to be in 'cierre' phase; current phase is '%s'", phase),
@@ -153,7 +171,7 @@ var CyclePhaseOrder = []string{PhaseAsignacion, PhaseAvance, PhaseCierre}
 // phaseOrderIndex returns the index of a phase in CyclePhaseOrder, or -1.
 // Legacy "medio-anio" maps to the avance index for read compatibility.
 func phaseOrderIndex(phase string) int {
-	n := normalizePhase(phase)
+	n := NormalizePhase(phase)
 	if n == PhaseMedioAnio {
 		n = PhaseAvance
 	}

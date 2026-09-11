@@ -525,18 +525,18 @@ func (r *NineBoxRepo) GetGoalAssigneesByCycle(ctx context.Context, cycleID uuid.
 }
 
 // GetGoalProgressByEmployee returns the average goal progress (0–100) for an employee.
-// Progress is calculated as: CASE WHEN direction='descendente' THEN (baseline-current)/baseline*100 ELSE (current/target)*100 END
-// Only goals with current_value > 0 are considered (goals with measurable progress).
+// Progress is calculated as: CASE WHEN direction='descendente' THEN (baseline-current)/baseline*100 ELSE (current/target)*100 END, clamped 0-100.
+// Only goals with current_value IS NOT NULL are considered (allows 0 → 100% in desc).
 func (r *NineBoxRepo) GetGoalProgressByEmployee(ctx context.Context, employeeID, cycleID uuid.UUID) (float64, error) {
 	var avgProgress sql.NullFloat64
 	err := r.db.QueryRowContext(ctx, `
 		SELECT AVG(
 			CASE
 				WHEN g.direction = 'descendente' AND g.baseline_value IS NOT NULL AND g.baseline_value > 0
-					THEN GREATEST(0, (g.baseline_value - g.current_value) / g.baseline_value * 100)
+					THEN LEAST(100, GREATEST(0, (g.baseline_value - g.current_value) / NULLIF(g.baseline_value, 0) * 100))
 				ELSE
 					CASE WHEN g.target_value > 0
-						THEN LEAST(100, g.current_value / g.target_value * 100)
+						THEN LEAST(100, GREATEST(0, g.current_value / g.target_value * 100))
 						ELSE 0
 					END
 			END
@@ -545,7 +545,7 @@ func (r *NineBoxRepo) GetGoalProgressByEmployee(ctx context.Context, employeeID,
 		JOIN goal_categories gc ON g.category_id = gc.id
 		JOIN goal_assignments ga ON ga.employee_id = $1 AND ga.cycle_id = $2
 		WHERE gc.employee_id = ga.employee_id
-		  AND g.current_value > 0
+		  AND g.current_value IS NOT NULL
 	`, employeeID, cycleID).Scan(&avgProgress)
 	if err != nil {
 		return 0, err
@@ -632,4 +632,3 @@ func (r *NineBoxRepo) GetCompetencyRatingsByEmployee(ctx context.Context, employ
 
 	return selfRating, hrRating, nil
 }
-

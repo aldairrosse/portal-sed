@@ -22,6 +22,7 @@ import (
 	"github.com/sed-evaluacion-desempeno/api/internal/goal"
 	"github.com/sed-evaluacion-desempeno/api/internal/goalassignment"
 	"github.com/sed-evaluacion-desempeno/api/internal/goalcategory"
+	"github.com/sed-evaluacion-desempeno/api/internal/goalcomment"
 	"github.com/sed-evaluacion-desempeno/api/internal/goalkpilink"
 	"github.com/sed-evaluacion-desempeno/api/internal/goaltemplate"
 	"github.com/sed-evaluacion-desempeno/api/internal/goaltemplatekpilink"
@@ -511,6 +512,25 @@ func init() {
 	goalcategoryDescID := goalcategoryFields[0].Descriptor()
 	// goalcategory.DefaultID holds the default value on creation for the id field.
 	goalcategory.DefaultID = goalcategoryDescID.Default.(func() uuid.UUID)
+	goalcommentMixin := schema.GoalComment{}.Mixin()
+	goalcommentMixinFields0 := goalcommentMixin[0].Fields()
+	_ = goalcommentMixinFields0
+	goalcommentFields := schema.GoalComment{}.Fields()
+	_ = goalcommentFields
+	// goalcommentDescCreatedAt is the schema descriptor for created_at field.
+	goalcommentDescCreatedAt := goalcommentMixinFields0[0].Descriptor()
+	// goalcomment.DefaultCreatedAt holds the default value on creation for the created_at field.
+	goalcomment.DefaultCreatedAt = goalcommentDescCreatedAt.Default.(func() time.Time)
+	// goalcommentDescUpdatedAt is the schema descriptor for updated_at field.
+	goalcommentDescUpdatedAt := goalcommentMixinFields0[1].Descriptor()
+	// goalcomment.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	goalcomment.DefaultUpdatedAt = goalcommentDescUpdatedAt.Default.(func() time.Time)
+	// goalcomment.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	goalcomment.UpdateDefaultUpdatedAt = goalcommentDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// goalcommentDescID is the schema descriptor for id field.
+	goalcommentDescID := goalcommentFields[0].Descriptor()
+	// goalcomment.DefaultID holds the default value on creation for the id field.
+	goalcomment.DefaultID = goalcommentDescID.Default.(func() uuid.UUID)
 	goalkpilinkFields := schema.GoalKpiLink{}.Fields()
 	_ = goalkpilinkFields
 	// goalkpilinkDescCreatedAt is the schema descriptor for created_at field.

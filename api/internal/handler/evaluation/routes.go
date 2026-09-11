@@ -109,16 +109,18 @@ func RegisterRoutes(r chi.Router, handler *EvaluationHandler, authSvc *authsvc.A
 		})
 
 		// POST /api/v1/evaluations/{id}/rh-evaluation
+		// AuthZ enforced in handler via AuthorizeRHEvaluationWrite
+		// (RH holders or assigned manager); no global RequirePermission here
+		// so assigned jefes are not 403'd before the ownership check.
 		r.Group(func(r chi.Router) {
-			r.Use(middleware.RequirePermission(auth.PermEvalRH))
 			r.Use(middleware.RateLimit(writeRateLimit))
 			r.Use(middleware.Idempotency(idempStore, 24*time.Hour))
 			r.Post("/evaluations/{id}/rh-evaluation", handler.SubmitRHEvaluation)
 		})
 
 		// PUT /api/v1/evaluations/{id}/rh-evaluation
+		// AuthZ enforced in handler via AuthorizeRHEvaluationWrite (see above).
 		r.Group(func(r chi.Router) {
-			r.Use(middleware.RequirePermission(auth.PermEvalRH))
 			r.Use(middleware.RateLimit(writeRateLimit))
 			r.Use(middleware.OptimisticLock)
 			r.Put("/evaluations/{id}/rh-evaluation", handler.UpdateRHEvaluation)

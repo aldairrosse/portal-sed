@@ -175,7 +175,8 @@ paths:
   /goals/{goalId}/progress:
     patch:
       operationId: updateGoalProgress
-      summary: Update goal progress (currentValue)
+      summary: Update goal progress (currentValue + phase snapshot)
+      description: "Escribe current_value y el snapshot directo de la fase activa (avance→avance_progress, cierre→cierre_progress). Sync: current_value = cierre_progress ?? avance_progress."
       parameters:
         - $ref: '#/components/parameters/GoalId'
       requestBody:
@@ -1444,6 +1445,10 @@ components:
         current_value:
           type: number
           minimum: 0
+        phase:
+          type: string
+          enum: [avance, cierre]
+          description: "Fase del avance; solo avance y cierre aceptan progreso (alias medio-anio solo docs, equivale a avance)."
 
     KpiUpdateValueRequest:
       type: object

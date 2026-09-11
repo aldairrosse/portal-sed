@@ -14,9 +14,11 @@ import (
 // EvaluationRepo defines the operations required by EvaluationService and DashboardService.
 type EvaluationRepo interface {
 	GetByID(ctx context.Context, id uuid.UUID) (*repo.EvaluationRow, error)
+	FindByEmployeeCycle(ctx context.Context, employeeID, cycleID uuid.UUID) (*repo.EvaluationRow, error)
+	EnsureEvaluation(ctx context.Context, employeeID, cycleID uuid.UUID, phase string, actorID uuid.UUID) (*repo.EvaluationRow, error)
 	BeginTx(ctx context.Context, opts *sql.TxOptions) (*sql.Tx, error)
 	LockEvalForUpdate(ctx context.Context, tx *sql.Tx, evalID uuid.UUID) (*repo.EvaluationRow, error)
-	SubmitEval(ctx context.Context, tx *sql.Tx, evalID uuid.UUID, comps []repo.CompetencyUpsert, goals []repo.GoalCommentUpsert, newState string, setSelfCompleted, setRHCompleted bool) error
+	SubmitEval(ctx context.Context, tx *sql.Tx, evalID uuid.UUID, profileID uuid.UUID, comps []repo.CompetencyUpsert, goals []repo.GoalCommentUpsert, newState string, setSelfCompleted, setRHCompleted bool) error
 	GetDetail(ctx context.Context, id uuid.UUID) (*repo.EvaluationRow, []*internal.EvaluationCompetency, []*internal.EvaluationGoal, error)
 	ListByCycle(ctx context.Context, cycleID uuid.UUID, state string, phase string, cursor string, limit int) ([]*repo.EvaluationRow, string, error)
 	GetCompetencyRatingsByEmployee(ctx context.Context, employeeID, cycleID, profileID uuid.UUID) ([]repo.EmployeeCompetencyRatingRow, error)
@@ -29,7 +31,7 @@ type EvaluationRepo interface {
 
 // CompetencyRatingRepo defines the operations required for competency ratings.
 type CompetencyRatingRepo interface {
-	BulkUpsert(ctx context.Context, tx *sql.Tx, evalID uuid.UUID, comps []repo.CompetencyUpsert) error
+	BulkUpsert(ctx context.Context, tx *sql.Tx, evalID uuid.UUID, profileID uuid.UUID, source string, comps []repo.CompetencyUpsert) error
 	DeleteByEvaluation(ctx context.Context, tx *sql.Tx, evalID uuid.UUID) error
 	GetByEvaluation(ctx context.Context, evalID uuid.UUID) ([]*internal.EvaluationCompetency, error)
 }

@@ -229,17 +229,17 @@ func (s *employeeService) UpdateEmployee(ctx context.Context, empID string, req 
 // employeeRowToItem converts an EmployeeRow to an EmployeeListItem.
 func employeeRowToItem(r *repo.EmployeeRow) org.EmployeeListItem {
 	item := org.EmployeeListItem{
-		ID:             r.ID.String(),
-		FirstName:      r.FirstName,
-		LastName:       r.LastName,
-		Email:          r.Email,
-		EmployeeNumber: r.EmployeeNumber,
-		OrgNodeID:      r.OrgNodeID.String(),
-		ProfileID:      r.ProfileID.String(),
-		ProfileName:    r.ProfileName,
+		ID:                 r.ID.String(),
+		FirstName:          r.FirstName,
+		LastName:           r.LastName,
+		Email:              r.Email,
+		EmployeeNumber:     r.EmployeeNumber,
+		OrgNodeID:          r.OrgNodeID.String(),
+		ProfileID:          r.ProfileID.String(),
+		ProfileName:        r.ProfileName,
 		ProfileDescription: r.ProfileDescription,
-		JobTitle:       r.JobTitle,
-		IsActive:       r.IsActive,
+		JobTitle:           r.JobTitle,
+		IsActive:           r.IsActive,
 	}
 	if r.ManagerID != nil {
 		item.ManagerID = r.ManagerID.String()
