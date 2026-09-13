@@ -262,8 +262,15 @@ func (h *EvaluationHandler) GetEmployeeCompetencies(w http.ResponseWriter, r *ht
 	} else {
 		cycleID, err = h.evalSvc.ResolveActiveCycleID(r.Context(), employeeID)
 		if err != nil {
-			writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
-				"no active cycle found for this employee", err))
+			var de *pkgerrors.DomainError
+			if pkgerrors.AsDomainError(err, &de) && de.Code == pkgerrors.CycleNotFound {
+				writeError(w, pkgerrors.NewDomainError(pkgerrors.CycleNotFound,
+					"no active cycle found for this employee", err).
+					WithDetails("employee_id: "+employeeID.String()))
+				return
+			}
+			log.Printf("handler/evaluation: ResolveActiveCycleID employee=%s: %v", employeeID, err)
+			writeError(w, err)
 			return
 		}
 	}

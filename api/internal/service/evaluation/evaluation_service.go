@@ -668,7 +668,7 @@ func (s *EvaluationService) EnsureEvaluation(ctx context.Context, employeeID, cy
 	return row.ID, nil
 }
 
-// ResolveActiveCycleID resolves the active (unfinished) cycle for an employee's organization.
+// ResolveActiveCycleID resolves the active (latest) cycle for an employee's organization.
 func (s *EvaluationService) ResolveActiveCycleID(ctx context.Context, employeeID uuid.UUID) (uuid.UUID, error) {
 	emp, err := s.empRepo.GetByID(ctx, employeeID)
 	if err != nil {

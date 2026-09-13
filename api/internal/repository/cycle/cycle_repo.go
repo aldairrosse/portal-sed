@@ -267,14 +267,13 @@ func (r *CycleRepo) ListCycles(ctx context.Context, orgID uuid.UUID, year *int, 
 
 // UpdatePhase applies the phase transition using an optimistic-lock UPDATE.
 // Uses raw SQL for atomic version check. Expects a *sql.Tx.
-// Sets finished_at on cierre and clears it when leaving cierre, so the
-// active cycle (finished_at IS NULL) changes when a new year starts.
+// Does NOT touch finished_at: cierre stays active (finished_at IS NULL)
+// until the new annual cycle is created in asignacion.
 // Returns CONCURRENT_UPDATE error if RowsAffected == 0.
 func (r *CycleRepo) UpdatePhase(ctx context.Context, tx *sql.Tx, cycleID uuid.UUID, nextPhase cycle.CurrentPhase, expectedVersion int) error {
 	res, err := tx.ExecContext(ctx,
 		`UPDATE cycles
-		 SET current_phase = $1::phase, version = version + 1, updated_at = NOW(),
-		     finished_at = CASE WHEN $1::text = 'cierre' THEN NOW() ELSE NULL END
+		 SET current_phase = $1::phase, version = version + 1, updated_at = NOW()
 		 WHERE id = $2 AND version = $3`,
 		string(nextPhase), cycleID, expectedVersion,
 	)
@@ -398,15 +397,21 @@ func (r *CycleRepo) ExecuteRawAdvisoryLock(ctx context.Context, orgID uuid.UUID,
 	}, nil
 }
 
-// GetActive returns the most recent unfinished cycle (finished_at IS NULL) ordered by created_at DESC.
-// Returns nil, nil if no active cycle exists.
+// GetActive returns the most recent cycle ordered by year DESC, created_at DESC.
+// Active = latest cycle; finished_at is never used to resolve the active cycle.
+// NOTE: global, NOT tenant-scoped (no organization_id filter). Legacy /
+// admin-only helper. Evaluations resolve the active cycle per-tenant via
+// GetActiveCycleID(ctx, orgID) — use that in multi-tenant paths.
+// Frontend divergence: frontend badge "Cerrado" reads finished_at, but backend
+// active resolution ignores finished_at; finished_at stays write-dead (no writer
+// yet — cierre finaliza solo al crear nuevo ciclo o update manual pendiente).
 func (r *CycleRepo) GetActive(ctx context.Context) (*CycleRow, error) {
 	row := &CycleRow{}
 	var currentPhase string
 	var startedAt, finishedAt sql.NullTime
 	err := r.db.QueryRowContext(ctx,
 		`SELECT id, created_at, updated_at, year, current_phase, started_at, finished_at, organization_id, COALESCE(version, 1)
-		 FROM cycles WHERE finished_at IS NULL ORDER BY created_at DESC LIMIT 1`,
+		 FROM cycles ORDER BY year DESC, created_at DESC LIMIT 1`,
 	).Scan(&row.ID, &row.CreatedAt, &row.UpdatedAt, &row.Year, &currentPhase, &startedAt, &finishedAt, &row.OrganizationID, &row.Version)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -425,13 +430,13 @@ func (r *CycleRepo) GetActive(ctx context.Context) (*CycleRow, error) {
 }
 
 // GetCurrent returns the cycle for the given year when it exists, otherwise
-// the most recent unfinished cycle (finished_at IS NULL). Returns nil, nil
-// when neither exists.
+// the most recent cycle ordered by year DESC, created_at DESC.
+// Returns nil, nil when neither exists.
 func (r *CycleRepo) GetCurrent(ctx context.Context, orgID uuid.UUID, year int) (*CycleRow, error) {
 	rows, err := r.queryCycles(ctx,
 		`SELECT id, created_at, updated_at, year, current_phase, started_at, finished_at, organization_id, COALESCE(version, 1) as version
-		 FROM cycles WHERE organization_id = $1 AND (year = $2 OR finished_at IS NULL)
-		 ORDER BY CASE WHEN year = $2 THEN 0 ELSE 1 END, created_at DESC LIMIT 1`,
+		 FROM cycles WHERE organization_id = $1
+		 ORDER BY CASE WHEN year = $2 THEN 0 ELSE 1 END, year DESC, created_at DESC LIMIT 1`,
 		orgID, year,
 	)
 	if err != nil {
@@ -443,11 +448,12 @@ func (r *CycleRepo) GetCurrent(ctx context.Context, orgID uuid.UUID, year int) (
 	return rows[0], nil
 }
 
-// GetActiveCycleID finds the active (unfinished) cycle for an organization.
+// GetActiveCycleID finds the active (latest) cycle for an organization,
+// ordered by year DESC, created_at DESC.
 func (r *CycleRepo) GetActiveCycleID(ctx context.Context, orgID uuid.UUID) (uuid.UUID, error) {
 	var id uuid.UUID
 	err := r.db.QueryRowContext(ctx,
-		`SELECT id FROM cycles WHERE organization_id = $1 AND finished_at IS NULL ORDER BY created_at DESC LIMIT 1`,
+		`SELECT id FROM cycles WHERE organization_id = $1 ORDER BY year DESC, created_at DESC LIMIT 1`,
 		orgID,
 	).Scan(&id)
 	if err != nil {
@@ -460,13 +466,15 @@ func (r *CycleRepo) GetActiveCycleID(ctx context.Context, orgID uuid.UUID) (uuid
 }
 
 // ReopenCompletedEvaluations reopens completed evaluations for a cycle.
-// Sets state='pendiente_avance' where cycle_id matches and state='completada':
-// a revert lands the cycle back in 'avance', so reopened evaluations must be
-// in the avance-phase state, not the cierre intermediate 'en_progreso'.
+// Sets state='pendiente_avance' only where phase IN ('avance','medio-anio')
+// and state='completada', so cierre rows are never overwritten: a revert lands
+// the cycle back in 'avance', reopened avance rows become editable while cierre
+// data stays intact. 'medio-anio' is the legacy enum value conserved alongside
+// 'avance' — both must match so revert reopens legacy evaluations too.
 // Returns the number of rows reopened.
 func (r *CycleRepo) ReopenCompletedEvaluations(ctx context.Context, tx *sql.Tx, cycleID uuid.UUID) (int64, error) {
 	res, err := tx.ExecContext(ctx,
-		`UPDATE evaluations SET state='pendiente_avance', updated_at = NOW() WHERE cycle_id=$1 AND state='completada'`,
+		`UPDATE evaluations SET state='pendiente_avance', updated_at = NOW() WHERE cycle_id=$1 AND state='completada' AND phase IN ('avance','medio-anio')`,
 		cycleID,
 	)
 	if err != nil {

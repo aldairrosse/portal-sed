@@ -311,7 +311,7 @@ func (s *service) TransitionPhase(ctx context.Context, req TransitionPhaseReques
 }
 
 // AdvancePhase moves a cycle one step forward in CyclePhaseOrder within the
-// active (unfinished) cycle. Wraps TransitionPhase.
+// active (latest) cycle. Wraps TransitionPhase.
 func (s *service) AdvancePhase(ctx context.Context, cycleID string, expectedVersion int, reason string) (*CycleResponse, error) {
 	id, err := uuid.Parse(cycleID)
 	if err != nil {
@@ -321,10 +321,6 @@ func (s *service) AdvancePhase(ctx context.Context, cycleID string, expectedVers
 	row, err := s.cycleRepo.GetCycle(ctx, id)
 	if err != nil {
 		return nil, err
-	}
-	if row.FinishedAt != nil {
-		return nil, pkgerrors.NewDomainError(pkgerrors.PhaseNotAdvanceable,
-			"cycle is finished; create a new cycle for the current year", nil)
 	}
 	next, ok := resolveNextPhase(row.CurrentPhase)
 	if !ok {
@@ -423,7 +419,7 @@ func (s *service) GetCycle(ctx context.Context, cycleID string) (*CycleResponse,
 }
 
 // GetCurrentCycle resolves the cycle for the given year, falling back to the
-// active (unfinished) cycle. Returns 404 when neither exists.
+// latest cycle. Returns 404 when neither exists.
 func (s *service) GetCurrentCycle(ctx context.Context, orgID string, year int) (*CycleResponse, error) {
 	oid, err := uuid.Parse(orgID)
 	if err != nil {
