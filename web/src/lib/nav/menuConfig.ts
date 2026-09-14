@@ -1,4 +1,5 @@
 import type { EvaluationProfile, CyclePhase } from '$lib/types/evaluation';
+import { MANAGER_ROLES } from '$lib/stores/roleStore.svelte';
 
 export interface MenuItem {
 	label: string;
@@ -50,7 +51,7 @@ export const MENU_ITEMS: MenuItem[] = [
 		label: 'Metas compartidas',
 		href: '/objetivos/compartidas',
 		icon: 'Users',
-		profiles: ['jefe', 'gerente-tienda', 'divisional', 'regional', 'director'],
+		profiles: [...MANAGER_ROLES, 'gerente-tienda', 'divisional', 'regional', 'director'],
 	},
 	{
 		label: 'Mi evaluación',
@@ -72,7 +73,7 @@ export const MENU_ITEMS: MenuItem[] = [
 		href: '/mis-evaluados',
 		icon: 'Users',
 		profiles: [
-			'jefe',
+			...MANAGER_ROLES,
 			'gerente-tienda',
 			'divisional',
 			'regional',
@@ -84,7 +85,7 @@ export const MENU_ITEMS: MenuItem[] = [
 		label: 'Matriz 9-Box',
 		href: '/evaluacion/9x9',
 		icon: 'Grid3x3',
-		profiles: ['jefe', 'director', 'director-general', 'rh'],
+		profiles: [...MANAGER_ROLES, 'director', 'director-general', 'rh'],
 	},
 	{
 		label: 'Jerarquía',

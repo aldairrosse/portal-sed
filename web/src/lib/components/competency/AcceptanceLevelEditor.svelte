@@ -3,7 +3,7 @@
 	import type { EvaluationProfile } from '$lib/types/evaluation';
 	import { PROFILE_LABELS } from '$lib/types/evaluation';
 	import {
-		getProfiles,
+		getProfilesForAcceptance,
 		getPillars,
 		getCompetencies,
 		getLevelDefinitions,
@@ -16,7 +16,7 @@
 	import AcceptanceLevelSummaryModal from './AcceptanceLevelSummaryModal.svelte';
 	import CustomSelect from '$lib/components/ui/CustomSelect.svelte';
 
-	const profiles = $derived(getProfiles());
+	const profiles = $derived(getProfilesForAcceptance());
 	let selectedProfile = $state<EvaluationProfile>('colaborador');
 	let showLevelDefModal = $state(false);
 	let showSummary = $state(false);

@@ -18,6 +18,7 @@
 	} from '$lib/stores/cycleStore.svelte';
 	import { loadPhases, getPhaseId } from '$lib/stores/phaseStore.svelte';
 	import { type EvaluationProfile } from '$lib/types/evaluation';
+import { MANAGER_ROLES } from '$lib/stores/roleStore.svelte';
 	import type { NineBoxEntry, NineBoxTier } from '$lib/types/nine-box';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
 	import NineBoxMatrix from '$lib/components/nine-box/NineBoxMatrix.svelte';
@@ -47,7 +48,7 @@
 	// ─── Reactive state ──────────────────────────────────────────────────────
 
 	const MANAGER_PROFILES: EvaluationProfile[] = [
-		'jefe',
+		...MANAGER_ROLES,
 		'director',
 		'director-general',
 		'rh',
@@ -172,7 +173,7 @@
 	{#if !isAuthorized}
 		<EmptyState
 			title="Sin acceso"
-			message="No tienes permisos para ver la matriz 9-Box. Esta función está disponible para jefes, directores y RH."
+			message="No tienes permisos para ver la matriz 9-Box. Esta función está disponible para jefes, gerentes, coordinadores, directores y RH."
 			actionLabel="Volver al inicio"
 			actionHref="/"
 		/>

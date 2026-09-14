@@ -1,7 +1,7 @@
 ﻿<script lang="ts">
 	import { X } from '@lucide/svelte';
 	import {
-		getProfiles,
+		getProfilesForAcceptance,
 		getPillars,
 		getCompetencies,
 		getCompetencyAcceptanceLevel,
@@ -34,7 +34,7 @@
 
 	const pillars = $derived(getPillars());
 	const competencies = $derived(getCompetencies());
-	const profiles = $derived(getProfiles());
+	const profiles = $derived(getProfilesForAcceptance());
 
 	function getCompetenciesByPillar(pillarId: string) {
 		return competencies.filter((c) => c.pillarId === pillarId);

@@ -20,6 +20,7 @@
 		getCompetencyAcceptanceLevelsByProfile,
 	} from '$lib/stores/competencyStore.svelte';
 	import { Users, User } from '@lucide/svelte';
+	import { isManager } from '$lib/stores/roleStore.svelte';
 	import type { Goal } from '$lib/types/goal';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import { pillarColors } from '$lib/utils/pillarColors';
@@ -61,14 +62,14 @@
 	);
 
 	const hasReports = $derived(
-		[
-			'jefe',
-			'gerente-tienda',
-			'divisional',
-			'regional',
-			'director',
-			'director-general',
-		].includes(profile),
+		isManager(profile) ||
+			[
+				'gerente-tienda',
+				'divisional',
+				'regional',
+				'director',
+				'director-general',
+			].includes(profile),
 	);
 
 	const myGoals = $derived(

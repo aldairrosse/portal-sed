@@ -14,6 +14,10 @@
 	import { getSession } from '$lib/api/session.svelte';
 	import { client } from '$lib/api/client';
 	import { type EvaluationProfile } from '$lib/types/evaluation';
+import {
+		MANAGER_ROLES,
+		isManagerProfile,
+	} from '$lib/stores/roleStore.svelte';
 	import type { OrgNode } from '$lib/types/org-hierarchy';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
 	import PageSkeleton from '$lib/components/ui/PageSkeleton.svelte';
@@ -33,10 +37,10 @@
 	const ALLOWED_PROFILES: EvaluationProfile[] = [
 		'director',
 		'director-general',
-		'jefe',
+		...MANAGER_ROLES,
 	];
 	const isAuthorized = $derived(ALLOWED_PROFILES.includes(profile));
-	const isJefe = $derived(profile === 'jefe');
+	const isManager = $derived(isManagerProfile(profile));
 
 	// ─── Jefe evaluatees state ──────────────────────────────────────────────
 
@@ -54,7 +58,7 @@
 
 	onMount(() => {
 		if (isAuthorized) {
-			if (isJefe) {
+			if (isManager) {
 				loadJefeEvaluatees();
 			} else {
 				load().then(() => {
@@ -112,7 +116,7 @@
 	const userOrgNodeId = $derived(user?.orgNodeId ?? '');
 
 	const treeRoot: OrgNode | null = $derived(
-		isAuthorized && !isJefe
+		isAuthorized && !isManager
 			? userOrgNodeId
 				? (getSubtree(userOrgNodeId) ?? getRoot())
 				: getRoot()
@@ -260,11 +264,11 @@
 	{#if !isAuthorized}
 		<EmptyState
 			title="Sin acceso"
-			message="Solo directores, director general y jefes pueden ver la jerarquía organizacional."
+			message="Solo directores, director general y managers pueden ver la jerarquía organizacional."
 			actionLabel="Volver al inicio"
 			actionHref="/"
 		/>
-	{:else if isJefe}
+	{:else if isManager}
 		<!-- Jefe view: table of direct reports -->
 		<div class="card bg-base-100 border border-base-300">
 			<div class="card-body p-0">

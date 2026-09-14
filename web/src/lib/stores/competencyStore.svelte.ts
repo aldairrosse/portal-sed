@@ -248,6 +248,11 @@ export function getProfiles(): Profile[] {
 	return data?.profiles ?? [];
 }
 
+// ponytail: filtrado solo UI niveles-aceptacion, backend sigue retornando todo para 9x9
+export function getProfilesForAcceptance(): Profile[] {
+	return (data?.profiles ?? []).filter((p) => p.name !== 'director-general');
+}
+
 // ─── Getters: Pillars ─────────────────────────────────────────────────────────
 
 export function getPillars(): Pillar[] {

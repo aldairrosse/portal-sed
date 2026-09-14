@@ -30,7 +30,7 @@
 	import { progressPercent as calcProgress } from '$lib/utils/scoring';
 
 	const profile = $derived(getProfile());
-	const allowedProfiles = ['jefe', 'director', 'director-general'];
+	const allowedProfiles = ['jefe', 'gerente', 'coordinador', 'director', 'director-general'];
 
 	const phase = $derived(getActivePhase() ?? 'inicio-anio');
 	const canEditProgress = $derived(
@@ -279,7 +279,7 @@
 		<div class="bg-base-100 border border-base-300 rounded-lg p-4 mb-4">
 			<h2 class="text-sm font-semibold mb-2">Ponderación de grupo</h2>
 			<p class="text-xs text-base-content/60 mb-3">
-				Jefe edita Grupo; Personal = 100 − Grupo se calcula automáticamente.
+				El responsable edita Grupo; Personal = 100 − Grupo se calcula automáticamente.
 			</p>
 			{#if jError}<p class="text-xs text-error mb-2">{jError}</p>{/if}
 			<div class="flex items-end gap-4">
