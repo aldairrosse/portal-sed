@@ -426,25 +426,39 @@ func (h *CycleHandler) AssignAllEmployees(w http.ResponseWriter, r *http.Request
 	}
 
 	isActive := true
-	employees, err := h.employeeRepo.List(r.Context(), repoorg.EmployeeFilter{
-		TreeID:   &orgID,
-		IsActive: &isActive,
-		Limit:    10000,
-	})
-	if err != nil {
-		writeError(w, err)
-		return
-	}
-
+	// EmployeeRepo.List clamps Limit to 200; paginate in batches of 200
+	// until all active employees are covered. CreateAssignment is
+	// idempotent (advisory lock + existence check), so retries are safe.
+	const batchSize = 200
 	assigned := 0
 	skipped := 0
-	for _, emp := range employees {
-		_, err := h.assignRepo.CreateAssignment(r.Context(), emp.ID, cycleID)
+	total := 0
+	for offset := 0; ; offset += batchSize {
+		batch, err := h.employeeRepo.List(r.Context(), repoorg.EmployeeFilter{
+			TreeID:   &orgID,
+			IsActive: &isActive,
+			Limit:    batchSize,
+			Offset:   offset,
+		})
 		if err != nil {
-			skipped++
-			continue
+			writeError(w, err)
+			return
 		}
-		assigned++
+		if len(batch) == 0 {
+			break
+		}
+		total += len(batch)
+		for _, emp := range batch {
+			_, err := h.assignRepo.CreateAssignment(r.Context(), emp.ID, cycleID)
+			if err != nil {
+				skipped++
+				continue
+			}
+			assigned++
+		}
+		if len(batch) < batchSize {
+			break
+		}
 	}
 
 	// Log activity
@@ -463,6 +477,6 @@ func (h *CycleHandler) AssignAllEmployees(w http.ResponseWriter, r *http.Request
 	writeJSON(w, http.StatusOK, map[string]interface{}{
 		"assigned": assigned,
 		"skipped":  skipped,
-		"total":    len(employees),
+		"total":    total,
 	})
 }

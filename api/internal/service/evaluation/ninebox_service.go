@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/google/uuid"
@@ -19,7 +20,15 @@ import (
 )
 
 // matrixViewTTL is the freshness window for a persisted matrix before it is re-derived.
+// ComputeMatrixView serves the persisted matrix as-is while younger than the
+// TTL (up to 1h stale); there is no write-through invalidation on evaluation
+// writes (out of scope) — recomputation happens per (cycle, phase) on TTL expiry.
 const matrixViewTTL = time.Hour
+
+// HierarchicalScorer computes the final 0-100 hierarchical score per employee.
+type HierarchicalScorer interface {
+	GetEmployeeHierarchicalScore(ctx context.Context, empID, cycleID uuid.UUID) (float64, error)
+}
 
 // NineBoxService handles 9×9 matrix operations and quadrant computation.
 type NineBoxService struct {
@@ -29,6 +38,7 @@ type NineBoxService struct {
 	cycleRepo    *cyclerepo.CycleRepo
 	orgNodeRepo  *orgrepo.OrgNodeRepo
 	employeeRepo *orgrepo.EmployeeRepo
+	scorer       HierarchicalScorer
 }
 
 // NewNineBoxService creates a new NineBoxService.
@@ -41,6 +51,30 @@ func NewNineBoxService(nineBoxRepo NineBoxRepo, catalogRepo CatalogRepo, db DB, 
 		orgNodeRepo:  orgNodeRepo,
 		employeeRepo: employeeRepo,
 	}
+}
+
+// WithScorer injects the hierarchical scorer (goal ScoringService).
+func (s *NineBoxService) WithScorer(scorer HierarchicalScorer) *NineBoxService {
+	s.scorer = scorer
+	return s
+}
+
+// computeHierarchicalPerformance returns the hierarchical 0-100 score when a
+// scorer is configured, else the AVG fallback. Scorer errors fall back to AVG.
+// It also returns the score source ("hierarchical"|"avg-fallback") and the
+// scorer error string (empty unless fallback was caused by a scorer error).
+func (s *NineBoxService) computeHierarchicalPerformance(ctx context.Context, empID, cycleID uuid.UUID, fallback float64) (float64, string, string) {
+	if s.scorer == nil {
+		slog.Info("ninebox AVG fallback no scorer", "emp", empID, "cycle", cycleID, "source", "avg-fallback")
+		return fallback, "avg-fallback", ""
+	}
+	score, err := s.scorer.GetEmployeeHierarchicalScore(ctx, empID, cycleID)
+	if err != nil {
+		slog.Warn("ninebox hierarchical fallback to AVG", "emp", empID, "cycle", cycleID, "err", err, "source", "avg-fallback")
+		return fallback, "avg-fallback", err.Error()
+	}
+	slog.Info("ninebox hierarchical score", "emp", empID, "cycle", cycleID, "score", score, "source", "hierarchical")
+	return score, "hierarchical", ""
 }
 
 // CreateMatrix creates a new 9×9 matrix for an evaluator in a cycle.
@@ -151,7 +185,9 @@ func (s *NineBoxService) RecomputeMatrix(ctx context.Context, cycleID, phaseID u
 		return nil
 	}
 
-	// 2. Resolve real evaluators from manager mapping. Employees without a manager are skipped.
+	// 2. Resolve real evaluators from manager mapping. Root employees
+	// (manager_id IS NULL → uuid.Nil) are self-grouped so RH/DirectorGeneral
+	// see them; scoped viewers filter them out via scopeToViewer upstream.
 	managerMapping, err := s.nineBoxRepo.GetManagerMapping(ctx, employeeIDs)
 	if err != nil {
 		return err
@@ -161,6 +197,10 @@ func (s *NineBoxService) RecomputeMatrix(ctx context.Context, cycleID, phaseID u
 	for _, empID := range employeeIDs {
 		managerID, ok := managerMapping[empID]
 		if !ok {
+			continue
+		}
+		if managerID == uuid.Nil {
+			evaluatorGroups[empID] = append(evaluatorGroups[empID], empID)
 			continue
 		}
 		evaluatorGroups[managerID] = append(evaluatorGroups[managerID], empID)
@@ -194,16 +234,23 @@ func (s *NineBoxService) RecomputeMatrix(ctx context.Context, cycleID, phaseID u
 			}
 		}
 
+		lockedMatrix, _ := s.nineBoxRepo.GetMatrixForUpdate(ctx, tx, matrix.ID)
+		existing := lockedMatrix
+		if existing == nil {
+			existing = matrix
+		}
+
 		for _, evaluateeID := range evaluatees {
-			// 3a. Compute performance tier from goal progress
-			avgProgress, err := s.nineBoxRepo.GetGoalProgressByEmployee(ctx, evaluateeID, cycleID)
+			// 3a. Compute performance tier from hierarchical score (fallback AVG).
+			avgProgress, err := s.nineBoxRepo.GetGoalProgressByEmployee(ctx, evaluateeID, cycleID, phaseID)
 			if err != nil {
 				return err
 			}
-			perfTier := quadrant.ComputePerformanceTier(avgProgress)
+			score, _, _ := s.computeHierarchicalPerformance(ctx, evaluateeID, cycleID, avgProgress)
+			perfTier := quadrant.ComputePerformanceTier(score)
 
-			// 3b. Compute potential tier from competency ratings
-			selfRating, hrRating, err := s.nineBoxRepo.GetCompetencyRatingsByEmployee(ctx, evaluateeID, cycleID)
+			// 3b. Compute potential tier from competency ratings (phase-scoped).
+			selfRating, hrRating, err := s.nineBoxRepo.GetCompetencyRatingsByEmployee(ctx, evaluateeID, cycleID, phaseID)
 			if err != nil {
 				return err
 			}
@@ -212,8 +259,9 @@ func (s *NineBoxService) RecomputeMatrix(ctx context.Context, cycleID, phaseID u
 			// 3c. Compute quadrant
 			q := quadrant.ComputeQuadrantFromTiers(perfTier, potTier)
 
-			// 4. Upsert entry
-			_, err = s.nineBoxRepo.UpsertEntryByTiers(ctx, tx, matrix.ID, evaluateeID, perfTier, potTier, q, "", &avgProgress, selfRating, hrRating)
+			// 4. Upsert entry, preserving existing comments (never blank them).
+			comments := existingComments(evaluateeID, existing)
+			_, err = s.nineBoxRepo.UpsertEntryByTiers(ctx, tx, matrix.ID, evaluateeID, perfTier, potTier, q, comments, &score, selfRating, hrRating)
 			if err != nil {
 				return err
 			}
@@ -234,6 +282,8 @@ type rawEntryInputs struct {
 	goalProgress float64
 	selfRating   *float64
 	hrRating     *float64
+	scoreSource  string
+	scorerError  string
 }
 
 // ComputeMatrixView returns the computed 9×9 matrices for a cycle and phase,
@@ -271,9 +321,17 @@ func (s *NineBoxService) ComputeMatrixView(ctx context.Context, cycleID uuid.UUI
 
 	evaluatorGroups := make(map[uuid.UUID][]uuid.UUID)
 	for _, empID := range employeeIDs {
-		if managerID, ok := managerMapping[empID]; ok {
-			evaluatorGroups[managerID] = append(evaluatorGroups[managerID], empID)
+		managerID, ok := managerMapping[empID]
+		if !ok {
+			continue
 		}
+		if managerID == uuid.Nil {
+			// Root: self-grouped; visible to RoleSeesAll, excluded for
+			// scoped viewers by scopeToViewer filtering above.
+			evaluatorGroups[empID] = append(evaluatorGroups[empID], empID)
+			continue
+		}
+		evaluatorGroups[managerID] = append(evaluatorGroups[managerID], empID)
 	}
 	if len(evaluatorGroups) == 0 {
 		return []dto.NineBoxMatrixResponse{}, nil
@@ -324,6 +382,9 @@ func (s *NineBoxService) ResolvePhaseID(ctx context.Context, cycleID uuid.UUID, 
 	if phase == "" {
 		return s.resolvePhase(ctx, cycleID, phaseID)
 	}
+	// Normalize legacy aliases (fin-anio→cierre, ...) before SQL so the raw
+	// alias never reaches the phase enum (avoids 22P02).
+	phase = state.NormalizePhase(phase)
 	resolved, err := s.cycleRepo.GetPhaseID(ctx, cycleID, phase)
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("resolve phase %q for cycle %s: %w", phase, cycleID, err)
@@ -349,7 +410,10 @@ func (s *NineBoxService) resolvePhase(ctx context.Context, cycleID uuid.UUID, ph
 }
 
 // scopeToViewer restricts the given employee IDs to those within the viewer's
-// org-node subtree.
+// org-node subtree (direct + indirect reports). Intentionally broader than
+// mis-evaluados (ListByManager, direct reports only): 9-box groups evaluatees
+// by manager, so the viewer needs the whole subtree; RoleSeesAll (RH,
+// DirectorGeneral) bypasses this filter upstream in ComputeMatrixView.
 func (s *NineBoxService) scopeToViewer(ctx context.Context, viewerID uuid.UUID, employeeIDs []uuid.UUID) ([]uuid.UUID, error) {
 	if len(employeeIDs) == 0 {
 		return employeeIDs, nil
@@ -436,30 +500,40 @@ func (s *NineBoxService) deriveMatrix(ctx context.Context, cycleID, evaluatorID,
 	entries := make([]*internal.NineBoxEntry, 0, len(evaluatees))
 	rawByEval := make(map[uuid.UUID]rawEntryInputs, len(evaluatees))
 
+	lockedMatrix, _ := s.nineBoxRepo.GetMatrixForUpdate(ctx, tx, matrix.ID)
+	existing := lockedMatrix
+	if existing == nil {
+		existing = matrix
+	}
+
 	for _, evaluateeID := range evaluatees {
-		avgProgress, err := s.nineBoxRepo.GetGoalProgressByEmployee(ctx, evaluateeID, cycleID)
+		avgProgress, err := s.nineBoxRepo.GetGoalProgressByEmployee(ctx, evaluateeID, cycleID, phaseID)
 		if err != nil {
 			return dto.NineBoxMatrixResponse{}, err
 		}
-		perfTier := quadrant.ComputePerformanceTier(avgProgress)
+		score, scoreSource, scorerErr := s.computeHierarchicalPerformance(ctx, evaluateeID, cycleID, avgProgress)
+		perfTier := quadrant.ComputePerformanceTier(score)
 
-		selfRating, hrRating, err := s.nineBoxRepo.GetCompetencyRatingsByEmployee(ctx, evaluateeID, cycleID)
+		selfRating, hrRating, err := s.nineBoxRepo.GetCompetencyRatingsByEmployee(ctx, evaluateeID, cycleID, phaseID)
 		if err != nil {
 			return dto.NineBoxMatrixResponse{}, err
 		}
 		potTier := weightedPotentialTier(selfRating, hrRating)
 		q := quadrant.ComputeQuadrantFromTiers(perfTier, potTier)
 
-		entry, err := s.nineBoxRepo.UpsertEntryByTiers(ctx, tx, matrix.ID, evaluateeID, perfTier, potTier, q, "", &avgProgress, selfRating, hrRating)
+		// Preserve existing comments (never blank them on recompute).
+		entry, err := s.nineBoxRepo.UpsertEntryByTiers(ctx, tx, matrix.ID, evaluateeID, perfTier, potTier, q, existingComments(evaluateeID, existing), &score, selfRating, hrRating)
 		if err != nil {
 			return dto.NineBoxMatrixResponse{}, err
 		}
 
 		entries = append(entries, entry)
 		rawByEval[evaluateeID] = rawEntryInputs{
-			goalProgress: avgProgress,
+			goalProgress: score,
 			selfRating:   selfRating,
 			hrRating:     hrRating,
+			scoreSource:  scoreSource,
+			scorerError:  scorerErr,
 		}
 	}
 
@@ -499,6 +573,8 @@ func (s *NineBoxService) matrixResponse(ctx context.Context, matrix *internal.Ni
 			d.SelfRating = raw.selfRating
 			d.HrRating = raw.hrRating
 			d.Weights = &dto.NineBoxWeightsDTO{Self: quadrant.DefaultWeightSelf, HR: quadrant.DefaultWeightRH}
+			d.ScoreSource = raw.scoreSource
+			d.ScorerError = raw.scorerError
 		} else if e != nil && (e.GoalProgressPercent != nil || e.SelfRating != nil || e.HrRating != nil) {
 			// TTL-hit: map raw inputs from the persisted entry instead of nil.
 			if e.GoalProgressPercent != nil {
@@ -513,12 +589,26 @@ func (s *NineBoxService) matrixResponse(ctx context.Context, matrix *internal.Ni
 	return resp
 }
 
+// existingComments returns the persisted entry comments for an evaluatee so
+// recompute never blanks them (UpsertEntryByTiers overwrites comments).
+func existingComments(evaluateeID uuid.UUID, matrix *internal.NineBoxMatrix) string {
+	if matrix == nil {
+		return ""
+	}
+	for _, e := range matrix.Edges.Entries {
+		if e != nil && e.EvaluateeID == evaluateeID {
+			return e.Comments
+		}
+	}
+	return ""
+}
+
 // weightedPotentialTier maps self/RH competency ratings to a tier 1–3 per
 // REQ-NBM-002: weighted 0.8*RH + 0.2*self. Nil handling avoids 0-bias: both
-// nil → 2 (unknown), single non-nil → that value alone.
+// nil → 1 (no data → low-low, quadrant 1), single non-nil → that value alone.
 func weightedPotentialTier(selfRating, hrRating *float64) int {
 	if selfRating == nil && hrRating == nil {
-		return 2
+		return 1
 	}
 	if selfRating == nil || hrRating == nil {
 		return quadrant.ComputePotentialTier(selfRating, hrRating)

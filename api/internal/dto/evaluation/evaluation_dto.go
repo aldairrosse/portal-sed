@@ -210,6 +210,8 @@ type NineBoxEntryDTO struct {
 	SelfRating          *float64           `json:"selfRating,omitempty"`
 	HrRating            *float64           `json:"hrRating,omitempty"`
 	Weights             *NineBoxWeightsDTO `json:"weights,omitempty"`
+	ScoreSource         string             `json:"scoreSource,omitempty"`
+	ScorerError         string             `json:"scorerError,omitempty"`
 }
 
 // NineBoxWeightsDTO carries the self/RH weights used in the weighted potential tier.

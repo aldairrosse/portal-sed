@@ -325,7 +325,7 @@ func main() {
 	kpiSvc := goalsvc.NewKPIService(kpiRepo, linkRepo, goalRepo, catRepo, phaseCheck, orgNodeRepo, orgTreeRepo, employeeRepo)
 	weightRepo := repoweight.NewRepo(client, db)
 	hierarchicalWeightSvc := weightsvc.NewService(weightRepo, cycleRepo, db)
-	scoringSvc := goalsvc.NewScoringService(catRepo, goalRepo).WithWeightResolver(hierarchicalWeightSvc)
+	scoringSvc := goalsvc.NewScoringService(catRepo, goalRepo).WithWeightResolver(hierarchicalWeightSvc).WithAssignmentRepo(assignRepo)
 	weightSvc := goalsvc.NewWeightValidationService(catRepo, goalRepo)
 	batchSvc := goalsvc.NewBatchService(goalRepo, catRepo, kpiRepo, linkRepo, weightQ, phaseCheck)
 	proposalSvc := goalsvc.NewGoalProposalService(proposalRepo, goalRepo, catRepo, linkRepo, weightQ, phaseCheck, db)
@@ -348,7 +348,7 @@ func main() {
 	idemCache := newInMemoryIdempotencyCache()
 
 	evalSvc := evalsvc.NewEvaluationService(evalRepo, compRatingRepo, goalRatingRepo, cycleCheck, idemCache, employeeRepo, orgNodeRepo)
-	nineBoxSvc := evalsvc.NewNineBoxService(nineBoxRepo, catalogEvalRepo, db, cycleRepo, orgNodeRepo, employeeRepo)
+	nineBoxSvc := evalsvc.NewNineBoxService(nineBoxRepo, catalogEvalRepo, db, cycleRepo, orgNodeRepo, employeeRepo).WithScorer(scoringSvc)
 	dashboardSvc := evalsvc.NewDashboardService(evalRepo)
 
 	// Org services
