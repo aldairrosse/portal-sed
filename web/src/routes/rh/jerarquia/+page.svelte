@@ -25,14 +25,7 @@
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
 	import ErrorState from '$lib/components/ui/ErrorState.svelte';
 	import PageSkeleton from '$lib/components/ui/PageSkeleton.svelte';
-	import {
-		Network,
-		Users,
-		Target,
-		CheckCircle2,
-		Clock,
-		Star,
-	} from '@lucide/svelte';
+	import { Network, Users, Target, Star } from '@lucide/svelte';
 
 	// ─── Profile guard ─────────────────────────────────────────────────────
 
@@ -198,11 +191,11 @@
 								</div>
 							{:else if metricType === 'progress' && metrics}
 								<div class="grid grid-cols-2 gap-4 p-4">
-									<!-- Avg progress -->
+									<!-- Avance promedio -->
 									<div class="flex flex-col gap-1 bg-base-200 rounded-lg p-4">
 										<div class="flex items-center gap-2 text-base-content/40">
 											<Target class="w-4 h-4" />
-											<span class="text-xs font-medium uppercase tracking-wide"
+											<span class="text-[11px] font-medium tracking-wide"
 												>Avance promedio</span
 											>
 										</div>
@@ -213,38 +206,12 @@
 										</p>
 									</div>
 
-									<!-- Completed goals -->
-									<div class="flex flex-col gap-1 bg-base-200 rounded-lg p-4">
-										<div class="flex items-center gap-2 text-base-content/40">
-											<CheckCircle2 class="w-4 h-4 text-success" />
-											<span class="text-xs font-medium uppercase tracking-wide"
-												>Completadas</span
-											>
-										</div>
-										<p class="text-2xl font-bold text-success">
-											{metrics.completedGoals}
-										</p>
-									</div>
-
-									<!-- Pending goals -->
-									<div class="flex flex-col gap-1 bg-base-200 rounded-lg p-4">
-										<div class="flex items-center gap-2 text-base-content/40">
-											<Clock class="w-4 h-4 text-warning" />
-											<span class="text-xs font-medium uppercase tracking-wide"
-												>Pendientes</span
-											>
-										</div>
-										<p class="text-2xl font-bold text-warning">
-											{metrics.pendingGoals}
-										</p>
-									</div>
-
-									<!-- Employees with goals -->
+									<!-- Evaluaciones (antes Colaboradores) -->
 									<div class="flex flex-col gap-1 bg-base-200 rounded-lg p-4">
 										<div class="flex items-center gap-2 text-base-content/40">
 											<Users class="w-4 h-4" />
-											<span class="text-xs font-medium uppercase tracking-wide"
-												>Colaboradores</span
+											<span class="text-[11px] font-medium tracking-wide"
+												>Evaluaciones</span
 											>
 										</div>
 										<p class="text-2xl font-bold">
@@ -257,53 +224,34 @@
 								</div>
 							{:else if metricType === 'rating' && metrics}
 								<div class="grid grid-cols-2 gap-4 p-4">
-									<!-- Avg rating -->
+									<!-- Promedio final -->
 									<div class="flex flex-col gap-1 bg-base-200 rounded-lg p-4">
 										<div class="flex items-center gap-2 text-base-content/40">
 											<Star class="w-4 h-4 text-warning" />
-											<span class="text-xs font-medium uppercase tracking-wide"
-												>Rating promedio</span
+											<span class="text-[11px] font-medium tracking-wide"
+												>Promedio final</span
 											>
 										</div>
 										<p class="text-2xl font-bold">
 											{metrics.avgRating !== null
-												? metrics.avgRating.toFixed(1)
+												? `${metrics.avgRating.toFixed(1)}%`
 												: '—'}
 										</p>
 									</div>
 
-									<!-- Ratings count -->
-									<div class="flex flex-col gap-1 bg-base-200 rounded-lg p-4">
-										<div class="flex items-center gap-2 text-base-content/40">
-											<Star class="w-4 h-4" />
-											<span class="text-xs font-medium uppercase tracking-wide"
-												>Evaluaciones</span
-											>
-										</div>
-										<p class="text-2xl font-bold">{metrics.ratingsCount}</p>
-									</div>
-
-									<!-- Employee count -->
+									<!-- Evaluaciones -->
 									<div class="flex flex-col gap-1 bg-base-200 rounded-lg p-4">
 										<div class="flex items-center gap-2 text-base-content/40">
 											<Users class="w-4 h-4" />
-											<span class="text-xs font-medium uppercase tracking-wide"
-												>Total colaboradores</span
-											>
-										</div>
-										<p class="text-2xl font-bold">{metrics.employeeCount}</p>
-									</div>
-
-									<!-- Employees with goals (contextual) -->
-									<div class="flex flex-col gap-1 bg-base-200 rounded-lg p-4">
-										<div class="flex items-center gap-2 text-base-content/40">
-											<Target class="w-4 h-4" />
-											<span class="text-xs font-medium uppercase tracking-wide"
-												>Con metas</span
+											<span class="text-[11px] font-medium tracking-wide"
+												>Evaluaciones</span
 											>
 										</div>
 										<p class="text-2xl font-bold">
-											{metrics.employeesWithGoals}
+											{metrics.ratingsCount}
+											<span class="text-sm font-normal text-base-content/40"
+												>/ {metrics.employeeCount}</span
+											>
 										</p>
 									</div>
 								</div>

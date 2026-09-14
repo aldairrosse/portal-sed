@@ -359,7 +359,7 @@ func main() {
 	orgsvc.AttachEvaluationRepo(evaluateeSvc, evalRepo)
 	orgsvc.AttachEmployeeEvaluationDeps(employeeSvc, cycleRepo, evalRepo)
 	metricsRepo := repoorganization.NewMetricsRepo(client, db)
-	metricsSvc := orgsvc.NewMetricsService(metricsRepo, orgNodeRepo, client)
+	metricsSvc := orgsvc.NewMetricsService(metricsRepo, orgNodeRepo, client).WithScorer(scoringSvc)
 
 	// -----------------------------------------------------------------------
 	// Dependency Injection — Handlers

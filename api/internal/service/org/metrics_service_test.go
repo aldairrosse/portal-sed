@@ -73,9 +73,9 @@ func TestMetricsService_GetAreaMetrics_Success(t *testing.T) {
 		WithArgs(cycleID).
 		WillReturnRows(sqlmock.NewRows([]string{"current_phase"}).AddRow("avance"))
 
-	// Expect GetRHEvaluationsByEmployees
-	mock.ExpectQuery("SELECT ec.rh_rating, e.employee_id FROM evaluation_competencies ec JOIN evaluations e ON e.id = ec.evaluation_id WHERE e.employee_id IN \\(\\$1,\\$2\\) AND e.cycle_id = \\$3 AND ec.rh_rating IS NOT NULL AND e.phase IN \\(\\$4, \\$5\\)").
-		WithArgs(empID1, empID2, cycleID, "avance", "medio-anio").
+	// Expect GetRHEvaluationsByEmployees (single canonical phase value)
+	mock.ExpectQuery("SELECT ec.rh_rating, e.employee_id FROM evaluation_competencies ec JOIN evaluations e ON e.id = ec.evaluation_id WHERE e.employee_id IN \\(\\$1,\\$2\\) AND e.cycle_id = \\$3 AND ec.rh_rating IS NOT NULL AND e.phase = \\$4").
+		WithArgs(empID1, empID2, cycleID, "avance").
 		WillReturnRows(sqlmock.NewRows([]string{
 			"rh_rating", "employee_id",
 		}).
@@ -88,16 +88,14 @@ func TestMetricsService_GetAreaMetrics_Success(t *testing.T) {
 	assert.Equal(t, 2, resp.EmployeeCount)
 	assert.Equal(t, 2, resp.EmployeesWithGoals)
 
-	// Expected avg progress: ((75/100)*100 + (50/50)*100) / 2 = (75 + 100) / 2 = 87.5
+	// Expected dept avg: per-employee (75 + 100)/2 = 87.5, solo metas, 0 por defecto. Tanto Avance como Promedio final usan mismo scorer.
 	require.NotNil(t, resp.AvgProgress)
 	assert.Equal(t, 87.5, *resp.AvgProgress)
+	require.NotNil(t, resp.AvgRating)
+	assert.Equal(t, 87.5, *resp.AvgRating)
 
 	assert.Equal(t, 1, resp.CompletedGoals) // Goal B: 50 >= 50
 	assert.Equal(t, 1, resp.PendingGoals)   // Goal A: 75 < 100
-
-	// Expected avg rating: (4.5 + 3.5) / 2 = 4.0
-	require.NotNil(t, resp.AvgRating)
-	assert.Equal(t, 4.0, *resp.AvgRating)
 
 	assert.Equal(t, 2, resp.RatingsCount)
 	require.Len(t, resp.Employees, 2)
@@ -185,10 +183,13 @@ func TestMetricsService_GetAreaMetrics_NoGoals(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 1, resp.EmployeeCount)
 	assert.Equal(t, 0, resp.EmployeesWithGoals)
-	assert.Nil(t, resp.AvgProgress)
+	// Sin metas => 0 por defecto para ambos promedios (solo metas)
+	require.NotNil(t, resp.AvgProgress)
+	assert.Equal(t, 0.0, *resp.AvgProgress)
+	require.NotNil(t, resp.AvgRating)
+	assert.Equal(t, 0.0, *resp.AvgRating)
 	assert.Equal(t, 0, resp.CompletedGoals)
 	assert.Equal(t, 0, resp.PendingGoals)
-	assert.Nil(t, resp.AvgRating)
 	assert.Equal(t, 0, resp.RatingsCount)
 
 	assert.NoError(t, mock.ExpectationsWereMet())
@@ -228,9 +229,9 @@ func TestMetricsService_GetAreaMetrics_NoRatings(t *testing.T) {
 			"id", "name", "target_value", "current_value", "state", "employee_id",
 		}).AddRow(goalID1, "Goal A", 100.0, 50.0, "in_progress", empID1))
 
-	// Expect empty ratings
-	mock.ExpectQuery("SELECT ec.rh_rating, e.employee_id FROM evaluation_competencies ec JOIN evaluations e ON e.id = ec.evaluation_id WHERE e.employee_id IN \\(\\$1\\) AND e.cycle_id = \\$2 AND ec.rh_rating IS NOT NULL AND e.phase IN \\(\\$3, \\$4\\)").
-		WithArgs(empID1, cycleID, "avance", "medio-anio").
+	// Expect empty ratings (single canonical phase value)
+	mock.ExpectQuery("SELECT ec.rh_rating, e.employee_id FROM evaluation_competencies ec JOIN evaluations e ON e.id = ec.evaluation_id WHERE e.employee_id IN \\(\\$1\\) AND e.cycle_id = \\$2 AND ec.rh_rating IS NOT NULL AND e.phase = \\$3").
+		WithArgs(empID1, cycleID, "avance").
 		WillReturnRows(sqlmock.NewRows([]string{
 			"rh_rating", "employee_id",
 		}))
@@ -239,14 +240,14 @@ func TestMetricsService_GetAreaMetrics_NoRatings(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 1, resp.EmployeeCount)
 
-	// Goals exist so progress should be computed
+	// Goals exist: dept avg = 50.0 para ambos (solo metas, 0 por defecto)
 	require.NotNil(t, resp.AvgProgress)
 	assert.Equal(t, 50.0, *resp.AvgProgress)
+	require.NotNil(t, resp.AvgRating)
+	assert.Equal(t, 50.0, *resp.AvgRating)
 	assert.Equal(t, 0, resp.CompletedGoals)
 	assert.Equal(t, 1, resp.PendingGoals)
 
-	// No ratings so avgRating is nil
-	assert.Nil(t, resp.AvgRating)
 	assert.Equal(t, 0, resp.RatingsCount)
 
 	assert.NoError(t, mock.ExpectationsWereMet())
@@ -370,17 +371,15 @@ func TestMetricsService_GetAreaMetrics_NoCycleID(t *testing.T) {
 			"id", "name", "target_value", "current_value", "state", "employee_id",
 		}).AddRow(goalID1, "Goal A", 100.0, 80.0, "in_progress", empID1))
 
-	// No cycleID, so no RH evaluations query
+	// No cycleID, avg se calcula igual (solo metas)
 	resp, err := service.GetAreaMetrics(context.Background(), nodeID.String(), "", "")
 	require.NoError(t, err)
 	assert.Equal(t, 1, resp.EmployeeCount)
 
-	// Goals should be computed even without cycleID
 	require.NotNil(t, resp.AvgProgress)
 	assert.Equal(t, 80.0, *resp.AvgProgress)
-
-	// No cycleID -> no ratings queried
-	assert.Nil(t, resp.AvgRating)
+	require.NotNil(t, resp.AvgRating)
+	assert.Equal(t, 80.0, *resp.AvgRating)
 	assert.Equal(t, 0, resp.RatingsCount)
 
 	assert.NoError(t, mock.ExpectationsWereMet())

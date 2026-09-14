@@ -12,6 +12,13 @@ import (
 	repo "github.com/sed-evaluacion-desempeno/api/internal/repository/org"
 )
 
+// GoalScorer computes the weighted metas score for a single employee (0-100).
+// It mirrors the 9-box hierarchical scorer (personal cat/goal weights + P/PJ + global/shared).
+type GoalScorer interface {
+	GetEmployeeScore(ctx context.Context, empID uuid.UUID) (float64, error)
+	GetEmployeeHierarchicalScore(ctx context.Context, empID, cycleID uuid.UUID) (float64, error)
+}
+
 // MetricsService defines the interface for area metrics operations.
 type MetricsService interface {
 	GetAreaMetrics(ctx context.Context, nodeID, cycleID, phase string) (*dto.AreaMetricsResponse, error)
@@ -21,15 +28,23 @@ type metricsService struct {
 	metricsRepo *repo.MetricsRepo
 	nodeRepo    *repo.OrgNodeRepo
 	client      *internal.Client
+	scorer      GoalScorer
 }
 
 // NewMetricsService creates a new MetricsService.
-func NewMetricsService(metricsRepo *repo.MetricsRepo, nodeRepo *repo.OrgNodeRepo, client *internal.Client) MetricsService {
+func NewMetricsService(metricsRepo *repo.MetricsRepo, nodeRepo *repo.OrgNodeRepo, client *internal.Client) *metricsService {
 	return &metricsService{
 		metricsRepo: metricsRepo,
 		nodeRepo:    nodeRepo,
 		client:      client,
 	}
+}
+
+// WithScorer injects the hierarchical goal scorer used for weighted department averages.
+// When set, AvgProgress and AvgRating are computed as the mean of per-employee hierarchical scores (0 por defecto si no tiene metas), solo metas.
+func (s *metricsService) WithScorer(scorer GoalScorer) *metricsService {
+	s.scorer = scorer
+	return s
 }
 
 // GetAreaMetrics computes aggregated metrics for the team of a given org node
@@ -88,20 +103,16 @@ func (s *metricsService) GetAreaMetrics(ctx context.Context, nodeID, cycleID, ph
 		}
 	}
 
-	// Get goals for those employees
+	// Get goals for legacy counters (completed/pending/employeesWithGoals).
 	goals, err := s.metricsRepo.GetGoalsByEmployees(ctx, empIDs)
 	if err != nil {
 		return nil, err
 	}
+	resp.CompletedGoals = countCompleted(goals)
+	resp.PendingGoals = countPending(goals)
+	resp.EmployeesWithGoals = countEmployeesWithGoals(goals)
 
-	if len(goals) > 0 {
-		resp.AvgProgress = computeAvgProgress(goals)
-		resp.CompletedGoals = countCompleted(goals)
-		resp.PendingGoals = countPending(goals)
-		resp.EmployeesWithGoals = countEmployeesWithGoals(goals)
-	}
-
-	// Parse cycle ID if provided
+	// Parse cycle ID and phase (para scorer cycle-scoped y para RatingsCount).
 	var cycleUUID uuid.UUID
 	if cycleID != "" {
 		cycleUUID, err = uuid.Parse(cycleID)
@@ -115,8 +126,6 @@ func (s *metricsService) GetAreaMetrics(ctx context.Context, nodeID, cycleID, ph
 			}
 		}
 	}
-
-	// Validate explicit phase filter (legacy aliases accepted via NormalizePhase).
 	if phase != "" {
 		phase = state.NormalizePhase(phase)
 		switch phase {
@@ -126,17 +135,63 @@ func (s *metricsService) GetAreaMetrics(ctx context.Context, nodeID, cycleID, ph
 		}
 	}
 
-	// Get RH evaluations if cycleID is provided
+	// ── Weighted department average: mean of per-employee hierarchical goal scores ──
+	// Solo metas, 0 por defecto para empleados sin metas. Usa el mismo scorer que 9-box
+	// (categorías/pesos + P/PJ + global/compartidas). Si no hay scorer inyectado, fallback
+	// a promedio simple por empleado con 0 para los sin metas.
+	var deptAvg *float64
+	if len(employees) > 0 {
+		var sum float64
+		if s.scorer != nil {
+			for _, emp := range employees {
+				score, err := s.scorer.GetEmployeeHierarchicalScore(ctx, emp.ID, cycleUUID)
+				if err != nil {
+					// Fallback to simple score if hierarchical fails
+					if s2, err2 := s.scorer.GetEmployeeScore(ctx, emp.ID); err2 == nil {
+						score = s2
+					} else {
+						score = 0
+					}
+				}
+				// GetEmployeeHierarchicalScore ya incluye clamp 0-100 y 0 si no tiene metas.
+				sum += score
+			}
+		} else {
+			// Fallback sin scorer: promedio por empleado (current/target) con 0 para sin metas.
+			perEmp := groupProgressByEmployee(goals)
+			for _, emp := range employees {
+				if v, ok := perEmp[emp.ID]; ok {
+					sum += v
+				} else {
+					sum += 0
+				}
+			}
+		}
+		avg := sum / float64(len(employees))
+		avg = math.Round(avg*10) / 10
+		deptAvg = &avg
+	}
+
+	// Asignar a ambas métricas para que Avance promedio (medio-año) y Promedio final (cierre)
+	// compartan el mismo cálculo ponderado de metas. Se mantiene compat con por-fase.
+	if deptAvg != nil {
+		resp.AvgProgress = deptAvg
+		resp.AvgRating = deptAvg
+	} else if len(employees) > 0 {
+		zero := 0.0
+		resp.AvgProgress = &zero
+		resp.AvgRating = &zero
+	}
+
+	// RatingsCount sigue siendo conteo de evaluaciones RH con rating para compatibilidad del
+	// card Evaluaciones en cierre (1/10). El promedio ya es de metas, pero el conteo se usa
+	// solo como numerador del total de colaboradores.
 	if cycleUUID != uuid.Nil {
 		ratings, err := s.metricsRepo.GetRHEvaluationsByEmployees(ctx, empIDs, cycleUUID, phase)
 		if err != nil {
 			return nil, err
 		}
-
-		if len(ratings) > 0 {
-			resp.AvgRating = computeAvgRating(ratings)
-			resp.RatingsCount = len(ratings)
-		}
+		resp.RatingsCount = len(ratings)
 	}
 
 	return resp, nil
@@ -212,4 +267,32 @@ func countEmployeesWithGoals(goals []*repo.GoalRow) int {
 		seen[g.EmployeeID] = struct{}{}
 	}
 	return len(seen)
+}
+
+// groupProgressByEmployee promedia el progreso por empleado (current/target) para el fallback sin scorer.
+// Retorna map employeeID -> avg progress 0-100 de ese empleado. Empleados sin metas no aparecen (caller pone 0).
+func groupProgressByEmployee(goals []*repo.GoalRow) map[uuid.UUID]float64 {
+	byEmp := make(map[uuid.UUID][]float64)
+	for _, g := range goals {
+		if g.TargetValue <= 0 {
+			continue
+		}
+		pct := g.CurrentValue / g.TargetValue * 100
+		if pct < 0 {
+			pct = 0
+		}
+		if pct > 100 {
+			pct = 100
+		}
+		byEmp[g.EmployeeID] = append(byEmp[g.EmployeeID], pct)
+	}
+	avg := make(map[uuid.UUID]float64, len(byEmp))
+	for emp, vals := range byEmp {
+		var sum float64
+		for _, v := range vals {
+			sum += v
+		}
+		avg[emp] = sum / float64(len(vals))
+	}
+	return avg
 }

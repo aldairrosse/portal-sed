@@ -279,7 +279,7 @@ func setupTestServerWithPhaseChecker(t *testing.T, phaseChecker goalsvc.PhaseChe
 	orgNodeSvc := orgsvc.NewOrgNodeService(orgNodeRepo, client)
 	employeeSvc := orgsvc.NewEmployeeService(employeeRepo, client)
 	evaluateeSvc := orgsvc.NewEvaluateeService(employeeRepo, orgNodeRepo, client, nil, nil, nil)
-	metricsSvc := orgsvc.NewMetricsService(metricsRepo, orgNodeRepo, client)
+	metricsSvc := orgsvc.NewMetricsService(metricsRepo, orgNodeRepo, client).WithScorer(scoringSvc)
 
 	// Activity
 	activityRepo := repoactivity.NewRepository(client)
