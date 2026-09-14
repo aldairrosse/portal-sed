@@ -44,6 +44,7 @@ let error = $state<string | null>(null);
 let hasMore = $state(false);
 let hasPrev = $state(false);
 let apiTotal = $state(0);
+let completedCount = $state<number | null>(null);
 
 // ─── Reactive getters ─────────────────────────────────────────────────────────
 
@@ -67,6 +68,9 @@ export function getCurrentPage(): number {
 }
 export function getTotalCount(): number {
 	return apiTotal;
+}
+export function getCompletedCount(): number | null {
+	return completedCount;
 }
 export function getSearchQuery(): string {
 	return currentQ ?? '';
@@ -120,7 +124,12 @@ export async function load(): Promise<void> {
 
 		const body = res.data as {
 			data?: Array<Record<string, unknown>>;
-			meta?: { hasMore?: boolean; total?: number };
+			meta?: {
+				hasMore?: boolean;
+				total?: number;
+				completedCount?: number;
+				completed_count?: number;
+			};
 		};
 
 		items = (body.data ?? []).map((raw) => {
@@ -152,10 +161,17 @@ export async function load(): Promise<void> {
 		hasMore = body.meta?.hasMore ?? false;
 		hasPrev = currentPage > 0;
 		apiTotal = body.meta?.total ?? 0;
+		const rawCompleted =
+			body.meta?.completedCount ?? body.meta?.completed_count;
+		completedCount =
+			typeof rawCompleted === 'number' && Number.isInteger(rawCompleted)
+				? rawCompleted
+				: null;
 	} catch (e) {
 		error =
 			e instanceof Error ? e.message : 'Error desconocido al cargar empleados';
 		items = [];
+		completedCount = null;
 	} finally {
 		loading = false;
 	}

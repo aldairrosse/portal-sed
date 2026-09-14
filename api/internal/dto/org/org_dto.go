@@ -176,10 +176,11 @@ type EmployeeDetail struct {
 type EmployeeListResponse struct {
 	Data []EmployeeListItem `json:"data"`
 	Meta struct {
-		HasMore bool `json:"hasMore"`
-		Limit   int  `json:"limit"`
-		Offset  int  `json:"offset"`
-		Total   int  `json:"total"`
+		HasMore        bool `json:"hasMore"`
+		Limit          int  `json:"limit"`
+		Offset         int  `json:"offset"`
+		Total          int  `json:"total"`
+		CompletedCount *int `json:"completedCount,omitempty"`
 	} `json:"meta"`
 }
 

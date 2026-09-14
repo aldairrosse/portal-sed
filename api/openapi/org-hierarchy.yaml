@@ -837,6 +837,15 @@ components:
               type: boolean
             limit:
               type: integer
+            offset:
+              type: integer
+            total:
+              type: integer
+              description: Total employees matching filter (sin paginación)
+            completedCount:
+              type: integer
+              nullable: true
+              description: Global completadas en fase activa (mismo filtro q, sin paginación). Solo GET /employees (RH); null si sin ciclo activo.
 
     Ancestor:
       type: object

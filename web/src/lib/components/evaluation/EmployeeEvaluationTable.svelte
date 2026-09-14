@@ -71,6 +71,10 @@
 			{ selfAvg: number; rhAvg: number; status: string }
 		>;
 		competencyDetailHref?: (employeeId: string) => string;
+		// Global RH count (303) — cuando se provee, el chip usa n de total global
+		// en lugar de n de página (50). No afecta mis-evaluados (manager).
+		globalCompleted?: number | null;
+		globalTotal?: number | null;
 	}
 
 	let {
@@ -82,6 +86,8 @@
 		mode = 'manager',
 		detail,
 		competencyRatings,
+		globalCompleted = null,
+		globalTotal = null,
 	}: Props = $props();
 
 	const loadingEval = $derived(isLoading());
@@ -188,9 +194,19 @@
 		isMedioAnioPhase(currentPhase) ? 'avance' : 'cierre',
 	);
 
-	const completionSummary = $derived({
-		total: filteredRows.length,
-		completed: filteredRows.filter((r) => hasCompletedPhase(r.id)).length,
+	const completionSummary = $derived.by(() => {
+		// RH: conteo global (mismo filtro q=, sin paginación) vía meta.completedCount
+		if (
+			mode === 'rh' &&
+			typeof globalTotal === 'number' &&
+			typeof globalCompleted === 'number'
+		) {
+			return { total: globalTotal, completed: globalCompleted };
+		}
+		return {
+			total: filteredRows.length,
+			completed: filteredRows.filter((r) => hasCompletedPhase(r.id)).length,
+		};
 	});
 
 	function hasCompletedPhase(employeeId: string): boolean {

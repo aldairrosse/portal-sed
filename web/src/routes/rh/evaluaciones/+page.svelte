@@ -17,6 +17,7 @@
 		hasPrevItems,
 		getCurrentPage,
 		getTotalCount,
+		getCompletedCount,
 		load,
 		search,
 		next,
@@ -32,6 +33,7 @@
 	const hasPrev = $derived(hasPrevItems());
 	const currentPage = $derived(getCurrentPage());
 	const totalCount = $derived(getTotalCount());
+	const completedCount = $derived(getCompletedCount());
 
 	const phase = $derived(getActivePhase() ?? 'inicio-anio');
 	const isFinAnio = $derived(isFinAnioPhase(phase));
@@ -155,6 +157,8 @@
 			onSelect={handleSelect}
 			{selectedEmployeeId}
 			disabled={!(isMedioAnio || isFinAnio)}
+			globalCompleted={completedCount}
+			globalTotal={totalCount}
 		>
 			{#snippet detail()}
 				{#if selectedEmployeeId}

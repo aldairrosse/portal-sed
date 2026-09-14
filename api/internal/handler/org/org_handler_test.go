@@ -376,6 +376,7 @@ func TestListEmployees_Success(t *testing.T) {
 					Limit   int  `json:"limit"`
 					Offset  int  `json:"offset"`
 					Total   int  `json:"total"`
+					CompletedCount *int `json:"completedCount,omitempty"`
 				}{HasMore: false, Limit: 25},
 			}, nil
 		},
@@ -438,6 +439,7 @@ func TestGetMyEvaluatees_Success(t *testing.T) {
 					Limit   int  `json:"limit"`
 					Offset  int  `json:"offset"`
 					Total   int  `json:"total"`
+					CompletedCount *int `json:"completedCount,omitempty"`
 				}{Limit: 1, HasMore: false},
 			}, nil
 		},
@@ -506,6 +508,7 @@ func TestBatchResolve_Success(t *testing.T) {
 					Limit   int  `json:"limit"`
 					Offset  int  `json:"offset"`
 					Total   int  `json:"total"`
+					CompletedCount *int `json:"completedCount,omitempty"`
 				}{Limit: 2, HasMore: false},
 			}, nil
 		},
@@ -540,6 +543,7 @@ func TestSearchEmployees_Success(t *testing.T) {
 					Limit   int  `json:"limit"`
 					Offset  int  `json:"offset"`
 					Total   int  `json:"total"`
+					CompletedCount *int `json:"completedCount,omitempty"`
 				}{Limit: 20, HasMore: false},
 			}, nil
 		},
@@ -673,6 +677,7 @@ func TestBatchResolve_TooManyIDs(t *testing.T) {
 					Limit   int  `json:"limit"`
 					Offset  int  `json:"offset"`
 					Total   int  `json:"total"`
+					CompletedCount *int `json:"completedCount,omitempty"`
 				}{Limit: len(idList), HasMore: false},
 			}, nil
 		},
@@ -1060,6 +1065,7 @@ func TestGetMyEvaluatees_WithQueryParams(t *testing.T) {
 					Limit   int  `json:"limit"`
 					Offset  int  `json:"offset"`
 					Total   int  `json:"total"`
+					CompletedCount *int `json:"completedCount,omitempty"`
 				}{Limit: 25, Offset: 10, HasMore: false},
 			}, nil
 		},

@@ -195,6 +195,71 @@ func (s *employeeService) ListEmployees(ctx context.Context, treeID, nodeID, pro
 		resp.Data[i] = item
 	}
 
+	// Global completed count (RH) — mismo filtro, sin paginación.
+	// No afecta a mis-evaluados: este servicio solo sirve GET /employees.
+	// Lógica de completada idéntica al per-row: self competencies + metas fase.
+	if targetCycleID != nil && activePhase != "" && phaseKind != "" && s.evalRepo != nil && total > 0 {
+		if compTotal == 0 {
+			if n, err := s.evalRepo.CompetencyTotalCount(ctx); err == nil {
+				compTotal = n
+			}
+		}
+		allIDs, err := s.empRepo.ListIDsWithProfiles(ctx, countFilter)
+		if err == nil {
+			if len(allIDs) == 0 {
+				zero := 0
+				resp.Meta.CompletedCount = &zero
+			} else {
+				const chunk = 500
+				globalAvg := map[uuid.UUID]repoeval.EmployeeAvg{}
+				globalGoals := map[uuid.UUID]repoeval.EmployeeGoalStatus{}
+				for sIdx := 0; sIdx < len(allIDs); sIdx += chunk {
+					e := sIdx + chunk
+					if e > len(allIDs) {
+						e = len(allIDs)
+					}
+					slice := allIDs[sIdx:e]
+					if m, err := s.evalRepo.BatchAvgByEmployeeIDs(ctx, *targetCycleID, activePhase, slice); err == nil {
+						for k, v := range m {
+							globalAvg[k] = v
+						}
+					}
+					if m, err := s.evalRepo.BatchGoalStatusByEmployeeIDs(ctx, *targetCycleID, activePhase, slice); err == nil {
+						for k, v := range m {
+							globalGoals[k] = v
+						}
+					}
+				}
+				completed := 0
+				for _, id := range allIDs {
+					rated := 0
+					if a, ok := globalAvg[id]; ok {
+						rated = a.SelfCount
+					}
+					gt, gd := 0, 0
+					if g, ok := globalGoals[id]; ok {
+						gt, gd = g.Total, g.Done
+					}
+					var status string
+					switch {
+					case rated == 0 && gd == 0:
+						status = "pending"
+					case compTotal <= 0:
+						status = "in-progress"
+					case rated < compTotal || gd < gt:
+						status = "in-progress"
+					default:
+						status = "completed"
+					}
+					if status == "completed" {
+						completed++
+					}
+				}
+				resp.Meta.CompletedCount = &completed
+			}
+		}
+	}
+
 	return resp, nil
 }
 

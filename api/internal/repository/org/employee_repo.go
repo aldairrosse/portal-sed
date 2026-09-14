@@ -187,6 +187,63 @@ func (r *EmployeeRepo) ListWithProfiles(ctx context.Context, filter EmployeeFilt
 	return scanEmployeeRowsWithProfile(r.db, ctx, fullQuery, args...)
 }
 
+// ListIDsWithProfiles returns only employee IDs matching the filter (no pagination/order; for global counters).
+func (r *EmployeeRepo) ListIDsWithProfiles(ctx context.Context, filter EmployeeFilter) ([]uuid.UUID, error) {
+	query := `SELECT e.id FROM employees e LEFT JOIN evaluation_profiles ep ON e.profile_id = ep.id`
+	var conditions []string
+	var joins []string
+	args := []interface{}{}
+	idx := 1
+	if filter.TreeID != nil {
+		joins = append(joins, `JOIN org_nodes on2 ON e.org_node_id = on2.id`)
+		conditions = append(conditions, `on2.organization_id = $`+itoa(idx))
+		args = append(args, *filter.TreeID)
+		idx++
+	}
+	if filter.NodeID != nil {
+		conditions = append(conditions, `e.org_node_id = $`+itoa(idx))
+		args = append(args, *filter.NodeID)
+		idx++
+	}
+	if filter.ProfileID != nil {
+		conditions = append(conditions, `e.profile_id = $`+itoa(idx))
+		args = append(args, *filter.ProfileID)
+		idx++
+	}
+	if filter.IsActive != nil {
+		conditions = append(conditions, `e.is_active = $`+itoa(idx))
+		args = append(args, *filter.IsActive)
+		idx++
+	} else {
+		conditions = append(conditions, `e.is_active = true`)
+	}
+	if filter.Query != "" {
+		conditions = append(conditions, `(e.first_name ILIKE $`+itoa(idx)+
+			` OR e.last_name ILIKE $`+itoa(idx)+
+			` OR e.email ILIKE $`+itoa(idx)+
+			` OR e.employee_number ILIKE $`+itoa(idx)+`)`)
+		args = append(args, "%"+filter.Query+"%")
+	}
+	fullQuery := query + " " + strings.Join(joins, " ")
+	if len(conditions) > 0 {
+		fullQuery += ` WHERE ` + strings.Join(conditions, " AND ")
+	}
+	rows, err := r.db.QueryContext(ctx, fullQuery, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var ids []uuid.UUID
+	for rows.Next() {
+		var id uuid.UUID
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+	return ids, rows.Err()
+}
+
 // CountWithProfiles returns the total number of employees matching the filter (without pagination).
 func (r *EmployeeRepo) CountWithProfiles(ctx context.Context, filter EmployeeFilter) (int, error) {
 	query := `SELECT COUNT(*)
