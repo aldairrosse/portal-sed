@@ -118,7 +118,9 @@
 									</p>
 									{#if entry.goalProgressPercent != null || entry.selfRating != null || entry.hrRating != null || entry.weights != null}
 										<p class="text-xs text-base-content/40 mt-0.5">
-											Avance {entry.goalProgressPercent ?? '0'}% · Auto {entry.selfRating ??
+											Avance {entry.goalProgressPercent != null
+												? Number(entry.goalProgressPercent).toFixed(1)
+												: '0.0'}% · Auto {entry.selfRating ??
 												'0'} · EV {entry.hrRating ?? '0'} · {entry.weights
 												?.self != null && entry.weights?.hr != null
 												? `(${entry.weights.self}/${entry.weights.hr})`

@@ -31,6 +31,7 @@
 		addManagerComment,
 		isLoading,
 		getError,
+		getErrorCode,
 		errorWithCode,
 		load as loadEvaluations,
 	} from '$lib/stores/evaluationStore.svelte';
@@ -71,6 +72,7 @@
 	const loadingEval = $derived(isLoading());
 	const loadingGoals = $derived(isGoalsLoading());
 	const errorEval = $derived(getError());
+	const errorCode = $derived(getErrorCode());
 
 	onMount(() => {
 		loadEvaluations(employeeId, viewerMode);
@@ -273,7 +275,7 @@
 {#if loadingEval}
 	<PageSkeleton variant="card" rows={3} />
 {:else if errorEval}
-	<ErrorState message={errorEval} onretry={loadEvaluations} />
+	<ErrorState message={errorEval} code={errorCode} onretry={() => loadEvaluations(employeeId, viewerMode)} />
 {:else}
 	<div class="flex flex-col gap-6">
 		{#if showBreadcrumb}
@@ -308,7 +310,7 @@
 					class="bg-primary text-primary-content rounded-full w-9 flex items-center justify-center"
 				>
 					<span class="text-sm font-semibold">
-						{(displayName.trim().charAt(0) || '—').toUpperCase()}
+						{(displayName.trim().split(/\s+/).slice(0, 2).map((w) => w.charAt(0)).join('') || '—').toUpperCase()}
 					</span>
 				</div>
 			</div>

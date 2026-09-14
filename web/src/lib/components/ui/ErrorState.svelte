@@ -4,6 +4,7 @@
 	interface Props {
 		title?: string;
 		message?: string;
+		code?: string | null;
 		retryLabel?: string;
 		onretry?: () => void;
 	}
@@ -11,6 +12,7 @@
 	let {
 		title = 'Error de red',
 		message = 'No se pudo conectar con el servidor. Verifica tu conexión e intenta de nuevo.',
+		code = undefined,
 		retryLabel = 'Reintentar',
 		onretry,
 	}: Props = $props();
@@ -27,6 +29,9 @@
 	</div>
 	<h3 class="text-lg font-semibold text-error">{title}</h3>
 	<p class="text-base-content/50 mt-1.5 max-w-sm">{message}</p>
+	{#if code}
+		<p class="mt-2 text-xs font-mono text-base-content/40">{code}</p>
+	{/if}
 	{#if onretry}
 		<button class="btn btn-error btn-sm mt-5 px-6" onclick={onretry}>
 			{retryLabel}

@@ -192,6 +192,7 @@ async function tryAutoCreate(
 let data = $state<StoreData | null>(null);
 let loading = $state(true);
 let error = $state<string | null>(null);
+let errorCode = $state<string | null>(null);
 let loadPromise: Promise<void> | null = null;
 let lastLoadTime = 0;
 const FRESHNESS_MS = 5000;
@@ -204,6 +205,11 @@ export function isLoading(): boolean {
 /** @returns the current error message, or null if no error. */
 export function getError(): string | null {
 	return error;
+}
+
+/** @returns the current error code, or null if none/unknown. */
+export function getErrorCode(): string | null {
+	return errorCode;
 }
 
 // ─── Normalize API response → StoreData ───────────────────────────────────────
@@ -540,6 +546,7 @@ async function _doLoad(
 ): Promise<void> {
 	loading = true;
 	error = null;
+	errorCode = null;
 
 	try {
 		if (employeeId) {
@@ -729,6 +736,7 @@ async function _doLoad(
 			e instanceof Error
 				? e.message
 				: 'Error desconocido al cargar evaluaciones';
+		errorCode = errorWithCode(e).code;
 	} finally {
 		loading = false;
 	}
