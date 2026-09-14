@@ -410,8 +410,8 @@ func (r *CycleRepo) ExecuteRawAdvisoryLock(ctx context.Context, orgID uuid.UUID,
 // NOTE: global, NOT tenant-scoped (no organization_id filter). Legacy /
 // admin-only helper. Evaluations resolve the active cycle per-tenant via
 // GetActiveCycleID(ctx, orgID) — use that in multi-tenant paths.
-// Frontend divergence: frontend badge "Cerrado" reads finished_at, but backend
-// active resolution ignores finished_at; finished_at stays write-dead (no writer
+// Frontend badge "Cerrado" usa current_phase, no finished_at; backend active
+// resolution ignora finished_at; finished_at stays write-dead (no writer
 // yet — cierre finaliza solo al crear nuevo ciclo o update manual pendiente).
 func (r *CycleRepo) GetActive(ctx context.Context) (*CycleRow, error) {
 	row := &CycleRow{}

@@ -71,12 +71,13 @@
 	}
 
 	function cycleStatusLabel(cycle: (typeof cycles)[0]): string {
-		if (cycle.finished_at) return 'Cerrado';
+		// ponytail: current_phase is source of truth; backend keeps finished_at NULL during cierre
+		if (cycle.current_phase === 'cierre') return 'Cerrado';
 		return 'Activo';
 	}
 
 	function cycleStatusBadgeClass(cycle: (typeof cycles)[0]): string {
-		if (cycle.finished_at) return 'badge-ghost';
+		if (cycle.current_phase === 'cierre') return 'badge-ghost';
 		return 'badge-primary';
 	}
 
@@ -188,7 +189,7 @@
 							>
 								{getPhaseLabel(cycle.current_phase)}
 							</span>
-							{#if !cycle.finished_at && getNextPhase(cycle.current_phase)}
+							{#if cycle.current_phase !== 'cierre' && getNextPhase(cycle.current_phase)}
 								<ArrowRight class="w-3 h-3" />
 								<span class="text-base-content/50">
 									{getPhaseLabel(getNextPhase(cycle.current_phase)!)}
@@ -214,7 +215,7 @@
 									{/if}
 								</button>
 							{/if}
-							{#if !cycle.finished_at && getNextPhase(cycle.current_phase)}
+							{#if cycle.current_phase !== 'cierre' && getNextPhase(cycle.current_phase)}
 								{#if cycle.current_phase === 'asignacion'}
 									<button
 										class="btn btn-accent btn-sm"
@@ -247,7 +248,7 @@
 							{/if}
 						</div>
 
-						{#if cycle.finished_at}
+						{#if cycle.current_phase === 'cierre'}
 							<div class="flex items-center gap-1 mt-1 text-xs text-success/70">
 								<CheckCircle2 class="w-3 h-3" />
 								Completado

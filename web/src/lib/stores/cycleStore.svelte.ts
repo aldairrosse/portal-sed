@@ -30,9 +30,9 @@ export function getError(): string | null {
 	return error;
 }
 
-/** Returns the active (not finished) cycle, if any. */
+/** Returns the active (not closed) cycle, if any. Phase is source of truth: backend keeps finished_at NULL during cierre. */
 export function getActiveCycle(): Cycle | undefined {
-	return cycles.find((c) => !c.finished_at);
+	return cycles.find((c) => c.current_phase !== 'cierre');
 }
 
 /** Returns true if there is a cycle for the given year. */
@@ -75,8 +75,9 @@ export async function loadCycles(): Promise<void> {
 			year: c.year,
 			current_phase: normalizePhase(c.current_phase),
 			version: c.version,
-			started_at: null,
-			finished_at: null,
+		// ponytail: CycleLight has no started_at/finished_at — keep null; cierre is detected via current_phase, not finished_at
+		started_at: null,
+		finished_at: null,
 			created_at: c.created_at,
 			updated_at: c.updated_at,
 		}));
@@ -211,12 +212,13 @@ export async function advancePhase(
 			c.id === cycleId
 				? {
 						...c,
-						current_phase: normalizePhase(raw.current_phase),
-						version: raw.version,
-						finished_at: raw.finished_at ?? c.finished_at,
-						updated_at: raw.updated_at,
-					}
-				: c,
+					current_phase: normalizePhase(raw.current_phase),
+					version: raw.version,
+					// ponytail: propagate backend finished_at as-is; spec keeps it NULL during cierre until a new annual cycle is created
+					finished_at: raw.finished_at ?? null,
+					updated_at: raw.updated_at,
+				}
+			: c,
 		);
 		// sync getActivePhase() consumers (cycle.svelte.ts)
 		loadCycle();
@@ -269,10 +271,11 @@ export async function revertPhase(cycleId: string): Promise<boolean> {
 			c.id === cycleId
 				? {
 						...c,
-						current_phase: normalizePhase(raw.current_phase),
-						version: raw.version,
-						finished_at: raw.finished_at ?? null,
-						updated_at: raw.updated_at,
+					current_phase: normalizePhase(raw.current_phase),
+					version: raw.version,
+					// ponytail: propagate backend finished_at as-is; stale legacy values left untouched (DB cleanup out of scope)
+					finished_at: raw.finished_at ?? null,
+					updated_at: raw.updated_at,
 					}
 				: c,
 		);
