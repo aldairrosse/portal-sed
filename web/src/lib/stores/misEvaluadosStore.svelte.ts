@@ -18,12 +18,46 @@ interface EmployeeListItemExtended {
 	isActive: boolean;
 	assignmentStatus: AssignmentStatus;
 	assignmentId?: string;
+	selfAvg?: number | null;
+	self_avg?: number | null;
+	rhAvg?: number | null;
+	rh_avg?: number | null;
+	// Status por fase activa (backend GetMyEvaluateesPaginated; null => fallback cliente).
+	evaluationStatus?: string | null;
+	evaluation_status?: string | null;
+	metasStatusFase?: string | null;
+	metas_status_fase?: string | null;
+	phase?: string | null;
+	phaseKind?: string | null;
+	phase_kind?: string | null;
+	goalTotal?: number | null;
+	goal_total?: number | null;
+	goalDone?: number | null;
+	goal_done?: number | null;
+	evaluatedCount?: number | null;
+	evaluated_count?: number | null;
+	totalCompetencies?: number | null;
+	total_competencies?: number | null;
 }
 
 function normalizeAssignmentStatus(raw: unknown): AssignmentStatus {
 	return raw === 'enviada' || raw === 'borrador' || raw === 'no_iniciado'
 		? raw
 		: 'no_iniciado';
+}
+
+function toAvg(raw: unknown): number | null {
+	return typeof raw === 'number' ? raw : null;
+}
+
+function normalizeEvalStatus(raw: unknown): string | null {
+	return raw === 'pending' || raw === 'in-progress' || raw === 'completed'
+		? raw
+		: null;
+}
+
+function toIntOrNull(raw: unknown): number | null {
+	return typeof raw === 'number' && Number.isInteger(raw) ? raw : null;
 }
 
 export function getAssignmentStatus(employeeId: string): AssignmentStatus {
@@ -139,6 +173,26 @@ export async function load(): Promise<void> {
 				assignmentId: (r.assignmentId ?? r.assignment_id ?? undefined) as
 					| string
 					| undefined,
+				selfAvg: toAvg(r.selfAvg ?? r.self_avg),
+				rhAvg: toAvg(r.rhAvg ?? r.rh_avg),
+				evaluationStatus: normalizeEvalStatus(
+					r.evaluationStatus ?? r.evaluation_status,
+				),
+				metasStatusFase:
+					typeof (r.metasStatusFase ?? r.metas_status_fase) === 'string'
+						? (r.metasStatusFase ?? r.metas_status_fase) as string
+						: null,
+				phase: typeof r.phase === 'string' ? r.phase : null,
+				phaseKind:
+					typeof (r.phaseKind ?? r.phase_kind) === 'string'
+						? (r.phaseKind ?? r.phase_kind) as string
+						: null,
+				goalTotal: toIntOrNull(r.goalTotal ?? r.goal_total),
+				goalDone: toIntOrNull(r.goalDone ?? r.goal_done),
+				evaluatedCount: toIntOrNull(r.evaluatedCount ?? r.evaluated_count),
+				totalCompetencies: toIntOrNull(
+					r.totalCompetencies ?? r.total_competencies,
+				),
 			} as EmployeeListItemExtended;
 		});
 		hasMore = body.meta?.hasMore ?? false;

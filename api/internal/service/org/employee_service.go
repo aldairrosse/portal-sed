@@ -8,6 +8,9 @@ import (
 	"github.com/sed-evaluacion-desempeno/api/internal"
 	"github.com/sed-evaluacion-desempeno/api/internal/dto/org"
 	"github.com/sed-evaluacion-desempeno/api/internal/pkg/errors"
+	"github.com/sed-evaluacion-desempeno/api/internal/pkg/state"
+	repocycle "github.com/sed-evaluacion-desempeno/api/internal/repository/cycle"
+	repoeval "github.com/sed-evaluacion-desempeno/api/internal/repository/evaluation"
 	repo "github.com/sed-evaluacion-desempeno/api/internal/repository/org"
 )
 
@@ -20,10 +23,21 @@ type EmployeeService interface {
 }
 
 type employeeService struct {
-	empRepo *repo.EmployeeRepo
-	client  *internal.Client
+	empRepo   *repo.EmployeeRepo
+	client    *internal.Client
+	cycleRepo *repocycle.CycleRepo
+	evalRepo  *repoeval.EvaluationRepo
 }
 
+// AttachEmployeeEvaluationDeps enables RH list enrichment (active cycle +
+// avg/goal batches). No-op on type mismatch; nil repos = fallback (fields
+// stay null/omitted). Keeps NewEmployeeService signature stable for tests.
+func AttachEmployeeEvaluationDeps(svc EmployeeService, cycleRepo *repocycle.CycleRepo, evalRepo *repoeval.EvaluationRepo) {
+	if s, ok := svc.(*employeeService); ok {
+		s.cycleRepo = cycleRepo
+		s.evalRepo = evalRepo
+	}
+}
 // NewEmployeeService creates a new EmployeeService.
 func NewEmployeeService(empRepo *repo.EmployeeRepo, client *internal.Client) EmployeeService {
 	return &employeeService{
@@ -89,8 +103,96 @@ func (s *employeeService) ListEmployees(ctx context.Context, treeID, nodeID, pro
 		resp.Meta.HasMore = filter.Offset+len(rows) < total
 	}
 
+	// RH enrichment (mirror GetMyEvaluateesPaginated 167-256): active cycle
+	// -> phase/phaseKind -> BatchAvg + BatchGoalStatus + CompetencyTotalCount
+	// in 3 queries (no N+1). Nil-safe: any missing repo/error => plain items.
+	var targetCycleID *uuid.UUID
+	activePhase := ""
+	if s.cycleRepo != nil {
+		if active, err := s.cycleRepo.GetActive(ctx); err == nil && active != nil {
+			targetCycleID = &active.ID
+			activePhase = string(active.CurrentPhase)
+		}
+	}
+	var empIDs []uuid.UUID
+	if targetCycleID != nil && activePhase != "" && len(rows) > 0 && s.evalRepo != nil {
+		empIDs = make([]uuid.UUID, len(rows))
+		for i, r := range rows {
+			empIDs[i] = r.ID
+		}
+	}
+	avgMap := map[uuid.UUID]repoeval.EmployeeAvg{}
+	goalMap := map[uuid.UUID]repoeval.EmployeeGoalStatus{}
+	compTotal := 0
+	if targetCycleID != nil && activePhase != "" && len(empIDs) > 0 && s.evalRepo != nil {
+		if m, err := s.evalRepo.BatchAvgByEmployeeIDs(ctx, *targetCycleID, activePhase, empIDs); err == nil {
+			avgMap = m
+		}
+		if m, err := s.evalRepo.BatchGoalStatusByEmployeeIDs(ctx, *targetCycleID, activePhase, empIDs); err == nil {
+			goalMap = m
+		}
+		if n, err := s.evalRepo.CompetencyTotalCount(ctx); err == nil {
+			compTotal = n
+		}
+	}
+	phaseKind := ""
+	normPhase := ""
+	if strings.TrimSpace(activePhase) != "" {
+		normPhase = state.NormalizePhase(activePhase)
+		if state.IsMidYearPhase(activePhase) {
+			phaseKind = "avance"
+		} else {
+			phaseKind = "cierre"
+		}
+	}
+
 	for i, r := range rows {
-		resp.Data[i] = employeeRowToItem(r)
+		item := employeeRowToItem(r)
+		if a, ok := avgMap[r.ID]; ok {
+			item.SelfAvg = a.SelfAvg
+			item.RhAvg = a.RhAvg
+		}
+		if targetCycleID != nil && phaseKind != "" {
+			rated := 0
+			if a, ok := avgMap[r.ID]; ok {
+				rated = a.SelfCount
+			}
+			gt, gd := 0, 0
+			if g, ok := goalMap[r.ID]; ok {
+				gt, gd = g.Total, g.Done
+			}
+			item.Phase = normPhase
+			item.PhaseKind = phaseKind
+			if compTotal > 0 {
+				tc := compTotal
+				item.TotalCompetencies = &tc
+			}
+			ec := rated
+			item.EvaluatedCount = &ec
+			item.GoalTotal = &gt
+			item.GoalDone = &gd
+			switch {
+			case gt == 0:
+				item.MetasStatusFase = "no_iniciado"
+			case gd == 0:
+				item.MetasStatusFase = "pending"
+			case gd < gt:
+				item.MetasStatusFase = "in-progress"
+			default:
+				item.MetasStatusFase = "completed"
+			}
+			switch {
+			case rated == 0 && gd == 0:
+				item.EvaluationStatus = "pending"
+			case compTotal <= 0:
+				item.EvaluationStatus = "in-progress"
+			case rated < compTotal || gd < gt:
+				item.EvaluationStatus = "in-progress"
+			default:
+				item.EvaluationStatus = "completed"
+			}
+		}
+		resp.Data[i] = item
 	}
 
 	return resp, nil

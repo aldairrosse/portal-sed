@@ -356,6 +356,8 @@ func main() {
 	orgNodeSvc := orgsvc.NewOrgNodeService(orgNodeRepo, client)
 	employeeSvc := orgsvc.NewEmployeeService(employeeRepo, client)
 	evaluateeSvc := orgsvc.NewEvaluateeService(employeeRepo, orgNodeRepo, client, cycleRepo, assignRepo, catRepo)
+	orgsvc.AttachEvaluationRepo(evaluateeSvc, evalRepo)
+	orgsvc.AttachEmployeeEvaluationDeps(employeeSvc, cycleRepo, evalRepo)
 	metricsRepo := repoorganization.NewMetricsRepo(client, db)
 	metricsSvc := orgsvc.NewMetricsService(metricsRepo, orgNodeRepo, client)
 

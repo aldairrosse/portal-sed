@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import {
 		getEvaluationStatus,
+		getCompetencyRatings,
 		isLoading,
 		getError,
 		load as loadEvaluations,
@@ -11,17 +12,24 @@
 		getCompetenciesByPillar,
 	} from '$lib/stores/competencyStore.svelte';
 	import { getNodeById } from '$lib/stores/orgHierarchyStore.svelte';
-	import { getGoals } from '$lib/stores/goalsStore.svelte';
+	import {
+		getGoals,
+		getAssignmentByEmployee,
+		isLoading as isGoalsLoading,
+	} from '$lib/stores/goalsStore.svelte';
 	import {
 		getAssignmentStatus as getMisAssignmentStatus,
 		getItems as getMisItems,
 	} from '$lib/stores/misEvaluadosStore.svelte';
 	import PageSkeleton from '$lib/components/ui/PageSkeleton.svelte';
 	import ErrorState from '$lib/components/ui/ErrorState.svelte';
+	import EvaluationStatusBadge from './EvaluationStatusBadge.svelte';
 	import { PROFILE_LABELS, PHASE_LABELS } from '$lib/types/evaluation';
 	import { titleCase } from '$lib/utils/text';
 	import { getActivePhase } from '$lib/api/cycle.svelte';
+	import { isMedioAnio as isMedioAnioPhase } from '$lib/types/cycle';
 	import type { EmployeeAssignment } from '$lib/types/goal';
+	import type { EvaluationStatus } from '$lib/types/evaluation-result';
 	import type { Snippet } from 'svelte';
 	import { load as reloadRhEvaluados } from '$lib/stores/rhEvaluadosStore.svelte';
 	import { FileDown, ChevronRight, Pencil } from '@lucide/svelte';
@@ -35,6 +43,19 @@
 		lastName: string;
 		profileName: string;
 		isActive: boolean;
+		selfAvg?: number | null;
+		self_avg?: number | null;
+		rhAvg?: number | null;
+		rh_avg?: number | null;
+		// Status por fase activa desde el backend (null => fallback cliente).
+		evaluationStatus?: string | null;
+		evaluation_status?: string | null;
+		metasStatusFase?: string | null;
+		metas_status_fase?: string | null;
+		phase?: string | null;
+		phaseKind?: string | null;
+		phase_kind?: string | null;
+		evaluatedCount?: number | null;
 	}
 
 	interface Props {
@@ -82,26 +103,19 @@
 	function getAssignmentStatus(
 		employeeId: string,
 	): 'no_iniciado' | 'borrador' | 'enviada' {
-		// primary: misEvaluadosStore (evaluatees endpoint)
-		const misItems = getMisItems();
-		const hit = misItems.find((x) => x.id === employeeId) as unknown as
-			| { assignmentStatus?: string }
-			| undefined;
-		if (hit?.assignmentStatus) {
-			const s = hit.assignmentStatus;
-			if (s === 'no_iniciado' || s === 'borrador' || s === 'enviada') return s;
+		// Loaded evaluatees list first (helper defaults missing -> 'no_iniciado').
+		if (getMisItems().length > 0) return getMisAssignmentStatus(employeeId);
+		// RH fallback only after goals finish loading: never invent from partial data.
+		if (!isGoalsLoading()) {
+			const g = getAssignmentByEmployee(employeeId)?.status;
+			if (g === 'enviada' || g === 'borrador') return g;
+			if ((g as string) === '') return 'borrador';
+			const legacy = employees.find(
+				(x) => x.employeeId === employeeId,
+			)?.status;
+			if (legacy === 'enviada' || legacy === 'borrador') return legacy;
 		}
-		// fallback via exported helper (covers empty array case)
-		const viaHelper = getMisAssignmentStatus(employeeId);
-		if (misItems.length > 0) return viaHelper;
-		// legacy fallback: employees prop may carry status
-		const a = employees.find((x) => x.employeeId === employeeId) as
-			| EmployeeAssignment
-			| undefined;
-		const raw = a?.status as string | undefined;
-		if (raw === 'enviada' || raw === 'borrador' || raw === 'no_iniciado')
-			return raw as 'no_iniciado' | 'borrador' | 'enviada';
-		return viaHelper;
+		return getMisAssignmentStatus(employeeId);
 	}
 
 	function assignmentBadge(status: 'no_iniciado' | 'borrador' | 'enviada'): {
@@ -131,22 +145,28 @@
 		);
 	}
 
-	const filteredEmployees = $derived(
+	// Single display source: rows (rh/mis-evaluados pass only rows; employees
+	// prop stays as goalIds/status sidecar). searchQuery has no input bound.
+	const filteredRows = $derived(
 		searchQuery.trim() === ''
-			? employees
-			: employees.filter(
-					(e) =>
-						e.employeeName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-						getProfileLabel(e.employeeId)
+			? rows
+			: rows.filter(
+					(r) =>
+						`${r.firstName} ${r.lastName}`
 							.toLowerCase()
-							.includes(searchQuery.toLowerCase()),
+							.includes(searchQuery.toLowerCase()) ||
+						r.profileName.toLowerCase().includes(searchQuery.toLowerCase()),
 				),
 	);
 
+	function goalIdsOf(employeeId: string): string[] {
+		return employees.find((e) => e.employeeId === employeeId)?.goalIds ?? [];
+	}
+
 	const progressMap = $derived(
 		new Map(
-			filteredEmployees.map((emp) => {
-				const empGoals = goals.filter((g) => emp.goalIds.includes(g.id));
+			filteredRows.map((row) => {
+				const empGoals = goals.filter((g) => goalIdsOf(row.id).includes(g.id));
 				const totalTarget = empGoals.reduce((sum, g) => sum + g.targetValue, 0);
 				const totalProgress = empGoals.reduce(
 					(sum, g) => sum + (g.progress ?? 0),
@@ -156,36 +176,48 @@
 					totalTarget > 0
 						? Math.min((totalProgress / totalTarget) * 100, 100)
 						: null;
-				return [emp.employeeId, pct] as const;
+				return [row.id, pct] as const;
 			}),
 		),
 	);
 
 	const currentPhase = $derived(getActivePhase() ?? 'inicio-anio');
 
+	// Same derivation as Detail L132-134: medio-anio -> avance, else cierre.
+	const phaseKind = $derived<'avance' | 'cierre'>(
+		isMedioAnioPhase(currentPhase) ? 'avance' : 'cierre',
+	);
+
 	const completionSummary = $derived({
-		total: filteredEmployees.length,
-		completed: filteredEmployees.filter((e) => hasCompletedPhase(e.employeeId))
-			.length,
+		total: filteredRows.length,
+		completed: filteredRows.filter((r) => hasCompletedPhase(r.id)).length,
 	});
 
 	function hasCompletedPhase(employeeId: string): boolean {
+		// DTO primero (fase activa del backend); evita recalcular si hay dato.
+		if (dtoStatusOf(employeeId) === 'completed') return true;
 		const assignment = employees.find((e) => e.employeeId === employeeId);
 		const empGoals = goals.filter((g) => assignment?.goalIds.includes(g.id));
 
-		switch (currentPhase) {
-			case 'inicio-anio':
-				// Completed if has goals assigned
-				return assignment !== undefined && assignment.goalIds.length > 0;
-			case 'medio-anio':
-				// Completed if has updated progress on any goal
-				return empGoals.some((g) => g.progress !== undefined && g.progress > 0);
-			case 'fin-anio':
-				// Completed if all competencies rated and all goals closed
-				return getStatus(employeeId) === 'completed';
-			default:
-				return false;
+		// Normaliza alias ↔ canónica: inicio-anio ≡ asignacion,
+		// medio-anio ≡ avance, fin-anio ≡ cierre.
+		const p = currentPhase.toLowerCase().trim().replace(/_/g, '-');
+		const isInicio =
+			p === 'inicio-anio' ||
+			p === 'asignacion' ||
+			p.includes('formul') ||
+			p.includes('planea');
+		if (isInicio) {
+			// Completed if has goals assigned
+			return assignment !== undefined && assignment.goalIds.length > 0;
 		}
+		if (isMedioAnioPhase(currentPhase)) {
+			// Completed if has updated progress on any goal
+			return empGoals.some((g) => g.progress !== undefined && g.progress > 0);
+		}
+		// avance canónico cae aquí también si isMedioAnioPhase fallara;
+		// cierre/fin-anio: mismo criterio que la fila (DTO o cálculo cliente).
+		return getStatus(employeeId) === 'completed';
 	}
 
 	function getProfileLabel(employeeId: string): string {
@@ -197,13 +229,41 @@
 		);
 	}
 
+	function dtoStatusOf(employeeId: string): EvaluationStatus | null {
+		const row = rows.find((r) => r.id === employeeId);
+		const raw = row?.evaluationStatus ?? row?.evaluation_status;
+		if (typeof raw !== 'string' || raw.trim() === '') return null;
+		const s = raw.toLowerCase();
+		return s === 'pending' || s === 'in-progress' || s === 'completed'
+			? s
+			: null;
+	}
+
 	function getStatus(employeeId: string) {
-		const assignment = employees.find((e) => e.employeeId === employeeId);
-		return getEvaluationStatus(
-			employeeId,
-			allCompetencies.length,
-			assignment?.goalIds ?? [],
+		// Backend primero (fase actual); fallback a cálculo cliente solo si null.
+		return (
+			dtoStatusOf(employeeId) ??
+			getEvaluationStatus(
+				employeeId,
+				allCompetencies.length,
+				goalIdsOf(employeeId),
+				phaseKind,
+			)
 		);
+	}
+
+	function metasBadge(row: EmployeeListItemRow): {
+		label: string;
+		cls: string;
+	} | null {
+		// DTO primero (fase actual); null => fallback a badge de assignment.
+		const raw = row.metasStatusFase ?? row.metas_status_fase;
+		if (typeof raw !== 'string' || raw === '') return null;
+		if (raw === 'completed') return { label: 'Completadas', cls: 'badge-success' };
+		if (raw === 'in-progress')
+			return { label: 'En progreso', cls: 'badge-warning' };
+		if (raw === 'pending') return { label: 'Pendiente', cls: 'badge-ghost' };
+		return { label: 'No iniciado', cls: 'badge-ghost' };
 	}
 
 	const statusLabelMap: Record<string, string> = {
@@ -212,32 +272,30 @@
 		completed: 'Completada',
 	};
 
-	function competencyStatusBadge(status: string): {
-		label: string;
-		class: string;
-	} {
-		switch (status) {
-			case 'completada':
-				return { label: 'Completada', class: 'badge-success' };
-			case 'autoevaluacion':
-				return { label: 'Autoevaluación', class: 'badge-warning' };
-			case 'pendiente':
-				return { label: 'Pendiente', class: 'badge-ghost' };
-			default:
-				return { label: 'Sin datos', class: 'badge-ghost' };
-		}
+	function avgRating(employeeId: string, kind: 'self' | 'rh'): number | null {
+		// Backend is phase-aware (detail returns the active-phase evaluation);
+		// filter defensively when a rating carries an optional phase field.
+		const vals = getCompetencyRatings(employeeId)
+			.filter((r) => {
+				const p = (r as { phase?: string }).phase;
+				return p == null || p === phaseKind;
+			})
+			.map((r) => (kind === 'self' ? r.selfRating : r.rhRating))
+			.filter((v): v is 1 | 2 | 3 | 4 | 5 => typeof v === 'number');
+		if (vals.length === 0) return null;
+		return vals.reduce((a, b) => a + b, 0) / vals.length;
 	}
 
 	function handleExportCsv() {
 		toCsv(
-			filteredEmployees.map((emp) => ({
-				Empleado: emp.employeeName,
-				Perfil: getProfileLabel(emp.employeeId),
+			filteredRows.map((row) => ({
+				Empleado: `${row.firstName} ${row.lastName}`.trim(),
+				Perfil: getProfileLabel(row.id),
 				'Progreso global %':
-					progressMap.get(emp.employeeId) !== null
-						? `${Math.round(progressMap.get(emp.employeeId)!)}%`
+					progressMap.get(row.id) !== null
+						? `${Math.round(progressMap.get(row.id)!)}%`
 						: '',
-				Estado: statusLabelMap[getStatus(emp.employeeId)],
+				Estado: statusLabelMap[getStatus(row.id)],
 			})),
 			'evaluaciones.csv',
 		);
@@ -268,7 +326,7 @@
 
 			<button
 				class="btn btn-outline btn-sm"
-				disabled={filteredEmployees.length === 0}
+				disabled={filteredRows.length === 0}
 				onclick={handleExportCsv}
 			>
 				<FileDown class="w-4 h-4" />
@@ -280,10 +338,10 @@
 	{#if selectedEmployeeId}
 		{@render detail?.()}
 	{:else if loadingEval}
-		<PageSkeleton variant="table" rows={Math.max(employees.length, 3)} />
-	{:else if errorEval && employees.length === 0}
+		<PageSkeleton variant="table" rows={Math.max(rows.length, 3)} />
+	{:else if errorEval && rows.length === 0}
 		<ErrorState message={errorEval} onretry={loadEvaluations} />
-	{:else if rows.length === 0}
+	{:else if filteredRows.length === 0}
 		<p class="text-sm text-base-content/30 italic text-center py-8">
 			Sin empleados para mostrar
 		</p>
@@ -295,7 +353,7 @@
 						<th class="text-xs font-semibold text-base-content/60">Empleado</th>
 						<th class="text-xs font-semibold text-base-content/60">Perfil</th>
 						<th class="text-xs font-semibold text-base-content/60 text-center"
-							>Estado Metas</th
+							>Metas</th
 						>
 						<th class="text-xs font-semibold text-base-content/60 text-center"
 							>Autoevaluación</th
@@ -303,20 +361,26 @@
 						<th class="text-xs font-semibold text-base-content/60 text-center"
 							>Evaluación</th
 						>
-						<th class="text-xs font-semibold text-base-content/60 text-center"
-							>Estado</th
-						>
 						<th class="text-center text-xs font-semibold text-base-content/60"
 							>Acciones</th
 						>
 					</tr>
 				</thead>
 				<tbody>
-					{#each rows as row (row.id)}
-						{@const cr = competencyRatings?.get(row.id)}
+					{#each filteredRows as row (row.id)}
 						{@const rowStatus = getAssignmentStatus(row.id)}
 						{@const _isDraft = isDraftOrBeginning(row.id)}
 						{@const _badge = assignmentBadge(rowStatus)}
+						{@const _metas = metasBadge(row) ?? _badge}
+						{@const selfAvg =
+							row.selfAvg ??
+							row.self_avg ??
+							competencyRatings?.get(row.id)?.selfAvg ??
+							avgRating(row.id, 'self')}
+						{@const rhAvg =
+							row.rhAvg ??
+							row.rh_avg ??
+							competencyRatings?.get(row.id)?.rhAvg ?? avgRating(row.id, 'rh')}
 						<tr class="hover:bg-base-200">
 							<td>
 								<div class="flex items-center gap-2.5">
@@ -333,6 +397,7 @@
 										>{row.firstName}
 										{row.lastName}</span
 									>
+									<EvaluationStatusBadge status={getStatus(row.id)} />
 								</div>
 							</td>
 							<td>
@@ -341,40 +406,31 @@
 								>
 							</td>
 							<td class="text-center">
-								<span class="badge badge-sm {_badge.cls}">
-									{_badge.label}
+								<span class="badge badge-sm {_metas.cls}">
+									{_metas.label}
 								</span>
 							</td>
 							<td class="text-center">
 								<span
-									class="text-sm font-mono {cr?.selfAvg != null
+									class="text-sm font-mono {selfAvg != null
 										? 'text-base-content'
 										: 'text-base-content/30'}"
 								>
-									{cr?.selfAvg?.toFixed(1) ?? '—'}
+									{selfAvg != null ? selfAvg.toFixed(2) : '-'}
 								</span>
 							</td>
 							<td class="text-center">
 								<span
-									class="text-sm font-mono {cr?.rhAvg != null
+									class="text-sm font-mono {rhAvg != null
 										? 'text-base-content'
 										: 'text-base-content/30'}"
 								>
-									{cr?.rhAvg?.toFixed(1) ?? '—'}
+									{rhAvg != null ? rhAvg.toFixed(2) : '-'}
 								</span>
-							</td>
-							<td class={competencyRatings ? 'text-center' : 'text-center'}>
-								{#if cr?.status}
-									{@const badge = competencyStatusBadge(cr.status)}
-									<span class="badge badge-sm {badge.class}">{badge.label}</span
-									>
-								{:else}
-									<span class="text-xs text-base-content/30">—</span>
-								{/if}
 							</td>
 							<td>
 								<div class="flex items-center justify-end gap-1">
-									{#if mode === 'rh' && currentPhase === 'inicio-anio'}
+									{#if mode === 'rh' && isFormulacionPhase()}
 										<button
 											type="button"
 											class="btn btn-outline btn-xs"

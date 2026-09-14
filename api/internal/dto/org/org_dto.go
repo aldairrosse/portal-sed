@@ -128,6 +128,23 @@ type EmployeeListItem struct {
 	JobTitle           string `json:"jobTitle"`
 	IsActive           bool   `json:"isActive"`
 	AssignmentStatus   string `json:"assignmentStatus,omitempty"`
+	// SelfAvg/RhAvg: batch competency averages for the active cycle+phase
+	// (nil => null, sin datos). Populated by mis-evaluados list; absent
+	// elsewhere until ListEmployees is enriched (frontend falls back).
+	SelfAvg *float64 `json:"selfAvg"`
+	RhAvg   *float64 `json:"rhAvg"`
+	// Phase/PhaseKind: ciclo activo normalizado (omitempty => compat).
+	// EvaluationStatus: pending|in-progress|completed (fase activa, misma
+	// lógica que evaluationStore.getEvaluationStatus).
+	// MetasStatusFase: no_iniciado|pending|in-progress|completed (solo fase).
+	Phase             string `json:"phase,omitempty"`
+	PhaseKind         string `json:"phaseKind,omitempty"`
+	EvaluationStatus  string `json:"evaluationStatus,omitempty"`
+	MetasStatusFase   string `json:"metasStatusFase,omitempty"`
+	GoalTotal         *int   `json:"goalTotal,omitempty"`
+	GoalDone          *int   `json:"goalDone,omitempty"`
+	EvaluatedCount    *int   `json:"evaluatedCount,omitempty"`
+	TotalCompetencies *int   `json:"totalCompetencies,omitempty"`
 }
 
 // EmployeeDetail is the detailed employee response with nested orgNode and manager.

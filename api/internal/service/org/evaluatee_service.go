@@ -8,7 +8,9 @@ import (
 	"github.com/sed-evaluacion-desempeno/api/internal"
 	"github.com/sed-evaluacion-desempeno/api/internal/dto/org"
 	"github.com/sed-evaluacion-desempeno/api/internal/pkg/errors"
+	"github.com/sed-evaluacion-desempeno/api/internal/pkg/state"
 	repocycle "github.com/sed-evaluacion-desempeno/api/internal/repository/cycle"
+	repoeval "github.com/sed-evaluacion-desempeno/api/internal/repository/evaluation"
 	repogoal "github.com/sed-evaluacion-desempeno/api/internal/repository/goal"
 	repo "github.com/sed-evaluacion-desempeno/api/internal/repository/org"
 )
@@ -30,6 +32,7 @@ type evaluateeService struct {
 	cycleRepo    *repocycle.CycleRepo
 	assignRepo   *repogoal.AssignmentRepo
 	categoryRepo *repogoal.CategoryRepo
+	evalRepo     *repoeval.EvaluationRepo
 }
 
 // NewEvaluateeService creates a new EvaluateeService.
@@ -41,6 +44,15 @@ func NewEvaluateeService(empRepo *repo.EmployeeRepo, nodeRepo *repo.OrgNodeRepo,
 		cycleRepo:    cycleRepo,
 		assignRepo:   assignRepo,
 		categoryRepo: categoryRepo,
+	}
+}
+
+// AttachEvaluationRepo enables the single-call avg batch in
+// GetMyEvaluateesPaginated. No-op on type mismatch; nil repo = fallback
+// (avgs stay null). Keeps NewEvaluateeService signature stable for tests.
+func AttachEvaluationRepo(svc EvaluateeService, r *repoeval.EvaluationRepo) {
+	if s, ok := svc.(*evaluateeService); ok {
+		s.evalRepo = r
 	}
 }
 
@@ -109,6 +121,7 @@ func (s *evaluateeService) GetMyEvaluateesPaginated(ctx context.Context, evaluat
 
 	// Resolve cycleId: query > active > no_iniciado (nil)
 	var targetCycleID *uuid.UUID
+	activePhase := ""
 	if strings.TrimSpace(cycleID) != "" {
 		parsed, err := uuid.Parse(strings.TrimSpace(cycleID))
 		if err != nil {
@@ -119,6 +132,7 @@ func (s *evaluateeService) GetMyEvaluateesPaginated(ctx context.Context, evaluat
 		active, err := s.cycleRepo.GetActive(ctx)
 		if err == nil && active != nil {
 			targetCycleID = &active.ID
+			activePhase = string(active.CurrentPhase)
 		}
 	}
 
@@ -150,6 +164,41 @@ func (s *evaluateeService) GetMyEvaluateesPaginated(ctx context.Context, evaluat
 		}
 	}
 
+	// Single batch call for competency avgs (no per-row N+1); missing => null.
+	// Errors are ignored: list still returns metas_status without avgs.
+	avgMap := map[uuid.UUID]repoeval.EmployeeAvg{}
+	if targetCycleID != nil && activePhase != "" && len(empIDsForBatch) > 0 && s.evalRepo != nil {
+		if m, err := s.evalRepo.BatchAvgByEmployeeIDs(ctx, *targetCycleID, activePhase, empIDsForBatch); err == nil {
+			avgMap = m
+		}
+	}
+
+	// PhaseKind espejo de Detail (132-134): medio-anio -> avance, resto -> cierre.
+	// Fase vacía => "" (filtros PhaseFilterClause quedan sin aplicar).
+	phaseKind := ""
+	normPhase := ""
+	if strings.TrimSpace(activePhase) != "" {
+		normPhase = state.NormalizePhase(activePhase)
+		if state.IsMidYearPhase(activePhase) {
+			phaseKind = "avance"
+		} else {
+			phaseKind = "cierre"
+		}
+	}
+
+	// Batch de cierres de metas por fase activa + total global de competencias.
+	// Nil-safe y sin N+1; errores se ignoran (campos nuevos quedan omitidos).
+	goalMap := map[uuid.UUID]repoeval.EmployeeGoalStatus{}
+	compTotal := 0
+	if targetCycleID != nil && activePhase != "" && len(empIDsForBatch) > 0 && s.evalRepo != nil {
+		if m, err := s.evalRepo.BatchGoalStatusByEmployeeIDs(ctx, *targetCycleID, activePhase, empIDsForBatch); err == nil {
+			goalMap = m
+		}
+		if n, err := s.evalRepo.CompetencyTotalCount(ctx); err == nil {
+			compTotal = n
+		}
+	}
+
 	resp := &org.EmployeeListResponse{
 		Data: make([]org.EmployeeListItem, len(rows)),
 	}
@@ -160,6 +209,52 @@ func (s *evaluateeService) GetMyEvaluateesPaginated(ctx context.Context, evaluat
 
 	for i, r := range rows {
 		item := employeeRowToItem(r)
+		if a, ok := avgMap[r.ID]; ok {
+			item.SelfAvg = a.SelfAvg
+			item.RhAvg = a.RhAvg
+		}
+		// Status por fase activa, espejo de getEvaluationStatus (786-834):
+		// rated = SelfCount>0, closures = goalMap.Done/Total.
+		if targetCycleID != nil && phaseKind != "" {
+			rated := 0
+			if a, ok := avgMap[r.ID]; ok {
+				rated = a.SelfCount
+			}
+			gt, gd := 0, 0
+			if g, ok := goalMap[r.ID]; ok {
+				gt, gd = g.Total, g.Done
+			}
+			item.Phase = normPhase
+			item.PhaseKind = phaseKind
+			if compTotal > 0 {
+				tc := compTotal
+				item.TotalCompetencies = &tc
+			}
+			ec := rated
+			item.EvaluatedCount = &ec
+			item.GoalTotal = &gt
+			item.GoalDone = &gd
+			switch {
+			case gt == 0:
+				item.MetasStatusFase = "no_iniciado"
+			case gd == 0:
+				item.MetasStatusFase = "pending"
+			case gd < gt:
+				item.MetasStatusFase = "in-progress"
+			default:
+				item.MetasStatusFase = "completed"
+			}
+			switch {
+			case rated == 0 && gd == 0:
+				item.EvaluationStatus = "pending"
+			case compTotal <= 0:
+				item.EvaluationStatus = "in-progress"
+			case rated < compTotal || gd < gt:
+				item.EvaluationStatus = "in-progress"
+			default:
+				item.EvaluationStatus = "completed"
+			}
+		}
 		if targetCycleID == nil {
 			item.AssignmentStatus = "no_iniciado"
 		} else {

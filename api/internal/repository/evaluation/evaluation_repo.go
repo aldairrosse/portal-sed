@@ -725,6 +725,153 @@ func (r *EvaluationRepo) CountCompetencyResults(ctx context.Context, cycleID uui
 	return total, nil
 }
 
+// EmployeeAvg carries per-employee competency averages; nil = sin datos.
+// SelfCount = distinct competencies with self_rating set (phase-filtered).
+type EmployeeAvg struct {
+	SelfAvg   *float64
+	RhAvg     *float64
+	SelfCount int
+}
+
+// BatchAvgByEmployeeIDs returns AVG(self_rating)/AVG(rh_rating) per employee
+// in ONE query: SELECT employee_id, AVG(self_rating), AVG(rh_rating)
+// GROUP BY employee_id WHERE cycle_id=? AND phase=? AND employee_id IN (?).
+// Phase uses state.PhaseFilterClause (avance/medio-anio match avance, empty =
+// unfiltered). Employees without evaluation rows are absent (caller => null).
+// Suggested index: evaluations(cycle_id, phase, employee_id).
+func (r *EvaluationRepo) BatchAvgByEmployeeIDs(ctx context.Context, cycleID uuid.UUID, phase string, employeeIDs []uuid.UUID) (map[uuid.UUID]EmployeeAvg, error) {
+	out := make(map[uuid.UUID]EmployeeAvg, len(employeeIDs))
+	if len(employeeIDs) == 0 || cycleID == uuid.Nil || r.db == nil {
+		return out, nil
+	}
+	args := []interface{}{cycleID}
+	idx := 2
+	phaseJoin := ""
+	if clause, clauseArgs, next := state.PhaseFilterClause("ev.phase", idx, phase); clause != "" {
+		phaseJoin = clause
+		args = append(args, clauseArgs...)
+		idx = next
+	}
+	placeholders := make([]string, len(employeeIDs))
+	for i, id := range employeeIDs {
+		placeholders[i] = "$" + strconv.Itoa(idx+i)
+		args = append(args, id)
+	}
+	query := `SELECT ev.employee_id, AVG(ec.self_rating), AVG(ec.rh_rating),
+		COUNT(DISTINCT CASE WHEN ec.self_rating IS NOT NULL THEN ec.competency_id END)
+		FROM evaluations ev
+		LEFT JOIN evaluation_competencies ec ON ec.evaluation_id = ev.id
+		WHERE ev.cycle_id = $1` + phaseJoin + `
+		AND ev.employee_id IN (` + placeholders[0]
+	for _, p := range placeholders[1:] {
+		query += `, ` + p
+	}
+	query += `) GROUP BY ev.employee_id`
+	rows, err := r.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var eid uuid.UUID
+		var selfAvg, rhAvg sql.NullFloat64
+		var selfCount sql.NullInt64
+		if err := rows.Scan(&eid, &selfAvg, &rhAvg, &selfCount); err != nil {
+			return nil, err
+		}
+		avg := EmployeeAvg{}
+		if selfAvg.Valid {
+			v := selfAvg.Float64
+			avg.SelfAvg = &v
+		}
+		if rhAvg.Valid {
+			v := rhAvg.Float64
+			avg.RhAvg = &v
+		}
+		if selfCount.Valid {
+			avg.SelfCount = int(selfCount.Int64)
+		}
+		out[eid] = avg
+	}
+	return out, rows.Err()
+}
+
+// EmployeeGoalStatus carries per-employee goal closure counts for the active
+// phase: Total = linked evaluation_goals, Done = self signal present
+// (non-empty final_comments OR phase snapshot > 0), mirroring
+// evaluationStore.getEvaluationStatus (selfAssessment/finalProgress>0).
+type EmployeeGoalStatus struct {
+	Total int
+	Done  int
+}
+
+// BatchGoalStatusByEmployeeIDs returns goal totals/done per employee in ONE
+// query, scoped to cycle+phase (PhaseFilterClause, same as BatchAvg).
+// Snapshot column follows SnapshotColumnForPhase (avance vs cierre).
+// Employees without evaluation/goal rows are absent (caller => 0/0).
+func (r *EvaluationRepo) BatchGoalStatusByEmployeeIDs(ctx context.Context, cycleID uuid.UUID, phase string, employeeIDs []uuid.UUID) (map[uuid.UUID]EmployeeGoalStatus, error) {
+	out := make(map[uuid.UUID]EmployeeGoalStatus, len(employeeIDs))
+	if len(employeeIDs) == 0 || cycleID == uuid.Nil || r.db == nil {
+		return out, nil
+	}
+	snapCol := SnapshotColumnForPhase(phase)
+	if snapCol != "avance_progress" && snapCol != "cierre_progress" {
+		snapCol = "avance_progress"
+	}
+	args := []interface{}{cycleID}
+	idx := 2
+	phaseJoin := ""
+	if clause, clauseArgs, next := state.PhaseFilterClause("ev.phase", idx, phase); clause != "" {
+		phaseJoin = clause
+		args = append(args, clauseArgs...)
+		idx = next
+	}
+	placeholders := make([]string, len(employeeIDs))
+	for i, id := range employeeIDs {
+		placeholders[i] = "$" + strconv.Itoa(idx+i)
+		args = append(args, id)
+	}
+	query := `SELECT ev.employee_id, COUNT(eg.id),
+		COUNT(CASE WHEN NULLIF(BTRIM(COALESCE(eg.final_comments, '')), '') IS NOT NULL
+			OR COALESCE(eg.` + snapCol + `, 0) > 0 THEN 1 END)
+		FROM evaluations ev
+		JOIN evaluation_goals eg ON eg.evaluation_id = ev.id
+		WHERE ev.cycle_id = $1` + phaseJoin + `
+		AND ev.employee_id IN (` + placeholders[0]
+	for _, p := range placeholders[1:] {
+		query += `, ` + p
+	}
+	query += `) GROUP BY ev.employee_id`
+	rows, err := r.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var eid uuid.UUID
+		var total, done int
+		if err := rows.Scan(&eid, &total, &done); err != nil {
+			return nil, err
+		}
+		out[eid] = EmployeeGoalStatus{Total: total, Done: done}
+	}
+	return out, rows.Err()
+}
+
+// CompetencyTotalCount returns the global competency count (single COUNT,
+// no N+1). Totals are global: GetCompetencyRatingsByEmployee lists ALL
+// competencies, so one count serves every employee in the list.
+func (r *EvaluationRepo) CompetencyTotalCount(ctx context.Context) (int, error) {
+	if r.db == nil {
+		return 0, nil
+	}
+	var total int
+	if err := r.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM competencies`).Scan(&total); err != nil {
+		return 0, err
+	}
+	return total, nil
+}
+
 // normalizeEvalPhase maps phases to the Ent enum via state.NormalizePhase,
 // preserving asignacion exact (never collapses to avance).
 func normalizeEvalPhase(phase string) evaluation.Phase {
