@@ -91,7 +91,8 @@
 	import CategoryCreateForm from '$lib/components/goals/CategoryCreateForm.svelte';
 	import ConfirmDialog from '$lib/components/ui/ConfirmDialog.svelte';
 	import ExportCsvModal from '$lib/components/goals/ExportCsvModal.svelte';
-	import { toCsv } from '$lib/utils/export';
+	import { toXlsx } from '$lib/utils/export';
+	import { getActiveCycleYear } from '$lib/api/cycle.svelte';
 	import * as notifications from '$lib/stores/notifications.svelte';
 	import { loadCycles } from '$lib/stores/cycleStore.svelte';
 	import { SvelteSet } from 'svelte/reactivity';
@@ -681,9 +682,14 @@
 		return g.unit === 'porcentaje' ? `${g.targetValue}%` : g.targetValue;
 	}
 
+	function exportFileName(base: string): string {
+		const year = getActiveCycleYear();
+		return year ? `${base}-${year}.xlsx` : `${base}.xlsx`;
+	}
+
 	async function exportCurrent() {
 		showExportModal = false;
-		toCsv(buildRows(targetAssignment!), 'asignacion-anual.csv');
+		toXlsx(buildRows(targetAssignment!), exportFileName('asignacion-anual'));
 	}
 
 	async function exportAll() {
@@ -697,7 +703,7 @@
 		}
 
 		await loadForEmployee(originalId);
-		toCsv(allRows, 'asignacion-anual-todos.csv');
+		toXlsx(allRows, exportFileName('asignacion-anual-todos'));
 	}
 </script>
 
@@ -753,7 +759,7 @@
 					onclick={handleExportCsv}
 				>
 					<FileDown class="w-4 h-4" />
-					Exportar CSV
+					Exportar Excel
 				</button>
 				{#if mode === 'editor' && phase !== 'medio-anio' && phase !== 'fin-anio'}
 					<div class="flex-1"></div>

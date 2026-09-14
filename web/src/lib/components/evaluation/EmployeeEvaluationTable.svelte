@@ -26,14 +26,14 @@
 	import EvaluationStatusBadge from './EvaluationStatusBadge.svelte';
 	import { PROFILE_LABELS, PHASE_LABELS } from '$lib/types/evaluation';
 	import { titleCase } from '$lib/utils/text';
-	import { getActivePhase } from '$lib/api/cycle.svelte';
-	import { isMedioAnio as isMedioAnioPhase } from '$lib/types/cycle';
+	import { getActivePhase, getActiveCycleYear } from '$lib/api/cycle.svelte';
+	import { isMedioAnio as isMedioAnioPhase, normalizePhase } from '$lib/types/cycle';
 	import type { EmployeeAssignment } from '$lib/types/goal';
 	import type { EvaluationStatus } from '$lib/types/evaluation-result';
 	import type { Snippet } from 'svelte';
 	import { load as reloadRhEvaluados } from '$lib/stores/rhEvaluadosStore.svelte';
 	import { FileDown, ChevronRight, Pencil } from '@lucide/svelte';
-	import { toCsv } from '$lib/utils/export';
+	import { toXlsx } from '$lib/utils/export';
 	import ChangeDepartmentProfileModal from './ChangeDepartmentProfileModal.svelte';
 
 	// ponytail: remove when OpenAPI schema includes profileName
@@ -303,7 +303,10 @@
 	}
 
 	function handleExportCsv() {
-		toCsv(
+		const year = getActiveCycleYear();
+		const phase = normalizePhase(getActivePhase() ?? 'asignacion');
+		const suffix = year ? `-${year}-${phase}` : `-${phase}`;
+		toXlsx(
 			filteredRows.map((row) => ({
 				Empleado: `${row.firstName} ${row.lastName}`.trim(),
 				Perfil: getProfileLabel(row.id),
@@ -313,7 +316,7 @@
 						: '',
 				Estado: statusLabelMap[getStatus(row.id)],
 			})),
-			'evaluaciones.csv',
+			`evaluaciones${suffix}.xlsx`,
 		);
 	}
 </script>
@@ -346,7 +349,7 @@
 				onclick={handleExportCsv}
 			>
 				<FileDown class="w-4 h-4" />
-				Exportar CSV
+				Exportar Excel
 			</button>
 		</div>
 	{/if}

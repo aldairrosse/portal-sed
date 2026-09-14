@@ -1,40 +1,31 @@
-export function toCsv(
+import * as XLSX from 'xlsx';
+
+export function toXlsx(
 	rows: Record<string, string | number | null>[],
 	filename: string,
+	sheetName = 'Datos',
 ): void {
 	if (rows.length === 0) {
 		console.warn(`[export] No data to export for "${filename}"`);
 		return;
 	}
-
+	const ws = XLSX.utils.json_to_sheet(rows);
+	// Auto width por header/contenido (min 10, max 40)
 	const headers = Object.keys(rows[0]);
-	const escapeField = (value: unknown): string => {
-		const s = value == null ? '' : String(value);
-		if (
-			s.includes('"') ||
-			s.includes(';') ||
-			s.includes('\n') ||
-			s.includes('\r')
-		) {
-			return `"${s.replace(/"/g, '""')}"`;
-		}
-		return s;
-	};
+	const colWidths = headers.map((h) => {
+		const maxLen = Math.max(
+			h.length,
+			...rows.map((r) => String(r[h] ?? '').length),
+		);
+		return { wch: Math.min(40, Math.max(10, maxLen + 2)) };
+	});
+	ws['!cols'] = colWidths;
 
-	const bom = '\uFEFF';
-	const headerLine = headers.join(',');
-	const dataLines = rows.map((row) =>
-		headers.map((h) => escapeField(row[h])).join(','),
-	);
-	const csv = bom + headerLine + '\r\n' + dataLines.join('\r\n');
-
-	const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-	const url = URL.createObjectURL(blob);
-	const a = document.createElement('a');
-	a.href = url;
-	a.download = filename.endsWith('.csv') ? filename : `${filename}.csv`;
-	document.body.appendChild(a);
-	a.click();
-	document.body.removeChild(a);
-	URL.revokeObjectURL(url);
+	const wb = XLSX.utils.book_new();
+	XLSX.utils.book_append_sheet(wb, ws, sheetName);
+	const name = filename.endsWith('.xlsx') ? filename : `${filename}.xlsx`;
+	XLSX.writeFile(wb, name);
 }
+
+/** @deprecated usar toXlsx */
+export const toCsv = toXlsx;

@@ -52,7 +52,7 @@
 		onclick={handleBackdropClick}
 	>
 		<div class="modal-box max-w-md">
-			<h3 class="font-semibold text-base-content">Exportar CSV</h3>
+			<h3 class="font-semibold text-base-content">Exportar Excel</h3>
 			<p class="text-sm text-base-content/60 mt-2">
 				¿Qué datos desea exportar?
 			</p>
