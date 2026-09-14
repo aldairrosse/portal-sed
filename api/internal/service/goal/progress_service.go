@@ -2,11 +2,13 @@ package goal
 
 import (
 	"context"
+	"fmt"
 	"log"
 
 	"github.com/google/uuid"
 	dtogoal "github.com/sed-evaluacion-desempeno/api/internal/dto/goal"
 	pkgerrors "github.com/sed-evaluacion-desempeno/api/internal/pkg/errors"
+	"github.com/sed-evaluacion-desempeno/api/internal/pkg/state"
 	repogoal "github.com/sed-evaluacion-desempeno/api/internal/repository/goal"
 )
 
@@ -75,24 +77,39 @@ func (s *ProgressService) UpdateGoalProgress(ctx context.Context, empID, goalID 
 	// Snapshot of the active phase (best-effort: never fails the progress write).
 	// Phase resolution: explicit request phase wins, then cycles.current_phase,
 	// then the evaluation's own phase. Missing evaluation skips with a log.
+	// P2: phase resolution from the ACTIVE cycle phase
+	// (cycles.current_phase). Explicit request phase must match active
+	// (only active editable, prior immutable); missing defaults to active.
 	if s.evalLookup != nil {
-		phase := ""
+		active := ""
 		if p, perr := s.phaseCheck.CurrentPhase(ctx, empID.String()); perr == nil {
-			phase = string(p)
+			active = string(p)
 		}
+		phase := active
 		if req.Phase != nil && *req.Phase != "" {
+			if active != "" && !state.SamePhaseForWrite(*req.Phase, active) {
+				return nil, pkgerrors.NewDomainError(pkgerrors.PhaseNotActive,
+					fmt.Sprintf("phase '%s' is not active; current phase is '%s'", *req.Phase, active), nil,
+				).WithDetails("requested_phase: " + *req.Phase, "current_phase: " + active)
+			}
 			phase = *req.Phase
 		}
 		cycleID, cerr := s.phaseCheck.ActiveCycleID(ctx, empID.String())
 		if cerr != nil {
 			log.Printf("[progress] skip snapshot goal=%s: no active cycle: %v", goalID, cerr)
-		} else if evalRow, ferr := s.evalLookup.FindByEmployeeCycle(ctx, empID, cycleID); ferr != nil || evalRow == nil {
-			log.Printf("[progress] skip snapshot goal=%s: no evaluation for cycle=%s: %v", goalID, cycleID, ferr)
 		} else {
 			if phase == "" {
-				phase = evalRow.Phase
+				if legacy, lerr := s.evalLookup.FindByEmployeeCycle(ctx, empID, cycleID); lerr == nil && legacy != nil {
+					phase = legacy.Phase
+				}
 			}
-			_ = s.goalRepo.UpsertProgressSnapshot(ctx, evalRow.ID, goalID, phase, req.CurrentValue)
+			if phase == "" {
+				log.Printf("[progress] skip snapshot goal=%s: no phase resolved", goalID)
+			} else if evalRow, ferr := s.evalLookup.FindByEmployeeCyclePhase(ctx, empID, cycleID, phase); ferr != nil || evalRow == nil {
+				log.Printf("[progress] skip snapshot goal=%s: no evaluation for cycle=%s phase=%s: %v", goalID, cycleID, phase, ferr)
+			} else {
+				_ = s.goalRepo.UpsertProgressSnapshot(ctx, evalRow.ID, goalID, phase, req.CurrentValue)
+			}
 		}
 	}
 

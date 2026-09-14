@@ -21,7 +21,7 @@ type EvaluationRepo interface {
 	SubmitEval(ctx context.Context, tx *sql.Tx, evalID uuid.UUID, profileID uuid.UUID, comps []repo.CompetencyUpsert, goals []repo.GoalCommentUpsert, newState string, setSelfCompleted, setRHCompleted bool) error
 	GetDetail(ctx context.Context, id uuid.UUID) (*repo.EvaluationRow, []*internal.EvaluationCompetency, []*internal.EvaluationGoal, error)
 	ListByCycle(ctx context.Context, cycleID uuid.UUID, state string, phase string, cursor string, limit int) ([]*repo.EvaluationRow, string, error)
-	GetCompetencyRatingsByEmployee(ctx context.Context, employeeID, cycleID, profileID uuid.UUID) ([]repo.EmployeeCompetencyRatingRow, error)
+	GetCompetencyRatingsByEmployee(ctx context.Context, employeeID, cycleID, profileID uuid.UUID, phase string) ([]repo.EmployeeCompetencyRatingRow, error)
 	FinalizeEval(ctx context.Context, tx *sql.Tx, evalID uuid.UUID) error
 	RefreshSummaryView(ctx context.Context) error
 	GetSummaryByCycle(ctx context.Context, cycleID uuid.UUID) (map[string]int64, error)
@@ -52,8 +52,8 @@ type NineBoxRepo interface {
 	GetMatrixByPhase(ctx context.Context, cycleID, evaluatorID, phaseID uuid.UUID) (*internal.NineBoxMatrix, error)
 	UpsertEntryByTiers(ctx context.Context, tx *sql.Tx, matrixID uuid.UUID, evaluateeID uuid.UUID, perfTier, potTier, quadrant int, comments string, goalProgress, selfRating, hrRating *float64) (*internal.NineBoxEntry, error)
 	GetGoalAssigneesByCycle(ctx context.Context, cycleID uuid.UUID) ([]uuid.UUID, error)
-	GetGoalProgressByEmployee(ctx context.Context, employeeID, cycleID uuid.UUID) (float64, error)
-	GetCompetencyRatingsByEmployee(ctx context.Context, employeeID, cycleID uuid.UUID) (selfRating, hrRating *float64, err error)
+	GetGoalProgressByEmployee(ctx context.Context, employeeID, cycleID, phaseID uuid.UUID) (float64, error)
+	GetCompetencyRatingsByEmployee(ctx context.Context, employeeID, cycleID, phaseID uuid.UUID) (selfRating, hrRating *float64, err error)
 
 	// --- Employee enrichment and evaluator resolution ---
 	GetEmployeesByIDs(ctx context.Context, ids []uuid.UUID) (map[uuid.UUID]*repo.EmployeeInfo, error)
@@ -72,6 +72,7 @@ type NineBoxRepo interface {
 	BatchUpsertEntries(ctx context.Context, tx *sql.Tx, matrixID uuid.UUID, items []repo.EntryUpsert) ([]*internal.NineBoxEntry, error)
 	LockEntryForSelect(ctx context.Context, tx *sql.Tx, matrixID, evaluateeID uuid.UUID) error
 	FetchEntryVersion(ctx context.Context, entryID uuid.UUID) (int, error)
+	GetMatrixForUpdate(ctx context.Context, tx *sql.Tx, matrixID uuid.UUID) (*internal.NineBoxMatrix, error)
 }
 
 // CatalogRepo defines read-only catalog operations for scales and quadrants.

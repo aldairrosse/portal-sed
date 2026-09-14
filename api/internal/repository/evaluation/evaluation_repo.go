@@ -16,6 +16,7 @@ import (
 	"github.com/sed-evaluacion-desempeno/api/internal/evaluation"
 	"github.com/sed-evaluacion-desempeno/api/internal/pkg/cursor"
 	pkgerrors "github.com/sed-evaluacion-desempeno/api/internal/pkg/errors"
+	"github.com/sed-evaluacion-desempeno/api/internal/pkg/state"
 )
 
 // contextKey for db role routing.
@@ -203,7 +204,7 @@ func (r *EvaluationRepo) GetDetail(ctx context.Context, id uuid.UUID) (*Evaluati
 // ListByCycle returns cursor-paginated evaluations for a cycle.
 // Optional filters: state (exact match) and phase. "avance" and "medio-anio"
 // are interchangeable and match both values (same mid-year phase).
-func (r *EvaluationRepo) ListByCycle(ctx context.Context, cycleID uuid.UUID, state string, phase string, cursorStr string, limit int) ([]*EvaluationRow, string, error) {
+func (r *EvaluationRepo) ListByCycle(ctx context.Context, cycleID uuid.UUID, stateFilter string, phase string, cursorStr string, limit int) ([]*EvaluationRow, string, error) {
 	if limit <= 0 {
 		limit = 20
 	} else if limit > 100 {
@@ -229,20 +230,16 @@ func (r *EvaluationRepo) ListByCycle(ctx context.Context, cycleID uuid.UUID, sta
 	args := []interface{}{cycleID}
 	idx := 2
 
-	if state != "" {
+	if stateFilter != "" {
 		query += ` AND e.state = $` + strconv.Itoa(idx)
-		args = append(args, state)
+		args = append(args, stateFilter)
 		idx++
 	}
 
-	if phase == "avance" || phase == "medio-anio" {
-		query += ` AND e.phase IN ($` + strconv.Itoa(idx) + `, $` + strconv.Itoa(idx+1) + `)`
-		args = append(args, "avance", "medio-anio")
-		idx += 2
-	} else if phase != "" {
-		query += ` AND e.phase = $` + strconv.Itoa(idx)
-		args = append(args, phase)
-		idx++
+	if phaseClause, phaseArgs, next := state.PhaseFilterClause("e.phase", idx, phase); phaseClause != "" {
+		query += phaseClause
+		args = append(args, phaseArgs...)
+		idx = next
 	}
 
 	if cID != nil && cUpdatedAt != nil {
@@ -524,7 +521,15 @@ func (r *EvaluationRepo) upsertVersion(ctx context.Context, tx *sql.Tx, evalID u
 // LEFT JOINed with evaluation_competencies aggregated by source to get self/rh
 // rating+comments (or null if not yet evaluated). GROUP BY collapses the two
 // source rows per competency into one; manager_comment is source-independent.
-func (r *EvaluationRepo) GetCompetencyRatingsByEmployee(ctx context.Context, employeeID, cycleID, profileID uuid.UUID) ([]EmployeeCompetencyRatingRow, error) {
+// phase scopes the evaluations JOIN to the active phase ("avance"/"medio-anio"
+// match both); empty phase keeps the legacy unfiltered JOIN (cycle without phase).
+func (r *EvaluationRepo) GetCompetencyRatingsByEmployee(ctx context.Context, employeeID, cycleID, profileID uuid.UUID, phase string) ([]EmployeeCompetencyRatingRow, error) {
+	phaseJoin := ""
+	args := []interface{}{employeeID, cycleID, profileID}
+	if clause, clauseArgs, _ := state.PhaseFilterClause("ev.phase", 4, phase); clause != "" {
+		phaseJoin = clause
+		args = append(args, clauseArgs...)
+	}
 	query := `SELECT c.id AS competency_id,
 	       MAX(CASE WHEN ec.source = 'self' THEN ec.rating END) AS self_rating,
 	       MAX(CASE WHEN ec.source = 'rh' THEN ec.rating END) AS rh_rating,
@@ -535,12 +540,12 @@ func (r *EvaluationRepo) GetCompetencyRatingsByEmployee(ctx context.Context, emp
 	       cal.level AS acceptance_level
 		FROM competencies c
 		LEFT JOIN competency_acceptance_levels cal ON cal.competency_id = c.id AND cal.profile_id = $3
-		LEFT JOIN evaluations ev ON ev.employee_id = $1 AND ev.cycle_id = $2
+		LEFT JOIN evaluations ev ON ev.employee_id = $1 AND ev.cycle_id = $2` + phaseJoin + `
 		LEFT JOIN evaluation_competencies ec ON ec.evaluation_id = ev.id AND ec.competency_id = c.id
 		GROUP BY c.id, cal.level
 		ORDER BY c.id`
 
-	rows, err := r.db.QueryContext(ctx, query, employeeID, cycleID, profileID)
+	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -612,14 +617,10 @@ func (r *EvaluationRepo) ListCompetencyResults(ctx context.Context, cycleID uuid
 	idx := 2
 
 	phaseJoin := ""
-	if phase == "avance" || phase == "medio-anio" {
-		phaseJoin = ` AND ev.phase IN ($` + strconv.Itoa(idx) + `, $` + strconv.Itoa(idx+1) + `)`
-		args = append(args, "avance", "medio-anio")
-		idx += 2
-	} else if phase != "" {
-		phaseJoin = ` AND ev.phase = $` + strconv.Itoa(idx)
-		args = append(args, phase)
-		idx++
+	if clause, clauseArgs, next := state.PhaseFilterClause("ev.phase", idx, phase); clause != "" {
+		phaseJoin = clause
+		args = append(args, clauseArgs...)
+		idx = next
 	}
 
 	baseQuery := `SELECT e.id,
@@ -693,14 +694,10 @@ func (r *EvaluationRepo) CountCompetencyResults(ctx context.Context, cycleID uui
 	idx := 2
 
 	phaseJoin := ""
-	if phase == "avance" || phase == "medio-anio" {
-		phaseJoin = ` AND ev.phase IN ($` + strconv.Itoa(idx) + `, $` + strconv.Itoa(idx+1) + `)`
-		args = append(args, "avance", "medio-anio")
-		idx += 2
-	} else if phase != "" {
-		phaseJoin = ` AND ev.phase = $` + strconv.Itoa(idx)
-		args = append(args, phase)
-		idx++
+	if clause, clauseArgs, next := state.PhaseFilterClause("ev.phase", idx, phase); clause != "" {
+		phaseJoin = clause
+		args = append(args, clauseArgs...)
+		idx = next
 	}
 
 	baseQuery := `SELECT COUNT(DISTINCT e.id)
@@ -728,25 +725,47 @@ func (r *EvaluationRepo) CountCompetencyResults(ctx context.Context, cycleID uui
 	return total, nil
 }
 
-// FindByEmployeeCycle returns the evaluation for an employee+cycle,
-// preferring the avance-phase row when several phases exist.
-func (r *EvaluationRepo) FindByEmployeeCycle(ctx context.Context, employeeID, cycleID uuid.UUID) (*EvaluationRow, error) {
+// normalizeEvalPhase maps phases to the Ent enum via state.NormalizePhase,
+// preserving asignacion exact (never collapses to avance).
+func normalizeEvalPhase(phase string) evaluation.Phase {
+	switch state.NormalizePhase(phase) {
+	case state.PhaseCierre:
+		return evaluation.PhaseCierre
+	case state.PhaseAsignacion:
+		return evaluation.PhaseAsignacion
+	default:
+		return evaluation.PhaseAvance
+	}
+}
+
+// FindByEmployeeCyclePhase returns the evaluation for an employee+cycle+phase,
+// giving each (employee, cycle, phase) its own row. Normalized: medio-anio
+// maps to avance, fin-anio maps to cierre.
+func (r *EvaluationRepo) FindByEmployeeCyclePhase(ctx context.Context, employeeID, cycleID uuid.UUID, phase string) (*EvaluationRow, error) {
+	entPhase := normalizeEvalPhase(phase)
 	ev, err := r.client.Evaluation.Query().
 		Where(evaluation.And(
 			evaluation.EmployeeID(employeeID),
 			evaluation.CycleID(cycleID),
-			evaluation.PhaseEQ(evaluation.PhaseAvance),
+			evaluation.PhaseEQ(entPhase),
 		)).
 		Order(evaluation.ByCreatedAt()).
 		First(ctx)
-	if err == nil {
-		log.Printf("[evalId] found employee=%s cycle=%s eval=%s", employeeID, cycleID, ev.ID)
-		return rowFromEnt(ev, ev.Version), nil
-	}
-	if !internal.IsNotFound(err) {
+	if err != nil {
+		if internal.IsNotFound(err) {
+			return nil, ErrEvaluationNotFound
+		}
 		return nil, err
 	}
-	ev, err = r.client.Evaluation.Query().
+	log.Printf("[evalId] found employee=%s cycle=%s phase=%s eval=%s", employeeID, cycleID, entPhase, ev.ID)
+	return rowFromEnt(ev, ev.Version), nil
+}
+
+// FindByEmployeeCycle returns the evaluation for an employee+cycle.
+// Legacy fallback without phase preference: earliest row by created_at.
+// Prefer FindByEmployeeCyclePhase for phase-specific reads.
+func (r *EvaluationRepo) FindByEmployeeCycle(ctx context.Context, employeeID, cycleID uuid.UUID) (*EvaluationRow, error) {
+	ev, err := r.client.Evaluation.Query().
 		Where(evaluation.And(
 			evaluation.EmployeeID(employeeID),
 			evaluation.CycleID(cycleID),
@@ -763,19 +782,18 @@ func (r *EvaluationRepo) FindByEmployeeCycle(ctx context.Context, employeeID, cy
 	return rowFromEnt(ev, ev.Version), nil
 }
 
-// EnsureEvaluation finds the evaluation for employee+cycle or creates it.
-// phase is the cycle's current phase ("avance"/"medio-anio" or "cierre");
+// EnsureEvaluation finds the evaluation for employee+cycle+phase or creates it.
+// Each (employee, cycle, phase) has its own row (avance vs cierre normalized);
 // actorID is used for created_by/updated_by (falls back to employeeID).
 func (r *EvaluationRepo) EnsureEvaluation(ctx context.Context, employeeID, cycleID uuid.UUID, phase string, actorID uuid.UUID) (*EvaluationRow, error) {
-	if row, err := r.FindByEmployeeCycle(ctx, employeeID, cycleID); err == nil {
+	if row, err := r.FindByEmployeeCyclePhase(ctx, employeeID, cycleID, phase); err == nil {
 		return row, nil
 	} else if err != ErrEvaluationNotFound {
 		return nil, err
 	}
-	entPhase := evaluation.PhaseAvance
+	entPhase := normalizeEvalPhase(phase)
 	entState := evaluation.StatePendienteAvance
-	if phase == "cierre" || phase == "fin-anio" {
-		entPhase = evaluation.PhaseCierre
+	if entPhase == evaluation.PhaseCierre {
 		entState = evaluation.StatePendienteEvaluacionFinal
 	}
 	if actorID == uuid.Nil {
@@ -790,8 +808,8 @@ func (r *EvaluationRepo) EnsureEvaluation(ctx context.Context, employeeID, cycle
 		SetUpdatedBy(actorID).
 		Save(ctx)
 	if err != nil {
-		// Concurrent creation won the race: re-read the winner.
-		if row, ferr := r.FindByEmployeeCycle(ctx, employeeID, cycleID); ferr == nil {
+		// Concurrent creation won the race: re-read the winner for this phase.
+		if row, ferr := r.FindByEmployeeCyclePhase(ctx, employeeID, cycleID, phase); ferr == nil {
 			return row, nil
 		}
 		return nil, err

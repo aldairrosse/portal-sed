@@ -9,7 +9,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"log"
-	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -173,6 +172,13 @@ func (s *EvaluationService) UpdateSelfEvaluation(ctx context.Context, evaluation
 	if err != nil {
 		return nil, err
 	}
+	currentPhase, err := s.cycleCheck.GetPhase(ctx, row.CycleID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get cycle phase: %w", err)
+	}
+	if err := validateRowPhase(row.Phase, currentPhase); err != nil {
+		return nil, err
+	}
 	if err := s.validateWritePhase(ctx, row.CycleID, ""); err != nil {
 		return nil, err
 	}
@@ -329,6 +335,13 @@ func (s *EvaluationService) SubmitRHEvaluation(ctx context.Context, evaluationID
 func (s *EvaluationService) UpdateRHEvaluation(ctx context.Context, evaluationID uuid.UUID, req dto.RHEvaluationRequest, ifMatch int) (*dto.EvaluationDetailResponse, error) {
 	row, err := s.evalRepo.GetByID(ctx, evaluationID)
 	if err != nil {
+		return nil, err
+	}
+	currentPhase, err := s.cycleCheck.GetPhase(ctx, row.CycleID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get cycle phase: %w", err)
+	}
+	if err := validateRowPhase(row.Phase, currentPhase); err != nil {
 		return nil, err
 	}
 	if err := s.validateWritePhase(ctx, row.CycleID, ""); err != nil {
@@ -537,6 +550,16 @@ func (s *EvaluationService) UpdateGoalState(ctx context.Context, evaluationID uu
 		return nil, repo.ErrEvaluationFinalized
 	}
 
+	// P3: direct closing value in the goal's own unit — 0 allowed, negative
+	// rejected (400). No unit/direction in input by contract
+	// (GoalStateUpdateInput has no unit field); direction scaling lives in
+	// P4 ninebox, not here. No final_rating derivation.
+	if input.FinalProgress != nil && *input.FinalProgress < 0 {
+		return nil, errors.NewDomainError(errors.InvalidRequest,
+			"el progreso no puede ser negativo", nil,
+		).WithDetails("INVALID_PROGRESS")
+	}
+
 	tx, err := s.evalRepo.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if err != nil {
 		return nil, err
@@ -551,15 +574,26 @@ func (s *EvaluationService) UpdateGoalState(ctx context.Context, evaluationID uu
 		return nil, err
 	}
 
-	// Resolve the closing phase: explicit request phase wins, then the
-	// evaluation's own phase, then the cycle's current phase.
+	// P2: resolve the write phase from the ACTIVE cycle phase
+	// (cycles.current_phase via cycleCheck). Explicit request phase must
+	// match the active phase (only active editable, prior immutable).
+	// Missing phase defaults to the active phase — never to avance.
+	activePhase := ""
+	if p, err := s.cycleCheck.GetPhase(ctx, row.CycleID); err == nil {
+		activePhase = p
+	}
 	phase := ""
 	if input.Phase != nil && *input.Phase != "" {
+		if activePhase != "" && !state.SamePhaseForWrite(*input.Phase, activePhase) {
+			return nil, errors.NewDomainError(errors.PhaseNotActive,
+				fmt.Sprintf("phase '%s' is not active; current phase is '%s'", *input.Phase, activePhase), nil,
+			).WithDetails("requested_phase: " + *input.Phase, "current_phase: " + activePhase)
+		}
 		phase = *input.Phase
+	} else if activePhase != "" {
+		phase = activePhase
 	} else if row.Phase != "" {
 		phase = row.Phase
-	} else if p, err := s.cycleCheck.GetPhase(ctx, row.CycleID); err == nil {
-		phase = p
 	}
 
 	// F3: nil = not sent (leave unchanged); empty string is also treated as
@@ -683,13 +717,20 @@ func (s *EvaluationService) ResolveActiveCycleID(ctx context.Context, employeeID
 
 // GetEmployeeCompetencyRatings returns ALL competencies for an employee's profile in a cycle,
 // with self/rh ratings if evaluations exist (or null if not yet evaluated).
-func (s *EvaluationService) GetEmployeeCompetencyRatings(ctx context.Context, employeeID, cycleID uuid.UUID) (*dto.EmployeeCompetencyRatingsResponse, error) {
+// phase is optional: empty defaults to the cycle's current phase so reads
+// follow the active phase without requiring the frontend to send it.
+func (s *EvaluationService) GetEmployeeCompetencyRatings(ctx context.Context, employeeID, cycleID uuid.UUID, phase string) (*dto.EmployeeCompetencyRatingsResponse, error) {
 	emp, err := s.empRepo.GetByID(ctx, employeeID)
 	if err != nil {
 		return nil, err
 	}
+	if phase == "" {
+		if p, err := s.cycleCheck.GetPhase(ctx, cycleID); err == nil && p != "" {
+			phase = p
+		}
+	}
 
-	rows, err := s.evalRepo.GetCompetencyRatingsByEmployee(ctx, employeeID, cycleID, emp.ProfileID)
+	rows, err := s.evalRepo.GetCompetencyRatingsByEmployee(ctx, employeeID, cycleID, emp.ProfileID, phase)
 	if err != nil {
 		return nil, err
 	}
@@ -817,6 +858,16 @@ func (s *EvaluationService) validatePhase(ctx context.Context, cycleID uuid.UUID
 // (with "avance"/"medio-anio" treated as the same phase). Saved rows stay
 // editable while the phase is active, including after a revert. Mismatch
 // returns PHASE_NOT_ADVANCEABLE (409); missing permission is 403 via RBAC.
+func validateRowPhase(rowPhase, currentPhase string) error {
+	if rowPhase == "" {
+		return nil
+	}
+	if state.SamePhaseForWrite(rowPhase, currentPhase) {
+		return nil
+	}
+	return errors.NewDomainError(errors.PhaseNotAdvanceable, "phase_mismatch: row is "+rowPhase+" but active is "+currentPhase, nil)
+}
+
 func (s *EvaluationService) validateWritePhase(ctx context.Context, cycleID uuid.UUID, wantPhase string) error {
 	phase, err := s.cycleCheck.GetPhase(ctx, cycleID)
 	if err != nil {
@@ -876,12 +927,7 @@ func hashRHEvalPayload(req dto.RHEvaluationRequest) string {
 // selfRestrictedPhase reports whether a colaborador viewer is limited to
 // their own evaluations in the given cycle phase (avance / medio-anio).
 func selfRestrictedPhase(phase string) bool {
-	switch strings.ToLower(strings.TrimSpace(phase)) {
-	case "avance", "medio-anio", "medio_anio":
-		return true
-	default:
-		return false
-	}
+	return state.IsMidYearPhase(phase)
 }
 
 // FilterEvaluationsForViewer hides other employees' evaluations from

@@ -58,6 +58,20 @@ func HierarchicalScore(personalScore float64, pWeight, pjWeight float64) float64
 	return result
 }
 
+// FinalScore sums personalHJ + global + shared contributions into a 0-100 score.
+// Each input is already weighted (personal includes catW/w_i/P/PJ, global
+// includes w_i/G, shared includes w_i/J/P). Result is clamped to [0, 100].
+func FinalScore(personalHJ, global, shared float64) float64 {
+	total := personalHJ + global + shared
+	if total < 0 {
+		return 0
+	}
+	if total > 100 {
+		return 100
+	}
+	return total
+}
+
 // EffectiveWeightPersonal returns peso ponderado personal: w * (P/100) * (PJ/100) fallback 100.
 func EffectiveWeightPersonal(w, pWeight, pjWeight float64) float64 {
 	if pWeight == 0 {

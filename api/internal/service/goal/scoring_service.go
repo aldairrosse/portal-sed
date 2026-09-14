@@ -14,9 +14,10 @@ type WeightResolver interface {
 
 // ScoringService handles employee score calculation.
 type ScoringService struct {
-	catRepo   CategoryRepository
-	goalRepo  GoalRepository
-	weightSvc WeightResolver
+	catRepo    CategoryRepository
+	goalRepo   GoalRepository
+	weightSvc  WeightResolver
+	assignRepo AssignmentRepository
 }
 
 // NewScoringService creates a new ScoringService.
@@ -28,6 +29,12 @@ func NewScoringService(
 		catRepo:  catRepo,
 		goalRepo: goalRepo,
 	}
+}
+
+// WithAssignmentRepo injects the assignment repo for global/shared contributions.
+func (s *ScoringService) WithAssignmentRepo(a AssignmentRepository) *ScoringService {
+	s.assignRepo = a
+	return s
 }
 
 // WithWeightResolver injects the hierarchical weight resolver.
@@ -76,4 +83,104 @@ func (s *ScoringService) GetEmployeeScore(ctx context.Context, empID uuid.UUID) 
 		pWeight, pjWeight = s.weightSvc.GetEmployeeHierarchicalWeights(ctx, empID)
 	}
 	return scoring.HierarchicalScore(personalScore, pWeight, pjWeight), nil
+}
+
+// GetEmployeeHierarchicalScore returns the final 0-100 score:
+// personalHJ (catW/w_i/P/PJ) + global (w_i*G) + shared (w_i*J*P).
+// cycleID scopes the score to a cycle; weights resolve via WeightResolver
+// (active cycle) with fallback 100. NULL snapshots are excluded by skipping
+// zero targets via ProgressPercent (target<=0 → 0).
+func (s *ScoringService) GetEmployeeHierarchicalScore(ctx context.Context, empID, cycleID uuid.UUID) (float64, error) {
+	_ = cycleID
+	pWeight, pjWeight := 100.0, 100.0
+	if s.weightSvc != nil {
+		pWeight, pjWeight = s.weightSvc.GetEmployeeHierarchicalWeights(ctx, empID)
+	}
+	if pWeight == 0 {
+		pWeight = 100
+	}
+	if pjWeight == 0 {
+		pjWeight = 100
+	}
+	gWeight := 100 - pWeight
+	if gWeight < 0 {
+		gWeight = 0
+	}
+	jWeight := 100 - pjWeight
+	if jWeight < 0 {
+		jWeight = 0
+	}
+
+	cats, err := s.catRepo.ListCategoriesByEmployee(ctx, empID)
+	if err != nil {
+		return 0, err
+	}
+	catScores := make([]scoring.CategoryScore, 0, len(cats))
+	for _, cat := range cats {
+		goals, err := s.goalRepo.ListGoalsByCategory(ctx, cat.ID)
+		if err != nil {
+			return 0, err
+		}
+		goalScores := make([]scoring.GoalScore, 0, len(goals))
+		for _, g := range goals {
+			baselineVal := 0.0
+			if g.BaselineValue != nil {
+				baselineVal = *g.BaselineValue
+			}
+			goalScores = append(goalScores, scoring.GoalScore{
+				Weight:          g.Weight,
+				ProgressPercent: scoring.ProgressPercent(g.CurrentValue, g.TargetValue, baselineVal, g.Direction),
+			})
+		}
+		catScores = append(catScores, scoring.CategoryScore{
+			Weight: cat.Weight,
+			Goals:  goalScores,
+		})
+	}
+	personalHJ := scoring.HierarchicalScore(scoring.EmployeeScore(catScores), pWeight, pjWeight)
+
+	var globalSum, sharedSum float64
+	if s.assignRepo != nil {
+		if globals, err := s.assignRepo.ListGlobalGoalsByEmployee(ctx, empID); err == nil {
+			for _, gg := range globals {
+				if gg == nil || len(gg.Assignments) == 0 {
+					continue
+				}
+				a := gg.Assignments[0]
+				target := a.TargetValue
+				if target == 0 {
+					target = gg.TargetValue
+				}
+				baseline := 0.0
+				if a.BaselineValue != nil {
+					baseline = *a.BaselineValue
+				} else if gg.BaselineValue != nil {
+					baseline = *gg.BaselineValue
+				}
+				pct := scoring.ProgressPercent(gg.CurrentValue, target, baseline, gg.Direction)
+				globalSum += pct * a.Weight / 100 * gWeight / 100
+			}
+		}
+		if shared, err := s.assignRepo.ListSharedGoalsAsMember(ctx, empID); err == nil {
+			for _, sg := range shared {
+				if sg == nil || len(sg.Members) == 0 {
+					continue
+				}
+				m := sg.Members[0]
+				target := m.TargetValue
+				if target == 0 {
+					target = sg.TargetValue
+				}
+				baseline := 0.0
+				if m.BaselineValue != nil {
+					baseline = *m.BaselineValue
+				} else if sg.BaselineValue != nil {
+					baseline = *sg.BaselineValue
+				}
+				pct := scoring.ProgressPercent(sg.CurrentValue, target, baseline, sg.Direction)
+				sharedSum += pct * m.Weight / 100 * jWeight / 100 * pWeight / 100
+			}
+		}
+	}
+	return scoring.FinalScore(personalHJ, globalSum, sharedSum), nil
 }

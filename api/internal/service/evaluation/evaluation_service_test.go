@@ -129,7 +129,7 @@ func (m *mockEvalRepo) RefreshSummaryView(ctx context.Context) error {
 	return m.refreshErr
 }
 
-func (m *mockEvalRepo) GetCompetencyRatingsByEmployee(ctx context.Context, employeeID, cycleID, profileID uuid.UUID) ([]repo.EmployeeCompetencyRatingRow, error) {
+func (m *mockEvalRepo) GetCompetencyRatingsByEmployee(ctx context.Context, employeeID, cycleID, profileID uuid.UUID, phase string) ([]repo.EmployeeCompetencyRatingRow, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	// ponytail: return empty slice by default; tests that need specific data must set up via sqlmock
@@ -390,12 +390,16 @@ func (m *mockNineBoxRepo) GetGoalAssigneesByCycle(ctx context.Context, cycleID u
 	return m.goalAssignees, nil
 }
 
-func (m *mockNineBoxRepo) GetGoalProgressByEmployee(ctx context.Context, employeeID, cycleID uuid.UUID) (float64, error) {
+func (m *mockNineBoxRepo) GetGoalProgressByEmployee(ctx context.Context, employeeID, cycleID, phaseID uuid.UUID) (float64, error) {
 	return 50, nil
 }
 
-func (m *mockNineBoxRepo) GetCompetencyRatingsByEmployee(ctx context.Context, employeeID, cycleID uuid.UUID) (selfRating, hrRating *float64, err error) {
+func (m *mockNineBoxRepo) GetCompetencyRatingsByEmployee(ctx context.Context, employeeID, cycleID, phaseID uuid.UUID) (selfRating, hrRating *float64, err error) {
 	return nil, nil, nil
+}
+
+func (m *mockNineBoxRepo) GetMatrixForUpdate(ctx context.Context, tx *sql.Tx, matrixID uuid.UUID) (*internal.NineBoxMatrix, error) {
+	return nil, nil
 }
 
 // ---------- Mock Catalog Repo ----------
@@ -983,13 +987,20 @@ func TestNineBoxService_RecomputeMatrix_SkipsRootEmployee(t *testing.T) {
 	rootID := uuid.New()
 
 	mockNineBox := &mockNineBoxRepo{
-		managerMap:    map[uuid.UUID]uuid.UUID{},
+		managerMap:    map[uuid.UUID]uuid.UUID{rootID: uuid.Nil},
 		goalAssignees: []uuid.UUID{rootID},
-		entry:         &internal.NineBoxEntry{ID: uuid.New(), EvaluateeID: rootID, Quadrant: 5},
+		matrix: &internal.NineBoxMatrix{
+			ID:          uuid.New(),
+			CycleID:     cycleID,
+			EvaluatorID: rootID,
+			PhaseID:     phaseID,
+		},
+		entry: &internal.NineBoxEntry{ID: uuid.New(), EvaluateeID: rootID, Quadrant: 5},
 	}
 	mockCatalog := &mockCatalogRepo{}
 
 	mock.ExpectBegin()
+	mock.ExpectCommit()
 
 	nineBoxSvc := svc.NewNineBoxService(mockNineBox, mockCatalog, &mockDB{db: db}, nil, nil, nil)
 
@@ -997,8 +1008,8 @@ func TestNineBoxService_RecomputeMatrix_SkipsRootEmployee(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 1, mockNineBox.callCount["GetManagerMapping"])
 	assert.Equal(t, 1, mockNineBox.callCount["GetGoalAssigneesByCycle"])
-	assert.Equal(t, 0, mockNineBox.callCount["GetMatrixByPhase"])
-	assert.Equal(t, 0, mockNineBox.callCount["UpsertEntryByTiers"])
+	assert.Equal(t, 1, mockNineBox.callCount["GetMatrixByPhase"])
+	assert.Equal(t, 1, mockNineBox.callCount["UpsertEntryByTiers"])
 }
 
 // ---------- Tests: GetCompetencyResults hasMore ----------
@@ -1127,7 +1138,7 @@ func (m *mockHasMoreEvalRepo) GetDetail(ctx context.Context, id uuid.UUID) (*rep
 func (m *mockHasMoreEvalRepo) ListByCycle(ctx context.Context, cycleID uuid.UUID, state string, phase string, cursor string, limit int) ([]*repo.EvaluationRow, string, error) {
 	return nil, "", nil
 }
-func (m *mockHasMoreEvalRepo) GetCompetencyRatingsByEmployee(ctx context.Context, employeeID, cycleID, profileID uuid.UUID) ([]repo.EmployeeCompetencyRatingRow, error) {
+func (m *mockHasMoreEvalRepo) GetCompetencyRatingsByEmployee(ctx context.Context, employeeID, cycleID, profileID uuid.UUID, phase string) ([]repo.EmployeeCompetencyRatingRow, error) {
 	return nil, nil
 }
 func (m *mockHasMoreEvalRepo) FinalizeEval(ctx context.Context, tx *sql.Tx, evalID uuid.UUID) error {

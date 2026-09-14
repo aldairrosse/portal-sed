@@ -114,7 +114,22 @@ func (r *GoalRatingRepo) UpsertGoalState(ctx context.Context, tx *sql.Tx, evalID
 	idx := 2
 
 	if input.FinalProgress != nil {
-		// Direct value into the closing-phase snapshot (never int(FP*5)).
+		// P2 guard: never write an inactive/unknown phase snapshot.
+		// Services validate explicit phases against cycles.current_phase;
+		// the repo rejects empty/unknown phases instead of silently
+		// defaulting to avance_progress (400 PHASE_NOT_ACTIVE).
+		if strings.TrimSpace(input.Phase) == "" {
+			return pkgerrors.NewDomainError(pkgerrors.PhaseNotActive,
+				"phase is required for snapshot writes; no active phase resolved", nil)
+		}
+		switch strings.ToLower(strings.TrimSpace(input.Phase)) {
+		case "avance", "medio-anio", "medio_anio", "cierre", "fin-anio", "fin_anio":
+		default:
+			return pkgerrors.NewDomainError(pkgerrors.PhaseNotActive,
+				"phase '"+input.Phase+"' is not a writable snapshot phase", nil,
+			).WithDetails("phase: " + input.Phase)
+		}
+		// Direct value into the active-phase snapshot column.
 		col := SnapshotColumnForPhase(input.Phase)
 		setClauses = append(setClauses, col+" = $"+strconv.Itoa(idx))
 		args = append(args, *input.FinalProgress)

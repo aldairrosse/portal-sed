@@ -39,11 +39,12 @@ type GoalRepository interface {
 	UpsertProgressSnapshot(ctx context.Context, evalID, goalID uuid.UUID, phase string, value float64) error
 }
 
-// EvaluationLookup resolves the evaluation for employee+cycle via the
-// existing evaluation repo (FindByEmployeeCycle). Implemented by
-// *repoeval.EvaluationRepo; kept as an interface for tests.
+// EvaluationLookup resolves the evaluation for employee+cycle+phase via the
+// existing evaluation repo. Implemented by *repoeval.EvaluationRepo;
+// kept as an interface for tests.
 type EvaluationLookup interface {
 	FindByEmployeeCycle(ctx context.Context, employeeID, cycleID uuid.UUID) (*repoeval.EvaluationRow, error)
+	FindByEmployeeCyclePhase(ctx context.Context, employeeID, cycleID uuid.UUID, phase string) (*repoeval.EvaluationRow, error)
 }
 
 // KPIRepository defines the storage contract for KPIs.
