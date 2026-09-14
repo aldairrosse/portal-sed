@@ -208,7 +208,7 @@ func TestComputePotentialTier_OnlyHR(t *testing.T) {
 
 func TestComputePotentialTier_NoData(t *testing.T) {
 	got := quadrant.ComputePotentialTier(nil, nil)
-	assert.Equal(t, 2, got, "no data → default tier 2")
+	assert.Equal(t, 1, got, "no data → low-low tier 1")
 }
 
 func TestComputePotentialTier_AverageRounding(t *testing.T) {

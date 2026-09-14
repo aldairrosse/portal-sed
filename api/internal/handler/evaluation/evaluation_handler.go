@@ -19,6 +19,7 @@ import (
 	dto "github.com/sed-evaluacion-desempeno/api/internal/dto/evaluation"
 	"github.com/sed-evaluacion-desempeno/api/internal/middleware"
 	pkgerrors "github.com/sed-evaluacion-desempeno/api/internal/pkg/errors"
+	"github.com/sed-evaluacion-desempeno/api/internal/pkg/state"
 
 	"github.com/sed-evaluacion-desempeno/api/internal/auth"
 	activitysvc "github.com/sed-evaluacion-desempeno/api/internal/service/activity"
@@ -80,18 +81,19 @@ func NewEvaluationHandler(
 }
 
 // parsePhaseParam validates the ?phase query param against the cycle phase enum.
+// Legacy aliases (medio-anio, fin-anio, inicio-anio) are normalized to canonical
+// (avance, cierre, asignacion) via state.NormalizePhase, so they never reach SQL
+// as enum values (avoids 22P02).
 // Empty means "default to the cycle's current_phase" (resolved by the service).
 func parsePhaseParam(raw string) (string, error) {
 	if raw == "" {
 		return "", nil
 	}
-	switch raw {
-	case "asignacion", "avance", "medio-anio", "cierre":
-		return raw, nil
-	default:
-		return "", pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
-			"phase must be one of 'asignacion', 'avance', 'medio-anio', 'cierre'", nil)
+	if n := state.NormalizePhase(raw); n == state.PhaseAsignacion || n == state.PhaseAvance || n == state.PhaseCierre {
+		return n, nil
 	}
+	return "", pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
+		"phase must be one of 'asignacion', 'avance', 'cierre' (aliases 'medio-anio', 'fin-anio', 'inicio-anio' accepted)", nil)
 }
 
 // parseEmployeeCycleQuery resolves ?employee_id & cycle_id for 404-retry upsert.
@@ -275,7 +277,15 @@ func (h *EvaluationHandler) GetEmployeeCompetencies(w http.ResponseWriter, r *ht
 		}
 	}
 
-	result, err := h.evalSvc.GetEmployeeCompetencyRatings(r.Context(), employeeID, cycleID)
+	// ?phase= is optional: empty defaults to the cycle's current phase
+	// (resolved in the service), so the frontend never has to send it.
+	phase, err := parsePhaseParam(r.URL.Query().Get("phase"))
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+
+	result, err := h.evalSvc.GetEmployeeCompetencyRatings(r.Context(), employeeID, cycleID, phase)
 	if err != nil {
 		writeError(w, err)
 		return
@@ -722,19 +732,34 @@ func (h *EvaluationHandler) ListMatrices(w http.ResponseWriter, r *http.Request)
 	}
 
 	var phaseID *uuid.UUID
+	var phaseFromID string
 	if p := r.URL.Query().Get("phase_id"); p != "" {
 		parsed, err := uuid.Parse(p)
 		if err != nil {
-			writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
-				"phase_id must be a valid UUID v4", err))
-			return
+			// Legacy callers send a phase alias (fin-anio, medio-anio, ...)
+			// as phase_id: resolve it as ?phase instead of failing.
+			alias, perr := parsePhaseParam(p)
+			if perr != nil {
+				writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
+					"phase_id must be a valid UUID v4", err))
+				return
+			}
+			phaseFromID = alias
+		} else {
+			phaseID = &parsed
 		}
-		phaseID = &parsed
 	}
 
 	phase, err := parsePhaseParam(r.URL.Query().Get("phase"))
 	if err != nil {
 		writeError(w, err)
+		return
+	}
+	if phase == "" {
+		phase = phaseFromID
+	} else if phaseFromID != "" && phase != phaseFromID {
+		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
+			"phase and phase_id conflict", nil))
 		return
 	}
 	if cycleID != uuid.Nil && phase == "" && phaseID == nil {

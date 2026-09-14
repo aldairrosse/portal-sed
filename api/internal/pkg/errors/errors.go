@@ -44,6 +44,7 @@ const (
 	InvalidBaselineValue    DomainCode = "INVALID_BASELINE_VALUE"
 	InvalidDirection        DomainCode = "INVALID_DIRECTION"
 	InvalidQuadrant         DomainCode = "INVALID_QUADRANT"
+	PhaseNotActive          DomainCode = "PHASE_NOT_ACTIVE"
 
 	// Códigos de error de dominio de jerarquía organizacional
 	TreeNotFound         DomainCode = "TREE_NOT_FOUND"
@@ -161,7 +162,7 @@ func HTTPStatus(err error) int {
 		return 429
 	case MissingIfMatch:
 		return 428
-	case InvalidRequest, InvalidIfMatch, InvalidWeightRange, InvalidTargetValue, InvalidUnit, BatchSizeExceeded, KpiLinkLimitExceeded, InvalidBaselineValue, InvalidDirection, InvalidParent, InvalidTreeType, InvalidQuadrant,
+	case InvalidRequest, InvalidIfMatch, InvalidWeightRange, InvalidTargetValue, InvalidUnit, BatchSizeExceeded, KpiLinkLimitExceeded, InvalidBaselineValue, InvalidDirection, InvalidParent, InvalidTreeType, InvalidQuadrant, PhaseNotActive,
 		"QUADRANT_OUT_OF_RANGE":
 		return 400
 	case RequestTimeout:

@@ -48,10 +48,10 @@ func ComputePerformanceTier(avgProgress float64) int {
 //
 // If both selfRating and hrRating are non-nil, their average is used.
 // If only one is provided, that value is used.
-// If neither is provided, returns 2 (default / unknown).
+// If neither is provided, returns 1 (no data → low-low, quadrant 1).
 func ComputePotentialTier(selfRating, hrRating *float64) int {
 	if selfRating == nil && hrRating == nil {
-		return 2
+		return 1
 	}
 
 	var sum, count float64

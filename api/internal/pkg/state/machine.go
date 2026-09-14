@@ -10,6 +10,7 @@ package state
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	pkgerrors "github.com/sed-evaluacion-desempeno/api/internal/pkg/errors"
@@ -199,4 +200,51 @@ func IsBackwardAllowed(fromPhase, toPhase string, cycleActive bool) bool {
 // String returns the string representation of the state.
 func (s EvaluationState) String() string {
 	return string(s)
+}
+
+// PhaseValues returns the DB phase values matching the requested phase.
+// Second return is false when phase is empty (no filter, legacy unfiltered
+// JOIN for cycles without phase data).
+//
+// Decision (single source of truth): asignacion stays EXACT and never
+// collapses to avance — reads filter ev.phase='asignacion' exact and the
+// state tests assert asignacion != avance. Only canonical enum values
+// (asignacion, avance, cierre) are returned: evaluations.phase and
+// phase_definitions.phase are enums, so legacy aliases (medio-anio,
+// fin-anio, inicio-anio) must never reach SQL or Postgres raises 22P02.
+func PhaseValues(phase string) ([]string, bool) {
+	if phase == "" {
+		return nil, false
+	}
+	switch NormalizePhase(phase) {
+	case PhaseAvance:
+		return []string{PhaseAvance}, true
+	case PhaseCierre:
+		return []string{PhaseCierre}, true
+	default:
+		return []string{NormalizePhase(phase)}, true
+	}
+}
+
+// PhaseFilterClause builds a phase predicate for column (e.g. "e.phase",
+// "ev.phase") with $N placeholders starting at startIdx.
+// Returns empty clause + nil args when phase is "" (no filter).
+// nextIdx is the next free placeholder index.
+func PhaseFilterClause(column string, startIdx int, phase string) (clause string, args []interface{}, nextIdx int) {
+	vals, ok := PhaseValues(phase)
+	if !ok {
+		return "", nil, startIdx
+	}
+	if len(vals) == 1 {
+		return " AND " + column + " = $" + strconv.Itoa(startIdx),
+			[]interface{}{vals[0]}, startIdx + 1
+	}
+	placeholders := make([]string, len(vals))
+	args = make([]interface{}, len(vals))
+	for i, v := range vals {
+		placeholders[i] = "$" + strconv.Itoa(startIdx+i)
+		args[i] = v
+	}
+	return " AND " + column + " IN (" + strings.Join(placeholders, ", ") + ")",
+		args, startIdx + len(vals)
 }

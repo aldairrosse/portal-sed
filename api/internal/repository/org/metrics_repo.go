@@ -141,16 +141,9 @@ func (r *MetricsRepo) GetRHEvaluationsByEmployees(ctx context.Context, employeeI
 	           WHERE e.employee_id IN (` + strings.Join(placeholders, ",") + `)
 	             AND e.cycle_id = $` + itoa(cycleParamIdx) + `
 	             AND ec.rh_rating IS NOT NULL`
-	if phase != "" {
-		// "avance" and "medio-anio" are equivalent (same as evaluation_repo.go);
-		// IsMidYearPhase also normalizes "medio_anio".
-		if state.IsMidYearPhase(phase) {
-			query += ` AND e.phase IN ($` + itoa(cycleParamIdx+1) + `, $` + itoa(cycleParamIdx+2) + `)`
-			args = append(args, "avance", "medio-anio")
-		} else {
-			query += ` AND e.phase = $` + itoa(cycleParamIdx+1) + `::phase`
-			args = append(args, phase)
-		}
+	if clause, clauseArgs, _ := state.PhaseFilterClause("e.phase", cycleParamIdx+1, phase); clause != "" {
+		query += clause
+		args = append(args, clauseArgs...)
 	}
 
 	rows, err := r.db.QueryContext(ctx, query, args...)

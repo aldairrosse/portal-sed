@@ -13,7 +13,7 @@ type EvalService interface {
 	ListEvaluations(ctx context.Context, cycleID uuid.UUID, stateFilter string, phase string, cursor string, limit int) (*dto.EvaluationListResponse, error)
 	GetEvaluation(ctx context.Context, id uuid.UUID) (*dto.EvaluationDetailResponse, error)
 	GetCyclePhase(ctx context.Context, cycleID uuid.UUID) (string, error)
-	GetEmployeeCompetencyRatings(ctx context.Context, employeeID, cycleID uuid.UUID) (*dto.EmployeeCompetencyRatingsResponse, error)
+	GetEmployeeCompetencyRatings(ctx context.Context, employeeID, cycleID uuid.UUID, phase string) (*dto.EmployeeCompetencyRatingsResponse, error)
 	ResolveActiveCycleID(ctx context.Context, employeeID uuid.UUID) (uuid.UUID, error)
 	ResolveEvaluationID(ctx context.Context, employeeID, cycleID uuid.UUID) (uuid.UUID, error)
 	EnsureEvaluation(ctx context.Context, employeeID, cycleID uuid.UUID, phase string) (uuid.UUID, error)

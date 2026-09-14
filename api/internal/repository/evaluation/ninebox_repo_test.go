@@ -70,17 +70,17 @@ func TestNineBoxRepo_GetManagerMapping_Success(t *testing.T) {
 	managerID := uuid.MustParse("22222222-2222-2222-2222-222222222222")
 	rootID := uuid.MustParse("33333333-3333-3333-3333-333333333333")
 
-	mock.ExpectQuery("SELECT id, manager_id FROM employees WHERE id IN \\(\\$1,\\$2\\) AND manager_id IS NOT NULL").
+	mock.ExpectQuery("SELECT id, manager_id FROM employees WHERE id IN \\(\\$1,\\$2\\)").
 		WithArgs(empID, rootID).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "manager_id"}).
-			AddRow(empID, managerID))
+			AddRow(empID, managerID).
+			AddRow(rootID, nil))
 
 	mapping, err := r.GetManagerMapping(context.Background(), []uuid.UUID{empID, rootID})
 	require.NoError(t, err)
-	require.Len(t, mapping, 1)
+	require.Len(t, mapping, 2)
 	assert.Equal(t, managerID, mapping[empID])
-	_, ok := mapping[rootID]
-	assert.False(t, ok, "root employee with NULL manager_id should be skipped")
+	assert.Equal(t, uuid.Nil, mapping[rootID], "root employee with NULL manager_id should map to uuid.Nil")
 
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

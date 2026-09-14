@@ -90,7 +90,7 @@ func (m *mockEvalService) GetCyclePhase(ctx context.Context, cycleID uuid.UUID) 
 	return "cierre", nil
 }
 
-func (m *mockEvalService) GetEmployeeCompetencyRatings(ctx context.Context, employeeID, cycleID uuid.UUID) (*dto.EmployeeCompetencyRatingsResponse, error) {
+func (m *mockEvalService) GetEmployeeCompetencyRatings(ctx context.Context, employeeID, cycleID uuid.UUID, phase string) (*dto.EmployeeCompetencyRatingsResponse, error) {
 	m.recordCall("GetEmployeeCompetencyRatings")
 	return nil, nil // ponytail: no-op mock, add fields when handler tests need this path
 }

@@ -8,6 +8,7 @@ import (
 	"github.com/sed-evaluacion-desempeno/api/internal"
 	dto "github.com/sed-evaluacion-desempeno/api/internal/dto/org"
 	"github.com/sed-evaluacion-desempeno/api/internal/pkg/errors"
+	"github.com/sed-evaluacion-desempeno/api/internal/pkg/state"
 	repo "github.com/sed-evaluacion-desempeno/api/internal/repository/org"
 )
 
@@ -115,11 +116,11 @@ func (s *metricsService) GetAreaMetrics(ctx context.Context, nodeID, cycleID, ph
 		}
 	}
 
-	// Validate explicit phase filter.
-	// "avance" and "medio-anio" are equivalent (see SamePhaseForWrite).
+	// Validate explicit phase filter (legacy aliases accepted via NormalizePhase).
 	if phase != "" {
+		phase = state.NormalizePhase(phase)
 		switch phase {
-		case "asignacion", "avance", "medio-anio", "medio_anio", "cierre":
+		case state.PhaseAsignacion, state.PhaseAvance, state.PhaseCierre:
 		default:
 			return nil, errors.NewDomainError(errors.InvalidRequest, "phase must be one of asignacion, avance, medio-anio, cierre", nil)
 		}

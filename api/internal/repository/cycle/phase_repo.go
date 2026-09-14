@@ -11,6 +11,7 @@ import (
 	"github.com/sed-evaluacion-desempeno/api/internal/phasedefinition"
 	"github.com/sed-evaluacion-desempeno/api/internal/phasetransition"
 	"github.com/sed-evaluacion-desempeno/api/internal/pkg/errors"
+	"github.com/sed-evaluacion-desempeno/api/internal/pkg/state"
 )
 
 // PhaseDefinitionRow represents a phase definition from the database.
@@ -91,7 +92,9 @@ func (r *PhaseRepo) GetPhaseDefinitions(ctx context.Context) ([]*PhaseDefinition
 }
 
 // GetPhaseDefinitionByPhase returns a single phase definition by its phase enum value.
+// Legacy aliases (fin-anio, medio-anio, inicio-anio) normalize to canonical.
 func (r *PhaseRepo) GetPhaseDefinitionByPhase(ctx context.Context, phase string) (*PhaseDefinitionRow, error) {
+	phase = state.NormalizePhase(phase)
 	results, err := r.queryPhaseDefinitions(ctx,
 		`SELECT id, created_at, updated_at, phase, label, "order", allowed_actors, allowed_actions, blocked_actions, cycle_id
 		 FROM phase_definitions WHERE phase = $1 ORDER BY "order" ASC LIMIT 1`, phase)
@@ -105,7 +108,9 @@ func (r *PhaseRepo) GetPhaseDefinitionByPhase(ctx context.Context, phase string)
 }
 
 // GetTransitionsByFromPhase returns transitions where from_phase matches, ordered by to_phase.
+// Legacy aliases normalize to canonical before the WHERE filter.
 func (r *PhaseRepo) GetTransitionsByFromPhase(ctx context.Context, fromPhase string) ([]*PhaseTransitionRow, error) {
+	fromPhase = state.NormalizePhase(fromPhase)
 	return r.queryPhaseTransitions(ctx,
 		`SELECT id, from_phase, to_phase, trigger, conditions, created_at, cycle_id, from_phase_id, to_phase_id
 		 FROM phase_transitions WHERE from_phase = $1 ORDER BY to_phase ASC`, fromPhase)

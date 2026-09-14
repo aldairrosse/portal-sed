@@ -13,6 +13,7 @@ import (
 	"github.com/sed-evaluacion-desempeno/api/internal/nineboxentry"
 	"github.com/sed-evaluacion-desempeno/api/internal/nineboxmatrix"
 	pkgerrors "github.com/sed-evaluacion-desempeno/api/internal/pkg/errors"
+	"github.com/sed-evaluacion-desempeno/api/internal/pkg/state"
 )
 
 // EmployeeInfo holds the minimal employee fields needed for DTO enrichment.
@@ -99,6 +100,42 @@ func (r *NineBoxRepo) GetMatrixByPhase(ctx context.Context, cycleID, evaluatorID
 		if internal.IsNotFound(err) {
 			return nil, ErrMatrixNotFound
 		}
+		return nil, err
+	}
+	return m, nil
+}
+
+// GetMatrixForUpdate locks the matrix row and its entries inside tx
+// (SELECT ... FOR UPDATE) so recompute captures comments from the locked
+// snapshot instead of a stale pre-transaction read.
+func (r *NineBoxRepo) GetMatrixForUpdate(ctx context.Context, tx *sql.Tx, matrixID uuid.UUID) (*internal.NineBoxMatrix, error) {
+	m := &internal.NineBoxMatrix{}
+	if err := tx.QueryRowContext(ctx,
+		`SELECT id, cycle_id, evaluator_id, phase_id, created_at, updated_at
+		 FROM nine_box_matrixes WHERE id = $1 FOR UPDATE`,
+		matrixID,
+	).Scan(&m.ID, &m.CycleID, &m.EvaluatorID, &m.PhaseID, &m.CreatedAt, &m.UpdatedAt); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, ErrMatrixNotFound
+		}
+		return nil, err
+	}
+	rows, err := tx.QueryContext(ctx,
+		`SELECT id, evaluatee_id, comments FROM nine_box_entries WHERE matrix_id = $1 FOR UPDATE`,
+		matrixID,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		e := &internal.NineBoxEntry{}
+		if err := rows.Scan(&e.ID, &e.EvaluateeID, &e.Comments); err != nil {
+			return nil, err
+		}
+		m.Edges.Entries = append(m.Edges.Entries, e)
+	}
+	if err := rows.Err(); err != nil {
 		return nil, err
 	}
 	return m, nil
@@ -220,7 +257,9 @@ func (r *NineBoxRepo) GetEmployeesByIDs(ctx context.Context, ids []uuid.UUID) (m
 }
 
 // GetManagerMapping returns a map of employee ID to manager ID.
-// Employees with a NULL manager_id are omitted from the result.
+// Root employees (manager_id IS NULL) are included with a uuid.Nil value,
+// self-grouped upstream so RH/DirectorGeneral see them; non-global viewers
+// exclude them via scopeToViewer.
 func (r *NineBoxRepo) GetManagerMapping(ctx context.Context, ids []uuid.UUID) (map[uuid.UUID]uuid.UUID, error) {
 	if len(ids) == 0 {
 		return map[uuid.UUID]uuid.UUID{}, nil
@@ -232,7 +271,7 @@ func (r *NineBoxRepo) GetManagerMapping(ctx context.Context, ids []uuid.UUID) (m
 		placeholders[i] = "$" + strconv.Itoa(i+1)
 		args[i] = id
 	}
-	query := `SELECT id, manager_id FROM employees WHERE id IN (` + strings.Join(placeholders, ",") + `) AND manager_id IS NOT NULL`
+	query := `SELECT id, manager_id FROM employees WHERE id IN (` + strings.Join(placeholders, ",") + `)`
 
 	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {
@@ -242,11 +281,16 @@ func (r *NineBoxRepo) GetManagerMapping(ctx context.Context, ids []uuid.UUID) (m
 
 	mapping := make(map[uuid.UUID]uuid.UUID)
 	for rows.Next() {
-		var employeeID, managerID uuid.UUID
+		var employeeID uuid.UUID
+		var managerID uuid.NullUUID
 		if err := rows.Scan(&employeeID, &managerID); err != nil {
 			return nil, err
 		}
-		mapping[employeeID] = managerID
+		if managerID.Valid {
+			mapping[employeeID] = managerID.UUID
+		} else {
+			mapping[employeeID] = uuid.Nil
+		}
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
@@ -498,11 +542,14 @@ func (r *NineBoxRepo) FetchEntryVersion(ctx context.Context, entryID uuid.UUID) 
 
 // ---- queries for RecomputeMatrix ----
 
-// GetGoalAssigneesByCycle returns all employee IDs that have goals assigned in a given cycle.
-// This is used to identify evaluatees for nine-box computation.
+// GetGoalAssigneesByCycle returns active employee IDs with goals assigned
+// in a given cycle. Decision: 9-box is scoped to employees linked to the
+// cycle via goal_assignments (not to all 303 active employees); RH/
+// DirectorGeneral see all of them, others are intersected with their org
+// subtree via scopeToViewer.
 func (r *NineBoxRepo) GetGoalAssigneesByCycle(ctx context.Context, cycleID uuid.UUID) ([]uuid.UUID, error) {
 	rows, err := r.db.QueryContext(ctx,
-		`SELECT DISTINCT employee_id FROM goal_assignments WHERE cycle_id = $1`,
+		`SELECT DISTINCT ga.employee_id FROM goal_assignments ga JOIN employees e ON e.id = ga.employee_id AND e.is_active = true WHERE ga.cycle_id = $1`,
 		cycleID,
 	)
 	if err != nil {
@@ -524,19 +571,51 @@ func (r *NineBoxRepo) GetGoalAssigneesByCycle(ctx context.Context, cycleID uuid.
 	return ids, rows.Err()
 }
 
-// GetGoalProgressByEmployee returns the average goal progress (0–100) for an employee.
-// Progress is calculated as: CASE WHEN direction='descendente' THEN (baseline-current)/baseline*100 ELSE (current/target)*100 END, clamped 0-100.
-// Only goals with current_value IS NOT NULL are considered (allows 0 → 100% in desc).
-func (r *NineBoxRepo) GetGoalProgressByEmployee(ctx context.Context, employeeID, cycleID uuid.UUID) (float64, error) {
+// GetGoalProgressByEmployee returns the average goal progress (0–100) for an employee
+// reading the snapshot of the requested phase: avance -> eg.avance_progress,
+// cierre -> eg.cierre_progress (never goals.current_value when the phase is known).
+// phaseID provid comes from the matrix phase (phase_definitions.id); when it is
+// Nil or unresolvable it falls back to goals.current_value (backward compat).
+// Progress is calculated as: CASE WHEN direction='descendente' THEN (baseline-snapshot)/baseline*100 ELSE (snapshot/target)*100 END, clamped 0-100.
+func (r *NineBoxRepo) GetGoalProgressByEmployee(ctx context.Context, employeeID, cycleID, phaseID uuid.UUID) (float64, error) {
+	col := ""
+	phaseName := ""
+	if phaseID != uuid.Nil {
+		var phase string
+		if err := r.db.QueryRowContext(ctx,
+			`SELECT phase FROM phase_definitions WHERE id = $1`, phaseID,
+		).Scan(&phase); err == nil {
+			switch state.NormalizePhase(phase) {
+			case state.PhaseAvance:
+				col = "avance_progress"
+				phaseName = state.NormalizePhase(phase)
+			case state.PhaseCierre:
+				col = "cierre_progress"
+				phaseName = state.NormalizePhase(phase)
+			}
+		}
+	}
+	valueExpr := "g.current_value"
+	filter := "g.current_value IS NOT NULL"
+	args := []interface{}{employeeID, cycleID}
+	phaseFilter := ""
+	if col != "" {
+		valueExpr = "eg." + col
+		filter = "eg." + col + " IS NOT NULL"
+		if clause, clauseArgs, _ := state.PhaseFilterClause("e.phase", 3, phaseName); clause != "" {
+			phaseFilter = clause
+			args = append(args, clauseArgs...)
+		}
+	}
 	var avgProgress sql.NullFloat64
 	err := r.db.QueryRowContext(ctx, `
 		SELECT AVG(
 			CASE
 				WHEN g.direction = 'descendente' AND g.baseline_value IS NOT NULL AND g.baseline_value > 0
-					THEN LEAST(100, GREATEST(0, (g.baseline_value - g.current_value) / NULLIF(g.baseline_value, 0) * 100))
+					THEN LEAST(100, GREATEST(0, (g.baseline_value - `+valueExpr+`) / NULLIF(g.baseline_value, 0) * 100))
 				ELSE
 					CASE WHEN g.target_value > 0
-						THEN LEAST(100, GREATEST(0, g.current_value / g.target_value * 100))
+						THEN LEAST(100, GREATEST(0, `+valueExpr+` / g.target_value * 100))
 						ELSE 0
 					END
 			END
@@ -544,9 +623,11 @@ func (r *NineBoxRepo) GetGoalProgressByEmployee(ctx context.Context, employeeID,
 		FROM goals g
 		JOIN goal_categories gc ON g.category_id = gc.id
 		JOIN goal_assignments ga ON ga.employee_id = $1 AND ga.cycle_id = $2
+		LEFT JOIN evaluations e ON e.employee_id = $1 AND e.cycle_id = $2`+phaseFilter+`
+		LEFT JOIN evaluation_goals eg ON eg.evaluation_id = e.id AND eg.goal_id = g.id
 		WHERE gc.employee_id = ga.employee_id
-		  AND g.current_value IS NOT NULL
-	`, employeeID, cycleID).Scan(&avgProgress)
+		  AND `+filter+`
+	`, args...).Scan(&avgProgress)
 	if err != nil {
 		return 0, err
 	}
@@ -556,18 +637,34 @@ func (r *NineBoxRepo) GetGoalProgressByEmployee(ctx context.Context, employeeID,
 	return avgProgress.Float64, nil
 }
 
-// GetCompetencyRatingsByEmployee returns the average competency rating for an employee's evaluation in a cycle.
+// GetCompetencyRatingsByEmployee returns the average competency rating for an employee's evaluation in a cycle+phase.
 // Returns self and HR ratings separately (or nil if not available).
-func (r *NineBoxRepo) GetCompetencyRatingsByEmployee(ctx context.Context, employeeID, cycleID uuid.UUID) (selfRating, hrRating *float64, err error) {
+// phaseID is the matrix phase (phase_definitions.id); it is mapped to the
+// evaluations.phase text and used as a filter. Nil/unresolvable phaseID keeps
+// the legacy unfiltered query (backward compat for cycles without phase).
+func (r *NineBoxRepo) GetCompetencyRatingsByEmployee(ctx context.Context, employeeID, cycleID, phaseID uuid.UUID) (selfRating, hrRating *float64, err error) {
 	// Single query: competency rows joined to their evaluation, split by source.
 	// ponytail: one query per employee; could batch across employees later (would change signature).
+	phaseFilter := ""
+	args := []interface{}{employeeID, cycleID}
+	if phaseID != uuid.Nil {
+		var phase string
+		if err := r.db.QueryRowContext(ctx,
+			`SELECT phase FROM phase_definitions WHERE id = $1`, phaseID,
+		).Scan(&phase); err == nil {
+			if clause, clauseArgs, _ := state.PhaseFilterClause("e.phase", 3, state.NormalizePhase(phase)); clause != "" {
+				phaseFilter = clause
+				args = append(args, clauseArgs...)
+			}
+		}
+	}
 	rows, err := r.db.QueryContext(ctx,
 		`SELECT ec.rating, ec.source, ec.created_at, e.self_evaluation_completed_at, e.rh_evaluation_completed_at
 		 FROM evaluation_competencies ec
 		 JOIN evaluations e ON e.id = ec.evaluation_id
-		 WHERE e.employee_id = $1 AND e.cycle_id = $2
+		 WHERE e.employee_id = $1 AND e.cycle_id = $2`+phaseFilter+`
 		 ORDER BY ec.created_at`,
-		employeeID, cycleID,
+		args...,
 	)
 	if err != nil {
 		return nil, nil, err

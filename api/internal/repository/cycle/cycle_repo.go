@@ -13,6 +13,7 @@ import (
 	"github.com/sed-evaluacion-desempeno/api/internal"
 	"github.com/sed-evaluacion-desempeno/api/internal/cycle"
 	"github.com/sed-evaluacion-desempeno/api/internal/pkg/errors"
+	"github.com/sed-evaluacion-desempeno/api/internal/pkg/state"
 )
 
 // contextKey for db role routing.
@@ -202,9 +203,12 @@ func (r *CycleRepo) GetCurrentPhaseID(ctx context.Context, cycleID uuid.UUID) (u
 }
 
 // GetPhaseID resolves the phase definition ID for a cycle + phase name.
-// "avance" and "medio-anio" fall back to each other when the requested value
-// has no phase definition (legacy cycles only created "avance").
+// The phase name is normalized to canonical (asignacion, avance, cierre) before
+// SQL so legacy aliases never reach the phase enum (avoids 22P02). Canonical
+// values fall back to their legacy alias when the requested value has no phase
+// definition (legacy cycles).
 func (r *CycleRepo) GetPhaseID(ctx context.Context, cycleID uuid.UUID, phase string) (uuid.UUID, error) {
+	phase = state.NormalizePhase(phase)
 	var phaseID uuid.UUID
 	err := r.db.QueryRowContext(ctx,
 		`SELECT pd.id FROM phase_definitions pd WHERE pd.cycle_id = $1 AND pd.phase = $2 LIMIT 1`,
@@ -216,12 +220,16 @@ func (r *CycleRepo) GetPhaseID(ctx context.Context, cycleID uuid.UUID, phase str
 	if err != sql.ErrNoRows {
 		return uuid.Nil, err
 	}
+	// phase is canonical here (see NormalizePhase above); fall back to the
+	// legacy alias for cycles whose definitions use the old name.
 	fallback := ""
 	switch phase {
 	case "avance":
 		fallback = "medio-anio"
-	case "medio-anio":
-		fallback = "avance"
+	case "cierre":
+		fallback = "fin-anio"
+	case "asignacion":
+		fallback = "inicio-anio"
 	default:
 		return uuid.Nil, sql.ErrNoRows
 	}
