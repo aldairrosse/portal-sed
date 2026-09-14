@@ -139,7 +139,7 @@ El sistema SHALL permitir vincular KPIs reutilizables (numérico, porcentaje o m
 
 ### Requirement: Restricciones de edición por fase (decisión #3)
 
-El sistema SHALL restringir la edición de metas según la fase del ciclo activo. En medio de año (`avance`), el sistema SHALL prohibir eliminar metas.
+El sistema SHALL restringir la edición de metas según la fase del ciclo activo. En medio de año (`avance`), el sistema SHALL prohibir eliminar metas. El registro de avances SHALL estar permitido en `avance` (incl. alias `medio-anio`) y en `cierre`; en `cierre` el resto de campos de meta siguen siendo de solo lectura.
 
 #### Scenario: Inicio de año — CRUD completo
 
@@ -158,8 +158,21 @@ El sistema SHALL restringir la edición de metas según la fase del ciclo activo
 
 - GIVEN ciclo en fase `cierre`
 - WHEN empleado accede a sus metas
-- THEN las metas son de solo lectura
+- THEN las metas son de solo lectura, excepto el registro de avances que sigue permitido
 - AND solo puede realizar autoevaluación (calificar competencias 1–5)
+
+#### Scenario: Cierre — avances permitidos, resto solo lectura
+
+- GIVEN ciclo en fase `cierre`
+- WHEN empleado registra avance en su meta
+- THEN el avance persiste
+- AND NO puede: crear/editar/eliminar metas, categorías, ponderaciones ni KPIs
+
+#### Scenario: Asignación — avances bloqueados
+
+- GIVEN ciclo en fase `asignacion`
+- WHEN empleado intenta registrar avance
+- THEN el sistema lo rechaza (fase no permite progreso)
 
 ### Requirement: Jerarquía de edición (decisión #8)
 
@@ -211,6 +224,119 @@ El sistema SHALL calcular y validar la integridad de la doble ponderación antes
 - WHEN intenta guardar
 - THEN el guardado se realiza
 - AND se muestra confirmación
+
+### Requirement: Separación total por fase avance/cierre
+
+El sistema SHALL tratar `avance` y `cierre` como evaluaciones independientes: progreso, snapshot y comentarios de una fase SHALL NOT contaminar la otra. `phaseKind` deriva de la fase del ciclo (`EmployeeEvaluationDetail`); `GoalClosureCard` SHALL renderizar single card de la fase actual.
+
+#### Scenario: Fases independientes
+
+- WHEN se registra avance o comentario en `cierre`
+- THEN `avance` permanece inmutable y viceversa.
+
+### Requirement: Comentarios de metas separados por fase y rol
+
+Los comentarios de metas SHALL separarse por fase (`avance`/`cierre`) y rol (empleado/jefa). Solo la fase actual SHALL ser editable; la fase previa SHALL ser inmutable (solo lectura).
+
+#### Scenario: Fase actual editable, previa inmutable
+
+- GIVEN ciclo en `cierre`
+- WHEN empleado o jefa accede a comentarios de `avance`
+- THEN los ve en solo lectura y NO puede editarlos; solo los comentarios de `cierre` son editables.
+
+### Requirement: Permisos jefa en comentarios de metas
+
+Jefa SHALL ver comentarios de metas de sus evaluados en `avance` y `cierre`; SHALL escribir comentarios de jefa solo en la fase actual. Empleado SHALL ver/escribir solo sus comentarios en fase actual (código actual = verdad).
+
+#### Scenario: Matriz de permisos metas
+
+- GIVEN rol `jefa` y fase actual `cierre`
+- WHEN accede a comentarios
+- THEN ve comentarios empleado+jefa de `avance` (inmutables) y ve/escribe comentarios de `cierre`.
+- GIVEN rol `empleado` y fase actual `cierre`
+- WHEN accede a comentarios
+- THEN ve comentarios de `avance` (inmutables) y escribe solo sus comentarios de `cierre`.
+
+### Requirement: Cierre activo hasta nuevo ciclo (sin finished_at)
+
+`UpdatePhase` SHALL NOT setear `finished_at` al entrar a `cierre`. `finished_at` SHALL setearse solo al crear el nuevo ciclo anual en `asignacion`. El ciclo en `cierre` SHALL seguir resoluble por `GetActiveCycleID WHERE finished_at IS NULL`. Botón de cierre manual fuera de scope.
+
+#### Scenario: Cierre sigue activo
+
+- GIVEN ciclo en fase `cierre` con `finished_at IS NULL`
+- WHEN se llama `GetActiveCycleID`
+- THEN retorna el ciclo (válido para avances, autoeval y 9-box).
+- WHEN se crea el nuevo ciclo anual en `asignacion`
+- THEN el ciclo anterior se marca `finished_at` y deja de ser activo.
+
+### Requirement: Empty state de mi-evaluación con acceso a metas
+
+Cuando las categorías no tienen metas o las metas no han sido enviadas, la vista mi-evaluación SHALL mostrar un empty state con gate `assignmentStatus` y un botón `Ir a metas` que navega a la gestión de metas (sin redirect auto).
+
+#### Scenario: Categorías sin metas
+
+- **WHEN** las categorías no contienen metas
+- **THEN** se muestra el empty state con el botón `Ir a metas`
+
+#### Scenario: Metas no enviadas
+
+- **WHEN** existen metas pero ninguna ha sido enviada
+- **THEN** se muestra el empty state con el botón `Ir a metas`
+
+### Requirement: Labels diferenciados de avance y cierre
+
+El sistema SHALL usar el label `Evaluación de avance de medio año` con botón `Guardar avance` en fase `avance`, y el label `Evaluación de cierre de año` con botón `Guardar cierre` en fase `cierre`.
+
+#### Scenario: Labels de avance
+
+- **WHEN** la evaluación está en fase `avance`
+- **THEN** el título es `Evaluación de avance de medio año` y el botón es `Guardar avance`
+
+#### Scenario: Labels de cierre
+
+- **WHEN** la evaluación está en fase `cierre`
+- **THEN** el título es `Evaluación de cierre de año` y el botón es `Guardar cierre`
+
+### Requirement: Comentarios por rol y fase en metas (verdad del código)
+
+Los comentarios de metas SHALL mostrarse y editarse por (rol,fase) de forma independiente, respetando los permisos de ver/escribir de `EmployeeEvaluationDetail` (incluida la jefa). El comentario enviado en la fase actual SHALL persistir visible en esa fase sin alterar otras fases.
+
+#### Scenario: Comentario con botón enviar persiste en fase actual
+
+- **WHEN** se envía un comentario de meta en la fase actual
+- **THEN** persiste visible en esa fase y las demás fases quedan intactas
+
+### Requirement: Avatar con iniciales correctas
+
+El avatar SHALL mostrar las iniciales del nombre correcto del empleado y SHALL no renderizarse en blanco (sin migración S3).
+
+#### Scenario: Iniciales visibles
+
+- **WHEN** se renderiza el avatar del empleado
+- **THEN** muestra las iniciales derivadas de su nombre correcto
+
+### Requirement: Textarea de comentarios con una línea por defecto
+
+El textarea de comentarios SHALL renderizarse con una línea por defecto y SHALL exponer el control de resize visible.
+
+#### Scenario: Altura inicial y resize
+
+- **WHEN** se abre el campo de comentarios
+- **THEN** ocupa una línea por defecto y el resize es visible y usable
+
+### Requirement: Toasts claros y ErrorState con dueño único
+
+Ante un fallo, el sistema SHALL mostrar un toast con el `error.code` claro. Ante un guardado exitoso, el sistema SHALL mostrar un toast de confirmación. El componente `ErrorState` SHALL tener dueño único en este change (no duplicarlo en otros changes).
+
+#### Scenario: Toast de error con código
+
+- **WHEN** el guardado falla con un código de error
+- **THEN** el toast muestra el `error.code` de forma clara
+
+#### Scenario: Toast de éxito
+
+- **WHEN** el guardado es exitoso
+- **THEN** el toast confirma la operación
 
 ## Non-goals
 
