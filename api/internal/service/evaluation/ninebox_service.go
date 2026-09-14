@@ -427,12 +427,17 @@ func (s *NineBoxService) scopeToViewer(ctx context.Context, viewerID uuid.UUID, 
 	if err != nil {
 		return nil, err
 	}
+	if node.Path == "" {
+		// ponytail: fallback por org_nodes.path null; migrar a poblar paths cuando se arregle org.
+		return s.scopeToViewerByManager(ctx, viewerID, employeeIDs)
+	}
 	descendants, err := s.orgNodeRepo.GetDescendants(ctx, node.Path)
 	if err != nil {
 		return nil, err
 	}
 	if len(descendants) == 0 {
-		return []uuid.UUID{}, nil
+		// ponytail: ltree sin hijos (path null/viejo); fallback a cadena manager_id.
+		return s.scopeToViewerByManager(ctx, viewerID, employeeIDs)
 	}
 
 	nodeIDs := make([]uuid.UUID, len(descendants))
@@ -443,10 +448,44 @@ func (s *NineBoxService) scopeToViewer(ctx context.Context, viewerID uuid.UUID, 
 	if err != nil {
 		return nil, err
 	}
+	if len(rows) == 0 {
+		// ponytail: nodos sin empleados activos; fallback a cadena manager_id.
+		return s.scopeToViewerByManager(ctx, viewerID, employeeIDs)
+	}
 
 	allowed := make(map[uuid.UUID]struct{}, len(rows))
 	for _, r := range rows {
 		allowed[r.ID] = struct{}{}
+	}
+	filtered := make([]uuid.UUID, 0, len(employeeIDs))
+	for _, id := range employeeIDs {
+		if _, ok := allowed[id]; ok {
+			filtered = append(filtered, id)
+		}
+	}
+	return filtered, nil
+}
+
+// scopeToViewerByManager falls back to the manager_id chain (direct + indirect
+// reports, active only, up to 5 levels) when org ltree paths are missing.
+func (s *NineBoxService) scopeToViewerByManager(ctx context.Context, viewerID uuid.UUID, employeeIDs []uuid.UUID) ([]uuid.UUID, error) {
+	allowed := make(map[uuid.UUID]struct{})
+	frontier := []uuid.UUID{viewerID}
+	for level := 0; level < 5 && len(frontier) > 0; level++ {
+		var next []uuid.UUID
+		for _, mgr := range frontier {
+			reports, err := s.employeeRepo.ListByManager(ctx, mgr, true)
+			if err != nil {
+				return nil, err
+			}
+			for _, r := range reports {
+				if _, seen := allowed[r.ID]; !seen {
+					allowed[r.ID] = struct{}{}
+					next = append(next, r.ID)
+				}
+			}
+		}
+		frontier = next
 	}
 	filtered := make([]uuid.UUID, 0, len(employeeIDs))
 	for _, id := range employeeIDs {
