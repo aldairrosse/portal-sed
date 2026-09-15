@@ -51,3 +51,8 @@ type BoxService interface {
 type DashService interface {
 	GetSummary(ctx context.Context, cycleID uuid.UUID) (*dto.EvaluationSummaryResponse, error)
 }
+
+// Exporter builds the 7-column evaluations export over the viewer scope.
+type Exporter interface {
+	Export(ctx context.Context, cycleID uuid.UUID, phase, query string, viewerID uuid.UUID, viewerRole auth.Role) (*dto.EvaluationExportResponse, error)
+}

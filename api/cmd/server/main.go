@@ -350,6 +350,7 @@ func main() {
 	evalSvc := evalsvc.NewEvaluationService(evalRepo, compRatingRepo, goalRatingRepo, cycleCheck, idemCache, employeeRepo, orgNodeRepo)
 	nineBoxSvc := evalsvc.NewNineBoxService(nineBoxRepo, catalogEvalRepo, db, cycleRepo, orgNodeRepo, employeeRepo).WithScorer(scoringSvc)
 	dashboardSvc := evalsvc.NewDashboardService(evalRepo)
+	exportSvc := evalsvc.NewExportService(evalRepo, employeeRepo, cycleRepo, scoringSvc)
 
 	// Org services
 	orgTreeSvc := orgsvc.NewOrgTreeService(orgTreeRepo, orgNodeRepo, employeeRepo, client)
@@ -372,7 +373,7 @@ func main() {
 	).WithWeightResolver(hierarchicalWeightSvc)
 	cycleH := cyclehandler.NewCycleHandler(cycleSvc, phaseSvc, activitySvc, assignRepo, employeeRepo)
 	compH := comphandler.NewHandler(pillarSvc, competencySvc, scaleSvc, catalogSvc, acceptanceSvc, activitySvc)
-	evalH := evalhandler.NewEvaluationHandler(evalSvc, nineBoxSvc, dashboardSvc, activitySvc)
+	evalH := evalhandler.NewEvaluationHandler(evalSvc, nineBoxSvc, dashboardSvc, activitySvc).WithExportService(exportSvc)
 	orgH := orghandler.NewOrgHandler(orgTreeSvc, orgNodeSvc, employeeSvc, evaluateeSvc, metricsSvc)
 	commentChangeH := commentchangehandler.NewHandler(db, notifypkg.NoopSender{})
 	globalGoalH := goalhandler.NewGlobalGoalHandler(globalGoalSvc)

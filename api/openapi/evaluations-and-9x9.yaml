@@ -44,6 +44,34 @@ paths:
               schema: { $ref: "#/components/schemas/EvaluationListResponse" }
         "429": { $ref: "#/components/responses/RateLimit" }
 
+  /evaluations/export:
+    get:
+      operationId: getEvaluationsExport
+      summary: Export evaluations (7 columns, full scope)
+      description: "Filas backend-computadas para Excel: numero, nombre, progreso ponderado jerárquico, promedios auto/RH, rating 0.2/0.8, estado fase. Alcance total del visor (RH ve todo)."
+      parameters:
+        - name: cycle_id
+          in: query
+          required: false
+          schema: { type: string, format: uuid }
+        - name: phase
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [asignacion, avance, cierre]
+        - name: q
+          in: query
+          required: false
+          schema: { type: string }
+      responses:
+        "200":
+          description: Export rows with scope meta
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/EvaluationExportResponse" }
+        "429": { $ref: "#/components/responses/RateLimit" }
+
   /evaluations/{id}:
     get:
       operationId: getEvaluation
@@ -880,6 +908,36 @@ components:
               type: array
               items: { type: string }
             trace_id: { type: string }
+
+    EvaluationExportRow:
+      type: object
+      required: [employeeId, employeeNumber, employeeName, goalProgress, selfAvg, rhAvg, rating, status]
+      properties:
+        employeeId: { type: string, format: uuid }
+        employeeNumber: { type: string }
+        employeeName: { type: string }
+        goalProgress: { type: number }
+        selfAvg: { type: number }
+        rhAvg: { type: number }
+        rating: { type: number }
+        status: { type: string, enum: [pending, in-progress, completed] }
+
+    EvaluationExportMeta:
+      type: object
+      required: [cycleId, phase, total]
+      properties:
+        cycleId: { type: string, format: uuid }
+        phase: { type: string }
+        total: { type: integer }
+
+    EvaluationExportResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: array
+          items: { $ref: "#/components/schemas/EvaluationExportRow" }
+        meta: { $ref: "#/components/schemas/EvaluationExportMeta" }
 
   responses:
     NotFound:

@@ -26,7 +26,7 @@
 	import EvaluationStatusBadge from './EvaluationStatusBadge.svelte';
 	import { PROFILE_LABELS, PHASE_LABELS } from '$lib/types/evaluation';
 	import { titleCase } from '$lib/utils/text';
-	import { getActivePhase, getActiveCycleYear } from '$lib/api/cycle.svelte';
+	import { getActivePhase, getActiveCycleYear, getActiveCycleId } from '$lib/api/cycle.svelte';
 	import { isMedioAnio as isMedioAnioPhase, normalizePhase } from '$lib/types/cycle';
 	import type { EmployeeAssignment } from '$lib/types/goal';
 	import type { EvaluationStatus } from '$lib/types/evaluation-result';
@@ -34,6 +34,7 @@
 	import { load as reloadRhEvaluados } from '$lib/stores/rhEvaluadosStore.svelte';
 	import { FileDown, ChevronRight, Pencil } from '@lucide/svelte';
 	import { toXlsx } from '$lib/utils/export';
+	import { fetchExport } from '$lib/api/evaluation';
 	import ChangeDepartmentProfileModal from './ChangeDepartmentProfileModal.svelte';
 
 	// ponytail: remove when OpenAPI schema includes profileName
@@ -302,19 +303,20 @@
 		return vals.reduce((a, b) => a + b, 0) / vals.length;
 	}
 
-	function handleExportCsv() {
+	async function handleExportCsv() {
 		const year = getActiveCycleYear();
 		const phase = normalizePhase(getActivePhase() ?? 'asignacion');
 		const suffix = year ? `-${year}-${phase}` : `-${phase}`;
+		const { data } = await fetchExport({ cycleId: getActiveCycleId(), phase });
 		toXlsx(
-			filteredRows.map((row) => ({
-				Empleado: `${row.firstName} ${row.lastName}`.trim(),
-				Perfil: getProfileLabel(row.id),
-				'Progreso global %':
-					progressMap.get(row.id) !== null
-						? `${Math.round(progressMap.get(row.id)!)}%`
-						: '',
-				Estado: statusLabelMap[getStatus(row.id)],
+			data.map((row) => ({
+				'Numero empleado': row.employeeNumber,
+				Nombre: row.employeeName,
+				'Progreso ponderado': Number(Number(row.goalProgress ?? 0).toFixed(2)),
+				Autoevaluacion: row.selfAvg,
+				Evaluacion: row.rhAvg,
+				Rating: row.rating,
+				Estado: row.status,
 			})),
 			`evaluaciones${suffix}.xlsx`,
 		);

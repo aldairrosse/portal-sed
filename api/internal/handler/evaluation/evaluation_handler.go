@@ -63,6 +63,7 @@ type EvaluationHandler struct {
 	nineBoxSvc   BoxService
 	dashboardSvc DashService
 	activitySvc  activitysvc.Service
+	exportSvc    Exporter
 }
 
 // NewEvaluationHandler creates a new EvaluationHandler.
@@ -78,6 +79,12 @@ func NewEvaluationHandler(
 		dashboardSvc: dashboardSvc,
 		activitySvc:  activitySvc,
 	}
+}
+
+// WithExportService injects the export service (7-column evaluations export).
+func (h *EvaluationHandler) WithExportService(svc Exporter) *EvaluationHandler {
+	h.exportSvc = svc
+	return h
 }
 
 // parsePhaseParam validates the ?phase query param against the cycle phase enum.
