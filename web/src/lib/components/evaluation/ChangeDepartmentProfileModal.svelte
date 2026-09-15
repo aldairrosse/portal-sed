@@ -110,11 +110,17 @@
 {:else}
 	<dialog
 		class="modal modal-open"
-		onclick={(e) => {
-			if (e.target === e.currentTarget) onclose();
-		}}
+		onclose={onclose}
 	>
 		<div class="modal-box max-w-lg overflow-visible">
+			<button
+				type="button"
+				class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
+				aria-label="Cerrar"
+				onclick={onclose}
+			>
+				✕
+			</button>
 			<h3 class="font-bold text-lg mb-4">Cambiar departamento y perfil</h3>
 			<p class="text-sm text-base-content/30">
 				{employeeName}

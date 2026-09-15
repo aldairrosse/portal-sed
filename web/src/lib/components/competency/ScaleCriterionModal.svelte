@@ -86,12 +86,6 @@
 		onCancel();
 	}
 
-	function handleBackdropClick(e: MouseEvent) {
-		if (e.target === dialogEl) {
-			handleCancel();
-		}
-	}
-
 	async function handleSubmit(e: Event) {
 		e.preventDefault();
 		// Build final criteria list and replace in one batch (API only supports batch replace)
@@ -116,7 +110,6 @@
 	class:modal-open={open}
 	aria-modal="true"
 	aria-labelledby="scale-criterion-title"
-	onclick={handleBackdropClick}
 	onclose={handleCancel}
 >
 	<div class="modal-box max-w-2xl">

@@ -39,12 +39,6 @@
 		onCancel();
 	}
 
-	function handleBackdropClick(e: MouseEvent) {
-		if (e.target === dialogEl) {
-			handleCancel();
-		}
-	}
-
 	function validate(nameVal: string, idToExclude?: string): string | null {
 		if (!nameVal.trim()) return 'El nombre es obligatorio.';
 		if (!description.trim()) return 'La descripción es obligatoria.';
@@ -76,7 +70,6 @@
 	class:modal-open={open}
 	aria-modal="true"
 	aria-labelledby="competency-form-title"
-	onclick={handleBackdropClick}
 	onclose={handleCancel}
 >
 	<div class="modal-box">

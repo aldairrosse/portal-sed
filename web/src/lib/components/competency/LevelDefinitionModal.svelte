@@ -113,12 +113,6 @@
 	function handleClose() {
 		onClose();
 	}
-
-	function handleBackdropClick(e: MouseEvent) {
-		if (e.target === dialogEl) {
-			handleClose();
-		}
-	}
 </script>
 
 <dialog
@@ -127,7 +121,6 @@
 	class:modal-open={open}
 	aria-modal="true"
 	aria-labelledby="level-def-title"
-	onclick={handleBackdropClick}
 	onclose={handleClose}
 >
 	<div class="modal-box max-w-3xl my-8 flex flex-col max-h-[calc(100vh-4rem)]">

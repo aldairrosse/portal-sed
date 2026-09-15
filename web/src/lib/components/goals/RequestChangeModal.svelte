@@ -58,9 +58,6 @@
 	function handleCancel() {
 		onClose();
 	}
-	function handleBackdropClick(e: MouseEvent) {
-		if (e.target === dialogEl) handleCancel();
-	}
 
 	function timeAgo(dateStr: string): string {
 		const diff = Date.now() - new Date(dateStr).getTime();
@@ -117,7 +114,6 @@
 	class:modal-open={open}
 	aria-modal="true"
 	aria-labelledby="request-change-title"
-	onclick={handleBackdropClick}
 	onclose={handleCancel}
 >
 	<div class="modal-box max-w-lg">
