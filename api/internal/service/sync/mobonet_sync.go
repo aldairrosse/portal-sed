@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/sed-evaluacion-desempeno/api/internal/seed"
 )
 
@@ -27,6 +28,10 @@ type MobonetEmployee struct {
 	JobTitle       string  `json:"job_title"`
 	DeptName       string  `json:"dept_name"`
 	ManagerEmail   *string `json:"manager_email,omitempty"`
+	// Profile es el perfil calculado por el CASE SQL de MoboNet
+	// (director-general/rh/director/jefe/colaborador). Fuente primaria
+	// en modo MySQL; vacío en modo HTTP/mock (fallback a jobTitle).
+	Profile string `json:"profile,omitempty"`
 }
 
 // Service sincroniza is_active + upsert de employees contra Mobonet y SSO.
@@ -56,10 +61,19 @@ func (s *Service) WithSSO(ss SSOSyncer) *Service {
 }
 
 // fetchMobonetEmployees lista empleados activos completos en Mobonet.
-// Si MOBONET_URL y MOBONET_KEY vacíos, retorna mock (activos actuales en BD) — idempotente.
+// Dual-mode: si MOBONET_URL (o SEED_DB_URL como alias histórico) es un MySQL
+// DSN (contiene "tcp("), consulta Mobonet directo; si es http(s) usa el flujo
+// HTTP actual; si ambos vacíos, retorna mock (activos actuales en BD).
 func (s *Service) fetchMobonetEmployees(ctx context.Context) ([]MobonetEmployee, error) {
 	url := strings.TrimSpace(os.Getenv("MOBONET_URL"))
 	key := strings.TrimSpace(os.Getenv("MOBONET_KEY"))
+	seedURL := strings.TrimSpace(os.Getenv("SEED_DB_URL"))
+	if isMySQLDSN(url) {
+		return s.fetchMobonetEmployeesMySQL(ctx, url)
+	}
+	if !isHTTPURL(url) && isMySQLDSN(seedURL) {
+		return s.fetchMobonetEmployeesMySQL(ctx, seedURL)
+	}
 	if url == "" && key == "" {
 		rows, err := s.db.QueryContext(ctx, `SELECT email, first_name, last_name, employee_number, COALESCE(job_title,'') FROM employees WHERE is_active = true`)
 		if err != nil {
@@ -163,6 +177,85 @@ func (s *Service) fetchMobonetEmployees(ctx context.Context) ([]MobonetEmployee,
 	return []MobonetEmployee{}, nil
 }
 
+func isMySQLDSN(s string) bool {
+	return strings.Contains(s, "@tcp(") || strings.Contains(s, "tcp(")
+}
+
+func isHTTPURL(s string) bool {
+	l := strings.ToLower(s)
+	return strings.HasPrefix(l, "http://") || strings.HasPrefix(l, "https://")
+}
+
+// fetchMobonetEmployeesMySQL consulta empleados activos directo en Mobonet.
+// Query copiada de api/cmd/import/main.go passEmployees (mismas tablas/joins,
+// mismo WHERE e.Status = 1); solo se mapean los campos que usa el sync.
+func (s *Service) fetchMobonetEmployeesMySQL(ctx context.Context, dsn string) ([]MobonetEmployee, error) {
+	db, err := sql.Open("mysql", dsn)
+	if err != nil {
+		return nil, err
+	}
+	defer db.Close()
+	db.SetMaxOpenConns(1)
+
+	rows, err := db.QueryContext(ctx, `
+		SELECT e.email, e.Nombre, e.Apellidos, e.NumEmpleado,
+		       CASE
+		         WHEN e.FkIdDepartamento = 1 THEN 'director-general'
+		         WHEN e.FkIdDepartamento = 5 THEN 'rh'
+		         WHEN EXISTS (
+		           SELECT 1 FROM mobonet.Departamentos d3
+		           WHERE d3.FkIdEmpleadoResponsable = e.IdEmpleado
+		             AND d3.IdDireccion = d3.IdDepartamento
+		             AND d3.IdDepartamento <> 1
+		         ) THEN 'director'
+		         WHEN EXISTS (
+		           SELECT 1 FROM mobonet.Empleados e3
+		           WHERE e3.FkIdEmpleadoJefeInmediato = e.IdEmpleado
+		             AND e3.Status = 1
+		         ) THEN 'jefe'
+		         ELSE 'colaborador'
+		       END,
+		       d.Nombre, p.Nombre, e2.email
+		FROM mobonet.Empleados e
+		LEFT JOIN mobonet.Departamentos d ON d.IdDepartamento = e.FkIdDepartamento
+		LEFT JOIN mobonet.Puestos p ON p.IdPuesto = e.FkIdPuesto
+		LEFT JOIN mobonet.Empleados e2 ON e2.IdEmpleado = e.FkIdEmpleadoJefeInmediato AND e2.Status = 1
+		WHERE e.Status = 1
+	`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []MobonetEmployee
+	for rows.Next() {
+		var email, firstName, lastName, empNum, profile string
+		var dept, jobTitle *string
+		var mgrEmail *string
+		if err := rows.Scan(&email, &firstName, &lastName, &empNum, &profile, &dept, &jobTitle, &mgrEmail); err != nil {
+			continue
+		}
+		e := MobonetEmployee{
+			Email: email, FirstName: firstName, LastName: lastName,
+			EmployeeNumber: strings.TrimSpace(empNum), ManagerEmail: mgrEmail,
+			Profile:        strings.ToLower(strings.TrimSpace(profile)),
+		}
+		if dept != nil {
+			e.DeptName = *dept
+		}
+		if jobTitle != nil {
+			e.JobTitle = *jobTitle
+		}
+		if e.EmployeeNumber != "" {
+			out = append(out, e)
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	slog.Info("mobonet_sync: mysql mode", "active_count", len(out))
+	return out, nil
+}
+
 func mapToMobonetEmployee(m map[string]interface{}) MobonetEmployee {
 	strVal := func(keys ...string) string {
 		for _, k := range keys {
@@ -191,9 +284,14 @@ func mapToMobonetEmployee(m map[string]interface{}) MobonetEmployee {
 	if email == "" && empNum != "" {
 		email = empNum + "@mock.local"
 	}
+	profile := strings.ToLower(strings.TrimSpace(strVal("profile", "_profile", "perfil")))
+	if !isValidProfileName(profile) {
+		profile = ""
+	}
 	return MobonetEmployee{
 		Email: email, FirstName: first, LastName: last,
 		EmployeeNumber: empNum, JobTitle: job, DeptName: dept, ManagerEmail: mgr,
+		Profile: profile,
 	}
 }
 
@@ -211,9 +309,34 @@ func jobTitleToProfileName(jobTitle string) string {
 	return ""
 }
 
+// isValidProfileName valida perfiles conocidos de evaluation_profiles.
+func isValidProfileName(p string) bool {
+	switch strings.ToLower(strings.TrimSpace(p)) {
+	case "colaborador", "jefe", "gerente", "coordinador", "director", "director-general", "rh":
+		return true
+	}
+	return false
+}
+
+// effectiveProfileName resuelve el perfil a asignar.
+// Prioridad: 1) job_title con gerente/coordinador (el puesto funcional
+// prevalece sobre el _profile jerárquico calculado, porque un gerente/
+// coordinador puede o no tener subordinados o dirigir un depto y aun así
+// debe evaluarse con ese perfil); 2) _profile del CASE SQL (modo MySQL,
+// fuente primaria para director-general/rh/director/jefe/colaborador);
+// 3) fallback resolveProfileName (modo HTTP/mock sin _profile).
+func (s *Service) effectiveProfileName(ctx context.Context, m MobonetEmployee) string {
+	if p := jobTitleToProfileName(m.JobTitle); p != "" {
+		return p
+	}
+	if isValidProfileName(m.Profile) {
+		return strings.ToLower(strings.TrimSpace(m.Profile))
+	}
+	return s.resolveProfileName(ctx, m)
+}
 // resolveProfileName applies the fallback chain: direct title match,
-// then the manager's profile, then "jefe" (preserve current jefe selection;
-// never demote to colaborador on unmapped titles).
+// then the manager's profile, then "colaborador" (safe default; unmapped
+// titles must not escalate to jefe).
 func (s *Service) resolveProfileName(ctx context.Context, m MobonetEmployee) string {
 	if p := jobTitleToProfileName(m.JobTitle); p != "" {
 		return p
@@ -223,7 +346,7 @@ func (s *Service) resolveProfileName(ctx context.Context, m MobonetEmployee) str
 			return mp
 		}
 	}
-	return "jefe"
+	return "colaborador"
 }
 
 // managerProfileName returns the evaluation profile name of the manager
@@ -332,21 +455,28 @@ func (s *Service) Run(ctx context.Context) (disabledCount int, err error) {
 		firstName string
 		lastName  string
 		jobTitle  string
+		profileID uuid.UUID
 	})
-	rows3, err := s.db.QueryContext(ctx, `SELECT id, employee_number, email, first_name, last_name, COALESCE(job_title,'') FROM employees`)
+	rows3, err := s.db.QueryContext(ctx, `SELECT id, employee_number, email, first_name, last_name, COALESCE(job_title,''), profile_id FROM employees`)
 	if err == nil {
 		defer rows3.Close()
 		for rows3.Next() {
 			var id uuid.UUID
 			var empNum, email, fn, ln, jt string
-			if err := rows3.Scan(&id, &empNum, &email, &fn, &ln, &jt); err == nil {
+			var prof sql.NullString
+			if err := rows3.Scan(&id, &empNum, &email, &fn, &ln, &jt, &prof); err == nil {
+				var pid uuid.UUID
+				if prof.Valid {
+					pid, _ = uuid.Parse(prof.String)
+				}
 				existing[empNum] = struct {
 					id        uuid.UUID
 					email     string
 					firstName string
 					lastName  string
 					jobTitle  string
-				}{id, email, fn, ln, jt}
+					profileID uuid.UUID
+				}{id, email, fn, ln, jt, pid}
 			}
 		}
 		_ = rows3.Err()
@@ -356,7 +486,7 @@ func (s *Service) Run(ctx context.Context) (disabledCount int, err error) {
 	var fallbackOrgID uuid.UUID
 	_ = s.db.QueryRowContext(ctx, `SELECT id FROM org_nodes LIMIT 1`).Scan(&fallbackOrgID)
 	var fallbackProfileID uuid.UUID
-	_ = s.db.QueryRowContext(ctx, `SELECT id FROM evaluation_profiles WHERE name='jefe' LIMIT 1`).Scan(&fallbackProfileID)
+	_ = s.db.QueryRowContext(ctx, `SELECT id FROM evaluation_profiles WHERE name='colaborador' LIMIT 1`).Scan(&fallbackProfileID)
 	if fallbackProfileID == uuid.Nil {
 		_ = s.db.QueryRowContext(ctx, `SELECT id FROM evaluation_profiles WHERE name='colaborador' LIMIT 1`).Scan(&fallbackProfileID)
 	}
@@ -371,14 +501,17 @@ func (s *Service) Run(ctx context.Context) (disabledCount int, err error) {
 			m.Email = m.EmployeeNumber + "@mock.local"
 		}
 		if rec, ok := existing[m.EmployeeNumber]; ok {
-			// Existe → refrescar si cambió. El perfil solo se toca con match
-			// directo de job_title (gerente/coordinador); si no, se respeta la
-			// selección actual (nunca sobrescribir jefe→colaborador).
+			// Existe → refrescar si cambió. El perfil se resuelve con
+			// effectiveProfileName: _profile SQL como fuente primaria,
+			// gerente/coordinador por job_title prevalece, y fallback a
+			// resolveProfileName en modo HTTP/mock.
+			profileName := s.effectiveProfileName(ctx, m)
 			var wantProfile uuid.UUID
-			if jobTitleToProfileName(m.JobTitle) != "" {
-				_ = s.db.QueryRowContext(ctx, `SELECT id FROM evaluation_profiles WHERE LOWER(name)=LOWER($1) LIMIT 1`, s.resolveProfileName(ctx, m)).Scan(&wantProfile)
+			if profileName != "" {
+				_ = s.db.QueryRowContext(ctx, `SELECT id FROM evaluation_profiles WHERE LOWER(name)=LOWER($1) LIMIT 1`, profileName).Scan(&wantProfile)
 			}
-			if rec.email != m.Email || rec.firstName != m.FirstName || rec.lastName != m.LastName || rec.jobTitle != m.JobTitle {
+			profileStale := wantProfile != uuid.Nil && rec.profileID != wantProfile
+			if rec.email != m.Email || rec.firstName != m.FirstName || rec.lastName != m.LastName || rec.jobTitle != m.JobTitle || profileStale {
 				if wantProfile != uuid.Nil {
 					_, err := s.db.ExecContext(ctx,
 						`UPDATE employees SET email=$1, first_name=$2, last_name=$3, job_title=$4, profile_id=$6, updated_at=NOW() WHERE id=$5`,
@@ -387,6 +520,8 @@ func (s *Service) Run(ctx context.Context) (disabledCount int, err error) {
 						slog.Error("mobonet_sync: update failed", "employee_number", m.EmployeeNumber, "error", err)
 						continue
 					}
+					slog.Info("mobonet_sync: perfil actualizado", "employee_number", m.EmployeeNumber)
+					updated++
 				} else {
 					_, err := s.db.ExecContext(ctx,
 						`UPDATE employees SET email=$1, first_name=$2, last_name=$3, job_title=$4, updated_at=NOW() WHERE id=$5`,
@@ -413,7 +548,7 @@ func (s *Service) Run(ctx context.Context) (disabledCount int, err error) {
 			}
 			profileID := fallbackProfileID
 			var pid uuid.UUID
-			if err := s.db.QueryRowContext(ctx, `SELECT id FROM evaluation_profiles WHERE LOWER(name)=LOWER($1) LIMIT 1`, s.resolveProfileName(ctx, m)).Scan(&pid); err == nil {
+			if err := s.db.QueryRowContext(ctx, `SELECT id FROM evaluation_profiles WHERE LOWER(name)=LOWER($1) LIMIT 1`, s.effectiveProfileName(ctx, m)).Scan(&pid); err == nil {
 				profileID = pid
 			}
 			id := seed.SeedID(m.Email)

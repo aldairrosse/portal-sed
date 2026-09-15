@@ -969,10 +969,10 @@ func canWriteRHEvaluation(role auth.Role, actorID uuid.UUID, managerID *uuid.UUI
 }
 
 // AuthorizeRHEvaluationWrite allows rh-evaluation writes for RH holders or the
-// assigned manager (jefe directo) of the evaluated employee, validated
+// assigned manager of the evaluated employee, validated
 // server-side via employees.manager_id. Missing session → 401
 // NOT_AUTHENTICATED; anyone else → 403 ErrForbidden. It never grants the
-// eval:rh permission itself, so unrelated jefes stay rejected.
+// eval:rh permission itself, so unrelated managers stay rejected.
 func (s *EvaluationService) AuthorizeRHEvaluationWrite(ctx context.Context, evaluationID uuid.UUID) error {
 	role, ok := auth.GetRole(ctx)
 	if !ok {
@@ -1018,7 +1018,7 @@ func (s *EvaluationService) RedactDetailForSelf(detail *dto.EvaluationDetailResp
 	return detail
 }
 
-// SuggestEvaluator returns the employee's manager (jefe recomendado), with
+// SuggestEvaluator returns the employee's manager (manager recomendado), with
 // "rh" fallback when the employee has no manager assigned.
 func (s *EvaluationService) SuggestEvaluator(ctx context.Context, employeeID uuid.UUID) (uuid.UUID, string, error) {
 	if s.empRepo == nil {
@@ -1029,7 +1029,7 @@ func (s *EvaluationService) SuggestEvaluator(ctx context.Context, employeeID uui
 		return uuid.Nil, "", err
 	}
 	if emp.ManagerID != nil && *emp.ManagerID != uuid.Nil {
-		return *emp.ManagerID, "jefe", nil
+		return *emp.ManagerID, "manager", nil
 	}
 	return uuid.Nil, "rh", nil
 }

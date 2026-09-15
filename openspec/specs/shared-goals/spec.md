@@ -41,7 +41,7 @@ Definir las **reglas de negocio para metas compartidas creadas por jefes/directo
 
 ### Requirement: Creación de metas compartidas por jefe/director
 
-Solo perfiles `jefe`, `gerente-tienda`, `divisional`, `regional`, `director` SHALL poder crear metas compartidas. Las metas compartidas SHALL tener `type=shared` y `goal_kind` (`qualitative` o `quantitative`).
+Solo perfiles `jefe`, `gerente`, `coordinador`, `gerente-tienda`, `divisional`, `regional`, `director` SHALL poder crear metas compartidas. Las metas compartidas SHALL tener `type=shared` y `goal_kind` (`qualitative` o `quantitative`).
 
 #### Scenario: Jefe crea meta compartida cualitativa
 

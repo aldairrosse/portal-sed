@@ -21,9 +21,9 @@ export function isManagerProfile(profileName?: string | null): boolean {
 	return isManager(profileName);
 }
 
-/** @deprecated Usa isManager() o isManagerProfile(). */
+/** @deprecated Alias de isManager(). Usa isManager() o isManagerProfile(). */
 export function isJefe(roleOrProfile?: string | null): boolean {
-	return normalizeRole(roleOrProfile) === 'jefe';
+	return isManager(roleOrProfile);
 }
 
 export function isManagerEvaluationProfile(
