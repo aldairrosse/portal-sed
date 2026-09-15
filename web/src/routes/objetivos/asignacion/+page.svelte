@@ -47,7 +47,6 @@
 		deleteCategoryComment,
 		getCategoryComments,
 		getWeightedScore,
-		getCategoryProgressAverage,
 		storeState,
 		load,
 		reload,
@@ -910,9 +909,11 @@
 			<p class="text-sm font-semibold text-base-content mb-2">
 				{phase === 'medio-anio'
 					? 'Avance global de metas'
-					: 'Distribución global de metas'}
+					: phase === 'fin-anio'
+						? 'Cierre final de metas'
+						: 'Distribución global de metas'}
 			</p>
-			{#if phase === 'medio-anio'}
+			{#if phase === 'medio-anio' || phase === 'fin-anio'}
 				{@const avgProgress = (() => {
 					// Weighted total: personal (cat*goal weights via progressPercent) + institutional Σ(weight/100*pct)
 					// Use same logic as getWeightedScore but without hierarchical scaling for the bar display
@@ -920,17 +921,12 @@
 					const score = getWeightedScore();
 					return Math.min(100, Math.max(0, score));
 				})()}
-				{@const personalScore = getWeightedScore()}
 				<ProgressIndicator
 					value={avgProgress}
-					label="Avance ponderado total (personal + institucional)"
 					color="primary"
 					decimals={1}
+					wide
 				/>
-				<p class="text-xs text-base-content/50 mt-1">
-					Puntaje ponderado {personalScore.toFixed(1)}/100 — incluye pesos G/P y
-					J/PJ
-				</p>
 			{:else}
 				<WeightIndicator
 					current={globalSum}
@@ -950,12 +946,12 @@
 				<div class="mt-3 pt-3 border-t border-base-300">
 					<div class="flex items-center justify-between">
 						<span class="text-sm font-semibold text-base-content"
-							>Puntaje ponderado</span
+							>Evaluacion de metas</span
 						>
 						<span class="text-2xl font-bold font-mono text-base-content">
-							{Math.round(score)}
+							{score.toFixed(2)}
 							<span class="text-base font-normal text-base-content/50"
-								>/100</span
+								>/ 100</span
 							>
 						</span>
 					</div>
@@ -965,22 +961,58 @@
 						<summary
 							class="collapse-title text-sm font-semibold text-base-content/70 min-h-0 pl-4 pr-8 py-2"
 						>
-							Desglose por categoría
+							Desglose por meta
 						</summary>
 						<div class="collapse-content text-sm px-4">
-							<div class="space-y-1.5">
-								{#each categories as cat (cat.id)}
-									{@const catProgress = getCategoryProgressAverage(cat.id)}
-									<div class="flex items-center justify-between text-xs">
-										<span class="text-base-content/70"
-											>{cat.name} ({cat.weight}%)</span
-										>
-										<span class="font-mono text-base-content"
-											>{catProgress.toFixed(1)}%</span
-										>
-									</div>
-								{/each}
-							</div>
+							{#if targetAssignment}
+								{@const rows = buildRows(targetAssignment)}
+								<div class="overflow-x-auto">
+									<table class="table table-sm">
+										<thead>
+											<tr>
+												<th class="text-xs text-gray-500">Meta</th>
+												<th class="text-xs text-gray-500">Grupo</th>
+												<th class="text-xs text-gray-500">Peso</th>
+												<th class="text-xs text-gray-500">Peso ponderado</th>
+												<th class="text-xs text-gray-500">Avance</th>
+												<th class="text-xs text-gray-500">Porcentaje avance</th>
+												<th class="text-xs text-gray-500">Avance ponderado</th>
+											</tr>
+										</thead>
+										<tbody>
+											{#each rows as row, i (i)}
+												<tr>
+													<td class="text-xs text-gray-500">{row.Meta}</td>
+													<td class="text-xs text-gray-500">{row.Grupo}</td>
+													<td class="text-xs text-gray-500"
+														>{Number(row['Peso meta %']).toFixed(2)}%</td
+													>
+													<td class="text-xs text-gray-500"
+														>{Number(row['Peso ponderado %']).toFixed(2)}%</td
+													>
+													<td class="text-xs text-gray-500"
+														>{row['Valor avance']}</td
+													>
+													<td class="text-xs text-gray-500"
+														>{Number(row['% avance']).toFixed(2)}%</td
+													>
+													<td class="text-xs text-gray-900"
+														>{Number(row['Avance ponderado']).toFixed(2)}</td
+													>
+												</tr>
+											{/each}
+										</tbody>
+										<tfoot>
+											<tr>
+												<td colspan={6} class="text-xs text-gray-500">Total</td>
+												<td class="text-xs text-gray-900"
+													>{score.toFixed(2)}</td
+												>
+											</tr>
+										</tfoot>
+									</table>
+								</div>
+							{/if}
 						</div>
 					</details>
 				</div>
