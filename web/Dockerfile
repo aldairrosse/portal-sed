@@ -2,7 +2,7 @@ FROM node:22-alpine AS builder
 
 WORKDIR /app
 
-RUN corepack enable && corepack prepare pnpm@10.34.5 --activate
+RUN corepack enable && corepack prepare pnpm@12.4.2 --activate
 
 ENV PNPM_HOME=/app/.pnpm-store
 
