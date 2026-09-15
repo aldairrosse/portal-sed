@@ -5,7 +5,6 @@ WORKDIR /app
 RUN corepack enable && corepack prepare pnpm@10.34.5 --activate
 
 ENV PNPM_HOME=/app/.pnpm-store
-RUN pnpm config set store-dir /app/.pnpm-store --global
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN pnpm install --frozen-lockfile
