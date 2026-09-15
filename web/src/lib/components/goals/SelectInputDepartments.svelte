@@ -11,6 +11,7 @@
 		placeholder?: string;
 		label?: string;
 		maxWidthClass?: string;
+		menuMaxHeightClass?: string;
 	}
 
 	let {
@@ -21,6 +22,7 @@
 		placeholder = 'Seleccionar departamento',
 		label,
 		maxWidthClass = 'max-w-xs',
+		menuMaxHeightClass = 'max-h-64',
 	}: Props = $props();
 
 	let open = $state(false);
@@ -70,12 +72,13 @@
 				}}
 			></button>
 			<div
-				class="dropdown-content bg-base-100 rounded-box shadow-lg mb-2 p-1 w-full max-w-full max-h-none z-100"
+				class="dropdown-content bg-base-100 rounded-box shadow-lg mb-2 p-1 w-full max-w-full {menuMaxHeightClass} overflow-y-auto z-[100]"
 			>
 				<DepartmentPagedMenu
 					{nodes}
 					{selectedId}
 					{groupName}
+					{menuMaxHeightClass}
 					onchange={(id) => {
 						onchange(id);
 						open = false;

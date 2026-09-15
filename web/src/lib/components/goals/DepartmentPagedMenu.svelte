@@ -9,6 +9,7 @@
 		onchange: (id: string) => void;
 		isChildren?: boolean;
 		openIds?: Set<string>;
+		menuMaxHeightClass?: string;
 	}
 
 	let {
@@ -18,6 +19,7 @@
 		onchange,
 		isChildren = false,
 		openIds,
+		menuMaxHeightClass = 'max-h-64',
 	}: Props = $props();
 
 	function findPath(
@@ -76,6 +78,7 @@
 						{selectedId}
 						{groupName}
 						{onchange}
+						{menuMaxHeightClass}
 						isChildren={true}
 						openIds={effectiveOpen}
 					/>

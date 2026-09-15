@@ -12,7 +12,7 @@
 	} from '$lib/stores/orgHierarchyStore.svelte';
 	import { titleCase } from '$lib/utils/text';
 	import CustomSelect from '$lib/components/ui/CustomSelect.svelte';
-	import OrgHierarchyTree from '$lib/components/org-hierarchy/OrgHierarchyTree.svelte';
+	import SelectInputDepartments from '../goals/SelectInputDepartments.svelte';
 
 	interface EmployeeDetailResponse {
 		id: string;
@@ -43,6 +43,7 @@
 		getProfiles().map((p) => ({ value: p.id, label: titleCase(p.name) })),
 	);
 	const rootNode = $derived(getRoot());
+	const nodes = $derived(rootNode ? [rootNode] : []);
 
 	onMount(async () => {
 		try {
@@ -113,7 +114,7 @@
 			if (e.target === e.currentTarget) onclose();
 		}}
 	>
-		<div class="modal-box max-w-lg">
+		<div class="modal-box max-w-lg overflow-visible">
 			<h3 class="font-bold text-lg mb-4">Cambiar departamento y perfil</h3>
 			<p class="text-sm text-base-content/30">
 				{employeeName}
@@ -138,22 +139,16 @@
 				</div>
 
 				<div>
-					<span class="label text-xs font-semibold text-base-content/60"
-						>Departamento</span
-					>
 					{#if rootNode}
-						<div
-							class="border border-base-300 rounded-box max-h-64 overflow-y-auto"
-						>
-							<OrgHierarchyTree
-								node={rootNode}
-								viewType="departments"
-								selectable={true}
-								selectableSelectedId={selectedOrgNodeId}
-								onSelectableClick={(id) => (selectedOrgNodeId = id)}
-								initialExpandedIds={[rootNode.id]}
-							/>
-						</div>
+						<SelectInputDepartments
+							{nodes}
+							selectedId={selectedOrgNodeId}
+							groupName="change-dept"
+							onchange={(id) => (selectedOrgNodeId = id)}
+							label="Departamento"
+							placeholder="Seleccionar departamento"
+							menuMaxHeightClass="max-h-48"
+						/>
 					{:else}
 						<p class="text-sm text-base-content/30 italic">
 							Cargando árbol organizacional...
