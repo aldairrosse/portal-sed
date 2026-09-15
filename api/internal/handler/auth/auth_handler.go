@@ -323,6 +323,7 @@ type EmployeeInfo struct {
 	FirstName      string `json:"first_name"`
 	LastName       string `json:"last_name"`
 	Email          string `json:"email"`
+	EmployeeNumber string `json:"employee_number"`
 	JobTitle       string `json:"job_title"`
 	OrgNodeID      string `json:"org_node_id"`
 	OrgNodeName    string `json:"org_node_name"`
@@ -518,6 +519,7 @@ func (h *AuthHandler) Me(w http.ResponseWriter, r *http.Request) {
 			FirstName:      emp.FirstName,
 			LastName:       emp.LastName,
 			Email:          emp.Email,
+			EmployeeNumber: emp.EmployeeNumber,
 			JobTitle:       emp.JobTitle,
 			OrgNodeID:      emp.OrgNodeID.String(),
 			OrgNodeName:    orgNodeName,

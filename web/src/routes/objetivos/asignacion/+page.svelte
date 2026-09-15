@@ -66,7 +66,9 @@
 	} from '$lib/stores/goalsStore.svelte';
 	import {
 		effectiveWeightGlobal,
+		effectiveWeightPersonal,
 		effectiveWeightShared,
+		progressPercent as calculateProgress,
 	} from '$lib/utils/scoring';
 	import { getSession } from '$lib/api/session.svelte';
 	import {
@@ -147,6 +149,7 @@
 			id: `stub-${viewerEmployeeId}`,
 			employeeId: viewerEmployeeId,
 			employeeName: session.user?.name ?? '',
+			employeeNumber: session.user?.employeeNumber ?? '',
 			profileId: viewerProfile,
 			managerId: null,
 			goalIds: [],
@@ -156,6 +159,7 @@
 		result.push({
 			...own,
 			employeeName: own.employeeName || session.user?.name || '',
+			employeeNumber: own.employeeNumber ?? session.user?.employeeNumber ?? '',
 		});
 		seen.add(viewerEmployeeId);
 
@@ -652,25 +656,89 @@
 
 	let showExportModal = $state(false);
 
+	function sentenceCase(s: string): string {
+		if (!s) return s;
+		return s.charAt(0).toLocaleUpperCase('es') + s.slice(1).toLocaleLowerCase('es');
+	}
+
 	function buildRows(
 		assignment: EmployeeAssignment,
 	): Record<string, string | number | null>[] {
 		const rows: Record<string, string | number | null>[] = [];
-		const cats = getCategories();
-		for (const cat of cats) {
-			const catGoals = getGoalsByCategory(cat.id);
-			for (const goal of catGoals) {
+		const employeeNumber =
+			assignment.employeeNumber ?? session.user?.employeeNumber ?? '';
+		const employeeName = assignment.employeeName;
+		const cw = getCycleWeights();
+		const tw = getTeamWeights();
+		const to2 = (v: number | null | undefined): number => Number((Number(v) || 0).toFixed(2));
+
+		const pushInstitutional = (goal: InstitutionalGoal, group: string) => {
+			const current = goal.currentValue ?? 0;
+			const pctStr = calculateProgress(
+				current,
+				goal.targetValue ?? 0,
+				goal.baselineValue,
+				goal.direction,
+			).toFixed(2);
+			const eff = effectiveFor(goal) ?? 0;
+			const pct = parseFloat(pctStr) || 0;
+			rows.push({
+				'No. Empleado': employeeNumber,
+				Empleado: employeeName,
+				Grupo: sentenceCase(group),
+				'Peso cat %': to2(goal.weight),
+				'Peso ponderado %': to2(eff),
+				Meta: goal.name,
+				Descripción: goal.description,
+				Unidad: sentenceCase(goal.unit ?? ''),
+				'Peso meta %': to2(goal.weight),
+				'Valor objetivo': formatGoalValue(goal.targetValue, goal.unit),
+				Dirección: sentenceCase(goal.direction ?? ''),
+				'Valor avance': formatGoalValue(current, goal.unit),
+				'% avance': Number(pct.toFixed(2)),
+				'Avance ponderado': Number((((pct * (goal.weight ?? 0)) / 100) * (eff / 100)).toFixed(2)),
+				KPIs: '',
+			});
+		};
+
+		for (const goal of getInstitutionalGoals().filter(
+			(g) => g.source === 'global',
+		))
+			pushInstitutional(goal, 'global');
+		for (const goal of getInstitutionalGoals().filter(
+			(g) => g.source === 'shared',
+		))
+			pushInstitutional(goal, 'compartida');
+
+		for (const cat of getCategories()) {
+			const catEffective =
+				cat.effectiveWeight ??
+				effectiveWeightPersonal(cat.weight, cw.pWeight, tw.pjWeight);
+			for (const goal of getGoalsByCategory(cat.id)) {
 				const kpis = getKpisForGoal(goal.id);
+				const current = goal.progress ?? 0;
+				const pctStr = calculateProgress(
+					current,
+					goal.targetValue,
+					goal.baselineValue,
+					goal.direction,
+				).toFixed(2);
+				const pct = parseFloat(pctStr) || 0;
 				rows.push({
-					'No. Empleado': assignment.employeeNumber ?? assignment.employeeId,
-					Empleado: assignment.employeeName,
-					Categoría: cat.name,
-					'Peso categoría %': cat.weight,
+					'No. Empleado': employeeNumber,
+					Empleado: employeeName,
+					Grupo: cat.name,
+					'Peso cat %': to2(cat.weight),
+					'Peso ponderado %': to2(catEffective),
 					Meta: goal.name,
 					Descripción: goal.description,
-					Unidad: goal.unit,
-					'Peso meta %': goal.weight,
-					'Valor objetivo': formatTarget(goal),
+					Unidad: sentenceCase(goal.unit ?? ''),
+					'Peso meta %': to2(goal.weight),
+					'Valor objetivo': formatGoalValue(goal.targetValue, goal.unit),
+					Dirección: sentenceCase(goal.direction ?? ''),
+					'Valor avance': formatGoalValue(current, goal.unit),
+					'% avance': Number(pct.toFixed(2)),
+					'Avance ponderado': Number((((pct * (goal.weight ?? 0)) / 100) * (catEffective / 100)).toFixed(2)),
 					KPIs: kpis.map((k) => k.name).join(', ') || '',
 				});
 			}
@@ -678,8 +746,15 @@
 		return rows;
 	}
 
-	function formatTarget(g: Goal) {
-		return g.unit === 'porcentaje' ? `${g.targetValue}%` : g.targetValue;
+	function formatGoalValue(
+		value: number | undefined | null,
+		unit: Goal['unit'],
+	): string | number {
+		if (value === undefined || value === null) return '';
+		if (unit === 'porcentaje') return `${value}%`;
+		if (unit === 'moneda') return `$${value.toLocaleString()}`;
+		if (unit === 'binario') return value === 1 ? 'Sí' : 'No';
+		return value;
 	}
 
 	function exportFileName(base: string): string {
@@ -689,7 +764,11 @@
 
 	async function exportCurrent() {
 		showExportModal = false;
-		toXlsx(buildRows(targetAssignment!), exportFileName('asignacion-anual'));
+		toXlsx(buildRows(targetAssignment!), exportFileName('asignacion-anual'), 'Datos', {
+			Grupo: 30,
+			Meta: 35,
+			Descripción: 40,
+		});
 	}
 
 	async function exportAll() {
@@ -703,7 +782,11 @@
 		}
 
 		await loadForEmployee(originalId);
-		toXlsx(allRows, exportFileName('asignacion-anual-todos'));
+		toXlsx(allRows, exportFileName('asignacion-anual-todos'), 'Datos', {
+			Grupo: 30,
+			Meta: 35,
+			Descripción: 40,
+		});
 	}
 </script>
 

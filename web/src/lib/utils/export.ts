@@ -4,20 +4,22 @@ export function toXlsx(
 	rows: Record<string, string | number | null>[],
 	filename: string,
 	sheetName = 'Datos',
+	maxWidths?: Record<string, number>,
 ): void {
 	if (rows.length === 0) {
 		console.warn(`[export] No data to export for "${filename}"`);
 		return;
 	}
 	const ws = XLSX.utils.json_to_sheet(rows);
-	// Auto width por header/contenido (min 10, max 40)
+	// Auto width por header/contenido (min 10, max 40 general, clamp por header si se indica)
 	const headers = Object.keys(rows[0]);
 	const colWidths = headers.map((h) => {
 		const maxLen = Math.max(
 			h.length,
 			...rows.map((r) => String(r[h] ?? '').length),
 		);
-		return { wch: Math.min(40, Math.max(10, maxLen + 2)) };
+		const cap = maxWidths?.[h] ?? 40;
+		return { wch: Math.min(cap, Math.max(10, maxLen + 2)) };
 	});
 	ws['!cols'] = colWidths;
 

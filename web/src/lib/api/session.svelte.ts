@@ -6,6 +6,7 @@ export interface AuthUser {
 	employeeId: string;
 	email: string;
 	name: string;
+	employeeNumber?: string;
 	profileId: EvaluationProfile;
 	profileName: string;
 	organizationId: string;
@@ -34,6 +35,7 @@ export async function ensureSession(): Promise<void> {
 			employee: {
 				id: string;
 				email?: string;
+				employee_number?: string;
 				first_name?: string;
 				last_name?: string;
 				job_title?: string;
@@ -51,6 +53,7 @@ export async function ensureSession(): Promise<void> {
 				[raw.employee.first_name, raw.employee.last_name]
 					.filter(Boolean)
 					.join(' ') || 'Usuario',
+			employeeNumber: raw.employee.employee_number ?? '',
 			profileId: raw.role as EvaluationProfile,
 			profileName: raw.profile?.name ?? raw.role ?? '',
 			organizationId: raw.organization_id ?? raw.employee.id ?? '',
