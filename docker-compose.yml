@@ -21,6 +21,11 @@ services:
     container_name: portal-sed-api
     environment:
       ENV: production
+      # Mail (SendGrid): no-op por defecto; definir en .env para activar
+      MAIL_PROVIDER: ${MAIL_PROVIDER:-no-op}
+      SENDGRID_API_KEY: ${SENDGRID_API_KEY:-}
+      MAIL_FROM: ${MAIL_FROM:-no-reply@example.com}
+      APP_BASE_URL: ${APP_BASE_URL:-http://localhost:5173}
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/health"]
       interval: 10s

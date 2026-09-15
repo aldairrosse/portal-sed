@@ -366,16 +366,31 @@ func main() {
 	// Dependency Injection — Handlers
 	// -----------------------------------------------------------------------
 
+	// Mail sender: MAIL_PROVIDER=sendgrid|no-op (default no-op).
+	// ponytail: SendGrid-only for now; SMTP sender exists but unwired until needed.
+	var mailSender notifypkg.Sender = notifypkg.NoopSender{}
+	if strings.ToLower(strings.TrimSpace(os.Getenv("MAIL_PROVIDER"))) == "sendgrid" {
+		if sg, err := notifypkg.NewSendGridSender(
+			os.Getenv("SENDGRID_API_KEY"),
+			os.Getenv("MAIL_FROM"),
+			os.Getenv("APP_BASE_URL"),
+		); err != nil {
+			log.Printf("[server] warn: sendgrid disabled, fallback to no-op: %v", err)
+		} else {
+			mailSender = sg
+		}
+	}
+
 	authH := authhandler.NewAuthHandler(authSvc, ssoAdapter)
 	goalH := goalhandler.NewGoalHandler(
 		catSvc, goalSvc, progressSvc, kpiSvc, scoringSvc, weightSvc, batchSvc, proposalSvc,
 		catRepo, goalRepo, kpiRepo, linkRepo, assignRepo, proposalRepo, activitySvc, evalSvc,
-	).WithWeightResolver(hierarchicalWeightSvc)
+	).WithWeightResolver(hierarchicalWeightSvc).WithNotifier(db, mailSender)
 	cycleH := cyclehandler.NewCycleHandler(cycleSvc, phaseSvc, activitySvc, assignRepo, employeeRepo)
 	compH := comphandler.NewHandler(pillarSvc, competencySvc, scaleSvc, catalogSvc, acceptanceSvc, activitySvc)
 	evalH := evalhandler.NewEvaluationHandler(evalSvc, nineBoxSvc, dashboardSvc, activitySvc).WithExportService(exportSvc)
 	orgH := orghandler.NewOrgHandler(orgTreeSvc, orgNodeSvc, employeeSvc, evaluateeSvc, metricsSvc)
-	commentChangeH := commentchangehandler.NewHandler(db, notifypkg.NoopSender{})
+	commentChangeH := commentchangehandler.NewHandler(db, mailSender)
 	globalGoalH := goalhandler.NewGlobalGoalHandler(globalGoalSvc)
 	sharedGoalH := goalhandler.NewSharedGoalHandler(sharedGoalSvc)
 	weightH := weighthandler.NewHandler(hierarchicalWeightSvc)

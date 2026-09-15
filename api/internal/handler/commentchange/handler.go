@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -27,6 +28,12 @@ var appBaseURL = func() string {
 	}
 	return "http://localhost:5173"
 }()
+
+// FullAssignmentURL returns the absolute CTA URL to the assignments page.
+// Reuses appBaseURL (APP_BASE_URL); always absolute for email clients.
+func FullAssignmentURL(base string) string {
+	return strings.TrimSuffix(strings.TrimSpace(base), "/") + "/objetivos/asignacion"
+}
 
 // --- DTOs ---
 
@@ -412,7 +419,51 @@ func (h *Handler) CreateChangeRequest(w http.ResponseWriter, r *http.Request) {
 		writeError(w, 500, "failed to create change request")
 		return
 	}
+	// Evento "Solicitar cambio": jefe → colaborador, best-effort como notifyOwner.
+	// ponytail: in-process goroutine, lost on restart; upgrade a tabla notifications si se exige SLA.
+	h.notifyChangeRequested(r.Context(), cr)
 	writeJSON(w, 201, cr)
+}
+
+// notifyChangeRequested emails the assignment owner (collaborator) about a
+// change request from the manager. Skips self-notify and unknown entities.
+func (h *Handler) notifyChangeRequested(parent context.Context, cr ChangeRequest) {
+	var ownerID, ownerEmail string
+	var err error
+	switch cr.EntityType {
+	case "category":
+		err = h.db.QueryRow(`SELECT gc.employee_id, e.email FROM goal_categories gc JOIN employees e ON e.id = gc.employee_id WHERE gc.id = $1`, cr.EntityID).Scan(&ownerID, &ownerEmail)
+	case "assignment":
+		err = h.db.QueryRow(`SELECT ga.employee_id, e.email FROM goal_assignments ga JOIN employees e ON e.id = ga.employee_id WHERE ga.id = $1`, cr.EntityID).Scan(&ownerID, &ownerEmail)
+	default: // "goal" y otros: dueño vía meta
+		err = h.db.QueryRow(`SELECT gc.employee_id, e.email FROM goals g JOIN goal_categories gc ON gc.id = g.category_id JOIN employees e ON e.id = gc.employee_id WHERE g.id = $1`, cr.EntityID).Scan(&ownerID, &ownerEmail)
+	}
+	if err != nil || ownerID == cr.RequestedBy || ownerEmail == "" {
+		return
+	}
+	cta := FullAssignmentURL(appBaseURL)
+	if !notifypkg.IsAbsoluteURL(cta) {
+		log.Printf("commentchange: skip change_requested, non-absolute CTA %q", cta)
+		return
+	}
+	n := notifypkg.Notification{
+		To:       ownerEmail,
+		Subject:  "Tu jefe solicitó cambios en tus metas",
+		Template: notifypkg.TemplateChangeRequested,
+		Data: map[string]string{
+			"Title":    "Solicitaron cambios en tus metas",
+			"Message":  "Tu jefe revisó tu asignación y propone cambios. Revisa el detalle y actualiza tus metas.",
+			"CTAURL":   cta,
+			"CTALabel": "Ver mi asignación",
+		},
+	}
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := h.notifier.Send(ctx, n); err != nil {
+			log.Printf("commentchange: change_requested notify failed (changeRequestID=%s entityID=%s): %v", cr.ID, cr.EntityID, err)
+		}
+	}()
 }
 
 func (h *Handler) UpdateChangeRequest(w http.ResponseWriter, r *http.Request) {

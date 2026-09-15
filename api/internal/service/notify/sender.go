@@ -7,7 +7,9 @@ import "context"
 type Template string
 
 const (
-	TemplateCommentCreated Template = "comment_created"
+	TemplateCommentCreated      Template = "comment_created"
+	TemplateAssignmentSubmitted Template = "assignment_submitted"
+	TemplateChangeRequested     Template = "change_requested"
 )
 
 // Notification is the rendered payload handed to a Sender. Keep it flat and

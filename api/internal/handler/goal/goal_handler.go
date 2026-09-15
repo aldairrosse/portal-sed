@@ -2,19 +2,23 @@ package goal
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"log"
 	"math"
 	"net/http"
+	"os"
 	"strconv"
 	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/sed-evaluacion-desempeno/api/internal/auth"
+	"github.com/sed-evaluacion-desempeno/api/internal/handler/commentchange"
 	dtogoal "github.com/sed-evaluacion-desempeno/api/internal/dto/goal"
 	"github.com/sed-evaluacion-desempeno/api/internal/middleware"
+	notifypkg "github.com/sed-evaluacion-desempeno/api/internal/service/notify"
 	"github.com/sed-evaluacion-desempeno/api/internal/pkg/cursor"
 	pkgerrors "github.com/sed-evaluacion-desempeno/api/internal/pkg/errors"
 	"github.com/sed-evaluacion-desempeno/api/internal/pkg/scoring"
@@ -73,7 +77,18 @@ type GoalHandler struct {
 	proposalRepo   svcgoal.GoalProposalRepository
 	activitySvc    activitysvc.Service
 	cycleResolver  CycleResolver
+	notifier       notifypkg.Sender
+	notifyDB       *sql.DB
 }
+
+// appBaseURL mirrors commentchange.appBaseURL for assignment CTA links.
+// Override in tests; main.go sets APP_BASE_URL at startup.
+var appBaseURL = func() string {
+	if v := os.Getenv("APP_BASE_URL"); v != "" {
+		return v
+	}
+	return "http://localhost:5173"
+}()
 
 func NewGoalHandler(
 	catService svcgoal.CategoryServicer,
@@ -117,6 +132,64 @@ func NewGoalHandler(
 func (h *GoalHandler) WithWeightResolver(r svcgoal.WeightResolver) *GoalHandler {
 	h.weightResolver = r
 	return h
+}
+
+// WithNotifier wires the notify sender + lookup DB. Nil sender falls back to NoopSender.
+func (h *GoalHandler) WithNotifier(db *sql.DB, sender notifypkg.Sender) *GoalHandler {
+	if sender == nil {
+		sender = notifypkg.NoopSender{}
+	}
+	h.notifier = sender
+	h.notifyDB = db
+	return h
+}
+
+// notifyAssignmentSubmitted emails the collaborator's manager when an assignment
+// is submitted. Guard: only status enviada/submitted (or SubmittedAt != nil).
+// Best-effort goroutine with detached ctx; idempotent (read-only after submit).
+// ponytail: in-process goroutine, lost on restart; upgrade a tabla notifications si se exige SLA.
+func (h *GoalHandler) notifyAssignmentSubmitted(a *repogoal.AssignmentRow) {
+	if a == nil || h.notifyDB == nil {
+		return
+	}
+	if a.SubmittedAt == nil && a.Status != "enviada" && a.Status != "submitted" {
+		return
+	}
+	if h.notifier == nil {
+		h.notifier = notifypkg.NoopSender{}
+	}
+	var managerEmail string
+	err := h.notifyDB.QueryRow(`
+		SELECT m.email FROM employees e
+		JOIN employees m ON m.id = e.manager_id
+		WHERE e.id = $1
+	`, a.EmployeeID.String()).Scan(&managerEmail)
+	if err != nil || managerEmail == "" {
+		return
+	}
+	cta := commentchange.FullAssignmentURL(appBaseURL)
+	if !notifypkg.IsAbsoluteURL(cta) {
+		log.Printf("goal: skip assignment_submitted, non-absolute CTA %q", cta)
+		return
+	}
+	n := notifypkg.Notification{
+		To:       managerEmail,
+		Subject:  "Un colaborador envió su asignación de metas",
+		Template: notifypkg.TemplateAssignmentSubmitted,
+		Data: map[string]string{
+			"Title":    "Asignación enviada para revisión",
+			"Message":  "Un colaborador terminó su asignación de metas y la envió para tu revisión.",
+			"CTAURL":   cta,
+			"CTALabel": "Revisar asignación",
+		},
+	}
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := h.notifier.Send(ctx, n); err != nil {
+			log.Printf("goal: assignment_submitted notify failed (assignment=%s): %v", a.ID, err)
+		}
+	}()
 }
 
 // ============================================================================
@@ -965,6 +1038,11 @@ func (h *GoalHandler) CreateAssignment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Dedup: CreateAssignment is idempotent (advisory-lock+Get) and may return
+	// an existing row already submitted. Skip the notify in that case so a
+	// retry does not resend the manager email.
+	alreadySubmitted := assignment.SubmittedAt != nil || assignment.Status == "enviada" || assignment.Status == "submitted"
+
 	// Weight validation gate: if Double 100% passes, transition to 'enviada'.
 	if h.weightSvc != nil {
 		v, verr := h.weightSvc.ValidateDoubleWeighting(r.Context(), empID)
@@ -1012,6 +1090,9 @@ func (h *GoalHandler) CreateAssignment(w http.ResponseWriter, r *http.Request) {
 		resp.Categories = catResponses
 	}
 
+	if !alreadySubmitted {
+		h.notifyAssignmentSubmitted(assignment)
+	}
 	writeJSON(w, http.StatusCreated, resp)
 }
 

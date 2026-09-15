@@ -25,6 +25,10 @@ services:
     env_file: .env
     environment:
       ENV: development
+      MAIL_PROVIDER: ${MAIL_PROVIDER:-no-op}
+      SENDGRID_API_KEY: ${SENDGRID_API_KEY:-}
+      MAIL_FROM: ${MAIL_FROM:-no-reply@sed.local}
+      APP_BASE_URL: ${APP_BASE_URL:-http://localhost:5173}
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/health"]
       interval: 10s
