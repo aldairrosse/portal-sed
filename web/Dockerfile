@@ -7,7 +7,7 @@ RUN corepack enable && corepack prepare pnpm@10.34.5 --activate
 ENV PNPM_HOME=/app/.pnpm-store
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile --store-dir=/tmp/pnpm-store
 
 COPY . .
 RUN pnpm run build
