@@ -1,17 +1,19 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { getProfile } from '$lib/stores/devContext.svelte';
-	import { getActivePhase } from '$lib/api/cycle.svelte';
+	import { getActivePhase, loadCycle } from '$lib/api/cycle.svelte';
 	import { getSession } from '$lib/api/session.svelte';
 	import type { ApiCyclePhase } from '$lib/types/cycle';
 	import { normalizePhase, API_PHASE_LABELS } from '$lib/types/cycle';
 	import {
+		load as loadGoals,
 		getGoals,
-		getCategories,
 		getAssignments,
 		getInstitutionalGoals,
 	} from '$lib/stores/goalsStore.svelte';
 	import ProgressChart from '$lib/components/ProgressChart.svelte';
+	import { getHomeProgress } from '$lib/utils/homeProgress';
+	import { progressPercent } from '$lib/utils/scoring';
 	import {
 		load as loadCompetencies,
 		getPillars,
@@ -35,7 +37,6 @@
 
 	const assignments = $derived(getAssignments());
 	const allGoals = $derived(getGoals());
-	const allCategories = $derived(getCategories());
 
 	const pillars = $derived(getPillars());
 	const competencies = $derived(getCompetencies());
@@ -45,6 +46,8 @@
 	);
 
 	onMount(() => {
+		loadCycle();
+		loadGoals();
 		loadCompetencies();
 	});
 
@@ -80,39 +83,55 @@
 			: [],
 	);
 
-	const institutionalGoals = $derived(getInstitutionalGoals());
+	// Progreso ponderado real del ciclo (0% en asignación, suma ponderada en
+	// avance/cierre). Evaluada = progressPercent recalculado > 0.
+	const homeProgress = $derived(
+		getHomeProgress(myAssignment?.goalIds ?? [], phase),
+	);
 
-	const personalStats = $derived({
-		evaluated: myGoals.filter((g) => g.progress !== undefined).length,
-		total: myGoals.length,
-	});
+	// Pendientes: primeras 3 de todas (personales del assignment + globales/
+	// compartidas del store) con progressPercent recalculado <= 0 — misma
+	// fuente y fórmula que homeProgress/computeHomeProgress.
+	const pendingGoals = $derived(
+		[
+			...myGoals.map((g) => ({
+				id: g.id,
+				name: g.name,
+				description: g.description,
+				pct: progressPercent(
+					g.progress ?? 0,
+					g.targetValue,
+					g.baselineValue,
+					g.direction,
+				),
+			})),
+			...getInstitutionalGoals().map((g) => ({
+				id: g.id,
+				name: g.name,
+				description: g.description,
+				pct: progressPercent(
+					g.currentValue ?? 0,
+					g.targetValue ?? 0,
+					g.baselineValue,
+					g.direction,
+				),
+			})),
+		]
+			.filter((g) => g.pct <= 0)
+			.slice(0, 3),
+	);
 
-	const institutionalStats = $derived({
-		global: institutionalGoals.filter((g) => g.source === 'global'),
-		shared: institutionalGoals.filter((g) => g.source === 'shared'),
-	});
+	const personalStats = $derived(homeProgress.personal);
 
 	const globalStats = $derived(
-		institutionalStats.global.length > 0
-			? {
-					evaluated: institutionalStats.global.filter(
-						(g) => g.progressPercent !== undefined,
-					).length,
-					total: institutionalStats.global.length,
-				}
-			: undefined,
+		homeProgress.global.total > 0 ? homeProgress.global : undefined,
 	);
 
 	const sharedStats = $derived(
-		institutionalStats.shared.length > 0
-			? {
-					evaluated: institutionalStats.shared.filter(
-						(g) => g.progressPercent !== undefined,
-					).length,
-					total: institutionalStats.shared.length,
-				}
-			: undefined,
+		homeProgress.shared.total > 0 ? homeProgress.shared : undefined,
 	);
+
+	const cycleTotal = $derived(homeProgress.total);
 
 	const myCompetencies = $derived(
 		competencies.map((c) => {
@@ -197,11 +216,6 @@
 		if (!step) return false;
 		const current_index = phaseTimeSteps[phase].index;
 		return step.index > current_index;
-	}
-
-	function getGoalCategoryName(goal: Goal): string {
-		const cat = allCategories.find((c) => c.id === goal.categoryId);
-		return cat?.name ?? '';
 	}
 </script>
 
@@ -297,13 +311,17 @@
 			<section
 				class="lg:col-span-4 bg-(--color-base) rounded-xl px-4 pt-3 pb-6"
 			>
-				<h2 class="text-sm font-bold text-base-content tracking-wide mb-6">
-					Tu progreso del ciclo
-				</h2>
+				<div class="flex items-center justify-between mb-6">
+					<h2 class="text-sm font-bold text-base-content tracking-wide">
+						Tu progreso del ciclo
+					</h2>
+				</div>
 				<ProgressChart
 					personal={personalStats}
 					global={globalStats}
 					shared={sharedStats}
+					total={cycleTotal}
+					{phase}
 				/>
 			</section>
 
@@ -349,35 +367,21 @@
 									Metas pendientes
 								</h2>
 							</div>
-							{#if myGoals.length > 0}
-								<ul class="space-y-3">
-									{#each myGoals as goal (goal.id)}
-										{@const categoryName = getGoalCategoryName(goal)}
-										<li>
-											<div class="flex items-baseline justify-between mb-1">
-												<span class="font-medium text-sm text-base-content"
-													>{goal.name}</span
-												>
-												<span class="text-xs font-mono text-primary ml-3">
-													{goal.weight}%
-												</span>
-											</div>
-											<div
-												class="h-1.5 bg-base-200 rounded-full overflow-hidden"
-											>
-												<div
-													class="h-full bg-primary/70 rounded-full"
-													style="width: {goal.weight}%"
-												></div>
-											</div>
-											{#if categoryName}
-												<p class="text-[11px] text-base-content/40 mt-1">
-													{categoryName}
-												</p>
-											{/if}
-										</li>
-									{/each}
-								</ul>
+						{#if pendingGoals.length > 0}
+							<ul class="space-y-3">
+								{#each pendingGoals as goal (goal.id)}
+									<li>
+										<p class="truncate text-sm font-medium text-base-content">
+											{goal.name}
+										</p>
+										<p
+											class="truncate text-sm text-base-content/60 overflow-hidden"
+										>
+											{goal.description}
+										</p>
+									</li>
+								{/each}
+							</ul>
 							{:else}
 								<p class="text-sm text-base-content/50 pt-2">
 									Aún no tienes metas pendientes.
