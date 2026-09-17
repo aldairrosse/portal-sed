@@ -1,6 +1,4 @@
 <script lang="ts">
-	import { browser } from '$app/environment';
-	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
 	import OrgHierarchyTree from '$lib/components/org-hierarchy/OrgHierarchyTree.svelte';
 	import {
@@ -11,7 +9,6 @@
 		getError,
 	} from '$lib/stores/orgHierarchyStore.svelte';
 	import { getProfile } from '$lib/stores/devContext.svelte';
-	import { isManagerProfile } from '$lib/stores/roleStore.svelte';
 	import { getActivePhase } from '$lib/api/cycle.svelte';
 	import {
 		selectNode,
@@ -31,12 +28,8 @@
 
 	const profile = $derived(getProfile());
 
-	// Redirect managers to the evaluacion hierarchy view
+	// Managers no longer have a hierarchy view — no redirect.
 	onMount(() => {
-		if (isManagerProfile(profile) && browser) {
-			goto('/evaluacion/9x9/jerarquia');
-			return;
-		}
 		if (isAuthorized) {
 			load();
 		}

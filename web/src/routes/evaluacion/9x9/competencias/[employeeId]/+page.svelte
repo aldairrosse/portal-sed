@@ -6,13 +6,31 @@
 	import { client } from '$lib/api/client';
 	import { getSession } from '$lib/api/session.svelte';
 	import PageSkeleton from '$lib/components/ui/PageSkeleton.svelte';
+	import Forbidden from '$lib/components/Forbidden.svelte';
 	import { Network, Table, Briefcase } from '@lucide/svelte';
 	import { titleCase } from '$lib/utils/text';
 	import { getProfile } from '$lib/stores/devContext.svelte';
+	import { isManager } from '$lib/stores/roleStore.svelte';
 
 	const employeeId = $derived($page.params.employeeId);
-	const isSelf = $derived(employeeId === getSession().user?.employeeId);
+	const sessionState = $derived(getSession());
+	const isSelf = $derived(employeeId === sessionState.user?.employeeId);
 	const viewerProfile = $derived(getProfile());
+	// Ownership guard: PermEval9x9 holders + RoleSeesAll may view anyone;
+	// everyone else only their own evaluation. Keep in sync with
+	// api/internal/auth/rbac.go (PermEval9x9 + RoleSeesAll).
+	const denied = $derived(
+		!sessionState.loading &&
+			!!sessionState.user &&
+			!isSelf &&
+			!isManager(viewerProfile) &&
+			viewerProfile !== 'rh' &&
+			viewerProfile !== 'director' &&
+			viewerProfile !== 'director-general' &&
+			viewerProfile !== 'gerente-tienda' &&
+			viewerProfile !== 'divisional' &&
+			viewerProfile !== 'regional',
+	);
 	const backHref = $derived(
 		viewerProfile === 'rh'
 			? '/rh/evaluaciones'
@@ -54,7 +72,7 @@
 	}
 
 	$effect(() => {
-		if (employeeId) {
+		if (employeeId && !denied && !sessionState.loading) {
 			// Load competency catalog (pillars, competencies, levels) — needed for radar/table
 			loadCompetencies();
 			// cycle_id is optional — backend resolves the active cycle automatically
@@ -157,7 +175,12 @@
 	</div>
 
 	<!-- Loading skeleton -->
-	{#if isLoading()}
+	{#if denied}
+		<Forbidden
+			title="Sin acceso"
+			message="Solo puedes ver tus propias competencias. Esta evaluación pertenece a otro empleado."
+		/>
+	{:else if sessionState.loading || isLoading()}
 		<PageSkeleton variant="card" rows={3} avatar />
 	{:else}
 		<!-- Competency view -->

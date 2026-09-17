@@ -250,12 +250,27 @@ func (h *EvaluationHandler) GetEvaluation(w http.ResponseWriter, r *http.Request
 
 // GetEmployeeCompetencies handles GET /api/v1/evaluations/employee/{employeeId}
 // Returns competency ratings for a specific employee + cycle.
-// TODO(auth:C7): Restrict to owner, manager, rh roles.
+// Ownership: self, RoleSeesAll (rh/director-general) or PermEval9x9 holders
+// (manager chain); anyone else gets 403. Fail fast before cycle resolution
+// to avoid leaking cycle existence.
 func (h *EvaluationHandler) GetEmployeeCompetencies(w http.ResponseWriter, r *http.Request) {
 	employeeID, err := uuid.Parse(chi.URLParam(r, "employeeId"))
 	if err != nil {
 		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
 			"employeeId must be a valid UUID v4", err))
+		return
+	}
+
+	viewerID, okID := auth.GetEmployeeID(r.Context())
+	viewerRole, okRole := auth.GetRole(r.Context())
+	if !okID || !okRole {
+		writeError(w, pkgerrors.ErrForbidden)
+		return
+	}
+	if viewerID != employeeID &&
+		!auth.RoleSeesAll(viewerRole) &&
+		!auth.HasPermission(viewerRole, auth.PermEval9x9) {
+		writeError(w, pkgerrors.ErrForbidden)
 		return
 	}
 

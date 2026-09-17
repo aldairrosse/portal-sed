@@ -6,10 +6,13 @@
 	import { loadCycle } from '$lib/api/cycle.svelte';
 	import '../app.css';
 	import AppShell from '$lib/components/AppShell.svelte';
+	import Forbidden from '$lib/components/Forbidden.svelte';
 	import ToastContainer from '$lib/components/ui/ToastContainer.svelte';
 	import DevBar from '$lib/components/DevBar.svelte';
 	import DevModeSelector from '$lib/components/DevModeSelector.svelte';
 	import { initTheme } from '$lib/stores/theme';
+	import { getProfile } from '$lib/stores/devContext.svelte';
+	import { canAccess } from '$lib/nav/menuConfig';
 
 	let { children } = $props();
 
@@ -28,6 +31,14 @@
 	// Only true when loading is done AND user exists.
 	// AppShell never renders until this is confirmed — zero flash.
 	let authResolved = $derived(!session.loading && !!session.user);
+
+	// Central RBAC guard: MENU_ITEMS is the source of truth.
+	// Blocks direct-URL access to routes the Sidebar already hides.
+	let forbidden = $derived(
+		authResolved &&
+			!isStandalone &&
+			!canAccess(getProfile(), $page.url.pathname),
+	);
 
 	// Dev unauthenticated view: when /api/v1/dev/status 200 allow unauthenticated shell
 	let devEnabled = $state(false);
@@ -105,6 +116,10 @@
 		{/if}
 	{:else if devBypass}
 		<DevModeSelector />
+	{:else if forbidden}
+		<AppShell>
+			<Forbidden />
+		</AppShell>
 	{:else}
 		<AppShell>
 			{@render children()}

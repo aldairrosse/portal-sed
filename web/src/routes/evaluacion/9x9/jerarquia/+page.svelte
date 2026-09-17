@@ -14,10 +14,7 @@
 	import { getSession } from '$lib/api/session.svelte';
 	import { client } from '$lib/api/client';
 	import { type EvaluationProfile } from '$lib/types/evaluation';
-import {
-		MANAGER_ROLES,
-		isManagerProfile,
-	} from '$lib/stores/roleStore.svelte';
+import { isManagerProfile } from '$lib/stores/roleStore.svelte';
 	import type { OrgNode } from '$lib/types/org-hierarchy';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
 	import PageSkeleton from '$lib/components/ui/PageSkeleton.svelte';
@@ -37,7 +34,6 @@ import {
 	const ALLOWED_PROFILES: EvaluationProfile[] = [
 		'director',
 		'director-general',
-		...MANAGER_ROLES,
 	];
 	const isAuthorized = $derived(ALLOWED_PROFILES.includes(profile));
 	const isManager = $derived(isManagerProfile(profile));
@@ -264,7 +260,7 @@ import {
 	{#if !isAuthorized}
 		<EmptyState
 			title="Sin acceso"
-			message="Solo directores, director general y managers pueden ver la jerarquía organizacional."
+			message="Solo directores y director general pueden ver la jerarquía organizacional."
 			actionLabel="Volver al inicio"
 			actionHref="/"
 		/>
