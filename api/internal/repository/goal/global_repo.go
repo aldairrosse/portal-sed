@@ -503,6 +503,18 @@ func (r *GlobalGoalRepo) evaluateAndAssign(ctx context.Context, c *internal.Clie
 		departmentPaths[*rule.DepartmentID] = node.Path
 	}
 
+	// Ancestor fallback when ltree path is empty: parent chain loaded once.
+	parentMap := make(map[uuid.UUID]*uuid.UUID)
+	if len(deptRules) > 0 {
+		nodes, err := c.OrgNode.Query().All(ctx)
+		if err != nil {
+			return 0, err
+		}
+		for _, n := range nodes {
+			parentMap[n.ID] = n.ParentID
+		}
+	}
+
 	// Max threshold across min_direct_reports rules.
 	var minReports *int
 	for _, rule := range minReportRules {
@@ -548,8 +560,31 @@ func (r *GlobalGoalRepo) evaluateAndAssign(ctx context.Context, c *internal.Clie
 				if rule.DepartmentID == nil {
 					continue
 				}
+				if emp.OrgNodeID == *rule.DepartmentID {
+					matched = true
+					break
+				}
 				deptPath := departmentPaths[*rule.DepartmentID]
 				employeePath := emp.Edges.OrgNode.Path
+				if deptPath == "" || employeePath == "" {
+					// fallback descendencia sin path: walk parent chain hasta root.
+					cur := emp.OrgNodeID
+					for cur != uuid.Nil {
+						if cur == *rule.DepartmentID {
+							matched = true
+							break
+						}
+						p, ok := parentMap[cur]
+						if !ok || p == nil {
+							break
+						}
+						cur = *p
+					}
+					if matched {
+						break
+					}
+					continue
+				}
 				if employeePath == deptPath || strings.HasPrefix(employeePath, deptPath+".") {
 					matched = true
 					break
