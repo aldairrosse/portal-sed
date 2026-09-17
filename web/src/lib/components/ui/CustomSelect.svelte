@@ -19,6 +19,8 @@
 		loadMore?: () => void;
 		allLoaded?: boolean;
 		loadingMore?: boolean;
+		loading?: boolean;
+		error?: string | null;
 	}
 
 	let {
@@ -34,6 +36,8 @@
 		loadMore,
 		allLoaded = false,
 		loadingMore = false,
+		loading = false,
+		error = null,
 	}: Props = $props();
 
 	const uid = $props.id();
@@ -205,10 +209,13 @@
 			</button>
 		</li>
 	{/each}
-	{#if loadingMore}
+	{#if loadingMore || loading}
 		<li class="px-2 py-1 text-xs text-base-content/50">Cargando…</li>
 	{/if}
-	{#if (searchable || onSearch) && filteredOptions.length === 0}
+	{#if !loading && error}
+		<li class="px-2 py-1 text-xs text-error">{error}</li>
+	{/if}
+	{#if !loading && !error && filteredOptions.length === 0}
 		<li class="px-2 py-1 text-xs text-base-content/50">Sin resultados</li>
 	{/if}
 </ul>

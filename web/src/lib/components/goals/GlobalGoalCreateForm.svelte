@@ -18,7 +18,9 @@
 		loadMore,
 		getEmployeeOptions,
 		hasMoreEmployees,
+		isLoading,
 		isLoadingMore,
+		getError,
 	} from '$lib/stores/employeePickerStore.svelte';
 	import {
 		getProfiles,
@@ -67,6 +69,7 @@
 	const root = $derived(getRoot());
 
 	const employeeOptions = $derived(getEmployeeOptions());
+	const pickerError = $derived(getError());
 
 	const deptMenuRoots = $derived.by(() => {
 		if (!root) return [] as OrgNode[];
@@ -399,9 +402,6 @@
 	class="modal"
 	{open}
 	aria-modal="true"
-	onclick={(e) => {
-		if (e.target === e.currentTarget) oncancel();
-	}}
 >
 	<div class="modal-box max-w-2xl max-h-[90vh] overflow-y-auto">
 		<div class="flex items-center justify-between mb-4">
@@ -565,6 +565,8 @@
 						loadMore={() => loadMore()}
 						allLoaded={!hasMoreEmployees()}
 						loadingMore={isLoadingMore()}
+						loading={isLoading()}
+						error={pickerError}
 					/>
 					<button
 						class="btn btn-outline btn-sm"

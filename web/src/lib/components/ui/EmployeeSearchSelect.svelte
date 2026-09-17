@@ -30,6 +30,8 @@
 	const options = $derived(store.getOptions());
 	const hasMore = $derived(store.hasMoreEmployees());
 	const loadingMore = $derived(store.isLoadingMore());
+	const loading = $derived(store.isLoading());
+	const error = $derived(store.getError());
 
 	onMount(() => {
 		store.loadFirstPage();
@@ -57,4 +59,6 @@
 	loadMore={store.loadMore}
 	allLoaded={!hasMore}
 	{loadingMore}
+	{loading}
+	{error}
 />

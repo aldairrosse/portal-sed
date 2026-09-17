@@ -85,6 +85,7 @@ class EmployeePickerStoreImpl {
 	page = $state(0);
 	debounceTimer: ReturnType<typeof setTimeout> | undefined = undefined;
 	useDev = false;
+	requestId = 0;
 	activeEmployeeId = $state<string | null>(null);
 	activeEmployeeLabel = $state<string | null>(null);
 
@@ -127,6 +128,7 @@ class EmployeePickerStoreImpl {
 
 	reset = (): void => {
 		this.clearDebounce();
+		this.requestId++;
 		this.items = [];
 		this.loading = false;
 		this.loadingMore = false;
@@ -139,27 +141,31 @@ class EmployeePickerStoreImpl {
 	};
 
 	loadFirstPage = async (query?: string): Promise<void> => {
+		const myId = ++this.requestId;
 		this.loading = true;
 		this.error = null;
 		this.page = 0;
 		this.currentQuery = query ?? '';
-		this.items = [];
 		try {
 			const fetcher = this.useDev ? fetchDevEmployees : fetchEmployees;
 			const body = await fetcher(query, 0);
+			if (myId !== this.requestId) {
+				return;
+			}
 			this.items = (body.data ?? []).map(toOption);
 			this.hasMore = body.meta?.hasMore ?? false;
 			this.allLoaded = !this.hasMore && !query;
 		} catch (e) {
+			if (myId !== this.requestId) {
+				return;
+			}
 			this.error =
 				e instanceof Error
 					? e.message
 					: 'Error desconocido al cargar empleados';
-			this.items = [];
-			this.hasMore = false;
 			this.allLoaded = false;
 		} finally {
-			this.loading = false;
+			if (myId === this.requestId) this.loading = false;
 		}
 	};
 
