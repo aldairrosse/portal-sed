@@ -19,6 +19,7 @@
 		type GlobalGoal,
 	} from '$lib/api/globalGoals';
 	import { getActivePhase } from '$lib/api/cycle.svelte';
+	import { isAsignacion, isCierre, isMedioAnio } from '$lib/types/cycle';
 	import GlobalGoalCreateForm from '$lib/components/goals/GlobalGoalCreateForm.svelte';
 	import ConfirmDialog from '$lib/components/ui/ConfirmDialog.svelte';
 	import { humanizeError } from '$lib/utils/error';
@@ -32,8 +33,9 @@
 
 	const phase = $derived(getActivePhase() ?? 'inicio-anio');
 	const canEditProgress = $derived(
-		phase === 'medio-anio' || phase === 'fin-anio',
+		isMedioAnio(phase) || isCierre(phase),
 	);
+	const canEditStructure = $derived(isAsignacion(phase));
 
 	let goals = $state<GlobalGoal[]>([]);
 	let loading = $state(true);
@@ -393,6 +395,7 @@
 											{/if}
 										</div>
 									{/if}
+								{#if canEditStructure}
 									<button
 										class="btn btn-ghost btn-xs"
 										onclick={() => openEdit(goal)}
@@ -405,21 +408,24 @@
 									>
 										Eliminar
 									</button>
+								{/if}
 								</div>
 							</div>
 						{/each}
 					</div>
 				{/if}
-				<button
-					class="btn btn-outline btn-sm mt-4 w-full"
-					onclick={() => {
-						createKind = 'qualitative';
-						editGoal = null;
-						showCreate = true;
-					}}
-				>
-					<Plus class="w-4 h-4" /> Nueva meta cualitativa
-				</button>
+				{#if canEditStructure}
+					<button
+						class="btn btn-outline btn-sm mt-4 w-full"
+						onclick={() => {
+							createKind = 'qualitative';
+							editGoal = null;
+							showCreate = true;
+						}}
+					>
+						<Plus class="w-4 h-4" /> Nueva meta cualitativa
+					</button>
+				{/if}
 			</div>
 		</details>
 
@@ -498,6 +504,7 @@
 											{/if}
 										</div>
 									{/if}
+								{#if canEditStructure}
 									<button
 										class="btn btn-ghost btn-xs"
 										onclick={() => openEdit(goal)}
@@ -510,21 +517,24 @@
 									>
 										Eliminar
 									</button>
+								{/if}
 								</div>
 							</div>
 						{/each}
 					</div>
 				{/if}
-				<button
-					class="btn btn-outline btn-sm mt-4 w-full"
-					onclick={() => {
-						createKind = 'quantitative';
-						editGoal = null;
-						showCreate = true;
-					}}
-				>
-					<Plus class="w-4 h-4" /> Nueva meta cuantitativa
-				</button>
+				{#if canEditStructure}
+					<button
+						class="btn btn-outline btn-sm mt-4 w-full"
+						onclick={() => {
+							createKind = 'quantitative';
+							editGoal = null;
+							showCreate = true;
+						}}
+					>
+						<Plus class="w-4 h-4" /> Nueva meta cuantitativa
+					</button>
+				{/if}
 			</div>
 		</details>
 	{/if}

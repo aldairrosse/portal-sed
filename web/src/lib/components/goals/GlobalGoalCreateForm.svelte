@@ -276,6 +276,13 @@
 		rules = rules.filter((_, i) => i !== index);
 	}
 
+	function clearAssignments() {
+		assignments = [];
+		rules = [];
+		employeeSelect = '';
+		error = '';
+	}
+
 	function profileLabel(profileId: string): string {
 		if (!profileId) return '';
 		return profileOptions.find((o) => o.value === profileId)?.label ?? '';
@@ -331,7 +338,7 @@
 							weight: a.weight,
 							target_value: a.targetValue,
 						}))
-					: undefined;
+					: [];
 			const rulesPayload =
 				rules.length > 0
 					? rules.map((r) => ({
@@ -344,7 +351,7 @@
 							default_weight: r.defaultWeight,
 							default_target: r.defaultTarget,
 						}))
-					: undefined;
+					: [];
 			if (goalId) {
 				await updateGlobalGoal(goalId, {
 					name: name.trim(),
@@ -746,24 +753,35 @@
 			{/if}
 		</div>
 
-		<div class="modal-action">
+		<div class="modal-action !justify-between">
 			<button
-				class="btn btn-ghost btn-sm"
-				onclick={oncancel}
-				disabled={saving}
-				type="button">Cancelar</button
-			>
-			<button
-				class="btn btn-primary btn-sm"
-				onclick={handleSave}
-				disabled={saving}
+				class="btn btn-outline btn-error btn-sm"
+				onclick={clearAssignments}
+				disabled={saving || (assignments.length === 0 && rules.length === 0)}
 				type="button"
 			>
-				{#if saving}
-					<Loader2 class="w-4 h-4 animate-spin" />
-				{/if}
-				Guardar
+				<Trash2 class="w-4 h-4" />
+				Limpiar asignaciones
 			</button>
+			<div class="flex gap-2">
+				<button
+					class="btn btn-ghost btn-sm"
+					onclick={oncancel}
+					disabled={saving}
+					type="button">Cancelar</button
+				>
+				<button
+					class="btn btn-primary btn-sm"
+					onclick={handleSave}
+					disabled={saving}
+					type="button"
+				>
+					{#if saving}
+						<Loader2 class="w-4 h-4 animate-spin" />
+					{/if}
+					Guardar
+				</button>
+			</div>
 		</div>
 	</div>
 </dialog>

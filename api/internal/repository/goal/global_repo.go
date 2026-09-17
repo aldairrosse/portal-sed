@@ -310,21 +310,52 @@ func (r *GlobalGoalRepo) UpdateGlobalGoal(ctx context.Context, goalID uuid.UUID,
 		return nil, err
 	}
 
-	if err := deleteGlobalDeps(ctx, tx, goalID); err != nil {
-		_ = tx.Rollback()
-		return nil, err
-	}
+	// nil rules + nil assignments = update solo-progreso: no tocar deps.
+	if rules != nil || assignments != nil {
+	// nil rules + nil assignments = update solo-progreso (current_value):
+	// no purgar ni re-evaluar deps.
+	if rules != nil || assignments != nil {
+		if len(rules) > 0 {
+			if err := deleteGlobalDeps(ctx, tx, goalID); err != nil {
+				_ = tx.Rollback()
+				return nil, err
+			}
+		} else {
+			if _, err := tx.GlobalGoalRule.Delete().Where(globalgoalrule.GoalID(goalID)).Exec(ctx); err != nil {
+				_ = tx.Rollback()
+				return nil, fmt.Errorf("delete global rules: %w", err)
+			}
+			if len(assignments) == 0 {
+				if _, err := tx.GlobalGoalAssignment.Delete().Where(globalgoalassignment.GoalID(goalID)).Exec(ctx); err != nil {
+					_ = tx.Rollback()
+					return nil, fmt.Errorf("delete global assignments: %w", err)
+				}
+			} else {
+				keep := make([]uuid.UUID, 0, len(assignments))
+				for _, a := range assignments {
+					if a != nil {
+						keep = append(keep, a.EmployeeID)
+					}
+				}
+				if _, err := tx.GlobalGoalAssignment.Delete().Where(globalgoalassignment.GoalID(goalID), globalgoalassignment.EmployeeIDNotIn(keep...)).Exec(ctx); err != nil {
+					_ = tx.Rollback()
+					return nil, fmt.Errorf("delete global assignments: %w", err)
+				}
+			}
+		}
 
-	for _, rule := range rules {
-		if err := r.createRule(ctx, tx.Client(), goalID, rule); err != nil {
+		for _, rule := range rules {
+			if err := r.createRule(ctx, tx.Client(), goalID, rule); err != nil {
+				_ = tx.Rollback()
+				return nil, err
+			}
+		}
+
+		if _, err := r.evaluateAndAssign(ctx, tx.Client(), goalID, rules, assignments); err != nil {
 			_ = tx.Rollback()
 			return nil, err
 		}
 	}
-
-	if _, err := r.evaluateAndAssign(ctx, tx.Client(), goalID, rules, assignments); err != nil {
-		_ = tx.Rollback()
-		return nil, err
 	}
 
 	if err := tx.Commit(); err != nil {
@@ -399,11 +430,10 @@ func (r *GlobalGoalRepo) ExecuteRules(ctx context.Context, goalID uuid.UUID) (in
 }
 
 // evaluateAndAssign materializes global_goal_assignments rows for a goal by
-// evaluating its rules over the organization's active employees and unioning the
-// result with the manual assignments. Rule semantics: departments ∩ min_direct_reports ∩ roles,
+// evaluating its rules over the organization's active employees. Rule semantics: departments ∩ min_direct_reports ∩ roles,
 // with OR within each category and identity for categories without rules.
-// Manual assignments always win. It is idempotent: an already-assigned employee is
-// never duplicated. It returns the number of newly created assignments.
+// Manual assignments apply only when there are no rules; with rules, manuals are ignored.
+// It is idempotent: an already-assigned employee is never duplicated. It returns the number of newly created assignments.
 func (r *GlobalGoalRepo) evaluateAndAssign(ctx context.Context, c *internal.Client, goalID uuid.UUID, rules []*GlobalRuleRow, manualAssignments []*GlobalAssignmentRow) (int, error) {
 	// Resolve the goal's organization from its creator.
 	creator, err := c.Goal.Query().Where(goal.ID(goalID)).Only(ctx)
@@ -438,39 +468,38 @@ func (r *GlobalGoalRepo) evaluateAndAssign(ctx context.Context, c *internal.Clie
 	assigned := 0
 	assignedSet := make(map[uuid.UUID]bool)
 
-	// Manual assignments first: they always win over rule-matched employees.
-	for _, a := range manualAssignments {
-		if assignedSet[a.EmployeeID] {
-			continue
-		}
-		exists, err := c.GlobalGoalAssignment.Query().
-			Where(globalgoalassignment.GoalID(goalID), globalgoalassignment.EmployeeID(a.EmployeeID)).
-			Exist(ctx)
-		if err != nil {
-			return 0, err
-		}
-		if exists {
-			assignedSet[a.EmployeeID] = true
-			continue
-		}
-		w := EffectiveWeight(globalWeight, a.Weight)
-		t := EffectiveTarget(globalDirection, globalUnit, globalTarget, a.TargetValue)
-		create := c.GlobalGoalAssignment.Create().
-			SetGoalID(goalID).
-			SetEmployeeID(a.EmployeeID).
-			SetWeight(w).
-			SetTargetValue(t)
-		if a.BaselineValue != nil {
-			create = create.SetBaselineValue(*a.BaselineValue)
-		}
-		if _, err := create.Save(ctx); err != nil {
-			return 0, err
-		}
-		assignedSet[a.EmployeeID] = true
-		assigned++
-	}
-
+	// Manual assignments only when there are no rules; with rules, manuals are ignored.
 	if len(rules) == 0 {
+		for _, a := range manualAssignments {
+			if assignedSet[a.EmployeeID] {
+				continue
+			}
+			exists, err := c.GlobalGoalAssignment.Query().
+				Where(globalgoalassignment.GoalID(goalID), globalgoalassignment.EmployeeID(a.EmployeeID)).
+				Exist(ctx)
+			if err != nil {
+				return 0, err
+			}
+			if exists {
+				assignedSet[a.EmployeeID] = true
+				continue
+			}
+			w := EffectiveWeight(globalWeight, a.Weight)
+			t := EffectiveTarget(globalDirection, globalUnit, globalTarget, a.TargetValue)
+			create := c.GlobalGoalAssignment.Create().
+				SetGoalID(goalID).
+				SetEmployeeID(a.EmployeeID).
+				SetWeight(w).
+				SetTargetValue(t)
+			if a.BaselineValue != nil {
+				create = create.SetBaselineValue(*a.BaselineValue)
+			}
+			if _, err := create.Save(ctx); err != nil {
+				return 0, err
+			}
+			assignedSet[a.EmployeeID] = true
+			assigned++
+		}
 		return assigned, nil
 	}
 

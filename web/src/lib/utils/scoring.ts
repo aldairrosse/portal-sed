@@ -28,6 +28,11 @@ export function progressPercent(
 ): number {
 	let pct: number;
 
+	// binario (Sí/No normalizado a 0/1, sin baseline): 0% o 100% explícito.
+	if ((target === 0 || target === 1) && baseline === undefined) {
+		return current === target ? 100 : 0;
+	}
+
 	if (direction === 'ascendente') {
 		// Guard: division by zero
 		if (target === 0) return 0;

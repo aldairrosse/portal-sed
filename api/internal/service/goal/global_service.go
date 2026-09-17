@@ -176,36 +176,44 @@ func (s *globalGoalService) UpdateGlobalGoal(ctx context.Context, goalID uuid.UU
 		}
 	}
 
-	// Convert assignments — fallback to global weight/target when 0
-	assignments := make([]*repogoal.GlobalAssignmentRow, 0, len(req.Assignments))
-	for _, a := range req.Assignments {
-		w := effectiveWeight(req.Weight, a.Weight)
-		if w <= 0 {
-			return nil, pkgerrors.ErrInvalidWeightRange
+	// Convert assignments — fallback to global weight/target when 0.
+	// nil (key ausente) = update solo-progreso: se preserva, no se purga.
+	var assignments []*repogoal.GlobalAssignmentRow
+	if req.Assignments != nil {
+		assignments = make([]*repogoal.GlobalAssignmentRow, 0, len(req.Assignments))
+		for _, a := range req.Assignments {
+			w := effectiveWeight(req.Weight, a.Weight)
+			if w <= 0 {
+				return nil, pkgerrors.ErrInvalidWeightRange
+			}
+			assignments = append(assignments, &repogoal.GlobalAssignmentRow{
+				EmployeeID:    a.EmployeeID,
+				Weight:        w,
+				TargetValue:   effectiveTarget(req.Direction, req.Unit, normalizedTarget, a.TargetValue),
+				BaselineValue: a.BaselineValue,
+			})
 		}
-		assignments = append(assignments, &repogoal.GlobalAssignmentRow{
-			EmployeeID:    a.EmployeeID,
-			Weight:        w,
-			TargetValue:   effectiveTarget(req.Direction, req.Unit, normalizedTarget, a.TargetValue),
-			BaselineValue: a.BaselineValue,
-		})
 	}
 
-	// Convert rules — fallback to global weight/target when 0
-	rules := make([]*repogoal.GlobalRuleRow, 0, len(req.Rules))
-	for _, r := range req.Rules {
-		w := effectiveWeight(req.Weight, r.DefaultWeight)
-		if w <= 0 {
-			return nil, pkgerrors.ErrInvalidWeightRange
+	// Convert rules — fallback to global weight/target when 0.
+	// nil (key ausente) = update solo-progreso: se preserva, no se purga.
+	var rules []*repogoal.GlobalRuleRow
+	if req.Rules != nil {
+		rules = make([]*repogoal.GlobalRuleRow, 0, len(req.Rules))
+		for _, r := range req.Rules {
+			w := effectiveWeight(req.Weight, r.DefaultWeight)
+			if w <= 0 {
+				return nil, pkgerrors.ErrInvalidWeightRange
+			}
+			rules = append(rules, &repogoal.GlobalRuleRow{
+				RuleType:         r.RuleType,
+				DepartmentID:     r.DepartmentID,
+				MinDirectReports: r.MinDirectReports,
+				ProfileID:        r.ProfileID,
+				DefaultWeight:    w,
+				DefaultTarget:    effectiveTarget(req.Direction, req.Unit, normalizedTarget, r.DefaultTarget),
+			})
 		}
-		rules = append(rules, &repogoal.GlobalRuleRow{
-			RuleType:         r.RuleType,
-			DepartmentID:     r.DepartmentID,
-			MinDirectReports: r.MinDirectReports,
-			ProfileID:        r.ProfileID,
-			DefaultWeight:    w,
-			DefaultTarget:    effectiveTarget(req.Direction, req.Unit, normalizedTarget, r.DefaultTarget),
-		})
 	}
 
 	return s.repo.UpdateGlobalGoal(ctx, goalID, req.Name, req.Description, req.Unit, req.Direction, req.GoalKind, req.Weight, normalizedTarget, req.CurrentValue, req.BaselineValue, assignments, rules)
