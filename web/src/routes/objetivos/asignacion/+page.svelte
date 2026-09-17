@@ -670,6 +670,10 @@
 		const employeeName = assignment.employeeName;
 		const cw = getCycleWeights();
 		const tw = getTeamWeights();
+		// Solo personales → P=100/PJ=100, igual que getWeightedScore/homeProgress.
+		const hasNoInstitutional = getInstitutionalGoals().length === 0;
+		const pW = hasNoInstitutional ? 100 : cw.pWeight;
+		const pjW = hasNoInstitutional ? 100 : tw.pjWeight;
 		const to2 = (v: number | null | undefined): number => Number((Number(v) || 0).toFixed(2));
 
 		const pushInstitutional = (goal: InstitutionalGoal, group: string) => {
@@ -713,7 +717,7 @@
 		for (const cat of getCategories()) {
 			const catEffective =
 				cat.effectiveWeight ??
-				effectiveWeightPersonal(cat.weight, cw.pWeight, tw.pjWeight);
+				effectiveWeightPersonal(cat.weight, pW, pjW);
 			for (const goal of getGoalsByCategory(cat.id)) {
 				const kpis = getKpisForGoal(goal.id);
 				const current = goal.progress ?? 0;
