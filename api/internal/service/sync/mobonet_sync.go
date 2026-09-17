@@ -35,11 +35,17 @@ type MobonetEmployee struct {
 }
 
 // Service sincroniza is_active + upsert de employees contra Mobonet y SSO.
+// SyncPuestos controla si los UPDATE de existentes tocan puesto
+// (job_title/profile_id). Default false: solo status + datos personales.
+// Los INSERT siempre asignan puesto, independiente del flag.
 type Service struct {
 	db     *sql.DB
 	client *http.Client
 	// sso opcional inyectado; si nil se usa syncSSO interno best-effort
 	sso SSOSyncer
+	// SyncPuestos: si true los UPDATE de existentes sincronizan
+	// job_title/profile_id; si false (default) solo datos personales.
+	SyncPuestos bool
 }
 
 // SSOSyncer abstrae el sync de usuarios al SSO seed (reutiliza lógica import/passSSOSeed).
@@ -501,7 +507,26 @@ func (s *Service) Run(ctx context.Context) (disabledCount int, err error) {
 			m.Email = m.EmployeeNumber + "@mock.local"
 		}
 		if rec, ok := existing[m.EmployeeNumber]; ok {
-			// Existe → refrescar si cambió. El perfil se resuelve con
+			// Existe → refrescar si cambió. Sin SyncPuestos solo datos
+			// personales; el puesto (job_title/profile_id) solo con
+			// SyncPuestos==true. El status corre siempre arriba.
+			basicStale := rec.email != m.Email || rec.firstName != m.FirstName || rec.lastName != m.LastName
+			if !s.SyncPuestos {
+				if !basicStale {
+					continue
+				}
+				_, err := s.db.ExecContext(ctx,
+					`UPDATE employees SET email=$1, first_name=$2, last_name=$3, updated_at=NOW() WHERE id=$4`,
+					m.Email, m.FirstName, m.LastName, rec.id)
+				if err != nil {
+					slog.Error("mobonet_sync: update failed", "employee_number", m.EmployeeNumber, "error", err)
+					continue
+				}
+				slog.Info("mobonet_sync: empleado actualizado", "employee_number", m.EmployeeNumber)
+				updated++
+				continue
+			}
+			// Con SyncPuestos: el perfil se resuelve con
 			// effectiveProfileName: _profile SQL como fuente primaria,
 			// gerente/coordinador por job_title prevalece, y fallback a
 			// resolveProfileName en modo HTTP/mock.

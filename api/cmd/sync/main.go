@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"database/sql"
+	"flag"
 	"log"
 	"os"
 	"strings"
@@ -17,6 +18,13 @@ import (
 // One-off manual runner: replica el cron de server/main.go (sync.NewService(db).Run)
 // sin scheduler. Propaga los logs de mobonet_sync (deshabilitado/reactivado/upsert).
 //
+// Puestos: por defecto NO se actualizan en existentes (solo status is_active
+// + datos personales); los INSERT siempre asignan puesto. Para sincronizar
+// puestos en existentes:
+//
+//	SYNC_PUESTOS=1 /opt/api/sync
+//	/opt/api/sync --sync-puestos=1   (o -p=1; el flag sobreescribe el env)
+//
 // Exit codes (convención del proyecto: server/main.go usa log.Fatal → exit 1):
 //   - DATABASE_URL vacío o error de DB/Run → log.Fatal (exit 1)
 //   - MOBONET_URL, MOBONET_KEY y SEED_DB_URL todos vacíos → log.Fatal (exit 1), no se ejecuta upsert.
@@ -25,6 +33,13 @@ import (
 func main() {
 	_ = godotenv.Load()
 	_ = godotenv.Load("../.env")
+
+	// SYNC_PUESTOS=1 sincroniza puestos (job_title/profile_id) en existentes;
+	// default 0 (solo status + datos personales). El flag lo sobreescribe.
+	syncPuestos := flag.Bool("sync-puestos", strings.TrimSpace(os.Getenv("SYNC_PUESTOS")) == "1",
+		"sincroniza puestos (job_title/profile_id) en empleados existentes [SYNC_PUESTOS]")
+	flag.BoolVar(syncPuestos, "p", *syncPuestos, "alias de --sync-puestos")
+	flag.Parse()
 
 	databaseURL := os.Getenv("DATABASE_URL")
 	if databaseURL == "" {
@@ -54,11 +69,13 @@ func main() {
 		log.Fatalf("[sync] failed to ensure evaluation profiles: %v", err)
 	}
 
-	disabled, err := syncsvc.NewService(db).Run(ctx)
+	svc := syncsvc.NewService(db)
+	svc.SyncPuestos = *syncPuestos
+	disabled, err := svc.Run(ctx)
 	if err != nil {
 		log.Fatalf("[sync] run failed: %v", err)
 	}
-	log.Printf("[sync] done (disabled=%d)", disabled)
+	log.Printf("[sync] done (disabled=%d sync_puestos=%t)", disabled, *syncPuestos)
 }
 
 // ensureEvaluationProfiles inserta idempotentemente los perfiles que
