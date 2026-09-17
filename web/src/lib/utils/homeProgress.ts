@@ -60,6 +60,12 @@ export function computeHomeProgress({
 	pjWeight,
 	phase,
 }: ComputeHomeProgressArgs): HomeProgress {
+	// Centralized: solo personales → P=100/PJ=100, ignorar config ciclo/equipo.
+	const hasNoInstitutional = institutionalGoals.length === 0;
+	if (hasNoInstitutional) {
+		pWeight = 100;
+		pjWeight = 100;
+	}
 	const personal: HomeGroupProgress = {
 		evaluated: 0,
 		total: personalGoals.length,
@@ -110,9 +116,11 @@ export function computeHomeProgress({
 				}
 			}
 		}
-		personal.value = hasOverride
-			? overridePersonal
-			: hierarchicalScore(rawPersonal, pWeight, pjWeight);
+		personal.value = hasNoInstitutional
+			? hierarchicalScore(rawPersonal, 100, 100)
+			: hasOverride
+				? overridePersonal
+				: hierarchicalScore(rawPersonal, pWeight, pjWeight);
 
 		// ─── Institucional: global + compartida ──────────────────────────
 		for (const goal of institutionalGoals) {

@@ -696,6 +696,11 @@ export function getCategoryProgressAverage(categoryId: string): number {
 export function getWeightedScore(): number {
 	const cats = storeState.data?.categories ?? [];
 	const allGoals = storeState.data?.goals ?? [];
+	const institutional = storeState.data?.institutionalGoals ?? [];
+	// Centralized: solo personales → P=100/PJ=100, ignorar config ciclo/equipo.
+	const hasNoInstitutional = institutional.length === 0;
+	const pW = hasNoInstitutional ? 100 : (cycleWeights.pWeight ?? 100);
+	const pjW = hasNoInstitutional ? 100 : (teamWeights.pjWeight ?? 100);
 	let personalTotal = 0;
 
 	for (const cat of cats) {
@@ -715,11 +720,11 @@ export function getWeightedScore(): number {
 	}
 	const hierarchicalPersonal = hierarchicalScore(
 		personalTotal,
-		cycleWeights.pWeight ?? 100,
-		teamWeights.pjWeight ?? 100,
+		pW,
+		pjW,
 	);
 	let institutionalTotal = 0;
-	for (const goal of storeState.data?.institutionalGoals ?? []) {
+	for (const goal of institutional) {
 		if (goal.progressPercent !== undefined) {
 			const pct = goal.progressPercent;
 			const eff =
@@ -727,10 +732,10 @@ export function getWeightedScore(): number {
 				(goal.source === 'shared'
 					? effectiveWeightShared(
 							goal.weight,
-							cycleWeights.pWeight ?? 100,
-							teamWeights.pjWeight ?? 100,
+							pW,
+							pjW,
 						)
-					: effectiveWeightGlobal(goal.weight, cycleWeights.pWeight ?? 100));
+					: effectiveWeightGlobal(goal.weight, pW));
 			institutionalTotal += (pct * eff) / 100;
 		}
 	}

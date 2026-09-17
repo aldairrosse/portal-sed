@@ -5,6 +5,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/sed-evaluacion-desempeno/api/internal/pkg/scoring"
+	repogoal "github.com/sed-evaluacion-desempeno/api/internal/repository/goal"
 )
 
 // WeightResolver resolves hierarchical P/PJ weights for an employee.
@@ -93,11 +94,43 @@ func (s *ScoringService) GetEmployeeScore(ctx context.Context, empID uuid.UUID) 
 // live current values (not cycle snapshots), so goals are intentionally not
 // filtered by cycleID here. Weights resolve via WeightResolver (active cycle)
 // with fallback 100. NULL snapshots are excluded via ProgressPercent (target<=0 → 0).
+// hasNoInstitutionalGoals centralizes the "solo metas personales" condition:
+// true when the employee has no global goals assigned nor shared goals linked
+// (rows without assignments/members don't count as assigned).
+func hasNoInstitutionalGoals(globals []*repogoal.GlobalGoalRow, shared []*repogoal.SharedGoalRow) bool {
+	for _, gg := range globals {
+		if gg != nil && len(gg.Assignments) > 0 {
+			return false
+		}
+	}
+	for _, sg := range shared {
+		if sg != nil && len(sg.Members) > 0 {
+			return false
+		}
+	}
+	return true
+}
+
 func (s *ScoringService) GetEmployeeHierarchicalScore(ctx context.Context, empID, cycleID uuid.UUID) (float64, error) {
 	_ = cycleID // avance: live values, no filtrar por ciclo; se conserva para scoping futuro/home
+	// List institutional goals first: centralized check needs them before weights.
+	var globals []*repogoal.GlobalGoalRow
+	var shared []*repogoal.SharedGoalRow
+	if s.assignRepo != nil {
+		if g, err := s.assignRepo.ListGlobalGoalsByEmployee(ctx, empID); err == nil {
+			globals = g
+		}
+		if sh, err := s.assignRepo.ListSharedGoalsAsMember(ctx, empID); err == nil {
+			shared = sh
+		}
+	}
 	pWeight, pjWeight := 100.0, 100.0
 	if s.weightSvc != nil {
 		pWeight, pjWeight = s.weightSvc.GetEmployeeHierarchicalWeights(ctx, empID)
+	}
+	if hasNoInstitutionalGoals(globals, shared) {
+		// Solo personales: ignorar config ciclo/equipo, personal 100%.
+		pWeight, pjWeight = 100, 100
 	}
 	if pWeight == 0 {
 		pWeight = 100
@@ -143,47 +176,41 @@ func (s *ScoringService) GetEmployeeHierarchicalScore(ctx context.Context, empID
 	personalHJ := scoring.HierarchicalScore(scoring.EmployeeScore(catScores), pWeight, pjWeight)
 
 	var globalSum, sharedSum float64
-	if s.assignRepo != nil {
-		if globals, err := s.assignRepo.ListGlobalGoalsByEmployee(ctx, empID); err == nil {
-			for _, gg := range globals {
-				if gg == nil || len(gg.Assignments) == 0 {
-					continue
-				}
-				a := gg.Assignments[0]
-				target := a.TargetValue
-				if target == 0 {
-					target = gg.TargetValue
-				}
-				baseline := 0.0
-				if a.BaselineValue != nil {
-					baseline = *a.BaselineValue
-				} else if gg.BaselineValue != nil {
-					baseline = *gg.BaselineValue
-				}
-				pct := scoring.ProgressPercent(gg.CurrentValue, target, baseline, gg.Direction)
-				globalSum += pct * a.Weight / 100 * gWeight / 100
-			}
+	for _, gg := range globals {
+		if gg == nil || len(gg.Assignments) == 0 {
+			continue
 		}
-		if shared, err := s.assignRepo.ListSharedGoalsAsMember(ctx, empID); err == nil {
-			for _, sg := range shared {
-				if sg == nil || len(sg.Members) == 0 {
-					continue
-				}
-				m := sg.Members[0]
-				target := m.TargetValue
-				if target == 0 {
-					target = sg.TargetValue
-				}
-				baseline := 0.0
-				if m.BaselineValue != nil {
-					baseline = *m.BaselineValue
-				} else if sg.BaselineValue != nil {
-					baseline = *sg.BaselineValue
-				}
-				pct := scoring.ProgressPercent(sg.CurrentValue, target, baseline, sg.Direction)
-				sharedSum += pct * m.Weight / 100 * jWeight / 100 * pWeight / 100
-			}
+		a := gg.Assignments[0]
+		target := a.TargetValue
+		if target == 0 {
+			target = gg.TargetValue
 		}
+		baseline := 0.0
+		if a.BaselineValue != nil {
+			baseline = *a.BaselineValue
+		} else if gg.BaselineValue != nil {
+			baseline = *gg.BaselineValue
+		}
+		pct := scoring.ProgressPercent(gg.CurrentValue, target, baseline, gg.Direction)
+		globalSum += pct * a.Weight / 100 * gWeight / 100
+	}
+	for _, sg := range shared {
+		if sg == nil || len(sg.Members) == 0 {
+			continue
+		}
+		m := sg.Members[0]
+		target := m.TargetValue
+		if target == 0 {
+			target = sg.TargetValue
+		}
+		baseline := 0.0
+		if m.BaselineValue != nil {
+			baseline = *m.BaselineValue
+		} else if sg.BaselineValue != nil {
+			baseline = *sg.BaselineValue
+		}
+		pct := scoring.ProgressPercent(sg.CurrentValue, target, baseline, sg.Direction)
+		sharedSum += pct * m.Weight / 100 * jWeight / 100 * pWeight / 100
 	}
 	return scoring.FinalScore(personalHJ, globalSum, sharedSum), nil
 }
