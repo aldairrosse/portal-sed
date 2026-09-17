@@ -136,9 +136,11 @@ export function computeHomeProgress({
 			const eff =
 				goal.effectiveWeight ??
 				(goal.source === 'global'
-					? effectiveWeightGlobal(goal.weight, pWeight)
-					: effectiveWeightShared(goal.weight, pWeight, pjWeight));
-			target.value += ((pct * (goal.weight ?? 0)) / 100) * (eff / 100);
+					? effectiveWeightGlobal(goal.weight ?? 0, pWeight)
+					: effectiveWeightShared(goal.weight ?? 0, pWeight, pjWeight));
+			// eff ya incluye peso meta * factor jerárquico (G o J*P), igual que
+			// backend scoring_service (pct * w/100 * G/100); no re-multiplicar por peso.
+			target.value += (pct * eff) / 100;
 		}
 	} else {
 		global.total = institutionalGoals.filter(
@@ -149,7 +151,12 @@ export function computeHomeProgress({
 		).length;
 	}
 
-	const __total = personal.value + global.value + shared.value;
+	// Cap 0-100 por segmento y total (personal+global+compartida ≤100, como FinalScore backend).
+	const clamp = (v: number) => Math.min(100, Math.max(0, v));
+	personal.value = clamp(personal.value);
+	global.value = clamp(global.value);
+	shared.value = clamp(shared.value);
+	const __total = clamp(personal.value + global.value + shared.value);
 	return {
 		personal,
 		global,
@@ -176,14 +183,15 @@ export function getHomeProgress(
 	const institutionalGoals = getInstitutionalGoals();
 	const { pWeight } = getCycleWeights();
 	const { pjWeight } = getTeamWeights();
-	// Nota: sin override explícito, hierarchicalScore(raw) equivale al camino
-	// por categoría con effectiveWeightPersonal (ver buildRows de asignación).
+	// Pesos aún null = no cargados: usar fallback org P=70/PJ=80 (cap 56),
+	// nunca 100 (daba max 100 falso). +page.svelte muestra skeleton hasta
+	// isWeightsLoaded() para evitar el parpadeo con estos interinos.
 	return computeHomeProgress({
 		personalGoals,
 		categories,
 		institutionalGoals,
-		pWeight: pWeight || 100,
-		pjWeight: pjWeight || 100,
+		pWeight: pWeight ?? 70,
+		pjWeight: pjWeight ?? 80,
 		phase,
 	});
 }

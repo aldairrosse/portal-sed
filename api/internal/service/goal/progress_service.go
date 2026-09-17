@@ -2,6 +2,7 @@ package goal
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 
@@ -9,6 +10,7 @@ import (
 	dtogoal "github.com/sed-evaluacion-desempeno/api/internal/dto/goal"
 	pkgerrors "github.com/sed-evaluacion-desempeno/api/internal/pkg/errors"
 	"github.com/sed-evaluacion-desempeno/api/internal/pkg/state"
+	repoeval "github.com/sed-evaluacion-desempeno/api/internal/repository/evaluation"
 	repogoal "github.com/sed-evaluacion-desempeno/api/internal/repository/goal"
 )
 
@@ -68,18 +70,10 @@ func (s *ProgressService) UpdateGoalProgress(ctx context.Context, empID, goalID 
 		return nil, err
 	}
 
-	// Sync core: goals.current_value always tracks the latest written value.
-	row, err := s.goalRepo.UpdateGoalCurrentValue(ctx, goalID, req.CurrentValue, &empID)
-	if err != nil {
-		return nil, err
-	}
-
-	// Snapshot of the active phase (best-effort: never fails the progress write).
-	// Phase resolution: explicit request phase wins, then cycles.current_phase,
-	// then the evaluation's own phase. Missing evaluation skips with a log.
-	// P2: phase resolution from the ACTIVE cycle phase
-	// (cycles.current_phase). Explicit request phase must match active
-	// (only active editable, prior immutable); missing defaults to active.
+	// Sync order: snapshot first for the resolved phase, then
+	// goals.current_value = COALESCE(cierre, avance) from evaluation_goals.
+	// Direct req.CurrentValue write is only a fallback when no evaluation
+	// row can be resolved. EnsureEvaluation still creates the row.
 	if s.evalLookup != nil {
 		active := ""
 		if p, perr := s.phaseCheck.CurrentPhase(ctx, empID.String()); perr == nil {
@@ -106,11 +100,39 @@ func (s *ProgressService) UpdateGoalProgress(ctx context.Context, empID, goalID 
 			if phase == "" {
 				log.Printf("[progress] skip snapshot goal=%s: no phase resolved", goalID)
 			} else if evalRow, ferr := s.evalLookup.FindByEmployeeCyclePhase(ctx, empID, cycleID, phase); ferr != nil || evalRow == nil {
-				log.Printf("[progress] skip snapshot goal=%s: no evaluation for cycle=%s phase=%s: %v", goalID, cycleID, phase, ferr)
+				if ferr != nil && !errors.Is(ferr, repoeval.ErrEvaluationNotFound) {
+					log.Printf("[progress] evaluation lookup goal=%s cycle=%s phase=%s: %v; attempting ensure", goalID, cycleID, phase, ferr)
+				}
+				ensured, eerr := s.evalLookup.EnsureEvaluation(ctx, empID, cycleID, phase, empID)
+				if eerr != nil || ensured == nil {
+					log.Printf("[progress] skip snapshot goal=%s: ensure evaluation for cycle=%s phase=%s failed: %v (lookup err: %v)", goalID, cycleID, phase, eerr, ferr)
+				} else {
+					if uerr := s.goalRepo.UpsertProgressSnapshot(ctx, ensured.ID, goalID, phase, req.CurrentValue); uerr != nil {
+						log.Printf("[progress] snapshot upsert failed goal=%s eval=%s phase=%s: %v", goalID, ensured.ID, phase, uerr)
+					}
+					if row, serr := s.goalRepo.UpdateCurrentFromSnapshot(ctx, goalID, &empID); serr == nil && row != nil {
+						return row, nil
+					} else if serr != nil {
+						log.Printf("[progress] snapshot sync failed goal=%s: %v; fallback direct", goalID, serr)
+					}
+				}
 			} else {
-				_ = s.goalRepo.UpsertProgressSnapshot(ctx, evalRow.ID, goalID, phase, req.CurrentValue)
+				if uerr := s.goalRepo.UpsertProgressSnapshot(ctx, evalRow.ID, goalID, phase, req.CurrentValue); uerr != nil {
+					log.Printf("[progress] snapshot upsert failed goal=%s eval=%s phase=%s: %v", goalID, evalRow.ID, phase, uerr)
+				}
+				if row, serr := s.goalRepo.UpdateCurrentFromSnapshot(ctx, goalID, &empID); serr == nil && row != nil {
+					return row, nil
+				} else if serr != nil {
+					log.Printf("[progress] snapshot sync failed goal=%s: %v; fallback direct", goalID, serr)
+				}
 			}
 		}
+	}
+
+	// Fallback: no evaluation row to sync from — direct write.
+	row, err := s.goalRepo.UpdateGoalCurrentValue(ctx, goalID, req.CurrentValue, &empID)
+	if err != nil {
+		return nil, err
 	}
 
 	return row, nil

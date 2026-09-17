@@ -89,41 +89,45 @@ export function formatDelta(
 }
 
 /**
- * Hierarchical weighted score: personal * P/100 * PJ/100 with fallback 100.
- * Mirrors backend scoring.HierarchicalScore.
+ * Hierarchical weighted score: personal * P/100 * PJ/100.
+ * null = aún no cargado → fallback org (P=70/PJ=80, tope personal 56);
+ * undefined = omitido → 100. Mirrors backend scoring.HierarchicalScore.
  */
 export function hierarchicalScore(
 	personalScore: number,
-	pWeight = 100,
-	pjWeight = 100,
+	pWeight: number | null | undefined = 100,
+	pjWeight: number | null | undefined = 100,
 ): number {
-	if (pWeight === 0) pWeight = 100;
-	if (pjWeight === 0) pjWeight = 100;
+	if (pWeight === null) pWeight = 70;
+	if (pjWeight === null) pjWeight = 80;
 	const r = personalScore * (pWeight / 100) * (pjWeight / 100);
 	return Math.min(Math.max(r, 0), 100);
 }
 
 export function effectiveWeightPersonal(
 	w: number,
-	pWeight = 100,
-	pjWeight = 100,
+	pWeight: number | null | undefined = 100,
+	pjWeight: number | null | undefined = 100,
 ): number {
-	if (!pWeight) pWeight = 100;
-	if (!pjWeight) pjWeight = 100;
+	if (pWeight === null) pWeight = 70;
+	if (pjWeight === null) pjWeight = 80;
 	return w * (pWeight / 100) * (pjWeight / 100);
 }
-export function effectiveWeightGlobal(w: number, pWeight = 100): number {
-	if (!pWeight) pWeight = 100;
+export function effectiveWeightGlobal(
+	w: number,
+	pWeight: number | null | undefined = 100,
+): number {
+	if (pWeight === null) pWeight = 70;
 	const g = 100 - pWeight;
 	return w * (Math.max(0, g) / 100);
 }
 export function effectiveWeightShared(
 	w: number,
-	pWeight = 100,
-	pjWeight = 100,
+	pWeight: number | null | undefined = 100,
+	pjWeight: number | null | undefined = 100,
 ): number {
-	if (!pWeight) pWeight = 100;
-	if (!pjWeight) pjWeight = 100;
+	if (pWeight === null) pWeight = 70;
+	if (pjWeight === null) pjWeight = 80;
 	const j = 100 - pjWeight;
 	return w * (Math.max(0, j) / 100) * (pWeight / 100);
 }

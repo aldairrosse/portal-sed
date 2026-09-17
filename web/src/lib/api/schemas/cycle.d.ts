@@ -190,6 +190,8 @@ export interface components {
 			 * @enum {string}
 			 */
 			current_phase: 'asignacion' | 'avance' | 'cierre';
+			/** @description Indica si es ciclo activo (único por organización) */
+			is_active: boolean;
 			/** @description Optimistic locking version */
 			version: number;
 			/**
@@ -221,6 +223,8 @@ export interface components {
 			current_phase: 'asignacion' | 'avance' | 'cierre';
 			/** Format: uuid */
 			organization_id: string;
+			/** @description Indica si es ciclo activo (único por organización) */
+			is_active: boolean;
 			/** @description Optimistic locking version */
 			version: number;
 			/** Format: date-time */

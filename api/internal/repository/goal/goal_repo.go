@@ -296,6 +296,25 @@ func (r *GoalRepo) fetchVersion(ctx context.Context, id uuid.UUID) (int, error) 
 	return version, nil
 }
 
+// UpdateCurrentFromSnapshot syncs goals.current_value from the latest
+// evaluation_goals snapshot for the goal: COALESCE(cierre, avance).
+// Returns sql.ErrNoRows when no snapshot row (or both NULL) exists so the
+// caller can fall back to a direct value write.
+func (r *GoalRepo) UpdateCurrentFromSnapshot(ctx context.Context, goalID uuid.UUID, createdBy *uuid.UUID) (*GoalRow, error) {
+	var v sql.NullFloat64
+	err := r.db.QueryRowContext(ctx,
+		`SELECT COALESCE(cierre_progress, avance_progress) FROM evaluation_goals WHERE goal_id = $1 ORDER BY updated_at DESC LIMIT 1`,
+		goalID,
+	).Scan(&v)
+	if err != nil {
+		return nil, err
+	}
+	if !v.Valid {
+		return nil, sql.ErrNoRows
+	}
+	return r.UpdateGoalCurrentValue(ctx, goalID, v.Float64, createdBy)
+}
+
 // UpsertProgressSnapshot writes the direct value into the active-phase
 // snapshot column (avance_progress/cierre_progress) of evaluation_goals.
 // "avance"/"medio-anio"/"medio_anio" -> avance_progress;

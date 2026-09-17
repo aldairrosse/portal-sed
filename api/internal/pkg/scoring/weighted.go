@@ -23,7 +23,7 @@ type CategoryScore struct {
 //
 //	score = Σ(cat_weight / 100 × Σ(goal_weight / 100 × progress%))
 //
-// Returns a value in the range [0, 100].
+// Returns a value in the range [0, 100] (clamped so personal+global+shared ≤100).
 func EmployeeScore(categories []CategoryScore) float64 {
 	var total float64
 
@@ -35,6 +35,12 @@ func EmployeeScore(categories []CategoryScore) float64 {
 		total += (cat.Weight / 100) * catScore
 	}
 
+	if total < 0 {
+		return 0
+	}
+	if total > 100 {
+		return 100
+	}
 	return total
 }
 

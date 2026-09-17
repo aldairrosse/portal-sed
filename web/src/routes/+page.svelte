@@ -7,6 +7,7 @@
 	import { normalizePhase, API_PHASE_LABELS } from '$lib/types/cycle';
 	import {
 		load as loadGoals,
+		isWeightsLoaded,
 		getGoals,
 		getAssignments,
 		getInstitutionalGoals,
@@ -85,6 +86,9 @@
 
 	// Progreso ponderado real del ciclo (0% en asignación, suma ponderada en
 	// avance/cierre). Evaluada = progressPercent recalculado > 0.
+	// loadGoals() ya espera fetchWeights; weightsReady evita el max 100 falso
+	// con pesos aún null (fallback org P=70/PJ=80 → cap 56 en homeProgress).
+	const weightsReady = $derived(isWeightsLoaded());
 	const homeProgress = $derived(
 		getHomeProgress(myAssignment?.goalIds ?? [], phase),
 	);
@@ -316,13 +320,20 @@
 						Tu progreso del ciclo
 					</h2>
 				</div>
-				<ProgressChart
-					personal={personalStats}
-					global={globalStats}
-					shared={sharedStats}
-					total={cycleTotal}
-					{phase}
-				/>
+				{#if !weightsReady}
+					<div class="flex flex-col items-center gap-3 py-8" aria-busy="true">
+						<div class="skeleton w-32 h-32 rounded-full"></div>
+						<div class="skeleton h-4 w-40"></div>
+					</div>
+				{:else}
+					<ProgressChart
+						personal={personalStats}
+						global={globalStats}
+						shared={sharedStats}
+						total={cycleTotal}
+						{phase}
+					/>
+				{/if}
 			</section>
 
 			<!-- Quick access -->

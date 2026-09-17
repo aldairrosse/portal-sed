@@ -246,6 +246,10 @@ func (m *mockGoalRepo) UpdateGoalCurrentValue(ctx context.Context, goalID uuid.U
 	return nil, nil
 }
 
+func (m *mockGoalRepo) UpdateCurrentFromSnapshot(ctx context.Context, goalID uuid.UUID, createdBy *uuid.UUID) (*repogoal.GoalRow, error) {
+	return nil, nil
+}
+
 func (m *mockGoalRepo) ListGoalsByCategory(ctx context.Context, catID uuid.UUID) ([]*repogoal.GoalRow, error) {
 	if m.listByCategoryFunc != nil {
 		return m.listByCategoryFunc(ctx, catID)

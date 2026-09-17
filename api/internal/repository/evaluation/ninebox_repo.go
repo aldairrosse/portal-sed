@@ -576,7 +576,7 @@ func (r *NineBoxRepo) GetGoalAssigneesByCycle(ctx context.Context, cycleID uuid.
 // cierre -> eg.cierre_progress (never goals.current_value when the phase is known).
 // phaseID provid comes from the matrix phase (phase_definitions.id); when it is
 // Nil or unresolvable it falls back to goals.current_value (backward compat).
-// Progress is calculated as: CASE WHEN direction='descendente' THEN (baseline-snapshot)/baseline*100 ELSE (snapshot/target)*100 END, clamped 0-100.
+// Progress is calculated as: CASE WHEN direction='descendente' THEN (baseline-snapshot)/NULLIF(baseline-target,0)*100 ELSE (snapshot/target)*100 END, clamped 0-100; baseline=target yields 0.
 func (r *NineBoxRepo) GetGoalProgressByEmployee(ctx context.Context, employeeID, cycleID, phaseID uuid.UUID) (float64, error) {
 	col := ""
 	phaseName := ""
@@ -611,8 +611,10 @@ func (r *NineBoxRepo) GetGoalProgressByEmployee(ctx context.Context, employeeID,
 	err := r.db.QueryRowContext(ctx, `
 		SELECT AVG(
 			CASE
-				WHEN g.direction = 'descendente' AND g.baseline_value IS NOT NULL AND g.baseline_value > 0
-					THEN LEAST(100, GREATEST(0, (g.baseline_value - `+valueExpr+`) / NULLIF(g.baseline_value, 0) * 100))
+				WHEN g.direction = 'descendente' AND g.baseline_value IS NOT NULL
+					THEN CASE WHEN g.baseline_value = g.target_value THEN 0
+						ELSE LEAST(100, GREATEST(0, (g.baseline_value - `+valueExpr+`) / NULLIF(g.baseline_value - g.target_value, 0) * 100))
+						END
 				ELSE
 					CASE WHEN g.target_value > 0
 						THEN LEAST(100, GREATEST(0, `+valueExpr+` / g.target_value * 100))

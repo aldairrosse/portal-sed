@@ -85,13 +85,16 @@ func (s *ScoringService) GetEmployeeScore(ctx context.Context, empID uuid.UUID) 
 	return scoring.HierarchicalScore(personalScore, pWeight, pjWeight), nil
 }
 
-// GetEmployeeHierarchicalScore returns the final 0-100 score:
+// GetEmployeeHierarchicalScore returns the final 0-100 score (same scorer as 9-box,
+// also exposed for home/avance via GoalScorer):
 // personalHJ (catW/w_i/P/PJ) + global (w_i*G) + shared (w_i*J*P).
-// cycleID scopes the score to a cycle; weights resolve via WeightResolver
-// (active cycle) with fallback 100. NULL snapshots are excluded by skipping
-// zero targets via ProgressPercent (target<=0 → 0).
+// Each goal uses ProgressPercent(current/target/baseline, direction).
+// cycleID is kept for API compatibility and future cycle scoping; avance reads
+// live current values (not cycle snapshots), so goals are intentionally not
+// filtered by cycleID here. Weights resolve via WeightResolver (active cycle)
+// with fallback 100. NULL snapshots are excluded via ProgressPercent (target<=0 → 0).
 func (s *ScoringService) GetEmployeeHierarchicalScore(ctx context.Context, empID, cycleID uuid.UUID) (float64, error) {
-	_ = cycleID
+	_ = cycleID // avance: live values, no filtrar por ciclo; se conserva para scoping futuro/home
 	pWeight, pjWeight := 100.0, 100.0
 	if s.weightSvc != nil {
 		pWeight, pjWeight = s.weightSvc.GetEmployeeHierarchicalWeights(ctx, empID)

@@ -13,6 +13,7 @@ import { isAvance, isCierre } from '$lib/types/cycle';
 import { getSession } from '$lib/api/session.svelte';
 import { client, HttpNotFoundError } from '$lib/api/client';
 import { SvelteMap, SvelteSet } from 'svelte/reactivity';
+import { getHomeProgress } from '$lib/utils/homeProgress';
 
 // ─── Internal data shape ──────────────────────────────────────────────────────
 
@@ -848,6 +849,18 @@ export function getEvaluationStatus(
 		return 'in-progress';
 
 	return 'completed';
+}
+
+/**
+ * Avance jerárquico para home (mismo scorer que 9-box): personal * P/100 * PJ/100
+ * + global (w*G) + compartida (w*J*P), en 3 segmentos con valor real 0-100.
+ * Delega en getHomeProgress (computeHomeProgress); no usa snapshots.
+ */
+export function getHomeHierarchicalProgress(
+	goalIds: string[],
+	phase: Parameters<typeof getHomeProgress>[1],
+): ReturnType<typeof getHomeProgress> {
+	return getHomeProgress(goalIds, phase);
 }
 
 // ─── Mutations: Employee Self-Evaluation ───────────────────────────────────────

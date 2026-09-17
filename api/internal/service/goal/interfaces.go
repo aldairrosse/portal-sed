@@ -33,6 +33,7 @@ type GoalRepository interface {
 	UpdateGoal(ctx context.Context, goalID, updatedBy uuid.UUID, name, description, unit, direction string, weight, targetValue float64, baselineValue *float64, expectedVersion int) (*repogoal.GoalRow, error)
 	DeleteGoal(ctx context.Context, goalID uuid.UUID) error
 	UpdateGoalCurrentValue(ctx context.Context, goalID uuid.UUID, currentValue float64, createdBy *uuid.UUID) (*repogoal.GoalRow, error)
+	UpdateCurrentFromSnapshot(ctx context.Context, goalID uuid.UUID, createdBy *uuid.UUID) (*repogoal.GoalRow, error)
 	ListGoalsByCategory(ctx context.Context, catID uuid.UUID) ([]*repogoal.GoalRow, error)
 	// UpsertProgressSnapshot writes the direct value into the active-phase
 	// snapshot column (avance_progress/cierre_progress) of evaluation_goals.
@@ -45,6 +46,7 @@ type GoalRepository interface {
 type EvaluationLookup interface {
 	FindByEmployeeCycle(ctx context.Context, employeeID, cycleID uuid.UUID) (*repoeval.EvaluationRow, error)
 	FindByEmployeeCyclePhase(ctx context.Context, employeeID, cycleID uuid.UUID, phase string) (*repoeval.EvaluationRow, error)
+	EnsureEvaluation(ctx context.Context, employeeID, cycleID uuid.UUID, phase string, actorID uuid.UUID) (*repoeval.EvaluationRow, error)
 }
 
 // KPIRepository defines the storage contract for KPIs.

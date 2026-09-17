@@ -19,29 +19,46 @@ import type { EvaluationProfile } from '$lib/types/evaluation';
 import { getActivePhase } from '$lib/api/cycle.svelte';
 import { getSession } from '$lib/api/session.svelte';
 import { client } from '$lib/api/client';
-import { getActiveCycle } from '$lib/stores/cycleStore.svelte';
+import { getActiveCycle, loadCurrent as loadCurrentCycle } from '$lib/stores/cycleStore.svelte';
 import * as notifications from '$lib/stores/notifications.svelte';
-import { progressPercent, hierarchicalScore } from '$lib/utils/scoring';
+import { progressPercent, hierarchicalScore, effectiveWeightGlobal, effectiveWeightShared } from '$lib/utils/scoring';
 import {
 	getCycleWeightConfig,
 	getTeamWeightConfig,
 } from '$lib/api/weightConfig';
 import { SvelteDate, SvelteMap } from 'svelte/reactivity';
 
-// ─── Hierarchical weights G/P J/PJ (fallback 100 per #363/#364) ───────────────
-let cycleWeights = $state({ gWeight: 100, pWeight: 100 });
-let teamWeights = $state({ jWeight: 100, pjWeight: 100 });
+// ─── Hierarchical weights G/P J/PJ (null hasta cargar; fallback org P=70/PJ=80 si fetch falla) ──
+let cycleWeights = $state<{ gWeight: number | null; pWeight: number | null }>({
+	gWeight: null,
+	pWeight: null,
+});
+let teamWeights = $state<{ jWeight: number | null; pjWeight: number | null }>({
+	jWeight: null,
+	pjWeight: null,
+});
+let weightsLoaded = $state(false);
 export function getCycleWeights() {
 	return cycleWeights;
 }
 export function getTeamWeights() {
 	return teamWeights;
 }
-export function setCycleWeights(g: number, p: number) {
-	cycleWeights = { gWeight: g || 100, pWeight: p || 100 };
+/** true cuando fetchWeights resolvió (con valores reales o fallback org). */
+export function isWeightsLoaded() {
+	return weightsLoaded;
 }
-export function setTeamWeights(j: number, pj: number) {
-	teamWeights = { jWeight: j || 100, pjWeight: pj || 100 };
+export function setCycleWeights(
+	g: number | null | undefined,
+	p: number | null | undefined,
+) {
+	cycleWeights = { gWeight: g ?? null, pWeight: p ?? null };
+}
+export function setTeamWeights(
+	j: number | null | undefined,
+	pj: number | null | undefined,
+) {
+	teamWeights = { jWeight: j ?? null, pjWeight: pj ?? null };
 }
 
 // ─── Internal data shape ──────────────────────────────────────────────────────
@@ -422,13 +439,17 @@ async function _doLoad(empIdOverride?: string): Promise<void> {
 				const c = await getCycleWeightConfig();
 				setCycleWeights(c.g_weight, c.p_weight);
 			} catch {
-				/* defaults kept */
+				// Fallback organización: P=70 (G=30) — evita max 100 falso.
+				setCycleWeights(30, 70);
 			}
 			try {
 				const t = await getTeamWeightConfig();
 				setTeamWeights(t.j_weight, t.pj_weight);
 			} catch {
-				/* defaults kept */
+				// Fallback organización: PJ=80 (J=20) — cap personal 70*80/100=56.
+				setTeamWeights(20, 80);
+			} finally {
+				weightsLoaded = true;
 			}
 		};
 		const fetchWeightsPromise = fetchWeights();
@@ -694,13 +715,23 @@ export function getWeightedScore(): number {
 	}
 	const hierarchicalPersonal = hierarchicalScore(
 		personalTotal,
-		cycleWeights.pWeight,
-		teamWeights.pjWeight,
+		cycleWeights.pWeight ?? 70,
+		teamWeights.pjWeight ?? 80,
 	);
 	let institutionalTotal = 0;
 	for (const goal of storeState.data?.institutionalGoals ?? []) {
 		if (goal.progressPercent !== undefined) {
-			institutionalTotal += (goal.weight / 100) * goal.progressPercent;
+			const pct = goal.progressPercent;
+			const eff =
+				goal.effectiveWeight ??
+				(goal.source === 'shared'
+					? effectiveWeightShared(
+							goal.weight,
+							cycleWeights.pWeight ?? 70,
+							teamWeights.pjWeight ?? 80,
+						)
+					: effectiveWeightGlobal(goal.weight, cycleWeights.pWeight ?? 70));
+			institutionalTotal += (pct * eff) / 100;
 		}
 	}
 	return hierarchicalPersonal + institutionalTotal;
@@ -920,17 +951,18 @@ export async function deleteCategory(
 
 // ─── Mutations: Goals ─────────────────────────────────────────────────────────
 
-/** Guard: solo escribir en ciclo activo. Toast + throw para create/update. */
-function requireActiveCycleOrThrow(): void {
-	const active = getActiveCycle();
-	if (!active || !active.is_active) {
-		notifications.error('Solo se puede escribir en ciclo activo');
-		throw new Error('Solo se puede escribir en ciclo activo');
-	}
+/** Guard: solo escribir en ciclo activo. Lazy-load vía /cycles/current antes de fallar. */
+async function requireActiveCycleOrThrow(): Promise<void> {
+	const cached = getActiveCycle();
+	if (cached?.is_active) return;
+	const fresh = await loadCurrentCycle();
+	if (fresh?.is_active) return;
+	notifications.error('Solo se puede escribir en ciclo activo');
+	throw new Error('Solo se puede escribir en ciclo activo');
 }
 
 export async function addGoal(goal: Goal): Promise<string> {
-	requireActiveCycleOrThrow();
+	await requireActiveCycleOrThrow();
 	const empId = getEmployeeId();
 	const { data, error: apiError } = await client.POST(
 		'/employees/{empId}/categories/{catId}/goals',
@@ -960,7 +992,7 @@ export async function updateGoal(
 	id: string,
 	updates: Partial<Omit<Goal, 'id'>>,
 ): Promise<void> {
-	requireActiveCycleOrThrow();
+	await requireActiveCycleOrThrow();
 	const { error: apiError } = await client.PUT('/goals/{goalId}', {
 		params: { path: { goalId: id } },
 		body: {
@@ -1022,7 +1054,7 @@ export async function createGoalProposal(
 		kpiIds: string[];
 	},
 ): Promise<void> {
-	requireActiveCycleOrThrow();
+	await requireActiveCycleOrThrow();
 	const { error } = await client.POST('/goals/{goalId}/proposals', {
 		params: { path: { goalId } },
 		body: {
@@ -1086,7 +1118,7 @@ export function getPendingProposal(goalId: string): GoalProposal | undefined {
 // ─── Mutations: KPIs ──────────────────────────────────────────────────────────
 
 export async function addKpi(kpi: KPI): Promise<void> {
-	requireActiveCycleOrThrow();
+	await requireActiveCycleOrThrow();
 	const { error: apiError } = await client.POST('/kpis', {
 		body: {
 			name: kpi.name,
@@ -1108,7 +1140,7 @@ export async function updateKpi(
 	id: string,
 	updates: Partial<Omit<KPI, 'id'>>,
 ): Promise<void> {
-	requireActiveCycleOrThrow();
+	await requireActiveCycleOrThrow();
 	const { error: apiError } = await client.PUT('/kpis/{kpiId}', {
 		params: { path: { kpiId: id } },
 		body: {
@@ -1131,7 +1163,7 @@ export async function updateKpi(
 }
 
 export async function deleteKpi(id: string): Promise<void> {
-	requireActiveCycleOrThrow();
+	await requireActiveCycleOrThrow();
 	const { error: apiError } = await client.DELETE('/kpis/{kpiId}', {
 		params: { path: { kpiId: id } },
 	});
@@ -1149,7 +1181,7 @@ export async function linkKpiToGoal(
 	goalId: string,
 	kpiId: string,
 ): Promise<void> {
-	requireActiveCycleOrThrow();
+	await requireActiveCycleOrThrow();
 	// Idempotent: skip if link already exists
 	const exists = (storeState.data?.goalKpiLinks ?? []).some(
 		(link) => link.goalId === goalId && link.kpiId === kpiId,
@@ -1172,7 +1204,7 @@ export async function unlinkKpiFromGoal(
 	goalId: string,
 	kpiId: string,
 ): Promise<void> {
-	requireActiveCycleOrThrow();
+	await requireActiveCycleOrThrow();
 	const { error: apiError } = await client.DELETE(
 		'/goals/{goalId}/kpis/{kpiId}',
 		{
@@ -1346,7 +1378,7 @@ export async function updateGoalProgress(
 	goalId: string,
 	progress: number,
 ): Promise<void> {
-	requireActiveCycleOrThrow();
+	await requireActiveCycleOrThrow();
 	// Clear pending debounce for this goal
 	const existing = debounceTimers.get(goalId);
 	if (existing) clearTimeout(existing);
@@ -1415,7 +1447,7 @@ export async function addGoalComment(
 	content: string,
 	phase: 'asignacion' | 'avance' | 'cierre' = 'cierre',
 ): Promise<void> {
-	requireActiveCycleOrThrow();
+	await requireActiveCycleOrThrow();
 	const { data, error: apiError } = await client.POST(
 		'/goals/{goalId}/comments',
 		{
@@ -1441,7 +1473,7 @@ export async function deleteGoalComment(
 	goalId: string,
 	commentId: string,
 ): Promise<void> {
-	requireActiveCycleOrThrow();
+	await requireActiveCycleOrThrow();
 	const { error: apiError } = await client.DELETE(
 		'/goals/{goalId}/comments/{commentId}',
 		{
@@ -1477,7 +1509,7 @@ export async function addCategoryComment(
 	content: string,
 	phase: 'asignacion' | 'avance' | 'cierre' = 'cierre',
 ): Promise<void> {
-	requireActiveCycleOrThrow();
+	await requireActiveCycleOrThrow();
 	const { data, error: apiError } = await client.POST(
 		'/categories/{catId}/comments',
 		{
@@ -1503,7 +1535,7 @@ export async function deleteCategoryComment(
 	categoryId: string,
 	commentId: string,
 ): Promise<void> {
-	requireActiveCycleOrThrow();
+	await requireActiveCycleOrThrow();
 	const { error: apiError } = await client.DELETE(
 		'/categories/{catId}/comments/{commentId}',
 		{
@@ -1569,7 +1601,7 @@ export async function addAssignmentComment(
 	content: string,
 	phase: 'asignacion' | 'avance' | 'cierre' = 'cierre',
 ): Promise<void> {
-	requireActiveCycleOrThrow();
+	await requireActiveCycleOrThrow();
 	const { data, error: apiError } = await client.POST(
 		'/assignments/{assignId}/comments',
 		{
@@ -1594,7 +1626,7 @@ export async function deleteAssignmentComment(
 	assignmentId: string,
 	commentId: string,
 ): Promise<void> {
-	requireActiveCycleOrThrow();
+	await requireActiveCycleOrThrow();
 	const { error: apiError } = await client.DELETE(
 		'/assignments/{assignId}/comments/{commentId}',
 		{

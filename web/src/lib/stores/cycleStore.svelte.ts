@@ -31,9 +31,9 @@ export function getError(): string | null {
 	return error;
 }
 
-/** Returns the cycle resolved via GET /cycles/current (no list fallback). */
+/** Returns the cycle resolved via GET /cycles/current (list fallback when unset). */
 export function getActiveCycle(): Cycle | undefined {
-	return activeCycle ?? undefined;
+	return activeCycle ?? cycles.find((c) => c.is_active) ?? undefined;
 }
 
 /** Returns activeCycle or toasts an error when there is no active cycle. */
@@ -96,6 +96,7 @@ export async function loadCycles(): Promise<void> {
 			created_at: c.created_at,
 			updated_at: c.updated_at,
 		}));
+		activeCycle = cycles.find((c) => c.is_active) ?? activeCycle ?? null;
 	} catch (e) {
 		error =
 			e instanceof Error ? e.message : 'Error desconocido al cargar ciclos';

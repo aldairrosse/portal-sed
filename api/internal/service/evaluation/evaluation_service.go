@@ -514,9 +514,17 @@ func (s *EvaluationService) GetEvaluation(ctx context.Context, id uuid.UUID) (*d
 	}
 	resp.GoalRatings = make([]dto.GoalRatingDTO, len(goals))
 	for i, g := range goals {
-		// Direct closing value: cierre ?? avance (never a derived 1-5 rating).
+		// Phase-aware snapshot read: avance shows avance_progress,
+		// cierre shows cierre_progress (fallback to the other when the
+		// phase snapshot is still empty).
 		var finalProgress *float64
-		if g.CierreProgress != nil {
+		if state.IsMidYearPhase(row.Phase) {
+			if g.AvanceProgress != nil {
+				finalProgress = g.AvanceProgress
+			} else if g.CierreProgress != nil {
+				finalProgress = g.CierreProgress
+			}
+		} else if g.CierreProgress != nil {
 			finalProgress = g.CierreProgress
 		} else if g.AvanceProgress != nil {
 			finalProgress = g.AvanceProgress

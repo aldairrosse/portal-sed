@@ -95,7 +95,7 @@
 	import { toXlsx } from '$lib/utils/export';
 	import { getActiveCycleYear } from '$lib/api/cycle.svelte';
 	import * as notifications from '$lib/stores/notifications.svelte';
-	import { loadCycles } from '$lib/stores/cycleStore.svelte';
+	import { loadCycles, loadCurrent } from '$lib/stores/cycleStore.svelte';
 	import { SvelteSet } from 'svelte/reactivity';
 
 	// ─── Load data ────────────────────────────────────────────────────────────
@@ -108,6 +108,7 @@
 	});
 	$effect(() => {
 		loadCycles();
+		loadCurrent();
 	});
 	$effect(() => {
 		loadPillars('metas');
@@ -695,7 +696,7 @@
 				Dirección: sentenceCase(goal.direction ?? ''),
 				'Valor avance': formatGoalValue(current, goal.unit),
 				'% avance': Number(pct.toFixed(2)),
-				'Avance ponderado': Number((((pct * (goal.weight ?? 0)) / 100) * (eff / 100)).toFixed(2)),
+				'Avance ponderado': Number(((pct * eff) / 100).toFixed(2)),
 				KPIs: '',
 			});
 		};
@@ -723,6 +724,7 @@
 					goal.direction,
 				).toFixed(2);
 				const pct = parseFloat(pctStr) || 0;
+				const effGoal = ((goal.weight ?? 0) / 100) * catEffective;
 				rows.push({
 					'No. Empleado': employeeNumber,
 					Empleado: employeeName,
@@ -737,7 +739,7 @@
 					Dirección: sentenceCase(goal.direction ?? ''),
 					'Valor avance': formatGoalValue(current, goal.unit),
 					'% avance': Number(pct.toFixed(2)),
-					'Avance ponderado': Number((((pct * (goal.weight ?? 0)) / 100) * (catEffective / 100)).toFixed(2)),
+					'Avance ponderado': Number(((pct * effGoal) / 100).toFixed(2)),
 					KPIs: kpis.map((k) => k.name).join(', ') || '',
 				});
 			}

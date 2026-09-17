@@ -31,6 +31,7 @@ type mockService struct {
 	revertPhaseFunc     func(ctx context.Context, cycleID string) (*svc.CycleResponse, error)
 	getCycleFunc        func(ctx context.Context, cycleID string) (*svc.CycleResponse, error)
 	getCurrentCycleFunc func(ctx context.Context, orgID string, year int) (*svc.CycleResponse, error)
+	activateCycleFunc   func(ctx context.Context, orgID, cycleID string) (*svc.CycleResponse, error)
 	listCyclesFunc      func(ctx context.Context, req svc.ListCyclesRequest) (*cursor.PaginatedList[*svc.CycleResponse], error)
 }
 
@@ -65,6 +66,13 @@ func (m *mockService) GetCurrentCycle(ctx context.Context, orgID string, year in
 		return nil, nil
 	}
 	return m.getCurrentCycleFunc(ctx, orgID, year)
+}
+
+func (m *mockService) ActivateCycle(ctx context.Context, orgID, cycleID string) (*svc.CycleResponse, error) {
+	if m.activateCycleFunc == nil {
+		return nil, nil
+	}
+	return m.activateCycleFunc(ctx, orgID, cycleID)
 }
 
 func (m *mockService) ListCycles(ctx context.Context, req svc.ListCyclesRequest) (*cursor.PaginatedList[*svc.CycleResponse], error) {
