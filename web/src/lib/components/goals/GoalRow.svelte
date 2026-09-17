@@ -18,6 +18,7 @@
 	import {
 		getCycleWeights,
 		getTeamWeights,
+		getInstitutionalGoals,
 	} from '$lib/stores/goalsStore.svelte';
 	import KpiBadge from './KpiBadge.svelte';
 	import ProgressIndicator from './ProgressIndicator.svelte';
@@ -169,6 +170,9 @@
 		if (src === 'global') return effectiveWeightGlobal(w, cw.pWeight);
 		if (src === 'shared')
 			return effectiveWeightShared(w, cw.pWeight, tw.pjWeight);
+		// Centralized: solo personales → P=100/PJ=100, ignorar config ciclo/equipo.
+		const hasNoInstitutional = getInstitutionalGoals().length === 0;
+		if (hasNoInstitutional) return effectiveWeightPersonal(w, 100, 100);
 		return effectiveWeightPersonal(w, cw.pWeight, tw.pjWeight);
 	});
 	$effect(() => {

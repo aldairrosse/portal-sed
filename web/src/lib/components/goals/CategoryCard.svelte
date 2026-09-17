@@ -16,6 +16,7 @@
 	import {
 		getCycleWeights,
 		getTeamWeights,
+		getInstitutionalGoals,
 	} from '$lib/stores/goalsStore.svelte';
 
 	interface Props {
@@ -198,10 +199,14 @@
 			return category.effectiveWeight;
 		const cw = getCycleWeights();
 		const tw = getTeamWeights();
+		// Centralized: solo personales → P=100/PJ=100, ignorar config ciclo/equipo.
+		const hasNoInstitutional = getInstitutionalGoals().length === 0;
+		const pW = hasNoInstitutional ? 100 : cw.pWeight;
+		const pjW = hasNoInstitutional ? 100 : tw.pjWeight;
 		return effectiveWeightPersonal(
 			category.weight ?? 0,
-			cw.pWeight,
-			tw.pjWeight,
+			pW,
+			pjW,
 		);
 	});
 	$effect(() => {
