@@ -104,6 +104,14 @@ func RegisterRoutes(r chi.Router, handler *CycleHandler, authSvc *authsvc.AuthSe
 			r.Post("/cycles/{id}/revert", handler.RevertPhase)
 		})
 
+		// POST /api/v1/cycles/{id}/activate
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.RequirePermission(auth.PermEvalRH))
+			r.Use(middleware.RateLimit(writeRateLimit))
+			r.Use(middleware.Idempotency(idempStore, 24*time.Hour))
+			r.Post("/cycles/{id}/activate", handler.ActivateCycle)
+		})
+
 		// --- Phase endpoints ---
 
 		// GET /api/v1/phases

@@ -336,6 +336,45 @@ func (h *CycleHandler) RevertPhase(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, result)
 }
 
+// ActivateCycle handles POST /api/v1/cycles/{id}/activate.
+// Query: organization_id (required, UUID). RBAC RH enforced by route middleware;
+// the service re-checks the role as defense in depth.
+func (h *CycleHandler) ActivateCycle(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	if id == "" {
+		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
+			"cycle id is required", nil))
+		return
+	}
+
+	if _, err := uuid.Parse(id); err != nil {
+		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
+			"cycle id must be a valid UUID v4", err))
+		return
+	}
+
+	orgID := r.URL.Query().Get("organization_id")
+	if orgID == "" {
+		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
+			"organization_id query parameter is required", nil))
+		return
+	}
+
+	if _, err := uuid.Parse(orgID); err != nil {
+		writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
+			"organization_id must be a valid UUID v4", err))
+		return
+	}
+
+	result, err := h.svc.ActivateCycle(r.Context(), orgID, id)
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, result)
+}
+
 // GetPhaseDefinitions handles GET /api/v1/phases.
 func (h *CycleHandler) GetPhaseDefinitions(w http.ResponseWriter, r *http.Request) {
 	defs, etag, err := h.phaseService.GetPhaseDefinitions(r.Context())

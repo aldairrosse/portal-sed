@@ -10,6 +10,8 @@ import type {
 import type { EvaluationProfile } from '$lib/types/evaluation';
 
 import { client } from '$lib/api/client';
+import { getActiveCycle } from '$lib/stores/cycleStore.svelte';
+import * as notifications from '$lib/stores/notifications.svelte';
 import { SvelteMap } from 'svelte/reactivity';
 
 // ─── Internal data shape ──────────────────────────────────────────────────────
@@ -411,7 +413,17 @@ export async function deletePillar(id: string): Promise<void> {
 
 // ─── Mutations: Competencies ─────────────────────────────────────────────────
 
+/** Guard: solo escribir en ciclo activo. */
+function requireActiveCycleOrThrow(): void {
+	const active = getActiveCycle();
+	if (!active || !active.is_active) {
+		notifications.error('Solo se puede escribir en ciclo activo');
+		throw new Error('Solo se puede escribir en ciclo activo');
+	}
+}
+
 export async function addCompetency(competency: Competency): Promise<void> {
+	requireActiveCycleOrThrow();
 	const { error: apiError } = await client.POST(
 		'/pillars/{pillarId}/competencies',
 		{
@@ -437,6 +449,7 @@ export async function updateCompetency(
 	id: string,
 	updates: Partial<Omit<Competency, 'id'>>,
 ): Promise<void> {
+	requireActiveCycleOrThrow();
 	const competency = data?.competencies.find((c) => c.id === id);
 	const { error: apiError } = await client.PUT('/competencies/{id}', {
 		params: {

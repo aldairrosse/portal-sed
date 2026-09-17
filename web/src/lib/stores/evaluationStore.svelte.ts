@@ -8,6 +8,7 @@ import {
 	getActiveCycleId,
 	loadCycle,
 } from '$lib/api/cycle.svelte';
+import { getActiveCycle } from '$lib/stores/cycleStore.svelte';
 import { isAvance, isCierre } from '$lib/types/cycle';
 import { getSession } from '$lib/api/session.svelte';
 import { client, HttpNotFoundError } from '$lib/api/client';
@@ -360,6 +361,22 @@ function isVersionConflict(code: string | null, message?: string): boolean {
 function isEditablePhase(): boolean {
 	const phase = getActivePhase() ?? 'inicio-anio';
 	return isAvance(phase) || isCierre(phase);
+}
+
+/** Guard: solo escribir en ciclo activo. Null cuando no hay ciclo o no coincide. */
+async function requireActiveCycleId(): Promise<string | null> {
+	let cid = getActiveCycleId();
+	if (!cid) {
+		try {
+			cid = await ensureCycleLoaded();
+		} catch {
+			return null;
+		}
+	}
+	if (!cid) return null;
+	const active = getActiveCycle();
+	if (!active || !active.is_active || active.id !== cid) return null;
+	return cid;
 }
 
 function assertValidLevel(level: unknown): asserts level is 1 | 2 | 3 | 4 | 5 {
@@ -843,6 +860,7 @@ export async function rateCompetency(
 ): Promise<void> {
 	assertValidLevel(level);
 	if (!isEditablePhase()) return;
+	if (!(await requireActiveCycleId())) return;
 
 	if (!getSession().user?.employeeId) return;
 	const evaluationId = pathIdFor(employeeId);
@@ -947,6 +965,7 @@ export async function closeGoal(
 	selfAssessment?: string,
 ): Promise<void> {
 	if (!isEditablePhase()) return;
+	if (!(await requireActiveCycleId())) return;
 
 	if (!getSession().user?.employeeId) return;
 	const query = upsertQuery(employeeId);
@@ -1053,6 +1072,7 @@ export async function rhRateCompetency(
 ): Promise<void> {
 	assertValidLevel(level);
 	if (!isEditablePhase()) return;
+	if (!(await requireActiveCycleId())) return;
 
 	if (!getSession().user?.employeeId) throw new Error('No hay sesión activa');
 	const evaluationId = pathIdFor(employeeId);
@@ -1209,6 +1229,7 @@ export async function rhAssessGoal(
 	rhAssessment?: string,
 ): Promise<void> {
 	if (!isEditablePhase()) return;
+	if (!(await requireActiveCycleId())) return;
 
 	if (!getSession().user?.employeeId) throw new Error('No hay sesión activa');
 	const query = upsertQuery(employeeId);
@@ -1307,6 +1328,7 @@ export async function addManagerComment(
 	comment: string,
 ): Promise<void> {
 	if (!isEditablePhase()) return;
+	if (!(await requireActiveCycleId())) return;
 
 	const empId = getSession().user?.employeeId;
 	if (!empId) return;
@@ -1404,6 +1426,7 @@ export async function addManagerComment(
 export async function submitSelfEvaluation(): Promise<void> {
 	const empId = getSession().user?.employeeId;
 	if (!empId) return;
+	if (!(await requireActiveCycleId())) return;
 
 	const empRatings = (data?.competencyRatings ?? []).filter(
 		(cr) => cr.employeeId === empId,
@@ -1445,6 +1468,8 @@ export async function submitSelfEvaluation(): Promise<void> {
  */
 export async function submitRHEvaluation(employeeId: string): Promise<void> {
 	if (!getSession().user?.employeeId) throw new Error('No hay sesión activa');
+	if (!(await requireActiveCycleId()))
+		throw new Error('Sin ciclo activo: no se puede enviar la evaluación');
 
 	const empRatings = (data?.competencyRatings ?? []).filter(
 		(cr) => cr.employeeId === employeeId,
@@ -1484,6 +1509,7 @@ export async function submitRHEvaluation(employeeId: string): Promise<void> {
 export async function finalizeEvaluation(reason?: string): Promise<void> {
 	const empId = getSession().user?.employeeId;
 	if (!empId) return;
+	if (!(await requireActiveCycleId())) return;
 
 	const evaluationId = await ensureEvaluationId(empId);
 	if (!evaluationId) throw new Error('Sin evaluationId: llama load() primero');

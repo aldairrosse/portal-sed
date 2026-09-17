@@ -75,5 +75,16 @@ func (c *cyclePhaseCheck) ActiveCycleID(ctx context.Context, empID string) (uuid
 	if err != nil {
 		return uuid.Nil, err
 	}
-	return c.cycleRepo.GetActiveCycleID(ctx, node.OrganizationID)
+	cycleID, err := c.cycleRepo.GetActiveCycleID(ctx, node.OrganizationID)
+	if err != nil {
+		return uuid.Nil, err
+	}
+	row, err := c.cycleRepo.GetCycle(ctx, cycleID)
+	if err != nil {
+		return uuid.Nil, err
+	}
+	if !row.IsActive {
+		return uuid.Nil, pkgerrors.ErrCycleNotActive
+	}
+	return cycleID, nil
 }

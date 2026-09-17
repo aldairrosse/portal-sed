@@ -20,6 +20,7 @@ import { getActivePhase } from '$lib/api/cycle.svelte';
 import { getSession } from '$lib/api/session.svelte';
 import { client } from '$lib/api/client';
 import { getActiveCycle } from '$lib/stores/cycleStore.svelte';
+import * as notifications from '$lib/stores/notifications.svelte';
 import { progressPercent, hierarchicalScore } from '$lib/utils/scoring';
 import {
 	getCycleWeightConfig,
@@ -919,7 +920,17 @@ export async function deleteCategory(
 
 // ─── Mutations: Goals ─────────────────────────────────────────────────────────
 
+/** Guard: solo escribir en ciclo activo. Toast + throw para create/update. */
+function requireActiveCycleOrThrow(): void {
+	const active = getActiveCycle();
+	if (!active || !active.is_active) {
+		notifications.error('Solo se puede escribir en ciclo activo');
+		throw new Error('Solo se puede escribir en ciclo activo');
+	}
+}
+
 export async function addGoal(goal: Goal): Promise<string> {
+	requireActiveCycleOrThrow();
 	const empId = getEmployeeId();
 	const { data, error: apiError } = await client.POST(
 		'/employees/{empId}/categories/{catId}/goals',
@@ -949,6 +960,7 @@ export async function updateGoal(
 	id: string,
 	updates: Partial<Omit<Goal, 'id'>>,
 ): Promise<void> {
+	requireActiveCycleOrThrow();
 	const { error: apiError } = await client.PUT('/goals/{goalId}', {
 		params: { path: { goalId: id } },
 		body: {
@@ -975,6 +987,11 @@ export async function deleteGoal(
 	id: string,
 	opts?: { skipReload?: boolean },
 ): Promise<void> {
+	const active = getActiveCycle();
+	if (!active || !active.is_active) {
+		notifications.error('Solo se puede escribir en ciclo activo');
+		return;
+	}
 	// Block deletion outside 'inicio-anio' phase
 	const phase = getActivePhase() ?? 'inicio-anio';
 	if (phase === 'medio-anio' || phase === 'fin-anio') return;
@@ -1005,6 +1022,7 @@ export async function createGoalProposal(
 		kpiIds: string[];
 	},
 ): Promise<void> {
+	requireActiveCycleOrThrow();
 	const { error } = await client.POST('/goals/{goalId}/proposals', {
 		params: { path: { goalId } },
 		body: {
@@ -1068,6 +1086,7 @@ export function getPendingProposal(goalId: string): GoalProposal | undefined {
 // ─── Mutations: KPIs ──────────────────────────────────────────────────────────
 
 export async function addKpi(kpi: KPI): Promise<void> {
+	requireActiveCycleOrThrow();
 	const { error: apiError } = await client.POST('/kpis', {
 		body: {
 			name: kpi.name,
@@ -1089,6 +1108,7 @@ export async function updateKpi(
 	id: string,
 	updates: Partial<Omit<KPI, 'id'>>,
 ): Promise<void> {
+	requireActiveCycleOrThrow();
 	const { error: apiError } = await client.PUT('/kpis/{kpiId}', {
 		params: { path: { kpiId: id } },
 		body: {
@@ -1111,6 +1131,7 @@ export async function updateKpi(
 }
 
 export async function deleteKpi(id: string): Promise<void> {
+	requireActiveCycleOrThrow();
 	const { error: apiError } = await client.DELETE('/kpis/{kpiId}', {
 		params: { path: { kpiId: id } },
 	});
@@ -1128,6 +1149,7 @@ export async function linkKpiToGoal(
 	goalId: string,
 	kpiId: string,
 ): Promise<void> {
+	requireActiveCycleOrThrow();
 	// Idempotent: skip if link already exists
 	const exists = (storeState.data?.goalKpiLinks ?? []).some(
 		(link) => link.goalId === goalId && link.kpiId === kpiId,
@@ -1150,6 +1172,7 @@ export async function unlinkKpiFromGoal(
 	goalId: string,
 	kpiId: string,
 ): Promise<void> {
+	requireActiveCycleOrThrow();
 	const { error: apiError } = await client.DELETE(
 		'/goals/{goalId}/kpis/{kpiId}',
 		{
@@ -1323,6 +1346,7 @@ export async function updateGoalProgress(
 	goalId: string,
 	progress: number,
 ): Promise<void> {
+	requireActiveCycleOrThrow();
 	// Clear pending debounce for this goal
 	const existing = debounceTimers.get(goalId);
 	if (existing) clearTimeout(existing);
@@ -1391,6 +1415,7 @@ export async function addGoalComment(
 	content: string,
 	phase: 'asignacion' | 'avance' | 'cierre' = 'cierre',
 ): Promise<void> {
+	requireActiveCycleOrThrow();
 	const { data, error: apiError } = await client.POST(
 		'/goals/{goalId}/comments',
 		{
@@ -1416,6 +1441,7 @@ export async function deleteGoalComment(
 	goalId: string,
 	commentId: string,
 ): Promise<void> {
+	requireActiveCycleOrThrow();
 	const { error: apiError } = await client.DELETE(
 		'/goals/{goalId}/comments/{commentId}',
 		{
@@ -1451,6 +1477,7 @@ export async function addCategoryComment(
 	content: string,
 	phase: 'asignacion' | 'avance' | 'cierre' = 'cierre',
 ): Promise<void> {
+	requireActiveCycleOrThrow();
 	const { data, error: apiError } = await client.POST(
 		'/categories/{catId}/comments',
 		{
@@ -1476,6 +1503,7 @@ export async function deleteCategoryComment(
 	categoryId: string,
 	commentId: string,
 ): Promise<void> {
+	requireActiveCycleOrThrow();
 	const { error: apiError } = await client.DELETE(
 		'/categories/{catId}/comments/{commentId}',
 		{
@@ -1541,6 +1569,7 @@ export async function addAssignmentComment(
 	content: string,
 	phase: 'asignacion' | 'avance' | 'cierre' = 'cierre',
 ): Promise<void> {
+	requireActiveCycleOrThrow();
 	const { data, error: apiError } = await client.POST(
 		'/assignments/{assignId}/comments',
 		{
@@ -1565,6 +1594,7 @@ export async function deleteAssignmentComment(
 	assignmentId: string,
 	commentId: string,
 ): Promise<void> {
+	requireActiveCycleOrThrow();
 	const { error: apiError } = await client.DELETE(
 		'/assignments/{assignId}/comments/{commentId}',
 		{

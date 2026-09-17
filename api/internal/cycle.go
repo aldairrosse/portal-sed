@@ -36,6 +36,9 @@ type Cycle struct {
 	FinishedAt *time.Time `json:"finished_at,omitempty"`
 	// OrganizationID holds the value of the "organization_id" field.
 	OrganizationID uuid.UUID `json:"organization_id,omitempty"`
+	// IsActive holds the value of the "is_active" field.
+	// ponytail: manual until ent regen picks up schema field is_active.
+	IsActive bool `json:"is_active,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the CycleQuery when eager-loading is set.
 	Edges        CycleEdges `json:"edges"`

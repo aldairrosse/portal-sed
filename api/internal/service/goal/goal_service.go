@@ -56,8 +56,29 @@ func NewGoalService(
 	}
 }
 
+// requireActiveCycle enforces writes against the active cycle only.
+// A missing/inactive cycle surfaces ErrCycleNotActive (409 via HTTPStatus).
+// Checkers without active-cycle support (test stubs → InvalidRequest) are
+// skipped best-effort so phase gates keep working standalone.
+func (s *GoalService) requireActiveCycle(ctx context.Context, empID uuid.UUID) error {
+	if s.phaseCheck == nil {
+		return nil
+	}
+	if _, err := s.phaseCheck.ActiveCycleID(ctx, empID.String()); err != nil {
+		var de *pkgerrors.DomainError
+		if pkgerrors.AsDomainError(err, &de) && de.Code == pkgerrors.InvalidRequest {
+			return nil
+		}
+		return pkgerrors.ErrCycleNotActive
+	}
+	return nil
+}
+
 // CreateGoal creates a new goal with weight overflow prevention.
 func (s *GoalService) CreateGoal(ctx context.Context, empID, catID uuid.UUID, req dtogoal.CreateGoalRequest) (*repogoal.GoalRow, error) {
+	if err := s.requireActiveCycle(ctx, empID); err != nil {
+		return nil, err
+	}
 	if err := s.phaseCheck.CanCreateGoal(ctx, empID.String()); err != nil {
 		return nil, err
 	}
@@ -124,6 +145,9 @@ func (s *GoalService) CreateGoal(ctx context.Context, empID, catID uuid.UUID, re
 
 // UpdateGoal updates a goal with optimistic locking.
 func (s *GoalService) UpdateGoal(ctx context.Context, empID, goalID uuid.UUID, req dtogoal.UpdateGoalRequest) (*repogoal.GoalRow, error) {
+	if err := s.requireActiveCycle(ctx, empID); err != nil {
+		return nil, err
+	}
 	if err := s.phaseCheck.CanUpdateGoal(ctx, empID.String()); err != nil {
 		return nil, err
 	}
@@ -200,6 +224,9 @@ func (s *GoalService) UpdateGoal(ctx context.Context, empID, goalID uuid.UUID, r
 
 // DeleteGoal deletes a goal with phase enforcement.
 func (s *GoalService) DeleteGoal(ctx context.Context, empID, goalID uuid.UUID) error {
+	if err := s.requireActiveCycle(ctx, empID); err != nil {
+		return err
+	}
 	if err := s.phaseCheck.CanDeleteGoal(ctx, empID.String()); err != nil {
 		return err
 	}

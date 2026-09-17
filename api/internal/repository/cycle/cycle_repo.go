@@ -50,6 +50,7 @@ type CycleRow struct {
 	StartedAt      *time.Time         `json:"started_at,omitempty"`
 	FinishedAt     *time.Time         `json:"finished_at,omitempty"`
 	OrganizationID uuid.UUID          `json:"organization_id"`
+	IsActive       bool               `json:"is_active"`
 	Version        int                `json:"version"`
 }
 
@@ -64,6 +65,7 @@ func (r *CycleRow) ToCycle() *internal.Cycle {
 		StartedAt:      r.StartedAt,
 		FinishedAt:     r.FinishedAt,
 		OrganizationID: r.OrganizationID,
+		IsActive:       r.IsActive,
 	}
 }
 
@@ -148,6 +150,7 @@ func (r *CycleRepo) CreateCycle(ctx context.Context, tx *sql.Tx, year int, orgID
 		Year:           year,
 		CurrentPhase:   cycle.CurrentPhaseAsignacion,
 		OrganizationID: orgID,
+		IsActive:       false,
 		Version:        1,
 	}, nil
 }
@@ -160,10 +163,10 @@ func (r *CycleRepo) GetCycle(ctx context.Context, id uuid.UUID) (*CycleRow, erro
 	var startedAt, finishedAt sql.NullTime
 
 	err := r.db.QueryRowContext(ctx,
-		`SELECT id, created_at, updated_at, year, current_phase, started_at, finished_at, organization_id, COALESCE(version, 1)
+		`SELECT id, created_at, updated_at, year, current_phase, started_at, finished_at, organization_id, is_active, COALESCE(version, 1)
 		 FROM cycles WHERE id = $1`, id,
 	).Scan(&row.ID, &row.CreatedAt, &row.UpdatedAt, &row.Year,
-		&currentPhase, &startedAt, &finishedAt, &row.OrganizationID, &row.Version)
+		&currentPhase, &startedAt, &finishedAt, &row.OrganizationID, &row.IsActive, &row.Version)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, errors.ErrCycleNotFound
@@ -246,7 +249,7 @@ func (r *CycleRepo) GetPhaseID(ctx context.Context, cycleID uuid.UUID, phase str
 // ListCycles returns cycles for an org, ordered by updated_at DESC, id DESC,
 // with cursor-based pagination. Uses raw SQL for full ordering control.
 func (r *CycleRepo) ListCycles(ctx context.Context, orgID uuid.UUID, year *int, phase *cycle.CurrentPhase, cursorID *uuid.UUID, cursorUpdatedAt *time.Time, limit int) ([]*CycleRow, error) {
-	query := `SELECT id, created_at, updated_at, year, current_phase, started_at, finished_at, organization_id, COALESCE(version, 1) as version
+	query := `SELECT id, created_at, updated_at, year, current_phase, started_at, finished_at, organization_id, is_active, COALESCE(version, 1) as version
 	           FROM cycles WHERE organization_id = $1`
 	args := []interface{}{orgID}
 	idx := 2
@@ -326,11 +329,11 @@ func (r *CycleRepo) LockCycleForUpdate(ctx context.Context, tx *sql.Tx, cycleID 
 	var startedAt, finishedAt sql.NullTime
 
 	err := tx.QueryRowContext(ctx,
-		`SELECT id, created_at, updated_at, year, current_phase, started_at, finished_at, organization_id, COALESCE(version, 1)
+		`SELECT id, created_at, updated_at, year, current_phase, started_at, finished_at, organization_id, is_active, COALESCE(version, 1)
 		 FROM cycles WHERE id = $1 FOR UPDATE`,
 		cycleID,
 	).Scan(&row.ID, &row.CreatedAt, &row.UpdatedAt, &row.Year,
-		&currentPhase, &startedAt, &finishedAt, &row.OrganizationID, &row.Version)
+		&currentPhase, &startedAt, &finishedAt, &row.OrganizationID, &row.IsActive, &row.Version)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, errors.ErrCycleNotFound
@@ -364,7 +367,7 @@ func (r *CycleRepo) queryCycles(ctx context.Context, query string, args ...inter
 		var startedAt, finishedAt sql.NullTime
 
 		err := rows.Scan(&row.ID, &row.CreatedAt, &row.UpdatedAt, &row.Year,
-			&currentPhase, &startedAt, &finishedAt, &row.OrganizationID, &row.Version)
+			&currentPhase, &startedAt, &finishedAt, &row.OrganizationID, &row.IsActive, &row.Version)
 		if err != nil {
 			return nil, err
 		}
@@ -418,9 +421,9 @@ func (r *CycleRepo) GetActive(ctx context.Context) (*CycleRow, error) {
 	var currentPhase string
 	var startedAt, finishedAt sql.NullTime
 	err := r.db.QueryRowContext(ctx,
-		`SELECT id, created_at, updated_at, year, current_phase, started_at, finished_at, organization_id, COALESCE(version, 1)
+		`SELECT id, created_at, updated_at, year, current_phase, started_at, finished_at, organization_id, is_active, COALESCE(version, 1)
 		 FROM cycles ORDER BY year DESC, created_at DESC LIMIT 1`,
-	).Scan(&row.ID, &row.CreatedAt, &row.UpdatedAt, &row.Year, &currentPhase, &startedAt, &finishedAt, &row.OrganizationID, &row.Version)
+	).Scan(&row.ID, &row.CreatedAt, &row.UpdatedAt, &row.Year, &currentPhase, &startedAt, &finishedAt, &row.OrganizationID, &row.IsActive, &row.Version)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil
@@ -438,13 +441,15 @@ func (r *CycleRepo) GetActive(ctx context.Context) (*CycleRow, error) {
 }
 
 // GetCurrent returns the cycle for the given year when it exists, otherwise
-// the most recent cycle ordered by year DESC, created_at DESC.
+// the active cycle (is_active) for the organization. Active resolution uses
+// only the is_active flag; finished_at is ignored. ListCycles order
+// (updated_at DESC) is history-only, NOT the source of active.
 // Returns nil, nil when neither exists.
 func (r *CycleRepo) GetCurrent(ctx context.Context, orgID uuid.UUID, year int) (*CycleRow, error) {
 	rows, err := r.queryCycles(ctx,
-		`SELECT id, created_at, updated_at, year, current_phase, started_at, finished_at, organization_id, COALESCE(version, 1) as version
-		 FROM cycles WHERE organization_id = $1
-		 ORDER BY CASE WHEN year = $2 THEN 0 ELSE 1 END, year DESC, created_at DESC LIMIT 1`,
+		`SELECT id, created_at, updated_at, year, current_phase, started_at, finished_at, organization_id, is_active, COALESCE(version, 1) as version
+		 FROM cycles WHERE organization_id = $1 AND is_active = true
+		 ORDER BY CASE WHEN year = $2 THEN 0 ELSE 1 END, year DESC, updated_at DESC, created_at DESC LIMIT 1`,
 		orgID, year,
 	)
 	if err != nil {
@@ -456,12 +461,12 @@ func (r *CycleRepo) GetCurrent(ctx context.Context, orgID uuid.UUID, year int) (
 	return rows[0], nil
 }
 
-// GetActiveCycleID finds the active (latest) cycle for an organization,
-// ordered by year DESC, created_at DESC.
+// GetActiveCycleID finds the active cycle for an organization via the
+// is_active flag (single active per org enforced by uniq_active_per_org).
 func (r *CycleRepo) GetActiveCycleID(ctx context.Context, orgID uuid.UUID) (uuid.UUID, error) {
 	var id uuid.UUID
 	err := r.db.QueryRowContext(ctx,
-		`SELECT id FROM cycles WHERE organization_id = $1 ORDER BY year DESC, created_at DESC LIMIT 1`,
+		`SELECT id FROM cycles WHERE organization_id = $1 AND is_active = true LIMIT 1`,
 		orgID,
 	).Scan(&id)
 	if err != nil {
@@ -471,6 +476,49 @@ func (r *CycleRepo) GetActiveCycleID(ctx context.Context, orgID uuid.UUID) (uuid
 		return uuid.Nil, err
 	}
 	return id, nil
+}
+
+// ActivateCycle marks cycleID as the single active cycle for the org.
+// It locks all cycles of the org, clears their flag, then sets the target
+// row. Returns errors.ErrCycleNotFound when the cycle does not belong to
+// the org.
+func (r *CycleRepo) ActivateCycle(ctx context.Context, orgID, cycleID uuid.UUID) error {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	if _, err := tx.ExecContext(ctx,
+		`SELECT 1 FROM cycles WHERE organization_id = $1 FOR UPDATE`,
+		orgID,
+	); err != nil {
+		return err
+	}
+
+	if _, err := tx.ExecContext(ctx,
+		`UPDATE cycles SET is_active = false WHERE organization_id = $1`,
+		orgID,
+	); err != nil {
+		return err
+	}
+
+	res, err := tx.ExecContext(ctx,
+		`UPDATE cycles SET is_active = true WHERE id = $1 AND organization_id = $2`,
+		cycleID, orgID,
+	)
+	if err != nil {
+		return err
+	}
+	affected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if affected == 0 {
+		return errors.ErrCycleNotFound
+	}
+
+	return tx.Commit()
 }
 
 // ReopenCompletedEvaluations reopens completed evaluations for a cycle.

@@ -103,7 +103,7 @@ paths:
     get:
       operationId: getCurrentCycle
       summary: Get the current cycle
-      description: Resolves the cycle for the given year, falling back to the active (unfinished) cycle. Must be matched before /cycles/{id}.
+      description: Resolves the cycle for the given year, falling back to the active (is_active flag) cycle for the organization. Must be matched before /cycles/{id}.
       parameters:
         - name: organization_id
           in: query
@@ -157,7 +157,7 @@ paths:
     put:
       operationId: transitionPhase
       summary: Transition a cycle's phase
-      description: Advances the cycle to the next phase with optimistic locking.
+      description: Advances the cycle to the next phase with optimistic locking. Writes against an inactive cycle return 409 CYCLE_NOT_ACTIVE.
       parameters:
         - name: id
           in: path
@@ -200,6 +200,50 @@ paths:
           $ref: "#/components/responses/Conflict"
         "428":
           $ref: "#/components/responses/PreconditionRequired"
+        "429":
+          $ref: "#/components/responses/RateLimit"
+  /cycles/{id}/activate:
+    post:
+      operationId: activateCycle
+      summary: Activate a cycle
+      description: "Marks the cycle as the single active (is_active) cycle for the organization. RBAC: RH only. Empty body; organization_id as query param."
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Cycle UUID
+        - name: organization_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Organization UUID
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Unique idempotency key (UUID v4)
+      responses:
+        "200":
+          description: Cycle activated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Cycle"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
         "429":
           $ref: "#/components/responses/RateLimit"
   /phases:
@@ -303,7 +347,7 @@ paths:
     post:
       operationId: revertPhase
       summary: Revert a cycle to the previous phase
-      description: "Reverts the cycle to the previous phase. RBAC: RH only. Empty body."
+      description: "Reverts the cycle to the previous phase. RBAC: RH only. Empty body. Writes against an inactive cycle return 409 CYCLE_NOT_ACTIVE."
       parameters:
         - name: id
           in: path
@@ -359,6 +403,10 @@ components:
           type: string
           enum: [asignacion, avance, cierre]
           description: Current cycle phase
+        is_active:
+          type: boolean
+          example: false
+          description: Indica si es ciclo activo (único por organización)
         version:
           type: integer
           description: Optimistic locking version
@@ -402,6 +450,10 @@ components:
         organization_id:
           type: string
           format: uuid
+        is_active:
+          type: boolean
+          example: false
+          description: Indica si es ciclo activo (único por organización)
         version:
           type: integer
           description: Optimistic locking version

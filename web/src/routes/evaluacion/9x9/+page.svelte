@@ -13,6 +13,7 @@
 	} from '$lib/stores/nineBoxStore.svelte';
 	import {
 		loadCycles,
+		loadCurrent,
 		getActiveCycle,
 		getError as cycleError,
 	} from '$lib/stores/cycleStore.svelte';
@@ -76,6 +77,7 @@ import { MANAGER_ROLES } from '$lib/stores/roleStore.svelte';
 			// (phaseDefinitions, cycles are $state — without untrack, reassignment triggers
 			// infinite effect re-fire → 489+ requests to /phases).
 			untrack(() => {
+				loadCurrent();
 				loadCycles();
 				loadPhases();
 			});

@@ -79,6 +79,7 @@ type CycleResponse struct {
 	Year           int     `json:"year"`
 	OrganizationID string  `json:"organization_id"`
 	CurrentPhase   string  `json:"current_phase"`
+	IsActive       bool    `json:"is_active"`
 	Version        int     `json:"version"`
 	StartedAt      *string `json:"started_at,omitempty"`
 	FinishedAt     *string `json:"finished_at,omitempty"`
@@ -93,6 +94,7 @@ func rowToResponse(r *repo.CycleRow) *CycleResponse {
 		Year:           r.Year,
 		OrganizationID: r.OrganizationID.String(),
 		CurrentPhase:   string(r.CurrentPhase),
+		IsActive:       r.IsActive,
 		Version:        r.Version,
 		CreatedAt:      r.CreatedAt.Format(time.RFC3339),
 		UpdatedAt:      r.UpdatedAt.Format(time.RFC3339),
@@ -115,6 +117,7 @@ type Service interface {
 	AdvancePhase(ctx context.Context, cycleID string, expectedVersion int, reason string) (*CycleResponse, error)
 	RevertPhase(ctx context.Context, cycleID string) (*CycleResponse, error)
 	GetCycle(ctx context.Context, cycleID string) (*CycleResponse, error)
+	ActivateCycle(ctx context.Context, orgID, cycleID string) (*CycleResponse, error)
 	GetCurrentCycle(ctx context.Context, orgID string, year int) (*CycleResponse, error)
 	ListCycles(ctx context.Context, req ListCyclesRequest) (*cursor.PaginatedList[*CycleResponse], error)
 }
@@ -129,6 +132,7 @@ type CycleRepository interface {
 	UpdatePhase(ctx context.Context, tx *sql.Tx, cycleID uuid.UUID, nextPhase cycle.CurrentPhase, expectedVersion int) error
 	GetCycle(ctx context.Context, id uuid.UUID) (*repo.CycleRow, error)
 	GetCurrent(ctx context.Context, orgID uuid.UUID, year int) (*repo.CycleRow, error)
+	ActivateCycle(ctx context.Context, orgID, cycleID uuid.UUID) error
 	InsertPhaseHistory(ctx context.Context, tx *sql.Tx, cycleID uuid.UUID, fromPhase, toPhase string, triggeredBy uuid.UUID, reason string) error
 	ReopenCompletedEvaluations(ctx context.Context, tx *sql.Tx, cycleID uuid.UUID) (int64, error)
 	ListCycles(ctx context.Context, orgID uuid.UUID, year *int, phase *cycle.CurrentPhase, cursorID *uuid.UUID, cursorUpdatedAt *time.Time, limit int) ([]*repo.CycleRow, error)
@@ -254,6 +258,11 @@ func (s *service) TransitionPhase(ctx context.Context, req TransitionPhaseReques
 		return nil, err
 	}
 
+	// Step 1b: Only the active cycle can transition.
+	if !row.IsActive {
+		return nil, pkgerrors.ErrCycleNotActive
+	}
+
 	// Step 2: Validate optimistic lock
 	if row.Version != req.ExpectedVersion {
 		return nil, pkgerrors.ErrConcurrentUpdate.WithDetails(
@@ -363,6 +372,11 @@ func (s *service) RevertPhase(ctx context.Context, cycleID string) (*CycleRespon
 		return nil, err
 	}
 
+	// Only the active cycle can transition.
+	if !row.IsActive {
+		return nil, pkgerrors.ErrCycleNotActive
+	}
+
 	idx := phaseIndex(row.CurrentPhase)
 	if idx <= 0 {
 		return nil, pkgerrors.NewDomainError(pkgerrors.PhaseNotAdvanceable,
@@ -418,8 +432,39 @@ func (s *service) GetCycle(ctx context.Context, cycleID string) (*CycleResponse,
 	return rowToResponse(row), nil
 }
 
+// ActivateCycle validates RH permission, marks cycleID as the single active
+// cycle for the org (repo uses SELECT FOR UPDATE + flag swap in tx), and
+// returns the activated cycle.
+func (s *service) ActivateCycle(ctx context.Context, orgID, cycleID string) (*CycleResponse, error) {
+	if role, ok := auth.GetRole(ctx); ok && !auth.HasPermission(role, auth.PermEvalRH) {
+		return nil, pkgerrors.ErrForbidden
+	}
+
+	oid, err := uuid.Parse(orgID)
+	if err != nil {
+		return nil, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
+			"organization_id must be a valid UUID v4", err)
+	}
+	id, err := uuid.Parse(cycleID)
+	if err != nil {
+		return nil, pkgerrors.NewDomainError(pkgerrors.InvalidRequest,
+			"cycle_id must be a valid UUID v4", err)
+	}
+
+	if err := s.cycleRepo.ActivateCycle(ctx, oid, id); err != nil {
+		return nil, err
+	}
+
+	row, err := s.cycleRepo.GetCycle(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	return rowToResponse(row), nil
+}
+
 // GetCurrentCycle resolves the cycle for the given year, falling back to the
-// latest cycle. Returns 404 when neither exists.
+// active (is_active) cycle for the organization. Returns 404 when neither exists.
 func (s *service) GetCurrentCycle(ctx context.Context, orgID string, year int) (*CycleResponse, error) {
 	oid, err := uuid.Parse(orgID)
 	if err != nil {

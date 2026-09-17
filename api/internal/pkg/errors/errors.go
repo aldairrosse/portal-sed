@@ -14,6 +14,7 @@ const (
 	CycleNotFound          DomainCode = "CYCLE_NOT_FOUND"
 	InvalidTransition      DomainCode = "INVALID_TRANSITION"
 	CycleAlreadyActive     DomainCode = "CYCLE_ALREADY_ACTIVE"
+	CycleNotActive         DomainCode = "CYCLE_NOT_ACTIVE"
 	PhaseNotAdvanceable    DomainCode = "PHASE_NOT_ADVANCEABLE"
 	ConcurrentUpdate       DomainCode = "CONCURRENT_UPDATE"
 	IdempotencyKeyConflict DomainCode = "IDEMPOTENCY_KEY_CONFLICT"
@@ -93,6 +94,7 @@ var (
 	ErrCycleNotFound       = &DomainError{Code: CycleNotFound, Message: "El ciclo solicitado no fue encontrado."}
 	ErrInvalidTransition   = &DomainError{Code: InvalidTransition, Message: "La transición de fase solicitada no es válida desde la fase actual."}
 	ErrCycleAlreadyActive  = &DomainError{Code: CycleAlreadyActive, Message: "Ya existe un ciclo para esta organización y año."}
+	ErrCycleNotActive    = &DomainError{Code: CycleNotActive, Message: "El ciclo no está activo; la escritura solo está permitida en el ciclo activo."}
 	ErrPhaseNotAdvanceable = &DomainError{Code: PhaseNotAdvanceable, Message: "La fase actual no se puede avanzar; condiciones no cumplidas."}
 	ErrConcurrentUpdate    = &DomainError{Code: ConcurrentUpdate, Message: "El recurso fue modificado por otra solicitud; reintente con la versión más reciente."}
 	ErrIdempotencyConflict = &DomainError{Code: IdempotencyKeyConflict, Message: "La clave de idempotencia ya fue usada con un payload diferente."}
@@ -151,7 +153,7 @@ func HTTPStatus(err error) int {
 	case CycleNotFound, CategoryNotFound, GoalNotFound, KpiNotFound, TreeNotFound, NodeNotFound, EmployeeNotFound, OrganizationNotFound, ScopeNotFound,
 		"EVALUATION_NOT_FOUND", "MATRIX_NOT_FOUND", "ENTRY_NOT_FOUND":
 		return 404
-	case InvalidTransition, CycleAlreadyActive, PhaseNotAdvanceable, ConcurrentUpdate, IdempotencyKeyConflict, DuplicateCategoryName, KpiLinkedCannotDelete, ConcurrentModification, NodeHasChildren, StaleVersion,
+	case InvalidTransition, CycleAlreadyActive, CycleNotActive, PhaseNotAdvanceable, ConcurrentUpdate, IdempotencyKeyConflict, DuplicateCategoryName, KpiLinkedCannotDelete, ConcurrentModification, NodeHasChildren, StaleVersion,
 		"EVALUATION_ALREADY_FINALIZED":
 		return 409
 	case PhaseRestricted, GoalNotDeletableInPhase, "FORBIDDEN", OTPRequired:

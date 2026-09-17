@@ -96,6 +96,9 @@ func (s *EvaluationService) SubmitSelfEvaluation(ctx context.Context, evaluation
 	if err != nil {
 		return nil, err
 	}
+	if err := s.requireActiveCycle(ctx, row.EmployeeID, row.CycleID); err != nil {
+		return nil, err
+	}
 
 	if err := s.validatePhase(ctx, row.CycleID); err != nil {
 		return nil, err
@@ -170,6 +173,9 @@ func (s *EvaluationService) SubmitSelfEvaluation(ctx context.Context, evaluation
 func (s *EvaluationService) UpdateSelfEvaluation(ctx context.Context, evaluationID uuid.UUID, req dto.SelfEvaluationRequest, ifMatch int) (*dto.EvaluationDetailResponse, error) {
 	row, err := s.evalRepo.GetByID(ctx, evaluationID)
 	if err != nil {
+		return nil, err
+	}
+	if err := s.requireActiveCycle(ctx, row.EmployeeID, row.CycleID); err != nil {
 		return nil, err
 	}
 	currentPhase, err := s.cycleCheck.GetPhase(ctx, row.CycleID)
@@ -279,6 +285,9 @@ func (s *EvaluationService) SubmitRHEvaluation(ctx context.Context, evaluationID
 	if err != nil {
 		return nil, err
 	}
+	if err := s.requireActiveCycle(ctx, row.EmployeeID, row.CycleID); err != nil {
+		return nil, err
+	}
 	if err := s.validatePhase(ctx, row.CycleID); err != nil {
 		return nil, err
 	}
@@ -335,6 +344,9 @@ func (s *EvaluationService) SubmitRHEvaluation(ctx context.Context, evaluationID
 func (s *EvaluationService) UpdateRHEvaluation(ctx context.Context, evaluationID uuid.UUID, req dto.RHEvaluationRequest, ifMatch int) (*dto.EvaluationDetailResponse, error) {
 	row, err := s.evalRepo.GetByID(ctx, evaluationID)
 	if err != nil {
+		return nil, err
+	}
+	if err := s.requireActiveCycle(ctx, row.EmployeeID, row.CycleID); err != nil {
 		return nil, err
 	}
 	currentPhase, err := s.cycleCheck.GetPhase(ctx, row.CycleID)
@@ -411,6 +423,9 @@ func (s *EvaluationService) FinalizeEvaluation(ctx context.Context, evaluationID
 
 	row, err := s.evalRepo.GetByID(ctx, evaluationID)
 	if err != nil {
+		return nil, err
+	}
+	if err := s.requireActiveCycle(ctx, row.EmployeeID, row.CycleID); err != nil {
 		return nil, err
 	}
 	if row.State == state.StateCompleted.String() {
@@ -539,6 +554,9 @@ func (s *EvaluationService) UpdateGoalState(ctx context.Context, evaluationID uu
 	if err != nil {
 		return nil, err
 	}
+	if err := s.requireActiveCycle(ctx, row.EmployeeID, row.CycleID); err != nil {
+		return nil, err
+	}
 	// ponytail: optimistic lock — reject if version doesn't match.
 	if ifMatch > 0 && row.Version != ifMatch {
 		return nil, errors.ErrConcurrentUpdate
@@ -632,6 +650,9 @@ func (s *EvaluationService) UpdateGoalComments(ctx context.Context, evaluationID
 	if err != nil {
 		return nil, err
 	}
+	if err := s.requireActiveCycle(ctx, row.EmployeeID, row.CycleID); err != nil {
+		return nil, err
+	}
 	// ponytail: optimistic lock — reject if version doesn't match.
 	if ifMatch > 0 && row.Version != ifMatch {
 		return nil, errors.ErrConcurrentUpdate
@@ -685,6 +706,9 @@ func (s *EvaluationService) ResolveEvaluationID(ctx context.Context, employeeID,
 // EnsureEvaluation finds or creates the evaluation for employee+cycle.
 // Empty phase defaults to the cycle's current phase.
 func (s *EvaluationService) EnsureEvaluation(ctx context.Context, employeeID, cycleID uuid.UUID, phase string) (uuid.UUID, error) {
+	if err := s.requireActiveCycle(ctx, employeeID, cycleID); err != nil {
+		return uuid.Nil, err
+	}
 	if phase == "" {
 		if p, err := s.cycleCheck.GetPhase(ctx, cycleID); err == nil && p != "" {
 			phase = p
@@ -842,6 +866,23 @@ func (s *EvaluationService) GetCompetencyResults(ctx context.Context, cycleID uu
 			Limit:   limit,
 		},
 	}, nil
+}
+
+// requireActiveCycle enforces writes against the employee's active cycle only.
+// Mismatch or unresolvable active cycle surfaces ErrCycleNotActive (409 via
+// HTTPStatus). Services wired without org repos (test fakes) skip best-effort.
+func (s *EvaluationService) requireActiveCycle(ctx context.Context, employeeID, cycleID uuid.UUID) error {
+	if s.empRepo == nil || s.nodeRepo == nil || s.cycleCheck == nil {
+		return nil
+	}
+	activeID, err := s.ResolveActiveCycleID(ctx, employeeID)
+	if err != nil {
+		return errors.ErrCycleNotActive
+	}
+	if activeID != cycleID {
+		return errors.ErrCycleNotActive
+	}
+	return nil
 }
 
 func (s *EvaluationService) validatePhase(ctx context.Context, cycleID uuid.UUID) error {

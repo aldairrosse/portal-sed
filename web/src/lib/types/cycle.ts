@@ -11,6 +11,7 @@ export interface Cycle {
 	year: number;
 	current_phase: ApiCyclePhase;
 	version: number;
+	is_active: boolean;
 	started_at: string | null;
 	finished_at: string | null;
 	created_at: string;
@@ -99,10 +100,14 @@ export const API_PHASE_LABELS: Record<ApiCyclePhase, string> = {
 	cierre: 'Fin de año',
 };
 
-/** R4: ciclo editable si está activo (sin finished_at) o su año es el actual. */
+/** R4: ciclo editable si el flag is_active es true; legacy (sin flag) si está activo (sin finished_at) o su año es el actual. */
 export function isCycleActive(
-	cycle: Pick<Cycle, 'year'> & { finished_at?: string | null },
+	cycle: Pick<Cycle, 'year'> & {
+		finished_at?: string | null;
+		is_active?: boolean;
+	},
 ): boolean {
+	if (typeof cycle.is_active === 'boolean') return cycle.is_active;
 	if (cycle.finished_at === null || cycle.finished_at === undefined)
 		return true;
 	return cycle.year === new Date().getFullYear();

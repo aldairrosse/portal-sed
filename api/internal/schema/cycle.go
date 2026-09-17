@@ -43,6 +43,8 @@ func (Cycle) Fields() []ent.Field {
 			Optional().
 			Nillable(),
 		field.UUID("organization_id", uuid.UUID{}),
+		field.Bool("is_active").
+			Default(false),
 	}
 }
 

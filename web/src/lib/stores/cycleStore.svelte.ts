@@ -1,6 +1,6 @@
 import { client } from '$lib/api/client';
 import { getSession } from '$lib/api/session.svelte';
-import { loadCycle } from '$lib/api/cycle.svelte';
+import { loadCycle, activateCycle as apiActivateCycle } from '$lib/api/cycle.svelte';
 import * as notifications from '$lib/stores/notifications.svelte';
 import type { Cycle, PhaseTransition, ApiCyclePhase } from '$lib/types/cycle';
 import { normalizePhase } from '$lib/types/cycle';
@@ -9,6 +9,7 @@ import type { components } from '$lib/api/schemas/cycle';
 // ─── Module state ───────────────────────────────────────────────────────────────
 
 let cycles = $state<Cycle[]>([]);
+let activeCycle = $state<Cycle | null>(null);
 // ponytail: plain vars, NOT $state — prevents $effect in consumers from tracking
 // loading/loaded changes and re-firing in an infinite loop (same pattern as phaseStore).
 let _loading = false;
@@ -30,9 +31,19 @@ export function getError(): string | null {
 	return error;
 }
 
-/** Returns the active (not closed) cycle, if any. Phase is source of truth: backend keeps finished_at NULL during cierre. */
+/** Returns the cycle resolved via GET /cycles/current (no list fallback). */
 export function getActiveCycle(): Cycle | undefined {
-	return cycles.find((c) => c.current_phase !== 'cierre');
+	return activeCycle ?? undefined;
+}
+
+/** Returns activeCycle or toasts an error when there is no active cycle. */
+export function requireActiveCycle(): Cycle | null {
+	const current = getActiveCycle();
+	if (!current || !current.is_active) {
+		notifications.error('No hay ciclo activo');
+		return null;
+	}
+	return current;
 }
 
 /** Returns true if there is a cycle for the given year. */
@@ -75,6 +86,10 @@ export async function loadCycles(): Promise<void> {
 			year: c.year,
 			current_phase: normalizePhase(c.current_phase),
 			version: c.version,
+			is_active:
+				(c as { is_active?: boolean }).is_active ??
+				// ponytail: CycleLight aún no trae is_active en schemas — legacy: inactivo por defecto, no enmascarar sin activo
+				false,
 		// ponytail: CycleLight has no started_at/finished_at — keep null; cierre is detected via current_phase, not finished_at
 		started_at: null,
 		finished_at: null,
@@ -99,7 +114,57 @@ export function reload(): Promise<void> {
 	return loadCycles();
 }
 
+/** Resolves the real active cycle via GET /cycles/current (source of truth for tabs). No year fallback. */
+export async function loadCurrent(year?: number): Promise<Cycle | null> {
+	const orgId = getSession().user?.organizationId;
+	if (!orgId) {
+		error = 'No hay organización en la sesión';
+		return null;
+	}
+	try {
+		const { data, error: apiError } = await client.GET('/cycles/current', {
+			params: { query: { organization_id: orgId, ...(year !== undefined ? { year } : {}) } },
+		});
+		if (apiError || !data) return null;
+		const raw = data as components['schemas']['Cycle'];
+		activeCycle = {
+			id: raw.id,
+			organization_id: raw.organization_id,
+			year: raw.year,
+			current_phase: normalizePhase(raw.current_phase),
+			version: raw.version,
+			is_active: (raw as { is_active?: boolean }).is_active ?? false,
+			started_at: raw.started_at ?? null,
+			finished_at: raw.finished_at ?? null,
+			created_at: raw.created_at,
+			updated_at: raw.updated_at,
+		};
+		return activeCycle;
+	} catch {
+		return null;
+	}
+}
+
 // ─── Mutations ──────────────────────────────────────────────────────────────────
+
+/** Activates a cycle via POST /cycles/{id}/activate and refreshes the store. */
+export async function activate(cycleId: string): Promise<boolean> {
+	const ok = await apiActivateCycle(cycleId);
+	if (!ok) {
+		error = 'Error al activar ciclo';
+		return false;
+	}
+	cycles = cycles.map((c) => ({ ...c, is_active: c.id === cycleId }));
+	const fresh = await getCycle(cycleId);
+	if (fresh) {
+		cycles = cycles.map((c) => (c.id === cycleId ? fresh : { ...c, is_active: false }));
+		activeCycle = fresh;
+	} else {
+		await loadCurrent();
+	}
+	loadCycle();
+	return true;
+}
 
 export async function createCycle(year: number): Promise<Cycle | null> {
 	if (hasCycleForYear(year)) {
@@ -134,12 +199,14 @@ export async function createCycle(year: number): Promise<Cycle | null> {
 			year: raw.year,
 			current_phase: normalizePhase(raw.current_phase),
 			version: raw.version,
+			is_active: (raw as { is_active?: boolean }).is_active ?? false,
 			started_at: raw.started_at ?? null,
 			finished_at: raw.finished_at ?? null,
 			created_at: raw.created_at,
 			updated_at: raw.updated_at,
 		};
 		cycles = [created, ...cycles];
+		activeCycle = created;
 		return created;
 	} catch (e) {
 		error = e instanceof Error ? e.message : 'Error al crear ciclo';
@@ -164,6 +231,7 @@ async function getCycle(cycleId: string): Promise<Cycle | null> {
 		year: raw.year,
 		current_phase: normalizePhase(raw.current_phase),
 		version: raw.version,
+		is_active: (raw as { is_active?: boolean }).is_active ?? false,
 		started_at: raw.started_at ?? null,
 		finished_at: raw.finished_at ?? null,
 		created_at: raw.created_at,
@@ -220,6 +288,15 @@ export async function advancePhase(
 				}
 			: c,
 		);
+		if (activeCycle?.id === cycleId) {
+			activeCycle = {
+				...activeCycle,
+				current_phase: normalizePhase(raw.current_phase),
+				version: raw.version,
+				finished_at: raw.finished_at ?? null,
+				updated_at: raw.updated_at,
+			};
+		}
 		// sync getActivePhase() consumers (cycle.svelte.ts)
 		loadCycle();
 		return true;
@@ -279,6 +356,15 @@ export async function revertPhase(cycleId: string): Promise<boolean> {
 					}
 				: c,
 		);
+		if (activeCycle?.id === cycleId) {
+			activeCycle = {
+				...activeCycle,
+				current_phase: normalizePhase(raw.current_phase),
+				version: raw.version,
+				finished_at: raw.finished_at ?? null,
+				updated_at: raw.updated_at,
+			};
+		}
 		// sync getActivePhase() consumers (cycle.svelte.ts)
 		loadCycle();
 		return true;

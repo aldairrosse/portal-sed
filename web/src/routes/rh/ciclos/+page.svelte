@@ -9,6 +9,7 @@
 		revertPhase,
 		hasCycleForYear,
 		assignAll,
+		activate,
 	} from '$lib/stores/cycleStore.svelte';
 	import { getPhaseLabel, normalizePhase } from '$lib/types/cycle';
 	import type { ApiCyclePhase } from '$lib/types/cycle';
@@ -35,6 +36,8 @@
 	let localError = $state<string | null>(null);
 	let assigningId = $state<string | null>(null);
 	let confirmAssign = $state<string | null>(null);
+	let activatingId = $state<string | null>(null);
+	let confirmActivate = $state<string | null>(null);
 	let assignResult = $state<{
 		assigned: number;
 		skipped: number;
@@ -71,14 +74,11 @@
 	}
 
 	function cycleStatusLabel(cycle: (typeof cycles)[0]): string {
-		// ponytail: current_phase is source of truth; backend keeps finished_at NULL during cierre
-		if (cycle.current_phase === 'cierre') return 'Cerrado';
-		return 'Activo';
+		return cycle.is_active ? 'Activo' : 'Cerrado';
 	}
 
 	function cycleStatusBadgeClass(cycle: (typeof cycles)[0]): string {
-		if (cycle.current_phase === 'cierre') return 'badge-ghost';
-		return 'badge-primary';
+		return cycle.is_active ? 'badge-success' : 'badge-ghost';
 	}
 
 	async function handleCreate() {
@@ -118,6 +118,22 @@
 	function requestAssignAll(cycleId: string) {
 		confirmAssign = cycleId;
 		assignResult = null;
+	}
+
+	function requestActivate(cycleId: string) {
+		confirmActivate = cycleId;
+	}
+
+	function cancelActivate() {
+		confirmActivate = null;
+	}
+
+	async function confirmActivateAction() {
+		if (!confirmActivate) return;
+		activatingId = confirmActivate;
+		await activate(confirmActivate);
+		activatingId = null;
+		confirmActivate = null;
 	}
 
 	function cancelAssign() {
@@ -198,6 +214,19 @@
 						</div>
 
 						<div class="card-actions justify-end mt-2">
+							{#if !cycle.is_active}
+								<button
+									class="btn btn-success btn-sm"
+									onclick={() => requestActivate(cycle.id)}
+									disabled={activatingId === cycle.id}
+								>
+									{#if activatingId === cycle.id}
+										<span class="loading loading-spinner loading-xs"></span>
+									{:else}
+										Activar
+									{/if}
+								</button>
+							{/if}
 							{#if getPrevPhase(cycle.current_phase)}
 								<button
 									class="btn btn-ghost btn-sm"
@@ -342,6 +371,35 @@
 		</div>
 		<form method="dialog" class="modal-backdrop">
 			<button onclick={cancelAdvance}>close</button>
+		</form>
+	</dialog>
+{/if}
+
+{#if confirmActivate}
+	{@const cycleToActivate = cycles.find((c) => c.id === confirmActivate)}
+	<dialog class="modal modal-open">
+		<div class="modal-box">
+			<h3 class="font-bold text-lg">Activar ciclo</h3>
+			<p class="py-4">
+				¿Deseas activar el ciclo {cycleToActivate?.year}? El ciclo activo actual
+				se cerrará.
+			</p>
+			<div class="modal-action">
+				<button class="btn btn-ghost" onclick={cancelActivate}>Cancelar</button>
+				<button
+					class="btn btn-success"
+					onclick={confirmActivateAction}
+					disabled={activatingId !== null}
+				>
+					{#if activatingId}
+						<span class="loading loading-spinner loading-xs"></span>
+					{/if}
+					Activar
+				</button>
+			</div>
+		</div>
+		<form method="dialog" class="modal-backdrop">
+			<button onclick={cancelActivate}>close</button>
 		</form>
 	</dialog>
 {/if}
