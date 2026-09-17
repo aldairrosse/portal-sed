@@ -432,6 +432,7 @@ describe('goalsStore – error handling', () => {
 		expect(store.getCategories()).toEqual([]);
 		expect(store.getGoals()).toEqual([]);
 		expect(store.getKpis()).toEqual([]);
-		expect(store.getAssignments()).toEqual([]);
+		expect(store.getAssignments()).toHaveLength(1);
+		expect(store.getAssignments()[0].status).toBe('no_iniciado');
 	});
 });

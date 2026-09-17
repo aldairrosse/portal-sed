@@ -11,7 +11,6 @@
 		getPillars,
 		getCompetenciesByPillar,
 	} from '$lib/stores/competencyStore.svelte';
-	import { getNodeById } from '$lib/stores/orgHierarchyStore.svelte';
 	import {
 		getGoals,
 		getAssignmentByEmployee,
@@ -24,7 +23,7 @@
 	import PageSkeleton from '$lib/components/ui/PageSkeleton.svelte';
 	import ErrorState from '$lib/components/ui/ErrorState.svelte';
 	import EvaluationStatusBadge from './EvaluationStatusBadge.svelte';
-	import { PROFILE_LABELS, PHASE_LABELS } from '$lib/types/evaluation';
+	import { PHASE_LABELS } from '$lib/types/evaluation';
 	import { titleCase } from '$lib/utils/text';
 	import { getActivePhase, getActiveCycleYear, getActiveCycleId } from '$lib/api/cycle.svelte';
 	import { isMedioAnio as isMedioAnioPhase, normalizePhase } from '$lib/types/cycle';
@@ -170,24 +169,6 @@
 		return employees.find((e) => e.employeeId === employeeId)?.goalIds ?? [];
 	}
 
-	const progressMap = $derived(
-		new Map(
-			filteredRows.map((row) => {
-				const empGoals = goals.filter((g) => goalIdsOf(row.id).includes(g.id));
-				const totalTarget = empGoals.reduce((sum, g) => sum + g.targetValue, 0);
-				const totalProgress = empGoals.reduce(
-					(sum, g) => sum + (g.progress ?? 0),
-					0,
-				);
-				const pct =
-					totalTarget > 0
-						? Math.min((totalProgress / totalTarget) * 100, 100)
-						: null;
-				return [row.id, pct] as const;
-			}),
-		),
-	);
-
 	const currentPhase = $derived(getActivePhase() ?? 'inicio-anio');
 
 	// Same derivation as Detail L132-134: medio-anio -> avance, else cierre.
@@ -237,15 +218,6 @@
 		return getStatus(employeeId) === 'completed';
 	}
 
-	function getProfileLabel(employeeId: string): string {
-		const node = getNodeById(employeeId);
-		if (!node) return '—';
-		return (
-			PROFILE_LABELS[node.profileId as keyof typeof PROFILE_LABELS] ??
-			node.profileId
-		);
-	}
-
 	function dtoStatusOf(employeeId: string): EvaluationStatus | null {
 		const row = rows.find((r) => r.id === employeeId);
 		const raw = row?.evaluationStatus ?? row?.evaluation_status;
@@ -282,12 +254,6 @@
 		if (raw === 'pending') return { label: 'Pendiente', cls: 'badge-ghost' };
 		return { label: 'No iniciado', cls: 'badge-ghost' };
 	}
-
-	const statusLabelMap: Record<string, string> = {
-		pending: 'Pendiente',
-		'in-progress': 'En progreso',
-		completed: 'Completada',
-	};
 
 	function avgRating(employeeId: string, kind: 'self' | 'rh'): number | null {
 		// Backend is phase-aware (detail returns the active-phase evaluation);
