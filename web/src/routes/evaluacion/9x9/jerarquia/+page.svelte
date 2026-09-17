@@ -208,11 +208,20 @@ import { isManagerProfile } from '$lib/stores/roleStore.svelte';
 		employeeScoreLoading = true;
 		selectedEmployeeScore = null;
 		try {
-			const res = await client.GET('/employees/{empId}/score', {
+			// Ponderado jerárquico (personalHJ + global w·G + shared w·J·P); fallback a /score si 404.
+			const res = await client.GET('/employees/{empId}/hierarchical-score', {
 				params: { path: { empId } },
 			});
 			if (!res.error) {
 				const data = res.data as { score?: number };
+				selectedEmployeeScore = data?.score ?? null;
+				return;
+			}
+			const legacy = await client.GET('/employees/{empId}/score', {
+				params: { path: { empId } },
+			});
+			if (!legacy.error) {
+				const data = legacy.data as { score?: number };
 				selectedEmployeeScore = data?.score ?? null;
 			}
 		} catch (e) {

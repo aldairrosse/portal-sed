@@ -4,1220 +4,1298 @@
  */
 
 export interface paths {
-	'/evaluations': {
-		parameters: {
-			query?: never;
-			header?: never;
-			path?: never;
-			cookie?: never;
-		};
-		/** List evaluations by cycle */
-		get: operations['listEvaluations'];
-		put?: never;
-		post?: never;
-		delete?: never;
-		options?: never;
-		head?: never;
-		patch?: never;
-		trace?: never;
-	};
-	'/evaluations/{id}': {
-		parameters: {
-			query?: never;
-			header?: never;
-			path?: never;
-			cookie?: never;
-		};
-		/** Get evaluation detail */
-		get: operations['getEvaluation'];
-		put?: never;
-		post?: never;
-		delete?: never;
-		options?: never;
-		head?: never;
-		patch?: never;
-		trace?: never;
-	};
-	'/evaluations/{id}/self-evaluation': {
-		parameters: {
-			query?: never;
-			header?: never;
-			path?: never;
-			cookie?: never;
-		};
-		get?: never;
-		/**
-		 * Update self-evaluation
-		 * @description Actualiza la autoevaluación en fase avance/medio-anio o cierre; responde 409 PHASE_NOT_ADVANCEABLE solo fuera de fases escribibles. Submit/Finalize siguen siendo solo cierre.
-		 */
-		put: operations['updateSelfEvaluation'];
-		/**
-		 * Submit self-evaluation
-		 * @description Solo fase cierre; responde 409 fuera de cierre.
-		 */
-		post: operations['submitSelfEvaluation'];
-		delete?: never;
-		options?: never;
-		head?: never;
-		patch?: never;
-		trace?: never;
-	};
-	'/evaluations/{id}/rh-evaluation': {
-		parameters: {
-			query?: never;
-			header?: never;
-			path?: never;
-			cookie?: never;
-		};
-		get?: never;
-		/**
-		 * Update RH evaluation
-		 * @description Actualiza la evaluación RH en fase avance/medio-anio o cierre; responde 409 PHASE_NOT_ADVANCEABLE solo fuera de fases escribibles. Submit/Finalize siguen siendo solo cierre. Escritura autorizada solo a RH (permiso eval:rh) o al jefe asignado (manager del evaluado); sin sesión responde 401, no autorizado responde 403.
-		 */
-		put: operations['updateRHEvaluation'];
-		/**
-		 * Submit RH evaluation
-		 * @description Solo fase cierre; responde 409 fuera de cierre. Escritura autorizada solo a RH (permiso eval:rh) o al jefe asignado (manager del evaluado); sin sesión responde 401, no autorizado responde 403.
-		 */
-		post: operations['submitRHEvaluation'];
-		delete?: never;
-		options?: never;
-		head?: never;
-		patch?: never;
-		trace?: never;
-	};
-	'/evaluations/{id}/finalize': {
-		parameters: {
-			query?: never;
-			header?: never;
-			path?: never;
-			cookie?: never;
-		};
-		get?: never;
-		put?: never;
-		/** Finalize evaluation */
-		post: operations['finalizeEvaluation'];
-		delete?: never;
-		options?: never;
-		head?: never;
-		patch?: never;
-		trace?: never;
-	};
-	'/evaluations/{id}/goal-state': {
-		parameters: {
-			query?: never;
-			header?: never;
-			path?: never;
-			cookie?: never;
-		};
-		get?: never;
-		/** Update per-goal state (finalProgress, selfAssessment, rhAssessment) */
-		put: operations['updateGoalState'];
-		post?: never;
-		delete?: never;
-		options?: never;
-		head?: never;
-		patch?: never;
-		trace?: never;
-	};
-	'/evaluations/{id}/goal-comments': {
-		parameters: {
-			query?: never;
-			header?: never;
-			path?: never;
-			cookie?: never;
-		};
-		get?: never;
-		/** Update per-goal manager comment */
-		put: operations['updateGoalComments'];
-		post?: never;
-		delete?: never;
-		options?: never;
-		head?: never;
-		patch?: never;
-		trace?: never;
-	};
-	'/evaluations/employee/{employeeId}': {
-		parameters: {
-			query?: never;
-			header?: never;
-			path?: never;
-			cookie?: never;
-		};
-		/** Get competency ratings for an employee in a cycle */
-		get: operations['getEmployeeCompetencies'];
-		put?: never;
-		post?: never;
-		delete?: never;
-		options?: never;
-		head?: never;
-		patch?: never;
-		trace?: never;
-	};
-	'/evaluations/competency-results': {
-		parameters: {
-			query?: never;
-			header?: never;
-			path?: never;
-			cookie?: never;
-		};
-		/**
-		 * Get competency results with pagination
-		 * @description Returns paginated competency ratings across evaluations for a cycle. Doble 9-box por phase: avance y medio-anio generan vistas independientes; use phase para filtrar.
-		 */
-		get: operations['getCompetencyResults'];
-		put?: never;
-		post?: never;
-		delete?: never;
-		options?: never;
-		head?: never;
-		patch?: never;
-		trace?: never;
-	};
-	'/evaluations/summary': {
-		parameters: {
-			query?: never;
-			header?: never;
-			path?: never;
-			cookie?: never;
-		};
-		/** Dashboard summary counts */
-		get: operations['getEvaluationSummary'];
-		put?: never;
-		post?: never;
-		delete?: never;
-		options?: never;
-		head?: never;
-		patch?: never;
-		trace?: never;
-	};
-	'/nine-box/matrices': {
-		parameters: {
-			query?: never;
-			header?: never;
-			path?: never;
-			cookie?: never;
-		};
-		/**
-		 * List 9×9 matrices, optionally filtered by cycle, phase, and/or evaluator
-		 * @description Snapshot 9-box solo en avance y cierre (doble 9-box por phase); phase_id es obligatorio cuando cycle_id está presente (400 si falta).
-		 */
-		get: operations['listMatrices'];
-		put?: never;
-		/** Create a 9×9 matrix */
-		post: operations['createMatrix'];
-		delete?: never;
-		options?: never;
-		head?: never;
-		patch?: never;
-		trace?: never;
-	};
-	'/nine-box/matrices/{matrixId}': {
-		parameters: {
-			query?: never;
-			header?: never;
-			path?: never;
-			cookie?: never;
-		};
-		/** Get matrix with entries */
-		get: operations['getMatrix'];
-		put?: never;
-		post?: never;
-		delete?: never;
-		options?: never;
-		head?: never;
-		patch?: never;
-		trace?: never;
-	};
-	'/nine-box/matrices/{matrixId}/entries': {
-		parameters: {
-			query?: never;
-			header?: never;
-			path?: never;
-			cookie?: never;
-		};
-		/** List entries in a matrix (tier-based) */
-		get: operations['listMatrixEntries'];
-		put?: never;
-		post?: never;
-		delete?: never;
-		options?: never;
-		head?: never;
-		patch?: never;
-		trace?: never;
-	};
-	'/nine-box/scales': {
-		parameters: {
-			query?: never;
-			header?: never;
-			path?: never;
-			cookie?: never;
-		};
-		/** Get 9×9 scale definitions */
-		get: operations['getScales'];
-		put?: never;
-		post?: never;
-		delete?: never;
-		options?: never;
-		head?: never;
-		patch?: never;
-		trace?: never;
-	};
-	'/nine-box/quadrants': {
-		parameters: {
-			query?: never;
-			header?: never;
-			path?: never;
-			cookie?: never;
-		};
-		/** Get 9×9 quadrant definitions */
-		get: operations['getQuadrants'];
-		put?: never;
-		post?: never;
-		delete?: never;
-		options?: never;
-		head?: never;
-		patch?: never;
-		trace?: never;
-	};
-	'/nine-box/quadrants/{quadrant}': {
-		parameters: {
-			query?: never;
-			header?: never;
-			path?: never;
-			cookie?: never;
-		};
-		get?: never;
-		/** Update quadrant title, description, colorHex (RH only) */
-		put: operations['updateQuadrant'];
-		post?: never;
-		delete?: never;
-		options?: never;
-		head?: never;
-		patch?: never;
-		trace?: never;
-	};
-	'/nine-box/recompute/{cycleId}/{phaseId}': {
-		parameters: {
-			query?: never;
-			header?: never;
-			path?: never;
-			cookie?: never;
-		};
-		get?: never;
-		put?: never;
-		/** Recompute all nine-box placements for a cycle and phase */
-		post: operations['recomputeMatrix'];
-		delete?: never;
-		options?: never;
-		head?: never;
-		patch?: never;
-		trace?: never;
-	};
+    "/evaluations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List evaluations by cycle */
+        get: operations["listEvaluations"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/evaluations/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export evaluations (7 columns, full scope)
+         * @description Filas backend-computadas para Excel: numero, nombre, progreso ponderado jerárquico, promedios auto/RH, rating 0.2/0.8, estado fase. Alcance total del visor (RH ve todo).
+         */
+        get: operations["getEvaluationsExport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/evaluations/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get evaluation detail */
+        get: operations["getEvaluation"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/evaluations/{id}/self-evaluation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Update self-evaluation
+         * @description Actualiza la autoevaluación en fase avance/medio-anio o cierre; responde 409 PHASE_NOT_ADVANCEABLE solo fuera de fases escribibles. Submit/Finalize siguen siendo solo cierre.
+         */
+        put: operations["updateSelfEvaluation"];
+        /**
+         * Submit self-evaluation
+         * @description Solo fase cierre; responde 409 fuera de cierre.
+         */
+        post: operations["submitSelfEvaluation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/evaluations/{id}/rh-evaluation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Update RH evaluation
+         * @description Actualiza la evaluación RH en fase avance/medio-anio o cierre; responde 409 PHASE_NOT_ADVANCEABLE solo fuera de fases escribibles. Submit/Finalize siguen siendo solo cierre. Escritura autorizada solo a RH (permiso eval:rh) o al jefe asignado (manager del evaluado); sin sesión responde 401, no autorizado responde 403.
+         */
+        put: operations["updateRHEvaluation"];
+        /**
+         * Submit RH evaluation
+         * @description Solo fase cierre; responde 409 fuera de cierre. Escritura autorizada solo a RH (permiso eval:rh) o al jefe asignado (manager del evaluado); sin sesión responde 401, no autorizado responde 403.
+         */
+        post: operations["submitRHEvaluation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/evaluations/{id}/finalize": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Finalize evaluation */
+        post: operations["finalizeEvaluation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/evaluations/{id}/goal-state": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Update per-goal state (finalProgress, selfAssessment, rhAssessment) */
+        put: operations["updateGoalState"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/evaluations/{id}/goal-comments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Update per-goal manager comment */
+        put: operations["updateGoalComments"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/evaluations/employee/{employeeId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get competency ratings for an employee in a cycle */
+        get: operations["getEmployeeCompetencies"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/evaluations/competency-results": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get competency results with pagination
+         * @description Returns paginated competency ratings across evaluations for a cycle. Doble 9-box por phase: avance y medio-anio generan vistas independientes; use phase para filtrar.
+         */
+        get: operations["getCompetencyResults"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/evaluations/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Dashboard summary counts */
+        get: operations["getEvaluationSummary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/nine-box/matrices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List 9×9 matrices, optionally filtered by cycle, phase, and/or evaluator
+         * @description Snapshot 9-box solo en avance y cierre (doble 9-box por phase); phase_id es obligatorio cuando cycle_id está presente (400 si falta).
+         */
+        get: operations["listMatrices"];
+        put?: never;
+        /** Create a 9×9 matrix */
+        post: operations["createMatrix"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/nine-box/matrices/{matrixId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get matrix with entries */
+        get: operations["getMatrix"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/nine-box/matrices/{matrixId}/entries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List entries in a matrix (tier-based) */
+        get: operations["listMatrixEntries"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/nine-box/scales": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get 9×9 scale definitions */
+        get: operations["getScales"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/nine-box/quadrants": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get 9×9 quadrant definitions */
+        get: operations["getQuadrants"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/nine-box/quadrants/{quadrant}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Update quadrant title, description, colorHex (RH only) */
+        put: operations["updateQuadrant"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/nine-box/recompute/{cycleId}/{phaseId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Recompute all nine-box placements for a cycle and phase */
+        post: operations["recomputeMatrix"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
-	schemas: {
-		EmployeeCompetencyRatingsResponse: {
-			/** Format: uuid */
-			employeeId?: string;
-			/** Format: uuid */
-			cycleId?: string;
-			ratings?: components['schemas']['EmployeeCompetencyRatingDTO'][];
-		};
-		EmployeeCompetencyRatingDTO: {
-			/** Format: uuid */
-			competencyId?: string;
-			selfRating?: number | null;
-			rhRating?: number | null;
-			comments?: string;
-			/** @example Buen liderazgo, mejorar delegación */
-			managerComment?: string | null;
-		};
-		EvaluationListResponse: {
-			data?: components['schemas']['EvaluationListItem'][];
-			nextCursor?: string;
-		};
-		EvaluationListItem: {
-			/** Format: uuid */
-			id?: string;
-			/** Format: uuid */
-			employeeId?: string;
-			/** Format: uuid */
-			cycleId?: string;
-			state?: string;
-			/** Format: date-time */
-			createdAt?: string;
-			/** Format: date-time */
-			updatedAt?: string;
-		};
-		EvaluationDetailResponse: {
-			/** Format: uuid */
-			id?: string;
-			/** Format: uuid */
-			employeeId?: string;
-			/** Format: uuid */
-			cycleId?: string;
-			state?: string;
-			/** Format: date-time */
-			selfEvaluationCompletedAt?: string | null;
-			/** Format: date-time */
-			rhEvaluationCompletedAt?: string | null;
-			competencies?: components['schemas']['CompetencyRatingDTO'][];
-			goals?: components['schemas']['GoalRatingDTO'][];
-			version?: number;
-			/** Format: date-time */
-			createdAt?: string;
-			/** Format: date-time */
-			updatedAt?: string;
-		};
-		CompetencyRatingDTO: {
-			/** Format: uuid */
-			competencyId?: string;
-			rating?: number;
-			comments?: string;
-			/** @example Buen liderazgo, mejorar delegación */
-			managerComment?: string | null;
-		};
-		GoalRatingDTO: {
-			/** Format: uuid */
-			goalId?: string;
-			/** @description Solo cuando se envía un rating explícito; el progreso NO deriva rating. */
-			finalRating?: number | null;
-			/** @description Valor directo de cierre en la unidad propia de la meta (porcentaje/moneda/numero/binario). */
-			finalProgress?: number | null;
-			/** @description Snapshot directo de la fase avance (medio-anio equivale a avance). */
-			avanceProgress?: number | null;
-			/** @description Snapshot directo de la fase cierre. */
-			cierreProgress?: number | null;
-			finalComments?: string;
-			rhAssessment?: string;
-			managerComment?: string;
-		};
-		SelfEvaluationRequest: {
-			competencies: components['schemas']['CompetencyRatingInput'][];
-			goalComments?: components['schemas']['GoalCommentInput'][];
-		};
-		CompetencyResultItem: {
-			id: string;
-			name: string;
-			profileName: string;
-			selfRatingAvg?: number | null;
-			rhRatingAvg?: number | null;
-			status: string;
-		};
-		CompetencyRatingInput: {
-			/** Format: uuid */
-			competencyId: string;
-			rating: number;
-			comments?: string;
-			/** @example Buen liderazgo, mejorar delegación */
-			managerComment?: string | null;
-			/**
-			 * @description Origen de la valoración: self o rh.
-			 * @enum {string}
-			 */
-			source?: 'self' | 'rh';
-			/**
-			 * @description Fase de la valoración; alias medio-anio solo docs (equivale a avance).
-			 * @enum {string}
-			 */
-			phase?: 'asignacion' | 'avance' | 'cierre';
-		};
-		GoalCommentInput: {
-			/** Format: uuid */
-			goalId: string;
-			comment?: string;
-		};
-		RHEvaluationRequest: {
-			competencies: components['schemas']['CompetencyRatingInput'][];
-			finalComments?: string;
-		};
-		FinalizeEvaluationRequest: {
-			reason?: string;
-		};
-		EvaluationSummaryResponse: {
-			/** Format: uuid */
-			cycleId?: string;
-			counts?: {
-				[key: string]: number;
-			};
-		};
-		/**
-		 * @description Fase válida para snapshot 9-box; alias medio-anio solo docs (equivale a avance).
-		 * @enum {string}
-		 */
-		NineBoxPhase: 'avance' | 'cierre';
-		NineBoxMatrixResponse: {
-			/** Format: uuid */
-			id?: string;
-			/** Format: uuid */
-			cycleId?: string;
-			/** Format: uuid */
-			evaluatorId?: string;
-			/** Format: uuid */
-			phaseId?: string;
-			phaseLabel?: components['schemas']['NineBoxPhase'];
-			entries?: components['schemas']['NineBoxEntryDTO'][];
-			/** Format: date-time */
-			createdAt?: string;
-			/** Format: date-time */
-			updatedAt?: string;
-		};
-		NineBoxEntryDTO: {
-			/** Format: uuid */
-			id?: string;
-			/** Format: uuid */
-			evaluateeId?: string;
-			/** @description Employee full name (first + last) */
-			employeeName?: string;
-			/**
-			 * Format: uuid
-			 * @description Employee's evaluation profile ID
-			 */
-			profileId?: string;
-			/** @description 1=low, 2=medium, 3=high */
-			performanceTier?: number;
-			/** @description 1=low, 2=medium, 3=high */
-			potentialTier?: number;
-			quadrant?: number;
-			quadrantLabel?: string;
-			quadrantColor?: string;
-			comments?: string;
-			version?: number;
-			/** Format: float */
-			readonly goalProgressPercent?: number;
-			readonly selfRating?: number | null;
-			readonly hrRating?: number | null;
-			readonly weights?: {
-				self?: number;
-				hr?: number;
-			};
-		};
-		/** @description ⚠️ Deprecated: entries are computed automatically via RecomputeMatrix. Use POST /nine-box/recompute/{cycleId}/{phaseId} instead. */
-		NineBoxEntryInput: {
-			/** Format: uuid */
-			evaluateeId: string;
-			performanceScore: number;
-			potentialScore: number;
-			comments?: string;
-		};
-		/** @description ⚠️ Deprecated: entries are computed automatically via RecomputeMatrix. */
-		NineBoxBatchRequest: {
-			entries: components['schemas']['NineBoxEntryInput'][];
-		};
-		NineBoxScaleDTO: {
-			/** @enum {string} */
-			axis?: 'performance' | 'potential';
-			level?: number;
-			label?: string;
-			description?: string;
-		};
-		NineBoxQuadrantDTO: {
-			quadrant?: number;
-			label?: string;
-			title?: string;
-			description?: string;
-			color?: string;
-			colorHex?: string;
-			actionRecommendation?: string;
-		};
-		NineBoxQuadrantUpdateInput: {
-			title?: string;
-			description?: string;
-			colorHex?: string;
-		};
-		GoalStateUpdateInput: {
-			/** Format: uuid */
-			goalId: string;
-			/** @description Valor directo en la unidad propia de la meta; se guarda en el snapshot de phase (default: fase de la evaluación/ciclo) y sincroniza current_value. */
-			finalProgress?: number | null;
-			/** @description Solo se escribe cuando es explícito; sin él, final_rating queda NULL. */
-			finalRating?: number | null;
-			/**
-			 * @description Snapshot destino; alias medio-anio solo docs (equivale a avance). Default: fase de la evaluación/ciclo.
-			 * @enum {string}
-			 */
-			phase?: 'avance' | 'cierre';
-			selfAssessment?: string | null;
-			rhAssessment?: string | null;
-		};
-		GoalCommentUpdateInput: {
-			/** Format: uuid */
-			goalId: string;
-			/** @enum {string} */
-			role: 'manager';
-			comment?: string;
-		};
-		ErrorResponse: {
-			error?: {
-				code?: string;
-				message?: string;
-				details?: string[];
-				trace_id?: string;
-			};
-		};
-	};
-	responses: {
-		/** @description Resource not found */
-		NotFound: {
-			headers: {
-				[name: string]: unknown;
-			};
-			content: {
-				'application/json': components['schemas']['ErrorResponse'];
-			};
-		};
-		/** @description Validation error */
-		BadRequest: {
-			headers: {
-				[name: string]: unknown;
-			};
-			content: {
-				'application/json': components['schemas']['ErrorResponse'];
-			};
-		};
-		/** @description Viewer lacks permission for the requested scope */
-		Forbidden: {
-			headers: {
-				[name: string]: unknown;
-			};
-			content: {
-				'application/json': components['schemas']['ErrorResponse'];
-			};
-		};
-		/** @description Concurrent update or business rule conflict */
-		Conflict: {
-			headers: {
-				[name: string]: unknown;
-			};
-			content: {
-				'application/json': components['schemas']['ErrorResponse'];
-			};
-		};
-		/** @description Too many requests */
-		RateLimit: {
-			headers: {
-				'Retry-After'?: number;
-				[name: string]: unknown;
-			};
-			content: {
-				'application/json': components['schemas']['ErrorResponse'];
-			};
-		};
-		/** @description Circuit breaker open or pool saturated */
-		ServiceUnavailable: {
-			headers: {
-				'Retry-After'?: number;
-				[name: string]: unknown;
-			};
-			content: {
-				'application/json': components['schemas']['ErrorResponse'];
-			};
-		};
-		/** @description If-Match header is required for this operation */
-		PreconditionRequired: {
-			headers: {
-				[name: string]: unknown;
-			};
-			content: {
-				'application/json': components['schemas']['ErrorResponse'];
-			};
-		};
-	};
-	parameters: never;
-	requestBodies: never;
-	headers: never;
-	pathItems: never;
+    schemas: {
+        EmployeeCompetencyRatingsResponse: {
+            /** Format: uuid */
+            employeeId?: string;
+            /** Format: uuid */
+            cycleId?: string;
+            ratings?: components["schemas"]["EmployeeCompetencyRatingDTO"][];
+        };
+        EmployeeCompetencyRatingDTO: {
+            /** Format: uuid */
+            competencyId?: string;
+            selfRating?: number | null;
+            rhRating?: number | null;
+            comments?: string;
+            selfComment?: string | null;
+            rhComment?: string | null;
+            /** @example Buen liderazgo, mejorar delegación */
+            managerComment?: string | null;
+        };
+        EvaluationListResponse: {
+            data?: components["schemas"]["EvaluationListItem"][];
+            nextCursor?: string;
+        };
+        EvaluationListItem: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            employeeId?: string;
+            /** Format: uuid */
+            cycleId?: string;
+            state?: string;
+            /** Format: date-time */
+            createdAt?: string;
+            /** Format: date-time */
+            updatedAt?: string;
+        };
+        EvaluationDetailResponse: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            employeeId?: string;
+            /** Format: uuid */
+            cycleId?: string;
+            state?: string;
+            /** Format: date-time */
+            selfEvaluationCompletedAt?: string | null;
+            /** Format: date-time */
+            rhEvaluationCompletedAt?: string | null;
+            competencies?: components["schemas"]["CompetencyRatingDTO"][];
+            goals?: components["schemas"]["GoalRatingDTO"][];
+            version?: number;
+            /** Format: date-time */
+            createdAt?: string;
+            /** Format: date-time */
+            updatedAt?: string;
+        };
+        CompetencyRatingDTO: {
+            /** Format: uuid */
+            competencyId?: string;
+            rating?: number;
+            comments?: string;
+            /** @example Buen liderazgo, mejorar delegación */
+            managerComment?: string | null;
+        };
+        GoalRatingDTO: {
+            /** Format: uuid */
+            goalId?: string;
+            /** @description Solo cuando se envía un rating explícito; el progreso NO deriva rating. */
+            finalRating?: number | null;
+            /** @description Valor directo de cierre en la unidad propia de la meta (porcentaje/moneda/numero/binario). */
+            finalProgress?: number | null;
+            /** @description Snapshot directo de la fase avance (medio-anio equivale a avance). */
+            avanceProgress?: number | null;
+            /** @description Snapshot directo de la fase cierre. */
+            cierreProgress?: number | null;
+            finalComments?: string;
+            rhAssessment?: string;
+            managerComment?: string;
+            /** @description Best-effort; empty when unknown. */
+            authorName?: string | null;
+            /** Format: date-time */
+            createdAt?: string | null;
+            /** Format: date-time */
+            updatedAt?: string | null;
+            managerCommentAuthor?: string | null;
+            /** Format: date-time */
+            managerCommentCreatedAt?: string | null;
+        };
+        SelfEvaluationRequest: {
+            competencies: components["schemas"]["CompetencyRatingInput"][];
+            goalComments?: components["schemas"]["GoalCommentInput"][];
+        };
+        CompetencyResultItem: {
+            id: string;
+            name: string;
+            profileName: string;
+            selfRatingAvg?: number | null;
+            rhRatingAvg?: number | null;
+            status: string;
+        };
+        CompetencyRatingInput: {
+            /** Format: uuid */
+            competencyId: string;
+            rating: number;
+            comments?: string;
+            /** @example Buen liderazgo, mejorar delegación */
+            managerComment?: string | null;
+            /**
+             * @description Origen de la valoración: self o rh.
+             * @enum {string}
+             */
+            source?: "self" | "rh";
+            /**
+             * @description Fase de la valoración; alias medio-anio solo docs (equivale a avance).
+             * @enum {string}
+             */
+            phase?: "asignacion" | "avance" | "cierre";
+        };
+        GoalCommentInput: {
+            /** Format: uuid */
+            goalId: string;
+            comment?: string;
+        };
+        RHEvaluationRequest: {
+            competencies: components["schemas"]["CompetencyRatingInput"][];
+            finalComments?: string;
+        };
+        FinalizeEvaluationRequest: {
+            reason?: string;
+        };
+        EvaluationSummaryResponse: {
+            /** Format: uuid */
+            cycleId?: string;
+            counts?: {
+                [key: string]: number;
+            };
+        };
+        /**
+         * @description Fase válida para snapshot 9-box; alias medio-anio solo docs (equivale a avance).
+         * @enum {string}
+         */
+        NineBoxPhase: "avance" | "cierre";
+        NineBoxMatrixResponse: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            cycleId?: string;
+            /** Format: uuid */
+            evaluatorId?: string;
+            /** Format: uuid */
+            phaseId?: string;
+            phaseLabel?: components["schemas"]["NineBoxPhase"];
+            entries?: components["schemas"]["NineBoxEntryDTO"][];
+            /** Format: date-time */
+            createdAt?: string;
+            /** Format: date-time */
+            updatedAt?: string;
+        };
+        NineBoxEntryDTO: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            evaluateeId?: string;
+            /** @description Employee full name (first + last) */
+            employeeName?: string;
+            /**
+             * Format: uuid
+             * @description Employee's evaluation profile ID
+             */
+            profileId?: string;
+            /** @description 1=low, 2=medium, 3=high */
+            performanceTier?: number;
+            /** @description 1=low, 2=medium, 3=high */
+            potentialTier?: number;
+            quadrant?: number;
+            quadrantLabel?: string;
+            quadrantColor?: string;
+            comments?: string;
+            version?: number;
+            /** Format: float */
+            readonly goalProgressPercent?: number;
+            readonly selfRating?: number | null;
+            readonly hrRating?: number | null;
+            readonly weights?: {
+                self?: number;
+                hr?: number;
+            };
+        };
+        /** @description ⚠️ Deprecated: entries are computed automatically via RecomputeMatrix. Use POST /nine-box/recompute/{cycleId}/{phaseId} instead. */
+        NineBoxEntryInput: {
+            /** Format: uuid */
+            evaluateeId: string;
+            performanceScore: number;
+            potentialScore: number;
+            comments?: string;
+        };
+        /** @description ⚠️ Deprecated: entries are computed automatically via RecomputeMatrix. */
+        NineBoxBatchRequest: {
+            entries: components["schemas"]["NineBoxEntryInput"][];
+        };
+        NineBoxScaleDTO: {
+            /** @enum {string} */
+            axis?: "performance" | "potential";
+            level?: number;
+            label?: string;
+            description?: string;
+        };
+        NineBoxQuadrantDTO: {
+            quadrant?: number;
+            label?: string;
+            title?: string;
+            description?: string;
+            color?: string;
+            colorHex?: string;
+            actionRecommendation?: string;
+        };
+        NineBoxQuadrantUpdateInput: {
+            title?: string;
+            description?: string;
+            colorHex?: string;
+        };
+        GoalStateUpdateInput: {
+            /** Format: uuid */
+            goalId: string;
+            /** @description Valor directo en la unidad propia de la meta; se guarda en el snapshot de phase (default: fase de la evaluación/ciclo) y sincroniza current_value. */
+            finalProgress?: number | null;
+            /** @description Solo se escribe cuando es explícito; sin él, final_rating queda NULL. */
+            finalRating?: number | null;
+            /**
+             * @description Snapshot destino; alias medio-anio solo docs (equivale a avance). Default: fase de la evaluación/ciclo.
+             * @enum {string}
+             */
+            phase?: "avance" | "cierre";
+            selfAssessment?: string | null;
+            rhAssessment?: string | null;
+        };
+        GoalCommentUpdateInput: {
+            /** Format: uuid */
+            goalId: string;
+            /** @enum {string} */
+            role: "manager";
+            comment?: string;
+        };
+        ErrorResponse: {
+            error?: {
+                code?: string;
+                message?: string;
+                details?: string[];
+                trace_id?: string;
+            };
+        };
+        EvaluationExportRow: {
+            /** Format: uuid */
+            employeeId: string;
+            employeeNumber: string;
+            employeeName: string;
+            goalProgress: number;
+            selfAvg: number;
+            rhAvg: number;
+            rating: number;
+            /** @enum {string} */
+            status: "pending" | "in-progress" | "completed";
+        };
+        EvaluationExportMeta: {
+            /** Format: uuid */
+            cycleId: string;
+            phase: string;
+            total: number;
+        };
+        EvaluationExportResponse: {
+            data: components["schemas"]["EvaluationExportRow"][];
+            meta: components["schemas"]["EvaluationExportMeta"];
+        };
+    };
+    responses: {
+        /** @description Resource not found */
+        NotFound: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ErrorResponse"];
+            };
+        };
+        /** @description Validation error */
+        BadRequest: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ErrorResponse"];
+            };
+        };
+        /** @description Viewer lacks permission for the requested scope */
+        Forbidden: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ErrorResponse"];
+            };
+        };
+        /** @description Concurrent update or business rule conflict */
+        Conflict: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ErrorResponse"];
+            };
+        };
+        /** @description Too many requests */
+        RateLimit: {
+            headers: {
+                "Retry-After"?: number;
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ErrorResponse"];
+            };
+        };
+        /** @description Circuit breaker open or pool saturated */
+        ServiceUnavailable: {
+            headers: {
+                "Retry-After"?: number;
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ErrorResponse"];
+            };
+        };
+        /** @description If-Match header is required for this operation */
+        PreconditionRequired: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ErrorResponse"];
+            };
+        };
+    };
+    parameters: never;
+    requestBodies: never;
+    headers: never;
+    pathItems: never;
 }
 export type $defs = Record<string, never>;
 export interface operations {
-	listEvaluations: {
-		parameters: {
-			query: {
-				cycle_id: string;
-				state?: string;
-				/** @description Filtra por fase, default current_phase. 'medio-anio' es alias frontend deprecado, mapear a 'avance'. */
-				phase?: 'asignacion' | 'avance' | 'cierre';
-				cursor?: string;
-				limit?: number;
-			};
-			header?: never;
-			path?: never;
-			cookie?: never;
-		};
-		requestBody?: never;
-		responses: {
-			/** @description Paginated evaluation list */
-			200: {
-				headers: {
-					[name: string]: unknown;
-				};
-				content: {
-					'application/json': components['schemas']['EvaluationListResponse'];
-				};
-			};
-			429: components['responses']['RateLimit'];
-		};
-	};
-	getEvaluation: {
-		parameters: {
-			query?: never;
-			header?: never;
-			path: {
-				id: string;
-			};
-			cookie?: never;
-		};
-		requestBody?: never;
-		responses: {
-			/** @description Evaluation with competencies and goals */
-			200: {
-				headers: {
-					[name: string]: unknown;
-				};
-				content: {
-					'application/json': components['schemas']['EvaluationDetailResponse'];
-				};
-			};
-			404: components['responses']['NotFound'];
-		};
-	};
-	updateSelfEvaluation: {
-		parameters: {
-			query?: {
-				/** @description Upsert de diagnóstico: si el {id} no existe, crea/reutiliza la evaluación para employee_id+cycle_id. */
-				employee_id?: string;
-				cycle_id?: string;
-				/** @description Fase para el upsert; por defecto la current_phase del ciclo. */
-				phase?: 'asignacion' | 'avance' | 'cierre';
-			};
-			header: {
-				'If-Match': number;
-			};
-			path: {
-				id: string;
-			};
-			cookie?: never;
-		};
-		requestBody: {
-			content: {
-				'application/json': components['schemas']['SelfEvaluationRequest'];
-			};
-		};
-		responses: {
-			/** @description Updated evaluation */
-			200: {
-				headers: {
-					[name: string]: unknown;
-				};
-				content: {
-					'application/json': components['schemas']['EvaluationDetailResponse'];
-				};
-			};
-			409: components['responses']['Conflict'];
-		};
-	};
-	submitSelfEvaluation: {
-		parameters: {
-			query?: never;
-			header: {
-				'Idempotency-Key': string;
-			};
-			path: {
-				id: string;
-			};
-			cookie?: never;
-		};
-		requestBody: {
-			content: {
-				'application/json': components['schemas']['SelfEvaluationRequest'];
-			};
-		};
-		responses: {
-			/** @description Updated evaluation */
-			200: {
-				headers: {
-					[name: string]: unknown;
-				};
-				content: {
-					'application/json': components['schemas']['EvaluationDetailResponse'];
-				};
-			};
-			409: components['responses']['Conflict'];
-			429: components['responses']['RateLimit'];
-		};
-	};
-	updateRHEvaluation: {
-		parameters: {
-			query?: {
-				/** @description Upsert de diagnóstico: si el {id} no existe, crea/reutiliza la evaluación para employee_id+cycle_id. */
-				employee_id?: string;
-				cycle_id?: string;
-				/** @description Fase para el upsert; por defecto la current_phase del ciclo. */
-				phase?: 'asignacion' | 'avance' | 'cierre';
-			};
-			header: {
-				'If-Match': number;
-			};
-			path: {
-				id: string;
-			};
-			cookie?: never;
-		};
-		requestBody: {
-			content: {
-				'application/json': components['schemas']['RHEvaluationRequest'];
-			};
-		};
-		responses: {
-			/** @description Updated evaluation */
-			200: {
-				headers: {
-					[name: string]: unknown;
-				};
-				content: {
-					'application/json': components['schemas']['EvaluationDetailResponse'];
-				};
-			};
-			/** @description Missing or invalid session */
-			401: {
-				headers: {
-					[name: string]: unknown;
-				};
-				content?: never;
-			};
-			403: components['responses']['Forbidden'];
-			409: components['responses']['Conflict'];
-		};
-	};
-	submitRHEvaluation: {
-		parameters: {
-			query?: never;
-			header: {
-				'Idempotency-Key': string;
-			};
-			path: {
-				id: string;
-			};
-			cookie?: never;
-		};
-		requestBody: {
-			content: {
-				'application/json': components['schemas']['RHEvaluationRequest'];
-			};
-		};
-		responses: {
-			/** @description Updated evaluation */
-			200: {
-				headers: {
-					[name: string]: unknown;
-				};
-				content: {
-					'application/json': components['schemas']['EvaluationDetailResponse'];
-				};
-			};
-			/** @description Missing or invalid session */
-			401: {
-				headers: {
-					[name: string]: unknown;
-				};
-				content?: never;
-			};
-			403: components['responses']['Forbidden'];
-			409: components['responses']['Conflict'];
-			429: components['responses']['RateLimit'];
-		};
-	};
-	finalizeEvaluation: {
-		parameters: {
-			query?: never;
-			header?: never;
-			path: {
-				id: string;
-			};
-			cookie?: never;
-		};
-		requestBody?: {
-			content: {
-				'application/json': components['schemas']['FinalizeEvaluationRequest'];
-			};
-		};
-		responses: {
-			/** @description Finalized evaluation */
-			200: {
-				headers: {
-					[name: string]: unknown;
-				};
-				content: {
-					'application/json': components['schemas']['EvaluationDetailResponse'];
-				};
-			};
-			409: components['responses']['Conflict'];
-			503: components['responses']['ServiceUnavailable'];
-		};
-	};
-	updateGoalState: {
-		parameters: {
-			query?: {
-				/** @description Upsert de diagnóstico: si el {id} no existe, crea/reutiliza la evaluación para employee_id+cycle_id. */
-				employee_id?: string;
-				cycle_id?: string;
-				/** @description Fase para el upsert; por defecto la current_phase del ciclo. */
-				phase?: 'asignacion' | 'avance' | 'cierre';
-			};
-			header: {
-				'If-Match': number;
-			};
-			path: {
-				id: string;
-			};
-			cookie?: never;
-		};
-		requestBody: {
-			content: {
-				'application/json': components['schemas']['GoalStateUpdateInput'];
-			};
-		};
-		responses: {
-			/** @description Goal state updated */
-			200: {
-				headers: {
-					[name: string]: unknown;
-				};
-				content: {
-					'application/json': components['schemas']['EvaluationDetailResponse'];
-				};
-			};
-			400: components['responses']['BadRequest'];
-			404: components['responses']['NotFound'];
-			409: components['responses']['Conflict'];
-			428: components['responses']['PreconditionRequired'];
-		};
-	};
-	updateGoalComments: {
-		parameters: {
-			query?: {
-				/** @description Upsert de diagnóstico: si el {id} no existe, crea/reutiliza la evaluación para employee_id+cycle_id. */
-				employee_id?: string;
-				cycle_id?: string;
-				/** @description Fase para el upsert; por defecto la current_phase del ciclo. */
-				phase?: 'asignacion' | 'avance' | 'cierre';
-			};
-			header: {
-				'If-Match': number;
-			};
-			path: {
-				id: string;
-			};
-			cookie?: never;
-		};
-		requestBody: {
-			content: {
-				'application/json': components['schemas']['GoalCommentUpdateInput'];
-			};
-		};
-		responses: {
-			/** @description Goal comment updated */
-			200: {
-				headers: {
-					[name: string]: unknown;
-				};
-				content: {
-					'application/json': components['schemas']['EvaluationDetailResponse'];
-				};
-			};
-			400: components['responses']['BadRequest'];
-			404: components['responses']['NotFound'];
-			409: components['responses']['Conflict'];
-			428: components['responses']['PreconditionRequired'];
-		};
-	};
-	getEmployeeCompetencies: {
-		parameters: {
-			query?: {
-				cycle_id?: string;
-			};
-			header?: never;
-			path: {
-				employeeId: string;
-			};
-			cookie?: never;
-		};
-		requestBody?: never;
-		responses: {
-			/** @description Employee competency ratings */
-			200: {
-				headers: {
-					[name: string]: unknown;
-				};
-				content: {
-					'application/json': components['schemas']['EmployeeCompetencyRatingsResponse'];
-				};
-			};
-			400: components['responses']['BadRequest'];
-			404: components['responses']['NotFound'];
-		};
-	};
-	getCompetencyResults: {
-		parameters: {
-			query: {
-				cycle_id: string;
-				/** @description Filtra por fase, default current_phase. 'medio-anio' es alias frontend deprecado, mapear a 'avance'. */
-				phase?: 'asignacion' | 'avance' | 'cierre';
-				cursor?: string;
-				limit?: number;
-			};
-			header?: never;
-			path?: never;
-			cookie?: never;
-		};
-		requestBody?: never;
-		responses: {
-			/** @description Paginated competency results */
-			200: {
-				headers: {
-					[name: string]: unknown;
-				};
-				content: {
-					'application/json': {
-						data?: components['schemas']['CompetencyResultItem'][];
-						nextCursor?: string | null;
-					};
-				};
-			};
-			400: components['responses']['BadRequest'];
-			429: components['responses']['RateLimit'];
-		};
-	};
-	getEvaluationSummary: {
-		parameters: {
-			query: {
-				cycle_id: string;
-			};
-			header?: never;
-			path?: never;
-			cookie?: never;
-		};
-		requestBody?: never;
-		responses: {
-			/** @description Counts by state */
-			200: {
-				headers: {
-					[name: string]: unknown;
-				};
-				content: {
-					'application/json': components['schemas']['EvaluationSummaryResponse'];
-				};
-			};
-		};
-	};
-	listMatrices: {
-		parameters: {
-			query: {
-				cycle_id: string;
-				/** @description Filtra por fase. 'medio-anio' es alias frontend deprecado, mapear a 'avance'. */
-				phase?: 'asignacion' | 'avance' | 'cierre';
-				/** @description Obligatorio cuando cycle_id está presente; sin default a current_phase */
-				phase_id: string;
-				/** @description Modo de vista: self (colaborador ve solo lo propio, redactado) u otro rol */
-				viewerMode?: 'self' | 'manager' | 'rh';
-				evaluator_id?: string;
-			};
-			header?: never;
-			path?: never;
-			cookie?: never;
-		};
-		requestBody?: never;
-		responses: {
-			/** @description Matrix list */
-			200: {
-				headers: {
-					[name: string]: unknown;
-				};
-				content: {
-					'application/json': components['schemas']['NineBoxMatrixResponse'][];
-				};
-			};
-			400: components['responses']['BadRequest'];
-			403: components['responses']['Forbidden'];
-		};
-	};
-	createMatrix: {
-		parameters: {
-			query?: never;
-			header?: never;
-			path?: never;
-			cookie?: never;
-		};
-		requestBody: {
-			content: {
-				'application/json': {
-					/** Format: uuid */
-					cycleId: string;
-					/** Format: uuid */
-					evaluatorId: string;
-				};
-			};
-		};
-		responses: {
-			/** @description Created matrix */
-			201: {
-				headers: {
-					[name: string]: unknown;
-				};
-				content: {
-					'application/json': components['schemas']['NineBoxMatrixResponse'];
-				};
-			};
-		};
-	};
-	getMatrix: {
-		parameters: {
-			query?: never;
-			header?: never;
-			path: {
-				matrixId: string;
-			};
-			cookie?: never;
-		};
-		requestBody?: never;
-		responses: {
-			/** @description Matrix detail */
-			200: {
-				headers: {
-					[name: string]: unknown;
-				};
-				content: {
-					'application/json': components['schemas']['NineBoxMatrixResponse'];
-				};
-			};
-			403: components['responses']['Forbidden'];
-			404: components['responses']['NotFound'];
-		};
-	};
-	listMatrixEntries: {
-		parameters: {
-			query?: {
-				quadrant?: number;
-			};
-			header?: never;
-			path: {
-				matrixId: string;
-			};
-			cookie?: never;
-		};
-		requestBody?: never;
-		responses: {
-			/** @description Entry list with tiers 1-3 */
-			200: {
-				headers: {
-					[name: string]: unknown;
-				};
-				content: {
-					'application/json': components['schemas']['NineBoxEntryDTO'][];
-				};
-			};
-			400: components['responses']['BadRequest'];
-			403: components['responses']['Forbidden'];
-		};
-	};
-	getScales: {
-		parameters: {
-			query?: never;
-			header?: never;
-			path?: never;
-			cookie?: never;
-		};
-		requestBody?: never;
-		responses: {
-			/** @description Scale list */
-			200: {
-				headers: {
-					[name: string]: unknown;
-				};
-				content: {
-					'application/json': components['schemas']['NineBoxScaleDTO'][];
-				};
-			};
-		};
-	};
-	getQuadrants: {
-		parameters: {
-			query?: never;
-			header?: never;
-			path?: never;
-			cookie?: never;
-		};
-		requestBody?: never;
-		responses: {
-			/** @description Quadrant list with title, colorHex */
-			200: {
-				headers: {
-					[name: string]: unknown;
-				};
-				content: {
-					'application/json': components['schemas']['NineBoxQuadrantDTO'][];
-				};
-			};
-		};
-	};
-	updateQuadrant: {
-		parameters: {
-			query?: never;
-			header?: never;
-			path: {
-				quadrant: number;
-			};
-			cookie?: never;
-		};
-		requestBody: {
-			content: {
-				'application/json': components['schemas']['NineBoxQuadrantUpdateInput'];
-			};
-		};
-		responses: {
-			/** @description Updated quadrant */
-			200: {
-				headers: {
-					[name: string]: unknown;
-				};
-				content: {
-					'application/json': components['schemas']['NineBoxQuadrantDTO'];
-				};
-			};
-			400: components['responses']['BadRequest'];
-			429: components['responses']['RateLimit'];
-		};
-	};
-	recomputeMatrix: {
-		parameters: {
-			query?: never;
-			header?: never;
-			path: {
-				cycleId: string;
-				phaseId: string;
-			};
-			cookie?: never;
-		};
-		requestBody?: never;
-		responses: {
-			/** @description Recompute result */
-			200: {
-				headers: {
-					[name: string]: unknown;
-				};
-				content: {
-					'application/json': {
-						/** @example ok */
-						status?: string;
-						/** @example Matrix recomputed successfully */
-						message?: string;
-					};
-				};
-			};
-			429: components['responses']['RateLimit'];
-			503: components['responses']['ServiceUnavailable'];
-		};
-	};
+    listEvaluations: {
+        parameters: {
+            query: {
+                cycle_id: string;
+                state?: string;
+                /** @description Filtra por fase, default current_phase. 'medio-anio' es alias frontend deprecado, mapear a 'avance'. */
+                phase?: "asignacion" | "avance" | "cierre";
+                cursor?: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Paginated evaluation list */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EvaluationListResponse"];
+                };
+            };
+            429: components["responses"]["RateLimit"];
+        };
+    };
+    getEvaluationsExport: {
+        parameters: {
+            query?: {
+                cycle_id?: string;
+                phase?: "asignacion" | "avance" | "cierre";
+                q?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Export rows with scope meta */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EvaluationExportResponse"];
+                };
+            };
+            429: components["responses"]["RateLimit"];
+        };
+    };
+    getEvaluation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Evaluation with competencies and goals */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EvaluationDetailResponse"];
+                };
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    updateSelfEvaluation: {
+        parameters: {
+            query?: {
+                /** @description Upsert de diagnóstico: si el {id} no existe, crea/reutiliza la evaluación para employee_id+cycle_id. */
+                employee_id?: string;
+                cycle_id?: string;
+                /** @description Fase para el upsert; por defecto la current_phase del ciclo. */
+                phase?: "asignacion" | "avance" | "cierre";
+            };
+            header: {
+                "If-Match": number;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SelfEvaluationRequest"];
+            };
+        };
+        responses: {
+            /** @description Updated evaluation */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EvaluationDetailResponse"];
+                };
+            };
+            409: components["responses"]["Conflict"];
+        };
+    };
+    submitSelfEvaluation: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SelfEvaluationRequest"];
+            };
+        };
+        responses: {
+            /** @description Updated evaluation */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EvaluationDetailResponse"];
+                };
+            };
+            409: components["responses"]["Conflict"];
+            429: components["responses"]["RateLimit"];
+        };
+    };
+    updateRHEvaluation: {
+        parameters: {
+            query?: {
+                /** @description Upsert de diagnóstico: si el {id} no existe, crea/reutiliza la evaluación para employee_id+cycle_id. */
+                employee_id?: string;
+                cycle_id?: string;
+                /** @description Fase para el upsert; por defecto la current_phase del ciclo. */
+                phase?: "asignacion" | "avance" | "cierre";
+            };
+            header: {
+                "If-Match": number;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RHEvaluationRequest"];
+            };
+        };
+        responses: {
+            /** @description Updated evaluation */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EvaluationDetailResponse"];
+                };
+            };
+            /** @description Missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    submitRHEvaluation: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RHEvaluationRequest"];
+            };
+        };
+        responses: {
+            /** @description Updated evaluation */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EvaluationDetailResponse"];
+                };
+            };
+            /** @description Missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["Conflict"];
+            429: components["responses"]["RateLimit"];
+        };
+    };
+    finalizeEvaluation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["FinalizeEvaluationRequest"];
+            };
+        };
+        responses: {
+            /** @description Finalized evaluation */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EvaluationDetailResponse"];
+                };
+            };
+            409: components["responses"]["Conflict"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    updateGoalState: {
+        parameters: {
+            query?: {
+                /** @description Upsert de diagnóstico: si el {id} no existe, crea/reutiliza la evaluación para employee_id+cycle_id. */
+                employee_id?: string;
+                cycle_id?: string;
+                /** @description Fase para el upsert; por defecto la current_phase del ciclo. */
+                phase?: "asignacion" | "avance" | "cierre";
+            };
+            header: {
+                "If-Match": number;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GoalStateUpdateInput"];
+            };
+        };
+        responses: {
+            /** @description Goal state updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EvaluationDetailResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            428: components["responses"]["PreconditionRequired"];
+        };
+    };
+    updateGoalComments: {
+        parameters: {
+            query?: {
+                /** @description Upsert de diagnóstico: si el {id} no existe, crea/reutiliza la evaluación para employee_id+cycle_id. */
+                employee_id?: string;
+                cycle_id?: string;
+                /** @description Fase para el upsert; por defecto la current_phase del ciclo. */
+                phase?: "asignacion" | "avance" | "cierre";
+            };
+            header: {
+                "If-Match": number;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GoalCommentUpdateInput"];
+            };
+        };
+        responses: {
+            /** @description Goal comment updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EvaluationDetailResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            428: components["responses"]["PreconditionRequired"];
+        };
+    };
+    getEmployeeCompetencies: {
+        parameters: {
+            query?: {
+                cycle_id?: string;
+            };
+            header?: never;
+            path: {
+                employeeId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Employee competency ratings */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmployeeCompetencyRatingsResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    getCompetencyResults: {
+        parameters: {
+            query: {
+                cycle_id: string;
+                /** @description Filtra por fase, default current_phase. 'medio-anio' es alias frontend deprecado, mapear a 'avance'. */
+                phase?: "asignacion" | "avance" | "cierre";
+                cursor?: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Paginated competency results */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data?: components["schemas"]["CompetencyResultItem"][];
+                        nextCursor?: string | null;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            429: components["responses"]["RateLimit"];
+        };
+    };
+    getEvaluationSummary: {
+        parameters: {
+            query: {
+                cycle_id: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Counts by state */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EvaluationSummaryResponse"];
+                };
+            };
+        };
+    };
+    listMatrices: {
+        parameters: {
+            query: {
+                cycle_id: string;
+                /** @description Filtra por fase. 'medio-anio' es alias frontend deprecado, mapear a 'avance'. */
+                phase?: "asignacion" | "avance" | "cierre";
+                /** @description Obligatorio cuando cycle_id está presente; sin default a current_phase */
+                phase_id: string;
+                /** @description Modo de vista: self (colaborador ve solo lo propio, redactado) u otro rol */
+                viewerMode?: "self" | "manager" | "rh";
+                evaluator_id?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Matrix list */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NineBoxMatrixResponse"][];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    createMatrix: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: uuid */
+                    cycleId: string;
+                    /** Format: uuid */
+                    evaluatorId: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Created matrix */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NineBoxMatrixResponse"];
+                };
+            };
+        };
+    };
+    getMatrix: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                matrixId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Matrix detail */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NineBoxMatrixResponse"];
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    listMatrixEntries: {
+        parameters: {
+            query?: {
+                quadrant?: number;
+            };
+            header?: never;
+            path: {
+                matrixId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Entry list with tiers 1-3 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NineBoxEntryDTO"][];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    getScales: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Scale list */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NineBoxScaleDTO"][];
+                };
+            };
+        };
+    };
+    getQuadrants: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Quadrant list with title, colorHex */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NineBoxQuadrantDTO"][];
+                };
+            };
+        };
+    };
+    updateQuadrant: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                quadrant: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NineBoxQuadrantUpdateInput"];
+            };
+        };
+        responses: {
+            /** @description Updated quadrant */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NineBoxQuadrantDTO"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            429: components["responses"]["RateLimit"];
+        };
+    };
+    recomputeMatrix: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                cycleId: string;
+                phaseId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Recompute result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @example ok */
+                        status?: string;
+                        /** @example Matrix recomputed successfully */
+                        message?: string;
+                    };
+                };
+            };
+            429: components["responses"]["RateLimit"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
 }

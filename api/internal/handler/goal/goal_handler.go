@@ -841,6 +841,34 @@ func (h *GoalHandler) GetEmployeeScore(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]float64{"score": score})
 }
 
+// GetEmployeeHierarchicalScore wraps ScoringService.GetEmployeeHierarchicalScore
+// (personalHJ + global w·G + shared w·J·P, clamp 0-100, P=100/PJ=100 sin institucionales).
+// cycleId query opcional; vacío = zero UUID (scorer usa valores live, no filtra por ciclo).
+func (h *GoalHandler) GetEmployeeHierarchicalScore(w http.ResponseWriter, r *http.Request) {
+	empID, err := parseEmpID(r)
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+
+	var cycleID uuid.UUID
+	if raw := r.URL.Query().Get("cycleId"); raw != "" {
+		cycleID, err = uuid.Parse(raw)
+		if err != nil {
+			writeError(w, pkgerrors.NewDomainError(pkgerrors.InvalidRequest, "invalid cycleId", err))
+			return
+		}
+	}
+
+	score, err := h.scoringSvc.GetEmployeeHierarchicalScore(r.Context(), empID, cycleID)
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]float64{"score": score})
+}
+
 // ============================================================================
 // Assignment Handlers
 // ============================================================================

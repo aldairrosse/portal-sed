@@ -884,6 +884,35 @@ paths:
         '404':
           $ref: '#/components/responses/GoalNotFound'
 
+  /employees/{empId}/hierarchical-score:
+    get:
+      operationId: getEmployeeHierarchicalScore
+      summary: Get the employee's hierarchical weighted score
+      description: Reutiliza ScoringService.GetEmployeeHierarchicalScore (personalHJ + global w·G + shared w·J·P, clamp 0-100; sin metas globales/compartidas P=100/PJ=100). cycleId opcional; scorer lee valores live.
+      parameters:
+        - $ref: '#/components/parameters/EmpId'
+        - name: cycleId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Hierarchical weighted score
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  score:
+                    type: number
+                    minimum: 0
+                    maximum: 100
+                required: [score]
+        '404':
+          $ref: '#/components/responses/GoalNotFound'
+
   # ============================================================================
   # Comments (goal / category / assignment)
   # ============================================================================

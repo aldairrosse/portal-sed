@@ -148,11 +148,19 @@ func (m *mockKPIService) UnlinkKPI(ctx context.Context, empID, goalID, kpiID uui
 
 type mockScoringService struct {
 	scoreFunc func(ctx context.Context, empID uuid.UUID) (float64, error)
+	hierarchicalFunc func(ctx context.Context, empID, cycleID uuid.UUID) (float64, error)
 }
 
 func (m *mockScoringService) GetEmployeeScore(ctx context.Context, empID uuid.UUID) (float64, error) {
 	if m.scoreFunc != nil {
 		return m.scoreFunc(ctx, empID)
+	}
+	return 0, nil
+}
+
+func (m *mockScoringService) GetEmployeeHierarchicalScore(ctx context.Context, empID, cycleID uuid.UUID) (float64, error) {
+	if m.hierarchicalFunc != nil {
+		return m.hierarchicalFunc(ctx, empID, cycleID)
 	}
 	return 0, nil
 }

@@ -199,6 +199,7 @@ func RegisterRoutes(r chi.Router, handler *GoalHandler, authSvc *authsvc.AuthSer
 			r.Use(middleware.RequirePermission(auth.PermGoalRead))
 			r.Use(middleware.RateLimit(readRateLimit))
 			r.Get("/employees/{empId}/score", handler.GetEmployeeScore)
+			r.Get("/employees/{empId}/hierarchical-score", handler.GetEmployeeHierarchicalScore)
 		})
 
 		// --- Goal proposal endpoints ---

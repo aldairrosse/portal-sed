@@ -123,6 +123,7 @@ type KpiServicer interface {
 // ScoringServicer handles employee score calculation.
 type ScoringServicer interface {
 	GetEmployeeScore(ctx context.Context, empID uuid.UUID) (float64, error)
+	GetEmployeeHierarchicalScore(ctx context.Context, empID, cycleID uuid.UUID) (float64, error)
 }
 
 // WeightValidationServicer handles weight validation business logic.
