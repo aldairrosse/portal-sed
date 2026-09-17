@@ -28,7 +28,7 @@ import {
 } from '$lib/api/weightConfig';
 import { SvelteDate, SvelteMap } from 'svelte/reactivity';
 
-// ─── Hierarchical weights G/P J/PJ (null hasta cargar; fallback org P=70/PJ=80 si fetch falla) ──
+// ─── Hierarchical weights G/P J/PJ (null hasta cargar; fallback sin config G:0/P:100, J:0/PJ:100 si fetch falla) ──
 let cycleWeights = $state<{ gWeight: number | null; pWeight: number | null }>({
 	gWeight: null,
 	pWeight: null,
@@ -439,15 +439,15 @@ async function _doLoad(empIdOverride?: string): Promise<void> {
 				const c = await getCycleWeightConfig();
 				setCycleWeights(c.g_weight, c.p_weight);
 			} catch {
-				// Fallback organización: P=70 (G=30) — evita max 100 falso.
-				setCycleWeights(30, 70);
+				// Fallback sin config: G:0/P:100 — personal llega a 100.
+				setCycleWeights(0, 100);
 			}
 			try {
 				const t = await getTeamWeightConfig();
 				setTeamWeights(t.j_weight, t.pj_weight);
 			} catch {
-				// Fallback organización: PJ=80 (J=20) — cap personal 70*80/100=56.
-				setTeamWeights(20, 80);
+				// Fallback sin config: J:0/PJ:100 — cap personal 100.
+				setTeamWeights(0, 100);
 			} finally {
 				weightsLoaded = true;
 			}
@@ -715,8 +715,8 @@ export function getWeightedScore(): number {
 	}
 	const hierarchicalPersonal = hierarchicalScore(
 		personalTotal,
-		cycleWeights.pWeight ?? 70,
-		teamWeights.pjWeight ?? 80,
+		cycleWeights.pWeight ?? 100,
+		teamWeights.pjWeight ?? 100,
 	);
 	let institutionalTotal = 0;
 	for (const goal of storeState.data?.institutionalGoals ?? []) {
@@ -727,10 +727,10 @@ export function getWeightedScore(): number {
 				(goal.source === 'shared'
 					? effectiveWeightShared(
 							goal.weight,
-							cycleWeights.pWeight ?? 70,
-							teamWeights.pjWeight ?? 80,
+							cycleWeights.pWeight ?? 100,
+							teamWeights.pjWeight ?? 100,
 						)
-					: effectiveWeightGlobal(goal.weight, cycleWeights.pWeight ?? 70));
+					: effectiveWeightGlobal(goal.weight, cycleWeights.pWeight ?? 100));
 			institutionalTotal += (pct * eff) / 100;
 		}
 	}

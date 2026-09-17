@@ -183,15 +183,15 @@ export function getHomeProgress(
 	const institutionalGoals = getInstitutionalGoals();
 	const { pWeight } = getCycleWeights();
 	const { pjWeight } = getTeamWeights();
-	// Pesos aún null = no cargados: usar fallback org P=70/PJ=80 (cap 56),
-	// nunca 100 (daba max 100 falso). +page.svelte muestra skeleton hasta
-	// isWeightsLoaded() para evitar el parpadeo con estos interinos.
+	// Pesos aún null = no cargados: fallback sin config P=100/PJ=100 (cap 100),
+	// igual que backend GetOrFallback (G:0/P:100, J:0/PJ:100). +page.svelte muestra
+	// skeleton hasta isWeightsLoaded() para evitar el parpadeo con estos interinos.
 	return computeHomeProgress({
 		personalGoals,
 		categories,
 		institutionalGoals,
-		pWeight: pWeight ?? 70,
-		pjWeight: pjWeight ?? 80,
+		pWeight: pWeight ?? 100,
+		pjWeight: pjWeight ?? 100,
 		phase,
 	});
 }
